@@ -204,6 +204,63 @@ h2:first-child{margin-top:0}
 .bep-2nd b{font-family:'Oswald',sans-serif;font-weight:500;font-size:25px;color:#FFFFFF}
 
 .cashbar{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px}
+
+/* ---------- 店舗ごとの当月売上（経営ボードの3つ目。2026-09-10） ---------- */
+.usales{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:13px}
+.usales button{flex:1 1 46%;min-width:0;text-align:left;
+  background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--accent);
+  border-radius:var(--r);padding:11px 12px;box-shadow:var(--sh);cursor:pointer;
+  font-family:inherit;color:var(--paper)}
+.usales button .n{display:block;font-size:14px;font-weight:800;line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.usales button .v{display:block;font-family:'Oswald',sans-serif;font-weight:500;
+  font-size:25px;line-height:1.1;margin-top:3px}
+.usales button .g{display:block;font-size:12px;font-weight:700;color:var(--paper-dim);margin-top:2px}
+
+/* ---------- 予実対比（黒帯の中。1本＝1行に収める） ---------- */
+.yline{padding:11px 0 9px;border-top:1px solid rgba(255,255,255,.16)}
+.yline:first-child{border-top:0;padding-top:4px}
+.yline .yh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.yline .yh+.yh{margin-top:2px}
+.yline .yk{font-size:15px;color:rgba(242,245,248,.8);font-weight:700}
+.yline .yv{font-family:'Oswald',sans-serif;font-weight:600;font-size:27px;color:#FFFFFF;
+  line-height:1;white-space:nowrap}
+.yline .yd{font-family:'Oswald',sans-serif;font-weight:500;font-size:19px;white-space:nowrap}
+.yline .yd.up{color:var(--brass-b)} .yline .yd.dn{color:#E8A0A0}
+.yline .ys{font-size:13px;color:rgba(242,245,248,.72);margin-top:4px;white-space:nowrap}
+.yline .gauge{height:8px;margin:7px 0 0}
+.ynone{font-size:16px;color:rgba(242,245,248,.9);line-height:1.7;padding:6px 0 2px}
+.ynone b{color:#fff}
+
+/* ---------- 当期の計画（月ごとの表） ---------- */
+.plangrid{display:grid;grid-template-columns:52px 1fr 1fr;gap:6px 8px;align-items:center}
+.plangrid .ph{font-size:12px;font-weight:800;color:var(--paper-dim);letter-spacing:.04em}
+.plangrid .pm{font-family:'Oswald',sans-serif;font-size:16px;font-weight:500}
+.plangrid .pm.past{color:var(--paper-dim)}
+.plangrid input{margin:0;padding:8px 9px;font-size:16px;text-align:right;
+  font-family:'Oswald',sans-serif}
+.plansum{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  margin-top:13px;padding-top:11px;border-top:2px solid var(--paper);font-size:14px;font-weight:800}
+.plansum>span{flex:none;line-height:1.3}
+.plansum b{font-family:'Oswald',sans-serif;font-weight:600;font-size:23px;
+  white-space:nowrap;text-align:right}
+.revlist .rv{display:flex;justify-content:space-between;align-items:baseline;gap:9px;
+  padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.revlist .rv:last-child{border-bottom:0}
+.revlist .rv .rr{font-family:'Oswald',sans-serif;font-weight:600;font-size:17px;flex:none}
+.revlist .rv .rm{flex:1;min-width:0;color:var(--paper-dim);font-weight:700}
+.revlist .rv .rd{font-family:'Oswald',sans-serif;font-weight:500;flex:none}
+.revlist .rv .rd.up{color:var(--green)} .revlist .rv .rd.dn{color:var(--red)}
+.revlist .rv.now{background:var(--ink2);margin:0 -8px;padding:10px 8px;border-radius:6px}
+
+/* ---------- 着地点の12か月の帯（実績／実績＋計画／計画） ---------- */
+.chakubar{display:flex;gap:3px;margin:0 0 15px}
+.chakubar i{flex:1;height:26px;border-radius:3px;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;color:var(--on-accent)}
+.chakubar i.real{background:var(--accent)}
+.chakubar i.mix{background:var(--brass)}
+.chakubar i.plan{background:var(--line);color:var(--paper-dim)}
 .cashbar .tile{padding:13px 12px}
 .cashbar .tile .k{font-size:13.5px;line-height:1.35}
 .cashbar .tile .s{font-size:12px;font-weight:700;color:var(--paper-dim);margin-top:3px;
@@ -1258,14 +1315,23 @@ button.delu[disabled]{opacity:.45}
     </div>
   </div>
 
-  <div class="bep">
-    <div class="bep-label">トントンまで、あと</div>
-    <div class="bep-num num" id="bepRemain">—</div>
-    <div class="bep-sub" id="bepSub">読み込み中</div>
-    <div class="gauge"><i id="gaugeBar" style="width:0"></i></div>
-    <div class="gauge-cap"><span>今月売上</span><span id="gaugeCap">—</span></div>
-    <div class="bep-2nd" id="livingRow" style="display:none">
-      <span>生活費まで、あと</span><b class="num" id="livingRemain">—</b>
+  <!-- ★ 3つ目 … 店舗ごとの当月売上（2026-09-10）
+       全体を見ているときに「どの店がいくら売っているか」が1枚で分かること。
+       押すとその店へ入る -->
+  <div id="uSales"></div>
+
+  <!-- ★★ 予実対比（2026-09-10）
+       ここまでは「トントンまであといくら」を出していた。それは
+       【計画が無くても出せる数字】。経営者になるために要るのは
+       「立てた計画に対して、いま上か下か」。ずれが見えて初めて、
+       上方修正・下方修正という判断ができる。
+       ★ 計画が無いときは、数字をでっち上げずに立て方を案内する -->
+  <div class="bep" id="yosanBox">
+    <div class="bep-label" id="yosanHead">計画に対して、いま</div>
+    <div id="yosanBody"></div>
+    <div class="bep-2nd" id="chakuRow" style="display:none">
+      <span id="chakuLabel">このまま行くと、年間で手元に残るお金</span>
+      <b class="num" id="chakuCash">—</b>
     </div>
   </div>
 
@@ -1674,7 +1740,87 @@ button.delu[disabled]{opacity:.45}
 
 <!-- ============ 試算 ============ -->
 <section class="view" id="v-sim">
-  <div class="ptitle">計画シミュレーション<em id="simUnit"></em></div>
+  <div class="ptitle">計画<em id="simUnit"></em></div>
+
+  <!-- ★★ 中を帯で3つに割る（2026-09-10）
+       憲法「タブは最大5本。増やしたくなったら中身を減らす」。
+       当年度の着地点予測はタブを増やさず、予実対比の中に入れた。
+
+         当期の計画 … 単年度の予算を立てる。上方修正・下方修正もここ
+         予実対比   … 計画と実績の乖離＋当年度の着地点（税・手残り）
+         シミュレーション … 過去実績からの、店ごとの新年度予測 -->
+  <div class="segbar big" id="p_mode">
+    <button data-v="plan">当期の計画</button>
+    <button data-v="yosan" aria-pressed="true">予実対比</button>
+    <button data-v="sim">シミュレーション</button>
+  </div>
+
+  <!-- ============ 当期の計画（予算） ============ -->
+  <div id="p_panePlan" hidden>
+    <div class="card">
+      <div class="eyebrow">当期の計画 <span id="pl_fyTag" class="flash">—</span></div>
+      <p class="muted" style="margin:0 0 12px">
+        <b>月次の訪問で、事務所と社長が決めるものです。</b>
+        直すたびに版が1つ増えて、前の版は残ります。
+        「いつ・いくらから いくらへ・なぜ変えたか」が跡になります。
+      </p>
+      <label>どの店の計画か</label>
+      <select id="pl_unit"></select>
+      <div id="pl_bulk"></div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">月ごとに直す</div>
+      <div class="plangrid" id="pl_grid"></div>
+      <div class="plansum" id="pl_sum"></div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">記録する</div>
+      <label>なぜ変えたか（次の訪問で読み返します）</label>
+      <input type="text" id="pl_memo" placeholder="例：9月訪問／夏の勢いで上方修正">
+      <div class="rowbtns">
+        <button class="ghost" id="pl_seed">実績のペースで埋める</button>
+      </div>
+      <button class="go" id="pl_save">この内容で記録する</button>
+      <div id="pl_msg" class="muted" style="margin-top:9px"></div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">改定の跡</div>
+      <div id="pl_revs"></div>
+    </div>
+  </div>
+
+  <!-- ============ 予実対比・着地点 ============ -->
+  <div id="p_paneYosan" hidden>
+    <div class="card">
+      <div class="eyebrow">当月の予実 <span class="flash">速報値</span></div>
+      <div id="yz_body"></div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">当年度の着地点予測 <span class="flash">概算</span></div>
+      <p class="muted" style="margin:0 0 12px">
+        <b>実績が入っている月は実績、まだの月は計画</b>で12か月を埋めた見込みです。
+        会計が月次で固まったところまでが実績になります。
+      </p>
+      <div class="chakubar" id="cz_months"></div>
+      <div class="vpl" id="cz_pl"></div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">着地点の税と、手元に残るお金 <span class="flash">概算</span></div>
+      <div class="vpl" id="cz_cash"></div>
+      <p class="muted" style="margin:12px 0 0">
+        個人事業なので <b>所得税・住民税・事業税</b>です。扶養・社会保険・
+        ほかの所得で変わるので、確定は事務所で出します。
+      </p>
+    </div>
+  </div>
+
+  <!-- ============ シミュレーション（過去実績からの新年度予測） ============ -->
+  <div id="p_paneSim" hidden>
 
   <!-- ★ 変動損益計算書。上から順に足し引きが読める形（2026-09-07）
        数字は触れる。触ると下がぜんぶ動くので、計算過程が頭に残る -->
@@ -1799,6 +1945,7 @@ button.delu[disabled]{opacity:.45}
   <p class="muted" style="margin:10px 4px 0">
     保存した試算は、あとから実績と並べて答え合わせができます。
   </p>
+  </div><!-- /p_paneSim -->
 </section>
 
 <!-- ============ 設定 ============ -->
@@ -2056,7 +2203,7 @@ button.delu[disabled]{opacity:.45}
   <button data-v="kintai">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>勤怠</button>
   <button data-v="sim">
-    <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h3M13 11h3M8 15h3M13 15v3"/></svg>シミュレーション</button>
+    <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h3M13 11h3M8 15h3M13 15v3"/></svg>計画</button>
 </nav>
 
 <!-- ★ 元帳から1件を直す・消す　2026-09-06
@@ -2993,7 +3140,122 @@ var DEMO = (function(){
         missingCount:(unit==='ALL'||unit==='U2') ? 1 : 0,
         notStarted:(unit==='U3'||unit==='E1')
           ? [{unit:unit,name:unitName(unit),kind:''}]
-          : (unit==='ALL' ? [{unit:'U3',name:'SYMBOLIC',kind:'常設'}] : [])};
+          : (unit==='ALL' ? [{unit:'U3',name:'SYMBOLIC',kind:'常設'}] : []),
+        /* ★ 店舗ごとの当月売上（経営ボードの3つ目。2026-09-10） */
+        unitSales:units.filter(function(u){
+          if(u.kind==='共通'||u.status==='終了') return false;
+          return unit==='ALL' || u.id===unit;
+        }).map(function(u){
+          var xx=dash(u.id);
+          return {id:u.id,name:u.name,color:u.color||'',
+                  sales:xx.sales,guests:Math.round(xx.sales/2900)};
+        })};
+    },
+    /* ==============================================================
+       ★ 当期の計画・予実対比・着地点予測（2026-09-10）
+         サーバ関数を足したら DEMO にも同名の関数を足す（憲法）
+       ============================================================== */
+    getPlanYear:function(fy){
+      var y=d.getFullYear();
+      fy = Number(fy)||y;
+      var ms=[]; for(var i=1;i<=12;i++) ms.push(fy+'-'+('0'+i).slice(-2));
+      var us=units.map(function(u){
+        return {id:u.id,name:u.name,kind:u.kind,color:u.color||''}; });
+      var base={U0:{s:0,l:0,r:0,o:120000},
+                U1:{s:3200000,l:640000,r:200000,o:180000},
+                U2:{s:2600000,l:520000,r:150000,o:150000},
+                U3:{s:0,l:0,r:0,o:0}, E1:{s:0,l:0,r:0,o:0}};
+      var cells={};
+      us.forEach(function(u){
+        var b=base[u.id]||{s:0,l:0,r:0,o:0};
+        cells[u.id]={};
+        ms.forEach(function(m){
+          cells[u.id][m]={sales:b.s,guests:b.s?Math.round(b.s/2900):0,costRate:0.33,
+                          labor:b.l,rent:b.r,other:b.o};
+        });
+      });
+      var tot=function(c){ var t=0; us.forEach(function(u){
+        ms.forEach(function(m){ t+=(c[u.id][m]||{}).sales||0; }); }); return t; };
+      var t1=tot(cells);
+      return {fy:fy,rev:2,has:true,months:ms,units:us,cells:cells,seed:cells,
+        fyStart:1,fyNow:y,
+        revisions:[
+          {rev:1,at:fy+'-01-15 10:00:00',memo:'期首の計画',sales:Math.round(t1*0.92),diff:0,dir:'最初の計画'},
+          {rev:2,at:fy+'-08-20 14:30:00',memo:'8月訪問：夏の勢いで上方修正',
+           sales:t1,diff:t1-Math.round(t1*0.92),dir:'上方修正'}
+        ]};
+    },
+    savePlanYear:function(p){
+      return {ok:true,rev:3,rows:24,msg:'第3版として記録しました（デモなので保存はしません）'};
+    },
+    getYosan:function(unit,ym){
+      unit=unit||'ALL';
+      var x=dash(unit);
+      var plan={ALL:5800000,U0:0,U1:3200000,U2:2600000,U3:0,E1:0}[unit]||0;
+      var el=Math.min(1,day/dim);
+      var line=function(k,n,real,pl,pro){
+        var ex=pro?Math.round(pl*el):pl;
+        return {key:k,name:n,real:real,plan:pl,expect:ex,diff:real-ex,diffFull:real-pl,
+                rate:pl>0?real/pl:0,ok:real>=ex};
+      };
+      var mpPlan=Math.round(plan*0.67);
+      var accPlan=Math.round((plan-Math.round(plan*0.33)-plan*0.30)*8);
+      var accReal=Math.round(accPlan*1.06);
+      return {unit:unit,ym:fmt(d).slice(0,7),fy:d.getFullYear(),has:true,rev:2,
+        elapsed:el,dayCount:day,daysInMonth:dim,pace:el,
+        lines:[line('sales','当月の売上',x.sales,plan,true),
+               line('mp','当月の粗利',x.mp,mpPlan,true),
+               line('accOp','当期の累計利益',accReal,accPlan,false)],
+        accSalesReal:x.sales*8,accSalesPlan:plan*8,
+        monthPlan:{sales:plan,mp:mpPlan}};
+    },
+    getChakuchi:function(unit,fy){
+      unit=unit||'ALL';
+      var all=(unit==='ALL');
+      var y=d.getFullYear();
+      var ms=[]; for(var i=1;i<=12;i++) ms.push(y+'-'+('0'+i).slice(-2));
+      var mSales={ALL:5800000,U1:3200000,U2:2600000}[unit]||0;
+      var rows=ms.map(function(m,i){
+        var kind = (i+1<day/dim*0+ (new Date().getMonth()+1)) ? '実績'
+                 : ((i+1)===(new Date().getMonth()+1) ? '実績＋計画' : '計画');
+        var sales=Math.round(mSales*(kind==='実績'?1.04:1));
+        var v=Math.round(sales*0.33);
+        var labor=Math.round(sales*0.20), rent={ALL:350000,U1:200000,U2:150000}[unit]||0;
+        var other={ALL:450000,U1:180000,U2:150000}[unit]||0;
+        return {ym:m,kind:kind,sales:sales,variable:v,mp:sales-v,
+                labor:labor,rent:rent,other:other,guests:Math.round(sales/2900),
+                op:sales-v-labor-rent-other};
+      });
+      var sum=function(k){ return rows.reduce(function(t,r){ return t+r[k]; },0); };
+      var sales=sum('sales'), v=sum('variable'), mp=sum('mp');
+      var labor=sum('labor'), rent=sum('rent'), other=sum('other');
+      var fixedTotal=labor+rent+other, op=mp-fixedTotal;
+      var interest=all?38000*12:0, ordinary=op-interest;
+      /* 個人事業の税（デモなのでざっくり同じ形で返す） */
+      var blue=650000, afterBlue=Math.max(0,ordinary-blue);
+      var ti=Math.floor(Math.max(0,afterBlue-480000)/1000)*1000;
+      var it=ti<=1949000?ti*0.05:(ti<=3299000?ti*0.10-97500:(ti<=6949000?ti*0.20-427500:ti*0.23-636000));
+      var incomeTax=Math.floor(Math.max(0,it)*1.021);
+      var tr=Math.floor(Math.max(0,afterBlue-430000)/1000)*1000;
+      var resident=tr>0?Math.floor(tr*0.10)+5000:0;
+      var bizTax=Math.floor(Math.max(0,ordinary-2900000)/1000)*1000;
+      bizTax=Math.floor(bizTax*0.05/100)*100;
+      var total=incomeTax+resident+bizTax;
+      var depre=all?45000*12:0, repay=all?120000*12:0, living=all?400000*12:0;
+      return {unit:unit,fy:y,all:all,has:true,rev:2,months:ms,rows:rows,
+        doneMonths:rows.filter(function(r){return r.kind==='実績'}).length,
+        nowYm:fmt(d).slice(0,7),
+        sales:sales,variable:v,mp:mp,guests:sum('guests'),
+        marginRate:sales>0?mp/sales:0,
+        labor:labor,rent:rent,other:other,fixedTotal:fixedTotal,
+        flRate:sales>0?(v+labor)/sales:0, flrRate:sales>0?(v+labor+rent)/sales:0,
+        op:op,interest:interest,ordinary:ordinary,
+        tax:{income:ordinary,blue:blue,dedI:480000,dedR:430000,taxableI:ti,taxableR:tr,
+             incomeTax:incomeTax,resident:resident,bizTax:bizTax,total:total,
+             rate:ordinary>0?total/ordinary:0},
+        depre:depre,repay:repay,living:living,
+        cash:ordinary-total+depre-repay-living,
+        avgSpend:2900};
     },
     getUnitPl:function(){
       return units.filter(function(u){return u.kind!=='共通'}).map(function(u){
@@ -3320,6 +3582,12 @@ var man = function(n){
 };
 var pct = function(n){ return (n*100).toFixed(1)+'%'; };
 var iv = function(id){ return Number(String($(id).value).replace(/[^0-9\-]/g,''))||0; };
+/* 画面に文字を差し込むときは必ず通す（屋号やメモに < > が入っても壊れないように） */
+var esc = function(x){
+  return String(x==null?'':x).replace(/[&<>"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; });
+};
+var errMsg = function(e){ return String((e&&e.message)||e||'うまくいきませんでした'); };
 var fv = function(id){ return Number(String($(id).value).replace(/[^0-9.\-]/g,''))||0; };
 
 function toast(m){
@@ -4163,7 +4431,7 @@ function showView(v, btn){
   if(v==='kintai'){ fillStaff(); loadRecent('勤怠','k_recent'); loadPayroll(); askGeo(); }
   if(v==='sim'){
     var su=$('simUnit'); if(su) su.textContent = S.unit==='ALL' ? '全社' : unitName(S.unit);
-    loadVpl(); simCalc();
+    setPPane(S.pMode||'yosan');
   }
 }
 $('gearBtn').onclick=function(){ showView('setting', null); };
@@ -4194,7 +4462,7 @@ $('gearBtn').onclick=function(){ showView('setting', null); };
      下へスクロールすると「酒処 二階のレジ内」までしか分からなくなっていた。
      店 › タブ › 帯 › 入金か出金 まで、ヘッダに1行で残す */
 var CRUMB_TAB = { board:'経営', cashin:'レジ内現金', cashout:'レジ外現金',
-                  kintai:'勤怠', sim:'シミュレーション', setting:'設定' };
+                  kintai:'勤怠', sim:'計画', setting:'設定' };
 function drawCrumbSoon_(){ setTimeout(drawCrumb, 0); }
 function crumbTxt_(el){
   if(!el) return '';
@@ -4235,6 +4503,8 @@ function drawCrumb(){
       kin = (isIn ? (S.cKind||'in') : (S.oKind||'out'));
     }
   }
+  /* 計画タブも帯で3つに割れているので、いまどの枚を見ているかを出す */
+  if(v==='sim') parts.push(crumbTxt_($('p_mode')));
   parts=parts.filter(Boolean);
   el.innerHTML = parts.map(function(x,i){
     var last=(i===parts.length-1);
@@ -4443,6 +4713,7 @@ function gotoUnit(id, view){
    ================================================================== */
 function refresh(){
   loadMokuhyou();
+  loadYosan();
   call('getDashboard',[S.unit]).then(function(d){
     S.dash=d;
 
@@ -4456,26 +4727,10 @@ function refresh(){
       'レジ内 '+yen(cn.reg)+' ／ レジ外 '+yen(cn.hand);
     if($('cDraw')) $('cDraw').textContent = yen(d.ownerDraw);
 
-    if(d.sales<=0){
-      $('bepRemain').innerHTML='<span class="muted" style="font-size:.42em">まだ売上がありません</span>';
-      $('bepSub').textContent='締めを入れると、ここに数字が出ます';
-    } else if(d.remain>0){
-      $('bepRemain').innerHTML = man(d.remain)+'<small>円</small>';
-      $('bepSub').innerHTML = '残り'+d.restDays+'日、1日あたり <b>'+yen(d.needPerDay)+'</b> 売れば届きます';
-    } else {
-      $('bepRemain').innerHTML = '<span class="pos">達成</span>';
-      $('bepSub').innerHTML = '損益分岐点を <b>'+yen(Math.abs(d.sales-d.bep))+'</b> 超えています';
-    }
-    var ratio = d.bep>0 ? Math.min(1, d.sales/d.bep) : 0;
-    var bar=$('gaugeBar');
-    bar.style.width=(ratio*100).toFixed(1)+'%';
-    bar.className = ratio>=1 ? 'over' : '';
-    $('gaugeCap').textContent = yen(d.sales)+' / '+yen(d.bep);
-
-    if(d.living>0){
-      $('livingRow').style.display='flex';
-      $('livingRemain').textContent = d.livingRemain>0 ? man(d.livingRemain)+'円' : '達成';
-    } else { $('livingRow').style.display='none'; }
+    /* ★ トントンの大きな数字はここから外した（2026-09-10）。
+         代わりに【計画との差】を loadYosan が描く。
+         トントン・生活費まで・目標利益までの3段は、下の
+         「目標と値決め」カードにそのまま残っている */
 
     $('mMp').textContent = yen(d.marginProfit);
     $('mMpRate').textContent = '限界利益率 '+pct(d.marginRate);
@@ -4486,6 +4741,9 @@ function refresh(){
     $('mHours').textContent = '総労働 '+d.workHours+'h';
     $('mGuests').innerHTML = d.guests.toLocaleString('ja-JP')+'<small>人</small>';
     $('mAvg').textContent = yen(d.avgSpend);
+
+    /* ★ 3つ目 … 店舗ごとの当月売上（2026-09-10） */
+    drawUnitSales(d.unitSales);
 
     drawSpark(d.series);
     drawSlots(d.slotList);
@@ -4503,6 +4761,362 @@ function refresh(){
     call('getUnitPl',[]).then(drawUnitPl).catch(function(e){ console.error(e); });
   } else {
     $('unitPlCard').style.display='none';
+  }
+}
+
+/* ==================================================================
+   ★★★ 当期の計画（予算）と、予実対比・着地点予測　2026-09-10
+
+   ここまでの経営ボードは「トントンまであといくら」を出していた。
+   それは【計画が無くても出せる数字】である。
+
+   経営者になるために要るのは、そこから一段上の
+   **「立てた計画に対して、いま上か下か」**。
+   ずれが見えて初めて、上方修正・下方修正という判断ができる。
+
+   ★ 修正は月次の訪問で、事務所と社長が向かい合って決めるもの。
+     だから版で積んで、過去の版を消さない。
+   ★ 計画が無いときは、数字をでっち上げない。立て方だけ案内する。
+   ================================================================== */
+
+/* ---------- 店舗ごとの当月売上（経営ボードの3つ目） ---------- */
+function drawUnitSales(list){
+  var box=$('uSales'); if(!box) return;
+  list = list || [];
+  /* 店を1つ選んでいるときは、帯の右にもう出ているので重ねない */
+  if(S.unit!=='ALL' || list.length<=1){ box.innerHTML=''; return; }
+  box.className='usales';
+  box.innerHTML = list.map(function(u){
+    var c = u.color || '';
+    return '<button type="button" data-u="'+esc(u.id)+'"'
+      + (c?' style="border-left-color:'+esc(c)+'"':'') + '>'
+      + '<span class="n">'+esc(u.name)+'</span>'
+      + '<span class="v">'+yen(u.sales)+'</span>'
+      + '<span class="g">'+(u.guests||0).toLocaleString('ja-JP')+'人</span>'
+      + '</button>';
+  }).join('');
+  [].forEach.call(box.children,function(b){
+    b.onclick=function(){ gotoUnit(b.dataset.u); };
+  });
+}
+
+/* ---------- 予実対比（経営ボードの真ん中） ---------- */
+function loadYosan(){
+  var box=$('yosanBody'); if(!box) return;
+  call('getYosan',[S.unit]).then(function(y){
+    S.yosan=y;
+    drawYosan(y);
+    /* 着地点の「手元に残るお金」を1行だけ添える */
+    return call('getChakuchi',[S.unit]).then(function(ch){
+      S.chaku=ch;
+      var row=$('chakuRow');
+      if(!row) return;
+      if(!ch || !ch.has){ row.style.display='none'; return; }
+      row.style.display='flex';
+      $('chakuLabel').textContent = ch.all
+        ? 'このまま行くと、年間で手元に残るお金'
+        : 'このまま行くと、この店の年間の営業利益';
+      var v = ch.all ? ch.cash : ch.op;
+      $('chakuCash').innerHTML = '<span class="'+(v>=0?'':'neg')+'">'+man(v)+'円</span>';
+    });
+  }).catch(function(e){ console.error(e); box.innerHTML=''; });
+}
+
+function drawYosan(y){
+  var box=$('yosanBody'); if(!box) return;
+  var head=$('yosanHead');
+
+  if(!y || !y.has){
+    if(head) head.textContent='当期の計画';
+    box.innerHTML='<div class="ynone">'
+      + '<b>当期の計画がまだありません。</b><br>'
+      + '計画を立てると、ここに「計画に対していま上か下か」が出ます。'
+      + '</div>'
+      + '<div class="rowbtns"><button class="ghost" id="yzGo">計画タブで立てる</button></div>';
+    var b=$('yzGo');
+    if(b) b.onclick=function(){ showView('sim'); setPPane('plan'); };
+    return;
+  }
+  /* ★ 日にちは【見出しに1回】。行ごとに繰り返すと3回出て、
+       そのぶん縦に伸びる（憲法「1行に収める」） */
+  if(head) head.textContent = '計画に対して、いま　第'+y.rev+'版・'
+    + y.dayCount+'/'+y.daysInMonth+'日';
+
+  box.innerHTML = y.lines.map(function(L){
+    var up = L.diff>=0;
+    var ratio = L.plan>0 ? Math.min(1, Math.max(0, L.real/L.plan)) : 0;
+    /* 月の売上・粗利は【今日までの計画】と比べる。でないと月初はいつも未達に見える。
+       累計利益は月ではないので、計画そのものと比べる */
+    var vs = (L.key==='accOp') ? '計画' : '今日まで';
+    return '<div class="yline">'
+      + '<div class="yh"><span class="yk">'+esc(L.name)+'</span>'
+      +   '<span class="yd '+(up?'up':'dn')+'">'+(up?'+':'−')+yen(Math.abs(L.diff))+'</span></div>'
+      + '<div class="yh"><span class="yv">'+yen(L.real)+'</span>'
+      +   '<span class="ys" style="margin:0">'+vs+' '+yen(L.key==='accOp'?L.plan:L.expect)+'</span></div>'
+      + '<div class="gauge"><i class="'+(ratio>=1?'over':'')+'" style="width:'+(ratio*100).toFixed(1)+'%"></i></div>'
+      + '</div>';
+  }).join('');
+}
+
+/* ==================================================================
+   計画タブ（帯で3つ）
+   ================================================================== */
+var P_PANES = { plan:'p_panePlan', yosan:'p_paneYosan', sim:'p_paneSim' };
+function setPPane(v){
+  S.pMode=v;
+  setPane('p_mode',P_PANES,v);
+  if(v==='plan')  loadPlanYear();
+  if(v==='yosan') loadYosanPane();
+  if(v==='sim'){ loadVpl(); simCalc(); }
+  window.scrollTo(0,0);
+}
+(function(){
+  var bar=$('p_mode');
+  if(bar) [].forEach.call(bar.children,function(b){
+    b.onclick=function(){ setPPane(b.dataset.v); };
+  });
+})();
+
+/* ---------- 当期の計画を立てる・直す ---------- */
+function loadPlanYear(){
+  call('getPlanYear',[null]).then(function(py){
+    S.py=py;
+    /* 計画が無いときは、実績のペースを下敷きにしておく
+       （白紙から12か月×店舗を打たせない） */
+    S.plCells = py.has ? JSON.parse(JSON.stringify(py.cells||{}))
+                       : JSON.parse(JSON.stringify(py.seed||{}));
+    var tag=$('pl_fyTag');
+    if(tag) tag.textContent = py.fy+'年度'+(py.has?'（第'+py.rev+'版）':'（まだ立てていません）');
+    var sel=$('pl_unit');
+    if(sel){
+      var keep = S.plUnit || (py.units[1]||py.units[0]||{}).id || '';
+      sel.innerHTML = py.units.map(function(u){
+        return '<option value="'+esc(u.id)+'">'+esc(u.name)+'</option>'; }).join('');
+      if(py.units.some(function(u){ return u.id===keep; })) sel.value=keep;
+      S.plUnit = sel.value;
+      sel.onchange=function(){ S.plUnit=sel.value; drawPlanEditor(); };
+    }
+    drawPlanEditor();
+    drawRevs(py);
+  }).catch(function(e){ console.error(e); toast('計画を読めませんでした'); });
+}
+
+function plCell(u,m){
+  if(!S.plCells[u]) S.plCells[u]={};
+  if(!S.plCells[u][m]) S.plCells[u][m]={sales:0,guests:0,costRate:0.30,labor:0,rent:0,other:0};
+  return S.plCells[u][m];
+}
+
+function drawPlanEditor(){
+  var py=S.py; if(!py) return;
+  var u=S.plUnit; if(!u) return;
+  var first = plCell(u, py.months[0]);
+
+  /* ★ まとめて入れる。12か月×6項目を1つずつ打たせない。
+       月ごとに違うところだけ、下の表で直す */
+  var bulk=$('pl_bulk');
+  if(bulk){
+    bulk.innerHTML =
+      '<div class="two">'
+      + '<div><label>月あたり売上</label><input inputmode="numeric" id="pb_sales" value="'+(first.sales||'')+'"></div>'
+      + '<div><label>月あたり客数</label><input inputmode="numeric" id="pb_guests" value="'+(first.guests||'')+'"></div>'
+      + '</div>'
+      + '<div class="two">'
+      + '<div><label>原価率（変動費率）</label><input inputmode="decimal" id="pb_cost" value="'+(first.costRate||0.30)+'"></div>'
+      + '<div><label>人件費（月）</label><input inputmode="numeric" id="pb_labor" value="'+(first.labor||'')+'"></div>'
+      + '</div>'
+      + '<div class="two">'
+      + '<div><label>家賃（月）</label><input inputmode="numeric" id="pb_rent" value="'+(first.rent||'')+'"></div>'
+      + '<div><label>その他の固定費（月）</label><input inputmode="numeric" id="pb_other" value="'+(first.other||'')+'"></div>'
+      + '</div>'
+      + '<div class="rowbtns"><button class="ghost" id="pb_all">この額を12か月に入れる</button></div>';
+    $('pb_all').onclick=function(){
+      var v={
+        sales:iv('pb_sales'), guests:iv('pb_guests'),
+        costRate:Number($('pb_cost').value)||0,
+        labor:iv('pb_labor'), rent:iv('pb_rent'), other:iv('pb_other')
+      };
+      py.months.forEach(function(m){
+        var c=plCell(u,m);
+        c.sales=v.sales; c.guests=v.guests; c.costRate=v.costRate;
+        c.labor=v.labor; c.rent=v.rent; c.other=v.other;
+      });
+      drawPlanEditor();
+      toast('12か月に入れました');
+    };
+  }
+
+  /* 月ごとの表。スマホの幅に収めるため、直せるのは売上と客数だけ */
+  var grid=$('pl_grid');
+  var nowYm = (py.fyNow===py.fy) ? '' : '';
+  var html='<div class="ph">月</div><div class="ph">売上</div><div class="ph">客数</div>';
+  py.months.forEach(function(m){
+    var c=plCell(u,m);
+    var mm=Number(m.split('-')[1]);
+    html += '<div class="pm">'+mm+'月</div>'
+      + '<input inputmode="numeric" data-m="'+m+'" data-k="sales" value="'+(c.sales||'')+'">'
+      + '<input inputmode="numeric" data-m="'+m+'" data-k="guests" value="'+(c.guests||'')+'">';
+  });
+  grid.innerHTML=html;
+  [].forEach.call(grid.querySelectorAll('input'),function(inp){
+    inp.addEventListener('input',function(){
+      var c=plCell(u,inp.dataset.m);
+      c[inp.dataset.k]=Number(String(inp.value).replace(/[^0-9]/g,''))||0;
+      drawPlanSum();
+    });
+  });
+  drawPlanSum();
+}
+
+function drawPlanSum(){
+  var py=S.py, u=S.plUnit; if(!py||!u) return;
+  var s=0, g=0, mp=0, fx=0;
+  py.months.forEach(function(m){
+    var c=plCell(u,m);
+    s+=c.sales; g+=c.guests;
+    mp += c.sales - Math.round(c.sales*c.costRate);
+    fx += c.labor + c.rent + c.other;
+  });
+  var box=$('pl_sum'); if(!box) return;
+  /* ★ man() は「万」まで付けて返す。もう一度足すと「4800万万」になる */
+  box.innerHTML = '<span>年間　売上 ／ 営業利益</span>'
+    + '<b>'+man(s)+' ／ '
+    + '<span class="'+((mp-fx)>=0?'pos':'neg')+'">'+man(mp-fx)+'</span></b>';
+}
+
+function drawRevs(py){
+  var box=$('pl_revs'); if(!box) return;
+  if(!py.revisions.length){
+    box.innerHTML='<p class="muted" style="margin:0">まだ記録がありません。'
+      + '上で入れて［この内容で記録する］を押すと、第1版になります。</p>';
+    return;
+  }
+  box.className='revlist';
+  box.innerHTML = py.revisions.slice().reverse().map(function(r){
+    var cls = r.diff>0?'up':(r.diff<0?'dn':'');
+    return '<div class="rv'+(r.rev===py.rev?' now':'')+'">'
+      + '<span class="rr">第'+r.rev+'版</span>'
+      + '<span class="rm">'+esc(r.memo||'（メモなし）')+'<br>'
+      +   '<span style="font-weight:700;font-size:12px">'+esc(String(r.at||'').slice(0,10))
+      +   ' ／ 年間 '+man(r.sales)+'</span></span>'
+      + '<span class="rd '+cls+'">'+(r.diff>0?'+':(r.diff<0?'−':''))
+      +   (r.diff?man(Math.abs(r.diff)):r.dir)+'</span>'
+      + '</div>';
+  }).join('');
+}
+
+(function(){
+  var b=$('pl_save');
+  if(b) b.onclick=function(){
+    var py=S.py; if(!py) return;
+    var btn=this; btn.disabled=true;
+    var memo=$('pl_memo').value||'';
+    call('savePlanYear',[{fy:py.fy, memo:memo, cells:S.plCells}]).then(function(r){
+      btn.disabled=false;
+      $('pl_msg').textContent = r.msg||'';
+      if(!r.ok){ toast(r.msg||'記録できませんでした'); return; }
+      toast(r.msg);
+      $('pl_memo').value='';
+      loadPlanYear();
+      if(S.view==='board') refresh();
+    }).catch(function(e){
+      btn.disabled=false;
+      $('pl_msg').textContent='記録できませんでした：'+errMsg(e);
+    });
+  };
+  var sd=$('pl_seed');
+  if(sd) sd.onclick=function(){
+    var py=S.py; if(!py||!py.seed){ toast('実績がまだありません'); return; }
+    S.plCells = JSON.parse(JSON.stringify(py.seed));
+    drawPlanEditor();
+    toast('実績のペースで埋めました');
+  };
+})();
+
+/* ---------- 予実対比・着地点（計画タブの中） ---------- */
+function loadYosanPane(){
+  call('getYosan',[S.unit]).then(function(y){
+    var box=$('yz_body'); if(!box) return;
+    if(!y.has){
+      box.innerHTML='<p class="muted" style="margin:0">'
+        + '<b>当期の計画がまだありません。</b>［当期の計画］で立ててください。</p>';
+      return;
+    }
+    box.innerHTML = '<div class="vpl">'
+      + y.lines.map(function(L){
+          var up=L.diffFull>=0;
+          return '<div class="r'+(up?'':' neg')+'">'
+            + '<span class="k">'+esc(L.name)
+            +   '<em>計画 '+yen(L.plan)+' ／ 実績 '+yen(L.real)+'</em></span>'
+            + '<span class="v">'+(up?'+':'−')+yen(Math.abs(L.diffFull))+'</span>'
+            + '</div>';
+        }).join('')
+      + '</div>'
+      + '<p class="muted" style="margin:11px 0 0">'
+      + '第'+y.rev+'版の計画に対して。当月は '+y.dayCount+'/'+y.daysInMonth+'日まで入っています。<br>'
+      + '<b>ここの差は「月末までの計画」に対してです。</b>'
+      + '経営ボードの差は「今日までの計画」に対してなので、月の途中では数字が違います。</p>';
+  }).catch(function(e){ console.error(e); });
+
+  call('getChakuchi',[S.unit]).then(drawChakuchi).catch(function(e){ console.error(e); });
+}
+
+function drawChakuchi(ch){
+  S.chaku=ch;
+  var bar=$('cz_months');
+  if(bar){
+    bar.innerHTML = (ch.rows||[]).map(function(r){
+      var cls = r.kind==='実績' ? 'real' : (r.kind==='計画' ? 'plan' : 'mix');
+      var mm=Number(r.ym.split('-')[1]);
+      return '<i class="'+cls+'" title="'+esc(r.ym+' '+r.kind)+'">'+mm+'</i>';
+    }).join('');
+  }
+  var pl=$('cz_pl');
+  if(pl){
+    if(!ch.has && ch.doneMonths===0){
+      pl.innerHTML='<p class="muted" style="margin:0">計画も実績もまだありません。</p>';
+    } else {
+      var pctf=function(x){ return (Math.round(x*1000)/10).toFixed(1)+'%'; };
+      /* ★ 形は既存の変動損益計算書のまま（.vpl .r/.k/.v）。
+           「見やすいからそれを」というご指示なので、器を作り直さない */
+      var row=function(k,v,cls,note){
+        return '<div class="r'+(cls==='neg'?' neg':'')+(cls==='sum'?' sum':'')+'">'
+          + '<span class="k">'+k+(note?'<em>'+note+'</em>':'')+'</span>'
+          + '<span class="v">'+v+'</span></div>';
+      };
+      pl.innerHTML =
+          row('売上高', yen(ch.sales), '', '客数 '+ch.guests.toLocaleString('ja-JP')+'人／客単価 '+yen(ch.avgSpend))
+        + row('− 変動費', yen(ch.variable), '', '原価率 '+pctf(ch.sales>0?ch.variable/ch.sales:0))
+        + row('＝ 限界利益', yen(ch.mp), 'sum', '限界利益率 '+pctf(ch.marginRate))
+        + row('− 人件費', yen(ch.labor), '', 'FL比率 '+pctf(ch.flRate)+'（60%以内）')
+        + row('− 家賃', yen(ch.rent), '', 'FLR比率 '+pctf(ch.flrRate)+'（70%以内）')
+        + row('− その他の固定費', yen(ch.other), '', '固定費 計 '+yen(ch.fixedTotal))
+        + row('＝ 営業利益', yen(ch.op), ch.op>=0?'sum':'neg', '')
+        + row('− 支払利息', yen(ch.interest), '', '')
+        + row('＝ 経常利益', yen(ch.ordinary), ch.ordinary>=0?'sum':'neg', '事業所得')
+        + '<p class="muted" style="margin:11px 0 0">'
+        + '<b>'+ch.doneMonths+'か月ぶんが実績</b>、残りは計画で埋めた見込みです。'
+        + (ch.has?'':'（計画がまだ無いので、実績のぶんだけです）')+'</p>';
+    }
+  }
+  var cz=$('cz_cash');
+  if(cz){
+    var t=ch.tax||{};
+    var row2=function(k,v,cls,note){
+      return '<div class="r'+(cls==='neg'?' neg':'')+(cls==='sum'?' sum':'')+'">'
+        + '<span class="k">'+k+(note?'<em>'+note+'</em>':'')+'</span>'
+        + '<span class="v">'+v+'</span></div>';
+    };
+    cz.innerHTML =
+        row2('事業所得（経常利益）', yen(ch.ordinary), '', '')
+      + row2('− 所得税', yen(t.incomeTax||0), '', '青色申告特別控除 '+yen(t.blue||0)+' を引いたあと')
+      + row2('− 住民税', yen(t.resident||0), '', '所得割10% ＋ 均等割')
+      + row2('− 事業税', yen(t.bizTax||0), '', '事業主控除290万を引いて5%')
+      + row2('税 合計', yen(t.total||0), 'neg', '実効 '+((Math.round((t.rate||0)*1000)/10).toFixed(1))+'%')
+      + row2('＋ 減価償却', yen(ch.depre), '', 'お金は出ないので足し戻す')
+      + row2('− 借入の返済', yen(ch.repay), '', '')
+      + (ch.all ? row2('− 生活費（事業主へ）', yen(ch.living), '', '経費ではないので所得は減らない') : '')
+      + row2('＝ 手元に残るお金', yen(ch.cash), ch.cash>=0?'sum':'neg', ch.all?'年間':'この店ぶん（生活費は引いていない）');
   }
 }
 
