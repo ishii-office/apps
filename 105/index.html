@@ -539,23 +539,43 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 
 /* ---- 小口現金の「取引の型」　2026-09-05 ---- */
 .cbox.kinds{border-color:var(--ai)}
-.kgrp{margin:2px 0 10px}
-.kgt{font-size:12px;font-weight:700;letter-spacing:1px;margin:0 0 5px;padding-left:2px}
-.kgt.in{color:var(--ice)} .kgt.out{color:var(--pink)} .kgt.x{color:#8A6D1B}
-.kwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:7px}
-.kbtn{display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:left;
-  border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:9px 11px;
-  cursor:pointer;font-family:inherit;line-height:1.35;min-height:46px}
-.kbtn b{font-size:14.5px;font-weight:700;color:var(--ink)}
-.kbtn span{font-size:10.5px;color:#8a8a8a}
-.kbtn.in:hover{border-color:var(--ice);background:#F2F8FB}
-.kbtn.out:hover{border-color:var(--pink);background:#FDF6F8}
-.kbtn.x:hover{border-color:var(--gold);background:#FFFCF3}
+/* ★ 入る と 出る は【厳然と分ける】（2026-09-11）
+     うすい色の文字だけでは、どちらの群にいるのか目で分からない。
+     色を塗った帯を1本ずつ立てて、群ごと地の色を変える */
+.kgrp{margin:0 0 14px;border-radius:12px;overflow:hidden;border:1.5px solid var(--line)}
+.kgrp.in {border-color:var(--ice)}
+.kgrp.out{border-color:var(--pink)}
+.kgrp.x  {border-color:var(--gold)}
+.kgt{font-size:15px;font-weight:800;letter-spacing:1px;color:#fff;padding:8px 12px}
+.kgt.in{background:var(--ice)} .kgt.out{background:var(--pink)} .kgt.x{background:var(--gold)}
+/* ★ スマホでは2列。1列に並べると22個ぶん転がすことになる */
+.kwrap{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px}
+.kgrp.in  .kwrap{background:#F2F8FB}
+.kgrp.out .kwrap{background:#FDF6F8}
+.kgrp.x   .kwrap{background:#FFFCF3}
+@media(min-width:620px){ .kwrap{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))} }
+.kbtn{display:flex;align-items:center;text-align:left;
+  border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:10px 11px;
+  cursor:pointer;font-family:inherit;line-height:1.3;min-height:52px;
+  font-size:15px;font-weight:700;color:var(--ink)}
 .kbtn.on{border-width:2.5px}
-.kbtn.in.on{border-color:var(--ice);background:#E8F3F8}
+.kbtn.in.on {border-color:var(--ice); background:#E8F3F8}
 .kbtn.out.on{border-color:var(--pink);background:#FBEBEF}
-.kbtn.x.on{border-color:var(--gold);background:#FFF7E3}
-.know{margin-top:4px;padding:8px 11px;border-radius:8px;background:#F6F4EE;font-size:13px}
+.kbtn.x.on  {border-color:var(--gold);background:#FFF7E3}
+.know{margin:8px 0 0;padding:8px 11px;border-radius:8px;background:#F6F4EE;font-size:13px}
+/* ★ 選んだあとは、この1行だけになる（下の入力の枠がすぐ出る） */
+.kpick{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  border:2.5px solid var(--line);background:#fff;border-radius:12px;
+  padding:13px 14px;cursor:pointer;font-family:inherit}
+.kpick.in {border-color:var(--ice)}
+.kpick.out{border-color:var(--pink)}
+.kpick .dir{flex:0 0 auto;font-size:13px;font-weight:800;color:#fff;
+  border-radius:6px;padding:4px 10px}
+.kpick.in  .dir{background:var(--ice)}
+.kpick.out .dir{background:var(--pink)}
+.kpick b{font-size:19px;font-weight:800;color:var(--ink);line-height:1.3}
+.kpick .chg{margin-left:auto;flex:0 0 auto;font-size:13px;color:var(--ai);
+  text-decoration:underline}
 
 /* ---- 添付ドロップ ---- */
 .dropzone{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;
@@ -2272,6 +2292,7 @@ var S = {
   cashJustId:null,
   cashKind:null,          /* 小口現金の「取引の型」 */
   cashMemoPre:'',         /* 型から入れる内容の下書き */
+  kindOpen:false,         /* ⓪の山を出しているか（選ぶと、たたむ） */
   cashAcctPre:'',         /* 型から入れる勘定科目 */
   saleOn:false,           /* 現金売上として記録するか */
   saleClient:null,        /* 現金売上の相手先（取引先id／'_other'） */
@@ -4467,14 +4488,16 @@ function viewCash(el){
   var formDate = e.date || S.cashDate || monthToday;
   if(formDate.slice(0,7)!==ym(m)) formDate=monthToday;
   var gap=dayGap(formDate);
-  var phrases=(isOut?CASH_PH_OUT:CASH_PH_IN);
-  var often=oftenPhrases();
 
   /* ★ ⓪で選んだ型から決まる内容（＝元帳に出る言葉）。
        現金売上と、売掛の現金回収（お店の名前が要る）だけは今までどおり打つ */
   /* 直しに戻したときは、その1件が持っている型を見る
        （④の行を押しても S.cashKind は前のまま残っているため） */
   var kdNow = cashKindOf((S.cashEdit && e.kind) ? e.kind : (S.cashKind || e.kind || ''));
+  /* ⓪の山を出すか、たたむか。選べていないあいだだけ出す */
+  var kdSel    = kdNow || {};
+  var kindOpen = !kdNow || !!S.kindOpen;
+  var only     = !kindOpen;   /* ⓪で決まっているか（決まっていればその枠だけ出す） */
   var baseMemo = (!S.saleOn && kdNow && !kdNow.arc && kdNow.memo) ? String(kdNow.memo) : '';
   /* 直すときは、決まった内容のうしろに足したメモだけを取り出して欄へ戻す */
   var extraMemo = '';
@@ -4507,7 +4530,10 @@ function viewCash(el){
       '<div class="row" style="gap:8px">'+
         '<span class="dwrap'+(gap===0?' today':'')+'">'+
           '<input type="date" id="cd" class="cash-date" value="'+formDate+'">'+
-          '<span class="dnote'+(gap===0?' today':'')+'" id="dnote">'+dayNote(formDate)+'</span>'+
+          /* 今日のときは「今日」のボタンが光っているので、同じ言葉を2つ出さない
+             （枠は残す。消すと、日を変えたときに書き込む先が無くなる） */
+          '<span class="dnote'+(gap===0?' today':'')+'" id="dnote">'+
+            (gap===0?'':dayNote(formDate))+'</span>'+
         '</span>'+
         qd(0,'今日')+qd(1,'きのう')+qd(2,'おととい')+
       '</div>'+
@@ -4538,11 +4564,7 @@ function viewCash(el){
           (S.saleOn?'　<span style="font-weight:400;color:var(--gold)">空欄でOK。「現金売上　店名」が入ります</span>':'')+'</label>'+
         '<input id="cn" class="cash-memo" lang="ja" value="'+esc(e.memo||S.cashMemoPre||'')+'" placeholder="'+
           (mo==='sale'?'空欄でOK':(isOut?'例：ガソリン　スタンド名　など':'例：預金から引き出し　など'))+'">'+
-        (mo==='sale'?''
-          : '<div class="phrases">'+
-              often.map(function(t){ return '<button class="ph often tap" data-ph="'+esc(t)+'">'+esc(t)+'</button>'; }).join('')+
-              phrases.map(function(t){ return '<button class="ph tap" data-ph="'+esc(t)+'">'+esc(t)+'</button>'; }).join('')+
-            '</div>')+'</div>')+
+        '</div>')+
     '<div class="dropzone" id="dz">'+
       '<label class="btn ghost tap" style="display:inline-flex;align-items:center;gap:6px;font-size:16px;padding:13px 18px">'+
         '📷 領収書の写真をとる／選ぶ'+
@@ -4595,43 +4617,53 @@ function viewCash(el){
   /* ---------- ⓪ 何があったか（取引の型）を選ぶ ---------- */
   '<div class="cbox kinds">'+
     '<div class="cbox-h"><span class="no">⓪</span><span class="ti">何があったか、を選ぶ</span>'+
-      '<span class="hint">入る／出る は型で決まります。あとは金額を打つだけ</span>'+
-      (S.cashKind?'<button class="btn ghost tap sm" id="kclr" style="margin-left:auto">選び直す</button>':'')+
+      '<span class="hint">'+(kindOpen?'選ぶと、下の枠が開きます':'金額を入れてください')+'</span>'+
+
     '</div>'+
-    ['in','out','x'].map(function(g){
-      var ks=CASH_KINDS.filter(function(x){ return x.g===g; });
-      var t=(g==='in'?'入る':g==='out'?'出る（払った）':'分からない');
-      return '<div class="kgrp"><div class="kgt '+g+'">'+t+'</div><div class="kwrap">'+
-        ks.map(function(x){
-          return '<button class="kbtn '+g+(S.cashKind===x.k?' on':'')+' tap" data-ck="'+x.k+'">'+
-            '<b>'+esc(x.label)+'</b>'+(x.hint?'<span>'+esc(x.hint)+'</span>':'')+'</button>';
-        }).join('')+'</div></div>';
-    }).join('')+
-    (S.cashKind
-      ? '<div class="know">いま選んでいるのは <b>'+esc((cashKindOf(S.cashKind)||{}).label||'')+'</b>'+
-        '（'+((cashKindOf(S.cashKind)||{}).dir==='in'?'入る':'出る')+'／科目は <b>'+
-        esc((cashKindOf(S.cashKind)||{}).acct||'')+'</b>）。下の枠で金額を入れてください。</div>'
-      : '<div class="know muted">型を選ぶと、下の枠が開いて金額だけ入れられます。'+
-        'あてはまるものが無ければ<b>「分からない」</b>を選んでください。</div>')+
+    /* ★ 選んだら、22個の山はたたむ（2026-09-11）
+         出したままだと入力の枠が下へ押しやられて、毎回そこまで転がすことになる */
+    (kindOpen
+      ? ['in','out','x'].map(function(g){
+          var ks=CASH_KINDS.filter(function(x){ return x.g===g; });
+          var t=(g==='in'?'入る（もらった・預かった）'
+                :g==='out'?'出る（払った）':'分からない');
+          return '<div class="kgrp '+g+'"><div class="kgt '+g+'">'+t+'</div><div class="kwrap">'+
+            ks.map(function(x){
+              return '<button class="kbtn '+g+(S.cashKind===x.k?' on':'')+' tap" data-ck="'+x.k+'">'+
+                esc(x.label)+'</button>';
+            }).join('')+'</div></div>';
+        }).join('')+
+        '<div class="know muted">あてはまるものが無ければ <b>「分からない」</b> を選んでください。</div>'
+      : '<button class="kpick '+(kdSel.dir==='in'?'in':'out')+' tap" id="kopen">'+
+          '<span class="dir">'+(kdSel.dir==='in'?'入る':'出る')+'</span>'+
+          '<b>'+esc(kdSel.label||'')+'</b>'+
+          '<span class="chg">選び直す</span>'+
+        '</button>')+
   '</div>'+
 
-  '<div class="kgnote">入れたものは、下の <b>④ 現金元帳</b> にぜんぶ並びます。</div>'+
+  (only?'':'<div class="kgnote">入れたものは、下の <b>④ 現金元帳</b> にぜんぶ並びます。</div>')+
 
+  /* ★★ ⓪で型が決まっているなら、その枠だけを出す（2026-09-11）
+       ⓪が①②③のどれを使うかを決めているのに、残りの2つを出しておくと、
+       ⓪と入力の枠のあいだに画面2つぶんの余計なものが挟まる。
+       まだ選んでいないあいだは、今までどおり3つとも出す */
+  (only && mo!=='sale' ? '' :
   /* ---------- ① 現金売上（店売り・都度売上） ---------- */
   '<div class="cbox sale'+(mo==='sale'?'':' off')+'">'+
     '<div class="cbox-h"><span class="no">①</span><span class="ti">現金売上（店売り、都度売上）</span>'+
       (mo==='sale'?'<span class="cbox-now">入力中</span>':'')+
-      '<span class="hint">氷をその場で現金で売ったとき。売掛にはなりません</span>'+
+      (only?'':'<span class="hint">氷をその場で現金で売ったとき。売掛にはなりません</span>')+
       (mo==='sale'?'':'<button class="cbox-open tap" data-cmode="sale">この枠に入れる</button>')+
     '</div>'+
     (mo==='sale'?formHtml:'')+
-  '</div>'+
+  '</div>')+
 
+  (only && mo!=='in' ? '<div id="arcslot" hidden></div>' :
   /* ---------- ② 売掛の現金回収（＋ 売掛でない入金） ---------- */
   '<div class="cbox recv">'+
     '<div class="cbox-h"><span class="no">②</span><span class="ti">売掛の現金回収</span>'+
       (mo==='in'?'<span class="cbox-now">入力中</span>':'')+
-      '<span class="hint">お店から集金してきた現金。売掛の消込と小口現金の両方に入ります</span>'+
+      (only?'':'<span class="hint">お店から集金してきた現金。売掛の消込と小口現金の両方に入ります</span>')+
     '</div>'+
     '<div id="arcslot"></div>'+
     '<div class="cbox-sub">'+
@@ -4640,17 +4672,18 @@ function viewCash(el){
       (mo==='in'?'':'<button class="cbox-open tap" data-cmode="in">その他の入金を入れる</button>')+
     '</div>'+
     (mo==='in'?formHtml:'')+
-  '</div>'+
+  '</div>')+
 
+  (only && mo!=='exp' ? '' :
   /* ---------- ③ 経費 ---------- */
   '<div class="cbox exp'+(mo==='exp'?'':' off')+'">'+
     '<div class="cbox-h"><span class="no">③</span><span class="ti">経費（払った現金）</span>'+
       (mo==='exp'?'<span class="cbox-now">入力中</span>':'')+
-      '<span class="hint">ガソリン・材料・こまごました支払い。領収書の写真もここで</span>'+
+      (only?'':'<span class="hint">ガソリン・材料・こまごました支払い。領収書の写真もここで</span>')+
       (mo==='exp'?'':'<button class="cbox-open tap" data-cmode="exp">この枠に入れる</button>')+
     '</div>'+
     (mo==='exp'?formHtml:'')+
-  '</div>'+
+  '</div>')+
 
   /* ---------- ④ 現金元帳 ---------- */
   '<div class="cbox led">'+
@@ -4756,7 +4789,7 @@ function viewCash(el){
 
   el.querySelectorAll('[data-ck]').forEach(function(b){ b.onclick=function(){
     var kd=cashKindOf(b.dataset.ck); if(!kd) return;
-    S.cashKind=kd.k;
+    S.cashKind=kd.k; S.kindOpen=false;   /* 選んだら山はたたむ */
     S.cashEdit=null; S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null;
     if(kd.sale){ cashModeSet('sale'); }
     else if(kd.arc){ cashModeSet('in'); S.cashDir='in'; }
@@ -4768,8 +4801,8 @@ function viewCash(el){
       var t=document.getElementById(kd.arc?'arca':'cm'); if(t){ t.focus(); t.select&&t.select(); }
     },60);
   }; });
-  if(el.querySelector('#kclr')) el.querySelector('#kclr').onclick=function(){
-    S.cashKind=null; S.cashMemoPre=''; S.cashAcctPre=''; S.cashEdit=null; render(); };
+  if(el.querySelector('#kopen')) el.querySelector('#kopen').onclick=function(){
+    S.kindOpen=true; render(); };
   el.querySelectorAll('[data-cmode]').forEach(function(b){ b.onclick=function(){
     var dEl=el.querySelector('#cd'); if(dEl) S.cashDate=dEl.value;
     cashModeSet(b.dataset.cmode);
@@ -4779,7 +4812,7 @@ function viewCash(el){
   var cd=el.querySelector('#cd'), dn=el.querySelector('#dnote');
   var refreshDay=function(){
     var g2=dayGap(cd.value);
-    dn.textContent=dayNote(cd.value);
+    dn.textContent=(g2===0?'':dayNote(cd.value));
     dn.className='dnote'+(g2===0?' today':'');
     dn.parentNode.className='dwrap'+(g2===0?' today':'');
     el.querySelectorAll('[data-qd]').forEach(function(b){
@@ -4790,13 +4823,6 @@ function viewCash(el){
     b.onclick=function(){ cd.value=b.dataset.qd; S.cashDate=cd.value; refreshDay(); }; });
 
   var cn=el.querySelector('#cn');
-  el.querySelectorAll('[data-ph]').forEach(function(b){
-    b.onclick=function(){
-      var t=b.dataset.ph, v=cn.value.trim();
-      cn.value = !v ? t : (v.indexOf(t)>=0 ? v : v+'　'+t);
-      cn.focus();
-    };
-  });
 
   /* 入力を全部クリア（まだ記録していない分だけ。元帳のものは消えません） */
   var cclr=el.querySelector('#cclr');
@@ -4850,7 +4876,7 @@ function viewCash(el){
     S.cashEdit=null; S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null;
     S.saleOn=false; S.saleClient=null; S.saleItems=null; S.saleQ=''; S.saleLump='';
     S.cashJustId=rec.id; S.cashDate=d;
-    S.cashKind=null; S.cashMemoPre=''; S.cashAcctPre='';
+    S.cashKind=null; S.cashMemoPre=''; S.cashAcctPre=''; S.kindOpen=false;
     /* ★ 保存を先に、描き直しをあとに（2026-08-25）
        描き直しの途中で何かあっても、現金元帳と現金売上の控えの
        どちらかだけが保存される、ということが起きないようにします。
@@ -4929,7 +4955,8 @@ function viewCash(el){
     if(x&&x.img) openDataUrl(x.img); }; });
   el.querySelectorAll('[data-ed]').forEach(function(b){ b.onclick=function(){
     var x=(DB.cash[bk]||[]).filter(function(y){return String(y.id)===b.dataset.ed;})[0];
-    if(x){ S.cashEdit=x; S.cashDir=x.dir; S.cashImg=x.img||null; S.cashImgType=x.imgType||null;
+    if(x){ S.cashEdit=x; S.cashDir=x.dir; S.kindOpen=false;
+      S.cashImg=x.img||null; S.cashImgType=x.imgType||null;
       S.cashImgUrl=x.imgUrl||null; S.cashJustId=null;
       S.saleOn=!!x.sale; S.saleClient=x.sale?x.sale.cid:null;
       S.saleItems=x.sale?saleUnpack(x.sale):null; S.saleQ='';
