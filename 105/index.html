@@ -512,12 +512,13 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .gtad{padding:0 10px 9px 52px;border-bottom:1px solid var(--line);font-size:14px;color:#555}
 .gtad.on{background:#FDF6F8}
 .gtad .gnote{margin-left:8px;color:#8A6D1B;font-weight:700}
-/* 配達人の丸番号と、直すための一列（担当を変える／上下に動かす） */
+/* グループの丸番号と、直すための一列（回る日・グループを変える／上下に動かす） */
 .dvno{display:inline-flex;align-items:center;justify-content:center;flex:0 0 34px;
   width:34px;height:34px;border-radius:50%;color:#fff;font-weight:800;font-size:18px}
 .gasg{display:flex;flex-wrap:wrap;align-items:center;gap:7px;
   padding:0 10px 9px 52px;border-bottom:1px solid var(--line)}
-.gasg select{font-size:16px;padding:5px 8px;min-width:112px}
+.gasg select{font-size:15px;padding:5px 7px;width:118px;min-width:0;max-width:118px}
+.gasg .lb{font-size:13px;color:var(--muted,#6b6b6b);flex:0 0 auto}
 .gasg .mv{font-size:19px;font-weight:800;padding:3px 13px;line-height:1.35}
 /* 電話では 回収日の点線を出さない（紙の様式のためのもの。画面では幅を食うだけ） */
 @media (max-width:820px){
@@ -721,7 +722,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .bu-f label{display:block}
 .bu-f input{width:100%}
 @media (max-width:720px){ .bu-h{font-size:20px} .bu-sum .hi .num{font-size:22px} }
-/* 集金の配達人タグと、回る順を決めるモード（2026-09-06） */
+/* 集金のグループタグと、回る順を決めるモード（2026-09-06 → 09-11 グループに） */
 .dvtag{display:inline-block;margin-left:7px;padding:2px 10px;border-radius:99px;
   background:#EAF1F5;border:1px solid var(--ai);color:var(--ai);
   font-size:14px;font-weight:700;vertical-align:2px;white-space:nowrap}
@@ -1535,7 +1536,6 @@ var DB = {
   deliv:   {},            /* 'deliv:2026-08'    -> {'2026-08-12':{id:true}} */
   alias:   {},            /* 'hist:alias'       -> {元帳の店名(正規化):取引先id} */
   cost:    null,          /* 'cost:setting' */
-  drivers: [],            /* 'driver:master'　配達人（集金に回る人）の苗字 */
   plan:    null,          /* 'plan:setting'　目標と値決め（限界利益シミュレーション） */
   buy:     {},            /* 'buy:YYYY-MM'　鳥居冷蔵の氷・Tao の配送料（毎月の請求書から） */
   sale:    {},            /* 'cashsale:2026-08' -> [{id,date,cid,code,name,items,total}] */
@@ -1613,7 +1613,8 @@ function normalizeClient(c,i){
     addr:  c.addr||'', tel:c.tel||'', pay:c.pay||'振込',
     /* 集金日 … 配達員が現金を集めに回る日。0＝行かない（振込など）／31＝末日 */
     shukin: Math.max(0, Math.min(31, parseInt(c.shukin,10)||0)),
-    /* 集金に回る配達人（苗字だけ）と、その人の中で回る順（1が先頭。0＝未指定） */
+    /* ★ driver … 回る日の中のグループ（'A'〜'H'）。2026-09-11 まで配達人の苗字だった。
+       dorder … そのグループの中で回る順（1が先頭。0＝未指定） */
     driver: String(c.driver||'').trim(),
     dorder: Math.max(0, parseInt(c.dorder,10)||0),
     note:  c.note||'', regno:c.regno||''
@@ -1644,7 +1645,7 @@ async function saveClients(){
   clearCaches();
   await storage.set('clients:master', JSON.stringify(DB.clients));
 }
-/* ★ 配達人・回る順・集金日のように【売掛の計算に関係しない】直しの保存（2026-09-07）
+/* ★ グループ・回る順・回る日のように【売掛の計算に関係しない】直しの保存（2026-09-07）
      ・`clearCaches()` を呼ばない … 呼ぶと売掛の集計を261件ぶん計算し直すので、
        押すたびに画面が固まる（これが「反映が遅い」の正体）
      ・待たない（await しない）… 画面を先に描き直して、保存は後ろで走らせる
@@ -3275,15 +3276,16 @@ function renderEditForm(box){
         '<div class="muted" style="margin-top:3px">だいたいの目安です。「集金予定」タブで'+
           'この日に回る店をまとめて出して、領収証もそこで作れます。'+
           '<b>振込の店は「行かない」</b>のままで結構です。</div></div>'+
-      '<div><label class="lbl">配達人（集金に回る人）</label>'+
+      '<div><label class="lbl">グループ（回る日の中の分け方）</label>'+
         '<select id="f_driver" style="'+IN+'">'+driverOptions(f.driver)+'</select>'+
-        '<div class="muted" style="margin-top:3px">同じ日のグループを、さらに人ごとに分けます。'+
-          '名前は「集金」タブの下で足せます。</div></div>'+
-      '<div><label class="lbl">回る順（その人の中で）</label>'+
+        '<div class="muted" style="margin-top:3px">同じ日の中を A・B・C … に分けます。'+
+          '<b>人では分けません</b>（その日に動ける人が行くので）。'+
+          '「集金」タブで押していくのがらくです。</div></div>'+
+      '<div><label class="lbl">回る順（グループの中で）</label>'+
         '<input id="f_dorder" class="num" inputmode="numeric" value="'+(f.dorder||'')+'" '+
           'placeholder="1 が先頭" style="'+IN+'">'+
         '<div class="muted" style="margin-top:3px">空でも構いません。'+
-          '「集金」タブの<b>回る順を決める</b>で、押した順に自動で振れます。</div></div>'+
+          '「集金」タブでグループを押してから店を押すと、押した順に自動で振れます。</div></div>'+
       '<div><label class="lbl">電話番号</label>'+
         '<input id="f_tel" inputmode="tel" value="'+esc(f.tel)+'" style="'+IN+'"></div>'+
     '</div>'+
@@ -6478,13 +6480,12 @@ function viewHome(el){
     if(!DB.kgReady){ renderMigration(); return; }
 
     await loadClients();
-    var g=await storage.getMany(['printed','hist:alias','cost:setting','plan:setting','driver:master',
+    var g=await storage.getMany(['printed','hist:alias','cost:setting','plan:setting',
       okey(S.date), ckey(S.date), dkey(S.date)]);
     DB.printed=jparse(g['printed'],{})||{};
     DB.alias=jparse(g['hist:alias'],{})||{};
     DB.cost=normalizeCost(jparse(g['cost:setting'],null));
     DB.plan=normalizePlan(jparse(g['plan:setting'],null));
-    DB.drivers=jparse(g['driver:master'],[])||[];
     DB.orders[okey(S.date)]=jparse(g[okey(S.date)],{})||{};
     DB.confirm[ckey(S.date)]=jparse(g[ckey(S.date)],{})||{};
     DB.deliv[dkey(S.date)]=jparse(g[dkey(S.date)],{})||{};
@@ -8965,6 +8966,9 @@ function viewCheck(el){
      ★ 現場のやり方をそのまま写しています。作り話ではありません。
        ① 翌月の 10日・15日・20日・25日 …と、日ごとに数十件をまとめる（グルーピング）。
           およそエリアで決まっている（祇園は10日、木屋町は15日 …）
+          その日の中を、さらに A・B・C … のグループに割る。
+          ★ 人（配達人）では割らない。同じ店を複数の人が担当していて、
+            その日に動ける人が行くので、人で割ると毎回やり直しになる（2026-09-11）
        ② その日の分の領収証をまとめて作り、グルーピングシートを二つ折りにして挟んでおく
        ③ 配達員が次の配達のついでに持って行き、現金を回収する
           （配達が無くても、集金だけで回ることもある）
@@ -8987,30 +8991,37 @@ function shukinOf(c){ return Math.max(0, Math.min(31, parseInt(c && c.shukin, 10
 function shukinLabel(d){ d=Math.max(0,Math.min(31,parseInt(d,10)||0)); return d? (d>=31?'末日':d+'日') : '行かない'; }
 /** 取引先情報の入力欄に出す選択肢 */
 
-/* ---- 配達人（集金に回る人）　2026-09-06 -----------------------
-     同じ日のグループを、さらに人ごとに分けます。
-     名前は苗字だけで十分（現場でそう呼んでいる）。
-     KV: driver:master … ['井上','河原', …] の並び
+/* ---- グループ（回る日の中の、二段めの分け方）　2026-09-11 --------
+     ★★ もとは【配達人（人の名前）】で分けていた。やめた。
+
+       同じ店を複数の人が担当していて、その日に動ける人が行く、という
+       運用だった。だから人で分けると、誰が行くか決まるたびに
+       割り当てをやり直すことになって、現場で回らない。
+
+       要るのは「回る日」と、その日の中の「A・B・C …」だけ。
+       だれが持って行くかは、紙のうえで決まる（回収者は紙に書く欄がある）。
+
+     ★ 器は今までの `c.driver` / `c.dorder` をそのまま使う。
+       中身が「伊藤」から「A」に変わるだけなので、移行が起きない。
+       前の名前が残っていても消さずに灰色で出す。選び直せばグループになる。
    -------------------------------------------------------------- */
-function drivers(){ return (DB.drivers||[]).filter(function(n){ return String(n||'').trim(); }); }
+var GROUPS=['A','B','C','D','E','F','G','H'];
+function drivers(){ return GROUPS.slice(); }
 function driverOf(c){ return String(c && c.driver || '').trim(); }
 function dorderOf(c){ var n=parseInt(c && c.dorder,10)||0; return n>0?n:9999; }
+/** 画面に出す言い方。'A' → 'Aグループ' */
+function grpLabel(g){ g=String(g||''); return g ? (GROUPS.indexOf(g)>=0 ? g+'グループ' : g) : '決めていない'; }
 function driverOptions(cur){
   cur=String(cur||'');
   return '<option value=""'+(cur?'':' selected')+'>（決めていない）</option>'+
     drivers().map(function(n){
-      return '<option'+(cur===n?' selected':'')+'>'+esc(n)+'</option>'; }).join('')+
-    (cur && drivers().indexOf(cur)<0 ? '<option selected>'+esc(cur)+'</option>' : '');
+      return '<option value="'+esc(n)+'"'+(cur===n?' selected':'')+'>'+esc(grpLabel(n))+'</option>'; }).join('')+
+    (cur && drivers().indexOf(cur)<0
+      ? '<option value="'+esc(cur)+'" selected>'+esc(cur)+'（前の担当）</option>' : '');
 }
-async function saveDrivers(list){
-  DB.drivers = list.filter(function(n){ return String(n||'').trim(); })
-                   .map(function(n){ return String(n).trim(); });
-  clearCaches();
-  await storage.set('driver:master', JSON.stringify(DB.drivers));
-}
-/** 集金の並び … 配達人（登録順）→ その人の回る順 → コード */
-/* ★ 配達人ごとの色（登録順）。色分けで「2段めのグルーピング」が一目で分かる（2026-09-07）
-     1人め 黄／2人め 赤／3人め 青 … 9人めからは同じ色に戻ります。 */
+/** 集金の並び … グループ（A→H）→ その中の回る順 → コード */
+/* ★ グループごとの色。色分けで「2段めのグルーピング」が一目で分かる（2026-09-07）
+     A 黄／B 赤／C 青 … 色は今までどおり（登録順→アルファベット順になっただけ）。 */
 var DRV_COLORS=[
   {bg:'#FFF2BF', bd:'#C9930B', fg:'#6B4E00'},   /* 黄 */
   {bg:'#FBD9D6', bd:'#C0392B', fg:'#8A1F16'},   /* 赤 */
@@ -9027,7 +9038,7 @@ function drvColor(name){
   if(i<0) return DRV_GREY;                       /* 登録から消した人 */
   return DRV_COLORS[i % DRV_COLORS.length];
 }
-/** その配達人の回る順を 1,2,3 … に振り直す（抜けを詰める） */
+/** そのグループの回る順を 1,2,3 … に振り直す（抜けを詰める） */
 function shkRenum_(d, pool){
   if(!d) return;
   pool.filter(function(o){ return driverOf(o)===d; })
@@ -9136,10 +9147,10 @@ function viewShukin(el){
   var group=pool.filter(function(c){
       return (day===-1) ? true : (shukinOf(c)===day);
     }).sort(shkSort);
-  /* 配達人のチップ（登録順）。未割当は最後
-     ★ 登録した人は、まだ1店も割り当てていなくても必ず出す。
-        「その日のグループに出てくる人」だけにすると、
-        足したばかりの人が出てこなくて割り当てを始められない（2026-09-06 の指摘） */
+  /* グループのチップ（A〜H）。未割当は最後
+     ★ A〜H は【いつでも全部出す】。まだ1店も付いていないグループを隠すと、
+        新しいグループに割り当て始められない（2026-09-06 の指摘と同じ理由）。
+        前に配達人の名前で分けたぶんが残っていたら、消さずに後ろへ足す */
   var dvs=drivers().slice(), hasNone=false;
   group.forEach(function(c){
     var d=driverOf(c);
@@ -9149,13 +9160,13 @@ function viewShukin(el){
   if(S.shkDrv==null) S.shkDrv='';                    /* '' ＝ 全員（だれも選んでいない） */
   var dCnt={}; group.forEach(function(c){ var d=driverOf(c)||'_'; dCnt[d]=(dCnt[d]||0)+1; });
   if(S.shkDrv && dvs.indexOf(S.shkDrv)<0) S.shkDrv='';
-  /* ★ 割り当てモードは別の状態にしない ＝ 配達人を選んでいれば割り当て中。
-       「割り当てを終わる」ボタンは要らない（全員 を押せば終わる）。2026-09-07 */
+  /* ★ 割り当てモードは別の状態にしない ＝ グループを選んでいれば割り当て中。
+       「割り当てを終わる」ボタンは要らない（ぜんぶ を押せば終わる）。2026-09-07 */
   S.shkAsg = S.shkDrv;
   var groupAll=group;
-  /* ★★ 配達人を選んでも【絞り込まない】（2026-09-07 に直した）
+  /* ★★ グループを選んでも【絞り込まない】（2026-09-07 に直した）
        絞ると、まだその人に付いていない店が消えて「この日のグループに店がありません」になり、
-       そこから選びようがなくなる。配達人を選ぶ＝「この人に割り当てる相手を決める」であって、
+       そこから選びようがなくなる。グループを選ぶ＝「そこへ入れる店を決める」であって、
        表示を絞ることではない。絞って見たいときだけ下の「この人の分だけ出す」を押す。 */
   if(S.shkDrvOnly && S.shkDrv) group=group.filter(function(c){ return driverOf(c)===S.shkDrv; });
 
@@ -9232,9 +9243,10 @@ function viewShukin(el){
     '<button class="chip tap '+(day===-1?'on':'')+'" data-skd="-1">全部</button>'+
   '</div>'+
 
+  /* ★ 二段めは【グループ A・B・C …】。人では分けない（2026-09-11） */
   '<div class="row" style="margin-bottom:8px;flex-wrap:wrap">'+
-    '<span class="lbl" style="margin:0">配達人</span>'+
-    '<button class="chip tap dvchip '+(S.shkDrv===''?'on':'')+'" data-skdv="">全員'+
+    '<span class="lbl" style="margin:0">グループ</span>'+
+    '<button class="chip tap dvchip '+(S.shkDrv===''?'on':'')+'" data-skdv="">ぜんぶ'+
       '<span style="opacity:.7;font-size:12px">　'+groupAll.length+'</span></button>'+
     dvs.map(function(n){
       var k=drvColor(n), act=(S.shkDrv===n);
@@ -9243,52 +9255,33 @@ function viewShukin(el){
       return '<button class="chip tap dvchip'+(act?' on':'')+'" style="'+sty+'" '+
         'data-skdv="'+esc(n)+'">'+esc(n)+
         '<span style="opacity:.8;font-size:12px">　'+(dCnt[n]||0)+'</span></button>'; }).join('')+
-    '<button class="chip tap dvchip" id="skDrvAdd" style="border-style:dashed">＋ 配達人を足す</button>'+
     (hasNone?'<span class="muted" style="font-size:14px;margin-left:4px">未割当 '+
       (dCnt['_']||0)+'店</span>':'')+
   '</div>'+
 
-  /* ★ 配達人を選んだら、そのまま割り当てに入る（ボタンをもう1回押させない）。
+  /* ★ グループを選んだら、そのまま割り当てに入る（ボタンをもう1回押させない）。
        一覧は絞らないので、その日のグループから選んでいける。 */
   (S.shkAsg
     ? '<div class="row" style="margin-bottom:8px;flex-wrap:wrap">'+
       '<label class="row" style="gap:5px;font-size:14px;color:var(--ai);font-weight:700">'+
         '<input type="checkbox" id="skDrvOnly" '+(S.shkDrvOnly?'checked':'')+
-        ' style="width:19px;height:19px;padding:0">この人の分だけ出す</label>'+
-      '<button class="btn ghost tap sm" id="skAsgClear">'+esc(S.shkAsg)+
+        ' style="width:19px;height:19px;padding:0">このグループだけ出す</label>'+
+      '<button class="btn ghost tap sm" id="skAsgClear">'+esc(grpLabel(S.shkAsg))+
         ' の割り当てをぜんぶ消す</button>'+
       '</div>'
-    : (drivers().length
-      ? '<div class="muted" style="font-size:14px;margin-bottom:8px">'+
-        '配達人をひとり押すと、そのまま店を<b>回る順に押していける</b>ようになります。</div>'
-      : ''))+
+    : '<div class="muted" style="font-size:14px;margin-bottom:8px">'+
+      'グループをひとつ押すと、そのまま店を<b>回る順に押していける</b>ようになります。</div>')+
 
-  /* ★ 配達人がまだ1人もいなければ、ここで登録できるようにする。
-       「下の欄で登録してください」と言わない（探させない）。 */
-  (drivers().length===0 || S.shkDrvNew!=null
-    ? '<div class="notice" style="background:#FFF6E0;border-color:#E0B65A;margin-bottom:10px">'+
-      (drivers().length===0
-        ? '<b>配達人がまだ登録されていません。</b>苗字を入れて「足す」を押してください。'
-        : '<b>配達人を足します。</b>苗字を入れて「足す」を押してください。')+
-      '<div class="row" style="gap:8px;margin-top:8px">'+
-        '<input id="skDrvName" value="'+esc(S.shkDrvNew||'')+'" placeholder="例 井上" '+
-          'style="width:170px;font-size:18px;padding:8px 10px">'+
-        '<button class="btn tap" id="skDrvAddGo">足す</button>'+
-        (drivers().length? '<button class="btn ghost tap sm" id="skDrvAddNo">やめる</button>':'')+
-        (drivers().length? '<span class="muted" style="font-size:12.5px">いま … '+
-          esc(drivers().join('・'))+'</span>':'')+
-      '</div></div>'
-    : '')+
   (S.shkAsg
     ? '<div class="notice" style="background:#F2F8FB;border-color:#9fc4d8">'+
-      '<b style="font-size:17px">「'+esc(S.shkAsg)+'」に割り当てています。</b>'+
+      '<b style="font-size:17px">'+esc(grpLabel(S.shkAsg))+'に割り当てています。</b>'+
       '<span style="font-size:15px">'+
       'この日の店が<b>ぜんぶ出ています</b>。回る順に押してください。押すごとに'+
       '<b>'+esc(S.shkAsg)+'の色が付いて、1 2 3 … と番号が付き、上へ並び替わります</b>。'+
-      '<br>ほかの人に決まっている店を押すと<b>'+esc(S.shkAsg)+'に付け替わります</b>。'+
+      '<br>ほかのグループに決まっている店を押すと<b>'+esc(S.shkAsg)+'に付け替わります</b>。'+
       '同じ店をもう一度押すと外れます。<b>押すたびにすぐ保存</b>されます。'+
-      '<br>順番や担当を直すときは、行の下の<b>［担当］［▲］［▼］</b>で変えられます。'+
-      '　終わったら<b>「全員」</b>か、ほかの配達人を押してください。'+
+      '<br>行の下の<b>［回る日］［グループ］［▲］［▼］</b>でも直せます。'+
+      '　終わったら<b>「ぜんぶ」</b>か、ほかのグループを押してください。'+
       '</span></div>'
     : '')+
 
@@ -9313,7 +9306,7 @@ function viewShukin(el){
       var on=!!S.shkSel[x.c.id];
       var dv=driverOf(x.c), dn=(parseInt(x.c.dorder,10)||0);
       var k=dv?drvColor(dv):null;
-      /* 割り当て済みの行は、その配達人の色で帯・丸番号・名札を出す */
+      /* 割り当て済みの行は、そのグループの色で帯・丸番号・名札を出す */
       var rsty = k ? 'border-left-color:'+k.bd+';background:'+k.bg+';' : '';
       return '<div data-s="'+esc(searchKey(x.c))+'">'+
         '<div class="grow2'+(on?' on':' off')+(S.shkAsg?' ordmode':'')+(dv?' hasdv':'')+'"'+
@@ -9327,25 +9320,34 @@ function viewShukin(el){
             '<span class="muted cd">'+fmtCode(x.c.code)+'</span>'+
             (dv?'<span class="dvtag" style="background:#fff;border-color:'+k.bd+';color:'+k.fg+'">'+
                   esc(dv)+'</span>'
-               :(S.shkAsg?'<span class="dvtag none">未</span>':''))+'</span>'+
+               :'<span class="dvtag none">未</span>')+'</span>'+
           '<input class="num" data-skamt="'+x.c.id+'" value="'+(x.amt||'')+'" inputmode="numeric" '+
             'style="width:104px;text-align:right;font-size:19px;font-weight:700;padding:6px 8px;'+
             (x.man?'border-color:var(--gold);background:#FFFCF3':'')+'">'+
           '<span class="dot" style="width:52px;border-bottom:1px dotted #bbb;height:15px;flex:0 0 52px"></span>'+
         '</div>'+
-        /* 直すための一列 … 担当を変える／回る順を上下に動かす（割り当て済みの行だけ） */
-        (dv&&dvs.length
-          ? '<div class="gasg" style="'+(k?'background:'+k.bg:'')+'">'+
-            '<span class="muted" style="font-size:13px">担当</span>'+
-            '<select data-skdvsel="'+x.c.id+'">'+
-              dvs.map(function(n){ return '<option value="'+esc(n)+'"'+(n===dv?' selected':'')+
-                '>'+esc(n)+'</option>'; }).join('')+
-              '<option value="">― 外す ―</option>'+
-            '</select>'+
-            '<button class="btn ghost tap sm mv" data-skmv="'+x.c.id+'|-1">▲</button>'+
-            '<button class="btn ghost tap sm mv" data-skmv="'+x.c.id+'|1">▼</button>'+
-            '</div>'
-          : '')+
+        /* ★★ 直すための一列（2026-09-11）
+             ── グルーピングは【回る日】と【グループ】の2つで決まる。
+                その2つを、その店の行のすぐ下で選べるようにした。
+                取引先情報タブまで探しに行かせない。
+             ★ 割り当て済みの行だけに出していたのをやめて、いつでも出す。
+               回る日がまちがっている店は「その日の一覧」に出てこないのではなく
+               【ちがう日の一覧に出てくる】ので、見つけたその場で直せないと意味がない。
+             ▲▼ は回る順なので、グループが決まっている行だけ */
+        '<div class="gasg" style="'+(k?'background:'+k.bg:'')+'">'+
+          '<span class="lb muted">回る日</span>'+
+          '<select data-skday="'+x.c.id+'">'+shukinOptions(shukinOf(x.c))+'</select>'+
+          '<span class="lb muted">グループ</span>'+
+          '<select data-skdvsel="'+x.c.id+'">'+
+            '<option value=""'+(dv?'':' selected')+'>― 決めていない ―</option>'+
+            dvs.map(function(n){ return '<option value="'+esc(n)+'"'+(n===dv?' selected':'')+
+              '>'+esc(grpLabel(n))+'</option>'; }).join('')+
+          '</select>'+
+          (dv
+            ? '<button class="btn ghost tap sm mv" data-skmv="'+x.c.id+'|-1">▲</button>'+
+              '<button class="btn ghost tap sm mv" data-skmv="'+x.c.id+'|1">▼</button>'
+            : '')+
+          '</div>'+
         '<div class="gmon'+(on?' on':'')+'">'+
           (x.opens.length? x.opens.map(function(o){
               return '<span class="gchip'+(shkMonOn(x.c.id,o,oneKey)?' on':'')+'" '+
@@ -9382,22 +9384,14 @@ function viewShukin(el){
     '<p class="muted" style="margin:8px 0 0">A4を4分割（A6が4つ）で刷ります。日にちは空欄です。'+
       '<b>5万円以上</b>には収入印紙（200円〜）が要ります。</p></div>'+
 
-  '<details class="card" style="margin-top:12px"'+(drivers().length?'':' open')+'>'+
-    '<summary style="cursor:pointer;font-weight:700;color:var(--ai)">配達人を登録する'+
-      '<span class="muted" style="font-weight:400;margin-left:8px">'+
-      (drivers().length? drivers().join('・') : 'まだ誰も登録していません')+'</span></summary>'+
-    '<p class="muted" style="margin:8px 0">苗字だけで結構です。'+
-      '<b>ここに書いた順が、集金の画面と刷るシートの並び順</b>になります。'+
-      '1行に1人、改行で区切ってください。</p>'+
-    '<textarea id="skDrvList" rows="4" style="width:100%;font-size:16px;line-height:1.7" '+
-      'placeholder="井上&#10;河原&#10;小泉">'+esc(drivers().join('\n'))+'</textarea>'+
-    '<button class="btn tap sm" id="skDrvSave" style="margin-top:7px">この内容で保存</button></details>'+
-
+  /* ★ 配達人を登録する枠は外した（2026-09-11）。
+       グループは A〜H の決め打ちなので、登録するものが無い */
   '<details class="card" style="margin-top:12px">'+
     '<summary style="cursor:pointer;font-weight:700;color:var(--ai)">回る日をまとめて決める'+
       '<span class="muted" style="font-weight:400;margin-left:8px">エリアで決まっている店を一気に</span></summary>'+
     '<p class="muted" style="margin:8px 0">ここで変えるとすぐ保存されます。'+
-      '<b>配達人と回る順は、上の「◯◯に割り当てる」で押していくのがらくです。</b></p>'+
+      '<b>回る日は、それぞれの行の下でも変えられます。</b>'+
+      'グループと回る順は、上でグループを押してから店を押していくのがらくです。</p>'+
     '<div class="gsheet">'+
       groupAll.map(function(c){
         return '<div class="grow2"><span class="nm" style="font-size:14px">'+esc(c.name)+
@@ -9460,7 +9454,7 @@ function viewShukin(el){
     saveClientsLater();
     S.shkAmt={}; S.shkMon={}; keepAndRender();
     toast(c.name+' … '+shukinLabel(c.shukin)); }; });
-  /* ★ 配達人を押す＝その人に割り当てるモードに入る（一覧は絞らない） */
+  /* ★ グループを押す＝そこへ割り当てるモードに入る（一覧は絞らない） */
   el.querySelectorAll('[data-skdv]').forEach(function(b){ b.onclick=function(){
     var n=b.dataset.skdv;
     S.shkDrv=n; S.shkAsg=n;                 /* '' なら全員＝割り当てを終わる */
@@ -9469,7 +9463,7 @@ function viewShukin(el){
   var dvOnly=el.querySelector('#skDrvOnly');
   if(dvOnly) dvOnly.onchange=function(){ S.shkDrvOnly=dvOnly.checked; render(); };
 
-  /* 担当を変える（選び直し・外す）。回る順は抜けを詰めて振り直す */
+  /* グループを変える（選び直し・外す）。回る順は抜けを詰めて振り直す */
   el.querySelectorAll('[data-skdvsel]').forEach(function(sel){ sel.onchange=function(){
     var c=clientById(sel.dataset.skdvsel); if(!c) return;
     var was=driverOf(c), to=sel.value;
@@ -9482,7 +9476,7 @@ function viewShukin(el){
     }
     shkRenum_(was, groupAll);
     saveClientsLater(); keepAndRender();
-    toast(c.name+' … '+(to? to+' の '+c.dorder+'番目' : '担当を外しました')+
+    toast(c.name+' … '+(to? grpLabel(to)+' の '+c.dorder+'番目' : 'グループを外しました')+
       (was&&to?'（'+was+' から変更）':''));
   }; });
 
@@ -9499,40 +9493,20 @@ function viewShukin(el){
     arr.splice(i,1); arr.splice(i+dir,0,c);
     arr.forEach(function(o,j){ o.dorder=j+1; });
     saveClientsLater(); keepAndRender();
-    toast(c.name+' … '+d+' の '+c.dorder+'番目');
+    toast(c.name+' … '+grpLabel(d)+' の '+c.dorder+'番目');
   }; });
 
-  /* ★ 配達人に割り当てるモード
-       配達人をひとり選んで入ると、店を押した順に【その人に紐づいて番号が付く】。
-       ほかの人に決まっている店を押すと付け替わる。同じ店をもう一度押すと外れる。 */
-  /* 配達人をその場で足す */
-  var dvAdd=el.querySelector('#skDrvAdd');
-  if(dvAdd) dvAdd.onclick=function(){ S.shkDrvNew=''; render();
-    var e=document.getElementById('skDrvName'); if(e) e.focus(); };
-  var dvNo=el.querySelector('#skDrvAddNo');
-  if(dvNo) dvNo.onclick=function(){ S.shkDrvNew=null; render(); };
-  var dvGo=el.querySelector('#skDrvAddGo');
-  if(dvGo){
-    var addDrv=async function(){
-      var nm=(document.getElementById('skDrvName').value||'').trim();
-      if(!nm){ toast('苗字を入れてください'); return; }
-      if(drivers().indexOf(nm)>=0){ toast(nm+' はもう登録されています');
-        S.shkDrvNew=null; S.shkDrv=nm; S.shkAsg=nm; render(); return; }
-      await saveDrivers(drivers().concat([nm]));
-      S.shkDrvNew=null; S.shkDrv=nm; S.shkAsg=nm;   /* 足したらそのまま割り当てに入る */
-      toast(nm+' を足しました。そのまま店を回る順に押してください'); render();
-    };
-    dvGo.onclick=addDrv;
-    var nmIn=el.querySelector('#skDrvName');
-    if(nmIn) nmIn.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); addDrv(); } };
-  }
+  /* ★ グループに割り当てるモード
+       グループをひとつ選んで入ると、店を押した順に【そのグループで番号が付く】。
+       ほかのグループに決まっている店を押すと付け替わる。もう一度押すと外れる。
+       ★ グループは A〜H の決め打ちなので、足す枠は要らない（2026-09-11） */
 
   var asgClr=el.querySelector('#skAsgClear');
   if(asgClr) asgClr.onclick=async function(){
     var d=S.shkAsg;
-    if(!confirm('この日の「'+d+'」の割り当てをぜんぶ消します。よろしいですか。')) return;
+    if(!confirm('この日の「'+grpLabel(d)+'」の割り当てをぜんぶ消します。よろしいですか。')) return;
     groupAll.forEach(function(c){ if(driverOf(c)===d){ c.driver=''; c.dorder=0; } });
-    saveClientsLater(); keepAndRender(); toast(d+' の割り当てを消しました');
+    saveClientsLater(); keepAndRender(); toast(grpLabel(d)+' の割り当てを消しました');
   };
   /* ★ 押したらすぐ画面に出す。保存は後ろで（`saveClientsLater`）。
        `await saveClients()` にすると、通信を待つうえに売掛の集計を全部
@@ -9554,18 +9528,9 @@ function viewShukin(el){
     c.driver=d; c.dorder=mx+1;
     shkRenum_(was, groupAll);
     saveClientsLater(); keepAndRender();
-    toast(c.name+' … '+d+' の '+c.dorder+'番目'+(was?'（'+was+' から変更）':''));
+    toast(c.name+' … '+grpLabel(d)+' の '+c.dorder+'番目'+(was?'（'+was+' から変更）':''));
   }; });
 
-  /* 配達人の登録（苗字だけ・書いた順が並び順） */
-  var dvSave=el.querySelector('#skDrvSave');
-  if(dvSave) dvSave.onclick=async function(){
-    var txt=el.querySelector('#skDrvList').value||'';
-    var list=txt.split(/[\r\n,、]+/).map(function(x){ return x.trim(); })
-                .filter(function(x){ return x; });
-    await saveDrivers(list);
-    toast(list.length+' 人を登録しました'); render();
-  };
   el.querySelector('#skMemo').onclick=function(){ printShukinSheet(chosen, ref, day, oneLabel); };
   el.querySelector('#skRc').onclick=function(){ printShukinReceipts(chosen, ref); };
   el.querySelector('#skBlank').onclick=function(){ printBlankReceipts(ref); };
@@ -9583,8 +9548,9 @@ function printBlankReceipts(ref){
 
 /** グルーピングシート（A4縦・2列）。二つ折りにして領収証の束を挟みます */
 /** グルーピングシート（A4縦2列）。
-    ★ 配達人が付いていれば【人ごとに1枚】刷ります。回収員はこれを持って回るので、
-      人ごとに分かれていないと現場で使えません。 */
+    ★ グループが付いていれば【グループごとに1枚】刷ります。
+      持って回る人はこれ1枚を持つので、グループごとに分かれていないと現場で使えません。
+      （誰が持って行くかは、その日に動ける人が決まってから紙のうえで決まる） */
 function printShukinSheet(list, ref, day, oneLabel){
   var byDrv={}, order=[];
   list.forEach(function(x){
@@ -9641,7 +9607,7 @@ function shukinSheetOne(list, ref, day, oneLabel, drv){
         jpYear(ref.getFullYear())+(ref.getMonth()+1)+'月　'+
         (day>0? shukinLabel(day)+'グループ' : (day===0?'（回る日を決めていない店）':'全部'))+
         (drv?'<span style="margin-left:10px;padding:2px 10px;border:2px solid #34506E;'+
-             'border-radius:5px;font-size:17px">'+esc(drv)+'</span>':'')+
+             'border-radius:5px;font-size:17px">'+esc(grpLabel(drv))+'</span>':'')+
         '<span style="font-size:11px;font-weight:400;margin-left:8px">'+esc(oneLabel)+'ぶん（繰越を含む）</span></div>'+
       '<div style="font-size:11px">有限会社 丸京　'+list.length+'店　合計 '+tot.toLocaleString()+' 円</div></div>'+
     '<div style="font-size:9.5px;margin-bottom:4px">'+
