@@ -9007,17 +9007,25 @@ function shukinLabel(d){ d=Math.max(0,Math.min(31,parseInt(d,10)||0)); return d?
    -------------------------------------------------------------- */
 var GROUPS=['A','B','C','D','E','F','G','H'];
 function drivers(){ return GROUPS.slice(); }
-function driverOf(c){ return String(c && c.driver || '').trim(); }
+/** ★ A〜H だけがグループ（2026-09-11）。
+      前に配達人の名前で分けていたぶん（井上・河原・伊藤 …）が残っていても、
+      グループとしては扱わない ＝【未割当】として出す。
+      名前はもう要らないので、画面のどこにも出さない。
+      c.driver の中身はそのまま残るが、グループを選べば上書きされる
+      （こちらから勝手に書き替えない。触ったときに自然に消える）。 */
+function driverOf(c){
+  var v=String(c && c.driver || '').trim();
+  return GROUPS.indexOf(v)>=0 ? v : '';
+}
 function dorderOf(c){ var n=parseInt(c && c.dorder,10)||0; return n>0?n:9999; }
 /** 画面に出す言い方。'A' → 'Aグループ' */
 function grpLabel(g){ g=String(g||''); return g ? (GROUPS.indexOf(g)>=0 ? g+'グループ' : g) : '決めていない'; }
 function driverOptions(cur){
   cur=String(cur||'');
+  if(GROUPS.indexOf(cur)<0) cur='';        /* 前の配達人の名前は選択肢に出さない */
   return '<option value=""'+(cur?'':' selected')+'>（決めていない）</option>'+
     drivers().map(function(n){
-      return '<option value="'+esc(n)+'"'+(cur===n?' selected':'')+'>'+esc(grpLabel(n))+'</option>'; }).join('')+
-    (cur && drivers().indexOf(cur)<0
-      ? '<option value="'+esc(cur)+'" selected>'+esc(cur)+'（前の担当）</option>' : '');
+      return '<option value="'+esc(n)+'"'+(cur===n?' selected':'')+'>'+esc(grpLabel(n))+'</option>'; }).join('');
 }
 /** 集金の並び … グループ（A→H）→ その中の回る順 → コード */
 /* ★ グループごとの色。色分けで「2段めのグルーピング」が一目で分かる（2026-09-07）
@@ -9047,9 +9055,9 @@ function shkRenum_(d, pool){
 }
 
 function shkSort(a,b){
+  /* グループ（A→H）→ その中の回る順 → コード。未割当はいちばん後ろ */
   var da=driverOf(a.c||a), db=driverOf(b.c||b);
   var ia=da?drivers().indexOf(da):998, ib=db?drivers().indexOf(db):998;
-  if(ia<0) ia=997; if(ib<0) ib=997;
   if(ia!==ib) return ia-ib;
   var oa=dorderOf(a.c||a), ob=dorderOf(b.c||b);
   if(oa!==ob) return oa-ob;
@@ -9150,13 +9158,10 @@ function viewShukin(el){
   /* グループのチップ（A〜H）。未割当は最後
      ★ A〜H は【いつでも全部出す】。まだ1店も付いていないグループを隠すと、
         新しいグループに割り当て始められない（2026-09-06 の指摘と同じ理由）。
-        前に配達人の名前で分けたぶんが残っていたら、消さずに後ろへ足す */
+     ★ 出すのは A〜H だけ（2026-09-11）。前の配達人の名前は足さない。
+        グループは8つで足りる、と現場で決まった */
   var dvs=drivers().slice(), hasNone=false;
-  group.forEach(function(c){
-    var d=driverOf(c);
-    if(!d){ hasNone=true; return; }
-    if(dvs.indexOf(d)<0) dvs.push(d);            /* 登録から消した人が残っていても出す */
-  });
+  group.forEach(function(c){ if(!driverOf(c)) hasNone=true; });
   if(S.shkDrv==null) S.shkDrv='';                    /* '' ＝ 全員（だれも選んでいない） */
   var dCnt={}; group.forEach(function(c){ var d=driverOf(c)||'_'; dCnt[d]=(dCnt[d]||0)+1; });
   if(S.shkDrv && dvs.indexOf(S.shkDrv)<0) S.shkDrv='';
@@ -9559,8 +9564,7 @@ function printShukinSheet(list, ref, day, oneLabel){
     byDrv[d].push(x);
   });
   order.sort(function(a,b){
-    var i=a?drivers().indexOf(a):998, j=b?drivers().indexOf(b):998;
-    return (i<0?997:i)-(j<0?997:j); });
+    return (a?drivers().indexOf(a):998)-(b?drivers().indexOf(b):998); });
   if(order.length>1 || (order.length===1 && order[0])){
     var html=order.map(function(d){
       return shukinSheetOne(byDrv[d], ref, day, oneLabel, d);
