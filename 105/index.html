@@ -26,6 +26,12 @@
      ================================================================== -->
 <script>window.__API_URL='https://script.google.com/macros/s/AKfycbyVftbnDjoNAM6D9Fm6lKEYT64LW2J32vFYDDAG25otlEjFyBYuz7lXeItyAiGB-gy2gg/exec';</script>
 
+<!-- ★★ これが無いと、スマホが「PCの画面」として描いて縮小表示になる（2026-09-11）
+     GAS から配るときは doGet の addMetaTag が付けてくれるが、
+     Pages は index.html をそのまま配るので、ここで付けないと誰も付けない。
+     昨日 Pages に出したときに抜けていた。 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -518,6 +524,10 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .gasg{display:flex;flex-wrap:wrap;align-items:center;gap:7px;
   padding:0 10px 9px 52px;border-bottom:1px solid var(--line)}
 .gasg select{font-size:15px;padding:5px 7px;width:118px;min-width:0;max-width:118px}
+/* ⓪で決まった内容を「見せるだけ」の欄（打たせない） */
+.cash-fixed{border:2px solid var(--line);border-radius:8px;background:#F7F5EF;
+  padding:11px 13px;font-size:19px;font-weight:700;line-height:1.4}
+.cash-fixed .muted{font-size:13px;font-weight:400}
 .gasg .lb{font-size:13px;color:var(--muted,#6b6b6b);flex:0 0 auto}
 .gasg .mv{font-size:19px;font-weight:800;padding:3px 13px;line-height:1.35}
 /* 電話では 回収日の点線を出さない（紙の様式のためのもの。画面では幅を食うだけ） */
@@ -4459,6 +4469,20 @@ function viewCash(el){
   var gap=dayGap(formDate);
   var phrases=(isOut?CASH_PH_OUT:CASH_PH_IN);
   var often=oftenPhrases();
+
+  /* ★ ⓪で選んだ型から決まる内容（＝元帳に出る言葉）。
+       現金売上と、売掛の現金回収（お店の名前が要る）だけは今までどおり打つ */
+  /* 直しに戻したときは、その1件が持っている型を見る
+       （④の行を押しても S.cashKind は前のまま残っているため） */
+  var kdNow = cashKindOf((S.cashEdit && e.kind) ? e.kind : (S.cashKind || e.kind || ''));
+  var baseMemo = (!S.saleOn && kdNow && !kdNow.arc && kdNow.memo) ? String(kdNow.memo) : '';
+  /* 直すときは、決まった内容のうしろに足したメモだけを取り出して欄へ戻す */
+  var extraMemo = '';
+  if(baseMemo){
+    var em = String(e.memo||'');
+    extraMemo = (em===baseMemo) ? ''
+              : (em.indexOf(baseMemo+'　')===0 ? em.slice(baseMemo.length+1) : em);
+  }
   var counts=(DB.count[nk]||[]).slice().sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); });
   var orph=saleOrphans(m);
   var today=monthToday;
@@ -4495,15 +4519,30 @@ function viewCash(el){
           (S.saleOn?'readonly style="background:#FFFBF0" ':'')+
           'value="'+(S.saleOn?(saleTotal(saleItems())||''):(e.amount||''))+'" placeholder="0"></div>'+
     '</div>'+
-    '<div class="cash-f"><label class="lbl">内容（'+(mo==='sale'?'元帳に出る書き方':(isOut?'何に使ったか':'どこから入ったか'))+'）'+
-        (S.saleOn?'　<span style="font-weight:400;color:var(--gold)">空欄でOK。「現金売上　店名」が入ります</span>':'')+'</label>'+
-      '<input id="cn" class="cash-memo" lang="ja" value="'+esc(e.memo||S.cashMemoPre||'')+'" placeholder="'+
-        (mo==='sale'?'空欄でOK':(isOut?'例：ガソリン　スタンド名　など':'例：預金から引き出し　など'))+'">'+
-      (mo==='sale'?''
-        : '<div class="phrases">'+
-            often.map(function(t){ return '<button class="ph often tap" data-ph="'+esc(t)+'">'+esc(t)+'</button>'; }).join('')+
-            phrases.map(function(t){ return '<button class="ph tap" data-ph="'+esc(t)+'">'+esc(t)+'</button>'; }).join('')+
-          '</div>')+'</div>'+
+    /* ★★ 内容は⓪で決まっている。二度入れさせない（2026-09-11）
+         ⓪で「夜食を買った」を選んだ時点で、内容は「厚生食事代」と決まっている。
+         それをもう一度打たせるのは二重。だから【決まった内容を見せるだけ】にして、
+         打つのは任意のメモだけにした。空でよい。
+         ★ 入れてもらうのは 日にち・金額・写真 の3つ。 */
+    (baseMemo
+      ? '<div class="cash-f">'+
+          '<label class="lbl">内容</label>'+
+          '<div class="cash-fixed">'+esc(baseMemo)+
+            '<span class="muted">　⓪で選んだものから決まります</span></div>'+
+          '<label class="lbl" style="margin-top:10px">メモ（任意）'+
+            '<span style="font-weight:400;color:var(--muted,#7a7a7a)">　空でかまいません</span></label>'+
+          '<input id="cn" class="cash-memo" lang="ja" value="'+esc(extraMemo)+'" '+
+            'placeholder="店名など、書いておきたいことがあれば">'+
+        '</div>'
+      : '<div class="cash-f"><label class="lbl">内容（'+(mo==='sale'?'元帳に出る書き方':(isOut?'何に使ったか':'どこから入ったか'))+'）'+
+          (S.saleOn?'　<span style="font-weight:400;color:var(--gold)">空欄でOK。「現金売上　店名」が入ります</span>':'')+'</label>'+
+        '<input id="cn" class="cash-memo" lang="ja" value="'+esc(e.memo||S.cashMemoPre||'')+'" placeholder="'+
+          (mo==='sale'?'空欄でOK':(isOut?'例：ガソリン　スタンド名　など':'例：預金から引き出し　など'))+'">'+
+        (mo==='sale'?''
+          : '<div class="phrases">'+
+              often.map(function(t){ return '<button class="ph often tap" data-ph="'+esc(t)+'">'+esc(t)+'</button>'; }).join('')+
+              phrases.map(function(t){ return '<button class="ph tap" data-ph="'+esc(t)+'">'+esc(t)+'</button>'; }).join('')+
+            '</div>')+'</div>')+
     '<div class="dropzone" id="dz">'+
       '<label class="btn ghost tap" style="display:inline-flex;align-items:center;gap:6px;font-size:16px;padding:13px 18px">'+
         '📷 領収書の写真をとる／選ぶ'+
@@ -4525,7 +4564,8 @@ function viewCash(el){
     '<div class="mincho" style="font-size:19px">'+jpYear(m.getFullYear())+' '+(m.getMonth()+1)+'月 の小口現金'+
       '<span id="cashSaving" class="muted" style="margin-left:10px;font-size:12px">'+(_cashPending?'保存中…':'')+'</span></div>'+
     '<button class="btn ghost tap" id="mn">›</button></div>'+
-  '<div class="notice">入れてもらうのは <b>金額</b> と <b>何に使ったか（内容）</b> と <b>領収書の写真</b> だけです。'+
+  '<div class="notice">⓪で<b>何があったか</b>を選んだら、あとは <b>日にち</b> と <b>金額</b> と '+
+    '<b>領収書の写真</b> だけです。内容は選んだものから決まります。'+
     '<span class="muted">勘定科目は事務所で付けます。日にちが違っていないかだけ、いつも見てください。</span></div>'+
 
   (saleListOf(m).length
@@ -4784,7 +4824,9 @@ function viewCash(el){
     var amt = sale ? sale.total
                    : (parseInt(el.querySelector('#cm').value.replace(/[^0-9]/g,''),10)||0);
     if(!amt){ alert('金額を入れてください。'); el.querySelector('#cm').focus(); return; }
-    var memo=cn.value.trim();
+    /* ★ 内容は⓪で決まっている。打ったメモはそのうしろに足す（2026-09-11） */
+    var typed=cn.value.trim();
+    var memo = baseMemo ? (typed ? baseMemo+'　'+typed : baseMemo) : typed;
     if(sale && !memo) memo='現金売上　'+sale.name;
     if(!memo && !S.cashImg && !S.cashImgUrl){
       if(!confirm('内容も写真も入っていません。このまま記録しますか？')) return;
