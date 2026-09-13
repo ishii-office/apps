@@ -1528,6 +1528,20 @@ function shrinkImage(f,max,q){
     img.onerror=rej; img.src=url;
   });
 }
+/* ★ 送れる大きさまで小さくする（2026-09-13）
+     Pages から開いているときは fetch で /exec へ POST します。大きいと途中で切れて
+     「Load failed」や「サーバにつながりませんでした（404）」になります。
+     領収書は読めればよいので、25万文字（≒19万バイト）に収まるまで落とします。 */
+var RCPT_MAX_CHARS = 250000;
+async function shrinkToFit(f){
+  var steps=[[1000,0.55],[820,0.5],[680,0.45],[540,0.42],[420,0.4]];
+  var last=null;
+  for(var i=0;i<steps.length;i++){
+    last=await shrinkImage(f,steps[i][0],steps[i][1]);
+    if(last.length<=RCPT_MAX_CHARS) return last;
+  }
+  return last;
+}
 function openDataUrl(u){
   if(/^https?:/.test(u)){ window.open(u,'_blank'); return; }
   try{
@@ -4109,24 +4123,182 @@ function dayNote(ds){
   if(g>0)   return g+'日前';
   return Math.abs(g)+'日あと';
 }
-/* 保存は「先に画面へ出して、裏で保存」＝ボタンの反応を待たせない */
-var _cashPending=0;
+/* ============================================================
+   保存のしかた（2026-09-13 に作り直し）
+
+   ★ もとは「送って、しくじったらその場であやまる」だけでした。
+     スマホの電波が一瞬切れただけで、画面に「記録しました」と出ているのに
+     中身が消えます。実際に起きました（保険料 13,310円）。
+
+   いまは、こうします。
+     ① 送る前に、この端末（localStorage）に控えを取る
+     ② 送る。しくじったら 1秒 → 3秒 → 8秒 → 20秒 と間をあけて送り直す
+     ③ 入ったのを確かめてから、控えを捨てる
+     ④ それでも駄目なら控えは残す。次に開いたとき、ひとりでもう一度送る
+   同じキーに続けて書いたときは、あとの方だけを送ります（古いのは捨てる）。
+   ============================================================ */
+var PEND_PREFIX='pend:';
+var _pendQ={}, _pendBusy={};
+var PEND_WAIT=[1000,3000,8000,20000];
+
+function lsSet(k,v){ try{ window.localStorage.setItem(k,v); return true; }catch(e){ return false; } }
+function lsGet(k){ try{ return window.localStorage.getItem(k); }catch(e){ return null; } }
+function lsDel(k){ try{ window.localStorage.removeItem(k); }catch(e){} }
+function lsKeys(pre){
+  var out=[];
+  try{
+    for(var i=0;i<window.localStorage.length;i++){
+      var k=window.localStorage.key(i);
+      if(k && k.indexOf(pre)===0) out.push(k);
+    }
+  }catch(e){}
+  return out;
+}
+var _pendTold=false;
+function pendMark(){
+  var n=Object.keys(_pendQ).length;
+  var e=document.getElementById('cashSaving');
+  if(!e) return;
+  e.textContent = n ? '保存中…'
+                    : (lsKeys(PEND_PREFIX).length ? '保存待ち（電波が戻ったら送ります）' : '');
+}
 function cashSaveAsync(key,val){
-  _cashPending++;
-  var mark=function(){
-    var e=document.getElementById('cashSaving');
-    if(e) e.textContent=_cashPending?'保存中…':'';
-  };
-  mark();
-  storage.set(key,val).then(function(){ _cashPending--; mark(); })
-    .catch(function(err){
-      _cashPending--; mark();
-      alert('保存できませんでした。通信を確かめて、もう一度「記録する」を押してください。\n'+(err&&err.message||err));
-    });
+  lsSet(PEND_PREFIX+key,val);                       /* ① 先に控え */
+  if(_pendQ[key]){ _pendQ[key].val=val; _pendQ[key].tries=0; }
+  else _pendQ[key]={val:val,tries:0};
+  pendMark();
+  pendRun(key);
+}
+function pendRun(key){
+  if(_pendBusy[key]) return;
+  var q=_pendQ[key]; if(!q) return;
+  _pendBusy[key]=true;
+  var sending=q.val;
+  storage.set(key,sending).then(function(){
+    _pendBusy[key]=false;
+    var cur=_pendQ[key];
+    if(cur && cur.val!==sending){ pendRun(key); return; }  /* 送っている間に新しくなった */
+    delete _pendQ[key];
+    lsDel(PEND_PREFIX+key);                          /* ③ 入ったのを確かめてから捨てる */
+    _pendTold=false;
+    pendMark();
+  }).catch(function(err){
+    _pendBusy[key]=false;
+    var cur=_pendQ[key]; if(!cur) return;
+    var w=PEND_WAIT[cur.tries]; cur.tries++;
+    if(w!=null){ setTimeout(function(){ pendRun(key); },w); return; }   /* ② 送り直す */
+    /* ★ ここで待ち行列から外すこと（2026-09-13）
+         外さないと、あとで pendResume() が「もう並んでいる」と見て素通りし、
+         控えが端末に残ったまま一生送られません。控え（localStorage）は残すので、
+         1分おきの見回りが拾って、ひとりで送り直します。 */
+    delete _pendQ[key];
+    pendMark();
+    if(!_pendTold){
+      _pendTold=true;
+      alert('いま保存できませんでした。打ち直しは要りません。\n\n'+
+        'この端末に控えを取ってあります。電波が戻れば、ひとりで送り直します。\n'+
+        '画面の「保存待ち」が消えたら、入っています。\n\n（'+(err&&err.message||err)+'）');
+    }
+  });
+}
+/** 開いたときに、送れていない控えを送り直します */
+function pendResume(){
+  var ks=lsKeys(PEND_PREFIX);
+  ks.forEach(function(k){
+    var key=k.slice(PEND_PREFIX.length), v=lsGet(k);
+    if(v==null){ lsDel(k); return; }
+    if(_pendQ[key]) return;
+    _pendQ[key]={val:v,tries:0};
+    pendRun(key);
+  });
+  if(ks.length) pendMark();
+  return ks.length;
 }
 window.addEventListener('beforeunload',function(e){
-  if(_cashPending){ e.preventDefault(); e.returnValue=''; return ''; }
+  if(Object.keys(_pendQ).length){ e.preventDefault(); e.returnValue=''; return ''; }
 });
+
+/* ============================================================
+   領収書の写真（2026-09-13）
+
+   ★ 写真を元帳（cashbook:）の中に base64 で入れてはいけません。
+     入れると 1枚で約16万文字。6枚たまって cashbook:2026-03 が
+     98万文字になり、そこへ1行足すたびに98万文字を送り直すことになって、
+     小口現金の保存がまるごと通らなくなりました（これが「404」の正体）。
+
+   だから写真は Drive にだけ置きます。Drive に置けなかったときは
+   元帳には「写真あり（送信待ち）」の印だけを書いて、写真そのものは
+   この端末で預かり、通信が戻ったときに裏でひとりで送ります。
+   ============================================================ */
+var RCPT_PREFIX='rcpt:';
+function rcptStash(id,bk,ym,date,dataUrl,type){
+  return lsSet(RCPT_PREFIX+id, JSON.stringify({id:id,bk:bk,ym:ym,date:date,type:type,data:dataUrl}));
+}
+function rcptOf(id){
+  var s=lsGet(RCPT_PREFIX+id); if(!s) return null;
+  try{ return JSON.parse(s); }catch(e){ return null; }
+}
+/** 預かっている写真を Drive へ送り、元帳にリンクを書き足します */
+var _rcptRunning=false;
+async function receiptFlush(){
+  if(_rcptRunning) return 0;
+  if(!(window.storage && storage.gas)) return 0;
+  _rcptRunning=true;
+  var done=0;
+  try{
+    var ks=lsKeys(RCPT_PREFIX);
+    for(var i=0;i<ks.length;i++){
+      var r=null;
+      try{ r=JSON.parse(lsGet(ks[i])||'null'); }catch(e){}
+      if(!r || !r.data){ lsDel(ks[i]); continue; }
+      var up=null;
+      try{ up=await storage.saveReceipt(r.data,{ym:r.ym,date:r.date,type:r.type}); }
+      catch(e){ continue; }                       /* まだ送れない。次に開いたときにまた試す */
+      if(!(up&&up.url)) continue;
+      var list=DB.cash[r.bk];
+      if(!list){                                   /* その月をまだ読んでいない → 読んでから書く */
+        try{
+          var g=await storage.get(r.bk);
+          list=DB.cash[r.bk]=jparse(g&&g.value,[])||[];
+        }catch(e){ continue; }
+      }
+      var hit=false;
+      list.forEach(function(x){
+        if(String(x.id)!==String(r.id)) return;
+        x.imgUrl=up.url; x.imgPend=null; x.img=null; x.imgType=null; hit=true;
+      });
+      if(hit) cashSaveAsync(r.bk,JSON.stringify(list));
+      lsDel(ks[i]);
+      done++;
+    }
+  }finally{ _rcptRunning=false; }
+  if(done){ try{ clearCaches(); render(); }catch(e){} }
+  return done;
+}
+
+/* ★ 送れていない控えがあるキーは、控えのほうが新しい。
+     読むときもそちらを返します。こうしないと、まだ送れていない記録を
+     載せていない古い一覧を読んで、その上に書いて、記録が消えます。 */
+(function(){
+  if(!window.storage) return;
+  var _get=storage.get, _getMany=storage.getMany;
+  function pendVal(k){
+    if(_pendQ[k]) return _pendQ[k].val;
+    return lsGet(PEND_PREFIX+k);
+  }
+  storage.get=function(k){
+    return _get.call(storage,k).then(function(r){
+      var v=pendVal(k);
+      return v==null ? r : {key:k,value:v};
+    });
+  };
+  storage.getMany=function(ks){
+    return _getMany.call(storage,ks).then(function(o){
+      (ks||[]).forEach(function(k){ var v=pendVal(k); if(v!=null) o[k]=v; });
+      return o;
+    });
+  };
+})();
 
 function attachChip(){
   if(S.cashImgUrl){
@@ -4135,9 +4307,11 @@ function attachChip(){
       '<button class="tap" id="chipdel" style="margin-left:8px;border:none;background:transparent;color:#999;font-size:12px">取消</button>';
   }
   if(S.cashImg){
+    /* Drive にまだ行っていない状態。記録すればこの端末で預かって、あとで送ります */
     return (S.cashImgType==='pdf'
       ? '<button class="tap" id="chipopen" style="border:1px solid var(--pink);background:#fff;color:var(--pink);border-radius:6px;font-size:12px;font-weight:700;padding:5px 10px">PDF ✓ 開く</button>'
       : '<img id="chipopen" src="'+S.cashImg+'" class="tap" style="height:46px;border-radius:6px;border:1px solid var(--line);vertical-align:middle">')+
+      (storage.gas?'<span class="muted" style="margin-left:8px;font-size:11px">写真は預かりました（あとで Drive へ送ります）</span>':'')+
       '<button class="tap" id="chipdel" style="margin-left:8px;border:none;background:transparent;color:#999;font-size:12px">取消</button>';
   }
   return '<span class="muted">写真なし</span>';
@@ -4640,7 +4814,7 @@ function viewCash(el){
   '<div class="row" style="justify-content:space-between;margin-bottom:10px">'+
     '<button class="btn ghost tap" id="mp">‹</button>'+
     '<div class="mincho" style="font-size:19px">'+jpYear(m.getFullYear())+' '+(m.getMonth()+1)+'月 の小口現金'+
-      '<span id="cashSaving" class="muted" style="margin-left:10px;font-size:12px">'+(_cashPending?'保存中…':'')+'</span></div>'+
+      '<span id="cashSaving" class="muted" style="margin-left:10px;font-size:12px">'+(Object.keys(_pendQ).length?'保存中…':'')+'</span></div>'+
     '<button class="btn ghost tap" id="mn">›</button></div>';
 
   var segHtml = '<div class="segbar">'+
@@ -4751,13 +4925,19 @@ function viewCash(el){
       (list.length?list.map(function(x){
         run += x.dir==='in'?x.amount:-x.amount;
         var i=x.dir==='in', isNew=String(x.id)===String(S.cashJustId);
+        /* 写真は Drive のリンクが本筋。送れていないぶんは端末で預かっています */
+        var stash = x.imgPend ? rcptOf(x.id) : null;
+        var raw   = x.img || (stash && stash.data) || null;
+        var rtype = x.imgType || (stash && stash.type) || null;
         var pic = x.imgUrl
           ? '<button class="tap" data-url="'+esc(x.imgUrl)+'" style="margin-left:6px;border:1px solid var(--green);background:#F3F9F5;color:var(--green);border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px">領収書</button>'
-          : (x.img
-              ? (x.imgType==='pdf'
-                  ? '<button class="tap" data-pdf="'+x.id+'" style="margin-left:6px;border:1px solid var(--pink);background:#fff;color:var(--pink);border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px">PDF</button>'
-                  : '<img src="'+x.img+'" data-img="'+x.id+'" class="tap cash-thumb">')
-              : ' <span class="pill tag-hide">写真なし</span>');
+          : (raw
+              ? (rtype==='pdf'
+                  ? '<button class="tap" data-pdf="'+x.id+'" style="margin-left:6px;border:1px solid var(--pink);background:#fff;color:var(--pink);border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px">PDF'+(x.imgPend?'（送信待ち）':'')+'</button>'
+                  : '<img src="'+raw+'" data-img="'+x.id+'" class="tap cash-thumb"'+(x.imgPend?' title="Drive へ送信待ち"':'')+'>')
+              : (x.imgPend
+                  ? ' <span class="pill tag-hide">写真（送信待ち）</span>'
+                  : ' <span class="pill tag-hide">写真なし</span>'));
         return '<div class="grow'+(isNew?' just':'')+'" style="grid-template-columns:'+C+'">'+
           '<span class="num cash-day">'+String(x.date).slice(5).replace('-','/')+'</span>'+
           '<span style="font-weight:700;font-size:13px;color:'+(i?'var(--ice)':'var(--pink)')+'">'+(i?'入金':'出金')+'</span>'+
@@ -4928,15 +5108,27 @@ function viewCash(el){
     if(d.slice(0,7)!==ym(m)){
       if(!confirm('日にちが '+d+' になっています。表示している月と違いますが、このまま記録しますか？')) return;
     }
-    var rec={id:e.id||Date.now(), date:d, dir:S.cashDir,
+    var rid=e.id||Date.now();
+    /* ★ 写真は元帳に入れない（2026-09-13）
+         Drive に入っていればリンクだけ。入っていなければ、写真はこの端末で
+         預かって、元帳には印だけ置きます。元帳に base64 を書くと、
+         1枚16万文字がその月ぶん全部に乗って、保存そのものが通らなくなります。 */
+    var _cashPic={url:(S.cashImgUrl||e.imgUrl||null), pend:null, img:null, type:null};
+    if(!_cashPic.url){
+      var _raw=S.cashImg||null, _rt=S.cashImgType||null;
+      if(!_raw && e.imgPend) _cashPic.pend=1;                 /* 直しただけ。預かりはそのまま */
+      else if(_raw){
+        if(storage.gas && rcptStash(rid,bk,ym(m),d,_raw,_rt)) _cashPic.pend=1;
+        else { _cashPic.img=_raw; _cashPic.type=_rt; }        /* 端末に置けないときだけ元帳へ */
+      }
+    }
+    var rec={id:rid, date:d, dir:S.cashDir,
       /* 型（kind）と科目（account）を一緒に持たせます。仕訳を作るときに使います */
       kind:(e.kind||S.cashKind||''),
       account:(e.account||S.cashAcctPre||''),
       amount:amt, party:(sale?sale.name:(e.party||'')), memo:memo,
       sale:sale,
-      imgUrl:S.cashImgUrl||e.imgUrl||null,
-      img:(S.cashImgUrl?null:(S.cashImg||null)),
-      imgType:(S.cashImgUrl?null:(S.cashImgType||null))};
+      imgUrl:_cashPic.url, imgPend:_cashPic.pend, img:_cashPic.img, imgType:_cashPic.type};
     DB.cash[bk]=e.id ? (DB.cash[bk]||[]).map(function(x){return x.id===e.id?rec:x;})
                      : (DB.cash[bk]||[]).concat([rec]);
     var wasEdit=!!e.id;
@@ -4956,6 +5148,7 @@ function viewCash(el){
     clearCaches();
     toast(wasEdit?'直しました':'記録しました');
     render();
+    setTimeout(function(){ receiptFlush(); },1500);   /* 預かった写真を裏で Drive へ */
   };
 
   var na=el.querySelector('#na'), nd=el.querySelector('#nd'),
@@ -4993,24 +5186,32 @@ function viewCash(el){
   if(dz){
   async function take(f){
     if(!f) return;
-    if(f.size>4*1024*1024){ alert('ファイルが大きすぎます（4MBまで）。写真で撮り直すか、PDFを圧縮してください。'); return; }
+    if(f.size>8*1024*1024){ alert('ファイルが大きすぎます（8MBまで）。写真で撮り直すか、PDFを圧縮してください。'); return; }
     var dataUrl, type;
     try{
       if(f.type==='application/pdf'){ dataUrl=await fileToDataUrl(f); type='pdf'; }
-      else { dataUrl=await shrinkImage(f); type='image'; }
+      else { dataUrl=await shrinkToFit(f); type='image'; }
     }catch(err){ alert('読み込めませんでした。'); return; }
     S.cashImg=dataUrl; S.cashImgType=type; S.cashImgUrl=null;
     prev.innerHTML='<span class="muted">Drive に保存中…</span>';
     if(!storage.gas){
       prev.innerHTML=attachChip(); bindChip(el); return;   /* ローカル確認時はそのまま持つ */
     }
-    try{
-      var r=await storage.saveReceipt(dataUrl,{ym:ym(m), date:cd.value, type:type});
-      S.cashImgUrl=r&&r.url||null;
-      if(S.cashImgUrl){ S.cashImg=null; S.cashImgType=null; }
-    }catch(err){
-      alert('Drive に保存できませんでした。写真はこのまま記録できますが、'+
-        'あとでメニューの「領収書の写真を Drive へ書き出し」を実行してください。\n'+(err&&err.message||err));
+    /* 電波が一瞬切れただけのことが多いので、3回まで送り直します */
+    var waits=[0,1500,4000];
+    for(var i=0;i<waits.length && !S.cashImgUrl;i++){
+      if(waits[i]) await new Promise(function(r){ setTimeout(r,waits[i]); });
+      if(i) prev.innerHTML='<span class="muted">Drive に保存中…（'+(i+1)+'回目）</span>';
+      try{
+        var r=await storage.saveReceipt(dataUrl,{ym:ym(m), date:cd.value, type:type});
+        S.cashImgUrl=r&&r.url||null;
+      }catch(err){ /* 次でもう一度 */ }
+    }
+    if(S.cashImgUrl){ S.cashImg=null; S.cashImgType=null; }
+    else{
+      /* ★ ここで謝らない。写真はこの端末で預かって、あとでひとりで送ります。
+           元帳（cashbook:）には base64 を入れません。入れると保存が通らなくなります。 */
+      toast('写真はこの端末で預かりました（通信が戻ったら自動で送ります）');
     }
     prev.innerHTML=attachChip(); bindChip(el);
   }
@@ -5026,12 +5227,17 @@ function viewCash(el){
   el.querySelectorAll('[data-url]').forEach(function(b){ b.onclick=function(){ window.open(b.dataset.url,'_blank'); }; });
   el.querySelectorAll('[data-pdf]').forEach(function(b){ b.onclick=function(){
     var x=(DB.cash[bk]||[]).filter(function(y){return String(y.id)===b.dataset.pdf;})[0];
-    if(x&&x.img) openDataUrl(x.img); }; });
+    if(!x) return;
+    var st=x.imgPend?rcptOf(x.id):null;
+    var raw=x.img||(st&&st.data)||null;
+    if(raw) openDataUrl(raw); }; });
   el.querySelectorAll('[data-ed]').forEach(function(b){ b.onclick=function(){
     var x=(DB.cash[bk]||[]).filter(function(y){return String(y.id)===b.dataset.ed;})[0];
     if(x){ S.cashEdit=x; S.cashDir=x.dir; S.kindOpen=false;
       S.cashPane='in'; S.cashJust=null;   /* 直すのは入力タブ */
-      S.cashImg=x.img||null; S.cashImgType=x.imgType||null;
+      var st=x.imgPend?rcptOf(x.id):null;
+      S.cashImg=x.img||(st&&st.data)||null;
+      S.cashImgType=x.imgType||(st&&st.type)||null;
       S.cashImgUrl=x.imgUrl||null; S.cashJustId=null;
       S.saleOn=!!x.sale; S.saleClient=x.sale?x.sale.cid:null;
       S.saleItems=x.sale?saleUnpack(x.sale):null; S.saleQ='';
@@ -6636,6 +6842,15 @@ function viewHome(el){
     DB.ready=true;
     clearCaches();
     render();
+    /* ★ 前に送れなかったぶんを、ここで片づけます（2026-09-13）
+         ・pend: … 保存が通らなかった控え
+         ・rcpt: … Drive へ行けなかった領収書の写真 */
+    try{
+      if(pendResume()) toast('前に送れなかった分を保存しています…');
+      setInterval(function(){ pendResume(); },60000);     /* 送れていない控えの見回り */
+      setTimeout(function(){ receiptFlush(); },3000);
+      setInterval(function(){ receiptFlush(); },300000);  /* 預かった写真の見回り */
+    }catch(e){}
   }catch(e){
     document.getElementById('root').innerHTML=
       '<div style="padding:30px;color:#C2607C;font-family:sans-serif">'+
@@ -6993,7 +7208,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-07b 集金 押したらすぐ色が付く（保存は後ろで）／終わるボタンを無くした';
+var APP_BUILD='2026-09-13a 小口現金が保存できないのを直す（写真は Drive／保存は送り直し）';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
