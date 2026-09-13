@@ -929,9 +929,51 @@ var API_URL='';
 /* Pages から開いている（Googleの中ではないが、口は分かっている） */
 var WEB2 = !LIVE && !!API_URL;
 
+/* ==================================================================
+   ★★ つながらなかったら【自動でやり直す】（2026-09-13）
+
+   電話でアプリを開いたとき「読み込みに失敗しました／Load failed」が出た。
+   iOS の「Load failed」は【通信そのものが1回こけた】という意味で、
+   電波・GASの起こし直し（コールドスタート）でふつうに起きる。
+
+   ★ 人に「再読み込みしてください」と言わない。**手数は0にする。**
+     1.2秒 → 3秒 → 8秒 と、こちらで3回やり直す。
+
+   ★ やり直してよいのは【何回やっても同じ結果になるもの】だけ。
+     KVは「この鍵をこの値にする」なので、二度書いても同じ。
+     領収書の写真（saveReceipt）は receiptFlush が別に見張っているので、
+     ここでは触らない。**増えると困るものを、ここに足さない。** */
+var NET_WAIT=[1200,3000,8000];
+var RETRY_OK={kvGet:1, kvGetMany:1, kvSet:1, kvSetMany:1, kvDelete:1, masterFromSheet:1};
+/** 通信がこけただけか（＝やり直す値打ちがあるか）。
+    サーバが「断った」「暗証番号」と言ってきたときは、やり直しても同じ */
+function netGlitch_(e){
+  var m=String((e&&e.message)||e||'');
+  if(m.indexOf('暗証番号')>=0) return false;
+  if(m.indexOf('サーバが断りました')>=0) return false;
+  if(m.indexOf('返事が読めませんでした')>=0) return false;
+  var st=m.match(/（(\d{3})）/);
+  if(st){ var n=+st[1]; return n>=500 || n===429; }   /* 400番台は直らない */
+  return true;                                        /* Load failed / タイムアウト など */
+}
+function sleep_(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+
 /** ★ サーバを呼ぶ道は、この1本だけ。
       行き先は必ず api(tok, fn, args)。api を通らない道は作らない */
-function rawCall(fn, args){
+async function rawCall(fn, args){
+  var last=null;
+  for(var i=0; i<=NET_WAIT.length; i++){
+    try{ return await rawCallOnce(fn, args); }
+    catch(e){
+      last=e;
+      if(!RETRY_OK[fn] || !netGlitch_(e) || i===NET_WAIT.length) throw e;
+      await sleep_(NET_WAIT[i]);
+    }
+  }
+  throw last;
+}
+
+function rawCallOnce(fn, args){
   return new Promise(function(res, rej){
     if(LIVE){
       google.script.run.withSuccessHandler(res).withFailureHandler(function(e){
@@ -6830,7 +6872,10 @@ function viewHome(el){
 /* ============================================================
    起動
    ============================================================ */
-(async function boot(){
+/* ★ 起動でこけたときは、こちらでもう一度やり直す（2026-09-13）。
+     それでもだめなら【大きなボタン】を出す。「再読み込みして」と言わない */
+var _bootTry=0;
+async function boot(){
   try{
     /* 単位の切り替えが済んでいるかを先に見る（済むまで他の画面は出しません） */
     var mg=await storage.get('migrate:kgunit');
@@ -6860,12 +6905,34 @@ function viewHome(el){
       setInterval(function(){ receiptFlush(); },300000);  /* 預かった写真の見回り */
     }catch(e){}
   }catch(e){
-    document.getElementById('root').innerHTML=
-      '<div style="padding:30px;color:#C2607C;font-family:sans-serif">'+
-      '<b>読み込みに失敗しました。</b><br>'+esc(e&&e.message||e)+
-      '<br><br>ページを再読み込みしてください。</div>';
+    _bootTry++;
+    var root=document.getElementById('root');
+    if(_bootTry<=1){          /* 1回だけ黙ってやり直す（およそ27秒でボタンが出る） */
+      /* まだ黙ってやり直す。人には「つないでいます」とだけ見せる */
+      root.innerHTML=
+        '<div style="padding:40px 26px;font-family:sans-serif;color:#7A2E3F">'+
+        '<div style="font-size:21px;font-weight:700">つないでいます…</div>'+
+        '<div style="font-size:16px;margin-top:10px;color:#8a8578">'+
+        '電波が弱いようです。そのままお待ちください。</div></div>';
+      setTimeout(boot, 2500);
+      return;
+    }
+    root.innerHTML=
+      '<div style="padding:40px 26px;font-family:sans-serif;color:#7A2E3F">'+
+      '<div style="font-size:22px;font-weight:700">つながりませんでした。</div>'+
+      '<div style="font-size:17px;margin-top:12px;line-height:1.7">'+
+      '電波のよいところで、下のボタンを押してください。</div>'+
+      '<button id="bootAgain" style="margin-top:22px;width:100%;max-width:340px;'+
+      'font-size:21px;font-weight:700;padding:18px 20px;border-radius:12px;'+
+      'border:0;background:#7A2E3F;color:#fff">もう一度つなぐ</button>'+
+      '<div style="font-size:12px;margin-top:22px;color:#a9a49a">'+
+      esc(e&&e.message||e)+'</div></div>';
+    var b=document.getElementById('bootAgain');
+    if(b) b.onclick=function(){ _bootTry=0;
+      b.disabled=true; b.textContent='つないでいます…'; boot(); };
   }
-})();
+}
+boot();
 </script>
 
 <!--
@@ -7216,7 +7283,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-13d 2月をFXの現金元帳に合わせる（回収140件）';
+var APP_BUILD='2026-09-13e つながらないとき自動でやり直す（Load failed を出さない）';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
