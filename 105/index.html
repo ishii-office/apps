@@ -937,14 +937,27 @@ var WEB2 = !LIVE && !!API_URL;
    電波・GASの起こし直し（コールドスタート）でふつうに起きる。
 
    ★ 人に「再読み込みしてください」と言わない。**手数は0にする。**
-     1.2秒 → 3秒 → 8秒 と、こちらで3回やり直す。
+     1.2秒 → 3秒 と、こちらでやり直す。
+     ★ 回数を欲ばらない。1回15秒で打ち切るので、3回で45秒。
+       これ以上並べると、人が待たされる時間のほうが長くなる。
 
    ★ やり直してよいのは【何回やっても同じ結果になるもの】だけ。
      KVは「この鍵をこの値にする」なので、二度書いても同じ。
      領収書の写真（saveReceipt）は receiptFlush が別に見張っているので、
      ここでは触らない。**増えると困るものを、ここに足さない。** */
-var NET_WAIT=[1200,3000,8000];
+var NET_WAIT=[1200,3000];
 var RETRY_OK={kvGet:1, kvGetMany:1, kvSet:1, kvSetMany:1, kvDelete:1, masterFromSheet:1};
+
+/* ★★★ 1回の通信を待つ上限（2026-09-14）。ここが無いと【固まる】。
+     電波が立っていても、GASの起こし直し・トンネル・LTEの切り替えで
+     「行ったきり返事が返ってこない」ことがある。
+     fetch も google.script.run も、そのときは成功も失敗も呼ばれないので、
+     await が永久に返らず、画面は「つないでいます…」のまま止まる。
+     ★ 止まるのは、エラーが出るより悪い。次の手が出ないから。
+     だから【必ず時間で打ち切って、失敗として扱う】。
+     打ち切れば netGlitch_ が「やり直す値打ちあり」と見て、自分でやり直す。 */
+var NET_TIMEOUT=15000;
+var NET_TIMEOUT_MSG='サーバの返事がありませんでした（時間切れ）';
 /** 通信がこけただけか（＝やり直す値打ちがあるか）。
     サーバが「断った」「暗証番号」と言ってきたときは、やり直しても同じ */
 function netGlitch_(e){
@@ -974,7 +987,16 @@ async function rawCall(fn, args){
 }
 
 function rawCallOnce(fn, args){
-  return new Promise(function(res, rej){
+  return new Promise(function(res0, rej0){
+    /* ★ 時間切れの見張り。どちらが先に来ても、返すのは1回だけ */
+    var done=false, tid=null, ac=null;
+    function res(v){ if(done) return; done=true; if(tid) clearTimeout(tid); res0(v); }
+    function rej(e){ if(done) return; done=true; if(tid) clearTimeout(tid); rej0(e); }
+    tid=setTimeout(function(){
+      try{ if(ac) ac.abort(); }catch(e){}     /* 出しっぱなしの通信も切る */
+      rej(new Error(NET_TIMEOUT_MSG));
+    }, NET_TIMEOUT);
+
     if(LIVE){
       google.script.run.withSuccessHandler(res).withFailureHandler(function(e){
         authSniff(e);            /* 「暗証番号」と言われたら関所を出す */
@@ -983,9 +1005,11 @@ function rawCallOnce(fn, args){
       return;
     }
     if(!WEB2){ rej(new Error('スプレッドシートから開いたときだけ使えます。')); return; }
+    try{ ac=(typeof AbortController!=='undefined') ? new AbortController() : null; }catch(e){ ac=null; }
     /* ★ Content-Type は text/plain。application/json にすると、
          ブラウザが先に許可を聞きにいって（preflight）GASでは通らない */
     fetch(API_URL, { method:'POST', redirect:'follow',
+      signal: ac ? ac.signal : undefined,
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({tok:authTok(), fn:fn, args:args||[]}) })
     .then(function(r){
@@ -6874,17 +6898,63 @@ function viewHome(el){
    ============================================================ */
 /* ★ 起動でこけたときは、こちらでもう一度やり直す（2026-09-13）。
      それでもだめなら【大きなボタン】を出す。「再読み込みして」と言わない */
-var _bootTry=0;
+/* ★★★ 起動でこけたときは、こちらでやり直す（2026-09-13／2026-09-14 に作り直した）
+
+   2026-09-14 に電話で「つないでいます…」のまま二度と進まなくなった。
+   **エラーが出ていたのではない。通信がぶら下がって catch にすら入らなかった。**
+   （rawCallOnce に時間切れが無かった。いまは NET_TIMEOUT で必ず打ち切る）
+
+   ここでの決まりは3つ。
+     ① 人を待たせっぱなしにしない。**待っている画面にも必ずボタンを置く**
+     ② 何回目かを見せる。黙って固まっているように見せない
+     ③ ボタンを押したら、前の試みは黙って降りる（_bootGen で見分ける）。
+        でないと、古い試みの失敗が新しい画面を壊す */
+var _bootTry=0, _bootGen=0, _bootWatch=null;
+
+/** 起動中／つながらなかったときの画面。どちらにも「もう一度つなぐ」を置く */
+function bootScreen_(ng, why){
+  var root=document.getElementById('root'); if(!root) return;
+  var n=_bootTry>1 ? '（'+_bootTry+'回目）' : '';
+  root.innerHTML=
+    '<div style="padding:40px 26px;font-family:sans-serif;color:#7A2E3F">'+
+    '<div style="font-size:22px;font-weight:700">'+
+      (ng ? 'つながりませんでした。' : 'つないでいます…'+n)+'</div>'+
+    '<div style="font-size:17px;margin-top:12px;line-height:1.7;color:'+
+      (ng?'#7A2E3F':'#8a8578')+'">'+
+      (ng ? '電波のよいところで、下のボタンを押してください。'
+          : 'そのままお待ちください。<br>待たされるときは、下のボタンを押してください。')+
+    '</div>'+
+    '<button id="bootAgain" style="margin-top:22px;width:100%;max-width:340px;'+
+    'font-size:21px;font-weight:700;padding:18px 20px;border-radius:12px;'+
+    'border:0;background:'+(ng?'#7A2E3F':'#b98a97')+';color:#fff">もう一度つなぐ</button>'+
+    (why ? '<div style="font-size:12px;margin-top:22px;color:#a9a49a">'+esc(why)+'</div>' : '')+
+    '</div>';
+  var b=document.getElementById('bootAgain');
+  if(b) b.onclick=function(){
+    b.disabled=true; b.textContent='つないでいます…';
+    _bootTry=0; boot();
+  };
+}
+
 async function boot(){
+  var gen=++_bootGen;
+  if(_bootWatch) clearTimeout(_bootWatch);
+  /* ★ 12秒たっても返事が無ければ、待っている画面（＋ボタン）を出す。
+       エラーではないので、赤い字にはしない */
+  _bootWatch=setTimeout(function(){
+    if(gen===_bootGen && !DB.ready) bootScreen_(false,'');
+  }, 12000);
+
   try{
     /* 単位の切り替えが済んでいるかを先に見る（済むまで他の画面は出しません） */
     var mg=await storage.get('migrate:kgunit');
     DB.kgReady = !!(mg && String(mg.value)==='1');
-    if(!DB.kgReady){ renderMigration(); return; }
+    if(!DB.kgReady){ clearTimeout(_bootWatch); renderMigration(); return; }
 
     await loadClients();
     var g=await storage.getMany(['printed','hist:alias','cost:setting','plan:setting',
       okey(S.date), ckey(S.date), dkey(S.date)]);
+    clearTimeout(_bootWatch);
     DB.printed=jparse(g['printed'],{})||{};
     DB.alias=jparse(g['hist:alias'],{})||{};
     DB.cost=normalizeCost(jparse(g['cost:setting'],null));
@@ -6905,31 +6975,15 @@ async function boot(){
       setInterval(function(){ receiptFlush(); },300000);  /* 預かった写真の見回り */
     }catch(e){}
   }catch(e){
+    clearTimeout(_bootWatch);
+    if(gen!==_bootGen) return;      /* ボタンで新しく始まっている。黙って降りる */
     _bootTry++;
-    var root=document.getElementById('root');
-    if(_bootTry<=1){          /* 1回だけ黙ってやり直す（およそ27秒でボタンが出る） */
-      /* まだ黙ってやり直す。人には「つないでいます」とだけ見せる */
-      root.innerHTML=
-        '<div style="padding:40px 26px;font-family:sans-serif;color:#7A2E3F">'+
-        '<div style="font-size:21px;font-weight:700">つないでいます…</div>'+
-        '<div style="font-size:16px;margin-top:10px;color:#8a8578">'+
-        '電波が弱いようです。そのままお待ちください。</div></div>';
-      setTimeout(boot, 2500);
+    if(_bootTry<=2){                /* 2回までは自分でやり直す */
+      bootScreen_(false,'');
+      setTimeout(function(){ if(gen===_bootGen) boot(); }, 2000);
       return;
     }
-    root.innerHTML=
-      '<div style="padding:40px 26px;font-family:sans-serif;color:#7A2E3F">'+
-      '<div style="font-size:22px;font-weight:700">つながりませんでした。</div>'+
-      '<div style="font-size:17px;margin-top:12px;line-height:1.7">'+
-      '電波のよいところで、下のボタンを押してください。</div>'+
-      '<button id="bootAgain" style="margin-top:22px;width:100%;max-width:340px;'+
-      'font-size:21px;font-weight:700;padding:18px 20px;border-radius:12px;'+
-      'border:0;background:#7A2E3F;color:#fff">もう一度つなぐ</button>'+
-      '<div style="font-size:12px;margin-top:22px;color:#a9a49a">'+
-      esc(e&&e.message||e)+'</div></div>';
-    var b=document.getElementById('bootAgain');
-    if(b) b.onclick=function(){ _bootTry=0;
-      b.disabled=true; b.textContent='つないでいます…'; boot(); };
+    bootScreen_(true, (e&&e.message)||String(e));
   }
 }
 boot();
@@ -7283,7 +7337,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-13f 3月の現金回収を入れる（売掛帳137件・3月末 442,077円）';
+var APP_BUILD='2026-09-14a 通信に時間切れを付ける（つないでいます…で固まらない）';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
