@@ -102,8 +102,22 @@ nav button[data-v="sim"][aria-current="page"]    {background:var(--t-sim)}
 nav button[data-v="board"][aria-current="page"]  {background:var(--t-board)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
+/* ★★ 背景のモノグラム（2026-09-15）
+     看板の「Re」を、便箋の地紋のように薄く敷く。
+
+     ・SVGをそのまま背景に埋める。画像を1枚も増やさない（速さは機能である）
+     ・字は generic の serif。背景SVGの中では Google Fonts が読み込まれない
+     ・濃さは 4%。カードは不透明なので、地紋が見えるのは【カードとカードの隙間】だけ。
+       ここを濃くすると、数字より先に地紋が目に入る。
+       憲法「強調は文字の大きさと黒白の差でつける」を邪魔しない濃さにとどめる
+     ・スクロールと一緒に動かす（background-attachment:fixed は
+       iOS で引っかかることがある） */
 body{
-  background:var(--ink);color:var(--paper);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='118' height='118' viewBox='0 0 118 118'%3E%3Cg fill='none' stroke='%23231A13' stroke-opacity='.105' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='29.5' cy='29.5' r='17.5' stroke-dasharray='82 46' transform='rotate(-48 29.5 29.5)'/%3E%3Ccircle cx='88.5' cy='88.5' r='17.5' stroke-dasharray='82 46' transform='rotate(-48 88.5 88.5)'/%3E%3C/g%3E%3Cg fill='%23231A13' fill-opacity='.105' font-family='Georgia,serif' font-size='16' text-anchor='middle'%3E%3Ctext x='29.5' y='35.5'%3ERe%3C/text%3E%3Ctext x='88.5' y='94.5'%3ERe%3C/text%3E%3C/g%3E%3C/svg%3E")
+    0 0 / 118px 118px repeat,
+    var(--ink);
+  color:var(--paper);
   font-family:'Zen Kaku Gothic New',-apple-system,BlinkMacSystemFont,sans-serif;
   font-size:18px;line-height:1.75;font-weight:500;
   padding-bottom:calc(92px + env(safe-area-inset-bottom));
@@ -884,7 +898,13 @@ button.ghost.danger{border-color:var(--red);color:var(--red)}
    　　閉店後の暗い店で、片手で4回押して終わること。
    　　だから【数字は大きく・並びは電話と同じ・4桁で自動で入る】。
    ================================================================== */
-#pinwall{position:fixed;inset:0;z-index:10000;background:var(--accent);
+/* 暗証番号の画面にも同じ地紋。いちばん最初に見る画面なので、ここで店の顔にする。
+   暗い地なので、白を薄く置く（本文側は焦げ茶を薄く置いている） */
+#pinwall{position:fixed;inset:0;z-index:10000;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='118' height='118' viewBox='0 0 118 118'%3E%3Cg fill='none' stroke='%23FFFCF7' stroke-opacity='.085' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='29.5' cy='29.5' r='17.5' stroke-dasharray='82 46' transform='rotate(-48 29.5 29.5)'/%3E%3Ccircle cx='88.5' cy='88.5' r='17.5' stroke-dasharray='82 46' transform='rotate(-48 88.5 88.5)'/%3E%3C/g%3E%3Cg fill='%23FFFCF7' fill-opacity='.085' font-family='Georgia,serif' font-size='16' text-anchor='middle'%3E%3Ctext x='29.5' y='35.5'%3ERe%3C/text%3E%3Ctext x='88.5' y='94.5'%3ERe%3C/text%3E%3C/g%3E%3C/svg%3E")
+    0 0 / 118px 118px repeat,
+    var(--accent);
   display:flex;align-items:center;justify-content:center;
   padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom))}
 #pinwall .bx{width:100%;max-width:380px;text-align:center;color:var(--on-accent)}
@@ -900,8 +920,10 @@ button.ghost.danger{border-color:var(--red);color:var(--red)}
 #pinwall .msg{min-height:26px;font-size:15.5px;font-weight:700;
   color:var(--brass-b);margin-bottom:10px;line-height:1.5}
 #pinwall .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+/* ★ 押す面は無地にする。地紋が透けると数字が読みにくくなる。
+     暗い店で、疲れた手で押すものなので、ここは迷わせない */
 #pinwall .pad button{padding:17px 0;border:1.5px solid rgba(255,255,255,.30);
-  background:rgba(255,255,255,.07);color:var(--on-accent);border-radius:var(--r2);
+  background:#31261C;color:var(--on-accent);border-radius:var(--r2);
   font-family:'Oswald',sans-serif;font-size:31px;font-weight:500;cursor:pointer}
 #pinwall .pad button:active{background:rgba(255,255,255,.24)}
 #pinwall .pad button.fn{font-family:inherit;font-size:16px;font-weight:800}
