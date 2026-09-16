@@ -1055,6 +1055,13 @@ button.ghost.danger{border-color:var(--red);color:var(--red)}
 .over-line.has{background:rgba(169,124,52,.12);border:1.5px solid var(--brass);color:#7A5A12}
 .over-line.has b{color:var(--brass)}
 .over-line.none{background:rgba(27,110,69,.08);border:1.5px solid var(--green);color:var(--green)}
+/* ★ まとめ締めの範囲（2026-09-16）。何日ぶんを数えているのかを、数字の前に言う */
+.span-line{margin:12px 0 0;padding:11px 13px;border-radius:var(--r2);
+  background:var(--ink2);border:1.5px solid var(--line);
+  font-size:15px;font-weight:600;line-height:1.65}
+.span-line b{font-family:'Oswald',sans-serif;font-size:19px}
+.span-line em{display:block;font-style:normal;font-weight:500;font-size:14px;
+  color:var(--paper-dim);margin-top:3px}
 .next-line{margin:8px 0 4px;font-size:14.5px;font-weight:600;color:var(--paper-dim);line-height:1.6}
 .next-line b{font-family:'Oswald',sans-serif;font-size:19px;color:var(--paper)}
 /* 締めていない日。縦に長くしない（2026-09-07） */
@@ -1594,11 +1601,13 @@ button.delu[disabled]{opacity:.45}
     <input inputmode="numeric" id="c_move" placeholder="0">
     <div class="next-line" id="c_nextLine">—</div>
 
+    <div class="span-line" id="c_spanLine" style="display:none"></div>
+
     <div class="verdict" id="verdict">
       <div class="row"><span id="v_junbiLabel">レジ内準備金（前日から）</span><b class="num" id="v_junbi">—</b></div>
-      <div class="row"><span>＋ 現金売上</span><b class="num" id="v_cash">—</b></div>
-      <div class="row"><span>− レジから払った分</span><b class="num" id="v_petty">—</b></div>
-      <div class="row"><span>− 事業主へ（生活費）</span><b class="num" id="v_draw">—</b></div>
+      <div class="row"><span id="v_cashLabel">＋ 現金売上</span><b class="num" id="v_cash">—</b></div>
+      <div class="row"><span id="v_pettyLabel">− レジから払った分</span><b class="num" id="v_petty">—</b></div>
+      <div class="row"><span id="v_drawLabel">− 事業主へ（生活費）</span><b class="num" id="v_draw">—</b></div>
       <div class="row"><span>＝ レジにあるはずの額</span><b class="num" id="v_riron">—</b></div>
       <div class="sa"><span id="v_saLabel">過不足</span><b class="num" id="v_sa">—</b></div>
       <div class="verdict-word">
@@ -3897,15 +3906,33 @@ function syncKind(){
 /* ★ 日付の直下に、いまいくらあるかを大きく出す（2026-09-07）
      レジ内 … いまレジの中にあるはずの額
      レジ外 … 誰がいくら持っているか */
+/* ★★ レジにあるはずの額（理論残）── まとめ締めに対応（2026-09-16）
+     レジ内準備金は【最後に締めた日】からの繰越なので、
+     そこから今日までに動いたお金をぜんぶ積まないと合わない。
+     c.span が間の日ぶん（前の締めの翌日〜前日）。
+     ★ 式はここ1本だけにする。画面のあちこちで書き直すと必ずずれる
+       （サーバの saveClosing と同じ式であること）。 */
+/* 「2026-09-14」→「9月14日」。催促の帯・まとめ締めの説明で使う */
+function mdTxt(d){
+  var m=String(d||'').match(/^\d{4}-(\d{2})-(\d{2})$/);
+  return m ? (Number(m[1])+'月'+Number(m[2])+'日') : String(d||'');
+}
+function rironParts(c, junbi){
+  var sp=(c&&c.span)||{};
+  if(junbi===undefined) junbi=num0(c&&c.junbi);
+  var cash  =(((c&&c.sales&&c.sales.by)||{})['現金']||0)+num0(sp.cash);
+  var petty =(num0(c&&c.petty)-num0(c&&c.pettyIn))+(num0(sp.petty)-num0(sp.pettyIn));
+  var inject=num0(c&&c.injectUse)+num0(sp.inject);
+  var draw  =num0(c&&c.drawUse)+num0(sp.draw);
+  return { junbi:junbi, cash:cash, petty:petty, inject:inject, draw:draw,
+           days:(sp.days||[]).length,
+           riron: junbi+cash-petty+inject-draw };
+}
 function drawNowIn(){
   var el=$('c_nowV'); if(!el) return;
   var c=S.closing;
   if(!c){ el.textContent='—'; return; }
-  var junbi=num0(c.junbi);
-  var cash=((c.sales&&c.sales.by)||{})['現金']||0;
-  var petty=num0(c.petty)-num0(c.pettyIn);
-  var riron=junbi+cash-petty+num0(c.injectUse)-num0(c.drawUse);
-  el.textContent=yen(riron);
+  el.textContent=yen(rironParts(c).riron);
 }
 /* ★ レジ外は「この店のレジ外の現金 ¥○○ ＋ 持っている人」を1行で（2026-09-08）。
      「現金がいまどこにあるか」の説明は要らない。レジ外と言えば分かる */
@@ -5091,12 +5118,24 @@ if($('c_move')) $('c_move').addEventListener('input', function(){
 function calcVerdict(){
   var c=S.closing; if(!c) return;
   var junbi = c.junbiEditable ? (iv('c_junbi')||c.junbi) : c.junbi;
-  var cash=(saleTotals().by||{})['現金']||0, petty=c.petty-c.pettyIn;
-  /* ★ 事業主貸・事業主借は【用途】から。締め画面では入れさせない（2026-09-07） */
-  var draw=num0(c.drawUse), inject=num0(c.injectUse);
-  var riron=junbi+cash-petty+inject-draw;
+  /* ★ 事業主貸・事業主借は【用途】から。締め画面では入れさせない（2026-09-07）
+     ★ まとめ締めのときは、間の日ぶんも積む（2026-09-16） */
+  var P=rironParts(c, junbi);
+  var cash=P.cash, petty=P.petty, draw=P.draw, inject=P.inject, riron=P.riron;
   var jissa=Number(String($('c_jissa').textContent).replace(/[^0-9]/g,''))||0;
   var sa=jissa-riron;
+
+  /* ★ 何日ぶんを数えているのかを、数字の前に言う。
+       「数えた額が90,000多い」と出ても、まとめ締めなら当たり前のことがある */
+  var sl=$('c_spanLine'), sp=c.span||{};
+  if(sl){
+    var nd=(sp.days||[]).length;
+    sl.style.display = nd ? '' : 'none';
+    if(nd) sl.innerHTML = '<b>'+(nd+1)+'日ぶん</b>をまとめて締めます'
+      + '<em>' + (c.carryFrom ? mdTxt(c.carryFrom)+'の締めのあと、' : '')
+      + (sp.days||[]).map(mdTxt).join('・') + ' と ' + mdTxt(c.date) + ' に営業しました。'
+      + 'レジの中は、この'+(nd+1)+'日ぶんが積み上がっています。</em>';
+  }
 
   /* ★ レジ内準備金と、前日からのスタートの差 */
   var std=num0(c.stdJunbi), gap=junbi-std;
@@ -5131,6 +5170,10 @@ function calcVerdict(){
       + '（標準 '+yen(std)+(jissa-move===std?'　ぴったり':'　差 '+yen(jissa-move-std))+'）'
       + '。移した '+yen(move)+' はレジ外現金に積まれます。';
 
+  /* ★ 何日ぶんかは、上の帯（c_spanLine）で1回だけ言う。
+       行ごとに「（3日ぶん）」と足すと2行に折り返して、かえって読めなくなる */
+  $('v_junbiLabel').textContent = c.carryFrom
+    ? 'レジ内準備金（'+mdTxt(c.carryFrom)+'の締めから）' : 'レジ内準備金';
   $('v_junbi').textContent=yen(junbi);
   $('v_cash').textContent=yen(cash);
   $('v_petty').textContent=yen(petty);
