@@ -2732,8 +2732,29 @@ function authGate(after){
    ================================================================== */
 var READ_FN  = /^get/;
 var CACHE_MS = 2000;
+/* ★ 返事が来ないまま待ち続けない（2026-09-16）
+     電波の弱いところ、GAS を貼り替えている最中は、返事が返らないことがある。
+     時間を切らないと、画面は「読み込み中…」のまま永久に止まり、
+     覚えている途中の約束（_inflight）が残るので、タブを開き直しても同じまま。
+     開き直すしか手が無くなるので、切って理由を出す。 */
+var CALL_MS  = 20000;    /* 読み出し */
+var CALL_MS_W= 40000;    /* 書き込み。GAS は書くほうが遅い */
 var _inflight = {}, _rcache = {};
 function callDrop(){ _rcache={}; }
+
+/* ★ 読めなかったときは【理由】と［もう一度読む］を出す（2026-09-16）
+     「読み込めませんでした。」だけだと、開き直すしか手が無い。
+     電波が戻れば読めるものなので、その場で押し直せるようにする。 */
+function loadFail_(box, e, again){
+  if(!box) return;
+  console.error(e);
+  var msg=String((e && e.message) || e || '読み込めませんでした');
+  var p=document.createElement('p'); p.className='empty'; p.textContent=msg;
+  var b=document.createElement('button');
+  b.type='button'; b.className='go'; b.textContent='もう一度読む';
+  b.onclick=function(){ callDrop(); again(); };
+  box.innerHTML=''; box.appendChild(p); box.appendChild(b);
+}
 
 function call(fn, args){
   if(typeof APP_LOCKED!=='undefined' && APP_LOCKED
@@ -2759,8 +2780,22 @@ function call(fn, args){
 }
 
 function call_(fn, args){
-  return new Promise(function(res2, rej){
-    var res=res2;
+  return new Promise(function(res2, rej2){
+    /* ★ 時間を切る（2026-09-16）。切れたら、そのあとの返事は捨てる。
+         ★ 書き込みのときの言い方に気をつける。
+           返事が来なかっただけで、サーバには入っているかもしれない。
+           「登録できませんでした」と言い切ると、もう一度押させて二重になる。 */
+    var read=READ_FN.test(fn), over=false, ac=null;
+    var tmr=setTimeout(function(){
+      over=true;
+      if(ac){ try{ ac.abort(); }catch(e){} }
+      rej2(new Error(read
+        ? 'サーバが'+Math.round(CALL_MS/1000)+'秒たっても答えませんでした。もう一度お試しください'
+        : 'サーバの返事が来ませんでした。入っているかどうか分かりません。'
+          + '下の「この日に入れたもの」を見て、無ければもう一度入れてください'));
+    }, read ? CALL_MS : CALL_MS_W);
+    var res=function(v){ if(over) return; clearTimeout(tmr); res2(v); };
+    var rej=function(e){ if(over) return; clearTimeout(tmr); rej2(e); };
     if(LIVE){
       /* ★ google.script.run は「返せない型」が混じっていると、
            例外ではなく【成功ハンドラに null】を渡す。
@@ -2786,12 +2821,14 @@ function call_(fn, args){
     } else if(WEB2){
       /* ★ Content-Type は text/plain。application/json にすると、
            ブラウザが先に許可を聞きにいって（preflight）GASでは通らない */
+      if(typeof AbortController!=='undefined') ac=new AbortController();
       fetch(API_URL, { method:'POST', redirect:'follow',
         headers:{'Content-Type':'text/plain;charset=utf-8'},
+        signal: ac ? ac.signal : undefined,
         body: JSON.stringify({tok:authTok(), fn:fn, args:args||[]}) })
-      .then(function(res){
-        if(!res.ok) throw new Error('サーバにつながりませんでした（'+res.status+'）');
-        return res.text();
+      .then(function(rp){
+        if(!rp.ok) throw new Error('サーバにつながりませんでした（'+rp.status+'）');
+        return rp.text();
       })
       .then(function(txt){
         var r;
@@ -2802,7 +2839,7 @@ function call_(fn, args){
         if(r.__login){ loginNeed(); throw new Error(r.msg||'ログインし直してください'); }
         if(r.__deny){ throw new Error(r.msg||'この操作はできません'); }
         if(r.__err){ throw new Error(r.msg||('サーバが断りました（'+fn+'）')); }
-        res2(r);
+        res(r);
       })
       .catch(function(e){ rej(e instanceof Error ? e : new Error(String(e))); });
     } else {
@@ -3117,8 +3154,7 @@ function loadLedgerOne(P){
       };
     });
   }).catch(function(e){
-    console.error(e);
-    box.innerHTML='<p class="empty">読み込めませんでした。</p>';
+    loadFail_(box, e, function(){ loadLedgerOne(P); });
   });
 }
 
@@ -3940,8 +3976,8 @@ function loadDayAll(){
     });
     if($('c_toSetup')) $('c_toSetup').onclick=function(){ showView('setting', null); };
   }).catch(function(e){
-    console.error(e);
-    box.innerHTML='<div class="card"><p class="empty">読み込めませんでした。</p></div>';
+    box.innerHTML='<div class="card"></div>';
+    loadFail_(box.firstChild, e, loadDayAll);
   });
 }
 
