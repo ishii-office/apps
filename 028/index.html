@@ -59,6 +59,10 @@
   --brass-b:#C89A48;
   --on-accent:#FFFCF7; --track:#DCD0BE;
   --green:#3F5A2E; --red:#9E1B22; --warn:#A5762C;
+  /* ★ 看板の色（2026-09-16。店頭の電飾看板の写真から画素を測った）。
+       ロゴだけに使う。--red は警告の赤で、看板の色ではない */
+  --sign:#93315F;          /* 看板の地。葡萄いろ */
+  --sign-ice:#EAFAFB;      /* 看板の環。白から淡い水いろ */
   --gold:var(--brass);     /* 旧名の互換 */
 
   /* ★★ 色の三軸（2026-09-08）
@@ -112,11 +116,13 @@ html,body{margin:0;padding:0}
        憲法「強調は文字の大きさと黒白の差でつける」を邪魔しない濃さにとどめる
      ・スクロールと一緒に動かす（background-attachment:fixed は
        iOS で引っかかることがある） */
+/* ★★ 地紋（2026-09-16）
+     看板のマークをそのまま薄く敷く。ヘッダの小さいロゴ・暗証番号の画面と
+     【同じ版下（#reMark）】を使うので、直せば3か所いっぺんに直る。
+     背景画像（data:URI）ではなく本物の <svg> にしてあるのは、版下を1つにするため。 */
+.wall{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
 body{
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='118' height='118' viewBox='0 0 118 118'%3E%3Cg fill='none' stroke='%23231A13' stroke-opacity='.105' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='29.5' cy='29.5' r='17.5' stroke-dasharray='82 46' transform='rotate(-48 29.5 29.5)'/%3E%3Ccircle cx='88.5' cy='88.5' r='17.5' stroke-dasharray='82 46' transform='rotate(-48 88.5 88.5)'/%3E%3C/g%3E%3Cg fill='%23231A13' fill-opacity='.105' font-family='Georgia,serif' font-size='16' text-anchor='middle'%3E%3Ctext x='29.5' y='35.5'%3ERe%3C/text%3E%3Ctext x='88.5' y='94.5'%3ERe%3C/text%3E%3C/g%3E%3C/svg%3E")
-    0 0 / 118px 118px repeat,
-    var(--ink);
+  background:var(--ink);
   color:var(--paper);
   font-family:'Zen Kaku Gothic New',-apple-system,BlinkMacSystemFont,sans-serif;
   font-size:18px;line-height:1.75;font-weight:500;
@@ -145,12 +151,17 @@ header{
 .crumb span.now.kin-out{background:var(--kin-out);color:var(--uc-out-fg)}
 .hd-row{display:flex;align-items:center;gap:9px}
 /* 事業計画書の黒帯と同じ形。名前をいちばん大きく置く */
-/* ★★ ロゴ（2026-09-15）
-     店の看板（赤地に白い環と Re / frain）を、そのまま小さくしても潰れるので、
-     環と Re だけに削いで SVG で描く。写真は使わない
-     ── 32pxで読めること・どんな画面でもにじまないこと・
+/* ★★ ロゴ（2026-09-15／2026-09-16 に看板から起こし直した）
+     店の看板（葡萄いろの地に、淡い水いろの環と Re / frain）。
+     そのまま小さくすると潰れるので、環と Re だけに削いで SVG で描く。写真は使わない
+     ── 30pxで読めること・どんな画面でもにじまないこと・
         余計な読み込みを増やさないこと（速さは機能である）。
-     字は店のサイトと同じ細いセリフ（Cormorant Garamond）。 */
+     ★ 環も Re も【看板の写真を測って起こしたパス】（tools/logo.mjs）。
+       字を <text> で置くと、書体が届かない端末で形が変わるので輪郭にしてある。
+     ★ 版下は <symbol id="reMark"> の1つだけ。ヘッダ・暗証番号の画面・地紋が
+       同じものを <use> で使う。ここを直せば3か所とも直る。 */
+.sig .fld{fill:var(--sign)}
+.sig .re{fill:var(--sign-ice)}
 .mark{display:flex;align-items:center;gap:9px;flex:none;
   background:var(--accent);color:var(--on-accent);
   padding:4px 13px 4px 6px;border-radius:4px;line-height:1}
@@ -900,16 +911,14 @@ button.ghost.danger{border-color:var(--red);color:var(--red)}
    ================================================================== */
 /* 暗証番号の画面にも同じ地紋。いちばん最初に見る画面なので、ここで店の顔にする。
    暗い地なので、白を薄く置く（本文側は焦げ茶を薄く置いている） */
-#pinwall{position:fixed;inset:0;z-index:10000;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='118' height='118' viewBox='0 0 118 118'%3E%3Cg fill='none' stroke='%23FFFCF7' stroke-opacity='.085' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='29.5' cy='29.5' r='17.5' stroke-dasharray='82 46' transform='rotate(-48 29.5 29.5)'/%3E%3Ccircle cx='88.5' cy='88.5' r='17.5' stroke-dasharray='82 46' transform='rotate(-48 88.5 88.5)'/%3E%3C/g%3E%3Cg fill='%23FFFCF7' fill-opacity='.085' font-family='Georgia,serif' font-size='16' text-anchor='middle'%3E%3Ctext x='29.5' y='35.5'%3ERe%3C/text%3E%3Ctext x='88.5' y='94.5'%3ERe%3C/text%3E%3C/g%3E%3C/svg%3E")
-    0 0 / 118px 118px repeat,
-    var(--accent);
+#pinwall{position:fixed;inset:0;z-index:10000;background:var(--accent);
   display:flex;align-items:center;justify-content:center;
   padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom))}
 #pinwall .bx{width:100%;max-width:380px;text-align:center;color:var(--on-accent)}
 #pinwall .pinlogo{margin:0 0 14px}
-#pinwall .pinlogo svg{width:64px;height:64px;display:block;margin:0 auto}
+#pinwall .wall{position:absolute;z-index:0}
+#pinwall .bx{position:relative;z-index:1}
+#pinwall .pinlogo svg{width:72px;height:72px;display:block;margin:0 auto}
 #pinwall h3{margin:0 0 4px;font-family:'Cormorant Garamond',serif;
   font-size:38px;font-weight:500;letter-spacing:.03em;line-height:1}
 #pinwall .sub{margin:0 0 18px;font-size:15px;color:rgba(255,255,255,.72)}
@@ -1324,19 +1333,33 @@ button.delu[disabled]{opacity:.45}
 </head>
 <body>
 
+<!-- ★ ロゴの版下。ヘッダ・暗証番号の画面・地紋がここを <use> で使う。
+     作り直すのは tools/logo.mjs（看板の写真から測った値でパスを起こす）。
+     display:none にすると参照できない端末があるので、0×0 で隠す -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
+  <defs>
+    <symbol id="reMark" viewBox="0 0 100 100">
+      <path d="M58.9 85.5C58.3 85.7 57.3 86.3 55.8 86.6C54.3 87 52.6 87.7 50 87.6C47.4 87.5 43.4 87.1 40.3 86.1C37.2 85.2 34.2 83.8 31.5 82C28.8 80.3 26.4 78.1 24.2 75.8C22 73.5 19.8 71.1 18.2 68.4C16.6 65.6 15.4 62.6 14.5 59.5C13.5 56.5 12.7 53.2 12.5 50C12.3 46.8 12.5 43.3 13.2 40.1C13.9 36.9 15.2 33.7 16.8 30.9C18.5 28 20.6 25.2 23 23C25.4 20.7 28.3 18.8 31.1 17.4C34 15.9 37.2 14.8 40.4 14.1C43.5 13.3 46.8 12.9 50 12.9C53.2 12.9 56.5 13.5 59.6 14.4C62.6 15.2 65.8 16.3 68.6 17.9C71.3 19.5 73.9 21.7 76 24C78 26.4 79.9 30.9 80.7 32.2L84.8 31.5C84.9 32.3 85.3 34.9 85.3 36.5C85.3 38 85.1 39.3 85 40.6C84.8 42 84.7 43.2 84.4 44.6C84.1 45.9 83.4 48.1 83.2 48.8C83.1 48.2 83.1 46 83 44.8C82.9 43.5 83 42.4 82.7 41.2C82.5 40.1 82.3 39.2 81.7 37.8C81.2 36.4 80.9 34.9 79.6 32.9C78.3 30.9 76.2 27.9 74 26C71.8 24.2 69 22.7 66.4 21.7C63.7 20.6 60.8 20 58.1 19.8C55.4 19.5 52.6 19.8 50 20.2C47.4 20.6 44.9 21.1 42.5 21.9C40.1 22.7 37.8 23.9 35.7 25.2C33.6 26.5 31.5 28 29.8 29.8C28 31.5 26.6 33.6 25.3 35.8C24.1 37.9 23 40.2 22.3 42.6C21.6 44.9 21.2 47.5 21.1 50C21 52.5 21.1 55.1 21.5 57.6C21.9 60.2 22.7 62.7 23.8 65.2C24.8 67.6 26.2 70 27.8 72.2C29.4 74.4 31.3 76.7 33.5 78.6C35.7 80.4 38.3 82.1 41.1 83.3C43.8 84.5 47.6 85.3 50 85.7C52.4 86.1 54.1 85.5 55.6 85.5C57.1 85.4 58.3 85.5 58.9 85.5Z"/>
+      <path d="M56.1 67Q55.4 67 53.8 65.3Q52.2 63.5 50 60.3Q47.7 57 44.9 52.6L48.6 51.5Q52.3 57 54.9 60.3Q57.5 63.5 59.5 65Q61.5 66.5 63.4 66.5Q63.5 66.5 63.5 66.7Q63.5 67 63.4 67Q60.5 67 58.7 67Q56.9 67 56.1 67M45.8 38.5Q49.7 38.5 51.9 40Q54 41.6 54 44.3Q54 46.9 52.6 49Q51.1 51 48.7 52.1Q46.4 53.3 43.7 53.3Q43.2 53.3 42.5 53.3Q41.9 53.2 41.4 53.2L41.4 63.3Q41.4 64.6 41.6 65.3Q41.9 66 42.6 66.2Q43.4 66.5 44.8 66.5Q44.9 66.5 44.9 66.7Q44.9 67 44.8 67Q43.7 67 42.3 67Q40.9 66.9 39.2 66.9Q37.6 66.9 36.1 67Q34.7 67 33.5 67Q33.4 67 33.4 66.7Q33.4 66.5 33.5 66.5Q35 66.5 35.8 66.2Q36.5 66 36.8 65.3Q37 64.6 37 63.3L37 42.3Q37 41 36.8 40.3Q36.5 39.6 35.8 39.4Q35.1 39.1 33.6 39.1Q33.5 39.1 33.5 38.9Q33.5 38.6 33.6 38.6Q34.7 38.6 36.1 38.7Q37.6 38.7 39.2 38.7Q40.6 38.7 42.4 38.6Q44.3 38.5 45.8 38.5M49.5 45.9Q49.5 43.3 48.9 41.8Q48.3 40.4 47.2 39.9Q46.1 39.3 44.7 39.3Q42.9 39.3 42.1 40Q41.4 40.6 41.4 42.4L41.4 52Q42 52.1 42.8 52.1Q43.5 52.1 44 52.1Q47.1 52.1 48.3 50.6Q49.5 49.1 49.5 45.9M64.8 61.8Q62.5 61.8 61 60.9Q59.4 59.9 58.6 58.3Q57.8 56.8 57.8 55Q57.8 52.8 58.8 51.1Q59.9 49.4 61.6 48.4Q63.4 47.4 65.6 47.4Q67.7 47.4 68.9 48.4Q70.1 49.4 70.1 51.5Q70.1 51.9 70 52.2Q69.9 52.5 69.7 52.5L66.8 52.5Q66.9 50.4 66.3 49.3Q65.7 48.1 64.4 48.1Q62.8 48.1 61.9 49.6Q61 51 61 53.5Q61 55.5 61.6 57.1Q62.2 58.6 63.5 59.4Q64.7 60.3 66.5 60.3Q67.6 60.3 68.4 60Q69.1 59.7 70 59.2Q70 59.1 70.2 59.3Q70.3 59.4 70.2 59.5Q68.9 60.8 67.6 61.3Q66.3 61.8 64.8 61.8M67.8 52.5L59.9 52.5L59.9 51.9L67.8 51.8"/>
+    </symbol>
+    <pattern id="reTile" width="128" height="128" patternUnits="userSpaceOnUse">
+      <use href="#reMark" x="4" y="4" width="46" height="46" fill="#231A13" fill-opacity=".10"/>
+      <use href="#reMark" x="68" y="68" width="46" height="46" fill="#231A13" fill-opacity=".10"/>
+    </pattern>
+    <pattern id="reTileLite" width="128" height="128" patternUnits="userSpaceOnUse">
+      <use href="#reMark" x="4" y="4" width="46" height="46" fill="#FFFCF7" fill-opacity=".07"/>
+      <use href="#reMark" x="68" y="68" width="46" height="46" fill="#FFFCF7" fill-opacity=".07"/>
+    </pattern>
+  </defs>
+</svg>
+<svg class="wall" aria-hidden="true"><rect width="100%" height="100%" fill="url(#reTile)"/></svg>
 
 <header>
   <div class="hd-row">
     <div class="mark" aria-label="バーリフレイン 経営アプリ">
-      <svg class="sig" viewBox="0 0 40 40" role="img" aria-hidden="true">
-        <rect width="40" height="40" rx="5" fill="#9E1B22"/>
-        <!-- 看板の白い環。右上を開けて、看板と同じ「巻き」にする -->
-        <circle cx="20" cy="20" r="13.2" fill="none" stroke="#FFFCF7"
-                stroke-width="2.1" stroke-linecap="round"
-                stroke-dasharray="62 83" transform="rotate(-48 20 20)"/>
-        <text x="20" y="25.6" text-anchor="middle" fill="#FFFCF7"
-              font-family="'Cormorant Garamond',serif" font-weight="600"
-              font-size="17.5" letter-spacing=".2">Re</text>
+      <svg class="sig" viewBox="0 0 100 100" role="img" aria-hidden="true">
+        <rect class="fld" width="100" height="100" rx="13"/>
+        <use class="re" href="#reMark" x="7" y="7" width="86" height="86"/>
       </svg>
       <span class="wm"><b>Refrain</b><em>CAFE &amp; BAR</em></span>
     </div>
@@ -2605,14 +2628,13 @@ function authGate(after){
   d.id='pinwall';
   var n=AUTH.len>0 ? AUTH.len : 0;
   var keys=['1','2','3','4','5','6','7','8','9','del','0','ok'];
-  d.innerHTML='<div class="bx">'
-    + '<div class="pinlogo"><svg viewBox="0 0 40 40" aria-hidden="true">'
-      + '<rect width="40" height="40" rx="5" fill="#9E1B22"/>'
-      + '<circle cx="20" cy="20" r="13.2" fill="none" stroke="#FFFCF7" stroke-width="2.1"'
-      + ' stroke-linecap="round" stroke-dasharray="62 83" transform="rotate(-48 20 20)"/>'
-      + '<text x="20" y="25.6" text-anchor="middle" fill="#FFFCF7"'
-      + " font-family=\"'Cormorant Garamond',serif\" font-weight=\"600\""
-      + ' font-size="17.5" letter-spacing=".2">Re</text></svg></div>'
+  d.innerHTML='<svg class="wall" aria-hidden="true">'
+      + '<rect width="100%" height="100%" fill="url(#reTileLite)"/></svg>'
+    + '<div class="bx">'
+    + '<div class="pinlogo"><svg class="sig" viewBox="0 0 100 100" aria-hidden="true">'
+      + '<rect class="fld" width="100" height="100" rx="13"/>'
+      + '<use class="re" href="#reMark" x="7" y="7" width="86" height="86"/>'
+      + '</svg></div>'
     + '<h3>Refrain</h3>'
     + '<div class="sub">暗証番号'+(n?'（'+n+'桁）':'')+'</div>'
     + (AUTH.num
@@ -3573,7 +3595,7 @@ function unitName(id){
      同系色のままコントラストがつくので、店の中でも見分けられる。
    ================================================================== */
 /* 設定タブで選べる色。サーバの UNIT_COLORS と同じ並び */
-var UNIT_PALETTE = ['#8A2226','#8C6412','#A9C2BB','#2A4A22','#2A2338','#123443','#4A3520'];
+var UNIT_PALETTE = ['#93315F','#8C6412','#A9C2BB','#2A4A22','#2A2338','#123443','#4A3520'];
 
 function hex2rgb_(h){
   h=String(h||'').replace('#','');
