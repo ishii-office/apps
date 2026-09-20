@@ -2766,105 +2766,246 @@ function loadFail_(box, e, again){
 }
 
 function call(fn, args){
-  if(typeof APP_LOCKED!=='undefined' && APP_LOCKED
-     && WRITE_FN.test(fn) && !ALWAYS_OK.test(fn)){
+  var isRead = READ_FN.test(fn);
+  /* ★ 版が古くなって画面を止めているあいだは書かせない。
+       もとは WRITE_FN / ALWAYS_OK という【どこにも無い名前】を見ていたので、
+       ここに来た瞬間 ReferenceError で落ちていた。
+       いちばん要るとき（保存しようとしたとき）に落ちる、いちばん悪い形（2026-09-20） */
+  if(typeof APP_LOCKED!=='undefined' && APP_LOCKED && !isRead){
     return Promise.reject(new Error('アプリが新しくなりました。開き直してから入力してください。'));
   }
-  var key = READ_FN.test(fn) ? (fn+'|'+JSON.stringify(args||[])) : '';
-  if(key){
+  if(isRead){
+    var key = fn+'|'+JSON.stringify(args||[]);
     var hit=_rcache[key];
     if(hit && (Date.now()-hit.at)<CACHE_MS) return Promise.resolve(hit.v);
     if(_inflight[key]) return _inflight[key];
-  }
-  var pr = call_(fn, args);
-  if(key){
+    var pr = callRead_(fn, args);
     _inflight[key]=pr;
     pr.then(function(v){ _rcache[key]={at:Date.now(), v:v}; delete _inflight[key]; },
             function(){ delete _inflight[key]; });
-  } else {
-    /* 書いたら、覚えているものは全部捨てる */
-    pr.then(callDrop, callDrop);
+    return pr;
   }
-  return pr;
+  /* 書き込み … 控えを取って、しくじったら同じ合図で送り直す */
+  return callWrite_(fn, args);
 }
 
-function call_(fn, args){
-  return new Promise(function(res2, rej2){
-    /* ★ 時間を切る（2026-09-16）。切れたら、そのあとの返事は捨てる。
-         ★ 書き込みのときの言い方に気をつける。
-           返事が来なかっただけで、サーバには入っているかもしれない。
-           「登録できませんでした」と言い切ると、もう一度押させて二重になる。 */
-    var read=READ_FN.test(fn), over=false, ac=null;
-    var tmr=setTimeout(function(){
-      over=true;
-      if(ac){ try{ ac.abort(); }catch(e){} }
-      rej2(new Error(read
-        ? 'サーバが'+Math.round(CALL_MS/1000)+'秒たっても答えませんでした。もう一度お試しください'
-        : 'サーバの返事が来ませんでした。入っているかどうか分かりません。'
-          + '下の「この日に入れたもの」を見て、無ければもう一度入れてください'));
-    }, read ? CALL_MS : CALL_MS_W);
-    var res=function(v){ if(over) return; clearTimeout(tmr); res2(v); };
-    var rej=function(e){ if(over) return; clearTimeout(tmr); rej2(e); };
-    if(LIVE){
-      /* ★ google.script.run は「返せない型」が混じっていると、
-           例外ではなく【成功ハンドラに null】を渡す。
-           そのまま進むと S.boot が null になり、切り替えが「全体」だけになる。
-           理由がどこにも出ないので、いちばん見つけにくい壊れ方になる。
-           だからここで止めて、理由を言う（2026-09-06）
+/* ==================================================================
+   ★★★ 保存は「送りっぱなし」にしない（2026-09-20）
 
-         ★ サーバの入口は api ひとつだけ（2026-09-09）。
-           合図（tok）を添えて、名前で呼ぶ先を渡す。
-           合図が合わなければ __auth が返るので、暗証番号を聞き直す */
-      google.script.run.withSuccessHandler(function(r){
-        if(r===null || r===undefined){
-          rej(new Error(fn+' がサーバから空の返事を返しました。開き直してください'));
-          return;
-        }
-        if(r && r.__auth){ authNeed(); rej(new Error(r.msg||'暗証番号を入れ直してください')); return; }
-        if(r && r.__login){ loginNeed(); rej(new Error(r.msg||'ログインし直してください')); return; }
-        /* 権限が足りない。聞き直しても同じなので、理由だけ返す */
-        if(r && r.__deny){ rej(new Error(r.msg||'この操作はできません')); return; }
-        if(r && r.__err){ rej(new Error(r.msg||('サーバが断りました（'+fn+'）'))); return; }
-        res(r);
-      }).withFailureHandler(rej).api(authTok(), fn, args||[]);
-    } else if(WEB2){
-      /* ★ Content-Type は text/plain。application/json にすると、
-           ブラウザが先に許可を聞きにいって（preflight）GASでは通らない */
-      if(typeof AbortController!=='undefined') ac=new AbortController();
+   105（丸京）で、通信が1回こけただけで
+   **画面に「記録しました」と出ているのに中身が消えていた**、
+   という事故が起きた。そして出た文句が
+   「もう一度押してください」。**打ち直させた時点で負け。**
+
+   ここも同じ作りだったので、丸京とそろえた。
+
+     ① 1回の通信は【15秒で打ち切る】（NET_TIMEOUT）。
+        止まるのはエラーより悪い。返事が返らないと画面はただ固まる
+     ② 読み出しは、こけたら 1.2秒 → 3秒 でやり直す
+     ③ 書き込みは、送る前に【この端末に控え】を取る（localStorage）。
+        しくじったら 1秒 → 3秒 → 8秒 → 20秒 で送り直し、
+        それでも駄目なら控えを残して、1分おきの見回りと
+        次に開いたときに、ひとりで送り直す
+     ④ **送り直しには合図（opId）を添える。** 同じ保存には同じ合図。
+        サーバ（onceRun_）が「すでにやった」と分かるので、**二度入らない**。
+        「送り直す」と「二度やっても増えない」は、いつも一組で考える
+     ⑤ サーバが「断った」「暗証番号」「権限が無い」と言ってきたら、
+        やり直しても同じなので**やり直さない**
+
+   見張りは node tools/save.mjs。ここを直したら必ず走らせる。
+   ================================================================== */
+var NET_TIMEOUT = 15000;
+var NET_TIMEOUT_MSG = 'サーバの返事がありませんでした（時間切れ）';
+var READ_WAIT  = [1200, 3000];             /* 読み出しのやり直し */
+var SAVE_WAIT  = [1000, 3000, 8000, 20000];/* 書き込みの送り直し */
+var SAVE_PREFIX = 'pend:';                 /* 端末に取る控え */
+var SAVE_PERSIST_MAX = 200000;             /* これより大きい控えは端末に残さない（写真よけ） */
+
+/* ★ 通信がこけただけか（＝やり直す値打ちがあるか）。
+     サーバが断ってきたときは、やり直しても同じ */
+function netGlitch_(e){
+  var m = String((e && e.message) || e || '');
+  if(m.indexOf('暗証番号')>=0 || m.indexOf('ログインし直')>=0) return false;
+  if(m.indexOf('この操作はできません')>=0) return false;
+  if(m.indexOf('サーバが断りました')>=0) return false;
+  if(m.indexOf('返事が読めませんでした')>=0) return false;
+  if(m.indexOf('空の返事')>=0) return false;
+  var st = m.match(/（(\d{3})）/);
+  if(st){ var n=+st[1]; return n>=500 || n===429; }   /* 400番台は直らない */
+  return true;                                        /* Load failed／時間切れ など */
+}
+function sleep_(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+function lsSet_(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
+function lsGet_(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsDel_(k){ try{ localStorage.removeItem(k); }catch(e){} }
+function lsKeys_(p){
+  var o=[];
+  try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&k.indexOf(p)===0) o.push(k); } }catch(e){}
+  return o;
+}
+function opUid_(){
+  return 'op' + Date.now().toString(36) + Math.random().toString(36).slice(2,9);
+}
+
+/* ---- 画面右下の合図 ---- */
+var _saveQ = {}, _saveTold = false;
+function saveMark_(){
+  if(!document.body) return;
+  var e = document.getElementById('savebadge');
+  if(!e){
+    e = document.createElement('div'); e.id='savebadge';
+    e.style.cssText='position:fixed;right:12px;bottom:12px;z-index:99999;display:none;'+
+      'font-size:13px;font-weight:700;padding:7px 13px;border-radius:999px;'+
+      'box-shadow:0 2px 8px rgba(0,0,0,.2);pointer-events:none';
+    document.body.appendChild(e);
+  }
+  var n = Object.keys(_saveQ).length, waiting = lsKeys_(SAVE_PREFIX).length;
+  if(n){
+    e.textContent='保存中…';
+    e.style.background='#FFF6DA'; e.style.color='#8A6D1B'; e.style.border='1px solid #E3C766';
+    e.style.display='';
+  }else if(waiting){
+    e.textContent='保存待ち（電波が戻ったら送ります）';
+    e.style.background='#FDECEC'; e.style.color='#A33'; e.style.border='1px solid #E0A0A0';
+    e.style.display='';
+  }else{
+    e.style.display='none';
+  }
+}
+
+/* ---- 1回だけ送る（時間切れ付き） ---- */
+function callOnce_(fn, args){
+  return new Promise(function(res0, rej0){
+    var done=false, tid=null, ac=null;
+    function res(v){ if(done) return; done=true; if(tid) clearTimeout(tid); res0(v); }
+    function rej(e){ if(done) return; done=true; if(tid) clearTimeout(tid); rej0(e instanceof Error?e:new Error(String(e))); }
+    /* ★ 時間切れが無いと、返事が返らないまま永久に待って画面が固まる */
+    tid = setTimeout(function(){
+      try{ if(ac) ac.abort(); }catch(e){}
+      rej(new Error(NET_TIMEOUT_MSG));
+    }, NET_TIMEOUT);
+
+    function ok(r){
+      if(r===null || r===undefined){ rej(new Error(fn+' がサーバから空の返事を返しました。開き直してください')); return; }
+      if(r.__auth){ authNeed(); rej(new Error(r.msg||'暗証番号を入れ直してください')); return; }
+      if(r.__login){ loginNeed(); rej(new Error(r.msg||'ログインし直してください')); return; }
+      if(r.__deny){ rej(new Error(r.msg||'この操作はできません')); return; }
+      if(r.__err){ rej(new Error(r.msg||('サーバが断りました（'+fn+'）'))); return; }
+      res(r);
+    }
+    if(LIVE){
+      google.script.run.withSuccessHandler(ok).withFailureHandler(rej)
+        .api(authTok(), fn, args||[]);
+      return;
+    }
+    if(WEB2){
+      try{ ac = (typeof AbortController!=='undefined') ? new AbortController() : null; }catch(e){ ac=null; }
       fetch(API_URL, { method:'POST', redirect:'follow',
+        signal: ac?ac.signal:undefined,
         headers:{'Content-Type':'text/plain;charset=utf-8'},
-        signal: ac ? ac.signal : undefined,
         body: JSON.stringify({tok:authTok(), fn:fn, args:args||[]}) })
-      .then(function(rp){
-        if(!rp.ok) throw new Error('サーバにつながりませんでした（'+rp.status+'）');
-        return rp.text();
+      .then(function(r){
+        if(!r.ok) throw new Error('サーバにつながりませんでした（'+r.status+'）');
+        return r.text();
       })
       .then(function(txt){
         var r;
         try{ r=JSON.parse(txt); }
         catch(e){ throw new Error('サーバの返事が読めませんでした。開き直してください'); }
-        if(r===null || r===undefined) throw new Error(fn+' がサーバから空の返事を返しました');
-        if(r.__auth){ authNeed(); throw new Error(r.msg||'暗証番号を入れ直してください'); }
-        if(r.__login){ loginNeed(); throw new Error(r.msg||'ログインし直してください'); }
-        if(r.__deny){ throw new Error(r.msg||'この操作はできません'); }
-        if(r.__err){ throw new Error(r.msg||('サーバが断りました（'+fn+'）')); }
-        res(r);
+        ok(r);
       })
-      .catch(function(e){ rej(e instanceof Error ? e : new Error(String(e))); });
-    } else {
-      setTimeout(function(){
-        try{
-          var r=DEMO[fn].apply(null, args||[]);
-          if(r===null || r===undefined){
-            rej(new Error(fn+' がサーバから空の返事を返しました。開き直してください'));
-            return;
-          }
-          res(r);
-        }catch(e){ rej(e); }
-      }, 150);
+      .catch(rej);
+      return;
     }
+    setTimeout(function(){
+      try{ ok(DEMO[fn].apply(null, args||[])); }catch(e){ rej(e); }
+    }, 150);
   });
 }
+
+/* ---- 読み出し（こけたらやり直す。何回読んでも同じなので安全） ---- */
+async function callRead_(fn, args){
+  var last=null;
+  for(var i=0;i<=READ_WAIT.length;i++){
+    try{ return await callOnce_(fn, args); }
+    catch(e){
+      last=e;
+      if(!netGlitch_(e) || i===READ_WAIT.length) throw e;
+      await sleep_(READ_WAIT[i]);
+    }
+  }
+  throw last;
+}
+
+/* ---- 書き込み（控えを取って、同じ合図で送り直す） ---- */
+/* ★★ 端末に控えを残してよいか（2026-09-20）
+
+   控えは localStorage に置くので、**中身がそのまま端末に残る**。
+   だから
+
+     ・**大きいもの（写真の base64）は置かない。** 1枚16万文字。
+       置くと localStorage があふれて、ほかの控えまで巻き添えで消える
+       （105 で「元帳に写真を入れて全部落ちた」のと同じ筋）
+     ・`SAVE_PERSIST_MAX` が 0 のアプリは、そもそも端末に残さない。
+       引数に暗証番号が混ざる作りのアプリはこちら
+
+   残せないときは【画面を開いているあいだ】送り直す。
+   画面右下の「保存待ち」が消えるまで閉じないよう、閉じるときに引き止める。 */
+function saveCanPersist_(rec){
+  if(!SAVE_PERSIST_MAX) return false;
+  try{ return JSON.stringify(rec).length <= SAVE_PERSIST_MAX; }catch(e){ return false; }
+}
+function callWrite_(fn, args, op){
+  op = op || opUid_();
+  var rec = { fn:fn, args:args||[], op:op, at:Date.now() };
+  if(saveCanPersist_(rec)) lsSet_(SAVE_PREFIX+op, JSON.stringify(rec));   /* ① 先に控え */
+  _saveQ[op] = rec; saveMark_();
+  return sendWrite_(rec, 0);
+}
+function sendWrite_(rec, tries){
+  /* ★ 合図はいちばん後ろに添える。サーバ（onceRun_）がこれを見て、
+       送り直しでも二度やらないようにする */
+  var args = (rec.args||[]).concat([{ __op: rec.op }]);
+  return callOnce_(rec.fn, args).then(function(r){
+    delete _saveQ[rec.op];
+    lsDel_(SAVE_PREFIX+rec.op);                    /* ③ 入ったのを確かめてから捨てる */
+    _saveTold=false; saveMark_(); callDrop();
+    return r;
+  }).catch(function(err){
+    if(!netGlitch_(err)){                          /* 断られた。やり直しても同じ */
+      delete _saveQ[rec.op]; lsDel_(SAVE_PREFIX+rec.op); saveMark_();
+      throw err;
+    }
+    var w = SAVE_WAIT[tries];
+    if(w!=null){ return sleep_(w).then(function(){ return sendWrite_(rec, tries+1); }); }
+    /* ★ あきらめても控えは残す。見回りと、次に開いたときに送り直す。
+         待ち行列からは外すこと（外さないと見回りが素通りする） */
+    delete _saveQ[rec.op]; saveMark_();
+    if(!_saveTold){
+      _saveTold = true;
+      alert('いま保存できませんでした。打ち直しは要りません。\n\n'+
+        'この端末に控えを取ってあります。電波が戻れば、ひとりで送り直します。\n'+
+        '画面右下の「保存待ち」が消えたら、入っています。\n\n（'+((err&&err.message)||err)+'）');
+    }
+    throw err;
+  });
+}
+/** 開いたとき・1分おきの見回り。送れていない控えを拾って送り直す */
+function saveResume_(){
+  var ks = lsKeys_(SAVE_PREFIX), n = 0;
+  ks.forEach(function(k){
+    var rec = null;
+    try{ rec = JSON.parse(lsGet_(k)); }catch(e){}
+    if(!rec || !rec.fn || !rec.op){ lsDel_(k); return; }
+    n++;
+    if(_saveQ[rec.op]) return;
+    _saveQ[rec.op] = rec;
+    sendWrite_(rec, 0).catch(function(){});
+  });
+  saveMark_();
+  return n;
+}
+
 
 /* ---------- デモ ----------
    ★★ ここから下は【GitHub Pages へ出すときに丸ごと落とす】（2026-09-15）
@@ -7145,6 +7286,27 @@ function appPulseStart(){
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) run(); });
 }
 appPulseStart();
+
+/* ★ 送れていない控えを片づける（2026-09-20）
+     ・開いたとき … 前に送れなかったぶんを拾って送り直す
+     ・1分おきの見回り … 電波が戻ったら、ひとりで送る
+     ・閉じるとき／裏へ回すとき … 送り切る。
+       beforeunload だけでは【スマホで鳴らない】ので pagehide も見る */
+(function(){
+  function sweep(){ try{ if(saveResume_()) saveMark_(); }catch(e){} }
+  setTimeout(sweep, 0);                 /* 読み込みの順番に引っかからないよう後回し */
+  setInterval(sweep, 60000);
+  window.addEventListener('pagehide', sweep);
+  window.addEventListener('visibilitychange', function(){
+    if(document.visibilityState !== 'hidden') sweep();
+  });
+  window.addEventListener('beforeunload', function(e){
+    if(Object.keys(_saveQ).length || lsKeys_(SAVE_PREFIX).length){
+      e.preventDefault(); e.returnValue=''; return '';
+    }
+  });
+})();
+
 
 /* ==================================================================
    ★★ 開いた瞬間に、前回の起動データで描く（2026-09-07 ／ 置き場所は 2026-09-09）
