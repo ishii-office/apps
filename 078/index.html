@@ -2366,11 +2366,40 @@ function authTok(){ return AUTH.dev + (AUTH.usr ? '~'+AUTH.usr : ''); }
     }
   }catch(e){}
 })();
+/** ★★★ 合図は【必ず】覚える（2026-09-21）
+
+    もとは try/catch で黙って握りつぶしていた。
+    端末の localStorage がいっぱい（送れていない控えが溜まっている・写真が入っている）だと
+    setItem が失敗し、**合図が残らないので、開くたびに暗証番号を聞かれる**。
+    「一度入れたら終わり」の約束が、いちばん要るときに破れていた。
+
+    だから、しくじったら **古い控えを捨ててから もう一度書く**。
+    控えより合図のほうが大事（控えはサーバに入っていることが多いが、
+    合図が無いと、人が毎回 番号を打つことになる）。 */
+function authStore_(o){
+  try{ localStorage.setItem(AUTH_KEY, JSON.stringify(o)); return true; }catch(e){}
+  /* いっぱいだったとみて、古いものから捨てて場所をあける */
+  try{
+    var pre = (typeof SAVE_PREFIX!=='undefined') ? SAVE_PREFIX
+            : (typeof OP_PREFIX!=='undefined') ? OP_PREFIX : null;
+    var ks=[];
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k && (!pre || k.indexOf(pre)===0)) ks.push(k);
+    }
+    ks.forEach(function(k){ if(k!==AUTH_KEY){ try{ localStorage.removeItem(k); }catch(e2){} } });
+    localStorage.setItem(AUTH_KEY, JSON.stringify(o));
+    try{ console.warn('端末がいっぱいだったので、古い控えを捨てて合図を残しました'); }catch(e3){}
+    return true;
+  }catch(e4){
+    try{ console.warn('合図を残せませんでした。次に開くと暗証番号を聞かれます', e4); }catch(e5){}
+    return false;
+  }
+}
 function authSave(){
   if(AUTH.sheet) return;
-  try{ localStorage.setItem(AUTH_KEY, JSON.stringify(
-    {dev:AUTH.dev, len:AUTH.len, num:AUTH.num,
-     usr:AUTH.usr, me:AUTH.me, roleOff:AUTH.roleOff})); }catch(e){}
+  authStore_({dev:AUTH.dev, len:AUTH.len, num:AUTH.num,
+              usr:AUTH.usr, me:AUTH.me, roleOff:AUTH.roleOff});
 }
 function authForget(){                 /* 1段目をやめる（2段目もいっしょに） */
   AUTH.dev=''; AUTH.usr=''; AUTH.me=null;
@@ -2730,7 +2759,19 @@ var NET_TIMEOUT_MSG = 'サーバの返事がありませんでした（時間切
 var ASK_WAIT = 2000, ASK_TIMES = 30;     /* 「入りましたか」を2秒おきに最大60秒 */
 var READ_WAIT  = [1200, 3000];             /* 読み出しのやり直し */
 var SAVE_WAIT  = [1000, 3000, 8000, 20000];/* 書き込みの送り直し */
-var SAVE_REST  = 30000;                   /* あきらめたあと、次に送り直すまで */
+var SAVE_REST  = 30000;
+/* ★★★ 読み出しの待ち（2026-09-21）
+     15秒では【短すぎた】。GAS は眠っていると起き上がるのに数秒かかり、
+     起動の読み出し（シートを何枚も読む）はそれだけで15秒を超える。
+     超えると画面はやり直す → 重い読み出しが2本3本と重なる →
+     GAS の同時実行が詰まって、どれも返ってこない。**自分で詰まらせていた。**
+       ・ふつうの読み出し … 30秒
+       ・起動の読み出し   … 60秒（いちばん重い。ここでこけると画面が空になる）
+     書き込み（60秒 > サーバの鍵待ち45秒）との大小は変えない。 */
+var READ_TIMEOUT = 30000;
+var BOOT_TIMEOUT = 60000;
+var BOOT_FN = /^(getBootstrap|bootstrap|getBoot|getAll|getInit)$/;
+function netReadMs_(fn){ return BOOT_FN.test(fn) ? BOOT_TIMEOUT : READ_TIMEOUT; }                   /* あきらめたあと、次に送り直すまで */
 /* ★ 控えの名前も【アプリごとに分ける】（2026-09-20）。
      Pages は全アプリが同じ置き場なので、'pend:' のままだと
      ほかのアプリの控えを拾って、こちらのサーバへ送ろうとする。
@@ -2796,7 +2837,7 @@ function saveMark_(){
 }
 
 /* ---- 1回だけ送る（時間切れ付き） ---- */
-function callOnce_(fn, args, ms){
+function callOnce_(fn, args, ms, quiet){
   return new Promise(function(res0, rej0){
     var done=false, tid=null, ac=null;
     function res(v){ if(done) return; done=true; if(tid) clearTimeout(tid); res0(v); }
@@ -2809,8 +2850,10 @@ function callOnce_(fn, args, ms){
 
     function ok(r){
       if(r===null || r===undefined){ rej(new Error(fn+' がサーバから空の返事を返しました。開き直してください')); return; }
-      if(r.__auth){ authNeed(); rej(new Error(r.msg||'暗証番号を入れ直してください')); return; }
-      if(r.__login){ loginNeed(); rej(new Error(r.msg||'ログインし直してください')); return; }
+      /* ★ 裏で送り直しているぶんが断られても、関所を出さない（2026-09-21）。
+             出すと、覚えている合図を捨ててしまい【毎回 暗証番号を聞かれる】 */
+      if(r.__auth){ if(!quiet) authNeed(); rej(new Error(r.msg||'暗証番号を入れ直してください')); return; }
+      if(r.__login){ if(!quiet) loginNeed(); rej(new Error(r.msg||'ログインし直してください')); return; }
       if(r.__deny){ rej(new Error(r.msg||'この操作はできません')); return; }
       if(r.__err){ rej(new Error(r.msg||('サーバが断りました（'+fn+'）'))); return; }
       res(r);
@@ -2849,7 +2892,7 @@ function callOnce_(fn, args, ms){
 async function callRead_(fn, args){
   var last=null;
   for(var i=0;i<=READ_WAIT.length;i++){
-    try{ return await callOnce_(fn, args); }
+    try{ return await callOnce_(fn, args, netReadMs_(fn)); }
     catch(e){
       last=e;
       if(!netGlitch_(e) || i===READ_WAIT.length) throw e;
@@ -2902,7 +2945,7 @@ function confirmOp_(rec){
   function step(){
     if(i++ >= ASK_TIMES) return Promise.resolve({ ask:'timeout' });
     return sleep_(ASK_WAIT).then(function(){
-      return callOnce_('getOpState', [rec.op], NET_TIMEOUT).then(function(s){
+      return callOnce_('getOpState', [rec.op], NET_TIMEOUT, true).then(function(s){
         if(s && s.state === 'done')    return { ask:'done', r:s.r };
         if(s && s.state === 'running') return step();          /* まだ走っている。待つ */
         return { ask:'none' };                                  /* 届いていない */
@@ -2917,7 +2960,7 @@ function sendWrite_(rec, tries){
        送り直しでも二度やらないようにする */
   var args = (rec.args||[]).concat([{ __op: rec.op }]);
   rec.st = 'send'; saveMark_();          /* ★ ここからが「保存中…」 */
-  return callOnce_(rec.fn, args, SAVE_TIMEOUT).then(function(r){
+  return callOnce_(rec.fn, args, SAVE_TIMEOUT, true).then(function(r){
     delete _saveQ[rec.op];
     lsDel_(SAVE_PREFIX+rec.op);                    /* ③ 入ったのを確かめてから捨てる */
     _saveTold=false; saveMark_(); callDrop(); saveNext_();
@@ -2963,6 +3006,17 @@ function sendWrite_(rec, tries){
 /** 開いたとき・1分おきの見回り。送れていない控えを拾って送り直す。
     ★ 一度に1本だけ送る（2026-09-20）。まとめて送ると、サーバの鍵の順番待ちが
       積み上がって、どれも返事が返らなくなる。1本入るたびに次を送る（saveNext_）。 */
+/* ★ いつまでも送り直さない（2026-09-21）
+     送れないまま1日たった控えは、もう入らない（アプリが変わった・名前が変わった）。
+     残しておくと、右下の「保存待ち」が永久に消えず、見回りも空回りし続ける。
+     捨てる前に console へ出す（こちらが追えるように）。 */
+var SAVE_MAX_AGE = 24*60*60*1000;
+function saveStale_(rec){
+  if(!rec || !rec.at) return false;
+  if(Date.now() - rec.at <= SAVE_MAX_AGE) return false;
+  try{ console.warn('送れないまま1日たったので、この控えは捨てます', rec.fn, rec.op); }catch(e){}
+  return true;
+}
 var _saveSwept = false;
 /** 1本入ったら、つぎの控えを送る（順番に1本ずつ） */
 function saveNext_(){ setTimeout(function(){ try{ saveResume_(); }catch(e){} }, 0); }
@@ -2985,7 +3039,7 @@ function saveResume_(){
   lsKeys_(SAVE_PREFIX).forEach(function(k){
     var rec = null;
     try{ rec = JSON.parse(lsGet_(k)); }catch(e){}
-    if(!rec || !rec.fn || !rec.op){ lsDel_(k); return; }
+    if(!rec || !rec.fn || !rec.op || saveStale_(rec)){ lsDel_(k); return; }
     offer(rec);
   });
   if(start){ start.st='send'; _saveQ[start.op]=start; sendWrite_(start, 0).catch(function(){}); }
@@ -3031,10 +3085,18 @@ var esc = function(x){
   return String(x==null?'':x).replace(/[&<>"]/g,function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; });
 };
-var errMsg = function(e){ return String((e&&e.message)||e||'うまくいきませんでした'); };
+/* ★★ 電波が1回こけただけのことを、人に見せない（2026-09-21）
+     「サーバの返事がありませんでした（時間切れ）」を出しても、人にできることは無い。
+     保存は控えを取って自分で送り直すし、読み出しもやり直している。
+     空文字を返すと toast は何も出さない（下の toast を見る）。 */
+var errMsg = function(e){
+  if(typeof netGlitch_==='function' && netGlitch_(e)) return '';
+  return String((e&&e.message)||e||'うまくいきませんでした');
+};
 var fv = function(id){ return Number(String($(id).value).replace(/[^0-9.\-]/g,''))||0; };
 
 function toast(m){
+  if(!m) return;                    /* ★ 空なら出さない（通信のこけはここで消える） */
   var t=$('toast'); t.textContent=m; t.classList.add('on');
   clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove('on')},2800);
 }
@@ -3597,10 +3659,22 @@ function bootLoad(){
 
 /* ★ 関所が立っていて、この端末がまだ通っていないときは、
      先に暗証番号を聞く。通ったら、そのまま起動する（bootGo） */
+
+/* ★ 起動の読み出しがこけたら、こちらで取りに行き直す（2026-09-21）。
+     人に「開き直してください」と言わない。8秒 → 20秒 → 45秒 の3回。 */
+var _bootRetry = 0, BOOT_RETRY = [8000, 20000, 45000];
+function bootRetrySoon_(){
+  var w = BOOT_RETRY[_bootRetry++];
+  if(w==null) return;
+  setTimeout(function(){
+    try{ callDrop(); }catch(e){}
+    try{ bootGo(); }catch(e){}
+  }, w);
+}
 function bootGo(){
 call('getBootstrap').then(function(b){
   if(!b || !b.units) throw new Error('サーバから空の返事が返りました');
-  S.boot=b; S.stale=false;
+  S.boot=b; S.stale=false; _bootRetry=0;
   bootSave(b);
 
   applyRole();
@@ -3679,6 +3753,24 @@ call('getBootstrap').then(function(b){
 }).catch(function(e){
   console.error(e);
   var msg=String(e&&e.message||e);
+  /* ★★★ 起動の読み出しがこけても、前に届いたぶんで描く（2026-09-21）
+       ここで空の S.boot を入れていたので、**店のチップが「全体」だけ**になり、
+       ANCHOVY 本店・船上レストランが消えていた。
+       前回の起動データ（bootLoad）があるなら、それで描くほうが百倍まし。
+       そして、こちらで黙って取りに行き直す。人に何もさせない。 */
+  var cached = null;
+  try{ cached = bootLoad(); }catch(e2){}
+  var haveUnits = !!(S.boot && S.boot.units && S.boot.units.length);
+  if(!haveUnits && cached && cached.units && cached.units.length){
+    S.boot = cached; haveUnits = true;
+  }
+  if(haveUnits){
+    S.stale = true;
+    try{ applyRole(); }catch(e3){}
+    buildUnitSelector();
+    bootRetrySoon_();
+    return;                              /* 赤い枠も出さない。黙って直しにいく */
+  }
   toast('読み込めませんでした');
   /* ★ 黙って「全体」だけの画面にしない。何が起きたかを画面に出す */
   var box=$('setupBox');
@@ -7252,7 +7344,10 @@ appPulseStart();
        beforeunload だけでは【スマホで鳴らない】ので pagehide も見る */
 (function(){
   function sweep(){ try{ if(saveResume_()) saveMark_(); }catch(e){} }
-  setTimeout(sweep, 0);                 /* 読み込みの順番に引っかからないよう後回し */
+  /* ★ 開いてすぐは見回らない（2026-09-21）。
+       起動の読み出しと送り直しが重なると、GAS の同時実行が詰まって
+       どちらも返ってこなくなる。起動が終わるころ（12秒後）から始める */
+  setTimeout(sweep, 12000);
   setInterval(sweep, 60000);
   window.addEventListener('pagehide', sweep);
   window.addEventListener('visibilitychange', function(){
