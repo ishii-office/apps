@@ -959,6 +959,23 @@ var RETRY_OK={kvGet:1, kvGetMany:1, kvSet:1, kvSetMany:1, kvDelete:1, masterFrom
      だから【必ず時間で打ち切って、失敗として扱う】。
      打ち切れば netGlitch_ が「やり直す値打ちあり」と見て、自分でやり直す。 */
 var NET_TIMEOUT=15000;
+/* ★★★ 書き込みは長く待つ（2026-09-20 に足した）
+
+   読み書きを同じ15秒にしていたが、書き込みは
+   **KVシートをまるごと書き直す・鍵の順番を待つ**ので15秒を超えることがある。
+   サーバ側は鍵を最大30秒待つ（kvSetMany_ / kvPatch の waitLock(30000)）ので、
+
+     画面：15秒で打ち切る → 送り直す
+     サーバ：まだ前のを走らせている → 鍵の順番待ちが積み上がる
+     → 送り直すほど詰まって、開き直しても直らない輪
+
+   になる。実際、同じ形でバーリフレイン（028）がこれで止まった。
+   **画面の待ちは、サーバの鍵待ちより必ず長くする。逆だと詰まる。** */
+var SAVE_TIMEOUT=60000;
+var SAVE_FN={kvSet:1, kvSetMany:1, kvDelete:1, kvPatch:1, saveReceipt:1,
+             masterFromSheet:1, makeJournalFile:1, runKgMigration:1,
+             exportArLedgerRun:1, exportCheckRun:1, fixDuplicateIds:1, seedImportRun:1};
+function netWaitMs_(fn){ return SAVE_FN[fn] ? SAVE_TIMEOUT : NET_TIMEOUT; }
 var NET_TIMEOUT_MSG='サーバの返事がありませんでした（時間切れ）';
 /** 通信がこけただけか（＝やり直す値打ちがあるか）。
     サーバが「断った」「暗証番号」と言ってきたときは、やり直しても同じ */
@@ -997,7 +1014,7 @@ function rawCallOnce(fn, args){
     tid=setTimeout(function(){
       try{ if(ac) ac.abort(); }catch(e){}     /* 出しっぱなしの通信も切る */
       rej(new Error(NET_TIMEOUT_MSG));
-    }, NET_TIMEOUT);
+    }, netWaitMs_(fn));
 
     if(LIVE){
       google.script.run.withSuccessHandler(res).withFailureHandler(function(e){
@@ -7810,7 +7827,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-20b 画面からの保存はぜんぶ「触ったところだけ」送る（2人で同時に入れても消えない）・控えを取って送り直す・請求書も締め月でそろえる';
+var APP_BUILD='2026-09-20c 画面からの保存はぜんぶ「触ったところだけ」送る（2人で同時に入れても消えない）・控えを取って送り直す・請求書も締め月でそろえる';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
