@@ -7431,7 +7431,7 @@ function cashCardHtml(fy,ca){
 /* ---------- 値引き・貸倒れ と 純売上 ----------
    ② 値引き   … 会計では 売上値引。純売上が減ります
    ③ 貸倒れ   … 会計では 貸倒損失（費用）。売上そのものは減りません
-   どちらも「売掛の振込回収」タブの②③の枠で入れた分です。
+   どちらも「売掛の振込回収」タブの［値引き］［貸倒れ］で入れた分です。
    入れた日の暦月で数えます（締め月ではありません）。
    ------------------------------------------------------------ */
 function discCardHtml(fy,agg){
@@ -7474,7 +7474,7 @@ function discCardHtml(fy,agg){
     '</div>'+
     (!da.count
       ? '<p class="muted" style="margin:0">この期の値引き・貸倒れはまだありません。'+
-        '「売掛の振込回収」タブの<b>②値引き</b>／<b>③貸倒れ</b>の枠から入れると、ここに出ます。</p>'
+        '「売掛の振込回収」タブの<b>［値引き］</b>／<b>［貸倒れ］</b>から入れると、ここに出ます。</p>'
       : '<div class="gscroll"><table class="ytbl" style="min-width:820px"><thead><tr><th>月</th>'+
           lab.map(function(t){ return '<th class="r">'+t+'</th>'; }).join('')+'<th class="r">合計</th></tr></thead><tbody>'+
           row('売上（税込）',sales,tS,'',true)+
@@ -8644,7 +8644,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-21d 仕訳（石井事務所）へ改称・一括読み込みエクセルのボタンはタブのいちばん下にいつも出す';
+var APP_BUILD='2026-09-21e 売掛の振込回収も【上のバー】で割る（通帳からの連続入力／値引き／貸倒れ／◯月の入金帳）・二重の説明をカット';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -9168,7 +9168,7 @@ function arDetail(el,fy){
     '（口座振替・相殺も銀行振込回収に入ります）。入金に「何月分」を指定していれば、その月分の行に入ります。'+
     '<b style="color:#6B5B95">値引き</b>・<b style="color:#7A2E3F">貸倒れ</b>は、もう請求しないと決めた分です'+
     '（端数を切った・回収をあきらめた）。お金は入っていませんが、その分だけ残高が減ります。'+
-    '「売掛の振込回収」タブの<b>②値引き</b>／<b>③貸倒れ</b>の枠で入れてください。'+
+    '「売掛の振込回収」タブの<b>［値引き］</b>／<b>［貸倒れ］</b>で入れてください。'+
     '売掛より多く入金された分は「前受・その他」の行に △ で出ます。</p>'+
   '<div class="bar"><span>'+fmtCode(c.code)+'　'+esc(c.name)+'</span>'+
     '<span>'+fyLabel(fy)+'</span>'+
@@ -9476,6 +9476,8 @@ S.rvMethod='振込'; S.rvLog=[]; S.rvOne=null;
 S.rvFocus=null;
 /** ①通帳からの連続入力 'in' ／②値引き 'disc' ／③貸倒れ 'bad' */
 S.rvMode='in';
+/** 上のバーで選んでいる帯 … 'in' / 'disc' / 'bad' / 'led'（◯月の入金帳） */
+S.rvPane='in';
 /** 回収の方法。むかし「口座」で入れた分があれば、それも選べるように残します */
 function rvMethodList(){
   var out=['振込','口座振替','相殺'];
@@ -9546,7 +9548,7 @@ function rvMethodPill(m){
   return 'tag-std';
 }
 
-/** ①②③のうち、いま選んでいる枠の中に出す入力フォーム（1つだけ） */
+/** いま選んでいる帯（通帳からの連続入力／値引き／貸倒れ）の入力フォーム */
 /* ---- ① の中の「振込手数料の負担」---------------------------------
    振込手数料は ふつう 相手方（取引先）の負担なので、はじめから「取引先」。
    そのまま素通りして「記録する」まで進めます。
@@ -9642,7 +9644,7 @@ function rvFormHtml(c,bal,fy,mode){
             '閉店して連絡がつかない・破産した・回収をあきらめた、などです。<br>'+
             '<b>会計では 貸倒損失（費用）</b>で、売上そのものは減りません。'+
             '売上管理では売上と別に並べて出します。'+
-            '<span class="muted">　まだ様子を見る分は、②値引きではなくそのまま残しておいてください。</span>'))+
+            '<span class="muted">　まだ様子を見る分は、［値引き］ではなくそのまま残しておいてください。</span>'))+
     '</div>'+
     '<div class="row" style="margin-top:10px;justify-content:flex-end;gap:9px">'+
       '<button class="btn ghost tap clrbtn" id="rvclr" style="padding:12px 16px">入力を全部クリア</button>'+
@@ -9657,58 +9659,46 @@ viewRecv=function(el){
     arLoad(fy).then(render); return;
   }
   if(!S.rvDate) S.rvDate=ymd(new Date());
-  var rvm0=S.rvMode||'in';
+  /* ★★★ ①②③④ の「開いたり閉じたり」をやめて、上のバーで割った（2026-09-21）
+       小口現金とまったく同じ形。［通帳からの連続入力］［値引き］［貸倒れ］［◯月の入金帳］
+       枠の名前・番号・「この枠に入れる」「入力中」の札は、ぜんぶ要らなくなった */
+  var PANE=S.rvPane||'in';
+  if(['in','disc','bad','led'].indexOf(PANE)<0) PANE='in';
+  var rvm0=(PANE==='led') ? (S.rvMode||'in') : PANE;
+  S.rvMode=rvm0;
   var c=S.rvClient?clientById(S.rvClient):null;
   var bal=c?arcBalOf(c.id):null;
 
-  /* 取引先を選んだときの明細（下のほう） */
+  /* 取引先を選んだときの明細（入金帳のタブの下） */
   if(S.recvClient && !clientById(S.recvClient)) S.recvClient=null;
   var sel=S.recvClient?clientById(S.recvClient):null;
 
+  var ymk=String(S.rvDate||ymd(new Date())).slice(0,7);
+  var mn=+ymk.slice(5,7);
   var C='92px 78px minmax(160px,1fr) 120px 78px 130px 70px';
-  el.innerHTML=
-  '<div class="row" style="justify-content:space-between;margin-bottom:8px">'+
-    '<div class="mincho" style="font-size:21px">売掛の振込回収・値引き・貸倒れ・振込手数料</div>'+
-    '<span class="muted" id="cashSaving"></span>'+
-  '</div>'+
-  '<div class="kgnote">どれを入れるか、<b>①②③の枠の名前で選んでください。</b>'+
-    'どれも<b>売掛帳</b>にそのまま出ます。②③は<b>売上管理</b>の「値引き・貸倒れ と 純売上」にも出ます。'+
-    '<b>振込手数料を差し引かれたとき</b>は、①の中の「回収のしかた」で選んでください。</div>'+
 
-  /* ---------- ① 通帳からの連続入力 ---------- */
-  '<div class="cbox'+(rvm0==='in'?' inpay':' off')+'">'+
-    '<div class="cbox-h"><span class="no">①</span><span class="ti">通帳からの連続入力</span>'+
-      (rvm0==='in'?'<span class="cbox-now">入力中</span>':'')+
-      '<span class="hint">振込・口座振替・相殺。お金が入った分</span>'+
-      (rvm0==='in'?'':'<button class="cbox-open tap" data-rvmode="in">この枠に入れる</button>')+
-    '</div>'+
-    (rvm0==='in'?rvFormHtml(c,bal,fy,rvm0):'')+
-  '</div>'+
+  var segHtml='<div class="segbar">'+
+    [['in','通帳からの連続入力'],['disc','値引き'],['bad','貸倒れ'],['led',mn+'月の入金帳']]
+    .map(function(p){
+      return '<button class="seg tap'+(PANE===p[0]?' on':'')+'" data-rvpane="'+p[0]+'">'+
+        p[1]+'</button>'; }).join('')+'</div>';
 
-  /* ---------- ② 値引き ---------- */
-  '<div class="cbox'+(rvm0==='disc'?' disc':' off')+'">'+
-    '<div class="cbox-h"><span class="no">②</span><span class="ti">値引き（端数等の切捨て・おまけ）</span>'+
-      (rvm0==='disc'?'<span class="cbox-now">入力中</span>':'')+
-      '<span class="hint">お金は入らないが、もう請求しないと決めた分。売上のマイナスになります</span>'+
-      (rvm0==='disc'?'':'<button class="cbox-open tap" data-rvmode="disc">この枠に入れる</button>')+
-    '</div>'+
-    (rvm0==='disc'?rvFormHtml(c,bal,fy,rvm0):'')+
-  '</div>'+
+  /* 入力の3枚。枠の見出しは出さない（どのタブに居るかは上のバーで分かる） */
+  var inputHtml=function(){
+    var note={
+      in  :'振込・口座振替・相殺。お金が入った分です。'+
+           '<b>振込手数料を差し引かれたとき</b>は、下の「振込手数料の負担」で選びます。',
+      disc:'お金は入らないが、もう請求しないと決めた分。売上のマイナスになります。',
+      bad :'閉店・行方不明・破産など。会計では費用（貸倒損失）で、売上は減りません。'
+    }[rvm0]||'';
+    return '<div class="cbox '+(rvm0==='in'?'inpay':(rvm0==='disc'?'disc':'bad'))+'">'+
+      (note?'<p class="muted" style="margin:0 0 10px">'+note+'</p>':'')+
+      rvFormHtml(c,bal,fy,rvm0)+
+    '</div>';
+  };
 
-  /* ---------- ③ 貸倒れ ---------- */
-  '<div class="cbox'+(rvm0==='bad'?' bad':' off')+'">'+
-    '<div class="cbox-h"><span class="no">③</span><span class="ti">貸倒れ（客観的に請求不能になったとき）</span>'+
-      (rvm0==='bad'?'<span class="cbox-now">入力中</span>':'')+
-      '<span class="hint">閉店・行方不明・破産など。会計では費用（貸倒損失）で、売上は減りません</span>'+
-      (rvm0==='bad'?'':'<button class="cbox-open tap" data-rvmode="bad">この枠に入れる</button>')+
-    '</div>'+
-    (rvm0==='bad'?rvFormHtml(c,bal,fy,rvm0):'')+
-  '</div>'+
-
-
-  /* ---------- ④ 入金帳（いま入力している月ぶん・全店） ---------- */
-  (function(){
-    var ymk=String(S.rvDate||ymd(new Date())).slice(0,7);
+  /* 入金帳（いま入力している月ぶん・全店） */
+  var ledHtml=function(){
     var rows=rvMonthRows(ymk);
     var justIds={}; S.rvLog.forEach(function(x){ justIds[String(x.id)]=1; });
     var tIn=0,tDisc=0,tBad=0;
@@ -9717,9 +9707,10 @@ viewRecv=function(el){
       if(arIsBad(r.p)) tBad+=a; else if(arIsDisc(r.p)) tDisc+=a; else tIn+=a;
     });
     return '<div class="cbox led">'+
-      '<div class="cbox-h" style="margin-bottom:8px"><span class="no">④</span><span class="ti">入金帳</span>'+
-        '<span class="hint">'+(+ymk.slice(5,7))+'月分（'+ymk+'）の入金・値引き・貸倒れを、全店まとめて日付の順に出します</span>'+
-        '<span class="muted" style="margin-left:auto">'+rows.length+'件</span></div>'+
+      '<p class="muted" style="margin:0 0 10px">'+mn+'月分（'+ymk+'）の入金・値引き・貸倒れを、'+
+        '全店まとめて日付の順に出します。'+
+        '<span class="muted">　日にちを変えると、その月の入金帳に切り替わります。</span>'+
+        '<span style="float:right">'+rows.length+'件</span></p>'+
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">'+
         '<div class="card" style="margin:0"><div class="muted">入金 計</div>'+
           '<div class="num" style="font-size:20px;font-weight:700;color:var(--ice)">'+yen(tIn)+'</div></div>'+
@@ -9748,67 +9739,77 @@ viewRecv=function(el){
                 ? '<span title="小口現金タブで消してください">🔒</span>'
                 : '<button class="led-btn rm tap" data-rvdel="'+x.id+'" data-rvcid="'+cc.id+'">🗑 消す</button>')+'</span>'+
             '</div>';
-          }).join(''):'<div style="padding:20px;text-align:center;color:#999">この月の記録はまだありません。上の①②③から入れてください。</div>')+
+          }).join(''):'<div style="padding:20px;text-align:center;color:#999">この月の記録はまだありません。'+
+            '上の［通帳からの連続入力］［値引き］［貸倒れ］から入れてください。</div>')+
         '</div></div></div></div>'+
-      '<p class="muted" style="margin:8px 0 0">日にちを変えると、その月の入金帳に切り替わります。'+
+      '<p class="muted" style="margin:8px 0 0">'+
         '<b>小口現金から</b>の分（お店から集金した現金）は<b>小口現金タブ</b>で消してください。</p>'+
-    '</div>';
-  })()+
+    '</div>'+
 
-  '<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:8px">'+
-      '<b style="font-size:17px;color:var(--ai)">取引先ごとの入金を見る・消す</b>'+
-      '<select id="rvsel" style="max-width:60vw;font-size:16px">'+
-        '<option value="">― 取引先を選ぶ ―</option>'+clientOptions(S.recvClient)+'</select></div>'+
-    (sel? (function(){
-      var L=arLedger(sel,fy);
-      var ps=arPayList(sel.id).slice().reverse();
-      var G='96px 120px 80px 150px 1fr 70px';
-      return '<div class="ar-sum" style="margin:0 0 10px">'+
-        '<div class="ar-box"><div class="k">前期繰越</div><div class="v num">'+yen(L.open)+'</div></div>'+
-        '<div class="ar-box"><div class="k">当期の発生</div><div class="v num">'+yen(L.billed)+'</div></div>'+
-        '<div class="ar-box"><div class="k">回収 計</div><div class="v num" style="color:var(--ice)">'+yen(L.cash+L.bank)+'</div></div>'+
-        '<div class="ar-box"><div class="k">値引き</div><div class="v num" style="color:#6B5B95">'+yen(L.discOnly)+'</div></div>'+
-        '<div class="ar-box"><div class="k">振込手数料</div><div class="v num" style="color:#4C6B8A">'+yen(L.fee)+'</div></div>'+
-        '<div class="ar-box"><div class="k">貸倒れ</div><div class="v num" style="color:#7A2E3F">'+yen(L.bad)+'</div></div>'+
-        '<div class="ar-box zan"><div class="k">残高</div><div class="v num">'+(L.bal<0?'△':'')+yen(Math.abs(L.bal))+'</div></div>'+
-        '</div>'+
-        '<div class="gridwrap rv-log"><div class="gscroll"><div style="min-width:700px">'+
-        '<div class="ghead" style="grid-template-columns:'+G+'"><span>入金日</span><span class="r">金額</span>'+
-          '<span class="c">方法</span><span>何月分</span><span>メモ</span><span class="c">取消</span></div>'+
-        '<div class="gbody" style="max-height:36vh">'+
-        (ps.length?ps.map(function(p){
-          return '<div class="grow" style="grid-template-columns:'+G+'">'+
-            '<span class="num">'+esc(String(p.date).slice(5).replace('-','/'))+'</span>'+
-            '<span class="r num" style="font-weight:700">'+yen(p.amount)+'</span>'+
-            '<span class="c"><span class="pill '+(p.method==='現金'?'tag-kan':(p.method===BAD_M?'tag-crush':(arIsDisc(p)?'tag-maru':'tag-std')))+'">'+esc(p.method||'')+'</span></span>'+
-            '<span class="muted">'+esc(p['for']?forLabel(sel,p['for']):'自動')+'</span>'+
-            '<span class="muted">'+esc(p.memo||'')+(p.fromCash?' <span class="arc-badge">小口現金から</span>':'')+'</span>'+
-            '<span class="c">'+(p.fromCash
-              ? '<span title="小口現金タブで消してください">🔒</span>'
-              : '<button class="tap" data-pdel="'+p.id+'" style="border:none;background:transparent;color:#ccc;font-size:16px">🗑</button>')+'</span>'+
-          '</div>';
-        }).join(''):'<div style="padding:18px;text-align:center;color:#999">入金の記録がありません。</div>')+
-        '</div></div></div></div>';
-    })() : '<p class="muted" style="margin:0">取引先を選ぶと、その店の入金の記録が出ます。</p>')+
+    '<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:8px">'+
+        '<b style="font-size:17px;color:var(--ai)">取引先ごとの入金を見る・消す</b>'+
+        '<select id="rvsel" style="max-width:60vw;font-size:16px">'+
+          '<option value="">― 取引先を選ぶ ―</option>'+clientOptions(S.recvClient)+'</select></div>'+
+      (sel? (function(){
+        var L=arLedger(sel,fy);
+        var ps=arPayList(sel.id).slice().reverse();
+        var G='96px 120px 80px 150px 1fr 70px';
+        return '<div class="ar-sum" style="margin:0 0 10px">'+
+          '<div class="ar-box"><div class="k">前期繰越</div><div class="v num">'+yen(L.open)+'</div></div>'+
+          '<div class="ar-box"><div class="k">当期の発生</div><div class="v num">'+yen(L.billed)+'</div></div>'+
+          '<div class="ar-box"><div class="k">回収 計</div><div class="v num" style="color:var(--ice)">'+yen(L.cash+L.bank)+'</div></div>'+
+          '<div class="ar-box"><div class="k">値引き</div><div class="v num" style="color:#6B5B95">'+yen(L.discOnly)+'</div></div>'+
+          '<div class="ar-box"><div class="k">振込手数料</div><div class="v num" style="color:#4C6B8A">'+yen(L.fee)+'</div></div>'+
+          '<div class="ar-box"><div class="k">貸倒れ</div><div class="v num" style="color:#7A2E3F">'+yen(L.bad)+'</div></div>'+
+          '<div class="ar-box zan"><div class="k">残高</div><div class="v num">'+(L.bal<0?'△':'')+yen(Math.abs(L.bal))+'</div></div>'+
+          '</div>'+
+          '<div class="gridwrap rv-log"><div class="gscroll"><div style="min-width:700px">'+
+          '<div class="ghead" style="grid-template-columns:'+G+'"><span>入金日</span><span class="r">金額</span>'+
+            '<span class="c">方法</span><span>何月分</span><span>メモ</span><span class="c">取消</span></div>'+
+          '<div class="gbody" style="max-height:36vh">'+
+          (ps.length?ps.map(function(p){
+            return '<div class="grow" style="grid-template-columns:'+G+'">'+
+              '<span class="num">'+esc(String(p.date).slice(5).replace('-','/'))+'</span>'+
+              '<span class="r num" style="font-weight:700">'+yen(p.amount)+'</span>'+
+              '<span class="c"><span class="pill '+(p.method==='現金'?'tag-kan':(p.method===BAD_M?'tag-crush':(arIsDisc(p)?'tag-maru':'tag-std')))+'">'+esc(p.method||'')+'</span></span>'+
+              '<span class="muted">'+esc(p['for']?forLabel(sel,p['for']):'自動')+'</span>'+
+              '<span class="muted">'+esc(p.memo||'')+(p.fromCash?' <span class="arc-badge">小口現金から</span>':'')+'</span>'+
+              '<span class="c">'+(p.fromCash
+                ? '<span title="小口現金タブで消してください">🔒</span>'
+                : '<button class="tap" data-pdel="'+p.id+'" style="border:none;background:transparent;color:#ccc;font-size:16px">🗑</button>')+'</span>'+
+            '</div>';
+          }).join(''):'<div style="padding:18px;text-align:center;color:#999">入金の記録がありません。</div>')+
+          '</div></div></div></div>';
+      })() : '<p class="muted" style="margin:0">取引先を選ぶと、その店の入金の記録が出ます。</p>')+
+    '</div>';
+  };
+
+  el.innerHTML=
+  '<div class="row" style="justify-content:space-between;margin-bottom:10px">'+
+    '<div class="mincho" style="font-size:21px">売掛の振込回収</div>'+
+    '<span class="muted" id="cashSaving"></span>'+
   '</div>'+
+  segHtml+
+  (PANE==='led' ? ledHtml() : inputHtml())+
   '<p class="muted" style="margin:10px 0 0;font-size:13px">'+
-    '<b style="color:#7A2E3F">①に入れるのは「振込・口座振替・相殺」で回収した分だけです。</b>'+
+    '<b style="color:#7A2E3F">「通帳からの連続入力」に入れるのは「振込・口座振替・相殺」で回収した分だけです。</b>'+
     'お店から<b>現金で集金した</b>ときは「小口現金（売掛の現金回収、現金売上はここ）」タブへ。'+
     '氷を<b>現金で売った</b>ときは小口現金の<b>現金売上</b>です（売掛にはなりません）。<br>'+
-    '<b style="color:#6B5B95">②値引き</b>と<b style="color:#6B5B95">③貸倒れ</b>は、お金は入っていませんが'+
+    '<b style="color:#6B5B95">値引き</b>と<b style="color:#6B5B95">貸倒れ</b>は、お金は入っていませんが'+
     'その分だけ売掛の残高が減ります。どちらも<b>売掛帳</b>の「値引き・貸倒れ」の列に出て、'+
     '<b>売上管理</b>では内わけを分けて出します。<br>'+
-    '<span class="muted">会計のあつかい … ②値引き＝売上値引（純売上が減る）／③貸倒れ＝貸倒損失（費用。売上は減らない）。'+
-    '2026-08-25 より前に「値引き・貸倒れ」で入れた分は ②値引き としてあつかっています。</span></p>';
-
+    '<span class="muted">会計のあつかい … 値引き＝売上値引（純売上が減る）／貸倒れ＝貸倒損失（費用。売上は減らない）。'+
+    '2026-08-25 より前に「値引き・貸倒れ」で入れた分は 値引き としてあつかっています。</span></p>';
   /* ---- 連続入力の配線 ---- */
   var rvd=el.querySelector('#rvd'), rvday=el.querySelector('#rvday'),
       rvq=el.querySelector('#rvq'), rvs=el.querySelector('#rvs'),
       rva=el.querySelector('#rva'), rvfor=el.querySelector('#rvfor'), rvm=el.querySelector('#rvm');
   var go=function(node){ if(!node) return; node.focus(); if(node.select) try{ node.select(); }catch(_){} };
 
-  el.querySelectorAll('[data-rvmode]').forEach(function(b){ b.onclick=function(){
-    S.rvMode=b.dataset.rvmode; S.rvAmt=''; S.rvFocus='day'; render(); }; });
+  el.querySelectorAll('[data-rvpane]').forEach(function(b){ b.onclick=function(){
+    S.rvPane=b.dataset.rvpane;
+    if(S.rvPane!=='led'){ S.rvMode=S.rvPane; S.rvAmt=''; S.rvFocus='day'; }
+    render(); }; });
   el.querySelectorAll('[data-rvfeeby]').forEach(function(b){ b.onclick=function(){
     S.rvFeeBy=b.dataset.rvfeeby;
     if(S.rvFeeBy!=='us') S.rvFee=0;
@@ -9915,7 +9916,9 @@ viewRecv=function(el){
     S.rvFor=rvfor.value;
     go(el.querySelector('#rvok'));
   };
-  el.querySelector('#rvok').onclick=commit;
+  /* ★ ［◯月の入金帳］の帯には入力フォームが無い。受け皿を付ける（2026-09-21） */
+  var rvok=el.querySelector('#rvok');
+  if(rvok) rvok.onclick=commit;
 
   /* ---- カーソルの置き場所 ---- */
   var want=S.rvFocus; S.rvFocus=null;
