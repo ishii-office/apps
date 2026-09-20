@@ -564,6 +564,28 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .kbtn.x.on  {border-color:var(--gold);background:#FFF7E3}
 .know{margin:8px 0 0;padding:8px 11px;border-radius:8px;background:#F6F4EE;font-size:13px}
 
+/* ===== 現金実査：金種で数える（2026-09-21）===== */
+.denom{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:7px}
+.dn{display:flex;align-items:center;gap:7px;border:1.5px solid var(--line);border-radius:9px;
+  background:#fff;padding:7px 9px}
+.dn.on{border-color:var(--green);background:#F3F9F5}
+.dnl{flex:0 0 58px;font-size:16px;font-weight:800;color:var(--ai)}
+.dnb{flex:0 0 auto;width:34px;height:34px;border:1.5px solid var(--line);border-radius:7px;
+  background:#F7F5EF;font-size:19px;font-weight:800;line-height:1;cursor:pointer;color:var(--ink)}
+.dni{width:64px;text-align:right;font-size:19px;font-weight:700;padding:6px 8px}
+.dnu{font-size:13px;color:#888}
+.dns{margin-left:auto;font-size:15px;font-weight:700;color:var(--green);min-width:78px;text-align:right}
+.dnlog{flex-basis:100%;font-size:12px;padding-top:3px}
+
+/* 売掛の現金回収 … 電話では 取引先 → 回収日 → 金額 → 記録する を縦に積む（2026-09-21） */
+@media(max-width:560px){
+  .arc-box .row{flex-wrap:wrap}
+  .arc-box .row > div{flex:1 1 100%;min-width:0}
+  .arc-box #arcok{flex:1 1 100%;margin-top:6px}
+  .arc-box #arcfull{flex:1 1 100%}
+}
+@media(max-width:560px){ .denom{grid-template-columns:1fr} }
+
 /* ===== 仕訳辞書（事務所が領収書を見ながら仕訳を起こす）2026-09-21 ===== */
 .jhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 12px}
 .jbig{font-size:26px;font-weight:800;color:var(--ai)}
@@ -2979,6 +3001,7 @@ var S = {
   cashMemoPre:'',         /* 型から入れる内容の下書き */
   kindOpen:false,         /* （名残り）⓪の山をたたむ仕掛け。いまは辞書を出したままにする */
   cashSide:'in',          /* 小口現金の下層タブ … 'in' 入金 ／ 'out' 出金 */
+  cashCnt:{},             /* 現金実査：金種ごとの枚数 */
   jIdx:0,                 /* 仕訳をつくる：いま何件目を見ているか */
   jQ:'',                  /* 仕訳辞書のしぼり込み */
   jEditId:null,           /* 辞書の登録・直し */
@@ -2991,7 +3014,7 @@ var S = {
   saleClient:null,        /* 現金売上の相手先（取引先id／'_other'） */
   saleQ:'',               /* 相手先の検索 */
   saleItems:null,         /* {kan:{q:'',a:''}, ...} */
-  saleMode:'unit',        /* 現金売上の入れ方 'unit'＝単価どおり／'lump'＝合計金額でまとめて */
+  saleMode:'lump',        /* 現金売上の入れ方。いまは「合計金額でまとめて」の1本だけ */
   saleLump:'',            /* まとめて入れるときの合計金額（税込） */
   yoyCash:true,           /* 売上管理に現金売上を含める */
   recvClient:null,
@@ -4715,6 +4738,13 @@ var CASH_KINDS=[
   {k:'kariuke', g:'x', dir:'in', label:'分からない（入った）', memo:'仮受金',
    acct:'仮受金', fx:'', hint:'同じく。金額と日付だけでOK'}
 ];
+/** 現金実査で数える金種。FXの金種とそろえてある */
+var DENOMS=[10000,5000,2000,1000,500,100,50,10,5,1];
+function denomLabel(d){
+  if(d>=10000) return '1万円';
+  if(d>=1000)  return (d/1000)+'千円';
+  return d+'円';
+}
 function cashKindOf(k){
   for(var i=0;i<CASH_KINDS.length;i++) if(CASH_KINDS[i].k===k) return CASH_KINDS[i];
   return null;
@@ -5068,14 +5098,12 @@ function saleSpread(items,total,c){
 }
 /** まとめて入れているときは、数量・合計から金額を作り直す */
 function saleReflow(){
-  if(S.saleMode!=='lump') return;
   saleSpread(saleItems(), saleNum(S.saleLump), saleClientOf());
 }
 /** 相手先に単価が無い先（その他・店売上など）は、はじめから「まとめて」にする */
-function saleModeAuto(){
-  var c=saleClientOf();
-  if(c && noPrice(c)) S.saleMode='lump';
-}
+/** ★ 入れ方は「合計金額でまとめて」の1本だけ（2026-09-21）。
+      切り替えは無くしたが、呼び出しを残して受け皿にしておく */
+function saleModeAuto(){ S.saleMode='lump'; }
 
 function saleBlank(){
   var o={};
@@ -5198,27 +5226,21 @@ function saleOrphanFix(m){
 function saleBoxHtml(){
   saleReflow();
   var items=saleItems(), sc=saleClientOf(), tot=saleTotal(items);
-  var lump=(S.saleMode==='lump');
+  /* ★★ 入れ方は【合計金額でまとめて】の1本だけ（2026-09-21）
+       現場は「貫が何本・かち割りが何kg」までは分かるが、
+       **それぞれがいくらかは分からない**（口座のない先への店売りなので）。
+       だから数量と、受け取った合計金額だけを入れてもらう。
+       商品ごとの金額は分析用にこちらで振り分ける（合計はぴったり合う）。
+       店売りは全体から見て小さいので、振り分けの誤差は分析に効かない。 */
+  var lump=true;
   if(!S.saleOn){
     return '<div class="cs-box" style="border-style:dashed;background:#fff">'+
       '<div class="row" style="justify-content:space-between">'+
         '<span style="font-size:16px;font-weight:700;color:#7a5c19">氷を現金で売ったとき</span>'+
         '<button class="cs-pick tap" id="csOn">＋ 現金売上として入れる</button></div>'+
-      '<p class="muted" style="margin:6px 0 0">取引先と、何貫でいくら・かち割り何kgでいくら、を入れておくと'+
-        '<b>売上管理</b>に出ます。ふつうの入金（売掛の回収など）はそのまま下に入れてください。</p>'+
     '</div>';
   }
   return '<div class="cs-box">'+
-    '<div class="row" style="justify-content:space-between;margin-bottom:10px">'+
-      '<b style="font-size:17px;color:#7a5c19">現金売上の内訳</b>'+
-      '<span class="muted">'+(lump?'数量と、受け取った合計金額を入れてください'
-                                  :'何貫でいくら／かち割り何kgでいくら、を入れてください')+'</span></div>'+
-
-    '<div class="cs-help">'+
-      '口座を作っていない先へ配達して現金でもらった分、店で一見のお客さんに売った分は '+
-      'まとめて ［<b>その他（店売上）00-001</b>］。'+
-      '<span class="muted">　口座のある先（締めナシの てきとう など）や、'+
-      '催事などで登録した先（00-002〜）は、コード・店名・よみ でさがして選びます。</span></div>'+
     '<label class="lbl">相手先</label>'+
     '<div class="cs-cli">'+
       (sc
@@ -5231,19 +5253,6 @@ function saleBoxHtml(){
           '<button class="cs-pick tap" id="csShop">その他（店売上）00-001</button>')+
     '</div>'+
     (sc?'':'<div id="cssug" class="sug" style="margin-bottom:10px"></div>')+
-
-    /* ---- 入れ方（単価どおり／合計金額でまとめて）---- */
-    '<label class="lbl">入れ方</label>'+
-    '<div class="row" id="csModes" style="margin-bottom:8px">'+
-      '<button class="chip tap '+(lump?'':'on')+'" data-smode="unit">単価どおり（数量と金額）</button>'+
-      '<button class="chip tap '+(lump?'on':'')+'" data-smode="lump">合計金額でまとめて</button>'+
-    '</div>'+
-    (lump
-      ? '<div class="cs-help">単価がバラバラでも大丈夫。<b>数量</b>と<b>受け取った合計金額</b>だけ入れてください。'+
-        '商品ごとの金額は、分析用にこちらで振り分けます（合計はぴったり合います）。'+
-        '<span class="muted">　数量を入れないと、ぜんぶ「その他」になります。'+
-        'かき氷など数量のないものは「単価どおり」で金額だけ入れてください。</span></div>'
-      : '')+
 
     '<div class="gscroll"><table class="cs-tbl"><thead><tr>'+
       '<th style="width:120px">商品</th><th class="r">数量</th>'+
@@ -5270,22 +5279,15 @@ function saleBoxHtml(){
           '</td></tr>';
       }).join('')+
     '</tbody></table></div>'+
-    '<p class="muted" style="margin:6px 0 0">数量は［−］［＋］でも入れられます'+
-      '（かち割り・クラッシュは1袋＝'+BAG_KG+'kg ずつ動きます）。</p>'+
+    '<p class="muted" style="margin:6px 0 0">かち割り・クラッシュは［−］［＋］で1袋＝'+BAG_KG+'kg ずつ。</p>'+
     (lump
       ? '<div class="row" style="justify-content:flex-end;gap:10px;margin-top:10px;align-items:center">'+
-          '<span style="font-size:16px;font-weight:700;color:#7a5c19">受け取った合計金額（税込）</span>'+
+          '<span style="font-size:16px;font-weight:700;color:#7a5c19">受け取った合計金額</span>'+
           '<input id="csLump" class="num" inputmode="numeric" value="'+esc(S.saleLump||'')+'" placeholder="0" '+
             'style="width:190px;text-align:right;font-size:27px;font-weight:700;padding:9px 12px;'+
             'border:2px solid var(--gold);background:#fff">'+
         '</div>'
       : '')+
-    '<div class="row" style="justify-content:flex-end;gap:10px;margin-top:10px">'+
-      '<span style="font-size:15px;font-weight:700;color:var(--ai)">現金売上 合計（税込）</span>'+
-      '<span class="cs-tot num" id="csTot">'+yen(tot)+'</span></div>'+
-    '<p class="muted" style="margin:6px 0 0">この合計が下の「金額」に入ります。'+
-      '受け取った現金そのもの（税込）を入れてください。'+
-      '売掛の回収ではないので、売掛の振込回収タブには入れないでください。</p>'+
   '</div>';
 }
 
@@ -5879,26 +5881,38 @@ function viewCash(el){
         ⓪を選んだ瞬間にカーソルが金額へ飛ぶので、金額がいちばん上に無いと
         画面が勝手に動いたように見える。日にちは今日が既定なので、
         たいていは触らずに ［記録する］ まで行ける */
+  /* ★★ 型ごとに、出すものを絞る（2026-09-21）
+
+       ・売掛の現金回収 … 取引先・回収日・金額 は上の枠（#arcslot）で入れる。
+         こちらは【受領書の写真だけ】。金額も日にちも記録ボタンも二重に出さない
+       ・京信より引出し・預入れ … 領収書は出ないので、写真の枠を出さない
+       ・そのほか … 金額 → 日にち → 領収書 → メモ */
+  var isArc  = !!(kdNow && kdNow.arc);                    /* 売掛の現金回収 */
+  var noShot = !!(kdNow && /^bk(in|out)2?$/.test(kdNow.k)); /* 京信の出し入れ … 領収書なし */
+  var shotLabel = isArc ? '📷 受領書の写真をとる／選ぶ' : '📷 領収書の写真をとる／選ぶ';
+
   var formHtml=
-  '<div id="cf" class="cbox-in">'+
+  '<div id="cf" class="cbox-in'+(isArc?' arconly':'')+'">'+
     (e.id
       ? '<div class="row" style="margin-bottom:10px"><span class="pill tag-maru">修正中</span>'+
         '<button class="btn ghost tap sm" id="cnew" style="margin-left:auto">＋新しく入力する</button></div>'
       : '')+
     (mo==='sale'?saleBoxHtml():'')+
     /* 内容は⓪で決まっている。欄にせず、1行の添え書きにする */
-    (baseMemo
-      ? '<p class="fixnote">内容は <b>'+esc(baseMemo)+'</b> で記録されます</p>'
-      : '')+
+    /* ★ 「内容は◯◯で記録されます」は出さない（2026-09-21）。
+         顧問先には、それが厚生食事代で記録されるかどうかはどうでもいい話。
+         勘定科目は事務所が決める。画面は単純明快に */
+    (isArc ? '' :
     '<div class="row cash-f" style="gap:12px;align-items:flex-end">'+
-      '<div style="flex:1;min-width:160px"><label class="lbl">金額'+
-          (S.saleOn?'　<span style="font-weight:400;color:var(--gold)">← 現金売上の内訳から自動で入ります</span>':'')+'</label>'+
+      '<div style="flex:1;min-width:160px"><label class="lbl">金額</label>'+
         '<input id="cm" class="num cash-amt" inputmode="numeric" '+
           (S.saleOn?'readonly style="background:#FFFBF0" ':'')+
           'value="'+(S.saleOn?(saleTotal(saleItems())||''):(e.amount||''))+'" placeholder="0"></div>'+
     '</div>'+
     '<div class="cash-f">'+
-      '<label class="lbl">日にち　<span style="font-weight:400">← ここが違っていないか、まず確かめてください</span></label>'+
+      /* ★ 日にちは【領収書の日付ではなく、小口現金が動いた日＝精算日】（2026-09-21）。
+           あとでまとめて精算することがあるので、ここは必ず精算日 */
+      '<label class="lbl">精算日　<span style="font-weight:400">小口現金が動いた日</span></label>'+
       '<div class="row" style="gap:8px">'+
         '<span class="dwrap'+(gap===0?' today':'')+'">'+
           '<input type="date" id="cd" class="cash-date" value="'+formDate+'">'+
@@ -5909,28 +5923,30 @@ function viewCash(el){
         '</span>'+
         qd(0,'今日')+qd(1,'きのう')+qd(2,'おととい')+
       '</div>'+
-    '</div>'+
+    '</div>')+
+    (noShot ? '' :
     '<div class="dropzone" id="dz">'+
       '<label class="btn ghost tap" style="display:inline-flex;align-items:center;gap:6px;font-size:16px;padding:13px 18px">'+
-        '📷 領収書の写真をとる／選ぶ'+
+        shotLabel+
         '<input type="file" id="cfile" accept="image/*,application/pdf" capture="environment" style="display:none">'+
       '</label>'+
       '<span id="cprev" style="margin-left:auto">'+attachChip()+'</span>'+
-    '</div>'+
-    (baseMemo
-      ? '<div class="cash-f"><label class="lbl">メモ（任意）'+
-          '<span style="font-weight:400;color:var(--muted,#7a7a7a)">　空でかまいません</span></label>'+
+    '</div>')+
+    (isArc ? '' :
+      baseMemo
+      ? '<div class="cash-f"><label class="lbl">メモ（任意）</label>'+
           '<input id="cn" class="cash-memo" lang="ja" value="'+esc(extraMemo)+'" '+
             'placeholder="店名など、書いておきたいことがあれば"></div>'
-      : '<div class="cash-f"><label class="lbl">内容（'+(mo==='sale'?'元帳に出る書き方':(isOut?'何に使ったか':'どこから入ったか'))+'）'+
-          (S.saleOn?'　<span style="font-weight:400;color:var(--gold)">空欄でOK。「現金売上　店名」が入ります</span>':'')+'</label>'+
+      : '<div class="cash-f"><label class="lbl">内容</label>'+
         '<input id="cn" class="cash-memo" lang="ja" value="'+esc(e.memo||S.cashMemoPre||'')+'" placeholder="'+
-          (mo==='sale'?'空欄でOK':(isOut?'例：ガソリン　スタンド名　など':'例：預金から引き出し　など'))+'">'+
+          (mo==='sale'?'空欄でOK':(isOut?'例：ガソリン　スタンド名':'例：預金から引き出し'))+'">'+
         '</div>')+
+    /* ★ 記録ボタンは1つだけ。売掛の回収は上の枠のボタンで記録する（2026-09-21） */
+    (isArc ? '' :
     '<div class="row" style="margin-top:12px;gap:9px">'+
       '<button class="btn tap bigbtn" id="cok" data-nav style="flex:1">'+(e.id?'この内容で直す':'記録する')+'</button>'+
       '<button class="btn ghost tap clrbtn" id="cclr">'+(e.id?'訂正しない':'クリア')+'</button>'+
-    '</div>'+
+    '</div>')+
   '</div>';
 
   /* ============================================================
@@ -6023,28 +6039,21 @@ function viewCash(el){
   /* ★★ ⓪が①②③のどれを使うかを決めているので、その枠だけを出す */
   (mo==='sale'
   /* ---------- ① 現金売上（店売り・都度売上） ---------- */
-  ? '<div class="cbox sale">'+
-      '<div class="cbox-h"><span class="ti">店売り（現金売上）</span>'+
-        '<span class="cbox-now">入力中</span></div>'+
-      formHtml+
-    '</div>'
+  /* ★ 見出しに「入力中」も「内容は◯◯で記録されます」も出さない（2026-09-21）。
+       どこを入力しているかは、押した辞書に色が付いているので見れば分かる。
+       勘定科目でどう記録されるかは事務所の仕事で、顧問先には要らない話 */
+  ? '<div class="cbox sale">'+ formHtml +'</div>'
   : mo==='in'
   /* ---------- ② 入金（売掛の回収・引出し・社長から） ----------
        ★ 売掛の回収の枠（#arcslot）は【売掛の回収を選んだときだけ】置く（2026-09-20）。
          いつも置いていたので、「京信より引出し」を選んでいるのに
          お店を選ぶ枠が上に出ていた */
   ? '<div class="cbox recv">'+
-      '<div class="cbox-h"><span class="ti">'+esc(kdNow?kdNow.label:'入金')+'</span>'+
-        '<span class="cbox-now">入力中</span></div>'+
       ((kdNow&&kdNow.arc)?'<div id="arcslot"></div>':'')+
       formHtml+
     '</div>'
   /* ---------- ③ 出金 ---------- */
-  : '<div class="cbox exp">'+
-      '<div class="cbox-h"><span class="ti">'+esc(kdNow?kdNow.label:'出金（払った現金）')+'</span>'+
-        '<span class="cbox-now">入力中</span></div>'+
-      formHtml+
-    '</div>');
+  : '<div class="cbox exp">'+ formHtml +'</div>');
 
   var ledHtml =
   /* ---------- ④ 現金元帳 ---------- */
@@ -6100,19 +6109,40 @@ function viewCash(el){
     '</div></div></div></div>'+
   '</div>';
 
+  /* ★★ 金種で数える（2026-09-21）
+       「万円が何枚、5千円が何枚」と数えて入れる。合計はこちらで出す。
+       金庫の前で数えながら打てるように、これがいちばん上。 */
+  var cnt = S.cashCnt || (S.cashCnt={});
+  var denomSum = DENOMS.reduce(function(t,d){
+    return t + d*(parseInt(String(cnt[d]||'').replace(/[^0-9]/g,''),10)||0); },0);
   var countHtml =
   '<div class="balbox" id="bc">'+
     '<div class="cbox-h" style="margin-bottom:8px">'+
       '<b class="ti" style="color:var(--green)">現金実査（金庫の現金を数える）</b>'+
-      '<span class="hint">帳簿とズレていないかの確認だけです。仕訳には使いません</span></div>'+
-    '<div class="row" style="gap:12px;align-items:flex-end">'+
+      '<span class="hint">帳簿とズレていないかの確認だけです</span></div>'+
+    '<div class="denom">'+
+      DENOMS.map(function(d){
+        var n=parseInt(String(cnt[d]||'').replace(/[^0-9]/g,''),10)||0;
+        return '<div class="dn'+(n?' on':'')+'">'+
+          '<span class="dnl">'+denomLabel(d)+'</span>'+
+          '<button class="dnb tap" tabindex="-1" data-dstep="-1" data-dv="'+d+'">−</button>'+
+          '<input class="dni num" inputmode="numeric" data-dn="'+d+'" value="'+esc(cnt[d]||'')+'" placeholder="0">'+
+          '<span class="dnu">'+(d>=1000?'枚':'個')+'</span>'+
+          '<button class="dnb tap" tabindex="-1" data-dstep="1" data-dv="'+d+'">＋</button>'+
+          '<span class="dns num" data-dsum="'+d+'">'+(n?yen(d*n):'')+'</span>'+
+        '</div>';
+      }).join('')+
+    '</div>'+
+    '<div class="row" style="gap:12px;align-items:flex-end;margin-top:12px;flex-wrap:wrap">'+
       '<div><label class="lbl">数えた日</label><input type="date" id="nd" class="cash-date" value="'+today+'"></div>'+
-      '<div><label class="lbl">実際にあった現金</label>'+
-        '<input id="na" class="num" inputmode="numeric" placeholder="0" style="width:160px;text-align:right;font-size:26px;font-weight:700;padding:9px 12px"></div>'+
+      '<div><label class="lbl">数えた合計</label>'+
+        '<input id="na" class="num" inputmode="numeric" placeholder="0" value="'+(denomSum||'')+'" '+
+          'style="width:170px;text-align:right;font-size:26px;font-weight:700;padding:9px 12px"></div>'+
       '<div><label class="lbl">帳簿の残高（その日まで）</label>'+
         '<div class="num mincho" id="nb" style="font-size:26px;font-weight:700;color:var(--ai)">'+yen(cashBalanceAt(m,today))+'</div></div>'+
       '<div><label class="lbl">差額</label>'+
         '<div class="num diffbig" id="ndiff" style="color:#bbb">—</div></div>'+
+      '<button class="btn ghost tap" id="nclr">数え直す</button>'+
       '<button class="btn tap" id="nok" style="background:var(--green);font-size:16px;padding:13px 20px">この残高を記録</button>'+
     '</div>'+
     (counts.length
@@ -6122,7 +6152,10 @@ function viewCash(el){
             '<span class="num cash-day">'+String(x.date).slice(5).replace('-','/')+'</span>'+
             '<span>実際 <b class="num">'+yen(x.actual)+'</b> ／ 帳簿 <span class="num">'+yen(b)+'</span></span>'+
             '<span class="num '+(df===0?'d-ok':'d-ng')+'" style="font-weight:700;font-size:17px">'+(df===0?'✓ ぴったり':(df>0?'+':'')+yen(df))+'</span>'+
-            '<button class="tap" data-nrm="'+x.id+'" style="border:none;background:transparent;color:#ccc">🗑</button></div>';
+            '<button class="tap" data-nrm="'+x.id+'" style="border:none;background:transparent;color:#ccc">🗑</button>'+
+            (x.by?'<div class="dnlog muted">'+DENOMS.filter(function(d){return x.by[d];})
+              .map(function(d){ return denomLabel(d)+' '+x.by[d]; }).join('／')+'</div>':'')+
+            '</div>';
         }).join('')+'</div>'
       : '<p class="muted" style="margin:8px 0 0">まだ記録がありません。月末や週末に数えて入れておくと、あとで探す手間がなくなります。</p>')+
   '</div>';
@@ -6317,10 +6350,54 @@ function viewCash(el){
     ndiff.textContent = df===0 ? '✓ ぴったり' : (df>0?'+':'')+yen(df);
   }
   na.oninput=refreshDiff; nd.onchange=refreshDiff;
+
+  /* ★ 金種を打つと、合計と差額がその場で動く（2026-09-21）。
+       描き直さないので、打っている途中でカーソルが飛ばない */
+  var sumDenoms=function(){
+    var t=0;
+    DENOMS.forEach(function(d){
+      var n=parseInt(String((S.cashCnt||{})[d]||'').replace(/[^0-9]/g,''),10)||0;
+      t+=d*n;
+      var c2=el.querySelector('[data-dsum="'+d+'"]'); if(c2) c2.textContent=n?yen(d*n):'';
+      var row=el.querySelector('[data-dn="'+d+'"]');
+      if(row&&row.parentNode) row.parentNode.classList.toggle('on', !!n);
+    });
+    na.value = t ? String(t) : '';
+    refreshDiff();
+  };
+  el.querySelectorAll('[data-dn]').forEach(function(i){
+    i.oninput=function(){
+      var r=i.value.replace(/[^0-9]/g,''); if(r!==i.value) i.value=r;
+      S.cashCnt[i.dataset.dn]=r; sumDenoms();
+    };
+  });
+  el.querySelectorAll('[data-dstep]').forEach(function(b){
+    b.onclick=function(){
+      var d=b.dataset.dv, i=el.querySelector('[data-dn="'+d+'"]');
+      var n=(parseInt(String(S.cashCnt[d]||'').replace(/[^0-9]/g,''),10)||0)+(+b.dataset.dstep);
+      if(n<0) n=0;
+      S.cashCnt[d]=n?String(n):'';
+      if(i) i.value=S.cashCnt[d];
+      sumDenoms();
+    };
+  });
+  var nclr=el.querySelector('#nclr');
+  if(nclr) nclr.onclick=function(){
+    S.cashCnt={};
+    el.querySelectorAll('[data-dn]').forEach(function(i){ i.value=''; });
+    sumDenoms();
+  };
+  sumDenoms();
   el.querySelector('#nok').onclick=function(){
     var raw=na.value.replace(/[^0-9]/g,'');
     if(raw===''){ alert('実際にあった現金の金額を入れてください。'); na.focus(); return; }
-    DB.count[nk]=(DB.count[nk]||[]).concat([{id:Date.now(),date:nd.value,actual:parseInt(raw,10)||0}]);
+    var by={};
+    DENOMS.forEach(function(d){
+      var n=parseInt(String((S.cashCnt||{})[d]||'').replace(/[^0-9]/g,''),10)||0;
+      if(n) by[d]=n; });
+    DB.count[nk]=(DB.count[nk]||[]).concat([{id:Date.now(),date:nd.value,
+      actual:parseInt(raw,10)||0, by:(Object.keys(by).length?by:null)}]);
+    S.cashCnt={};
     toast('残高を記録しました');
     render();
     cashSaveAsync(nk,JSON.stringify(DB.count[nk]));
@@ -6394,7 +6471,7 @@ function viewCash(el){
       S.cashImgUrl=x.imgUrl||null; S.cashJustId=null;
       S.saleOn=!!x.sale; S.saleClient=x.sale?x.sale.cid:null;
       S.saleItems=x.sale?saleUnpack(x.sale):null; S.saleQ='';
-      S.saleMode='unit'; S.saleLump='';
+      S.saleMode='lump'; S.saleLump='';
       render(); window.scrollTo({top:0,behavior:'smooth'}); } }; });
   el.querySelectorAll('[data-rm]').forEach(function(b){ b.onclick=function(){
     var x=(DB.cash[bk]||[]).filter(function(y){return String(y.id)===b.dataset.rm;})[0];
@@ -8429,7 +8506,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-21a 仕訳辞書（領収書を見ながら辞書を選ぶだけで仕訳ができる）・読み出しの待ちを伸ばす・時間切れを人に見せない・暗証番号は一度きり';
+var APP_BUILD='2026-09-21b 小口現金の画面から要らない説明と二重の欄を落とす・店売りは合計金額だけ・現金実査を金種で数える';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -9066,14 +9143,10 @@ function arcBoxHtml(m){
   var lastDay=daysInMonth(m.getFullYear(),m.getMonth());
   var d=S.arcDate||ymd(new Date(m.getFullYear(),m.getMonth(),Math.min(new Date().getDate(),lastDay)));
   if(d.slice(0,7)!==ym(m)) d=ymd(new Date(m.getFullYear(),m.getMonth(),Math.min(new Date().getDate(),lastDay)));
+  /* ★ 説明は置かない（2026-09-21）。見出しも要らない。
+       「売掛の現金回収」を押してここに居るのだから、見れば分かる。
+       要るのは【取引先・回収日・金額】の3つだけ */
   return '<div class="arc-box">'+
-    '<div class="row" style="justify-content:space-between;margin-bottom:8px">'+
-      '<b style="font-size:17px;color:#7A2E3F">お店から集金した現金を入れる</b>'+
-      '<span class="muted">ここに入れると、売掛の消込と小口現金の入金の<b>両方</b>に入ります</span></div>'+
-    '<div class="cs-help" style="border-color:#7A2E3F;color:#7A2E3F">'+
-      '集金してきた現金は<b>ここだけ</b>に入れてください。'+
-      '「売掛の振込回収」タブには入れません（二重になります）。<br>'+
-      '<b>氷を現金で売った</b>ときは、これではなく上の「① 現金売上（店売り、都度売上）」です。</div>'+
     '<div class="row" style="gap:8px;margin-bottom:8px">'+
       (c
         ? '<span class="pill tag-slip" style="font-size:16px;padding:8px 14px"><span class="num">'+fmtCode(c.code)+'</span>　'+esc(c.name)+'</span>'+
@@ -9084,13 +9157,14 @@ function arcBoxHtml(m){
     '</div>'+
     (c?'':'<div id="arcsug" class="sug" style="margin-bottom:8px"></div>')+
     '<div class="row" style="gap:12px;align-items:flex-end">'+
-      '<div><label class="lbl">回収した日</label><input type="date" id="arcd" class="cash-date" value="'+d+'"></div>'+
-      '<div style="flex:1;min-width:150px"><label class="lbl">金額（税込）</label>'+
+      '<div><label class="lbl">回収日</label><input type="date" id="arcd" class="cash-date" value="'+d+'"></div>'+
+      '<div style="flex:1;min-width:150px"><label class="lbl">金額</label>'+
         '<input id="arca" class="num cash-amt" inputmode="numeric" value="'+esc(S.arcAmt||'')+'" placeholder="0"></div>'+
-      (c?'<div style="min-width:200px"><label class="lbl">何月分の回収か</label>'+
+      (c?'<div style="min-width:180px"><label class="lbl">何月分</label>'+
           '<select id="arcfor" class="rv-sel">'+forOptions(c,fy,S.arcFor)+'</select></div>':'')+
       (bal>0?'<button class="btn ghost tap" id="arcfull" style="margin-bottom:2px">残高全額</button>':'')+
-      '<button class="arc-pick tap" id="arcok" style="margin-bottom:2px;padding:14px 22px;font-size:17px">この現金回収を記録する</button>'+
+      /* ★ 記録ボタンはここ1つだけ。下の枠には出さない（2026-09-21） */
+      '<button class="arc-pick tap" id="arcok" style="margin-bottom:2px;padding:14px 22px;font-size:17px">記録する</button>'+
     '</div>'+
   '</div>';
 }
@@ -9150,17 +9224,27 @@ function arcSave(el,m){
   }
   var id=Date.now();
   var bk=bkey(m);
-  var rec={id:id, date:d, dir:'in', account:'', amount:amt,
+  /* ★ 受領書の写真も一緒に残す（2026-09-21）。
+       領収書はこちらが渡すもので、もらってくるのは【受領書】。
+       写真は元帳に入れない ── Drive のリンクか、この端末の預かり（印だけ） */
+  var pic={url:(S.cashImgUrl||null), pend:null, img:null, type:null};
+  if(!pic.url && S.cashImg){
+    if(storage.gas && rcptStash(id,bk,ym(m),d,S.cashImg,S.cashImgType,S.cashImgUid||rcptUid())) pic.pend=1;
+    else { pic.img=S.cashImg; pic.type=S.cashImgType; }
+  }
+  var rec={id:id, date:d, dir:'in', account:'', amount:amt, kind:'ar',
            party:c.name, memo:'売掛の現金回収　'+c.name+(forKey?'（'+forLabel(c,forKey)+'）':''), sale:null,
            arPay:{cid:c.id, code:c.code, name:c.name, 'for':forKey},
-           imgUrl:null, img:null, imgType:null};
+           imgUrl:pic.url, imgPend:pic.pend, img:pic.img, imgType:pic.type};
   DB.cash[bk]=(DB.cash[bk]||[]).concat([rec]);
   var pk='payments:'+c.id;
   DB.pay[pk]=(DB.pay[pk]||[]).concat([{id:id, date:d, amount:amt, method:'現金',
                                        memo:'小口現金から', 'for':forKey, fromCash:true}]);
   S.cashJustId=id; S.arcClient=null; S.arcQ=''; S.arcAmt=''; S.arcFor=''; S.arcDate=d;
+  S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null; S.cashImgUid=null;
+  S.cashJust={ d:String(d).slice(5).replace('-','/'), t:'売掛の現金回収　'+c.name, a:amt };
   clearCaches();
-  toast('売掛の現金回収を記録しました');
+  toast('記録しました');
   render();
   cashSaveAsync(bk, JSON.stringify(DB.cash[bk]));
   cashSaveAsync(pk, JSON.stringify(DB.pay[pk]));
