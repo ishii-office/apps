@@ -4708,13 +4708,15 @@ function viewRecv(el){
    ★ 京信は【普通 1113/01（3069484）】と【当座 1112/01（0002880）】の2本ある。
      どちらの口座から出し入れしたかで分ける。取りちがえない */
 var CASH_KINDS=[
+  /* ★★★ 名前 ＝ 摘要 ＝ 仕訳辞書の名前。3つを揃える（2026-09-21）
+       「何があったか」を1つ選んだら、それがそのまま元帳の摘要になり、
+       仕訳辞書の名前にもなる。別々の言葉にしない（`label` と `memo` は必ず同じ）。
+     ★ 消した型は `gone:1` を立てて【残す】。消すと、前に入れた記録の名前が引けなくなる */
   /* ---- 入る ---- */
   {k:'ar',   g:'in',  dir:'in',  label:'売掛の現金回収', memo:'売掛の現金回収',
-   acct:'売掛金', fx:'', arc:true,
-   hint:'集金してきた分。お店を選んで入れる'},
-  {k:'uri',  g:'in',  dir:'in',  label:'店売り（現金売上）', memo:'店売り',
-   acct:'売上高（現金売上）', fx:'', sale:true,
-   hint:'氷をその場で現金で売った。売掛にはならない'},
+   acct:'売掛金', fx:'', arc:true},
+  {k:'uri',  g:'in',  dir:'in',  label:'店売り（現金売上）', memo:'店売り（現金売上）', was:'店売り',
+   acct:'売上高（現金売上）', fx:'', sale:true},
   {k:'bkout2',g:'in', dir:'in',  label:'京信（普通）より引出し', memo:'京信（普通）より引出し',
    acct:'普通預金（京信 河原町支店 3069484）',
    fx:'1113', fxName:'普通預金', sub:'01', subName:'京信 河原町支店 3069484', tax:'0'},
@@ -4723,60 +4725,71 @@ var CASH_KINDS=[
    fx:'1112', fxName:'当座預金', sub:'01', subName:'京信 河原町支店 0002880', tax:'0'},
   {k:'shacho',g:'in', dir:'in',  label:'社長から入金', memo:'社長から入金',
    acct:'役員借入金', fx:''},
+  {k:'kariuke', g:'x', dir:'in', label:'分からない', memo:'分からない', was:'仮受金',
+   acct:'仮受金', fx:''},
   /* ---- 出る ---- */
-  {k:'bkin2',g:'out', dir:'out', label:'京信（普通）へ預入れ', memo:'現金より普通預金へ',
+  {k:'bkin2',g:'out', dir:'out', label:'京信（普通）へ預入れ', memo:'京信（普通）へ預入れ', was:'現金より普通預金へ',
    acct:'普通預金（京信 河原町支店 3069484）',
    fx:'1113', fxName:'普通預金', sub:'01', subName:'京信 河原町支店 3069484', tax:'0'},
-  {k:'bkin', g:'out', dir:'out', label:'京信（当座）へ預入れ', memo:'現金より当座へ',
+  {k:'bkin', g:'out', dir:'out', label:'京信（当座）へ預入れ', memo:'京信（当座）へ預入れ', was:'現金より当座へ',
    acct:'当座預金（京信 河原町支店 0002880）',
    fx:'1112', fxName:'当座預金', sub:'01', subName:'京信 河原町支店 0002880', tax:'0'},
-  {k:'fami', g:'out', dir:'out', label:'ファミマ・スーパー（飲み物）', memo:'厚生食事代',
-   acct:'福利厚生費（軽減8%）',
-   fx:'6226', fxName:'福利厚生費', tax:'5', rate:8, red:1, hint:'配達員の水分補給'},
-  {k:'gas',  g:'out', dir:'out', label:'バイクのガソリン代', memo:'バイクガソリン代',
-   acct:'旅費交通費／燃料代',
-   fx:'6112', fxName:'旅費交通費', sub:'02', subName:'燃料代', tax:'5', rate:10,
-   hint:'配達員が立て替えた分の精算'},
-  {k:'bike', g:'out', dir:'out', label:'バイクの修理（林モーター）', memo:'林モーター バイク修理',
-   acct:'車両費', fx:''},
-  {k:'inoue',g:'out', dir:'out', label:'井上へ前渡し（給料の前借り）', memo:'井上 前渡し',
-   acct:'未払費用', fx:'', hint:'給料を渡すとき手取りから差し引く'},
-  {k:'kawara',g:'out',dir:'out', label:'河原へ給料', memo:'河原 給料',
-   acct:'給料手当', fx:''},
-  {k:'kyuryo',g:'out',dir:'out', label:'給料を払った', memo:'給料',
-   acct:'給料手当', fx:''},
-  {k:'yashoku',g:'out',dir:'out',label:'夜食を買った', memo:'厚生食事代',
+  {k:'fami', g:'out', dir:'out', label:'厚生費(飲み物、夜食)', memo:'厚生費(飲み物、夜食)', was:'厚生食事代',
    acct:'福利厚生費（軽減8%）',
    fx:'6226', fxName:'福利厚生費', tax:'5', rate:8, red:1},
-  {k:'tao',  g:'out', dir:'out', label:'Tao配送料を払った', memo:'氷 配送料',
+  {k:'gas',  g:'out', dir:'out', label:'バイク 燃料代', memo:'バイク 燃料代', was:'バイクガソリン代',
+   acct:'旅費交通費／燃料代',
+   fx:'6112', fxName:'旅費交通費', sub:'02', subName:'燃料代', tax:'5', rate:10},
+  {k:'bike', g:'out', dir:'out', label:'バイク 修理・整備', memo:'バイク 修理・整備', was:'林モーター バイク修理',
+   acct:'車両費', fx:''},
+  {k:'inoue',g:'out', dir:'out', label:'井上へ前渡し（給料の前借り）', memo:'井上へ前渡し（給料の前借り）', was:'井上 前渡し',
+   acct:'未払費用', fx:''},
+  {k:'kawara',g:'out',dir:'out', label:'河原へ給料', memo:'河原へ給料', was:'河原 給料',
+   acct:'給料手当', fx:''},
+  {k:'kyuryo',g:'out',dir:'out', label:'給料の支払い', memo:'給料の支払い', was:'給料',
+   acct:'給料手当', fx:''},
+  {k:'tao',  g:'out', dir:'out', label:'氷 配送代', memo:'氷 配送代', was:'氷 配送料',
    acct:'仕入高／Tao 運賃',
    fx:'5211', fxName:'仕入高', sub:'02', subName:'Tao 運賃', tax:'5', rate:10},
-  {k:'shinbun',g:'out',dir:'out',label:'新聞代', memo:'新聞代 デイリースポーツ',
+  {k:'shinbun',g:'out',dir:'out',label:'新聞代', memo:'新聞代', was:'新聞代 デイリースポーツ',
    acct:'図書新聞費（軽減8%）',
    fx:'6118', fxName:'図書新聞費', sub:'01', subName:'図書新聞費', tax:'5', rate:8, red:1},
-  {k:'gomi', g:'out', dir:'out', label:'ゴミ処理代（森商店）', memo:'ごみ処理代',
+  {k:'gomi', g:'out', dir:'out', label:'ゴミ処理代', memo:'ゴミ処理代', was:'ごみ処理代',
    acct:'衛生管理等諸費',
    fx:'6233', fxName:'衛生管理等諸費', tax:'5', rate:10},
-  {k:'hoken',g:'out', dir:'out', label:'保険料', memo:'保険料',
+  {k:'hoken',g:'out', dir:'out', label:'バイク保険料', memo:'バイク保険料', was:'保険料',
+   acct:'保険料／バイク保険', fx:''},
+  {k:'hokent',g:'out',dir:'out', label:'トラック保険料', memo:'トラック保険料',
    acct:'保険料', fx:''},
-  {k:'zei',  g:'out', dir:'out', label:'税金（住民税など）', memo:'住民税',
-   acct:'預り金', fx:''},
-  {k:'settai',g:'out',dir:'out', label:'接待・交際', memo:'交際費',
+  {k:'settai',g:'out',dir:'out', label:'接待交際', memo:'接待交際', was:'交際費',
    acct:'接待交際費', fx:''},
-  {k:'shomo',g:'out', dir:'out', label:'消耗品・事務用品', memo:'備品・消耗品費',
+  {k:'shomo',g:'out', dir:'out', label:'消耗品', memo:'消耗品', was:'備品・消耗品費',
    acct:'備品消耗品費',
    fx:'6225', fxName:'備品消耗品費', tax:'5', rate:10},
-  {k:'kounetsu',g:'out',dir:'out',label:'水道・ガス・電気', memo:'水道光熱費',
+  {k:'suido',g:'out', dir:'out', label:'水道代', memo:'水道代',
    acct:'水道光熱費',
-   fx:'6219', fxName:'水道光熱費', tax:'5', rate:10, hint:'現金で払ったときだけ'},
-  {k:'tesuryo',g:'out',dir:'out',label:'顧問料・手数料', memo:'税理士報酬',
+   fx:'6219', fxName:'水道光熱費', tax:'5', rate:10},
+  {k:'gasu', g:'out', dir:'out', label:'ガス代', memo:'ガス代',
+   acct:'水道光熱費',
+   fx:'6219', fxName:'水道光熱費', tax:'5', rate:10},
+  {k:'denki',g:'out', dir:'out', label:'電気代', memo:'電気代',
+   acct:'水道光熱費',
+   fx:'6219', fxName:'水道光熱費', tax:'5', rate:10},
+  {k:'karibarai',g:'x',dir:'out',label:'分からない', memo:'分からない', was:'仮払金',
+   acct:'仮払金', fx:''},
+  /* ---- 消した型（2026-09-21）。前に入れた記録の名前を引くためだけに残す。
+         `gone:1` があるものは辞書にも仕訳辞書にも出さない ---- */
+  {k:'yashoku',g:'out',dir:'out',label:'夜食を買った', memo:'厚生食事代', gone:1,
+   acct:'福利厚生費（軽減8%）',
+   fx:'6226', fxName:'福利厚生費', tax:'5', rate:8, red:1},
+  {k:'zei',  g:'out', dir:'out', label:'税金（住民税など）', memo:'住民税', gone:1,
+   acct:'預り金', fx:''},
+  {k:'kounetsu',g:'out',dir:'out',label:'水道・ガス・電気', memo:'水道光熱費', gone:1,
+   acct:'水道光熱費',
+   fx:'6219', fxName:'水道光熱費', tax:'5', rate:10},
+  {k:'tesuryo',g:'out',dir:'out',label:'顧問料・手数料', memo:'税理士報酬', gone:1,
    acct:'支払手数料／その他',
-   fx:'6117', fxName:'支払手数料', sub:'99', subName:'その他', tax:'5', rate:10},
-  /* ---- 分からない ---- */
-  {k:'karibarai',g:'x',dir:'out',label:'分からない（払った）', memo:'仮払金',
-   acct:'仮払金', fx:'', hint:'あとで事務所が調べます。金額と日付だけでOK'},
-  {k:'kariuke', g:'x', dir:'in', label:'分からない（入った）', memo:'仮受金',
-   acct:'仮受金', fx:'', hint:'同じく。金額と日付だけでOK'}
+   fx:'6117', fxName:'支払手数料', sub:'99', subName:'その他', tax:'5', rate:10}
 ];
 /** 現金実査で数える金種。FXの金種とそろえてある */
 var DENOMS=[10000,5000,2000,1000,500,100,50,10,5,1];
@@ -5506,6 +5519,7 @@ function jdicSeed(){
   var have={}; jdicList().forEach(function(d){ have[d.name]=1; });
   var add=[];
   CASH_KINDS.forEach(function(k){
+    if(k.gone) return;                /* 消した型は辞書にしない */
     if(have[k.label]) return;
     if(!k.fx) return;                 /* FXの科目が決まっている型だけ。あとは手で足す */
     add.push(jdNorm({id:jdUid(), grp:(k.dir==='in'?'入金':'出金'),
@@ -5998,9 +6012,18 @@ function viewCash(el){
   /* 直すときは、決まった内容のうしろに足したメモだけを取り出して欄へ戻す */
   var extraMemo = '';
   if(baseMemo){
+    /* ★ 前の名前で入れた記録も、打ったメモだけを取り出せるようにする（2026-09-21）。
+         型の名前を変えたので、`was`（前の摘要）でも剥がす。
+         そうしないと「厚生食事代　マックスバリュ」が丸ごと欄へ戻って、
+         保存で「厚生費(飲み物、夜食)　厚生食事代　マックスバリュ」と積み上がる */
     var em = String(e.memo||'');
-    extraMemo = (em===baseMemo) ? ''
-              : (em.indexOf(baseMemo+'　')===0 ? em.slice(baseMemo.length+1) : em);
+    var heads = [baseMemo]; if(kdNow.was) heads.push(String(kdNow.was));
+    extraMemo = em;
+    for(var hi=0; hi<heads.length; hi++){
+      var h=heads[hi];
+      if(em===h){ extraMemo=''; break; }
+      if(em.indexOf(h+'　')===0){ extraMemo=em.slice(h.length+1); break; }
+    }
   }
   var counts=(DB.count[nk]||[]).slice().sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); });
   var orph=saleOrphans(m);
@@ -6161,12 +6184,13 @@ function viewCash(el){
       return '<button class="seg tap'+(SIDE===p[0]?' on':'')+'" data-cside="'+p[0]+'">'+
         p[1]+'</button>'; }).join('')+'</div>';
 
-  var sideKinds = CASH_KINDS.filter(function(x){ return x.dir===SIDE; });
+  /* ★ 消した型（gone）は辞書に出さない。前の記録の名前を引くためだけに残してある */
+  var sideKinds = CASH_KINDS.filter(function(x){ return x.dir===SIDE && !x.gone; });
   var kindsHtml =
   sideHtml +
-  '<div class="kgrp '+SIDE+'"><div class="kgt '+SIDE+'">'+
-      (SIDE==='in'?'入金 … 何が入ったか':'出金 … 何に払ったか')+
-    '</div><div class="kwrap">'+
+  /* ★ 「入金 … 何が入ったか」「出金 … 何に払ったか」の見出しは出さない（2026-09-21）。
+       すぐ上のバーで［入金］［出金］を選んでいるので、見れば分かる */
+  '<div class="kgrp '+SIDE+'"><div class="kwrap">'+
     sideKinds.map(function(x){
       return '<button class="kbtn '+(x.g==='x'?'x':SIDE)+(S.cashKind===x.k?' on':'')+
         ' tap" data-ck="'+x.k+'">'+esc(x.label)+'</button>';
@@ -8644,7 +8668,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-21e 売掛の振込回収も【上のバー】で割る（通帳からの連続入力／値引き／貸倒れ／◯月の入金帳）・二重の説明をカット';
+var APP_BUILD='2026-09-21f 小口現金の型の名前＝元帳の摘要＝仕訳辞書の名前 を揃える・型の入れ替え（厚生費／バイク／水道代・ガス代・電気代 …）';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
