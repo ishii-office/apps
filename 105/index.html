@@ -946,7 +946,9 @@ var WEB2 = !LIVE && !!API_URL;
      領収書の写真（saveReceipt）は receiptFlush が別に見張っているので、
      ここでは触らない。**増えると困るものを、ここに足さない。** */
 var NET_WAIT=[1200,3000];
-var RETRY_OK={kvGet:1, kvGetMany:1, kvSet:1, kvSetMany:1, kvDelete:1, masterFromSheet:1};
+var RETRY_OK={kvGet:1, kvGetMany:1, kvSet:1, kvSetMany:1, kvDelete:1, masterFromSheet:1,
+              /* 注文の「このマスをこの値にする」。二度送っても同じ（2026-09-20） */
+              ordersPatch:1};
 
 /* ★★★ 1回の通信を待つ上限（2026-09-14）。ここが無いと【固まる】。
      電波が立っていても、GASの起こし直し・トンネル・LTEの切り替えで
@@ -1888,7 +1890,10 @@ async function ensureMonths(dates){
   if(!need.length) return;
   var got=await storage.getMany(need);
   need.forEach(function(k){
-    if(k.indexOf('orders:')===0) DB.orders[k]=jparse(got[k],{})||{};
+    /* ★ 読んだ月には、まだ送れていないぶんを必ず当てる（opOverlay）。
+         当てないと「入れたのに画面から消えた」になり、
+         その古い画面の上に書いて、本当に消える */
+    if(k.indexOf('orders:')===0) DB.orders[k]=opOverlay(k, jparse(got[k],{})||{});
     else                         DB.deliv[k] =jparse(got[k],{})||{};
   });
   clearCaches();
@@ -1899,7 +1904,97 @@ function monthsLoaded(dates){
 function dayOrders(d){ var m=DB.orders[okey(d)]||{}; return m[ymd(d)]||{}; }
 function getQty(d,id){ return dayOrders(d)[id]; }
 
-var _saveTimer={}, _dirty={};
+/* ============================================================
+   ★★★ 注文の保存（2026-09-20 に作り直した）
+
+   【なぜ作り直したか】2026-09-20 に「入力した分が全部消えた」。
+   もとは、1マス直すたびに orders:2026-09 を【月まるごと】
+   （261店ぶん）送り直して上書きしていた。だから
+
+     ・中西さんが店のPC（Pages）で入れる
+     ・戸倉さんが自宅から入れる
+     ・石井が事務所で直しを見る
+
+   のように2人が同じ月を開いていると、あとから1マス入れたほうの
+   「古い月まるごと」が、先に入れたぶんを丸ごと消す。
+   ★ 開いているだけなら平気。1マスでも入れた時点で起きる。
+
+   さらに、旧 flushMonth は送る前に _dirty を落としてしまい、
+   しくじっても誰も拾わなかったので【黙って消えて】いた。
+
+   いまはこうする。
+     ① 送るのは【日付 × 店 の、触ったマスだけ】（ordersPatch）。
+        サーバが鍵をかけて、そのマスだけ差し替える。
+        ほかの人が入れたぶんは、こちらの画面が古くても消えない
+     ② 送る前に、この端末（localStorage）に控えを取る
+     ③ しくじったら 1秒 → 3秒 → 8秒 → 20秒 と送り直す
+     ④ それでも駄目なら控えを残す。1分おきの見回りと、
+        次に開いたときに、ひとりで送り直す
+     ⑤ 入ったのを確かめてから、控えを捨てる
+     ⑥ 読むときも控えを先に当てる。そうしないと、まだ送れていない
+        ぶんを載せていない古い月を読んで、画面から消えて見える
+
+   ★ 何回送っても同じ結果になる（だから安心してやり直せる）。
+   ★ 見張りは node tools/ordsave.mjs。ここを直したら必ず走らせる。
+   ============================================================ */
+var OP_PREFIX='opend:';                 /* 端末に取る控え */
+var OP_WAIT=[1000,3000,8000,20000];
+var _opQ={}, _opSending={}, _opBusy={}, _opTimer={}, _opTold=false;
+
+/** うしろ（add）が勝つように混ぜる */
+function opMerge(base, add){
+  var out={};
+  Object.keys(base||{}).forEach(function(ds){
+    out[ds]={}; Object.keys(base[ds]||{}).forEach(function(id){ out[ds][id]=base[ds][id]; });
+  });
+  Object.keys(add||{}).forEach(function(ds){
+    out[ds]=out[ds]||{};
+    Object.keys(add[ds]||{}).forEach(function(id){ out[ds][id]=add[ds][id]; });
+  });
+  return out;
+}
+function opCells(p){
+  var n=0; Object.keys(p||{}).forEach(function(ds){ n+=Object.keys(p[ds]||{}).length; });
+  return n;
+}
+/** まだ送れていないぶん（送信中＋待ち）をぜんぶ返す */
+function opUnsent(k){ return opMerge(_opSending[k]||{}, (_opQ[k]||{}).patch||{}); }
+function opBackup(k){
+  var all=opUnsent(k);
+  if(opCells(all)) lsSet(OP_PREFIX+k, JSON.stringify(all));
+  else             lsDel(OP_PREFIX+k);
+}
+/** 送れていない注文の数（画面の合図・閉じるときの引き止めに使う） */
+function opPending(){
+  var n=0;
+  Object.keys(_opSending).forEach(function(k){ n+=opCells(_opSending[k]); });
+  Object.keys(_opQ).forEach(function(k){ n+=opCells((_opQ[k]||{}).patch); });
+  return n;
+}
+function opMark(){
+  if(!document.body) return;
+  var e=document.getElementById('opsave');
+  if(!e){
+    e=document.createElement('div'); e.id='opsave';
+    e.style.cssText='position:fixed;right:12px;bottom:12px;z-index:9999;display:none;'+
+      'font-size:13px;font-weight:700;padding:7px 13px;border-radius:999px;'+
+      'box-shadow:0 2px 8px rgba(0,0,0,.2);pointer-events:none';
+    document.body.appendChild(e);
+  }
+  var n=opPending(), waiting=lsKeys(OP_PREFIX).length;
+  if(n){
+    e.textContent='保存中…';
+    e.style.background='#FFF6DA'; e.style.color='#8A6D1B'; e.style.border='1px solid #E3C766';
+    e.style.display='';
+  }else if(waiting){
+    e.textContent='保存待ち（電波が戻ったら送ります）';
+    e.style.background='#FDECEC'; e.style.color='#A33'; e.style.border='1px solid #E0A0A0';
+    e.style.display='';
+  }else{
+    e.style.display='none';
+  }
+}
+
 function setQty(d,id,pk,n){
   var k=okey(d), ds=ymd(d);
   var m=DB.orders[k]=DB.orders[k]||{};
@@ -1912,18 +2007,123 @@ function setQty(d,id,pk,n){
   if(n>0) q[pk]=n; else delete q[pk];
   if(Object.keys(q).length) day[id]=q; else delete day[id];
   if(!Object.keys(day).length) delete m[ds];
-  _dirty[k]=true; clearCaches();
-  clearTimeout(_saveTimer[k]);
-  _saveTimer[k]=setTimeout(function(){ flushMonth(k); },500);
+
+  /* ★ 送るのは、いま触ったこの1マスだけ（消すときは null） */
+  var qq=_opQ[k]=_opQ[k]||{patch:{},tries:0};
+  qq.patch[ds]=qq.patch[ds]||{};
+  qq.patch[ds][id]=Object.keys(q).length?JSON.parse(JSON.stringify(q)):null;
+  opBackup(k); opMark();
+
+  clearCaches();
+  clearTimeout(_opTimer[k]);
+  _opTimer[k]=setTimeout(function(){ opSend(k); },500);
 }
-async function flushMonth(k){
-  if(!_dirty[k]) return;
-  _dirty[k]=false;
-  await storage.set(k, JSON.stringify(DB.orders[k]||{}));
-  toast('保存しました');
+
+/** 1回送る。しくじったら自分で送り直す（呼ぶ側は待たなくてよい） */
+function opSend(k){
+  clearTimeout(_opTimer[k]);
+  if(_opBusy[k]) return Promise.resolve(false);
+  var qq=_opQ[k];
+  if(!qq || !opCells(qq.patch)) return Promise.resolve(true);
+  _opBusy[k]=true;
+  var sending=qq.patch;
+  qq.patch={};
+  _opSending[k]=sending;
+  opBackup(k); opMark();
+
+  /* ★ 版が古くなって画面を止めているあいだは書かせない。
+       storage.set と同じ門（APP_LOCKED / APP_FLUSH）をここでも通す。
+       srv() は storage を通らないので、付け忘れると門が効かない */
+  if(typeof APP_LOCKED!=='undefined' && APP_LOCKED && !APP_FLUSH){
+    _opBusy[k]=false;
+    _opQ[k]=_opQ[k]||{patch:{},tries:0};
+    _opQ[k].patch=opMerge(sending,_opQ[k].patch);
+    delete _opSending[k];
+    opBackup(k); opMark();
+    return Promise.resolve(false);
+  }
+
+  var ym=k.slice('orders:'.length);
+  return srv('ordersPatch',[ym,sending]).then(function(){
+    _opBusy[k]=false; delete _opSending[k];
+    if(_opQ[k]) _opQ[k].tries=0;
+    _opTold=false;
+    opBackup(k); opMark();
+    if(opCells((_opQ[k]||{}).patch)) return opSend(k);   /* 送っている間に足された */
+    toast('保存しました');
+    return true;
+  }).catch(function(err){
+    _opBusy[k]=false;
+    /* ★ 送れなかったぶんを待ちへ戻す。あとの編集のほうが勝つ */
+    _opQ[k]=_opQ[k]||{patch:{},tries:0};
+    _opQ[k].patch=opMerge(sending,_opQ[k].patch);
+    delete _opSending[k];
+    opBackup(k); opMark();
+    var t=_opQ[k].tries||0; _opQ[k].tries=t+1;
+    var w=OP_WAIT[t];
+    if(w!=null){ _opTimer[k]=setTimeout(function(){ opSend(k); },w); return false; }
+    /* ★ ここで回数を戻しておくこと（2026-09-20）。
+         戻さないと、1分おきの見回りが拾ってもすぐあきらめて、
+         控えが端末に残ったまま一生送られない。
+         小口現金で 2026-09-13 に踏んだのと同じ穴。 */
+    _opQ[k].tries=0;
+    if(!_opTold){
+      _opTold=true;
+      alert('いま保存できませんでした。打ち直しは要りません。\n\n'+
+        'この端末に控えを取ってあります。電波が戻れば、ひとりで送り直します。\n'+
+        '画面右下の「保存待ち」が消えたら、入っています。\n\n（'+((err&&err.message)||err)+'）');
+    }
+    return false;
+  });
 }
-window.addEventListener('beforeunload',function(){
-  Object.keys(_dirty).forEach(function(k){ if(_dirty[k]) flushMonth(k); });
+/** その月の待ちを今すぐ送る（配達伝票の直しなど、続きが要るところ用） */
+function flushMonth(k){ return opSend(k); }
+/** 待っているぶんをぜんぶ送る */
+function opFlushAll(){ return Promise.all(Object.keys(_opQ).map(function(k){ return opSend(k); })); }
+
+/** 開いたとき・1分おきの見回り。送れていない控えを拾って送り直す */
+function opResume(){
+  var ks=lsKeys(OP_PREFIX), n=0;
+  ks.forEach(function(lk){
+    var k=lk.slice(OP_PREFIX.length), p=jparse(lsGet(lk),null);
+    if(!p || !opCells(p)){ lsDel(lk); return; }
+    n++;
+    if(_opBusy[k]) return;
+    _opQ[k]=_opQ[k]||{patch:{},tries:0};
+    /* 控えのほうが古い。いま画面で触ったぶんが勝つ */
+    _opQ[k].patch=opMerge(p,_opQ[k].patch);
+    _opQ[k].tries=0;
+    opSend(k);
+  });
+  opMark();
+  return n;
+}
+/** ★ 読んだ月に、まだ送れていないぶんを当てる。
+      当てないと「入れたのに画面から消えた」になり、その上に書いて本当に消える */
+function opOverlay(k,mo){
+  var p=opMerge(jparse(lsGet(OP_PREFIX+k),{})||{}, opUnsent(k));
+  Object.keys(p).forEach(function(ds){
+    var day=mo[ds]||{};
+    Object.keys(p[ds]).forEach(function(id){
+      var q=p[ds][id];
+      if(q==null) delete day[id]; else day[id]=q;
+    });
+    if(Object.keys(day).length) mo[ds]=day; else delete mo[ds];
+  });
+  return mo;
+}
+
+/* ★ 閉じるとき・裏へ回すときに送り切る。
+     beforeunload だけでは【スマホで鳴らない】ので pagehide と
+     visibilitychange も見る（小口現金と同じ作り） */
+function opOnLeave(){ try{ opFlushAll(); }catch(e){} }
+window.addEventListener('pagehide', opOnLeave);
+window.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='hidden') opOnLeave(); else opResume();
+});
+window.addEventListener('beforeunload',function(e){
+  opOnLeave();
+  if(opPending()){ e.preventDefault(); e.returnValue=''; return ''; }
 });
 
 /* ---- 計算結果の使いまわし（253件×12か月を何度も回さないため） ---- */
@@ -2751,6 +2951,12 @@ function splitDay(shime){ return ((shime===SHIME_NONE||!shime)?31:shime) - 10; }
      そこで月の1日を基準にして、締め日の月でそろえます（2026-08-25）。
    ------------------------------------------------------------ */
 function monthAnchor(ref){ return new Date(ref.getFullYear(), ref.getMonth(), 1); }
+/** ★ 「◯月分」＝ その月に締める期間。きょうが何日かに左右されない。
+      請求書・請求のたしかめも【必ずこれ】を使う（period を直に呼ばない）。
+      2026-09-20 … 注文入力だけ直してあって、請求書は period(S.invRef,…)
+      ＝きょう基準のままだった。だから 9/21 になると 20締の請求書が
+      9/21〜10/20（まだ何も入っていない期間）へ飛んで、
+      「入力した分が全部消えた」ように見えた。 */
 function ordPeriod(ref, shime){ return period(monthAnchor(ref), shime); }
 
 /** 締め期間を左右2段に分ける */
@@ -3796,7 +4002,7 @@ function viewInvoice(el){
   }
   var c=clientById(S.invClient);
   if(!c){ el.innerHTML='<p>取引先がありません。</p>'; return; }
-  var pr=period(S.invRef,c.shime);
+  var pr=ordPeriod(S.invRef,c.shime);
   var need=eachDay(pr[0],pr[1]);
   if(!monthsLoaded(need)){
     el.innerHTML='<div class="skel"></div><div class="skel"></div>';
@@ -6966,11 +7172,22 @@ async function boot(){
     clearCaches();
     render();
     /* ★ 前に送れなかったぶんを、ここで片づけます（2026-09-13）
-         ・pend: … 保存が通らなかった控え
-         ・rcpt: … Drive へ行けなかった領収書の写真 */
+         ・pend:  … 小口現金の保存が通らなかった控え
+         ・opend: … 注文（触ったマス）の控え（2026-09-20）
+         ・rcpt:  … Drive へ行けなかった領収書の写真 */
     try{
-      if(pendResume()) toast('前に送れなかった分を保存しています…');
-      setInterval(function(){ pendResume(); },60000);     /* 送れていない控えの見回り */
+      /* ★ いちど後回しにする（setTimeout 0）。
+           srv() などは、この下の <script> で定義される。
+           await のあとの続きは【script の切れ目でも走る】ので、
+           ここで直に呼ぶと「srv is not defined」になりうる
+           （078 と 105 で踏んだ「script のいちばん最後に置く」と同じ形）。 */
+      setTimeout(function(){
+        try{
+          var back=pendResume()+opResume();
+          if(back) toast('前に送れなかった分を保存しています…');
+        }catch(e){}
+      },0);
+      setInterval(function(){ pendResume(); opResume(); },60000);  /* 控えの見回り */
       setTimeout(function(){ receiptFlush(); },3000);
       setInterval(function(){ receiptFlush(); },300000);  /* 預かった写真の見回り */
     }catch(e){}
@@ -7337,7 +7554,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-14i R8の売掛帳と突き合わせて2〜7月の掛売上を確定（7月分の抜けほか124件・＋1,227,285円）';
+var APP_BUILD='2026-09-20a 注文は触ったマスだけ送る（2人で同時に入れても消えない）・控えを取って送り直す・請求書も締め月でそろえる';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -8725,7 +8942,7 @@ viewInvoice=function(el){
   var c=clientById(S.invClient);
   if(!c){ el.innerHTML='<p>取引先がありません。</p>'; return; }
 
-  var pr=period(S.invRef,c.shime);
+  var pr=ordPeriod(S.invRef,c.shime);
   var need=eachDay(pr[0],pr[1]);
   if(!monthsLoaded(need)){
     el.innerHTML='<div class="skel"></div><div class="skel"></div>';
@@ -8859,7 +9076,7 @@ viewInvoice=function(el){
     if(!confirm(pending.length+'枚を印刷します。\n\n※ まとめ印刷は各店の「当月分」だけを載せます。\n'+
       '繰越も載せたい店は、その店を選んで1枚ずつ印刷してください。\n\nよろしいですか？')) return;
     var html=pending.map(function(x){
-      var p2=period(S.invRef,x.shime);
+      var p2=ordPeriod(S.invRef,x.shime);
       var g=monthGross(x,fy,idx);
       return '<div class="slip-page">'+invoiceHtml(x,billedRows(x,p2[0],p2[1]),p2[0],p2[1],
         {extras:[],cur:{on:true,amt:g,label:(p2[1].getMonth()+1)+'月分'},total:g,fy:fy,idx:idx})+'</div>';
@@ -10358,10 +10575,11 @@ async function appLock(to){
   var saved=0, ng=0;
   APP_FLUSH=true;
   try{
-    var ks=Object.keys(_dirty||{}).filter(function(k){ return _dirty[k]; });
-    for(var i=0;i<ks.length;i++){
-      try{ await flushMonth(ks[i]); saved++; }catch(e){ ng++; _dirty[ks[i]]=true; }
-    }
+    saved=opPending();
+    var ks=Object.keys(_opQ||{});
+    for(var i=0;i<ks.length;i++){ try{ await opSend(ks[i]); }catch(e){} }
+    ng=opPending();                 /* 送り切れずに残ったマスの数 */
+    saved=Math.max(0,saved-ng);
   }catch(e){}
   APP_FLUSH=false;
 
@@ -10369,10 +10587,11 @@ async function appLock(to){
   if(sv){
     if(ng){
       sv.style.color='#7A2E3F';
-      sv.innerHTML='打ちかけの分を保存できませんでした（'+ng+'件）。'+
-                   '<br>読み込み直す前に、いま画面に出ている数字を紙に書きうつしてください。';
+      sv.innerHTML='打ちかけの分（'+ng+'マス）は、まだ送れていません。'+
+                   '<br>この端末に控えを取ってあるので、<b>開き直せばひとりで送ります</b>。'+
+                   '打ち直しは要りません。';
     }else{
-      sv.textContent='打ちかけの分は保存しました。消えていません。'+(saved?'（'+saved+'件）':'');
+      sv.textContent='打ちかけの分は保存しました。消えていません。'+(saved?'（'+saved+'マス）':'');
     }
   }
 }
