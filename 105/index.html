@@ -673,6 +673,9 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .jgo2{font-size:18px;padding:13px 22px;background:var(--green)}
 .jgo2[disabled]{opacity:.45}
 .jfin{text-align:center}
+/* ★ 一括読み込みエクセルの枠は、タブのいちばん下にいつも置く */
+.jmk{margin-top:18px;border:2px solid var(--line);border-radius:14px}
+.jmk .jgo2{width:100%;font-size:18px;padding:14px 10px}
 .jdicbox{margin-top:16px}
 .jopen{width:100%;border:1.5px dashed var(--line);border-radius:10px;background:#FBFAF6;
   padding:12px;font-size:15px;font-weight:700;color:var(--ai);cursor:pointer}
@@ -5578,12 +5581,9 @@ function viewJournal(el, m){
   }
   if(!x){
     el.innerHTML=head+
-      '<div class="cbox jfin"><div class="cbox-h"><span class="ti">ぜんぶ当て終わりました</span></div>'+
-      '<p class="muted">一括読み込みエクセルを作って、ドライブに置きます。'+
-      'FXクラウドの「ファイル選択」からそのまま開けます。</p>'+
-      '<button class="btn tap jgo2" id="jmake">一括読み込みエクセルを作る（'+ym(m)+'）</button>'+
-      '<div id="jmakeout" class="muted" style="margin-top:8px"></div></div>'+
-      jdicBoxHtml(dic);
+      '<div class="cbox jfin"><div class="cbox-h">'+
+        '<span class="ti">ぜんぶ当て終わりました</span></div></div>'+
+      jdicBoxHtml(dic)+jMakeBoxHtml(m, done, all.length);
     jBind(el,m); return;
   }
 
@@ -5658,8 +5658,26 @@ function viewJournal(el, m){
     '</div>'+
   '</div>';
 
-  el.innerHTML=head+body+jdicBoxHtml(dic);
+  el.innerHTML=head+body+jdicBoxHtml(dic)+jMakeBoxHtml(m, done, all.length);
   jBind(el,m);
+}
+
+/** ★ 一括読み込みエクセルを作る枠（2026-09-21）
+    **タブのいちばん下に、いつも置く。**「ぜんぶ当て終わりました」の画面にしか
+    無いと、あと1件だけ分からないものが残っているときに作れない。
+    残りがあるときは「◯件はまだ入りません」と添えるだけで、止めはしない。 */
+function jMakeBoxHtml(m, done, total){
+  var left = Math.max(0, total - done);
+  return '<div class="cbox jmk">'+
+    '<div class="cbox-h"><span class="ti">一括読み込みエクセルを作る</span></div>'+
+    '<p class="muted">'+
+      (left ? '<b>あと '+left+' 件</b> 当てていません。いま作ると、'+
+              '当て終わった <b>'+done+' 件</b> だけが入ります。'
+            : '<b>'+done+' 件 ぜんぶ当て終わりました。</b>')+
+      '<br>ドライブに置くので、FXクラウドの「ファイル選択」からそのまま開けます。'+
+      '（1ファイル60行まで・ファイルは日付をまたぎません）</p>'+
+    '<button class="btn tap jgo2" id="jmake">一括読み込みエクセルを作る（'+ym(m)+'）</button>'+
+    '<div id="jmakeout" class="muted" style="margin-top:8px"></div></div>';
 }
 
 /** ★★★ 伝票の様式（2026-09-21）
@@ -6089,7 +6107,7 @@ function viewCash(el){
        同じ役どころの【現金実査】を真ん中に置く */
   var segHtml = '<div class="segbar">'+
     [['in','取引の入力'],['count','現金実査'],['led',(m.getMonth()+1)+'月の出納帳'],
-     ['jrn','仕訳（事務所）']].map(function(p){
+     ['jrn','仕訳（石井事務所）']].map(function(p){
       return '<button class="seg tap'+(PANE===p[0]?' on':'')+'" data-cpane="'+p[0]+'">'+
         p[1]+'</button>'; }).join('')+'</div>';
 
@@ -6289,7 +6307,7 @@ function viewCash(el){
     (PANE==='count' ? countHtml : '')+
     (PANE==='jrn'   ? '<div id="jrnbox"></div>' : '');
 
-  /* ★ 仕訳（事務所）… 領収書を見ながら辞書を当てる。中身は viewJournal が組む */
+  /* ★ 仕訳（石井事務所）… 領収書を見ながら辞書を当てる。中身は viewJournal が組む */
   if(PANE==='jrn'){
     var jb=el.querySelector('#jrnbox');
     if(jb) viewJournal(jb, m);
@@ -8626,7 +8644,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-21c 仕訳は伝票の様式（市成商会と同じ並び）・行番号→Enter で次の領収書へ・金額と精算日を1行に';
+var APP_BUILD='2026-09-21d 仕訳（石井事務所）へ改称・一括読み込みエクセルのボタンはタブのいちばん下にいつも出す';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
