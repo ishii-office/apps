@@ -1317,6 +1317,8 @@ window.addHistYear({
       getMany: function(ks){ return call('kvGetMany',[ks]); },
       set:     function(k,v){ return call('kvSet',[k,v]); },
       setMany: function(o){ return call('kvSetMany',[o]); },
+      /* ★ 触ったところだけ送る（2026-09-20）。行き先は必ず api */
+      patch:   function(k,shape,pt){ return call('kvPatch',[k,shape,pt]); },
       del:     function(k){ return call('kvDelete',[k]); },
       masterFromSheet: function(){ return call('masterFromSheet',[]); },
       saveReceipt: function(dataUrl,meta){ return call('saveReceipt',[dataUrl,meta]); },
@@ -1331,6 +1333,13 @@ window.addHistYear({
       getMany: function(ks){ var o={}; ks.forEach(function(k){o[k]=L.getItem('kv:'+k);}); return Promise.resolve(o); },
       set:     function(k,v){ L.setItem('kv:'+k,v); return Promise.resolve({key:k,value:v}); },
       setMany: function(o){ Object.keys(o).forEach(function(k){L.setItem('kv:'+k,o[k]);}); return Promise.resolve(true); },
+      /* ★ サーバが無いときも、同じ混ぜ方（opApply）でこの端末の中に入れる。
+           ここを用意しておかないと、口の分からない開き方をしたときに
+           「記録したのに何も残らない」になる */
+      patch:   function(k,shape,pt){
+        L.setItem('kv:'+k, opApply(shape, L.getItem('kv:'+k), pt));
+        return Promise.resolve({key:k,n:1});
+      },
       del:     function(k){ L.removeItem('kv:'+k); return Promise.resolve({key:k,deleted:true}); },
       masterFromSheet: function(){ return Promise.resolve(null); },
       saveReceipt: function(){ return Promise.reject(new Error('スプレッドシートから開いたときだけ使えます。')); },
@@ -1746,7 +1755,9 @@ async function toggleDeliv(d,id){
   var m=DB.deliv[k]=DB.deliv[k]||{}, day=m[ds]=m[ds]||{};
   if(day[id]) delete day[id]; else day[id]=true;
   if(!Object.keys(day).length) delete m[ds];
-  await storage.set(k,JSON.stringify(m));
+  /* ★ 触った1マスだけ送る。月まるごと上書きしない（2026-09-20） */
+  var one={}; one[ds]={}; one[ds][id]=day[id]?true:null;
+  patchSave(k,'map2',one);
 }
 
 /* ---- 取引先の正規化（旧形式からの移行を含む） ---- */
@@ -1797,6 +1808,8 @@ async function loadClients(){
       if(pb!=null) return 1;
       return codeNum(a)-codeNum(b);
     });
+    /* ★ ここは【はじめの1回だけ】の移行（clients:migrated が '2' になるまで）。
+         まだ誰も触っていない状態から作るので、まるごと書いてよい。 */
     await storage.setMany({'clients:master':JSON.stringify(list),'clients:migrated':'2'});
   }
   DB.clients=list;
@@ -1804,7 +1817,7 @@ async function loadClients(){
 }
 async function saveClients(){
   clearCaches();
-  await storage.set('clients:master', JSON.stringify(DB.clients));
+  listSave('clients:master', DB.clients, 'id');
 }
 /* ★ グループ・回る順・回る日のように【売掛の計算に関係しない】直しの保存（2026-09-07）
      ・`clearCaches()` を呼ばない … 呼ぶと売掛の集計を261件ぶん計算し直すので、
@@ -1820,7 +1833,7 @@ function saveClientsLater(){
 function flushClientSave(){
   if(!_cliSaveT) return;
   clearTimeout(_cliSaveT); _cliSaveT=null;
-  var p=storage.set('clients:master', JSON.stringify(DB.clients));
+  var p=Promise.resolve(listSave('clients:master', DB.clients, 'id'));
   if(p && p.catch) p.catch(function(){ toast('保存できませんでした。電波を確かめてください'); });
 }
 /* 閉じる・裏に回るときに、まだ送っていない分を送り切る */
@@ -1837,7 +1850,7 @@ async function importFromSheet(){
   if(!confirm('シートの '+list.length+' 件でアプリの取引先情報を上書きします。\n（今の '+DB.clients.length+' 件は置き換わります）\n\nよろしいですか？')) return;
   DB.clients=list;
   clearCaches();
-  await storage.set('clients:master', JSON.stringify(DB.clients));
+  listSave('clients:master', DB.clients, 'id');
   toast('シートから取り込みました');
   S.editId=null; S.form=null; render();
 }
@@ -1890,10 +1903,10 @@ async function ensureMonths(dates){
   if(!need.length) return;
   var got=await storage.getMany(need);
   need.forEach(function(k){
-    /* ★ 読んだ月には、まだ送れていないぶんを必ず当てる（opOverlay）。
-         当てないと「入れたのに画面から消えた」になり、
-         その古い画面の上に書いて、本当に消える */
-    if(k.indexOf('orders:')===0) DB.orders[k]=opOverlay(k, jparse(got[k],{})||{});
+    /* ★ まだ送れていないぶんは storage.getMany の中で当たっている（opOverlay）。
+         ここで二度当てない。当てないと「入れたのに画面から消えた」になり、
+         その古い画面の上に書いて本当に消えるので、当てる場所は1か所に寄せた */
+    if(k.indexOf('orders:')===0) DB.orders[k]=jparse(got[k],{})||{};
     else                         DB.deliv[k] =jparse(got[k],{})||{};
   });
   clearCaches();
@@ -1941,34 +1954,100 @@ var OP_PREFIX='opend:';                 /* 端末に取る控え */
 var OP_WAIT=[1000,3000,8000,20000];
 var _opQ={}, _opSending={}, _opBusy={}, _opTimer={}, _opTold=false;
 
-/** うしろ（add）が勝つように混ぜる */
-function opMerge(base, add){
-  var out={};
-  Object.keys(base||{}).forEach(function(ds){
-    out[ds]={}; Object.keys(base[ds]||{}).forEach(function(id){ out[ds][id]=base[ds][id]; });
-  });
-  Object.keys(add||{}).forEach(function(ds){
-    out[ds]=out[ds]||{};
-    Object.keys(add[ds]||{}).forEach(function(id){ out[ds][id]=add[ds][id]; });
-  });
-  return out;
+/* ★ どのキーがどの形か。ここに無いものは「ただの1つの値」なので
+     kvSet のままでよい（中に他人のぶんが同居していないから）。
+     cashcarry: / ledger:autofrom: / migrate:kgunit / clients:migrated など。 */
+var OP_SHAPE=[
+  [/^clients:master$/,      'list'],
+  [/^cashbook:/,            'list'],
+  [/^cashcount:/,           'list'],
+  [/^cashsale:/,            'list'],
+  [/^payments:/,            'list'],
+  [/^orders:/,              'map2'],
+  [/^deliv:/,               'map2'],
+  [/^ledger:manual:/,       'map2'],
+  [/^confirm:/,             'map1'],
+  [/^printed$/,             'map1'],
+  [/^ar:open:/,             'map1'],
+  [/^invsel:/,              'map1'],
+  [/^hist:alias$/,          'map1'],
+  [/^cost:setting$/,        'map1'],
+  [/^plan:setting$/,        'map1'],
+  [/^buy:/,                 'map1']
+];
+function opShapeOf(k){
+  for(var i=0;i<OP_SHAPE.length;i++) if(OP_SHAPE[i][0].test(k)) return OP_SHAPE[i][1];
+  return null;                          /* ただの1つの値 */
 }
-function opCells(p){
-  var n=0; Object.keys(p||{}).forEach(function(ds){ n+=Object.keys(p[ds]||{}).length; });
+
+/* ---- 空のかたまり ---- */
+function opEmpty(shape,idKey){
+  return shape==='list' ? {idKey:idKey||'id', set:{}, del:{}} : {};
+}
+/** うしろ（add）が勝つように混ぜる */
+function opMerge(shape, base, add){
+  if(shape==='list'){
+    var b=base||opEmpty('list'), a=add||opEmpty('list');
+    var out={idKey:a.idKey||b.idKey||'id', set:{}, del:{}};
+    Object.keys(b.set||{}).forEach(function(id){ out.set[id]=b.set[id]; });
+    Object.keys(b.del||{}).forEach(function(id){ out.del[id]=1; });
+    Object.keys(a.set||{}).forEach(function(id){ out.set[id]=a.set[id]; delete out.del[id]; });
+    Object.keys(a.del||{}).forEach(function(id){ out.del[id]=1;      delete out.set[id]; });
+    return out;
+  }
+  var o={};
+  Object.keys(base||{}).forEach(function(k){
+    o[k]= (shape==='map2' && base[k] && typeof base[k]==='object')
+        ? Object.assign({}, base[k]) : base[k];
+  });
+  Object.keys(add||{}).forEach(function(k){
+    if(shape==='map2' && add[k] && typeof add[k]==='object' && o[k] && typeof o[k]==='object'){
+      Object.keys(add[k]).forEach(function(k2){ o[k][k2]=add[k][k2]; });
+    }else{
+      o[k]= (shape==='map2' && add[k] && typeof add[k]==='object')
+          ? Object.assign({}, add[k]) : add[k];
+    }
+  });
+  return o;
+}
+/** 触ったところの数 */
+function opCells(shape,p){
+  if(!p) return 0;
+  if(shape==='list') return Object.keys(p.set||{}).length + Object.keys(p.del||{}).length;
+  var n=0;
+  Object.keys(p).forEach(function(k){
+    if(shape==='map2' && p[k] && typeof p[k]==='object') n+=Object.keys(p[k]).length;
+    else n++;
+  });
   return n;
 }
-/** まだ送れていないぶん（送信中＋待ち）をぜんぶ返す */
-function opUnsent(k){ return opMerge(_opSending[k]||{}, (_opQ[k]||{}).patch||{}); }
-function opBackup(k){
-  var all=opUnsent(k);
-  if(opCells(all)) lsSet(OP_PREFIX+k, JSON.stringify(all));
-  else             lsDel(OP_PREFIX+k);
+/** サーバへ渡す形に直す（list だけ 配列にする） */
+function opWire(shape,p){
+  if(shape!=='list') return p;
+  return { idKey:p.idKey||'id',
+           set:Object.keys(p.set||{}).map(function(id){ return p.set[id]; }),
+           del:Object.keys(p.del||{}) };
 }
-/** 送れていない注文の数（画面の合図・閉じるときの引き止めに使う） */
+
+/* ---- まだ送れていないぶん ---- */
+function opUnsent(k){
+  var q=_opQ[k], s=(q&&q.shape)||(_opSending[k]&&_opSending[k].shape)||opShapeOf(k)||'map1';
+  return opMerge(s, (_opSending[k]||{}).patch, (q||{}).patch);
+}
+function opShapeCur(k){
+  return (_opQ[k]&&_opQ[k].shape) || (_opSending[k]&&_opSending[k].shape) || opShapeOf(k) || 'map1';
+}
+function opBackup(k){
+  var s=opShapeCur(k), all=opUnsent(k);
+  if(opCells(s,all)) lsSet(OP_PREFIX+k, JSON.stringify({shape:s, patch:all}));
+  else               lsDel(OP_PREFIX+k);
+}
+/** 送れていない数（画面の合図・閉じるときの引き止めに使う） */
 function opPending(){
-  var n=0;
-  Object.keys(_opSending).forEach(function(k){ n+=opCells(_opSending[k]); });
-  Object.keys(_opQ).forEach(function(k){ n+=opCells((_opQ[k]||{}).patch); });
+  var n=0, seen={};
+  Object.keys(_opSending).forEach(function(k){ seen[k]=1; });
+  Object.keys(_opQ).forEach(function(k){ seen[k]=1; });
+  Object.keys(seen).forEach(function(k){ n+=opCells(opShapeCur(k), opUnsent(k)); });
   return n;
 }
 function opMark(){
@@ -1981,7 +2060,7 @@ function opMark(){
       'box-shadow:0 2px 8px rgba(0,0,0,.2);pointer-events:none';
     document.body.appendChild(e);
   }
-  var n=opPending(), waiting=lsKeys(OP_PREFIX).length;
+  var n=opPending(), waiting=lsKeys(OP_PREFIX).length+lsKeys(PEND_PREFIX).length;
   if(n){
     e.textContent='保存中…';
     e.style.background='#FFF6DA'; e.style.color='#8A6D1B'; e.style.border='1px solid #E3C766';
@@ -1995,40 +2074,117 @@ function opMark(){
   }
 }
 
-function setQty(d,id,pk,n){
-  var k=okey(d), ds=ymd(d);
-  var m=DB.orders[k]=DB.orders[k]||{};
-  var day=m[ds]=m[ds]||{};
-  var c=clientById(id);
-  /* ★ ここで商品を決め打ちしないこと。以前は4商品だけ写していたので
-        数量を1つ直すと「その他売上」が消えていました。 */
-  var src=qtyObj(c,day[id]), q={};
-  PKEYS.forEach(function(x){ if(src[x]) q[x]=src[x]; });
-  if(n>0) q[pk]=n; else delete q[pk];
-  if(Object.keys(q).length) day[id]=q; else delete day[id];
-  if(!Object.keys(day).length) delete m[ds];
+/* ============================================================
+   ★ 入口は3つ。呼ぶ側は「いまの全体」を渡すだけでよい
 
-  /* ★ 送るのは、いま触ったこの1マスだけ（消すときは null） */
-  var qq=_opQ[k]=_opQ[k]||{patch:{},tries:0};
-  qq.patch[ds]=qq.patch[ds]||{};
-  qq.patch[ds][id]=Object.keys(q).length?JSON.parse(JSON.stringify(q)):null;
-  opBackup(k); opMark();
+     patchSave(key, shape, patch) … 触ったところを直に指定する（注文入力）
+     listSave (key, list, idKey)  … 一覧ぜんぶを渡す。前に読んだものと
+                                    くらべて「変わった記録と消えた記録」だけ送る
+     mapSave  (key, obj)          … 表ぜんぶを渡す。同じくくらべて差だけ送る
 
-  clearCaches();
-  clearTimeout(_opTimer[k]);
-  _opTimer[k]=setTimeout(function(){ opSend(k); },500);
+   くらべる相手（もとの姿）は、サーバから読んだときに控えてある（_opBase）。
+   もとの姿を知らなければ「足すだけ・消さない」になるので、
+   **知らなくても人のぶんを消すことはない。**
+   ============================================================ */
+var _opBase={};
+function opBaseSet(k,v){ if(opShapeOf(k)) _opBase[k]=(v==null?null:String(v)); }
+function opBaseOf(k,def){ return jparse(_opBase[k], def); }
+
+function patchSave(key, shape, patch){
+  var q=_opQ[key]=_opQ[key]||{shape:shape, patch:opEmpty(shape), tries:0};
+  q.shape=shape;
+  q.patch=opMerge(shape, q.patch, patch);
+  opBackup(key); opMark();
+  clearTimeout(_opTimer[key]);
+  _opTimer[key]=setTimeout(function(){ opSend(key); },500);
+  return q;
+}
+/** 一覧（id つき）。前の姿とくらべて、変わったものと消えたものだけ送る */
+function listSave(key, list, idKey){
+  idKey=idKey||'id';
+  list=Array.isArray(list)?list:[];
+  var base=opBaseOf(key,null);
+  var p={idKey:idKey, set:{}, del:{}};
+  var now={};
+  list.forEach(function(r){
+    if(!r || r[idKey]==null) return;
+    var id=String(r[idKey]); now[id]=1;
+    var was = base && Array.isArray(base)
+            ? base.filter(function(x){ return x && String(x[idKey])===id; })[0] : null;
+    if(!was || JSON.stringify(was)!==JSON.stringify(r)) p.set[id]=r;
+  });
+  if(base && Array.isArray(base)){
+    base.forEach(function(r){
+      if(!r || r[idKey]==null) return;
+      var id=String(r[idKey]);
+      if(!now[id]) p.del[id]=1;
+    });
+  }
+  if(opWipes(key, base?base.length:0, list.length, Object.keys(p.del).length)) return null;
+  /* 送ったあとの姿は「いまの一覧」。控えを先に進めておく
+     （次の保存で、同じものをもう一度送らないため） */
+  opBaseSet(key, JSON.stringify(list));
+  if(!opCells('list',p)){ opMark(); return null; }
+  return patchSave(key,'list',p);
+}
+/** ★ まとめて全部消す、は【事故】とみなして止める（2026-09-20）
+
+    下の入れものは、画面から一度に消せるのは1件ずつ（🗑 を押す・0 を入れる）。
+    だから「5件以上あったのに、ぜんぶ消える」形の差分が出たら、それは
+    読み込めていない入れもの（DB.◯◯ が空のまま）を保存しにいった、という筋。
+    そのまま送ると、人のぶんまで消える。
+    だから【送らずに、そのままにしておく】。次に正しく読めたときに直る。
+
+    ★ ここに入れてよいのは「まとめて消す操作が画面に無いもの」だけ。
+      `printed` は「この締めの印刷済みを取消」でまとめて消えるので入れない。
+      入れると、ふつうの操作が黙って効かなくなる。 */
+var OP_NEVER_EMPTY=[
+  /^clients:master$/, /^cashbook:/, /^cashsale:/, /^cashcount:/, /^payments:/,
+  /^orders:/, /^deliv:/, /^ledger:manual:/, /^ar:open:/
+];
+function opWipes(key, wasN, nowN, delN){
+  if(!(wasN>=5 && nowN===0 && delN>=wasN)) return false;
+  if(!OP_NEVER_EMPTY.some(function(re){ return re.test(key); })) return false;
+  try{ console.warn('保存を見送りました（'+key+' が丸ごと空になる差分）'); }catch(e){}
+  return true;
+}
+/** 表（1段・2段）。前の姿とくらべて、変わったところだけ送る */
+function mapSave(key, obj){
+  var shape=opShapeOf(key)||'map1';
+  obj=(obj&&typeof obj==='object')?obj:{};
+  var base=opBaseOf(key,null); if(!base||typeof base!=='object'||Array.isArray(base)) base=null;
+  var p={};
+  Object.keys(obj).forEach(function(k1){
+    var b=base?base[k1]:undefined;
+    if(shape==='map2' && obj[k1] && typeof obj[k1]==='object'){
+      var inn={}, bb=(b&&typeof b==='object')?b:{};
+      Object.keys(obj[k1]).forEach(function(k2){
+        if(JSON.stringify(bb[k2])!==JSON.stringify(obj[k1][k2])) inn[k2]=obj[k1][k2];
+      });
+      Object.keys(bb).forEach(function(k2){ if(!(k2 in obj[k1])) inn[k2]=null; });
+      if(Object.keys(inn).length) p[k1]=inn;
+    }else{
+      if(JSON.stringify(b)!==JSON.stringify(obj[k1])) p[k1]=obj[k1];
+    }
+  });
+  if(base) Object.keys(base).forEach(function(k1){ if(!(k1 in obj)) p[k1]=null; });
+  if(opWipes(key, base?Object.keys(base).length:0, Object.keys(obj).length,
+             Object.keys(p).filter(function(k1){ return p[k1]==null; }).length)) return null;
+  opBaseSet(key, JSON.stringify(obj));
+  if(!opCells(shape,p)){ opMark(); return null; }
+  return patchSave(key,shape,p);
 }
 
 /** 1回送る。しくじったら自分で送り直す（呼ぶ側は待たなくてよい） */
 function opSend(k){
   clearTimeout(_opTimer[k]);
   if(_opBusy[k]) return Promise.resolve(false);
-  var qq=_opQ[k];
-  if(!qq || !opCells(qq.patch)) return Promise.resolve(true);
+  var q=_opQ[k];
+  if(!q || !opCells(q.shape,q.patch)) return Promise.resolve(true);
   _opBusy[k]=true;
-  var sending=qq.patch;
-  qq.patch={};
-  _opSending[k]=sending;
+  var shape=q.shape, sending=q.patch;
+  q.patch=opEmpty(shape, shape==='list'?sending.idKey:null);
+  _opSending[k]={shape:shape, patch:sending};
   opBackup(k); opMark();
 
   /* ★ 版が古くなって画面を止めているあいだは書かせない。
@@ -2036,27 +2192,27 @@ function opSend(k){
        srv() は storage を通らないので、付け忘れると門が効かない */
   if(typeof APP_LOCKED!=='undefined' && APP_LOCKED && !APP_FLUSH){
     _opBusy[k]=false;
-    _opQ[k]=_opQ[k]||{patch:{},tries:0};
-    _opQ[k].patch=opMerge(sending,_opQ[k].patch);
+    _opQ[k]=_opQ[k]||{shape:shape, patch:opEmpty(shape), tries:0};
+    _opQ[k].patch=opMerge(shape,sending,_opQ[k].patch);
     delete _opSending[k];
     opBackup(k); opMark();
     return Promise.resolve(false);
   }
 
-  var ym=k.slice('orders:'.length);
-  return srv('ordersPatch',[ym,sending]).then(function(){
+  return storage.patch(k, shape, opWire(shape,sending)).then(function(){
     _opBusy[k]=false; delete _opSending[k];
     if(_opQ[k]) _opQ[k].tries=0;
     _opTold=false;
     opBackup(k); opMark();
-    if(opCells((_opQ[k]||{}).patch)) return opSend(k);   /* 送っている間に足された */
+    if(opCells(shape,(_opQ[k]||{}).patch)) return opSend(k);  /* 送っている間に足された */
     toast('保存しました');
     return true;
   }).catch(function(err){
     _opBusy[k]=false;
     /* ★ 送れなかったぶんを待ちへ戻す。あとの編集のほうが勝つ */
-    _opQ[k]=_opQ[k]||{patch:{},tries:0};
-    _opQ[k].patch=opMerge(sending,_opQ[k].patch);
+    _opQ[k]=_opQ[k]||{shape:shape, patch:opEmpty(shape), tries:0};
+    _opQ[k].shape=shape;
+    _opQ[k].patch=opMerge(shape,sending,_opQ[k].patch);
     delete _opSending[k];
     opBackup(k); opMark();
     var t=_opQ[k].tries||0; _opQ[k].tries=t+1;
@@ -2076,7 +2232,7 @@ function opSend(k){
     return false;
   });
 }
-/** その月の待ちを今すぐ送る（配達伝票の直しなど、続きが要るところ用） */
+/** その入れものの待ちを今すぐ送る（続きが要るところ用） */
 function flushMonth(k){ return opSend(k); }
 /** 待っているぶんをぜんぶ送る */
 function opFlushAll(){ return Promise.all(Object.keys(_opQ).map(function(k){ return opSend(k); })); }
@@ -2085,37 +2241,91 @@ function opFlushAll(){ return Promise.all(Object.keys(_opQ).map(function(k){ ret
 function opResume(){
   var ks=lsKeys(OP_PREFIX), n=0;
   ks.forEach(function(lk){
-    var k=lk.slice(OP_PREFIX.length), p=jparse(lsGet(lk),null);
-    if(!p || !opCells(p)){ lsDel(lk); return; }
+    var k=lk.slice(OP_PREFIX.length), o=jparse(lsGet(lk),null);
+    if(!o || !o.shape || !o.patch || !opCells(o.shape,o.patch)){ lsDel(lk); return; }
     n++;
     if(_opBusy[k]) return;
-    _opQ[k]=_opQ[k]||{patch:{},tries:0};
+    _opQ[k]=_opQ[k]||{shape:o.shape, patch:opEmpty(o.shape), tries:0};
     /* 控えのほうが古い。いま画面で触ったぶんが勝つ */
-    _opQ[k].patch=opMerge(p,_opQ[k].patch);
+    _opQ[k].patch=opMerge(o.shape,o.patch,_opQ[k].patch);
+    _opQ[k].shape=o.shape;
     _opQ[k].tries=0;
     opSend(k);
   });
   opMark();
   return n;
 }
-/** ★ 読んだ月に、まだ送れていないぶんを当てる。
-      当てないと「入れたのに画面から消えた」になり、その上に書いて本当に消える */
-function opOverlay(k,mo){
-  var p=opMerge(jparse(lsGet(OP_PREFIX+k),{})||{}, opUnsent(k));
-  Object.keys(p).forEach(function(ds){
-    var day=mo[ds]||{};
-    Object.keys(p[ds]).forEach(function(id){
-      var q=p[ds][id];
-      if(q==null) delete day[id]; else day[id]=q;
+/** ★ 混ぜ方の本体。Code.js の kvPatch と【同じ結果】になるように書く。
+      渡す patch はサーバへ送るのと同じ形（list なら set/del は配列）。
+      ここを使うのは2つ … 画面に当てるとき（opOverlay）と、
+      サーバが無いときの保存層（storage.patch）。 */
+function opApply(shape, val, p){
+  if(!p) return val;
+  if(shape==='list'){
+    var idKey=p.idKey||'id';
+    var list=jparse(val,[]); if(!Array.isArray(list)) list=[];
+    var pos={};
+    list.forEach(function(r,i){ if(r&&r[idKey]!=null) pos[String(r[idKey])]=i; });
+    (p.set||[]).forEach(function(r){
+      if(!r || r[idKey]==null) return;
+      var id=String(r[idKey]);
+      if(pos[id]!=null) list[pos[id]]=r;
+      else { pos[id]=list.length; list.push(r); }
     });
-    if(Object.keys(day).length) mo[ds]=day; else delete mo[ds];
+    if((p.del||[]).length){
+      var del={}; p.del.forEach(function(id){ del[String(id)]=1; });
+      list=list.filter(function(r){ return !(r&&r[idKey]!=null&&del[String(r[idKey])]); });
+    }
+    return JSON.stringify(list);
+  }
+  var obj=jparse(val,{}); if(!obj||typeof obj!=='object'||Array.isArray(obj)) obj={};
+  Object.keys(p).forEach(function(k1){
+    if(shape==='map1'){ if(p[k1]==null) delete obj[k1]; else obj[k1]=p[k1]; return; }
+    if(p[k1]==null){ delete obj[k1]; return; }
+    if(typeof p[k1]!=='object') return;
+    var in1=(obj[k1]&&typeof obj[k1]==='object')?obj[k1]:{};
+    Object.keys(p[k1]).forEach(function(k2){
+      var v=p[k1][k2];
+      if(v==null || (typeof v==='object' && !Object.keys(v).length)) delete in1[k2];
+      else in1[k2]=v;
+    });
+    if(Object.keys(in1).length) obj[k1]=in1; else delete obj[k1];
   });
-  return mo;
+  return JSON.stringify(obj);
+}
+/** ★ 読んだものに、まだ送れていないぶんを当てる。
+      当てないと「入れたのに画面から消えた」になり、その上に書いて本当に消える */
+function opOverlay(k, val){
+  var shape=opShapeOf(k); if(!shape) return val;
+  var saved=jparse(lsGet(OP_PREFIX+k),null);
+  var p=opMerge(shape, (saved&&saved.shape===shape)?saved.patch:null, opUnsent(k));
+  if(!opCells(shape,p)) return val;
+  return opApply(shape, val, opWire(shape,p));
+}
+
+function setQty(d,id,pk,n){
+  var k=okey(d), ds=ymd(d);
+  var m=DB.orders[k]=DB.orders[k]||{};
+  var day=m[ds]=m[ds]||{};
+  var c=clientById(id);
+  /* ★ ここで商品を決め打ちしないこと。以前は4商品だけ写していたので
+        数量を1つ直すと「その他売上」が消えていました。 */
+  var src=qtyObj(c,day[id]), q={};
+  PKEYS.forEach(function(x){ if(src[x]) q[x]=src[x]; });
+  if(n>0) q[pk]=n; else delete q[pk];
+  if(Object.keys(q).length) day[id]=q; else delete day[id];
+  if(!Object.keys(day).length) delete m[ds];
+
+  /* ★ 送るのは、いま触ったこの1マスだけ（消すときは null） */
+  var one={}; one[ds]={};
+  one[ds][id]=Object.keys(q).length?JSON.parse(JSON.stringify(q)):null;
+  clearCaches();
+  patchSave(k,'map2',one);
 }
 
 /* ★ 閉じるとき・裏へ回すときに送り切る。
      beforeunload だけでは【スマホで鳴らない】ので pagehide と
-     visibilitychange も見る（小口現金と同じ作り） */
+     visibilitychange も見る */
 function opOnLeave(){ try{ opFlushAll(); }catch(e){} }
 window.addEventListener('pagehide', opOnLeave);
 window.addEventListener('visibilitychange', function(){
@@ -2254,7 +2464,7 @@ function histTotals(y,shime){
   });
   return out;
 }
-async function saveAlias(){ clearCaches(); _nameIx=null; await storage.set('hist:alias', JSON.stringify(DB.alias)); }
+async function saveAlias(){ clearCaches(); _nameIx=null; mapSave('hist:alias', DB.alias); }
 
 /* ============================================================
    原価・標準売価・判定基準
@@ -2344,7 +2554,7 @@ function judgeOf(rate){
   if(j.stop>0 && rate< j.stop) return {k:'stop',t:'取引見直し',cls:'tag-kan'};
   return {k:'fix',t:'要改善',cls:'tag-maru'};
 }
-async function saveCost(){ clearCaches(); await storage.set('cost:setting', JSON.stringify(DB.cost)); }
+async function saveCost(){ clearCaches(); mapSave('cost:setting', DB.cost); }
 DB.cost = normalizeCost(DB.cost);
 
 /* ============================================================
@@ -2413,7 +2623,7 @@ function normalizePlan(o){
   if(!c.loans.length) c.loans=[{name:'',bal:0,monthly:0,rate:0,until:''}];
   return c;
 }
-async function savePlan(){ clearCaches(); await storage.set('plan:setting', JSON.stringify(DB.plan)); }
+async function savePlan(){ clearCaches(); mapSave('plan:setting', DB.plan); }
 
 /** 固定費の合計（年額）。役員報酬は「目標役員報酬」があればそちらに差し替えます */
 function planFixedTotal(){
@@ -2802,7 +3012,7 @@ function buyOf(m){ return DB.buy[buyKey(m)] || buyBlank(); }
 async function buySave(m,o){
   var k=buyKey(m);
   DB.buy[k]=normalizeBuy(o); clearCaches();
-  await storage.set(k, JSON.stringify(DB.buy[k]));
+  mapSave(k, DB.buy[k]);
 }
 /** 氷の本数（請求額と単価から出せるときは出す） */
 function buyIceQty(b){
@@ -3827,9 +4037,7 @@ async function markDelivered(c,start,end){
     var k=dkey(x.d), ds=ymd(x.d);
     var m=DB.deliv[k]=DB.deliv[k]||{}; (m[ds]=m[ds]||{})[c.id]=true; touched[k]=1;
   });
-  var payload={};
-  Object.keys(touched).forEach(function(k){ payload[k]=JSON.stringify(DB.deliv[k]); });
-  if(Object.keys(payload).length) await storage.setMany(payload);
+  Object.keys(touched).forEach(function(k){ mapSave(k, DB.deliv[k]); });
   clearCaches();
 }
 function slipRange(){
@@ -4064,7 +4272,7 @@ function viewInvoice(el){
   el.querySelector('#mNext').onclick=function(){ var d=new Date(S.invRef); d.setMonth(d.getMonth()+1); S.invRef=d; render(); };
   el.querySelector('#p1').onclick=async function(){
     printHtml('<div class="sheet">'+invoiceHtml(c,rows,pr[0],pr[1])+'</div>',false);
-    DB.printed[pkey(c,pr[1])]=true; await storage.set('printed',JSON.stringify(DB.printed)); render();
+    DB.printed[pkey(c,pr[1])]=true; mapSave('printed', DB.printed); render();
   };
   el.querySelector('#pAll').onclick=async function(){
     if(!confirm(pending.length+'枚を印刷します。プリンターに用紙をセットして「OK」を押してください。')) return;
@@ -4073,12 +4281,12 @@ function viewInvoice(el){
     }).join('');
     printHtml('<div class="sheet">'+html+'</div>',false);
     pending.forEach(function(x){ DB.printed[pkey(x,pr[1])]=true; });
-    await storage.set('printed',JSON.stringify(DB.printed)); render();
+    mapSave('printed', DB.printed); render();
   };
   el.querySelector('#pReset').onclick=async function(){
     if(!confirm('この締め（'+periodLabel(pr[0],pr[1])+'／'+SHIME_LABEL[c.shime]+'）の「印刷済み」を全部取り消しますか？')) return;
     group.forEach(function(x){ delete DB.printed[pkey(x,pr[1])]; });
-    await storage.set('printed',JSON.stringify(DB.printed)); render();
+    mapSave('printed', DB.printed); render();
   };
   /* ---- FXクラウド 一括計上 ---- */
   el.querySelector('#fx').onclick=function(){
@@ -4247,12 +4455,12 @@ function viewRecv(el){
     if(!a) return;
     DB.pay[pk]=(DB.pay[pk]||[]).concat([{id:Date.now(),date:el.querySelector('#pd').value,
       amount:a,method:el.querySelector('#pm').value,memo:el.querySelector('#pn').value.trim()}]);
-    await storage.set(pk,JSON.stringify(DB.pay[pk])); clearCaches(); toast('記録しました'); render();
+    listSave(pk, DB.pay[pk], 'id'); clearCaches(); toast('記録しました'); render();
   };
   el.querySelectorAll('[data-del]').forEach(function(b){
     b.onclick=async function(ev){ ev.stopPropagation();
       DB.pay[pk]=(DB.pay[pk]||[]).filter(function(x){return String(x.id)!==b.dataset.del;});
-      await storage.set(pk,JSON.stringify(DB.pay[pk])); clearCaches(); render(); };
+      listSave(pk, DB.pay[pk], 'id'); clearCaches(); render(); };
   });
 }
 </script>
@@ -4434,12 +4642,24 @@ function pendMark(){
   e.textContent = n ? '保存中…'
                     : (lsKeys(PEND_PREFIX).length ? '保存待ち（電波が戻ったら送ります）' : '');
 }
+/* ★★ 2026-09-20 … まるごと送るのをやめました。
+     小口現金も「1か月ぜんぶ（cashbook:2026-09）」を送り直していたので、
+     お重さんと戸倉さんが同時に打つと、あとから保存したほうの
+     古いまるごとが、先に入れたぶんを消していました。
+
+     いまは listSave が【前に読んだ姿とくらべて、変わった記録と
+     消えた記録だけ】を送ります。呼び方は前と同じ（いまの一覧をまるごと渡す）。
+     控えと送り直しは opend: のほうが見ています。 */
 function cashSaveAsync(key,val){
-  lsSet(PEND_PREFIX+key,val);                       /* ① 先に控え */
-  if(_pendQ[key]){ _pendQ[key].val=val; _pendQ[key].tries=0; }
-  else _pendQ[key]={val:val,tries:0};
-  pendMark();
-  pendRun(key);
+  var list=jparse(val,[]);
+  if(!Array.isArray(list)){                        /* 一覧でないものは、そのまま1つの値として */
+    lsSet(PEND_PREFIX+key,val);
+    if(_pendQ[key]){ _pendQ[key].val=val; _pendQ[key].tries=0; }
+    else _pendQ[key]={val:val,tries:0};
+    pendMark(); pendRun(key);
+    return;
+  }
+  listSave(key, list, 'id');
 }
 function pendRun(key){
   if(_pendBusy[key]) return;
@@ -4473,18 +4693,36 @@ function pendRun(key){
     }
   });
 }
-/** 開いたときに、送れていない控えを送り直します */
+/** 開いたときに、送れていない控えを送り直します。
+
+    ★ 2026-09-20 … 一覧の形（cashbook: など）の古い控えは、
+      **まるごと上書きではなく「足すだけ」に直して**送ります。
+      まるごと送ると、そのあいだに他の人が入れたぶんを消してしまう。
+      足すだけなら、その端末に残っていた記録は入り、人のぶんも消えません。
+      （消す指示は入っていないので、消したはずの記録が戻ることはあります。
+        消えるより、戻るほうがよい） */
 function pendResume(){
-  var ks=lsKeys(PEND_PREFIX);
+  var ks=lsKeys(PEND_PREFIX), n=0;
   ks.forEach(function(k){
     var key=k.slice(PEND_PREFIX.length), v=lsGet(k);
     if(v==null){ lsDel(k); return; }
+    if(opShapeOf(key)==='list'){
+      var list=jparse(v,null);
+      if(Array.isArray(list)){
+        var pt={idKey:'id', set:{}, del:{}};
+        list.forEach(function(r){ if(r&&r.id!=null) pt.set[String(r.id)]=r; });
+        lsDel(k);
+        if(opCells('list',pt)){ patchSave(key,'list',pt); n++; }
+        return;
+      }
+    }
+    n++;
     if(_pendQ[key]) return;
     _pendQ[key]={val:v,tries:0};
     pendRun(key);
   });
   if(ks.length) pendMark();
-  return ks.length;
+  return n;
 }
 window.addEventListener('beforeunload',function(e){
   if(Object.keys(_pendQ).length){ e.preventDefault(); e.returnValue=''; return ''; }
@@ -4555,25 +4793,41 @@ async function receiptFlush(){
   return done;
 }
 
-/* ★ 送れていない控えがあるキーは、控えのほうが新しい。
-     読むときもそちらを返します。こうしないと、まだ送れていない記録を
-     載せていない古い一覧を読んで、その上に書いて、記録が消えます。 */
+/* ★★ 読み出しは、ここ1か所で2つのことをします（2026-09-20）。
+
+     ① サーバから来た【もとの姿】を控える（`_opBase`）。
+        listSave / mapSave は、これとくらべて「変わったところ」だけを送る。
+        もとの姿を知らなければ「足すだけ・消さない」になるので、
+        知らなくても人のぶんを消すことはない。
+
+     ② まだ送れていないぶんを当てて返す（`opOverlay`）。
+        当てないと、自分がいま入れたぶんを載せていない古いものを読んで、
+        画面から消えて見える。そしてその上に書いて、本当に消える。
+
+   ★ 控えるのは「当てる前」の値。当てたあとを控えると、
+     次の差分が空になって、送るものが消えます。 */
 (function(){
   if(!window.storage) return;
   var _get=storage.get, _getMany=storage.getMany;
-  function pendVal(k){
+  function pendVal(k){                       /* 旧・小口現金のまるごと控え（残っている端末のため） */
     if(_pendQ[k]) return _pendQ[k].val;
     return lsGet(PEND_PREFIX+k);
   }
+  function fix(k,v){
+    var pv=pendVal(k);
+    if(pv!=null) v=pv;
+    opBaseSet(k,v);                          /* ① もとの姿（当てる前） */
+    return opOverlay(k,v);                   /* ② まだ送れていないぶんを当てる */
+  }
   storage.get=function(k){
     return _get.call(storage,k).then(function(r){
-      var v=pendVal(k);
+      var v=fix(k, r&&r.value!=null?r.value:null);
       return v==null ? r : {key:k,value:v};
     });
   };
   storage.getMany=function(ks){
     return _getMany.call(storage,ks).then(function(o){
-      (ks||[]).forEach(function(k){ var v=pendVal(k); if(v!=null) o[k]=v; });
+      (ks||[]).forEach(function(k){ o[k]=fix(k,o[k]); });
       return o;
     });
   };
@@ -6926,7 +7180,8 @@ function bindDrill(el){
       if(dm[ds]&&dm[ds][c.id]){
         delete dm[ds][c.id];
         if(!Object.keys(dm[ds]).length) delete dm[ds];
-        await storage.set(dkey(d),JSON.stringify(dm));
+        var d1={}; d1[ds]={}; d1[ds][c.id]=null;
+        patchSave(dkey(d),'map2',d1);
       }
       await flushMonth(okey(d));
       toast('取り消しました'); render();
@@ -7095,7 +7350,8 @@ function viewHome(el){
   el.querySelector('#cf').onclick=async function(){
     var ds=ymd(S.date), c=DB.confirm[ck]=DB.confirm[ck]||{};
     if(c[ds]) delete c[ds]; else c[ds]=true;
-    await storage.set(ck,JSON.stringify(c)); render();
+    var one={}; one[ds]=c[ds]?true:null;
+    patchSave(ck,'map1',one); render();
   };
 }
 
@@ -7428,7 +7684,7 @@ function arOpenHasBreak(fy,id){
 }
 async function saveArOpen(fy){
   clearCaches();
-  await storage.set('ar:open:'+fy, JSON.stringify(DB.arOpen[fy]||{}));
+  mapSave('ar:open:'+fy, DB.arOpen[fy]||{});
 }
 function invSelKey(id,ymk){ return id+'|'+ymk; }
 function invSelOf(fy,id,ymk){ return (DB.invSel[fy]||{})[invSelKey(id,ymk)]||null; }
@@ -7437,7 +7693,7 @@ function saveInvSel(fy){
   clearCaches();
   clearTimeout(_invSelT);
   _invSelT=setTimeout(function(){
-    storage.set('invsel:'+fy, JSON.stringify(DB.invSel[fy]||{}));
+    mapSave('invsel:'+fy, DB.invSel[fy]||{});
   },600);
 }
 /** サーバ側（Code.gs）の関数を呼ぶ */
@@ -7554,7 +7810,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-20a 注文は触ったマスだけ送る（2人で同時に入れても消えない）・控えを取って送り直す・請求書も締め月でそろえる';
+var APP_BUILD='2026-09-20b 画面からの保存はぜんぶ「触ったところだけ」送る（2人で同時に入れても消えない）・控えを取って送り直す・請求書も締め月でそろえる';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -9070,7 +9326,7 @@ viewInvoice=function(el){
     invStore(fy,c,curYm,rows);
     printHtml('<div class="sheet">'+
       invoiceHtml(c,billed,pr[0],pr[1],{extras:extras,cur:curRow,total:total,fy:fy,idx:idx})+'</div>',false);
-    DB.printed[pkey(c,pr[1])]=true; await storage.set('printed',JSON.stringify(DB.printed)); render();
+    DB.printed[pkey(c,pr[1])]=true; mapSave('printed', DB.printed); render();
   };
   el.querySelector('#pAll').onclick=async function(){
     if(!confirm(pending.length+'枚を印刷します。\n\n※ まとめ印刷は各店の「当月分」だけを載せます。\n'+
@@ -9083,12 +9339,12 @@ viewInvoice=function(el){
     }).join('');
     printHtml('<div class="sheet">'+html+'</div>',false);
     pending.forEach(function(x){ DB.printed[pkey(x,pr[1])]=true; });
-    await storage.set('printed',JSON.stringify(DB.printed)); render();
+    mapSave('printed', DB.printed); render();
   };
   el.querySelector('#pReset').onclick=async function(){
     if(!confirm('この締め（'+periodLabel(pr[0],pr[1])+'／'+SHIME_LABEL[c.shime]+'）の「印刷済み」を全部取り消しますか？')) return;
     group.forEach(function(x){ delete DB.printed[pkey(x,pr[1])]; });
-    await storage.set('printed',JSON.stringify(DB.printed)); render();
+    mapSave('printed', DB.printed); render();
   };
   el.querySelector('#fx').onclick=function(){
     var b=el.querySelector('#fx'), st=el.querySelector('#fxst');
@@ -10608,11 +10864,13 @@ async function appLock(to){
 /* 止まってからは保存しない（古いコードで書き込まないため） */
 (function(){
   if(!window.storage) return;
-  var _set=storage.set, _setMany=storage.setMany;
+  var _set=storage.set, _setMany=storage.setMany, _patch=storage.patch;
   var msg='アプリが新しくなりました。開き直してから入力してください。';
   var stop=function(){ return APP_LOCKED && !APP_FLUSH; };
   storage.set=function(k,v){ return stop()? Promise.reject(new Error(msg)) : _set(k,v); };
   storage.setMany=function(o){ return stop()? Promise.reject(new Error(msg)) : _setMany(o); };
+  /* ★ 差分の口もここを通す。opSend の中でも見ているが、門は1つ残らず閉める */
+  storage.patch=function(k,sh,pt){ return stop()? Promise.reject(new Error(msg)) : _patch(k,sh,pt); };
 })();
 
 /** 1分おきに版を確かめる */
