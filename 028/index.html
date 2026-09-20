@@ -2371,7 +2371,20 @@ var LIVE = typeof google !== 'undefined' && google.script && google.script.run;
      2. リンクで渡す … …/?u=（GASのURL）→ 端末が覚えて、アドレス欄からは消す
      3. すでに覚えている（localStorage）
    ================================================================== */
-var API_KEY_LS='kb_api_url';
+/* ★★★ localStorage の名前は【アプリごとに分ける】（2026-09-20）
+
+   GitHub Pages は 5アプリとも ishii-office.github.io の同じ置き場なので、
+   **localStorage を全アプリで共有している**。
+   708・028・078 は名前まで同じ（kb_boot_v1 など）だったので、
+
+     ・ANCHOVY を開いたのに、店舗チップに **バーリフレイン** が一瞬出る
+       （ほかのアプリが書いた kb_boot_v1 を読んでいた）
+     ・ほかのアプリの「送れていない控え（pend:）」を拾って、
+       **こちらのサーバへ送ろうとして、いつまでも「保存中…」のまま**
+
+   が起きた。**名前が同じなら、中身も混ざる。**
+   新しいアプリを作るときは、必ず自分の名前を先頭に付けること。 */
+var API_KEY_LS='rf_api_url';
 var API_URL='';
 (function(){
   var get=function(k){
@@ -2416,7 +2429,7 @@ var WEB2 = !LIVE && !!API_URL;
    ★ 誰が入ったかは、この番号では分からない。
      人ごとの見える範囲（経営者／管理者／従業員）は、この上に別の層として乗せる。
    ================================================================== */
-var AUTH_KEY='kb_auth_v1';
+var AUTH_KEY='rf_auth_v1';
 /* dev … 1段目（端末）の合図 ／ usr … 2段目（人）の合図 */
 var AUTH={on:false, known:false, len:0, num:true, dev:'', sheet:false,
           usr:'', me:null, roleOff:false};
@@ -2814,11 +2827,34 @@ function call(fn, args){
 
    見張りは node tools/save.mjs。ここを直したら必ず走らせる。
    ================================================================== */
-var NET_TIMEOUT = 15000;
+/* ★★★ 読み出しと書き込みで、待つ長さを分ける（2026-09-20 に直した）
+
+   はじめは両方15秒にしていた。ところが書き込みは
+   **写真を Drive に置く・シートを何枚も直す・鍵の順番を待つ**ので、
+   ふつうに15秒を超える。しかもサーバ側は鍵を最大45秒待つ作りなので、
+
+     画面：15秒で打ち切る → 送り直す
+     サーバ：まだ前のを走らせている → 鍵の順番待ちが積み上がる
+     → **送り直すほど詰まって、開き直しても直らない輪**
+
+   になっていた（2026-09-20 にバーリフレインで実際に起きた）。
+
+   だから
+     ・読み出しは 15秒（軽い。やり直しも安い）
+     ・書き込みは 60秒（サーバの鍵待ち 45秒より長くする。ここが逆だと必ず詰まる）
+     ・打ち切ったら、**送り直す前に「入りましたか」を聞く**（confirmOp_） */
+var NET_TIMEOUT = 15000;                 /* 読み出し */
+var SAVE_TIMEOUT = 60000;                /* 書き込み。サーバの LOCK_WAIT_MS(45秒)より長く */
 var NET_TIMEOUT_MSG = 'サーバの返事がありませんでした（時間切れ）';
+var ASK_WAIT = 2000, ASK_TIMES = 30;     /* 「入りましたか」を2秒おきに最大60秒 */
 var READ_WAIT  = [1200, 3000];             /* 読み出しのやり直し */
 var SAVE_WAIT  = [1000, 3000, 8000, 20000];/* 書き込みの送り直し */
-var SAVE_PREFIX = 'pend:';                 /* 端末に取る控え */
+var SAVE_REST  = 30000;                   /* あきらめたあと、次に送り直すまで */
+/* ★ 控えの名前も【アプリごとに分ける】（2026-09-20）。
+     Pages は全アプリが同じ置き場なので、'pend:' のままだと
+     ほかのアプリの控えを拾って、こちらのサーバへ送ろうとする。
+     それで「保存中…」が消えなくなっていた。 */
+var SAVE_PREFIX = 'rf_pend:';                 /* 端末に取る控え */
 var SAVE_PERSIST_MAX = 200000;             /* これより大きい控えは端末に残さない（写真よけ） */
 
 /* ★ 通信がこけただけか（＝やり直す値打ちがあるか）。
@@ -2859,7 +2895,12 @@ function saveMark_(){
       'box-shadow:0 2px 8px rgba(0,0,0,.2);pointer-events:none';
     document.body.appendChild(e);
   }
-  var n = Object.keys(_saveQ).length, waiting = lsKeys_(SAVE_PREFIX).length;
+  /* ★ 「保存中…」は【いま送っている最中】だけ（2026-09-20）
+       送り直しの待ち時間や、見回りが拾っただけのものまで「保存中」にすると、
+       右下にずっと出っぱなしになる（708 で実際に起きた）。待っているものは「保存待ち」。 */
+  var n = 0, waiting = 0, qk = Object.keys(_saveQ);
+  qk.forEach(function(k){ var r=_saveQ[k]; if(!r) return; if(r.st==='send') n++; else waiting++; });
+  lsKeys_(SAVE_PREFIX).forEach(function(k){ if(!_saveQ[k.slice(SAVE_PREFIX.length)]) waiting++; });
   if(n){
     e.textContent='保存中…';
     e.style.background='#FFF6DA'; e.style.color='#8A6D1B'; e.style.border='1px solid #E3C766';
@@ -2874,7 +2915,7 @@ function saveMark_(){
 }
 
 /* ---- 1回だけ送る（時間切れ付き） ---- */
-function callOnce_(fn, args){
+function callOnce_(fn, args, ms){
   return new Promise(function(res0, rej0){
     var done=false, tid=null, ac=null;
     function res(v){ if(done) return; done=true; if(tid) clearTimeout(tid); res0(v); }
@@ -2883,7 +2924,7 @@ function callOnce_(fn, args){
     tid = setTimeout(function(){
       try{ if(ac) ac.abort(); }catch(e){}
       rej(new Error(NET_TIMEOUT_MSG));
-    }, NET_TIMEOUT);
+    }, ms || NET_TIMEOUT);
 
     function ok(r){
       if(r===null || r===undefined){ rej(new Error(fn+' がサーバから空の返事を返しました。開き直してください')); return; }
@@ -2957,51 +2998,116 @@ function saveCanPersist_(rec){
 }
 function callWrite_(fn, args, op){
   op = op || opUid_();
-  var rec = { fn:fn, args:args||[], op:op, at:Date.now() };
+  var rec = { fn:fn, args:args||[], op:op, at:Date.now(), st:'wait' };
   if(saveCanPersist_(rec)) lsSet_(SAVE_PREFIX+op, JSON.stringify(rec));   /* ① 先に控え */
   _saveQ[op] = rec; saveMark_();
   return sendWrite_(rec, 0);
 }
+/* ★★ 送り直す前に「入りましたか」を聞く（2026-09-20）
+
+   返事が返らなかったからといって、届いていないとはかぎらない。
+   そのまま送り直すと、サーバがまだ走っている最中なら
+   **鍵の順番待ちが積み上がって、いつまでも返事が返らなくなる。**
+
+   だから先に聞く。getOpState は鍵を取らないので、
+   書き込みが走っている最中でもすぐ返る。
+
+     done    … 入っていた → そのときの答えを返す（送り直さない）
+     running … いま走っている → 待つ（送り直さない）
+     none    … 届いていない → 送り直してよい
+*/
+function confirmOp_(rec){
+  var i = 0;
+  function step(){
+    if(i++ >= ASK_TIMES) return Promise.resolve({ ask:'timeout' });
+    return sleep_(ASK_WAIT).then(function(){
+      return callOnce_('getOpState', [rec.op], NET_TIMEOUT).then(function(s){
+        if(s && s.state === 'done')    return { ask:'done', r:s.r };
+        if(s && s.state === 'running') return step();          /* まだ走っている。待つ */
+        return { ask:'none' };                                  /* 届いていない */
+      }).catch(function(){ return step(); });                   /* 聞けなかった。もう一度 */
+    });
+  }
+  return step();
+}
+
 function sendWrite_(rec, tries){
   /* ★ 合図はいちばん後ろに添える。サーバ（onceRun_）がこれを見て、
        送り直しでも二度やらないようにする */
   var args = (rec.args||[]).concat([{ __op: rec.op }]);
-  return callOnce_(rec.fn, args).then(function(r){
+  rec.st = 'send'; saveMark_();          /* ★ ここからが「保存中…」 */
+  return callOnce_(rec.fn, args, SAVE_TIMEOUT).then(function(r){
     delete _saveQ[rec.op];
     lsDel_(SAVE_PREFIX+rec.op);                    /* ③ 入ったのを確かめてから捨てる */
-    _saveTold=false; saveMark_(); callDrop();
+    _saveTold=false; saveMark_(); callDrop(); saveNext_();
     return r;
   }).catch(function(err){
+    rec.st = 'wait'; saveMark_();         /* ★ 送り終わった。ここからは「保存待ち」 */
     if(!netGlitch_(err)){                          /* 断られた。やり直しても同じ */
       delete _saveQ[rec.op]; lsDel_(SAVE_PREFIX+rec.op); saveMark_();
       throw err;
     }
-    var w = SAVE_WAIT[tries];
-    if(w!=null){ return sleep_(w).then(function(){ return sendWrite_(rec, tries+1); }); }
-    /* ★ あきらめても控えは残す。見回りと、次に開いたときに送り直す。
-         待ち行列からは外すこと（外さないと見回りが素通りする） */
-    delete _saveQ[rec.op]; saveMark_();
-    if(!_saveTold){
-      _saveTold = true;
-      alert('いま保存できませんでした。打ち直しは要りません。\n\n'+
-        'この端末に控えを取ってあります。電波が戻れば、ひとりで送り直します。\n'+
-        '画面右下の「保存待ち」が消えたら、入っています。\n\n（'+((err&&err.message)||err)+'）');
-    }
-    throw err;
+    /* ★★ 送り直す前に、まず「入りましたか」を聞く（2026-09-20）。
+         聞かずに送り直すと、サーバがまだ走っている最中に
+         鍵の順番待ちが積み上がって、いつまでも返事が返らなくなる。
+         開き直しても直らない輪は、これで起きていた。 */
+    return confirmOp_(rec).then(function(a){
+      if(a.ask === 'done'){                        /* 入っていた。送り直さない */
+        delete _saveQ[rec.op]; lsDel_(SAVE_PREFIX+rec.op);
+        _saveTold=false; saveMark_(); callDrop(); saveNext_();
+        return a.r;
+      }
+      var w = SAVE_WAIT[tries];
+      /* まだ走っている（timeout）なら、送り直さずにもう一度聞きにいく */
+      if(a.ask === 'timeout' && tries < SAVE_WAIT.length){
+        return sendWrite_(rec, tries+1);
+      }
+      if(w!=null){ return sleep_(w).then(function(){ return sendWrite_(rec, tries+1); }); }
+      /* ★ あきらめても控えは残す。見回りと、次に開いたときに送り直す。
+           待ち行列からは外すこと（外さないと見回りが素通りする）
+         ★★ アラートは出さない（2026-09-20）
+           出しても人にできることは無いのに、OKを押させるだけ。打ち直す必要も無い。
+           知らせるのは【画面右下の「保存待ち」】の1つだけにする。 */
+      rec.st = 'wait'; rec.next = Date.now() + SAVE_REST;
+      if(saveCanPersist_(rec)){
+        lsSet_(SAVE_PREFIX+rec.op, JSON.stringify(rec));
+        delete _saveQ[rec.op];                     /* 控えがあるので見回りが拾う */
+      }                                            /* 控えを残せないものは待ち行列に置く */
+      saveMark_();
+      try{ console.warn('保存を送り直します', rec.fn, (err&&err.message)||err); }catch(e2){}
+      throw err;
+    });
   });
 }
-/** 開いたとき・1分おきの見回り。送れていない控えを拾って送り直す */
+/** 開いたとき・1分おきの見回り。送れていない控えを拾って送り直す。
+    ★ 一度に1本だけ送る（2026-09-20）。まとめて送ると、サーバの鍵の順番待ちが
+      積み上がって、どれも返事が返らなくなる。1本入るたびに次を送る（saveNext_）。 */
+var _saveSwept = false;
+/** 1本入ったら、つぎの控えを送る（順番に1本ずつ） */
+function saveNext_(){ setTimeout(function(){ try{ saveResume_(); }catch(e){} }, 0); }
 function saveResume_(){
-  var ks = lsKeys_(SAVE_PREFIX), n = 0;
-  ks.forEach(function(k){
+  var now = Date.now(), n = 0, busy = 0, start = null, first = !_saveSwept, seen = {};
+  _saveSwept = true;
+  function offer(rec){
+    if(seen[rec.op]) return; seen[rec.op] = 1; n++;
+    if(!first && rec.next && rec.next > now) return;   /* まだ休ませる */
+    if(busy || start) return;                          /* ★ 一度に1本だけ */
+    start = rec;
+  }
+  var qk = Object.keys(_saveQ);
+  qk.forEach(function(k){ var r=_saveQ[k]; if(r && r.st==='send') busy++; });
+  qk.forEach(function(k){
+    var r=_saveQ[k]; if(!r) return;
+    if(r.st==='send'){ seen[r.op]=1; n++; return; }    /* いま送っている最中 */
+    offer(r);                                          /* 控えが取れないものも拾う */
+  });
+  lsKeys_(SAVE_PREFIX).forEach(function(k){
     var rec = null;
     try{ rec = JSON.parse(lsGet_(k)); }catch(e){}
     if(!rec || !rec.fn || !rec.op){ lsDel_(k); return; }
-    n++;
-    if(_saveQ[rec.op]) return;
-    _saveQ[rec.op] = rec;
-    sendWrite_(rec, 0).catch(function(){});
+    offer(rec);
   });
+  if(start){ start.st='send'; _saveQ[start.op]=start; sendWrite_(start, 0).catch(function(){}); }
   saveMark_();
   return n;
 }
@@ -3586,7 +3692,7 @@ function applyRole(){
   syncTabs();
 }
 
-var BOOT_KEY='kb_boot_v1';
+var BOOT_KEY='rf_boot_v1';
 function bootSave(b){
   try{ localStorage.setItem(BOOT_KEY, JSON.stringify({at:Date.now(), b:b})); }catch(e){}
 }
