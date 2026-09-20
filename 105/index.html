@@ -563,6 +563,12 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .kbtn.out.on{border-color:var(--pink);background:#FBEBEF}
 .kbtn.x.on  {border-color:var(--gold);background:#FFF7E3}
 .know{margin:8px 0 0;padding:8px 11px;border-radius:8px;background:#F6F4EE;font-size:13px}
+.segbar.side{border-color:var(--ice)}
+.segbar.side .seg{color:var(--ice);font-size:18px;padding:13px 8px;border-right-color:var(--ice)}
+.segbar.side.in  .seg.on{background:var(--ice);color:#fff}
+.segbar.side.out{border-color:var(--pink)}
+.segbar.side.out .seg{color:var(--pink);border-right-color:var(--pink)}
+.segbar.side.out .seg.on{background:var(--pink);color:#fff}
 /* ★★★ 小口現金の下層タブ（2026-09-12）
      入力／元帳／現金実査。縦に積むのをやめて、横に並べる */
 .segbar{display:flex;gap:0;margin:0 0 14px;border:1.5px solid var(--ai);
@@ -1346,18 +1352,18 @@ window.addHistYear({
     var L=window.localStorage;
     window.storage = {
       gas:false,
-      get:     function(k){ var v=L.getItem('kv:'+k); return Promise.resolve(v==null?null:{key:k,value:v}); },
-      getMany: function(ks){ var o={}; ks.forEach(function(k){o[k]=L.getItem('kv:'+k);}); return Promise.resolve(o); },
-      set:     function(k,v){ L.setItem('kv:'+k,v); return Promise.resolve({key:k,value:v}); },
-      setMany: function(o){ Object.keys(o).forEach(function(k){L.setItem('kv:'+k,o[k]);}); return Promise.resolve(true); },
+      get:     function(k){ var v=L.getItem('mk_kv:'+k); return Promise.resolve(v==null?null:{key:k,value:v}); },
+      getMany: function(ks){ var o={}; ks.forEach(function(k){o[k]=L.getItem('mk_kv:'+k);}); return Promise.resolve(o); },
+      set:     function(k,v){ L.setItem('mk_kv:'+k,v); return Promise.resolve({key:k,value:v}); },
+      setMany: function(o){ Object.keys(o).forEach(function(k){L.setItem('mk_kv:'+k,o[k]);}); return Promise.resolve(true); },
       /* ★ サーバが無いときも、同じ混ぜ方（opApply）でこの端末の中に入れる。
            ここを用意しておかないと、口の分からない開き方をしたときに
            「記録したのに何も残らない」になる */
       patch:   function(k,shape,pt){
-        L.setItem('kv:'+k, opApply(shape, L.getItem('kv:'+k), pt));
+        L.setItem('mk_kv:'+k, opApply(shape, L.getItem('mk_kv:'+k), pt));
         return Promise.resolve({key:k,n:1});
       },
-      del:     function(k){ L.removeItem('kv:'+k); return Promise.resolve({key:k,deleted:true}); },
+      del:     function(k){ L.removeItem('mk_kv:'+k); return Promise.resolve({key:k,deleted:true}); },
       masterFromSheet: function(){ return Promise.resolve(null); },
       saveReceipt: function(){ return Promise.reject(new Error('スプレッドシートから開いたときだけ使えます。')); },
       makeJournal: function(){ return Promise.reject(new Error('スプレッドシートから開いたときだけ使えます。')); },
@@ -1967,7 +1973,7 @@ function getQty(d,id){ return dayOrders(d)[id]; }
    ★ 何回送っても同じ結果になる（だから安心してやり直せる）。
    ★ 見張りは node tools/ordsave.mjs。ここを直したら必ず走らせる。
    ============================================================ */
-var OP_PREFIX='opend:';                 /* 端末に取る控え */
+var OP_PREFIX='mk_opend:';                 /* 端末に取る控え */
 var OP_WAIT=[1000,3000,8000,20000];
 var _opQ={}, _opSending={}, _opBusy={}, _opTimer={}, _opTold=false;
 
@@ -2077,7 +2083,11 @@ function opMark(){
       'box-shadow:0 2px 8px rgba(0,0,0,.2);pointer-events:none';
     document.body.appendChild(e);
   }
-  var n=opPending(), waiting=lsKeys(OP_PREFIX).length+lsKeys(PEND_PREFIX).length;
+  /* ★ 「保存中…」は【いま送っている最中】だけ（2026-09-20）
+       待っているだけのもの（送り直し待ち・見回りが拾った控え）まで「保存中」にすると、
+       右下にずっと出っぱなしになる。待っているものは「保存待ち」。 */
+  var n=Object.keys(_opSending).length;
+  var waiting=opPending()+lsKeys(OP_PREFIX).length+lsKeys(PEND_PREFIX).length;
   if(n){
     e.textContent='保存中…';
     e.style.background='#FFF6DA'; e.style.color='#8A6D1B'; e.style.border='1px solid #E3C766';
@@ -2240,12 +2250,10 @@ function opSend(k){
          控えが端末に残ったまま一生送られない。
          小口現金で 2026-09-13 に踏んだのと同じ穴。 */
     _opQ[k].tries=0;
-    if(!_opTold){
-      _opTold=true;
-      alert('いま保存できませんでした。打ち直しは要りません。\n\n'+
-        'この端末に控えを取ってあります。電波が戻れば、ひとりで送り直します。\n'+
-        '画面右下の「保存待ち」が消えたら、入っています。\n\n（'+((err&&err.message)||err)+'）');
-    }
+    /* ★★ アラートは出さない（2026-09-20）
+         出しても人にできることは無いのに、OKを押させるだけ。打ち直す必要も無い。
+         知らせるのは【画面右下の「保存待ち」】の1つだけにする。 */
+    try{ console.warn('保存を送り直します', k, (err&&err.message)||err); }catch(e2){}
     return false;
   });
 }
@@ -2848,7 +2856,8 @@ var S = {
   cashJustId:null,
   cashKind:null,          /* 小口現金の「取引の型」 */
   cashMemoPre:'',         /* 型から入れる内容の下書き */
-  kindOpen:false,         /* ⓪の山を出しているか（選ぶと、たたむ） */
+  kindOpen:false,         /* （名残り）⓪の山をたたむ仕掛け。いまは辞書を出したままにする */
+  cashSide:'in',          /* 小口現金の下層タブ … 'in' 入金 ／ 'out' 出金 */
   cashPane:'in',          /* 小口現金の下層タブ 'in'入力／'led'元帳／'count'現金実査 */
   cashJust:null,          /* いま入れた1件（入力タブの頭に「入れました」と出す） */
   cashAcctPre:'',         /* 型から入れる勘定科目 */
@@ -4504,21 +4513,32 @@ function viewRecv(el){
 
    ★ 型に無いものは「分からない（仮払い／仮受け）」。日付と金額だけ入れてもらいます。
    ============================================================ */
+/* ★★ 並びは【現場でよく出る順】。辞書なので、探さずに押せるのが値打ち（2026-09-20）
+     入金 … 売掛の現金回収 → 店売り → 京信（普通）より引出し → 京信（当座）より引出し → 社長から入金
+     出金 … 京信（普通）へ預入れ → 京信（当座）へ預入れ → 以下ふだんの払い
+   ★ 京信は【普通 1113/01（3069484）】と【当座 1112/01（0002880）】の2本ある。
+     どちらの口座から出し入れしたかで分ける。取りちがえない */
 var CASH_KINDS=[
   /* ---- 入る ---- */
+  {k:'ar',   g:'in',  dir:'in',  label:'売掛の現金回収', memo:'売掛の現金回収',
+   acct:'売掛金', fx:'', arc:true,
+   hint:'集金してきた分。お店を選んで入れる'},
   {k:'uri',  g:'in',  dir:'in',  label:'店売り（現金売上）', memo:'店売り',
    acct:'売上高（現金売上）', fx:'', sale:true,
    hint:'氷をその場で現金で売った。売掛にはならない'},
-  {k:'ar',   g:'in',  dir:'in',  label:'売掛を現金で回収した', memo:'売掛の現金回収',
-   acct:'売掛金', fx:'', arc:true,
-   hint:'集金してきた分。お店を選んで入れる'},
-  {k:'bkout',g:'in',  dir:'in',  label:'京信から引き出した', memo:'京信から引き出し',
+  {k:'bkout2',g:'in', dir:'in',  label:'京信（普通）より引出し', memo:'京信（普通）より引出し',
+   acct:'普通預金（京信 河原町支店 3069484）',
+   fx:'1113', fxName:'普通預金', sub:'01', subName:'京信 河原町支店 3069484', tax:'0'},
+  {k:'bkout',g:'in',  dir:'in',  label:'京信（当座）より引出し', memo:'京信（当座）より引出し',
    acct:'当座預金（京信 河原町支店 0002880）',
    fx:'1112', fxName:'当座預金', sub:'01', subName:'京信 河原町支店 0002880', tax:'0'},
-  {k:'shacho',g:'in', dir:'in',  label:'社長から入れた', memo:'社長から入金',
+  {k:'shacho',g:'in', dir:'in',  label:'社長から入金', memo:'社長から入金',
    acct:'役員借入金', fx:''},
   /* ---- 出る ---- */
-  {k:'bkin', g:'out', dir:'out', label:'京信へ預け入れた', memo:'現金より当座へ',
+  {k:'bkin2',g:'out', dir:'out', label:'京信（普通）へ預入れ', memo:'現金より普通預金へ',
+   acct:'普通預金（京信 河原町支店 3069484）',
+   fx:'1113', fxName:'普通預金', sub:'01', subName:'京信 河原町支店 3069484', tax:'0'},
+  {k:'bkin', g:'out', dir:'out', label:'京信（当座）へ預入れ', memo:'現金より当座へ',
    acct:'当座預金（京信 河原町支店 0002880）',
    fx:'1112', fxName:'当座預金', sub:'01', subName:'京信 河原町支店 0002880', tax:'0'},
   {k:'fami', g:'out', dir:'out', label:'ファミマ・スーパー（飲み物）', memo:'厚生食事代',
@@ -4634,7 +4654,11 @@ function dayNote(ds){
      ④ それでも駄目なら控えは残す。次に開いたとき、ひとりでもう一度送る
    同じキーに続けて書いたときは、あとの方だけを送ります（古いのは捨てる）。
    ============================================================ */
-var PEND_PREFIX='pend:';
+/* ★ 控えの名前は【アプリごとに分ける】（2026-09-20）。
+     Pages は 5アプリとも ishii-office.github.io の同じ置き場なので、
+     'pend:' のままだと、ほかのアプリの控えを拾って
+     丸京のKVへ書きにいってしまう。 */
+var PEND_PREFIX='mk_pend:';
 var _pendQ={}, _pendBusy={};
 var PEND_WAIT=[1000,3000,8000,20000];
 
@@ -4702,12 +4726,8 @@ function pendRun(key){
          1分おきの見回りが拾って、ひとりで送り直します。 */
     delete _pendQ[key];
     pendMark();
-    if(!_pendTold){
-      _pendTold=true;
-      alert('いま保存できませんでした。打ち直しは要りません。\n\n'+
-        'この端末に控えを取ってあります。電波が戻れば、ひとりで送り直します。\n'+
-        '画面の「保存待ち」が消えたら、入っています。\n\n（'+(err&&err.message||err)+'）');
-    }
+    /* ★★ アラートは出さない（2026-09-20）。知らせるのは「保存待ち」の1つだけ */
+    try{ console.warn('保存を送り直します', key, (err&&err.message)||err); }catch(e2){}
   });
 }
 /** 開いたときに、送れていない控えを送り直します。
@@ -4757,7 +4777,7 @@ window.addEventListener('beforeunload',function(e){
    元帳には「写真あり（送信待ち）」の印だけを書いて、写真そのものは
    この端末で預かり、通信が戻ったときに裏でひとりで送ります。
    ============================================================ */
-var RCPT_PREFIX='rcpt:';
+var RCPT_PREFIX='mk_rcpt:';
 /* ★ 写真1枚につき1つの合図（2026-09-13）
      送り直しのとき、これを添えるとサーバは【同じ名前なら作らずに、いまあるものを返す】。
      これが無いと、電波が切れるたびに Drive に同じ写真が増えます。
@@ -4998,6 +5018,15 @@ function saleRemove(m,id){
 /* ---- 小口現金の入力の枠（①現金売上／②売掛の現金回収・その他の入金／③経費） ----
    中身のデータは今までと同じ（dir:'in'/'out' ＋ sale の有無）。
    どの枠で入れるかを選ぶだけで、記録のしかたは変わりません。 */
+/** いま打っているのは 入金か 出金か（下層タブ）。
+    ★ 「分からない（入った／払った）」も、その向きの辞書に混ぜる。
+      向きだけは決まっているので、迷わせずに済む */
+function cashSide(){
+  if(S.cashSide==='in'||S.cashSide==='out') return S.cashSide;
+  var kd=cashKindOf(S.cashKind||'');
+  if(kd) return kd.dir==='out'?'out':'in';
+  return S.cashDir==='out'?'out':'in';
+}
 function cashMode(){
   if(S.cashDir!=='in') return 'exp';     /* ③ 経費（出金） */
   return S.saleOn ? 'sale' : 'in';       /* ① 現金売上 ／ ②のその他の入金 */
@@ -5271,9 +5300,7 @@ function viewCash(el){
        （④の行を押しても S.cashKind は前のまま残っているため） */
   var kdNow = cashKindOf((S.cashEdit && e.kind) ? e.kind : (S.cashKind || e.kind || ''));
   /* ⓪の山を出すか、たたむか。選べていないあいだだけ出す */
-  var kdSel    = kdNow || {};
-  var kindOpen = !kdNow || !!S.kindOpen;
-  var only     = !kindOpen;   /* ⓪で決まっているか（決まっていればその枠だけ出す） */
+  /* ★ 辞書はたたまない（2026-09-20）。型を選べば、そのまま下に入力欄が出る */
   var baseMemo = (!S.saleOn && kdNow && !kdNow.arc && kdNow.memo) ? String(kdNow.memo) : '';
   /* 直すときは、決まった内容のうしろに足したメモだけを取り出して欄へ戻す */
   var extraMemo = '';
@@ -5367,8 +5394,11 @@ function viewCash(el){
       '<span id="cashSaving" class="muted" style="margin-left:10px;font-size:12px">'+(Object.keys(_pendQ).length?'保存中…':'')+'</span></div>'+
     '<button class="btn ghost tap" id="mn">›</button></div>';
 
+  /* ★★ 上のバーは ビーメイツ・小林と同じ形にそろえた（2026-09-20）
+       取引の入力 ／ 現金実査 ／ ◯月の出納帳。丸京に「レジ締め」は無いので、
+       同じ役どころの【現金実査】を真ん中に置く */
   var segHtml = '<div class="segbar">'+
-    [['in','入力'],['led','元帳'],['count','現金実査']].map(function(p){
+    [['in','取引の入力'],['count','現金実査'],['led',(m.getMonth()+1)+'月の出納帳']].map(function(p){
       return '<button class="seg tap'+(PANE===p[0]?' on':'')+'" data-cpane="'+p[0]+'">'+
         p[1]+'</button>'; }).join('')+'</div>';
 
@@ -5407,54 +5437,56 @@ function viewCash(el){
       '<div class="muted">帳簿の残高</div><div class="num mincho">'+yen(bal)+'</div></div>'+
   '</div>';
 
-  var kindsHtml =
-  /* ---------- ⓪ 何があったか（取引の型）を選ぶ ---------- */
-  '<div class="cbox kinds">'+
-    '<div class="cbox-h"><span class="no">⓪</span><span class="ti">何があったか、を選ぶ</span>'+
-      '<span class="hint">'+(kindOpen?'選ぶと、下の枠が開きます':'金額を入れてください')+'</span>'+
+  /* ★★★ 入金／出金の下層タブ ＋ いつも開いている辞書（2026-09-20）
 
-    '</div>'+
-    /* ★ 選んだら、22個の山はたたむ（2026-09-11）
-         出したままだと入力の枠が下へ押しやられて、毎回そこまで転がすことになる */
-    (kindOpen
-      ? ['in','out','x'].map(function(g){
-          var ks=CASH_KINDS.filter(function(x){ return x.g===g; });
-          var t=(g==='in'?'入る（もらった・預かった）'
-                :g==='out'?'出る（払った）':'分からない');
-          return '<div class="kgrp '+g+'"><div class="kgt '+g+'">'+t+'</div><div class="kwrap">'+
-            ks.map(function(x){
-              return '<button class="kbtn '+g+(S.cashKind===x.k?' on':'')+' tap" data-ck="'+x.k+'">'+
-                esc(x.label)+'</button>';
-            }).join('')+'</div></div>';
-        }).join('')+
-        '<div class="know muted">あてはまるものが無ければ <b>「分からない」</b> を選んでください。</div>'
-      : '<button class="kpick '+(kdSel.dir==='in'?'in':'out')+' tap" id="kopen">'+
-          '<span class="dir">'+(kdSel.dir==='in'?'入る':'出る')+'</span>'+
-          '<b>'+esc(kdSel.label||'')+'</b>'+
-          '<span class="chg">選び直す</span>'+
-        '</button>')+
-  '</div>';
+       ⓪①②③ と番号を振って、選ぶたびに画面が入れ替わる形をやめた。
+       ビーメイツ・小林と同じで、**入金と出金のタブを選んだら、その辞書が並んでいて、
+       押したらすぐ下が入力欄**。画面は動かない。
+
+       ・辞書はたたまない。選んでも並んだまま（選び直しが1手で済む）
+       ・「分からない」は、その向きのぶんだけ辞書の最後に混ぜる
+       ・入金＝氷色、出金＝桃色。帯の色で、いま何を打っているかが分かる */
+  var SIDE = cashSide();
+  var sideHtml = '<div class="segbar side '+SIDE+'">'+
+    [['in','入金'],['out','出金']].map(function(p){
+      return '<button class="seg tap'+(SIDE===p[0]?' on':'')+'" data-cside="'+p[0]+'">'+
+        p[1]+'</button>'; }).join('')+'</div>';
+
+  var sideKinds = CASH_KINDS.filter(function(x){ return x.dir===SIDE; });
+  var kindsHtml =
+  sideHtml +
+  '<div class="kgrp '+SIDE+'"><div class="kgt '+SIDE+'">'+
+      (SIDE==='in'?'入金 … 何が入ったか':'出金 … 何に払ったか')+
+    '</div><div class="kwrap">'+
+    sideKinds.map(function(x){
+      return '<button class="kbtn '+(x.g==='x'?'x':SIDE)+(S.cashKind===x.k?' on':'')+
+        ' tap" data-ck="'+x.k+'">'+esc(x.label)+'</button>';
+    }).join('')+
+  '</div></div>';
 
   var boxesHtml =
   /* ★★ ⓪が①②③のどれを使うかを決めているので、その枠だけを出す */
   (mo==='sale'
   /* ---------- ① 現金売上（店売り・都度売上） ---------- */
   ? '<div class="cbox sale">'+
-      '<div class="cbox-h"><span class="no">①</span><span class="ti">現金売上（店売り、都度売上）</span>'+
+      '<div class="cbox-h"><span class="ti">店売り（現金売上）</span>'+
         '<span class="cbox-now">入力中</span></div>'+
       formHtml+
     '</div>'
   : mo==='in'
-  /* ---------- ② 売掛の現金回収（＋ 売掛でない入金） ---------- */
+  /* ---------- ② 入金（売掛の回収・引出し・社長から） ----------
+       ★ 売掛の回収の枠（#arcslot）は【売掛の回収を選んだときだけ】置く（2026-09-20）。
+         いつも置いていたので、「京信より引出し」を選んでいるのに
+         お店を選ぶ枠が上に出ていた */
   ? '<div class="cbox recv">'+
-      '<div class="cbox-h"><span class="no">②</span><span class="ti">売掛の現金回収</span>'+
+      '<div class="cbox-h"><span class="ti">'+esc(kdNow?kdNow.label:'入金')+'</span>'+
         '<span class="cbox-now">入力中</span></div>'+
-      '<div id="arcslot"></div>'+
+      ((kdNow&&kdNow.arc)?'<div id="arcslot"></div>':'')+
       formHtml+
     '</div>'
-  /* ---------- ③ 経費 ---------- */
+  /* ---------- ③ 出金 ---------- */
   : '<div class="cbox exp">'+
-      '<div class="cbox-h"><span class="no">③</span><span class="ti">経費（払った現金）</span>'+
+      '<div class="cbox-h"><span class="ti">'+esc(kdNow?kdNow.label:'出金（払った現金）')+'</span>'+
         '<span class="cbox-now">入力中</span></div>'+
       formHtml+
     '</div>');
@@ -5462,8 +5494,8 @@ function viewCash(el){
   var ledHtml =
   /* ---------- ④ 現金元帳 ---------- */
   '<div class="cbox led">'+
-    '<div class="cbox-h" style="margin-bottom:8px"><span class="no">④</span><span class="ti">現金元帳</span>'+
-      '<span class="hint">①②③で入れたものが、ぜんぶ日付の順に並びます</span>'+
+    '<div class="cbox-h" style="margin-bottom:8px"><span class="ti">現金出納帳</span>'+
+      '<span class="hint">入力タブで入れたものが、ぜんぶ日付の順に並びます</span>'+
       '<span class="muted" style="margin-left:auto">'+list.length+'件</span></div>'+
   '<div class="gridwrap"><div class="gscroll"><div style="min-width:700px">'+
     '<div class="ghead" style="grid-template-columns:'+C+'"><span>日付</span><span>区分</span>'+
@@ -5515,7 +5547,7 @@ function viewCash(el){
 
   var countHtml =
   '<div class="balbox" id="bc">'+
-    '<div class="cbox-h" style="margin-bottom:8px"><span class="no" style="color:var(--green)">⑤</span>'+
+    '<div class="cbox-h" style="margin-bottom:8px">'+
       '<b class="ti" style="color:var(--green)">現金実査（金庫の現金を数える）</b>'+
       '<span class="hint">帳簿とズレていないかの確認だけです。仕訳には使いません</span></div>'+
     '<div class="row" style="gap:12px;align-items:flex-end">'+
@@ -5542,7 +5574,8 @@ function viewCash(el){
 
   el.innerHTML = monthHtml + segHtml +
     (PANE==='in'
-      ? justHtml + kindsHtml + (kindOpen ? '' : boxesHtml)
+      /* ★ 辞書はいつも出したまま。型を選んだら、その下に入力欄が出る */
+      ? justHtml + kindsHtml + (kdNow ? boxesHtml : '')
       : '')+
     (PANE==='led'   ? noticeHtml + cardsHtml + ledHtml : '')+
     (PANE==='count' ? countHtml : '');
@@ -5584,7 +5617,8 @@ function viewCash(el){
 
   el.querySelectorAll('[data-ck]').forEach(function(b){ b.onclick=function(){
     var kd=cashKindOf(b.dataset.ck); if(!kd) return;
-    S.cashKind=kd.k; S.kindOpen=false;   /* 選んだら山はたたむ */
+    /* ★ 辞書はたたまない（2026-09-20）。選び直しが1手で済む */
+    S.cashKind=kd.k; S.kindOpen=false; S.cashSide=kd.dir;
     S.cashEdit=null; S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null;
     if(kd.sale){ cashModeSet('sale'); }
     else if(kd.arc){ cashModeSet('in'); S.cashDir='in'; }
@@ -5596,8 +5630,14 @@ function viewCash(el){
       var t=document.getElementById(kd.arc?'arca':'cm'); if(t){ t.focus(); t.select&&t.select(); }
     },60);
   }; });
-  if(el.querySelector('#kopen')) el.querySelector('#kopen').onclick=function(){
-    S.kindOpen=true; render(); };
+  /* 入金／出金の下層タブ。向きを変えたら、選んでいた型は外す */
+  el.querySelectorAll('[data-cside]').forEach(function(b){ b.onclick=function(){
+    if(S.cashSide===b.dataset.cside) return;
+    S.cashSide=b.dataset.cside;
+    S.cashKind=null; S.cashEdit=null; S.cashMemoPre=''; S.cashAcctPre='';
+    S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null;
+    cashModeSet(S.cashSide==='out'?'exp':'in');
+    render(); }; });
   el.querySelectorAll('[data-cmode]').forEach(function(b){ b.onclick=function(){
     var dEl=el.querySelector('#cd'); if(dEl) S.cashDate=dEl.value;
     cashModeSet(b.dataset.cmode);
@@ -5783,7 +5823,7 @@ function viewCash(el){
     if(raw) openDataUrl(raw); }; });
   el.querySelectorAll('[data-ed]').forEach(function(b){ b.onclick=function(){
     var x=(DB.cash[bk]||[]).filter(function(y){return String(y.id)===b.dataset.ed;})[0];
-    if(x){ S.cashEdit=x; S.cashDir=x.dir; S.kindOpen=false;
+    if(x){ S.cashEdit=x; S.cashDir=x.dir; S.kindOpen=false; S.cashSide=x.dir;
       S.cashPane='in'; S.cashJust=null;   /* 直すのは入力タブ */
       var st=x.imgPend?rcptOf(x.id):null;
       S.cashImgUid=(st&&st.uid)||null;      /* 直しても同じ写真は Drive で二重にしない */
@@ -7827,7 +7867,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-20c 画面からの保存はぜんぶ「触ったところだけ」送る（2人で同時に入れても消えない）・控えを取って送り直す・請求書も締め月でそろえる';
+var APP_BUILD='2026-09-20d 端末の控えの名前をアプリごとに分ける・右下の「保存中」は送っている最中だけ・保存できないときのアラートをやめる';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
