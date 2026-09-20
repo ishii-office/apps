@@ -577,6 +577,15 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .dns{margin-left:auto;font-size:15px;font-weight:700;color:var(--green);min-width:78px;text-align:right}
 .dnlog{flex-basis:100%;font-size:12px;padding-top:3px}
 
+/* 金額と精算日は1行（金額の枠が横に伸びすぎていた・2026-09-21） */
+.amtday .amtcell{flex:0 0 auto;width:200px}
+.amtday .daycell{flex:1 1 auto;min-width:180px}
+.amtday .cash-amt{width:100%}
+@media(max-width:480px){
+  .amtday .amtcell{width:44%}
+  .amtday .daycell{min-width:0}
+}
+
 /* 売掛の現金回収 … 電話では 取引先 → 回収日 → 金額 → 記録する を縦に積む（2026-09-21） */
 @media(max-width:560px){
   .arc-box .row{flex-wrap:wrap}
@@ -611,27 +620,54 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
   border-radius:8px;padding:7px 10px;margin:10px 0 8px}
 .jq{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
 .jq input{font-size:16px;padding:9px 11px}
-.jdlist{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px;background:#FBFAF6}
+.jdlist{max-height:380px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px;background:#FBFAF6}
 .jdlist.all{max-height:320px;margin-top:10px}
 .jgrp{margin-bottom:8px}
-.jgt{font-size:13px;font-weight:800;color:#fff;background:var(--ai);border-radius:6px;padding:3px 9px;margin-bottom:4px}
+.jgt{font-size:13px;font-weight:800;color:#1f7a6a;background:#EAF4F1;border-radius:6px;padding:3px 9px;margin-bottom:4px}
 .jd{display:flex;align-items:baseline;gap:9px;width:100%;text-align:left;margin:0 0 4px;
   border:1.5px solid var(--line);border-radius:8px;background:#fff;padding:8px 10px;cursor:pointer}
 .jd:hover{border-color:var(--ai)}
 .jd.on{border-color:var(--green);border-width:2.5px;background:#F1F8F3}
-.jd .jn{flex:0 0 auto;min-width:24px;text-align:center;font-size:12px;font-weight:800;
-  color:#fff;background:#9AA7B4;border-radius:5px;padding:1px 4px}
+.jd .jn{flex:0 0 auto;min-width:30px;text-align:right;font-size:15px;font-weight:800;
+  color:#1f7a6a;background:transparent;border-radius:0;padding:0 6px 0 0;font-variant-numeric:tabular-nums}
 .jd .jn.in{background:var(--ice)} .jd .jn.out{background:var(--pink)}
 .jd b{font-size:16px}
 .jd .jsub{font-size:12px;color:#777;margin-left:auto;text-align:right}
-.jpick{margin-top:10px;border:2px solid var(--green);border-radius:10px;padding:10px;background:#F1F8F3}
-.jpick.none{border-color:var(--line);border-style:dashed;background:#FBFAF6;color:#999;text-align:center}
-.jpt{font-size:13px;font-weight:800;color:var(--green);margin-bottom:5px}
-.jprev{width:100%;border-collapse:collapse;font-size:15px}
-.jprev th{width:44px;text-align:left;color:#777;font-size:13px;padding:3px 0}
-.jprev td{padding:3px 6px;border-bottom:1px solid #D9D2C466}
-.jprev2{font-size:13px;color:#555;margin-top:5px}
-.jpick input{width:100%;margin-top:8px;font-size:15px;padding:8px 10px}
+/* ---- 伝票の様式（市成商会の仕訳辞書［修正］と同じ並び）2026-09-21 ---- */
+.dp{border:1.5px solid #1f7a6a;border-radius:8px;overflow:hidden;background:#fff;margin-bottom:10px}
+.dp.jempty{opacity:.65}
+.dpname{display:flex;align-items:center;gap:10px;background:#EAF4F1;padding:7px 10px;
+  border-bottom:1.5px solid #1f7a6a}
+.dpname span{font-size:12px;color:#1f7a6a;font-weight:800;flex:0 0 auto}
+.dpname b{font-size:17px;font-weight:800;color:var(--ink)}
+.dpwrap{overflow-x:auto}
+.dptbl{border-collapse:collapse;width:100%;min-width:790px;font-size:12.5px;table-layout:fixed}
+.dptbl th{background:#1f7a6a;color:#fff;font-weight:700;letter-spacing:0;
+  border:1px solid #fff;padding:3px 3px;text-align:center;white-space:nowrap;font-size:11px}
+.dptbl td{border:1px solid #BFD8D2;padding:4px 6px;background:#fff;height:22px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dptbl td.c{text-align:center}
+.dptbl td.r{text-align:right}
+.dptbl td.k{text-align:center;font-weight:800;background:#F2F8F6}
+.dptbl tr.r1 td{background:#FFFDF2}
+.dptbl tr.r2 td,.dptbl tr.r3 td{background:#FBFAF6}
+.dptbl tr.r1 td.num{font-size:15px;font-weight:800}
+.dpin{width:100%;border:1px dashed #BFD8D2;border-radius:4px;background:#fff;
+  font-size:12.5px;padding:2px 5px;font-family:inherit}
+.dpin:focus{border-style:solid;border-color:#1f7a6a;outline:none}
+/* ---- 行番号 → Enter ---- */
+.jcmd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border:2px solid var(--gold);border-radius:10px;background:#FFFBF0;padding:9px 12px;margin-bottom:8px}
+.jcmdl{font-size:14px;font-weight:800;color:#7a5c19}
+.jcmd input{width:96px;text-align:center;font-size:26px;font-weight:800;padding:6px 8px;
+  border:2px solid var(--gold);border-radius:8px;background:#fff}
+.jcmdh{font-size:13px;color:#7a5c19}
+.jcnt{margin-left:auto;font-size:13px;color:#888}
+.jlast{display:flex;align-items:center;gap:10px;font-size:14px;margin:0 0 10px;
+  border:1.5px solid var(--green);background:#F1F8F3;border-radius:8px;padding:7px 11px}
+.jlast b{font-size:16px}
+.jlast button{margin-left:auto;border:1px solid var(--green);background:#fff;color:var(--green);
+  border-radius:6px;font-size:13px;font-weight:700;padding:4px 10px;cursor:pointer}
 .jbtns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .jbtns .jgo2{margin-left:auto}
 .jgo2{font-size:18px;padding:13px 22px;background:var(--green)}
@@ -3007,6 +3043,7 @@ var S = {
   jEditId:null,           /* 辞書の登録・直し */
   jOpen:false,            /* 辞書の登録欄をひらいているか */
   jDone:false,            /* 済んだぶんも出すか */
+  jLast:null,             /* 直前に当てた1件（打ちまちがいを戻すため） */
   cashPane:'in',          /* 小口現金の下層タブ 'in'入力／'led'元帳／'count'現金実査 */
   cashJust:null,          /* いま入れた1件（入力タブの頭に「入れました」と出す） */
   cashAcctPre:'',         /* 型から入れる勘定科目 */
@@ -5448,6 +5485,11 @@ function jdNorm(d){
     kind:String(d.kind||'')};
 }
 /** 辞書の id。時刻＋乱数で、同時に作っても重ならない */
+/** ★ サーバの `CASH_JOURNAL`（Code.js）と同じ値。伝票の見ために使う。
+      ここが食いちがうと「画面で見た伝票」と「エクセルの1行」がずれるので、
+      片方を直したら必ずもう片方も直す */
+var CASH_JOURNAL_C={ slipNo:999, voucherNo:'999',
+  cashCode:'1111', cashName:'現金', cashSubName:'小口現金' };
 function jdUid(){ return 'jd'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function jdicList(){ return (DB.jdic||[]).map(jdNorm); }
 function jdicOf(id){
@@ -5523,7 +5565,12 @@ function viewJournal(el, m){
     '<div class="jbar"><i style="width:'+(all.length?Math.round(done*100/all.length):0)+'%"></i></div>'+
     '<label class="jchk"><input type="checkbox" id="jdone" '+(S.jDone?'checked':'')+'>'+
       '済んだぶんも出す</label>'+
-  '</div>';
+  '</div>'+
+  /* ★ 直前に入れた1件。番号を打ちまちがえても、ここで気づいて戻せる */
+  (S.jLast
+    ? '<div class="jlast">✓ '+esc(S.jLast.d)+'　'+yen(S.jLast.a)+'　→　<b>'+esc(S.jLast.n)+'</b>'+
+        '<button class="tap" id="jback">戻して直す</button></div>'
+    : '');
 
   if(!all.length){
     el.innerHTML=head+'<div class="cbox"><p class="muted">この月の小口現金は、まだ1件も入っていません。</p></div>'+jdicBoxHtml(dic);
@@ -5552,31 +5599,30 @@ function viewJournal(el, m){
         : '<img class="jshot" src="'+raw+'" alt="領収書">')
       : '<div class="jshot none">領収書の写真はありません</div>');
 
-  /* ---- いま選んでいる辞書 ---- */
-  var sel=cur.d?jdicOf(cur.d):null;
+  /* ---- 辞書。行番号は【その向きの並び順】で固定。しぼり込んでも動かない ---- */
+  var side = dic.filter(function(d){ return d.dir===x.dir; });
+  side.forEach(function(d,i2){ d.no = i2+1; });
   var q=String(S.jQ||'').trim();
-  var shown=dic.filter(function(d){
-    if(d.dir!==x.dir) return false;
-    if(!q) return true;
-    return (d.name+' '+d.grp+' '+d.memo+' '+d.acctName).indexOf(q)>=0;
-  });
+  var shown = q ? side.filter(function(d){
+    return (d.name+' '+d.grp+' '+d.memo+' '+d.acctName+' '+d.acct).indexOf(q)>=0; }) : side;
   var grps=[], byGrp={};
   shown.forEach(function(d){ if(!byGrp[d.grp]){ byGrp[d.grp]=[]; grps.push(d.grp); } byGrp[d.grp].push(d); });
-  var no=0;
-  var dicHtml=grps.map(function(g){
-    return '<div class="jgrp"><div class="jgt">'+esc(g)+'</div>'+
+  var sel = cur.d ? jdicOf(cur.d) : null;
+  if(sel) side.forEach(function(d){ if(d.id===sel.id) sel.no=d.no; });
+
+  var dicHtml = grps.map(function(g){
+    return '<div class="jgrp"><div class="jgt">☆ '+esc(g)+'</div>'+
       byGrp[g].map(function(d){
-        no++;
         return '<button class="jd tap'+(sel&&sel.id===d.id?' on':'')+'" data-jd="'+d.id+'">'+
-          '<span class="jn">'+no+'</span>'+
+          '<span class="jn">'+d.no+'</span>'+
           '<b>'+esc(d.name)+'</b>'+
-          '<span class="jsub">'+esc(d.acctName||d.acct)+
+          '<span class="jsub">'+esc(d.acct)+' '+esc(d.acctName||'')+
             (d.subName?'／'+esc(d.subName):'')+
             '　'+esc(jtaxText(d.tax))+(d.rate?' '+d.rate+'%'+(d.red?'(軽)':''):'')+
             (d.partyName?'　'+esc(d.partyName):'')+'</span>'+
         '</button>';
       }).join('')+'</div>';
-  }).join('') || '<p class="muted">この向きの辞書がまだありません。下の「辞書を登録する」から足してください。</p>';
+  }).join('') || '<p class="muted" style="padding:8px">この向きの辞書がまだありません。下の「辞書を登録する」から足してください。</p>';
 
   var kd=cashKindOf(x.kind||'');
   var body=
@@ -5590,27 +5636,25 @@ function viewJournal(el, m){
       '<div class="jmemo">'+esc(x.memo||'（内容なし）')+
         (kd?'<span class="pill tag-std">'+esc(kd.label)+'</span>':'')+'</div>'+
       shot+
-      '<p class="jwarn">★ 写真の <b>日付</b> と <b>金額</b> も、ここで一緒に確かめてください。'+
-        'ちがっていたら［出納帳を直す］で直します。</p>'+
+      '<p class="jwarn">★ 写真の <b>日付</b> と <b>金額</b> も、ここで一緒に確かめてください。</p>'+
       '<button class="btn ghost tap sm" data-jfix="'+x.id+'">出納帳を直す</button>'+
     '</div>'+
     '<div class="jright">'+
-      '<div class="jq"><input id="jq" placeholder="辞書をしぼり込む（消耗品・ガソリン…）" value="'+esc(q)+'">'+
-        '<span class="muted">番号を打って Enter でも選べます</span></div>'+
+      jDenpyoHtml(x, sel)+
+      /* ★★ 行番号 → Enter。これだけで、辞書がセットされて次の領収書が出る */
+      '<div class="jcmd">'+
+        '<label class="jcmdl">行番号</label>'+
+        '<input id="jcmd" inputmode="numeric" autocomplete="off" value="" placeholder="番号">'+
+        '<span class="jcmdh">→ Enter で、この伝票ができて次の領収書へ</span>'+
+        '<span class="jcnt">'+(S.jIdx+1)+' / '+todo.length+' 件め</span>'+
+      '</div>'+
+      '<div class="jq"><input id="jq" placeholder="辞書をしぼり込む（消耗品・ガソリン…）" value="'+esc(q)+'"></div>'+
       '<div class="jdlist">'+dicHtml+'</div>'+
-      (sel
-        ? '<div class="jpick">'+
-            '<div class="jpt">この仕訳になります</div>'+
-            jPreviewHtml(x, sel)+
-            '<input id="jnote" placeholder="元帳摘要（変えたいときだけ）" value="'+esc(cur.note||'')+'">'+
-          '</div>'
-        : '<div class="jpick none">辞書を1つ選んでください。</div>')+
       '<div class="jbtns">'+
         '<button class="btn ghost tap" id="jprev">‹ もどる</button>'+
         '<button class="btn ghost tap" id="jskip">この1件はとばす</button>'+
         '<button class="btn tap jgo2" id="jok"'+(sel?'':' disabled')+'>これで確定 →</button>'+
       '</div>'+
-      '<div class="muted" style="text-align:right">'+(S.jIdx+1)+' / '+todo.length+' 件め</div>'+
     '</div>'+
   '</div>';
 
@@ -5618,29 +5662,74 @@ function viewJournal(el, m){
   jBind(el,m);
 }
 
-/** 選んだ辞書で、どんな仕訳になるかをその場で見せる */
-function jPreviewHtml(x,d){
+/** ★★★ 伝票の様式（2026-09-21）
+
+    市成商会の仕訳辞書［修正］と同じ並びにしてある。
+    事務所の職員がいちばん見なれている形で、**一括読み込みエクセルを取り込んだあとも
+    FXの中でこの形で見える**ので、前後で突き合わせやすい。
+
+      年月日 ｜      ｜ 借方科目 ｜ 貸方科目 ｜ 取引金額     ｜ 税率／小切手番号／実際の仕入れ年月日／収支
+      伝番   ｜ 課税 ｜ 科目名   ｜ 科目名   ｜（内、消費税等）｜ 取引先名
+      証番   ｜ 事業 ｜ 口座名   ｜ 口座名   ｜ 税抜き金額    ｜ 元帳摘要
+
+    ★ ここに出る値は、そのまま一括読み込みエクセルの1行になる。
+      見ための表と、書き出す44列を別々に作らない（食いちがうもとになる）。 */
+function jDenpyoHtml(x, d){
+  var J=CASH_JOURNAL_C;
   var g=Math.round(Number(x.amount)||0);
-  var taxable=(d.tax!=='0'&&d.tax!==''&&d.rate>0);
-  var net=taxable?Math.round(g/(1+d.rate/100)):g;
-  var cash={c:'1111',n:'現金',s:'',t:'対象外'};
-  var side={c:d.acct,n:d.acctName||d.acct,s:d.subName?(d.sub+' '+d.subName):'',
-            t:jtaxText(d.tax)+(taxable?(' '+d.rate+'%'+(d.red?'（軽減）':'')):'')};
-  var dr=(d.dir==='in')?cash:side, cr=(d.dir==='in')?side:cash;
-  var row=function(lb,a){
-    return '<tr><th>'+lb+'</th><td><b>'+esc(a.c)+'</b> '+esc(a.n)+
-      (a.s?'<span class="muted">／'+esc(a.s)+'</span>':'')+'</td>'+
-      '<td class="r num">'+yen(g)+'</td><td class="muted">'+esc(a.t)+'</td></tr>';
-  };
-  return '<table class="jprev">'+row('借方',dr)+row('貸方',cr)+'</table>'+
-    '<div class="jprev2">'+
-      (taxable?'税抜 '+yen(net)+'　消費税 '+yen(g-net)+'　':'')+
-      '摘要「'+esc(d.memo||d.name)+'」'+
-      (d.partyName?'　取引先 '+esc(d.partyName)+'（'+esc(d.party)+'）':'')+
-    '</div>';
+  var taxable = !!(d && d.tax!=='0' && d.tax!=='' && d.rate>0);
+  var tax = taxable ? Math.floor(g*d.rate/(100+d.rate)) : 0;
+  var net = g-tax;
+  var cash={code:J.cashCode, name:J.cashName, sub:'', subName:J.cashSubName, tax:'0', biz:''};
+  var side=d?{code:d.acct, name:d.acctName||'', sub:d.sub||'', subName:d.subName||'',
+              tax:d.tax, biz:d.biz}:{code:'',name:'',sub:'',subName:'',tax:'',biz:''};
+  var dr=(d&&d.dir==='in')?cash:side, cr=(d&&d.dir==='in')?side:cash;
+  var rateTxt = !d ? '' : (taxable ? ('判定('+(d.red?'軽':'標')+')') : '—');
+  var e_=function(v){ return esc(v==null?'':String(v)); };
+  var blank = d ? '' : ' jempty';
+
+  return '<div class="dp'+blank+'">'+
+    '<div class="dpname"><span>仕訳の種類名</span><b>'+(d?esc(d.name):'（辞書を選んでください）')+'</b></div>'+
+    '<div class="dpwrap"><table class="dptbl">'+
+      /* ★ 列幅は決め打ち。決めないと11列が均等になって、
+           見出しが重なり、日付も金額も「…」で切れる */
+      '<colgroup>'+
+        '<col style="width:104px"><col style="width:46px">'+
+        '<col style="width:60px"><col style="width:40px">'+
+        '<col style="width:60px"><col style="width:40px">'+
+        '<col style="width:112px"><col style="width:70px">'+
+        '<col style="width:72px"><col style="width:116px"><col style="width:44px">'+
+      '</colgroup>'+
+      '<thead>'+
+        '<tr><th>年月日</th><th></th><th colspan="2">借 方 科 目</th><th colspan="2">貸 方 科 目</th>'+
+          '<th>取 引 金 額</th><th>税 率</th><th>小切手番号</th><th>実際の仕入れ年月日</th><th>収支</th></tr>'+
+        '<tr><th>伝番</th><th>課税</th><th colspan="2">科 目 名</th><th colspan="2">科 目 名</th>'+
+          '<th>（内、消費税等）</th><th colspan="4">取引先名（仕入先の氏名又は名称）</th></tr>'+
+        '<tr><th>証番</th><th>事業</th><th colspan="2">口 座 名</th><th colspan="2">口 座 名</th>'+
+          '<th>税 抜 き 金 額</th><th colspan="4">元帳摘要（仕入れ資産等の総称）</th></tr>'+
+      '</thead>'+
+      '<tbody>'+
+        '<tr class="r1"><td class="k">'+e_(String(x.date).replace(/-/g,'/'))+'</td><td></td>'+
+          '<td class="c">'+e_(dr.code)+'</td><td class="c">'+e_(dr.sub)+'</td>'+
+          '<td class="c">'+e_(cr.code)+'</td><td class="c">'+e_(cr.sub)+'</td>'+
+          '<td class="r num">'+(g?yen(g):'0')+'</td><td class="c">'+e_(rateTxt)+'</td>'+
+          '<td></td><td class="c">'+(taxable?e_(String(x.date).replace(/-/g,'/')):'')+'</td><td></td></tr>'+
+        '<tr class="r2"><td class="c">'+e_(d?J.slipNo:'')+'</td><td class="c">'+e_(dr.tax)+'</td>'+
+          '<td colspan="2">'+e_(dr.name)+'</td><td colspan="2">'+e_(cr.name)+'</td>'+
+          '<td class="r num">'+(taxable?yen(tax):'')+'</td>'+
+          '<td colspan="4">'+e_(d?(d.partyName||(d.party?d.party:'')):'')+'</td></tr>'+
+        '<tr class="r3"><td class="c">'+e_(d?J.voucherNo:'')+'</td><td class="c">'+e_(dr.biz)+'</td>'+
+          '<td colspan="2">'+e_(dr.subName)+'</td><td colspan="2">'+e_(cr.subName)+'</td>'+
+          '<td class="r num">'+(d?yen(net):'')+'</td>'+
+          /* ★ 元帳摘要はここで直せる（市成商会の伝票と同じで、マスに直に打つ） */
+          '<td colspan="4">'+(d
+            ? '<input id="jnote" class="dpin" value="'+esc(x.memo||d.memo)+'">'
+            : '')+'</td></tr>'+
+      '</tbody>'+
+    '</table></div>'+
+  '</div>';
 }
 
-/** 辞書の登録・直し（下にたたんで置く） */
 function jdicBoxHtml(dic){
   if(!S.jOpen){
     return '<div class="cbox jdicbox"><button class="jopen tap" id="jopen">'+
@@ -5696,6 +5785,19 @@ function jdicBoxHtml(dic){
   '</div>';
 }
 
+/** 辞書を当てて確定し、つぎの領収書へ。行番号→Enter も［これで確定］もここを通る */
+function jApply(m, x, d, el){
+  var mp=jMap(m);
+  var e=mp[String(x.id)]||{};
+  e.d=d.id; delete e.skip; e.ok=1; e.at=ymd(new Date());
+  var nt=el&&el.querySelector('#jnote'); if(nt) e.note=nt.value;
+  mp[String(x.id)]=e; jSaveMap(m);
+  S.jLast={ id:x.id, d:String(x.date).slice(5).replace('-','/'), a:x.amount, n:d.name };
+  if(!S.jDone) S.jIdx=Math.min(S.jIdx, Math.max(0, jTodo(m).length-1));
+  else S.jIdx++;
+  S.jQ='';
+  render();
+}
 function jBind(el,m){
   var mp=jMap(m), todo=jTodo(m), x=todo[S.jIdx]||null;
   var chk=el.querySelector('#jdone');
@@ -5711,16 +5813,38 @@ function jBind(el,m){
   var qe=el.querySelector('#jq');
   if(qe){
     qe.oninput=function(){ S.jQ=qe.value; };
-    qe.onkeydown=function(ev){
-      if(ev.key!=='Enter') return;
-      var n=parseInt(String(qe.value).trim(),10);
-      if(n>0){
-        var bs=el.querySelectorAll('[data-jd]');
-        if(bs[n-1]){ qe.value=''; S.jQ=''; bs[n-1].click(); return; }
-      }
-      render();
-    };
+    qe.onkeydown=function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); render(); } };
   }
+
+  /* ★★★ 行番号 → Enter（2026-09-21）
+       これ1つで「辞書がセットされる → 伝票ができる → 次の領収書が出る」。
+       市成商会の仕訳辞書と同じ打ち方。番号を打ちまちがえても、
+       上の「✓ …　戻して直す」で1つ戻せる。 */
+  var cmd=el.querySelector('#jcmd');
+  if(cmd){
+    cmd.onkeydown=function(ev){
+      if(ev.key!=='Enter') return;
+      ev.preventDefault();
+      var v=String(cmd.value).replace(/[^0-9]/g,'');
+      if(!v){ if(ok) ok.click(); return; }   /* 空の Enter は［これで確定］と同じ */
+      var n=parseInt(v,10);
+      var side=jdicList().filter(function(d){ return d.dir===x.dir; });
+      var d=side[n-1];
+      if(!d){ toast(n+' 番の辞書はありません'); cmd.value=''; return; }
+      jApply(m, x, d, el);
+    };
+    setTimeout(function(){ try{ cmd.focus(); }catch(e2){} },40);
+  }
+  var bk=el.querySelector('#jback');
+  if(bk) bk.onclick=function(){
+    var id=S.jLast&&S.jLast.id;
+    S.jLast=null;
+    if(id){
+      var e2=mp[String(id)]||{}; delete e2.ok; mp[String(id)]=e2; jSaveMap(m);
+      S.jDone=false; S.jIdx=0;
+    }
+    render();
+  };
   var nt=el.querySelector('#jnote');
   if(nt) nt.onchange=function(){
     if(!x) return;
@@ -5732,14 +5856,9 @@ function jBind(el,m){
   if(ok) ok.onclick=function(){
     if(!x) return;
     var e=mp[String(x.id)]||{};
-    if(!e.d){ toast('辞書を選んでください'); return; }
-    var n2=el.querySelector('#jnote'); if(n2) e.note=n2.value;
-    e.ok=1; e.at=ymd(new Date());
-    mp[String(x.id)]=e; jSaveMap(m);
-    if(!S.jDone) S.jIdx=Math.min(S.jIdx, Math.max(0, jTodo(m).length-1));
-    else S.jIdx++;
-    S.jQ=''; render();
-    toast('仕訳ができました');
+    var d=e.d?jdicOf(e.d):null;
+    if(!d){ toast('辞書を選んでください'); return; }
+    jApply(m, x, d, el);
   };
   var sk=el.querySelector('#jskip');
   if(sk) sk.onclick=function(){
@@ -5902,18 +6021,17 @@ function viewCash(el){
     /* ★ 「内容は◯◯で記録されます」は出さない（2026-09-21）。
          顧問先には、それが厚生食事代で記録されるかどうかはどうでもいい話。
          勘定科目は事務所が決める。画面は単純明快に */
+    /* ★ 金額と精算日は【1行】に（2026-09-21）。
+         金額の枠が画面いっぱいに伸びていて、間が抜けていた。
+         日にちは領収書の日付ではなく、小口現金が動いた日＝精算日 */
     (isArc ? '' :
-    '<div class="row cash-f" style="gap:12px;align-items:flex-end">'+
-      '<div style="flex:1;min-width:160px"><label class="lbl">金額</label>'+
+    '<div class="row cash-f amtday" style="gap:12px;align-items:flex-end">'+
+      '<div class="amtcell"><label class="lbl">金額</label>'+
         '<input id="cm" class="num cash-amt" inputmode="numeric" '+
           (S.saleOn?'readonly style="background:#FFFBF0" ':'')+
           'value="'+(S.saleOn?(saleTotal(saleItems())||''):(e.amount||''))+'" placeholder="0"></div>'+
-    '</div>'+
-    '<div class="cash-f">'+
-      /* ★ 日にちは【領収書の日付ではなく、小口現金が動いた日＝精算日】（2026-09-21）。
-           あとでまとめて精算することがあるので、ここは必ず精算日 */
-      '<label class="lbl">精算日　<span style="font-weight:400">小口現金が動いた日</span></label>'+
-      '<div class="row" style="gap:8px">'+
+      '<div class="daycell">'+
+        '<label class="lbl">精算日　<span style="font-weight:400">小口現金が動いた日</span></label>'+
         '<span class="dwrap'+(gap===0?' today':'')+'">'+
           '<input type="date" id="cd" class="cash-date" value="'+formDate+'">'+
           /* 今日のときは「今日」のボタンが光っているので、同じ言葉を2つ出さない
@@ -5921,8 +6039,10 @@ function viewCash(el){
           '<span class="dnote'+(gap===0?' today':'')+'" id="dnote">'+
             (gap===0?'':dayNote(formDate))+'</span>'+
         '</span>'+
-        qd(0,'今日')+qd(1,'きのう')+qd(2,'おととい')+
       '</div>'+
+    '</div>'+
+    '<div class="row" style="gap:8px;margin-top:6px">'+
+      qd(0,'今日')+qd(1,'きのう')+qd(2,'おととい')+
     '</div>')+
     (noShot ? '' :
     '<div class="dropzone" id="dz">'+
@@ -8506,7 +8626,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-21b 小口現金の画面から要らない説明と二重の欄を落とす・店売りは合計金額だけ・現金実査を金種で数える';
+var APP_BUILD='2026-09-21c 仕訳は伝票の様式（市成商会と同じ並び）・行番号→Enter で次の領収書へ・金額と精算日を1行に';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
