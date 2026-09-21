@@ -4791,6 +4791,9 @@ var CASH_KINDS=[
   {k:'tao',  g:'out', dir:'out', label:'氷 配送代', memo:'氷 配送代', was:'氷 配送料',
    acct:'仕入高／Tao 運賃',
    fx:'5211', fxName:'仕入高', sub:'02', subName:'Tao 運賃', tax:'5', rate:10},
+  {k:'fukuro',g:'out', dir:'out', label:'遠興 袋代(手数料含)', memo:'遠興 袋代(手数料含)',
+   acct:'仕入高／その他（袋代）',
+   fx:'5211', fxName:'仕入高', sub:'99', subName:'その他', tax:'5', rate:10},
   {k:'shinbun',g:'out',dir:'out',label:'新聞代', memo:'新聞代', was:'新聞代 デイリースポーツ',
    acct:'図書新聞費（軽減8%）',
    fx:'6118', fxName:'図書新聞費', sub:'01', subName:'図書新聞費', tax:'5', rate:8, red:1},
@@ -5036,6 +5039,23 @@ var RCPT_PREFIX='mk_rcpt:';
      送り直しのとき、これを添えるとサーバは【同じ名前なら作らずに、いまあるものを返す】。
      これが無いと、電波が切れるたびに Drive に同じ写真が増えます。
      実際、3月の領収書は 73枚に対して Drive に 128枚できていました。 */
+/* ★★★ 写真は【いまの入力】のものだけを受け取る（2026-09-21 に実際に起きた）
+     写真を撮ると Drive へ送りに行くが、これは時間がかかる（送り直しも3回まで）。
+     そのあいだに ［記録する］ を押して次の取引を打ちはじめると、
+     **あとから返ってきた前の写真の URL が、次の取引の枠に入ってしまう**。
+     4/12 の「厚生費 2,134」の領収書が、そのあとの「井上へ前渡し 2,000」にも
+     付いてしまったのがこれ。
+
+     直し … 写真1枚ごとに【世代の番号】を持たせる。
+     記録する・クリア・直しに戻る のたびに番号を1つ進め、
+     **番号が変わっていたら、返ってきた結果は捨てる**（もう別の取引の画面なので）。
+     捨てても写真は失われない ── 記録のときに端末へ預けてあり、
+     `receiptFlush` が同じ `uid` で送り直すので、Drive でも二重にならない。 */
+function cashImgNewGen(){ return (S.cashImgGen = (S.cashImgGen || 0) + 1); }
+function cashImgDrop(){   /* いま持っている写真を手放す（＋在庫中の送信も切り離す） */
+  S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null; S.cashImgUid=null; cashImgNewGen();
+}
+
 function rcptUid(){
   return String(Date.now())+'-'+Math.random().toString(36).slice(2,8);
 }
@@ -5046,6 +5066,18 @@ function rcptOf(id){
   var s=lsGet(RCPT_PREFIX+id); if(!s) return null;
   try{ return JSON.parse(s); }catch(e){ return null; }
 }
+/* ★ 打っている最中に描き直すと、入れかけの金額が消える（2026-09-21）。
+     写真が Drive へ届いたことは、次に描き直したときに出れば足りる。
+     金額を打ちかけているあいだは、描き直しを見送る。 */
+function cashTyping(){
+  var ids=['cm','arca'];
+  for(var i=0;i<ids.length;i++){
+    var el2=document.getElementById(ids[i]);
+    if(el2 && String(el2.value||'').replace(/[^0-9]/g,'')) return true;
+  }
+  return false;
+}
+
 /** 預かっている写真を Drive へ送り、元帳にリンクを書き足します */
 var _rcptRunning=false;
 async function receiptFlush(){
@@ -5080,7 +5112,7 @@ async function receiptFlush(){
       done++;
     }
   }finally{ _rcptRunning=false; }
-  if(done){ try{ clearCaches(); render(); }catch(e){} }
+  if(done){ try{ clearCaches(); if(!cashTyping()) render(); }catch(e){} }
   return done;
 }
 
@@ -5146,7 +5178,7 @@ function bindChip(el){
     if(S.cashImgUrl){ window.open(S.cashImgUrl,'_blank'); return; }
     if(S.cashImgType==='pdf') openDataUrl(S.cashImg); else lightbox(S.cashImg);
   };
-  if(d) d.onclick=function(){ S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null; S.cashImgUid=null;
+  if(d) d.onclick=function(){ cashImgDrop();
     el.querySelector('#cprev').innerHTML=attachChip(); bindChip(el); };
 }
 
@@ -6453,7 +6485,9 @@ function viewCash(el){
     var kd=cashKindOf(b.dataset.ck); if(!kd) return;
     /* ★ 辞書はたたまない（2026-09-20）。選び直しが1手で済む */
     S.cashKind=kd.k; S.kindOpen=false; S.cashSide=kd.dir;
-    S.cashEdit=null; S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null;
+    /* ★ 型を選び直したら写真も手放す。世代を進めないと、
+         まだ送信中だった前の写真が、あとから返ってきてここへ入る */
+    S.cashEdit=null; cashImgDrop();
     if(kd.sale){ cashModeSet('sale'); }
     else if(kd.arc){ cashModeSet('in'); S.cashDir='in'; }
     else { cashModeSet(kd.dir==='out'?'exp':'in'); }
@@ -6469,7 +6503,7 @@ function viewCash(el){
     if(S.cashSide===b.dataset.cside) return;
     S.cashSide=b.dataset.cside;
     S.cashKind=null; S.cashEdit=null; S.cashMemoPre=''; S.cashAcctPre='';
-    S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null;
+    cashImgDrop();
     cashModeSet(S.cashSide==='out'?'exp':'in');
     render(); }; });
   el.querySelectorAll('[data-cmode]').forEach(function(b){ b.onclick=function(){
@@ -6554,7 +6588,8 @@ function viewCash(el){
     DB.cash[bk]=e.id ? (DB.cash[bk]||[]).map(function(x){return x.id===e.id?rec:x;})
                      : (DB.cash[bk]||[]).concat([rec]);
     var wasEdit=!!e.id;
-    S.cashEdit=null; S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null;
+    /* ★ 写真はここで手放す。世代も進めて、送信中のものが次の取引へ入らないようにする */
+    S.cashEdit=null; cashImgDrop();
     S.saleOn=false; S.saleClient=null; S.saleItems=null; S.saleQ=''; S.saleLump='';
     S.cashJustId=rec.id; S.cashDate=d;
     /* ★ 入れたら すぐ ⓪ へ戻す。入ったことは入力タブの頭の1行で知らせる */
@@ -6658,22 +6693,27 @@ function viewCash(el){
       if(f.type==='application/pdf'){ dataUrl=await fileToDataUrl(f); type='pdf'; }
       else { dataUrl=await shrinkToFit(f); type='image'; }
     }catch(err){ alert('読み込めませんでした。'); return; }
-    S.cashImg=dataUrl; S.cashImgType=type; S.cashImgUrl=null; S.cashImgUid=rcptUid();
+    /* ★ この1枚の「世代」。［記録する］などで番号が進んだら、
+         この take はもう前の取引のものなので、書き戻さずに降りる */
+    var gen=cashImgNewGen(), uid=rcptUid(), mine=function(){ return S.cashImgGen===gen; };
+    S.cashImg=dataUrl; S.cashImgType=type; S.cashImgUrl=null; S.cashImgUid=uid;
     prev.innerHTML='<span class="muted">Drive に保存中…</span>';
     if(!storage.gas){
       prev.innerHTML=attachChip(); bindChip(el); return;   /* ローカル確認時はそのまま持つ */
     }
     /* 電波が一瞬切れただけのことが多いので、3回まで送り直します */
-    var waits=[0,1500,4000];
-    for(var i=0;i<waits.length && !S.cashImgUrl;i++){
+    var waits=[0,1500,4000], url=null;
+    for(var i=0;i<waits.length && !url;i++){
       if(waits[i]) await new Promise(function(r){ setTimeout(r,waits[i]); });
+      if(!mine()) return;                    /* ★ もう次の取引の画面。降りる */
       if(i) prev.innerHTML='<span class="muted">Drive に保存中…（'+(i+1)+'回目）</span>';
       try{
-        var r=await storage.saveReceipt(dataUrl,{ym:ym(m), date:cd.value, type:type, uid:S.cashImgUid});
-        S.cashImgUrl=r&&r.url||null;
+        var r=await storage.saveReceipt(dataUrl,{ym:ym(m), date:cd.value, type:type, uid:uid});
+        url=r&&r.url||null;
       }catch(err){ /* 次でもう一度 */ }
+      if(!mine()) return;                    /* ★ 返ってきたときに変わっていても降りる */
     }
-    if(S.cashImgUrl){ S.cashImg=null; S.cashImgType=null; }
+    if(url){ S.cashImgUrl=url; S.cashImg=null; S.cashImgType=null; }
     else{
       /* ★ ここで謝らない。写真はこの端末で預かって、あとでひとりで送ります。
            元帳（cashbook:）には base64 を入れません。入れると保存が通らなくなります。 */
@@ -6702,6 +6742,7 @@ function viewCash(el){
     if(x){ S.cashEdit=x; S.cashDir=x.dir; S.kindOpen=false; S.cashSide=x.dir;
       S.cashPane='in'; S.cashJust=null;   /* 直すのは入力タブ */
       var st=x.imgPend?rcptOf(x.id):null;
+      cashImgNewGen();                      /* 送信中のものを切り離してから入れ替える */
       S.cashImgUid=(st&&st.uid)||null;      /* 直しても同じ写真は Drive で二重にしない */
       S.cashImg=x.img||(st&&st.data)||null;
       S.cashImgType=x.imgType||(st&&st.type)||null;
@@ -8743,7 +8784,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-21j 小口現金 … 交通費・打ち合わせ食事代を足す／金額と精算日を電話でも1行／出納帳を電話でも出納帳の形に';
+var APP_BUILD='2026-09-21k 送信中の写真が【次の取引】に付くのを止めた／遠興 袋代(手数料含) を足す';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -9478,7 +9519,7 @@ function arcSave(el,m){
   DB.pay[pk]=(DB.pay[pk]||[]).concat([{id:id, date:d, amount:amt, method:'現金',
                                        memo:'小口現金から', 'for':forKey, fromCash:true}]);
   S.cashJustId=id; S.arcClient=null; S.arcQ=''; S.arcAmt=''; S.arcFor=''; S.arcDate=d;
-  S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null; S.cashImgUid=null;
+  cashImgDrop();
   S.cashJust={ d:String(d).slice(5).replace('-','/'), t:'売掛の現金回収　'+c.name, a:amt };
   clearCaches();
   toast('記録しました');
