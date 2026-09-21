@@ -577,13 +577,21 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .dns{margin-left:auto;font-size:15px;font-weight:700;color:var(--green);min-width:78px;text-align:right}
 .dnlog{flex-basis:100%;font-size:12px;padding-top:3px}
 
-/* 金額と精算日は1行（金額の枠が横に伸びすぎていた・2026-09-21） */
+/* ★ 金額と精算日は【スマホでも1行】（2026-09-21）
+     折り返すと、いちばんよく打つ2つが縦に離れて転がすことになる。
+     だから flex-wrap を止めて、幅は割合でつめる。 */
+.amtday{flex-wrap:nowrap}
 .amtday .amtcell{flex:0 0 auto;width:200px}
 .amtday .daycell{flex:1 1 auto;min-width:180px}
 .amtday .cash-amt{width:100%}
-@media(max-width:480px){
-  .amtday .amtcell{width:44%}
+@media(max-width:560px){
+  .amtday{gap:8px!important}
+  .amtday .amtcell{width:42%;min-width:0}
   .amtday .daycell{min-width:0}
+  .amtday .daysub{display:none}          /* 見出しが2行になるのを止める */
+  .amtday .dwrap{width:100%;padding:4px 6px;gap:4px}
+  .amtday .cash-date{min-width:0;width:100%;font-size:17px}
+  .amtday .dnote{white-space:nowrap}
 }
 
 /* 売掛の現金回収 … 電話では 取引先 → 回収日 → 金額 → 記録する を縦に積む（2026-09-21） */
@@ -713,23 +721,6 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .cashsum .bal .muted{font-size:12px;opacity:.85;color:#fff}
 .cashsum .bal .num{font-size:23px;font-weight:700}
 
-/* ★★ 元帳はスマホでは【1件1ブロック】にする（2026-09-12）
-     6列を横スクロールで出していたので、電話では金額も残高も画面の外にあった */
-@media(max-width:560px){
-  .cbox.led .gscroll{overflow-x:visible}
-  .cbox.led .gscroll > div{min-width:0 !important}
-  .cbox.led .ghead{display:none !important}
-  .cbox.led .grow{display:block !important;padding:10px 11px}
-  .cbox.led .grow > span{text-align:left !important}
-  .cbox.led .grow > span:nth-child(1),
-  .cbox.led .grow > span:nth-child(2){display:inline-block;margin-right:9px}
-  .cbox.led .grow > span:nth-child(3){display:block;margin:3px 0 5px}
-  .cbox.led .grow > span:nth-child(4),
-  .cbox.led .grow > span:nth-child(5),
-  .cbox.led .grow > span:nth-child(6){display:inline-block;margin-right:12px}
-  .cbox.led .grow > span:nth-child(6):not(:empty)::before{
-    content:'残 ';font-size:12px;font-weight:400;color:#8a8a8a}
-}
 /* 現金実査は、スマホでは2列に折る（差額と記録ボタンが重なるため） */
 @media(max-width:560px){
   .balbox > .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
@@ -791,6 +782,50 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .diffbig{font-size:26px;font-weight:700}
 .d-ok{color:var(--green)} .d-ng{color:var(--pink)}
 .cash-thumb{height:34px;vertical-align:middle;margin-left:6px;border-radius:4px;border:1px solid var(--line)}
+.ledmin{min-width:700px}
+.grow .c-zo{display:none}
+.grow .c-bal .balpre{display:none}
+
+/* ★★★ 出納帳は、電話でも【出納帳の見え方】にする（2026-09-21）
+     前は6列の表を横スクロールで出していたので、電話では
+     いちばん見たい【増減】と【残高】が画面の外にあった。
+     出すのは 日付／取引の種類／領収書あり・なし／直す／消す／増減／残高 の7つだけ。
+     右端に 増減 と 残高 を縦に並べて、紙の出納帳と同じ形にする。 */
+@media(max-width:560px){
+  .cbox.led .gscroll{overflow-x:visible}
+  .cbox.led .ledmin{min-width:0}
+  .cbox.led .ghead{display:none}
+  .cbox.led .gbody{max-height:none}
+  .cbox.led .grow{
+    /* 右の列は中身に合わせる。7桁（−1,600,000）でも切れないように */
+    grid-template-columns:minmax(0,1fr) max-content !important;
+    grid-template-areas:"day zo" "memo bal";
+    align-items:start;gap:1px 10px;padding:10px 11px}
+  .cbox.led .grow .c-memo{overflow-wrap:anywhere}
+  .cbox.led .hint{display:none}
+  .cbox.led .grow .c-day{grid-area:day;font-size:15px;align-self:center}
+  .cbox.led .grow .c-memo{grid-area:memo;font-size:15px;line-height:1.45}
+  .cbox.led .grow .c-memo .cash-memo-t{font-size:15px}
+  .cbox.led .grow .c-zo{grid-area:zo;display:block;font-size:19px;font-weight:700;
+    white-space:nowrap;align-self:center}
+  .cbox.led .grow.inrow  .c-zo{color:var(--ice)}
+  .cbox.led .grow.outrow .c-zo{color:var(--pink)}
+  .cbox.led .grow .c-bal{grid-area:bal;font-size:15px;font-weight:700;color:#7a7a7a;
+    white-space:nowrap}
+  .cbox.led .grow .c-bal .balpre{display:inline;font-size:12px;font-weight:400;color:#9a9a9a}
+  /* 見なくても分かるもの・事務所で付けるものは出さない */
+  .cbox.led .grow .c-dir,
+  .cbox.led .grow .c-in,
+  .cbox.led .grow .c-out,
+  .cbox.led .grow .c-memo .tag-std,
+  .cbox.led .grow .c-saletx{display:none}
+  .cbox.led .grow .c-party{display:block;font-size:14px}
+  .cbox.led .grow .cash-thumb{height:26px}
+  .cbox.led .grow .led-btns{display:flex;gap:8px;margin:5px 0 0}
+  .cbox.led .grow .led-btn{padding:6px 14px;font-size:13px}
+  /* 繰越の行も同じ形（増減は無いので空） */
+  .cbox.led .grow .c-memo.muted{font-weight:700}
+}
 .cash-big{font-size:20px;font-weight:700}
 
 /* ---- 注文入力（掛売上）の売上ダッシュボード ---- */
@@ -878,10 +913,6 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .dwrap.today{border-color:var(--line);background:#fff}
 .dnote{font-size:13px;font-weight:700;color:#8a6d3b;white-space:nowrap}
 .dnote.today{color:var(--ai)}
-.dq{border:1px solid var(--ai);background:#fff;color:var(--ai);border-radius:16px;
-  padding:7px 12px;font-size:14px;font-weight:700}
-.dq.on{background:var(--ai);color:#fff}
-
 /* ---- 売上管理 ---- */
 /* 売上管理の表。金額を読む表なので、字を小さくしない（2026-09-06 に大きくした） */
 .ytbl{width:100%;border-collapse:collapse;font-size:16px}
@@ -4770,8 +4801,13 @@ var CASH_KINDS=[
    acct:'保険料／バイク保険', fx:''},
   {k:'hokent',g:'out',dir:'out', label:'トラック保険料', memo:'トラック保険料',
    acct:'保険料', fx:''},
+  {k:'kotsu',g:'out', dir:'out', label:'交通費', memo:'交通費',
+   acct:'旅費交通費／有料交通費',
+   fx:'6112', fxName:'旅費交通費', sub:'01', subName:'有料交通費', tax:'5', rate:10},
   {k:'settai',g:'out',dir:'out', label:'接待交際', memo:'接待交際', was:'交際費',
    acct:'接待交際費', fx:''},
+  {k:'kaigi', g:'out', dir:'out', label:'打ち合わせ食事代', memo:'打ち合わせ食事代',
+   acct:'会議費', fx:''},
   {k:'shomo',g:'out', dir:'out', label:'消耗品', memo:'消耗品', was:'備品・消耗品費',
    acct:'備品消耗品費',
    fx:'6225', fxName:'備品消耗品費', tax:'5', rate:10},
@@ -6040,10 +6076,6 @@ function viewCash(el){
   var orph=saleOrphans(m);
   var today=monthToday;
   var C='84px 56px 1fr 116px 116px 132px';
-  var qd=function(n,t){
-    var v=ymd(addDays(new Date(),-n));
-    return '<button class="dq tap'+(formDate===v?' on':'')+'" data-qd="'+v+'">'+t+'</button>';
-  };
 
   var mo=cashMode();      /* 'sale' ＝① 現金売上／'in' ＝②その他の入金／'exp' ＝③ 経費 */
 
@@ -6083,18 +6115,15 @@ function viewCash(el){
           (S.saleOn?'readonly style="background:#FFFBF0" ':'')+
           'value="'+(S.saleOn?(saleTotal(saleItems())||''):(e.amount||''))+'" placeholder="0"></div>'+
       '<div class="daycell">'+
-        '<label class="lbl">精算日　<span style="font-weight:400">小口現金が動いた日</span></label>'+
+        '<label class="lbl">精算日　<span class="daysub" style="font-weight:400">小口現金が動いた日</span></label>'+
         '<span class="dwrap'+(gap===0?' today':'')+'">'+
           '<input type="date" id="cd" class="cash-date" value="'+formDate+'">'+
-          /* 今日のときは「今日」のボタンが光っているので、同じ言葉を2つ出さない
+          /* 既定は今日。ずれている日だけ「◯日前」と出す
              （枠は残す。消すと、日を変えたときに書き込む先が無くなる） */
           '<span class="dnote'+(gap===0?' today':'')+'" id="dnote">'+
             (gap===0?'':dayNote(formDate))+'</span>'+
         '</span>'+
       '</div>'+
-    '</div>'+
-    '<div class="row" style="gap:8px;margin-top:6px">'+
-      qd(0,'今日')+qd(1,'きのう')+qd(2,'おととい')+
     '</div>')+
     (noShot ? '' :
     '<div class="dropzone" id="dz">'+
@@ -6262,13 +6291,15 @@ function viewCash(el){
     '<div class="cbox-h" style="margin-bottom:8px"><span class="ti">現金出納帳</span>'+
       '<span class="hint">入力タブで入れたものが、ぜんぶ日付の順に並びます</span>'+
       '<span class="muted" style="margin-left:auto">'+list.length+'件</span></div>'+
-  '<div class="gridwrap"><div class="gscroll"><div style="min-width:700px">'+
+  '<div class="gridwrap"><div class="gscroll"><div class="ledmin">'+
     '<div class="ghead" style="grid-template-columns:'+C+'"><span>日付</span><span>区分</span>'+
       '<span>内容・領収書</span><span class="r">入金</span><span class="r">出金</span><span class="r">残高</span></div>'+
     '<div class="gbody">'+
       '<div class="grow" style="grid-template-columns:'+C+';background:var(--iceBg);font-weight:700">'+
-        '<span>—</span><span class="muted">繰越</span><span class="muted">前月繰越</span><span></span><span></span>'+
-        '<span class="r num cash-big">'+yen(carry)+'</span></div>'+
+        '<span class="c-day">—</span><span class="muted c-dir">繰越</span>'+
+        '<span class="muted c-memo">前月繰越</span><span class="c-in"></span><span class="c-out"></span>'+
+        '<span class="r num cash-big c-bal"><span class="balpre">残 </span>'+yen(carry)+'</span>'+
+        '<span class="r num c-zo"></span></div>'+
       (list.length?list.map(function(x){
         run += x.dir==='in'?x.amount:-x.amount;
         var i=x.dir==='in', isNew=String(x.id)===String(S.cashJustId);
@@ -6285,27 +6316,29 @@ function viewCash(el){
               : (x.imgPend
                   ? ' <span class="pill tag-hide">写真（送信待ち）</span>'
                   : ' <span class="pill tag-hide">写真なし</span>'));
-        return '<div class="grow'+(isNew?' just':'')+'" style="grid-template-columns:'+C+'">'+
-          '<span class="num cash-day">'+String(x.date).slice(5).replace('-','/')+'</span>'+
-          '<span style="font-weight:700;font-size:13px;color:'+(i?'var(--ice)':'var(--pink)')+'">'+(i?'入金':'出金')+'</span>'+
+        return '<div class="grow'+(isNew?' just':'')+(i?' inrow':' outrow')+'" style="grid-template-columns:'+C+'">'+
+          '<span class="num cash-day c-day">'+String(x.date).slice(5).replace('-','/')+'</span>'+
+          '<span class="c-dir" style="font-weight:700;font-size:13px;color:'+(i?'var(--ice)':'var(--pink)')+'">'+(i?'入金':'出金')+'</span>'+
           /* ★ 直す・消す は「内容」の欄に置きます。
              スマホでは表が横スクロールで、右端の残高の欄まで届かないためです（2026-08-25）。 */
-          '<span style="overflow:hidden" data-memo="'+x.id+'">'+
+          '<span class="c-memo" style="overflow:hidden" data-memo="'+x.id+'">'+
             (x.memo?'<b class="cash-memo-t">'+esc(x.memo)+'</b>':'<span class="muted">（内容なし・写真で確認）</span>')+
             (isNew?'<span class="justbadge">✓ いま記録</span>':'')+
             (x.sale?'<span class="cs-badge">現金売上 '+esc(fmtCode(x.sale.code))+'</span>':'')+
-            (x.party?' <span style="color:var(--ai)">'+esc(x.party)+'</span>':'')+
+            (x.party?' <span class="c-party" style="color:var(--ai)">'+esc(x.party)+'</span>':'')+
             (x.account?' <span class="pill tag-std">'+esc(x.account)+'</span>':'')+
             pic+
-            (x.sale?'<div class="muted" style="font-size:12.5px;margin-top:2px">'+esc(saleText(x.sale))+'</div>':'')+
+            (x.sale?'<div class="c-saletx muted" style="font-size:12.5px;margin-top:2px">'+esc(saleText(x.sale))+'</div>':'')+
             '<span class="led-btns">'+
               '<button class="led-btn tap" data-ed="'+x.id+'">✎ 直す</button>'+
               '<button class="led-btn rm tap" data-rm="'+x.id+'">🗑 消す</button>'+
             '</span>'+
             '</span>'+
-          '<span class="r num cash-big" style="color:var(--ice)">'+(i?yen(x.amount):'')+'</span>'+
-          '<span class="r num cash-big" style="color:var(--pink)">'+(i?'':yen(x.amount))+'</span>'+
-          '<span class="r num cash-big">'+yen(run)+'</span></div>';
+          '<span class="r num cash-big c-in" style="color:var(--ice)">'+(i?yen(x.amount):'')+'</span>'+
+          '<span class="r num cash-big c-out" style="color:var(--pink)">'+(i?'':yen(x.amount))+'</span>'+
+          '<span class="r num cash-big c-bal"><span class="balpre">残 </span>'+yen(run)+'</span>'+
+          /* ★ 電話でだけ出す「増減」。入金は ＋、出金は −。右端に残高と縦に並ぶ */
+          '<span class="r num c-zo">'+(i?'＋':'−')+Math.round(x.amount).toLocaleString('ja-JP')+'</span></div>';
       }).join(''):'<div style="padding:20px;text-align:center;color:#999">記録がありません。</div>')+
     '</div></div></div></div>'+
   '</div>';
@@ -6452,12 +6485,8 @@ function viewCash(el){
     dn.textContent=(g2===0?'':dayNote(cd.value));
     dn.className='dnote'+(g2===0?' today':'');
     dn.parentNode.className='dwrap'+(g2===0?' today':'');
-    el.querySelectorAll('[data-qd]').forEach(function(b){
-      b.className='dq tap'+(b.dataset.qd===cd.value?' on':''); });
   };
   cd.onchange=function(){ S.cashDate=cd.value; refreshDay(); };
-  el.querySelectorAll('[data-qd]').forEach(function(b){
-    b.onclick=function(){ cd.value=b.dataset.qd; S.cashDate=cd.value; refreshDay(); }; });
   }
 
   var cn=el.querySelector('#cn');
@@ -8714,7 +8743,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-21i 小口現金 … 摘要を欄に出す（メモ→摘要）／月をプルダウンでえらべる';
+var APP_BUILD='2026-09-21j 小口現金 … 交通費・打ち合わせ食事代を足す／金額と精算日を電話でも1行／出納帳を電話でも出納帳の形に';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
