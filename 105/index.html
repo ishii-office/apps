@@ -736,6 +736,15 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
   .balbox > .row > button{grid-column:1 / -1}
 }
 /* ⓪で決まった内容は、欄ではなく1行の添え書きにする */
+/* ★ 月のプルダウン（小口現金の見出し）。70歳の人が押すので大きく */
+.msel{font-size:19px;font-weight:700;color:var(--ink);background:#fff;
+  border:2px solid var(--line);border-radius:10px;padding:9px 34px 9px 14px;
+  max-width:100%;text-align:center;text-align-last:center;cursor:pointer;
+  -webkit-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9'><path d='M1 1l6 6 6-6' fill='none' stroke='%23888' stroke-width='2'/></svg>");
+  background-repeat:no-repeat;background-position:right 12px center}
+.msel:focus{outline:none;border-color:var(--gold)}
+@media(max-width:560px){ .msel{font-size:17px;padding:9px 30px 9px 10px} }
 .fixnote{margin:0 0 10px;font-size:15px;color:#6b6b6b}
 .fixnote b{font-size:17px;color:var(--ink)}
 /* ★ 選んだあとは、この1行だけになる（下の入力の枠がすぐ出る） */
@@ -6009,20 +6018,22 @@ function viewCash(el){
   /* ⓪の山を出すか、たたむか。選べていないあいだだけ出す */
   /* ★ 辞書はたたまない（2026-09-20）。型を選べば、そのまま下に入力欄が出る */
   var baseMemo = (!S.saleOn && kdNow && !kdNow.arc && kdNow.memo) ? String(kdNow.memo) : '';
-  /* 直すときは、決まった内容のうしろに足したメモだけを取り出して欄へ戻す */
-  var extraMemo = '';
+  /* ★★ 摘要は【欄に出す】（2026-09-21）
+       前は欄を空にして、保存のときに頭へ型の名前を足していた。それだと
+       ・欄を見ても、何が摘要として残るのか分からない
+       ・「内容は◯◯で記録されます」の1行を別に出すことになる（同じ言葉が2か所）
+       ・型の名前を変えるたびに、前の名前（`was`）を剥がす細工が要る
+       名前＝摘要＝仕訳辞書の名前で揃えたので、**欄にその言葉をそのまま入れて**、
+       欄に出ている文字がそのまま元帳の摘要になる形にした。足すなら後ろに書き足す。
+       ★ 前の名前で入れた記録を直すときは、いまの名前に置き換えて出す
+         （「厚生食事代　マックスバリュ」→「厚生費(飲み物、夜食)　マックスバリュ」）。 */
+  var memoVal = String(e.memo || (baseMemo ? '' : (S.cashMemoPre||'')));
   if(baseMemo){
-    /* ★ 前の名前で入れた記録も、打ったメモだけを取り出せるようにする（2026-09-21）。
-         型の名前を変えたので、`was`（前の摘要）でも剥がす。
-         そうしないと「厚生食事代　マックスバリュ」が丸ごと欄へ戻って、
-         保存で「厚生費(飲み物、夜食)　厚生食事代　マックスバリュ」と積み上がる */
-    var em = String(e.memo||'');
-    var heads = [baseMemo]; if(kdNow.was) heads.push(String(kdNow.was));
-    extraMemo = em;
-    for(var hi=0; hi<heads.length; hi++){
-      var h=heads[hi];
-      if(em===h){ extraMemo=''; break; }
-      if(em.indexOf(h+'　')===0){ extraMemo=em.slice(h.length+1); break; }
+    if(!memoVal) memoVal = baseMemo;
+    else if(kdNow.was){
+      var w = String(kdNow.was);
+      if(memoVal === w) memoVal = baseMemo;
+      else if(memoVal.indexOf(w+'　') === 0) memoVal = baseMemo + memoVal.slice(w.length);
     }
   }
   var counts=(DB.count[nk]||[]).slice().sort(function(a,b){ return String(a.date).localeCompare(String(b.date)); });
@@ -6095,11 +6106,12 @@ function viewCash(el){
     '</div>')+
     (isArc ? '' :
       baseMemo
-      ? '<div class="cash-f"><label class="lbl">メモ（任意）</label>'+
-          '<input id="cn" class="cash-memo" lang="ja" value="'+esc(extraMemo)+'" '+
-            'placeholder="店名など、書いておきたいことがあれば"></div>'
-      : '<div class="cash-f"><label class="lbl">内容</label>'+
-        '<input id="cn" class="cash-memo" lang="ja" value="'+esc(e.memo||S.cashMemoPre||'')+'" placeholder="'+
+      ? '<div class="cash-f"><label class="lbl">摘要（任意）'+
+          '<span style="font-weight:400;color:var(--muted,#7a7a7a)">　このままでかまいません</span></label>'+
+          '<input id="cn" class="cash-memo" lang="ja" value="'+esc(memoVal)+'" '+
+            'placeholder="'+esc(baseMemo)+'"></div>'
+      : '<div class="cash-f"><label class="lbl">摘要</label>'+
+        '<input id="cn" class="cash-memo" lang="ja" value="'+esc(memoVal)+'" placeholder="'+
           (mo==='sale'?'空欄でOK':(isOut?'例：ガソリン　スタンド名':'例：預金から引き出し'))+'">'+
         '</div>')+
     /* ★ 記録ボタンは1つだけ。売掛の回収は上の枠のボタンで記録する（2026-09-21） */
@@ -6118,12 +6130,39 @@ function viewCash(el){
        現金実査 … ⑤
      ============================================================ */
   var PANE = S.cashPane || 'in';
-  var monthHtml =
-  '<div class="row" style="justify-content:space-between;margin-bottom:10px">'+
-    '<button class="btn ghost tap" id="mp">‹</button>'+
-    '<div class="mincho" style="font-size:19px">'+jpYear(m.getFullYear())+' '+(m.getMonth()+1)+'月 の小口現金'+
-      '<span id="cashSaving" class="muted" style="margin-left:10px;font-size:12px">'+(Object.keys(_pendQ).length?'保存中…':'')+'</span></div>'+
-    '<button class="btn ghost tap" id="mn">›</button></div>';
+  /* ★★ 月は【プルダウン】で直接えらべる（2026-09-21）
+       ‹ › で1月ずつ送るしかなかったので、半年前を見るのに6回押していた。
+       ‹ › も残す（1つ前・1つ後はボタンのほうが速い）。 */
+  var monthHtml = (function(){
+    /* 出す範囲 … 今の期の頭（2月）から、今月の翌月まで。
+       ★ DB.cash はその月を開いたときに読み込むので、中身から作ってはいけない
+         （まだ開いていない月が出なくなる）。期の頭からの並びで作る。 */
+    var seen = {}, now = new Date();
+    var st = new Date(fyOf(now), FY_START_MONTH-1, 1);
+    var en = new Date(now.getFullYear(), now.getMonth()+1, 1);
+    if(m < st) st = new Date(m.getFullYear(), m.getMonth(), 1);
+    if(m > en) en = new Date(m.getFullYear(), m.getMonth(), 1);
+    for(var d=new Date(st); d<=en; d.setMonth(d.getMonth()+1)) seen[ym(d)] = 1;
+    /* すでに読み込んである月（前の期の分など）も足す */
+    ['cash','carry','count','sale'].forEach(function(bag){
+      Object.keys(DB[bag]||{}).forEach(function(k){
+        var t = String(k).split(':')[1] || '';
+        if(/^\d{4}-\d{2}$/.test(t)) seen[t] = 1;
+      });
+    });
+    seen[ym(m)] = 1;                              /* いま見ている月は必ず出す */
+    var opts = Object.keys(seen).sort().reverse().map(function(t){
+      return '<option value="'+t+'"'+(t===ym(m)?' selected':'')+'>'+
+        jpYear(+t.slice(0,4))+' '+(+t.slice(5,7))+'月 の小口現金</option>';
+    }).join('');
+    return '<div class="row" style="justify-content:space-between;margin-bottom:10px;gap:8px">'+
+      '<button class="btn ghost tap" id="mp">‹</button>'+
+      '<div style="flex:1;min-width:0;text-align:center">'+
+        '<select id="msel" class="msel mincho">'+opts+'</select>'+
+        '<span id="cashSaving" class="muted" style="margin-left:10px;font-size:12px">'+
+          (Object.keys(_pendQ).length?'保存中…':'')+'</span></div>'+
+      '<button class="btn ghost tap" id="mn">›</button></div>';
+  })();
 
   /* ★★ 上のバーは ビーメイツ・小林と同じ形にそろえた（2026-09-20）
        取引の入力 ／ 現金実査 ／ ◯月の出納帳。丸京に「レジ締め」は無いので、
@@ -6347,6 +6386,11 @@ function viewCash(el){
   var goMonth=function(d){ S.month=d; S.cashEdit=null; S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null;
     S.cashJustId=null; S.cashDate=null; render(); };
   el.querySelector('#mp').onclick=function(){ goMonth(new Date(m.getFullYear(),m.getMonth()-1,1)); };
+  var msel=el.querySelector('#msel');
+  if(msel) msel.onchange=function(){
+    var t=String(this.value).split('-');
+    goMonth(new Date(+t[0], +t[1]-1, 1));
+  };
   el.querySelector('#mn').onclick=function(){ goMonth(new Date(m.getFullYear(),m.getMonth()+1,1)); };
 
   var ofx=el.querySelector('#orphFix');
@@ -6444,9 +6488,11 @@ function viewCash(el){
     var amt = sale ? sale.total
                    : (parseInt(el.querySelector('#cm').value.replace(/[^0-9]/g,''),10)||0);
     if(!amt){ alert('金額を入れてください。'); el.querySelector('#cm').focus(); return; }
-    /* ★ 内容は⓪で決まっている。打ったメモはそのうしろに足す（2026-09-11） */
+    /* ★ 欄に出ている文字が、そのまま元帳の摘要になる（2026-09-21）。
+         頭に型の名前を足さない（欄にもう入っているので、足すと二重になる）。
+         消してしまったときだけ、型の名前へ戻す。 */
     var typed=cn.value.trim();
-    var memo = baseMemo ? (typed ? baseMemo+'　'+typed : baseMemo) : typed;
+    var memo = typed || baseMemo;
     if(sale && !memo) memo='現金売上　'+sale.name;
     if(!memo && !S.cashImg && !S.cashImgUrl){
       if(!confirm('内容も写真も入っていません。このまま記録しますか？')) return;
@@ -8668,7 +8714,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-21h 二重の登録を消す（ＭＩＬＫ　ＨＡＬＬ 30-115・kuro hige 20-062）・持ち主直しはコードが合ったときだけ';
+var APP_BUILD='2026-09-21i 小口現金 … 摘要を欄に出す（メモ→摘要）／月をプルダウンでえらべる';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
