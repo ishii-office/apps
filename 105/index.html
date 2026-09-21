@@ -756,6 +756,23 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .dropzone{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;
   padding:8px 11px;border:1px dashed var(--ice);border-radius:10px;background:var(--iceBg)}
 .dropzone.over{background:#D9E8F1;border-style:solid}
+.shotbtn{display:inline-flex;align-items:center;gap:6px;font-size:16px;padding:13px 18px}
+.shothint{font-size:12px}
+/* ★ 撮った写真を小さく並べる（何枚でも・2026-09-21） */
+.pchips{display:flex;flex-wrap:wrap;gap:7px;flex:1 1 100%;order:9}
+.pchip{position:relative;display:inline-flex;align-items:center;justify-content:center;
+  width:56px;height:56px;border:2px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+.pchip img{width:100%;height:100%;object-fit:cover}
+.pchip.done{border-color:var(--green)}
+.pchip.busy{border-style:dashed;opacity:.65}
+.pchip .pc-ok{color:var(--green);font-size:20px;font-weight:700}
+.pchip .pc-pdf{color:var(--pink);font-size:13px;font-weight:700}
+.pchip .pcn{position:absolute;left:0;bottom:0;background:#0009;color:#fff;
+  font-size:11px;font-weight:700;padding:0 4px;border-radius:0 6px 0 6px}
+.pchip .pcx{position:absolute;right:0;top:0;width:20px;height:20px;line-height:1;
+  border:none;background:#0009;color:#fff;font-size:12px;border-radius:0 6px 0 6px;padding:0}
+.pcsum{font-size:13px;font-weight:700;color:var(--ai);order:8;margin-left:auto}
+.pcsum .muted{font-weight:400;margin-left:6px}
 
 /* ---- 押した感 ---- */
 .ph:active{background:#D9E8F1;transform:scale(.96)}
@@ -3073,7 +3090,7 @@ var S = {
   slipOne:null,
   cashEdit:null,
   cashDir:'out',
-  cashImg:null, cashImgType:null, cashImgUrl:null,
+  cashImg:null, cashImgType:null, cashImgUrl:null, cashPics:null,
   cashDate:null,
   cashJustId:null,
   cashKind:null,          /* 小口現金の「取引の型」 */
@@ -4792,8 +4809,10 @@ var CASH_KINDS=[
    acct:'仕入高／Tao 運賃',
    fx:'5211', fxName:'仕入高', sub:'02', subName:'Tao 運賃', tax:'5', rate:10},
   {k:'fukuro',g:'out', dir:'out', label:'遠興 袋代(手数料含)', memo:'遠興 袋代(手数料含)',
-   acct:'仕入高／その他（袋代）',
-   fx:'5211', fxName:'仕入高', sub:'99', subName:'その他', tax:'5', rate:10},
+   acct:'仕入高／袋代',
+   /* ★ 5211-03 は袋代のために新しく作った補助（2026-09-21）。
+        補助の名前は、新しい勘定科目一覧をもらったら合わせる */
+   fx:'5211', fxName:'仕入高', sub:'03', subName:'袋代', tax:'5', rate:10},
   {k:'shinbun',g:'out',dir:'out',label:'新聞代', memo:'新聞代', was:'新聞代 デイリースポーツ',
    acct:'図書新聞費（軽減8%）',
    fx:'6118', fxName:'図書新聞費', sub:'01', subName:'図書新聞費', tax:'5', rate:8, red:1},
@@ -5052,20 +5071,79 @@ var RCPT_PREFIX='mk_rcpt:';
      捨てても写真は失われない ── 記録のときに端末へ預けてあり、
      `receiptFlush` が同じ `uid` で送り直すので、Drive でも二重にならない。 */
 function cashImgNewGen(){ return (S.cashImgGen = (S.cashImgGen || 0) + 1); }
-function cashImgDrop(){   /* いま持っている写真を手放す（＋在庫中の送信も切り離す） */
-  S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null; S.cashImgUid=null; cashImgNewGen();
+
+/* ★★★ 領収書の写真は【何枚でも】持てる（2026-09-21）
+     バイクの燃料代は、従業員が何十枚もまとめて立て替えて、一括で精算してくる。
+     1枚ずつ「型を選ぶ→撮る→記録する」を繰り返させるのは現実的でない。
+     だから **金額は1本、写真は何枚でも** にする。連続で撮れる。
+
+     S.cashPics … いま入力中の写真の一覧。1枚は
+       { uid, url }          … もう Drive に入っている
+       { uid, data, type }   … まだ送れていない（記録のとき端末に預ける）
+     元帳の1件には `pics:[{uid,url}|{uid,pend:1}]` で残す。
+     ★ `imgUrl` は【1枚目】。前からある画面（元帳・仕訳・書き出し）は
+       これを見ているので、必ず入れておく。 */
+function cashPics(){ return (S.cashPics = S.cashPics || []); }
+function cashPicCount(){ return cashPics().length; }
+function cashImgDrop(){   /* いま持っている写真を手放す（＋送信中のものも切り離す） */
+  S.cashPics=[]; S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null; S.cashImgUid=null;
+  cashImgNewGen();
+}
+/** 元帳の1件から、いま入力中の一覧へ読み込む（前からある1枚だけの形も受ける） */
+function cashPicsLoad(x){
+  var out=[];
+  if(x && Array.isArray(x.pics) && x.pics.length){
+    var st=rcptAllOf(x.id), by={};
+    st.forEach(function(r){ by[r.uid]=r; });
+    x.pics.forEach(function(pp){
+      if(pp && pp.url){ out.push({uid:pp.uid||'', url:pp.url}); return; }
+      var r=pp&&by[pp.uid];
+      if(r) out.push({uid:r.uid, data:r.data, type:r.type});
+    });
+  }else if(x){
+    var st1=x.imgPend?rcptOf(x.id):null;
+    if(x.imgUrl) out.push({uid:'', url:x.imgUrl});
+    else if(x.img) out.push({uid:'', data:x.img, type:x.imgType||'image'});
+    else if(st1)  out.push({uid:st1.uid, data:st1.data, type:st1.type});
+  }
+  return out;
+}
+/** 記録するとき … 一覧から、元帳に書く形（pics／imgUrl／imgPend）を作る */
+function cashPicsPack(rid, bk, ymv, dv){
+  var ps=cashPics(), pics=[], pend=0, first=null, legacy=null;
+  ps.forEach(function(pp){
+    if(pp.url){ pics.push({uid:pp.uid||'', url:pp.url}); if(!first) first=pp.url; return; }
+    var uid=pp.uid||rcptUid();
+    if(storage.gas && rcptStash(rid,bk,ymv,dv,pp.data,pp.type,uid)){
+      pics.push({uid:uid, pend:1}); pend=1;
+    }else if(!legacy){                       /* 端末に置けないときだけ元帳へ（1枚まで） */
+      legacy={img:pp.data, type:pp.type};
+    }
+  });
+  return { pics: pics, url: first, pend: pend?1:null,
+           img: legacy?legacy.img:null, type: legacy?legacy.type:null };
 }
 
 function rcptUid(){
   return String(Date.now())+'-'+Math.random().toString(36).slice(2,8);
 }
+/* ★ 預かりの鍵は `mk_rcpt:<記録のid>#<写真のuid>`（2026-09-21）。
+     1件に何枚でも預けられるようにするため、うしろに uid を付けた。
+     `#` の無い古い鍵（1枚だけの形）もそのまま読める。 */
 function rcptStash(id,bk,ym,date,dataUrl,type,uid){
-  return lsSet(RCPT_PREFIX+id, JSON.stringify({id:id,bk:bk,ym:ym,date:date,type:type,uid:uid||'',data:dataUrl}));
+  return lsSet(RCPT_PREFIX+id+'#'+(uid||''),
+    JSON.stringify({id:id,bk:bk,ym:ym,date:date,type:type,uid:uid||'',data:dataUrl}));
 }
-function rcptOf(id){
-  var s=lsGet(RCPT_PREFIX+id); if(!s) return null;
-  try{ return JSON.parse(s); }catch(e){ return null; }
+function rcptAllOf(id){
+  var out=[], want=String(id);
+  lsKeys(RCPT_PREFIX).forEach(function(k){
+    var tail=k.slice(RCPT_PREFIX.length), rid=tail.split('#')[0];
+    if(rid!==want) return;
+    try{ var r=JSON.parse(lsGet(k)||'null'); if(r&&r.data) out.push(r); }catch(e){}
+  });
+  return out;
 }
+function rcptOf(id){ return rcptAllOf(id)[0] || null; }
 /* ★ 打っている最中に描き直すと、入れかけの金額が消える（2026-09-21）。
      写真が Drive へ届いたことは、次に描き直したときに出れば足りる。
      金額を打ちかけているあいだは、描き直しを見送る。 */
@@ -5105,7 +5183,18 @@ async function receiptFlush(){
       var hit=false;
       list.forEach(function(x){
         if(String(x.id)!==String(r.id)) return;
-        x.imgUrl=up.url; x.imgPend=null; x.img=null; x.imgType=null; hit=true;
+        hit=true;
+        if(Array.isArray(x.pics) && x.pics.length){
+          /* ★ 何枚でも持てる形。届いた1枚だけを差し替える */
+          x.pics.forEach(function(pp){
+            if(pp && !pp.url && String(pp.uid||'')===String(r.uid||'')){ pp.url=up.url; delete pp.pend; }
+          });
+          x.imgUrl=(x.pics[0]&&x.pics[0].url)||null;
+          x.imgPend=x.pics.some(function(pp){ return pp && !pp.url; })?1:null;
+          if(!x.imgPend){ x.img=null; x.imgType=null; }
+        }else{
+          x.imgUrl=up.url; x.imgPend=null; x.img=null; x.imgType=null;
+        }
       });
       if(hit) cashSaveAsync(r.bk,JSON.stringify(list));
       lsDel(ks[i]);
@@ -5156,30 +5245,43 @@ async function receiptFlush(){
   };
 })();
 
+/* 撮った写真を、何枚でも小さく並べる。1枚ずつ ✕ で外せる */
 function attachChip(){
-  if(S.cashImgUrl){
-    return '<button class="tap" id="chipopen" style="border:1px solid var(--green);background:#F3F9F5;color:var(--green);'+
-      'border-radius:6px;font-size:12px;font-weight:700;padding:5px 10px">✓ Drive に保存しました（開く）</button>'+
-      '<button class="tap" id="chipdel" style="margin-left:8px;border:none;background:transparent;color:#999;font-size:12px">取消</button>';
-  }
-  if(S.cashImg){
-    /* Drive にまだ行っていない状態。記録すればこの端末で預かって、あとで送ります */
-    return (S.cashImgType==='pdf'
-      ? '<button class="tap" id="chipopen" style="border:1px solid var(--pink);background:#fff;color:var(--pink);border-radius:6px;font-size:12px;font-weight:700;padding:5px 10px">PDF ✓ 開く</button>'
-      : '<img id="chipopen" src="'+S.cashImg+'" class="tap" style="height:46px;border-radius:6px;border:1px solid var(--line);vertical-align:middle">')+
-      (storage.gas?'<span class="muted" style="margin-left:8px;font-size:11px">写真は預かりました（あとで Drive へ送ります）</span>':'')+
-      '<button class="tap" id="chipdel" style="margin-left:8px;border:none;background:transparent;color:#999;font-size:12px">取消</button>';
-  }
-  return '<span class="muted">写真なし</span>';
+  var ps=cashPics();
+  if(!ps.length) return '<span class="muted">写真なし</span>';
+  var body=ps.map(function(pp,i){
+    var inner = pp.url
+      ? '<span class="pc-ok">✓</span>'
+      : (pp.type==='pdf' ? '<span class="pc-pdf">PDF</span>'
+                         : '<img src="'+pp.data+'" alt="">');
+    return '<span class="pchip'+(pp.url?' done':'')+(pp.busy?' busy':'')+'" data-pi="'+i+'">'+
+      inner+
+      '<button class="pcx tap" data-pdel="'+i+'" title="この1枚を外す">✕</button>'+
+      '<span class="pcn">'+(i+1)+'</span></span>';
+  }).join('');
+  var busy=ps.filter(function(pp){ return pp.busy; }).length;
+  var pend=ps.filter(function(pp){ return !pp.url && !pp.busy; }).length;
+  var note = busy ? '<span class="muted">（'+busy+'枚を Drive に保存中…）</span>'
+           : (pend&&storage.gas ? '<span class="muted">（'+pend+'枚は預かり中。あとで送ります）</span>' : '');
+  return '<span class="pchips">'+body+'</span>'+
+    '<span class="pcsum">'+ps.length+'枚'+note+'</span>';
 }
 function bindChip(el){
-  var o=el.querySelector('#chipopen'), d=el.querySelector('#chipdel');
-  if(o) o.onclick=function(){
-    if(S.cashImgUrl){ window.open(S.cashImgUrl,'_blank'); return; }
-    if(S.cashImgType==='pdf') openDataUrl(S.cashImg); else lightbox(S.cashImg);
-  };
-  if(d) d.onclick=function(){ cashImgDrop();
-    el.querySelector('#cprev').innerHTML=attachChip(); bindChip(el); };
+  el.querySelectorAll('[data-pi]').forEach(function(c){
+    c.onclick=function(ev){
+      if(ev.target && ev.target.hasAttribute && ev.target.hasAttribute('data-pdel')) return;
+      var pp=cashPics()[+c.dataset.pi]; if(!pp) return;
+      if(pp.url){ window.open(pp.url,'_blank'); return; }
+      if(pp.type==='pdf') openDataUrl(pp.data); else lightbox(pp.data);
+    };
+  });
+  el.querySelectorAll('[data-pdel]').forEach(function(b){
+    b.onclick=function(ev){
+      ev.stopPropagation();
+      cashPics().splice(+b.dataset.pdel,1);
+      var pv=el.querySelector('#cprev'); if(pv){ pv.innerHTML=attachChip(); bindChip(el); }
+    };
+  });
 }
 
 /* ============================================================
@@ -5682,9 +5784,14 @@ function viewJournal(el, m){
   var stash = x.imgPend ? rcptOf(x.id) : null;
   var raw   = x.img || (stash && stash.data) || null;
   var rtype = x.imgType || (stash && stash.type) || null;
+  /* ★ 何枚でも並べる（2026-09-21）。燃料代のまとめ精算は何十枚にもなる */
+  var urls = (Array.isArray(x.pics)&&x.pics.length)
+    ? x.pics.map(function(pp){ return pp.url||''; }).filter(Boolean)
+    : (x.imgUrl?[x.imgUrl]:[]);
   var shot =
-    x.imgUrl ? '<a class="jshot" href="'+esc(x.imgUrl)+'" target="_blank" rel="noopener">'+
-                 '<img src="'+esc(x.imgUrl)+'" alt="領収書"></a>'
+    urls.length
+      ? urls.map(function(u){ return '<a class="jshot" href="'+esc(u)+'" target="_blank" rel="noopener">'+
+          '<img src="'+esc(u)+'" alt="領収書"></a>'; }).join('')
     : (raw ? (rtype==='pdf'
         ? '<button class="jshot pdf tap" data-jpdf="'+x.id+'">PDF の領収書をひらく</button>'
         : '<img class="jshot" src="'+raw+'" alt="領収書">')
@@ -5985,7 +6092,7 @@ function jBind(el,m){
     if(!y) return;
     S.cashEdit=y; S.cashDir=y.dir; S.cashSide=y.dir; S.cashKind=y.kind||null;
     S.cashPane='in'; S.cashJust=null;
-    S.cashImg=y.img||null; S.cashImgType=y.imgType||null; S.cashImgUrl=y.imgUrl||null;
+    cashImgNewGen(); S.cashPics=cashPicsLoad(y);
     render();
   }; });
   el.querySelectorAll('[data-jpdf]').forEach(function(b){ b.onclick=function(){
@@ -6124,7 +6231,11 @@ function viewCash(el){
        ・そのほか … 金額 → 日にち → 領収書 → メモ */
   var isArc  = !!(kdNow && kdNow.arc);                    /* 売掛の現金回収 */
   var noShot = !!(kdNow && /^bk(in|out)2?$/.test(kdNow.k)); /* 京信の出し入れ … 領収書なし */
-  var shotLabel = isArc ? '📷 受領書の写真をとる／選ぶ' : '📷 領収書の写真をとる／選ぶ';
+  /* ★ 2枚目からは「もう1枚」。何枚でも続けて撮れることが、押す前に分かるように */
+  var _nPic = cashPicCount();
+  var shotLabel = _nPic
+    ? '📷 もう1枚とる／選ぶ'
+    : (isArc ? '📷 受領書の写真をとる／選ぶ' : '📷 領収書の写真をとる／選ぶ');
 
   var formHtml=
   '<div id="cf" class="cbox-in'+(isArc?' arconly':'')+'">'+
@@ -6159,11 +6270,12 @@ function viewCash(el){
     '</div>')+
     (noShot ? '' :
     '<div class="dropzone" id="dz">'+
-      '<label class="btn ghost tap" style="display:inline-flex;align-items:center;gap:6px;font-size:16px;padding:13px 18px">'+
-        shotLabel+
-        '<input type="file" id="cfile" accept="image/*,application/pdf" capture="environment" style="display:none">'+
+      '<label class="btn ghost tap shotbtn"><span id="shotlbl">'+shotLabel+'</span>'+
+        /* ★ multiple … まとめて選ぶのも、続けて撮るのも、同じ口で受ける（2026-09-21） */
+        '<input type="file" id="cfile" accept="image/*,application/pdf" capture="environment" multiple style="display:none">'+
       '</label>'+
-      '<span id="cprev" style="margin-left:auto">'+attachChip()+'</span>'+
+      '<span class="muted shothint"'+(_nPic?' style="display:none"':'')+'>何枚でも足せます</span>'+
+      '<span id="cprev">'+attachChip()+'</span>'+
     '</div>')+
     (isArc ? '' :
       baseMemo
@@ -6339,8 +6451,14 @@ function viewCash(el){
         var stash = x.imgPend ? rcptOf(x.id) : null;
         var raw   = x.img || (stash && stash.data) || null;
         var rtype = x.imgType || (stash && stash.type) || null;
+        /* ★ 何枚でも持てる（2026-09-21）。2枚目からは「領収書 ×3」と枚数を出す */
+        var nPic = Array.isArray(x.pics)&&x.pics.length ? x.pics.length
+                 : ((x.imgUrl||x.img||x.imgPend)?1:0);
+        var picN = nPic>1 ? ' ×'+nPic : '';
         var pic = x.imgUrl
-          ? '<button class="tap" data-url="'+esc(x.imgUrl)+'" style="margin-left:6px;border:1px solid var(--green);background:#F3F9F5;color:var(--green);border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px">領収書</button>'
+          ? '<button class="tap" data-url="'+esc(x.imgUrl)+'"'+
+            (nPic>1?' data-urls="'+esc(JSON.stringify((x.pics||[]).map(function(pp){return pp.url||'';}).filter(Boolean)))+'"':'')+
+            ' style="margin-left:6px;border:1px solid var(--green);background:#F3F9F5;color:var(--green);border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px">領収書'+picN+'</button>'
           : (raw
               ? (rtype==='pdf'
                   ? '<button class="tap" data-pdf="'+x.id+'" style="margin-left:6px;border:1px solid var(--pink);background:#fff;color:var(--pink);border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px">PDF'+(x.imgPend?'（送信待ち）':'')+'</button>'
@@ -6448,7 +6566,7 @@ function viewCash(el){
     S.cashPane=v; render(); }; });
 
   var cfEl=el.querySelector('#cf'); if(cfEl) enterNav(cfEl);
-  var goMonth=function(d){ S.month=d; S.cashEdit=null; S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null;
+  var goMonth=function(d){ S.month=d; S.cashEdit=null; cashImgDrop();
     S.cashJustId=null; S.cashDate=null; render(); };
   el.querySelector('#mp').onclick=function(){ goMonth(new Date(m.getFullYear(),m.getMonth()-1,1)); };
   var msel=el.querySelector('#msel');
@@ -6528,7 +6646,7 @@ function viewCash(el){
   /* 入力を全部クリア（まだ記録していない分だけ。元帳のものは消えません） */
   var cclr=el.querySelector('#cclr');
   if(cclr) cclr.onclick=function(){
-    S.cashEdit=null; S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null;
+    S.cashEdit=null; cashImgDrop();
     S.saleClient=null; S.saleItems=null; S.saleQ=''; S.saleLump='';
     S.cashDate=null; S.cashJustId=null;
     toast('入力をクリアしました');
@@ -6536,7 +6654,7 @@ function viewCash(el){
   };
 
   var cnew=el.querySelector('#cnew'); if(cnew) cnew.onclick=function(){
-    S.cashEdit=null; S.cashImg=null; S.cashImgType=null; S.cashImgUrl=null;
+    S.cashEdit=null; cashImgDrop();
     S.saleOn=false; S.saleClient=null; S.saleItems=null; S.saleQ=''; S.saleLump=''; render(); };
 
   if(el.querySelector('#cok')) el.querySelector('#cok').onclick=function(){
@@ -6557,7 +6675,7 @@ function viewCash(el){
     var typed=cn.value.trim();
     var memo = typed || baseMemo;
     if(sale && !memo) memo='現金売上　'+sale.name;
-    if(!memo && !S.cashImg && !S.cashImgUrl){
+    if(!memo && !cashPicCount()){
       if(!confirm('内容も写真も入っていません。このまま記録しますか？')) return;
     }
     var d=cd.value;
@@ -6569,22 +6687,15 @@ function viewCash(el){
          Drive に入っていればリンクだけ。入っていなければ、写真はこの端末で
          預かって、元帳には印だけ置きます。元帳に base64 を書くと、
          1枚16万文字がその月ぶん全部に乗って、保存そのものが通らなくなります。 */
-    var _cashPic={url:(S.cashImgUrl||e.imgUrl||null), pend:null, img:null, type:null};
-    if(!_cashPic.url){
-      var _raw=S.cashImg||null, _rt=S.cashImgType||null;
-      if(!_raw && e.imgPend) _cashPic.pend=1;                 /* 直しただけ。預かりはそのまま */
-      else if(_raw){
-        if(storage.gas && rcptStash(rid,bk,ym(m),d,_raw,_rt,S.cashImgUid||rcptUid())) _cashPic.pend=1;
-        else { _cashPic.img=_raw; _cashPic.type=_rt; }        /* 端末に置けないときだけ元帳へ */
-      }
-    }
+    var _cashPic=cashPicsPack(rid,bk,ym(m),d);
     var rec={id:rid, date:d, dir:S.cashDir,
       /* 型（kind）と科目（account）を一緒に持たせます。仕訳を作るときに使います */
       kind:(e.kind||S.cashKind||''),
       account:(e.account||S.cashAcctPre||''),
       amount:amt, party:(sale?sale.name:(e.party||'')), memo:memo,
       sale:sale,
-      imgUrl:_cashPic.url, imgPend:_cashPic.pend, img:_cashPic.img, imgType:_cashPic.type};
+      imgUrl:_cashPic.url, imgPend:_cashPic.pend, img:_cashPic.img, imgType:_cashPic.type,
+      pics:(_cashPic.pics.length?_cashPic.pics:null)};
     DB.cash[bk]=e.id ? (DB.cash[bk]||[]).map(function(x){return x.id===e.id?rec:x;})
                      : (DB.cash[bk]||[]).concat([rec]);
     var wasEdit=!!e.id;
@@ -6685,52 +6796,77 @@ function viewCash(el){
   /* ---- 写真：選んだらすぐ Drive へ ---- */
   var dz=el.querySelector('#dz'), cfl=el.querySelector('#cfile'), prev=el.querySelector('#cprev');
   if(dz){
-  async function take(f){
-    if(!f) return;
-    if(f.size>8*1024*1024){ alert('ファイルが大きすぎます（8MBまで）。写真で撮り直すか、PDFを圧縮してください。'); return; }
-    var dataUrl, type;
+  var redraw=function(){
+    if(prev){ prev.innerHTML=attachChip(); bindChip(el); }
+    /* ★ 撮るたびに描き直すのは写真の欄だけ（画面ごと描き直すと打ちかけが消える）。
+         だからボタンの言葉と添え書きも、ここで合わせる */
+    var n=cashPicCount();
+    var lb=el.querySelector('#shotlbl');
+    if(lb) lb.textContent = n ? '📷 もう1枚とる／選ぶ'
+                              : (isArc ? '📷 受領書の写真をとる／選ぶ' : '📷 領収書の写真をとる／選ぶ');
+    var hn=el.querySelector('.shothint');
+    if(hn) hn.style.display = n ? 'none' : '';
+  };
+  /* ★ 読み込むのと、Drive へ送るのを【分ける】（2026-09-21）。
+       まとめて何十枚を選んだとき、送り終わるのを待ってから次を読んでいると、
+       画面に2枚目から先が出てこない。**まず全部ならべて、送るのはうしろで順に。** */
+  async function readOne(f){
+    if(!f) return null;
+    if(f.size>8*1024*1024){ alert('ファイルが大きすぎます（8MBまで）。写真で撮り直すか、PDFを圧縮してください。'); return null; }
     try{
-      if(f.type==='application/pdf'){ dataUrl=await fileToDataUrl(f); type='pdf'; }
-      else { dataUrl=await shrinkToFit(f); type='image'; }
-    }catch(err){ alert('読み込めませんでした。'); return; }
+      if(f.type==='application/pdf') return {uid:rcptUid(), data:await fileToDataUrl(f), type:'pdf', busy:!!storage.gas};
+      return {uid:rcptUid(), data:await shrinkToFit(f), type:'image', busy:!!storage.gas};
+    }catch(err){ alert('読み込めませんでした。'); return null; }
+  }
+  /* 1枚を Drive へ送る。ほかの枚数の送信とは関わらない */
+  async function sendOne(pp){
     /* ★ この1枚の「世代」。［記録する］などで番号が進んだら、
-         この take はもう前の取引のものなので、書き戻さずに降りる */
-    var gen=cashImgNewGen(), uid=rcptUid(), mine=function(){ return S.cashImgGen===gen; };
-    S.cashImg=dataUrl; S.cashImgType=type; S.cashImgUrl=null; S.cashImgUid=uid;
-    prev.innerHTML='<span class="muted">Drive に保存中…</span>';
-    if(!storage.gas){
-      prev.innerHTML=attachChip(); bindChip(el); return;   /* ローカル確認時はそのまま持つ */
-    }
+         この写真はもう前の取引のものなので、書き戻さずに降りる。
+         ★ 写真を足しただけでは番号を進めない（進めると2枚目が1枚目を打ち消す）*/
+    var gen=(S.cashImgGen=S.cashImgGen||1), mine=function(){ return S.cashImgGen===gen; };
+    if(!storage.gas){ pp.busy=false; redraw(); return; }   /* ローカル確認時はそのまま持つ */
     /* 電波が一瞬切れただけのことが多いので、3回まで送り直します */
     var waits=[0,1500,4000], url=null;
     for(var i=0;i<waits.length && !url;i++){
       if(waits[i]) await new Promise(function(r){ setTimeout(r,waits[i]); });
       if(!mine()) return;                    /* ★ もう次の取引の画面。降りる */
-      if(i) prev.innerHTML='<span class="muted">Drive に保存中…（'+(i+1)+'回目）</span>';
       try{
-        var r=await storage.saveReceipt(dataUrl,{ym:ym(m), date:cd.value, type:type, uid:uid});
+        var r=await storage.saveReceipt(pp.data,{ym:ym(m), date:cd.value, type:pp.type, uid:pp.uid});
         url=r&&r.url||null;
       }catch(err){ /* 次でもう一度 */ }
       if(!mine()) return;                    /* ★ 返ってきたときに変わっていても降りる */
     }
-    if(url){ S.cashImgUrl=url; S.cashImg=null; S.cashImgType=null; }
+    pp.busy=false;
+    if(url){ pp.url=url; pp.data=null; }
     else{
       /* ★ ここで謝らない。写真はこの端末で預かって、あとでひとりで送ります。
            元帳（cashbook:）には base64 を入れません。入れると保存が通らなくなります。 */
       toast('写真はこの端末で預かりました（通信が戻ったら自動で送ります）');
     }
-    prev.innerHTML=attachChip(); bindChip(el);
+    redraw();
   }
-  cfl.onchange=function(ev){ take(ev.target.files && ev.target.files[0]); };
+  /* ★ 何枚まとめて選んでも、連続で撮っても、同じ道で受ける */
+  async function take(fs){
+    var arr=fs?Array.prototype.slice.call(fs):[], added=[];
+    for(var i=0;i<arr.length;i++){
+      var pp=await readOne(arr[i]);
+      if(pp){ cashPics().push(pp); added.push(pp); redraw(); }
+    }
+    for(var j=0;j<added.length;j++) await sendOne(added[j]);
+  }
+  cfl.onchange=function(ev){ var fs=ev.target.files; take(fs); ev.target.value=''; };
   dz.addEventListener('dragover',function(ev){ ev.preventDefault(); dz.classList.add('over'); });
   dz.addEventListener('dragleave',function(){ dz.classList.remove('over'); });
   dz.addEventListener('drop',function(ev){ ev.preventDefault(); dz.classList.remove('over');
-    take(ev.dataTransfer.files && ev.dataTransfer.files[0]); });
+    take(ev.dataTransfer.files); });
   bindChip(el);
   }
 
   el.querySelectorAll('[data-img]').forEach(function(im){ im.onclick=function(){ lightbox(im.src); }; });
-  el.querySelectorAll('[data-url]').forEach(function(b){ b.onclick=function(){ window.open(b.dataset.url,'_blank'); }; });
+  el.querySelectorAll('[data-url]').forEach(function(b){ b.onclick=function(){
+    var many=null; try{ many=b.dataset.urls?JSON.parse(b.dataset.urls):null; }catch(e){}
+    if(many && many.length>1){ many.forEach(function(u){ window.open(u,'_blank'); }); return; }
+    window.open(b.dataset.url,'_blank'); }; });
   el.querySelectorAll('[data-pdf]').forEach(function(b){ b.onclick=function(){
     var x=(DB.cash[bk]||[]).filter(function(y){return String(y.id)===b.dataset.pdf;})[0];
     if(!x) return;
@@ -6741,12 +6877,9 @@ function viewCash(el){
     var x=(DB.cash[bk]||[]).filter(function(y){return String(y.id)===b.dataset.ed;})[0];
     if(x){ S.cashEdit=x; S.cashDir=x.dir; S.kindOpen=false; S.cashSide=x.dir;
       S.cashPane='in'; S.cashJust=null;   /* 直すのは入力タブ */
-      var st=x.imgPend?rcptOf(x.id):null;
       cashImgNewGen();                      /* 送信中のものを切り離してから入れ替える */
-      S.cashImgUid=(st&&st.uid)||null;      /* 直しても同じ写真は Drive で二重にしない */
-      S.cashImg=x.img||(st&&st.data)||null;
-      S.cashImgType=x.imgType||(st&&st.type)||null;
-      S.cashImgUrl=x.imgUrl||null; S.cashJustId=null;
+      /* ★ 直しても同じ写真は Drive で二重にしない（uid をそのまま持ち越す） */
+      S.cashPics=cashPicsLoad(x); S.cashJustId=null;
       S.saleOn=!!x.sale; S.saleClient=x.sale?x.sale.cid:null;
       S.saleItems=x.sale?saleUnpack(x.sale):null; S.saleQ='';
       S.saleMode='lump'; S.saleLump='';
@@ -8784,7 +8917,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-21k 送信中の写真が【次の取引】に付くのを止めた／遠興 袋代(手数料含) を足す';
+var APP_BUILD='2026-09-21l 領収書の写真を何枚でも（燃料代のまとめ精算）／袋代は 5211-03';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -9505,15 +9638,12 @@ function arcSave(el,m){
   /* ★ 受領書の写真も一緒に残す（2026-09-21）。
        領収書はこちらが渡すもので、もらってくるのは【受領書】。
        写真は元帳に入れない ── Drive のリンクか、この端末の預かり（印だけ） */
-  var pic={url:(S.cashImgUrl||null), pend:null, img:null, type:null};
-  if(!pic.url && S.cashImg){
-    if(storage.gas && rcptStash(id,bk,ym(m),d,S.cashImg,S.cashImgType,S.cashImgUid||rcptUid())) pic.pend=1;
-    else { pic.img=S.cashImg; pic.type=S.cashImgType; }
-  }
+  var pic=cashPicsPack(id,bk,ym(m),d);
   var rec={id:id, date:d, dir:'in', account:'', amount:amt, kind:'ar',
            party:c.name, memo:'売掛の現金回収　'+c.name+(forKey?'（'+forLabel(c,forKey)+'）':''), sale:null,
            arPay:{cid:c.id, code:c.code, name:c.name, 'for':forKey},
-           imgUrl:pic.url, imgPend:pic.pend, img:pic.img, imgType:pic.type};
+           imgUrl:pic.url, imgPend:pic.pend, img:pic.img, imgType:pic.type,
+           pics:(pic.pics.length?pic.pics:null)};
   DB.cash[bk]=(DB.cash[bk]||[]).concat([rec]);
   var pk='payments:'+c.id;
   DB.pay[pk]=(DB.pay[pk]||[]).concat([{id:id, date:d, amount:amt, method:'現金',
