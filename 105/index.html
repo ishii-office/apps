@@ -890,6 +890,15 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
 .diffbig{font-size:26px;font-weight:700}
 .d-ok{color:var(--green)} .d-ng{color:var(--pink)}
 .cash-thumb{height:34px;vertical-align:middle;margin-left:6px;border-radius:4px;border:1px solid var(--line)}
+/* ★ 出納帳を CSV で取り出す枠（2026-09-22）。
+     電話でも選んで写せるように、枠そのものを画面に出す */
+.csvbox{border:2px solid var(--gold);border-radius:10px;background:#FFFBF0;
+  padding:9px 10px;margin:0 0 10px}
+.csvh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px}
+.csvh b{font-size:14px;color:#7a5c19}
+.csvbox textarea{width:100%;font-size:12px;line-height:1.45;font-family:ui-monospace,
+  SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;overflow:auto;
+  border:1px solid var(--line);border-radius:8px;padding:8px}
 .ledmin{min-width:700px}
 .grow .c-zo{display:none}
 .grow .c-bal .balpre{display:none}
@@ -3195,6 +3204,7 @@ var S = {
   jOpen:false,            /* 辞書の登録欄をひらいているか */
   jDone:false,            /* 済んだぶんも出すか */
   jLast:null,             /* 直前に当てた1件（打ちまちがいを戻すため） */
+  cashCsv:false,          /* ★ 出納帳の CSV の枠をひらいているか */
   jDirect:false,          /* ★ 伝票直接入力（既定は行番号。ボタンで切り替え） */
   jFocus:null,            /* ★ 直接入力：描き直したあと、どのマスへ戻るか（番号 or 'ok'） */
   cashPane:'in',          /* 小口現金の下層タブ 'in'入力／'led'元帳／'count'現金実査 */
@@ -6597,6 +6607,42 @@ function jBind(el,m){
   }
 }
 
+/** ★★ 現金出納帳を CSV にする（2026-09-22）
+    **帳面と突き合わせるために、月ぶんをまるごと外へ出す。**
+    1行1件・日付順で、いちばん上に前月繰越、いちばん下に合計と月末残を置く。
+    残高の列があるので、**渡した先で1行ずつ検算できる**のが値打ち。
+
+    ★ 区切りはカンマ。中に カンマ・引用符・改行 があれば引用符でくくる。
+    ★ 書き出すのは【見ている月】だけ。月を変えてもう一度押す */
+function cashCsvText(m, list, carry){
+  var q=function(v){
+    v = (v==null?'':String(v));
+    return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  };
+  var row=function(a){ return a.map(q).join(','); };
+  var out=[];
+  out.push(row(['日付','区分','取引の種類','摘要','取引先','入金','出金','残高','領収書']));
+  var run=carry, tin=0, tout=0;
+  out.push(row(['','','','前月繰越','','','',run,'']));
+  list.forEach(function(x){
+    var i = x.dir==='in';
+    var amt = Math.round(Number(x.amount)||0);
+    run += i ? amt : -amt;
+    if(i) tin += amt; else tout += amt;
+    var kd = cashKindOf(x.kind||'');
+    var nPic = (Array.isArray(x.pics)&&x.pics.length) ? x.pics.length
+             : ((x.imgUrl||x.img||x.imgPend)?1:0);
+    out.push(row([
+      x.date||'', i?'入金':'出金',
+      (kd?kd.label:''), (x.memo||''),
+      (x.party||(x.arPay&&x.arPay.name)||''),
+      i?amt:'', i?'':amt, run,
+      nPic?('あり'+(nPic>1?'×'+nPic:'')):''
+    ]));
+  });
+  out.push(row(['','','','合計','',tin,tout,run,'']));
+  return out.join('\n');
+}
 function viewCash(el){
   var m=S.month, bk=bkey(m), yk=ykey(m), nk=nkey(m), sk=skey(m), jk=jkey(m);
   if(!(bk in DB.cash) || !(nk in DB.count) || !(sk in DB.sale)
@@ -6876,12 +6922,30 @@ function viewCash(el){
   /* ---------- ③ 出金 ---------- */
   : '<div class="cbox exp">'+ formHtml +'</div>');
 
+  /* ★★ 月ぶんを CSV で外へ出す（2026-09-22）。
+       **帳面と突き合わせるのに、月の取引をまるごと渡せるようにする。**
+       電話でもファイルを落とせるとはかぎらないので、
+       **枠に出して選んで写せる形**と、ファイルに落とす形の両方を置く */
+  var csvTxt = S.cashCsv ? cashCsvText(m, list, carry) : '';
+  var csvHtml = S.cashCsv
+    ? '<div class="csvbox">'+
+        '<div class="csvh"><b>'+esc(ym(m))+' の出納帳　'+list.length+'件</b>'+
+          '<button class="btn tap sm" id="csvcopy">コピーする</button>'+
+          '<button class="btn ghost tap sm" id="csvdl">ファイルに落とす</button>'+
+          '<button class="btn ghost tap sm" id="csvclose" style="margin-left:auto">閉じる</button>'+
+        '</div>'+
+        '<textarea id="csvtxt" readonly rows="12" spellcheck="false">'+esc(csvTxt)+'</textarea>'+
+      '</div>'
+    : '';
+
   var ledHtml =
   /* ---------- ④ 現金元帳 ---------- */
   '<div class="cbox led">'+
     '<div class="cbox-h" style="margin-bottom:8px"><span class="ti">現金出納帳</span>'+
       '<span class="hint">入力タブで入れたものが、ぜんぶ日付の順に並びます</span>'+
-      '<span class="muted" style="margin-left:auto">'+list.length+'件</span></div>'+
+      '<button class="btn ghost tap sm" id="cbcsv" style="margin-left:auto">CSVで取り出す</button>'+
+      '<span class="muted">'+list.length+'件</span></div>'+
+    csvHtml+
   '<div class="gridwrap"><div class="gscroll"><div class="ledmin">'+
     '<div class="ghead" style="grid-template-columns:'+C+'"><span>日付</span><span>区分</span>'+
       '<span>内容・領収書</span><span class="r">入金</span><span class="r">出金</span><span class="r">残高</span></div>'+
@@ -7032,7 +7096,48 @@ function viewCash(el){
     var v=b.dataset.cpane;
     if(v!=='in'){ S.cashJust=null; }
     S.cashJustShow=false;   /* タブを動かしたら、もう画面に入れて見せない */
+    S.cashCsv=false;        /* 月やタブを動かしたら CSV の枠は閉じる */
     S.cashPane=v; render(); }; });
+
+  /* ★★ 出納帳を CSV で取り出す（2026-09-22）。
+       ひらくと枠に出るので、そのまま選んで写せる。
+       ファイルに落とす道も残してある（パソコンはこちらが速い） */
+  var cbx=el.querySelector('#cbcsv');
+  if(cbx) cbx.onclick=function(){ S.cashCsv=!S.cashCsv; render(); };
+  var cbc=el.querySelector('#csvclose');
+  if(cbc) cbc.onclick=function(){ S.cashCsv=false; render(); };
+  var cbt=el.querySelector('#csvtxt');
+  if(cbt){
+    /* ひらいたらすぐ全部えらんでおく（長押しで写せるように） */
+    setTimeout(function(){ try{ cbt.focus(); cbt.select(); }catch(e2){} },40);
+  }
+  var cpy=el.querySelector('#csvcopy');
+  if(cpy) cpy.onclick=function(){
+    if(!cbt) return;
+    try{ cbt.focus(); cbt.select(); cbt.setSelectionRange(0, cbt.value.length); }catch(e3){}
+    var done=false;
+    try{ done=document.execCommand('copy'); }catch(e4){}
+    if(!done && navigator.clipboard){
+      navigator.clipboard.writeText(cbt.value)
+        .then(function(){ toast('写しました'); })
+        .catch(function(){ toast('えらんであるので、長押しでコピーしてください'); });
+      return;
+    }
+    toast(done?'写しました':'えらんであるので、長押しでコピーしてください');
+  };
+  var cdl=el.querySelector('#csvdl');
+  if(cdl) cdl.onclick=function(){
+    if(!cbt) return;
+    try{
+      /* ★ 頭に BOM。付けないと Excel で開いたときに文字化けする */
+      var blob=new Blob(['\ufeff'+cbt.value],{type:'text/csv;charset=utf-8'});
+      var url=URL.createObjectURL(blob);
+      var a2=document.createElement('a');
+      a2.href=url; a2.download='丸京_'+ym(m)+'_小口現金.csv';
+      document.body.appendChild(a2); a2.click();
+      setTimeout(function(){ document.body.removeChild(a2); URL.revokeObjectURL(url); },1000);
+    }catch(e5){ toast('落とせませんでした。枠から写してください'); }
+  };
 
   /* ★★ 「入れました」は【記録した直後の1回だけ】画面に入れて見せる（2026-09-22）。
        ［記録する］は辞書の下にあるので、押したあとの目線はだいたい画面の下。
@@ -7046,7 +7151,7 @@ function viewCash(el){
 
   var cfEl=el.querySelector('#cf'); if(cfEl) enterNav(cfEl);
   var goMonth=function(d){ S.month=d; S.cashEdit=null; cashImgDrop();
-    S.cashJustId=null; S.cashDate=null; render(); };
+    S.cashJustId=null; S.cashDate=null; S.cashCsv=false; render(); };
   el.querySelector('#mp').onclick=function(){ goMonth(new Date(m.getFullYear(),m.getMonth()-1,1)); };
   var msel=el.querySelector('#msel');
   if(msel) msel.onchange=function(){
@@ -9464,7 +9569,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-22f 仕訳に伝票直接入力／3月末を 448,077 に読み直す';
+var APP_BUILD='2026-09-22g 出納帳を CSV で取り出す／仕訳に伝票直接入力';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
