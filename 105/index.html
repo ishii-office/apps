@@ -548,15 +548,22 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .kgrp.x  {border-color:var(--gold)}
 .kgt{font-size:15px;font-weight:800;letter-spacing:1px;color:#fff;padding:8px 12px}
 .kgt.in{background:var(--ice)} .kgt.out{background:var(--pink)} .kgt.x{background:var(--gold)}
-/* ★ スマホでは2列。1列に並べると22個ぶん転がすことになる */
-.kwrap{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px}
+/* ★ スマホでは2列。1列に並べると22個ぶん転がすことになる。
+     ★★ 3列は採らない（2026-09-22 にモックで実測して決めた）。字を15pxのまま
+     3列にすると22個のうち9〜18個が2〜3行に折り返し、ボタンの高さがバラバラになる。
+     それで縮むのは2列より 65px だけ。名前は摘要でもあるので短くできない
+     （label ＝ memo ＝ 仕訳辞書の名前）。高さが揃っているほうが探しやすい */
+.kwrap{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:7px}
 .kgrp.in  .kwrap{background:#F2F8FB}
 .kgrp.out .kwrap{background:#FDF6F8}
 .kgrp.x   .kwrap{background:#FFFCF3}
 @media(min-width:620px){ .kwrap{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))} }
+/* ★★ 縦だけ詰める（2026-09-22）。字は15pxのまま、高さ52px → 38px。
+     これでスマホ390px幅の出金22個が 665px → 525px（21%）に縮み、1画面にほぼ収まる。
+     ★ font-size は下げない。押すのは70歳の人 */
 .kbtn{display:flex;align-items:center;text-align:left;
-  border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:10px 11px;
-  cursor:pointer;font-family:inherit;line-height:1.3;min-height:52px;
+  border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:6px 9px;
+  cursor:pointer;font-family:inherit;line-height:1.25;min-height:38px;
   font-size:15px;font-weight:700;color:var(--ink)}
 .kbtn.on{border-width:2.5px}
 .kbtn.in.on {border-color:var(--ice); background:#E8F3F8}
@@ -706,11 +713,13 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
   border-right:1px solid var(--ai)}
 .segbar .seg:last-child{border-right:none}
 .segbar .seg.on{background:var(--ai);color:#fff}
-/* 記録したことを、入力タブの頭で知らせる（元帳はとなりのタブなので） */
+/* 記録したことを、入力の枠のすぐ下で知らせる（元帳はとなりのタブなので）。
+   ★ 2026-09-22 に画面の頭から［記録する］の下へ移した。margin もそれに合わせて上下を入れ替える */
 .justline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   border:2px solid var(--green);background:#F3F9F5;color:#28503F;
-  border-radius:10px;padding:11px 13px;margin:0 0 12px;font-size:16px;font-weight:700}
+  border-radius:10px;padding:11px 13px;margin:12px 0 0;font-size:16px;font-weight:700}
 .justline b{font-size:19px}
+.justline .jok{color:var(--green)}
 .justline .jgo{margin-left:auto;border:1.5px solid var(--green);background:#fff;
   color:var(--green);border-radius:8px;font-family:inherit;font-size:14px;font-weight:700;
   padding:7px 12px;cursor:pointer}
@@ -3105,7 +3114,8 @@ var S = {
   jDone:false,            /* 済んだぶんも出すか */
   jLast:null,             /* 直前に当てた1件（打ちまちがいを戻すため） */
   cashPane:'in',          /* 小口現金の下層タブ 'in'入力／'led'元帳／'count'現金実査 */
-  cashJust:null,          /* いま入れた1件（入力タブの頭に「入れました」と出す） */
+  cashJust:null,          /* いま入れた1件（入力の枠のすぐ下に「入れました」と出す） */
+  cashJustShow:false,     /* その1回だけ画面に入れて見せる（描き直しでは動かない） */
   cashAcctPre:'',         /* 型から入れる勘定科目 */
   saleOn:false,           /* 現金売上として記録するか */
   saleClient:null,        /* 現金売上の相手先（取引先id／'_other'） */
@@ -3146,7 +3156,7 @@ var TABS=[
   ['home','カレンダー']
 ];
 
-function go(tab){ S.tab=tab; S.cashJust=null; /* 「入れました」は入れた直後だけ */
+function go(tab){ S.tab=tab; S.cashJust=null; S.cashJustShow=false; /* 「入れました」は入れた直後だけ */
   render(); window.scrollTo({top:0}); }
 
 /* ============================================================
@@ -6091,7 +6101,7 @@ function jBind(el,m){
     var y=(DB.cash[bkey(m)]||[]).filter(function(z){ return String(z.id)===id; })[0];
     if(!y) return;
     S.cashEdit=y; S.cashDir=y.dir; S.cashSide=y.dir; S.cashKind=y.kind||null;
-    S.cashPane='in'; S.cashJust=null;
+    S.cashPane='in'; S.cashJust=null; S.cashJustShow=false;
     cashImgNewGen(); S.cashPics=cashPicsLoad(y);
     render();
   }; });
@@ -6347,10 +6357,15 @@ function viewCash(el){
         p[1]+'</button>'; }).join('')+'</div>';
 
   /* ★ 記録したら、その場で「入れました」と出す。
-       元帳がとなりのタブへ移ったので、ここが無いと入ったかどうか分からない */
+       元帳がとなりのタブへ移ったので、ここが無いと入ったかどうか分からない。
+       ★★ 出す場所は【入力の枠のすぐ下】（2026-09-22 に移した）。
+       画面のいちばん上（辞書より前）に出していたので、記録したあと
+       上まで転がして戻らないと見えず、入ったかどうか分からなかった */
   var justHtml = S.cashJust
-    ? '<div class="justline">✓ '+esc(S.cashJust.d)+'　'+esc(S.cashJust.t)+'　'+
-        '<b>'+yen(S.cashJust.a)+'</b> を入れました'+
+    /* ★ 「入れました」を先に置く（2026-09-22）。うしろに置くと、電話で
+         折り返したときに「を入れました」だけが2行目に残って落ち着かない */
+    ? '<div class="justline"><span class="jok">✓ 入れました</span>'+
+        '<span>'+esc(S.cashJust.d)+'　'+esc(S.cashJust.t)+'　<b>'+yen(S.cashJust.a)+'</b></span>'+
         '<button class="tap jgo" data-cpane="led">元帳で見る</button></div>'
     : '';
 
@@ -6546,8 +6561,9 @@ function viewCash(el){
 
   el.innerHTML = monthHtml + segHtml +
     (PANE==='in'
-      /* ★ 辞書はいつも出したまま。型を選んだら、その下に入力欄が出る */
-      ? justHtml + kindsHtml + (kdNow ? boxesHtml : '')
+      /* ★ 辞書はいつも出したまま。型を選んだら、その下に入力欄が出る。
+           「入れました」は、その入力の枠のすぐ下（＝［記録する］のすぐ下） */
+      ? kindsHtml + (kdNow ? boxesHtml : '') + justHtml
       : '')+
     (PANE==='led'   ? noticeHtml + cardsHtml + ledHtml : '')+
     (PANE==='count' ? countHtml : '')+
@@ -6562,8 +6578,19 @@ function viewCash(el){
   /* ★ 下層タブの切り替え。入力へ戻るときは「入れました」の1行を消す */
   el.querySelectorAll('[data-cpane]').forEach(function(b){ b.onclick=function(){
     var v=b.dataset.cpane;
-    if(v!=='in') S.cashJust=null;
+    if(v!=='in'){ S.cashJust=null; }
+    S.cashJustShow=false;   /* タブを動かしたら、もう画面に入れて見せない */
     S.cashPane=v; render(); }; });
+
+  /* ★★ 「入れました」は【記録した直後の1回だけ】画面に入れて見せる（2026-09-22）。
+       ［記録する］は辞書の下にあるので、押したあとの目線はだいたい画面の下。
+       入力の枠が消えて画面が短くなるぶん、放っておくと合図が画面の外に出ることがある。
+       S.cashJustShow は記録したときにだけ立てるので、描き直しのたびには動かない */
+  if(S.cashJustShow){
+    S.cashJustShow=false;
+    var jl=el.querySelector('.justline');
+    if(jl && jl.scrollIntoView) try{ jl.scrollIntoView({block:'center'}); }catch(e){}
+  }
 
   var cfEl=el.querySelector('#cf'); if(cfEl) enterNav(cfEl);
   var goMonth=function(d){ S.month=d; S.cashEdit=null; cashImgDrop();
@@ -6703,8 +6730,9 @@ function viewCash(el){
     S.cashEdit=null; cashImgDrop();
     S.saleOn=false; S.saleClient=null; S.saleItems=null; S.saleQ=''; S.saleLump='';
     S.cashJustId=rec.id; S.cashDate=d;
-    /* ★ 入れたら すぐ ⓪ へ戻す。入ったことは入力タブの頭の1行で知らせる */
+    /* ★ 入れたら すぐ辞書へ戻す。入ったことは【入力の枠のすぐ下】の1行で知らせる */
     S.cashJust={ d:String(d).slice(5).replace('-','/'), t:(memo||'（内容なし）'), a:amt };
+    S.cashJustShow=true;
     S.cashPane='in';
     S.cashKind=null; S.cashMemoPre=''; S.cashAcctPre=''; S.kindOpen=false;
     /* ★ 保存を先に、描き直しをあとに（2026-08-25）
@@ -6876,7 +6904,7 @@ function viewCash(el){
   el.querySelectorAll('[data-ed]').forEach(function(b){ b.onclick=function(){
     var x=(DB.cash[bk]||[]).filter(function(y){return String(y.id)===b.dataset.ed;})[0];
     if(x){ S.cashEdit=x; S.cashDir=x.dir; S.kindOpen=false; S.cashSide=x.dir;
-      S.cashPane='in'; S.cashJust=null;   /* 直すのは入力タブ */
+      S.cashPane='in'; S.cashJust=null; S.cashJustShow=false;   /* 直すのは入力タブ */
       cashImgNewGen();                      /* 送信中のものを切り離してから入れ替える */
       /* ★ 直しても同じ写真は Drive で二重にしない（uid をそのまま持ち越す） */
       S.cashPics=cashPicsLoad(x); S.cashJustId=null;
@@ -8917,7 +8945,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-21l 領収書の写真を何枚でも（燃料代のまとめ精算）／袋代は 5211-03';
+var APP_BUILD='2026-09-22a 「入れました」を［記録する］の下へ／取引の種類を縦に詰める（2列のまま）';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -9651,6 +9679,7 @@ function arcSave(el,m){
   S.cashJustId=id; S.arcClient=null; S.arcQ=''; S.arcAmt=''; S.arcFor=''; S.arcDate=d;
   cashImgDrop();
   S.cashJust={ d:String(d).slice(5).replace('-','/'), t:'売掛の現金回収　'+c.name, a:amt };
+  S.cashJustShow=true;
   clearCaches();
   toast('記録しました');
   render();
