@@ -5850,13 +5850,15 @@ function jdicResync(){
     if(JSON.stringify(jdNorm(old))!==JSON.stringify(d)) upd++;
     out.push(d);
   });
-  /* 型に結びつかない、手で足した辞書はうしろに残す */
+  /* 型に結びつかない、手で足した辞書はうしろに残す。
+     ★ 消した型（gone）の行は、kind が付いていなくても【名前で】落とす。
+       Code.js の jdicResyncRun と同じ落とし方にする（片方だけ直さない） */
   var keep=cur.filter(function(d){
     if(used[d.id]) return false;
-    if(d.kind){                       /* 型が消えたぶんは落とす */
-      return !CASH_KINDS.some(function(k){ return k.k===d.kind; });
-    }
-    return !CASH_KINDS.some(function(k){ return !k.gone && k.label===d.name; });
+    if(CASH_KINDS.some(function(k){ return !k.gone && k.label===d.name; })) return false;
+    if(d.kind && CASH_KINDS.some(function(k){ return k.k===d.kind; })) return false;
+    if(CASH_KINDS.some(function(k){ return k.gone && k.label===d.name; })) return false;
+    return true;
   });
   return { list: out.concat(keep), add: add, upd: upd, drop: cur.length-out.length-keep.length+add };
 }
@@ -9360,7 +9362,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-22d 仕訳 … 辞書を取引の種類にそろえる／伝票をその場で直せる／電話でも横スクロールなし';
+var APP_BUILD='2026-09-22e 仕訳辞書を「取引の種類」にそろえる（反映で直る）';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
