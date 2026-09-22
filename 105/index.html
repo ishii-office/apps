@@ -746,7 +746,12 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
 .dptbl tr.r1 td.num{font-size:15px;font-weight:800}
 .dpin{width:100%;border:1px dashed #BFD8D2;border-radius:4px;background:#fff;
   font-size:12.5px;padding:2px 5px;font-family:inherit}
-.dpin:focus{border-style:solid;border-color:#1f7a6a;outline:none}
+.dpin:focus{border-style:solid;border-color:#1f7a6a;outline:2px solid var(--gold)}
+/* 税率のマスに添える「判定(標)／判定(軽)」 */
+.dprt{display:block;font-size:10px;color:#888;margin-top:1px;line-height:1.1}
+.dpsp .spv .dprt{display:none}
+/* ★ 最後のマスから Enter で来たとき、どこに居るか分かるように */
+#jok:focus{outline:3px solid var(--gold);outline-offset:2px}
 /* ---- 行番号 → Enter ---- */
 .jcmd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   border:2px solid var(--gold);border-radius:10px;background:#FFFBF0;padding:9px 12px;margin-bottom:8px}
@@ -3190,6 +3195,8 @@ var S = {
   jOpen:false,            /* 辞書の登録欄をひらいているか */
   jDone:false,            /* 済んだぶんも出すか */
   jLast:null,             /* 直前に当てた1件（打ちまちがいを戻すため） */
+  jDirect:false,          /* ★ 伝票直接入力（既定は行番号。ボタンで切り替え） */
+  jFocus:null,            /* ★ 直接入力：描き直したあと、どのマスへ戻るか（番号 or 'ok'） */
   cashPane:'in',          /* 小口現金の下層タブ 'in'入力／'led'元帳／'count'現金実査 */
   cashJust:null,          /* いま入れた1件（入力の枠のすぐ下に「入れました」と出す） */
   cashJustShow:false,     /* その1回だけ画面に入れて見せる（描き直しでは動かない） */
@@ -6034,8 +6041,9 @@ function viewJournal(el, m){
   var sel0 = cur.d ? jdicOf(cur.d) : null;
   if(sel0) side.forEach(function(d){ if(d.id===sel0.id) sel0.no=d.no; });
   /* ★ その1件だけの直し（ov）を重ねたものを伝票に出す。辞書そのものは動かさない */
-  var sel = sel0 ? jEff(sel0, cur.ov) : null;
-  if(sel) sel.no = sel0.no;
+  var sel = sel0 ? jEff(sel0, cur.ov)
+                 : ((S.jDirect || cur.d===JD_DIRECT) ? jEff(jDirectBase(x), cur.ov) : null);
+  if(sel && sel0) sel.no = sel0.no;
   if(cur.note!=null) x.__note = cur.note;
 
   /* ★★ 辞書は【縦に狭く・一覧で探せる】形にする（2026-09-22）。
@@ -6075,11 +6083,18 @@ function viewJournal(el, m){
          辞書は下に全幅でどける（右の列に押し込むと伝票が細くなる） */
     '<div class="jright">'+
       jDenpyoHtml(x, sel)+
-      /* ★★ 行番号 → Enter。これだけで、辞書がセットされて次の領収書が出る */
+      /* ★★ 行番号 → Enter。これだけで、辞書がセットされて次の領収書が出る。
+           ★★★ 辞書に無い1件は［伝票に直接入れる］に切り替える（2026-09-22）。
+             そのときは Enter でマスを進み、F1 で1つ戻り、
+             最後のマスから Enter で［これで確定］へ移る */
       '<div class="jcmd">'+
-        '<label class="jcmdl">行番号</label>'+
-        '<input id="jcmd" inputmode="numeric" autocomplete="off" value="" placeholder="番号">'+
-        '<span class="jcmdh">→ Enter で、この伝票ができて次の領収書へ</span>'+
+        '<button class="btn ghost tap sm" id="jmode">'+
+          (S.jDirect?'行番号で入れる':'伝票に直接入れる')+'</button>'+
+        (S.jDirect
+          ? '<span class="jcmdh">Enter で次のマス／F1 で1つ戻る／最後のマスから Enter で［これで確定］へ</span>'
+          : '<label class="jcmdl">行番号</label>'+
+            '<input id="jcmd" inputmode="numeric" autocomplete="off" value="" placeholder="番号">'+
+            '<span class="jcmdh">→ Enter で、この伝票ができて次の領収書へ</span>')+
         '<span class="jcnt">'+(S.jIdx+1)+' / '+todo.length+' 件め</span>'+
       '</div>'+
       '<div class="jbtns">'+
@@ -6132,6 +6147,20 @@ function jMakeBoxHtml(m, done, total){
 
     ★ ここに出る値は、そのまま一括読み込みエクセルの1行になる。
       見ための表と、書き出す44列を別々に作らない（食いちがうもとになる）。 */
+/** ★ 直接入力の印。辞書の id には使われない決め打ちの文字列。
+    **Code.js の JD_DIRECT と同じ値。片方だけ直さない。** */
+var JD_DIRECT='__direct';
+/** ★★★ 伝票直接入力の土台（2026-09-22）
+    辞書を使わずに、伝票のマスへ直に打つときの「空の1件」。
+    向きだけは記録から取る（出金なら借方が相手・貸方が現金）。
+    ここに ov を重ねたものが、そのまま伝票になり、エクセルの1行になる。
+    **サーバ（cashJournalSource_）も同じ土台を作る。片方だけ直さない。** */
+function jDirectBase(x){
+  var b=jdNorm({id:JD_DIRECT, name:'（直接入力）', dir:(x&&x.dir==='in'?'in':'out'), tax:'0'});
+  b.memo=String((x&&x.memo)||'');
+  b.direct=1;
+  return b;
+}
 /** その1件だけの直し（ov）を辞書に重ねた「いま効いている値」
     ★ 画面（伝票）と、サーバが書き出す44列は、**同じものから作る**。
       だから Code.js の cashJournalSource_ も同じ重ね方をする。片方だけ直さない */
@@ -6140,6 +6169,10 @@ function jEff(d, ov){
   var o={}; for(var k in d) o[k]=d[k];
   if(ov) for(var k2 in ov){ if(ov[k2]!==undefined && ov[k2]!=='') o[k2]=ov[k2]; }
   o.rate = Number(o.rate)||0;
+  /* ★ 税率を直したら、軽減（8%）か標準（10%）かも付いてくる。
+       丸京は 8%＝軽減・10%＝標準 の2つしかないので、率だけで決まる。
+       **サーバ（cashJournalSource_）も同じ決め方をする。片方だけ直さない。** */
+  if(ov && ov.rate!==undefined && ov.rate!=='') o.red = (o.rate===8?1:0);
   return o;
 }
 /** 伝票に出す値を1か所で作る（表と、電話の1枚ものが食いちがわないように） */
@@ -6214,7 +6247,9 @@ function jDenpyoHtml(x, d){
         '<tr class="r1"><td class="k">'+e_(v.day)+'</td><td></td>'+
           '<td class="c">'+dcell('dr','code')+'</td><td class="c">'+dcell('dr','sub')+'</td>'+
           '<td class="c">'+dcell('cr','code')+'</td><td class="c">'+dcell('cr','sub')+'</td>'+
-          '<td class="r num">'+(v.g?yen(v.g):'0')+'</td><td class="c">'+e_(v.rateTxt)+'</td>'+
+          '<td class="r num">'+(v.g?yen(v.g):'0')+'</td>'+
+          '<td class="c">'+(d?inp('rate', d.rate||0,'c')+
+            '<span class="dprt">'+e_(v.rateTxt)+'</span>':e_(v.rateTxt))+'</td>'+
           '<td></td><td class="c">'+(v.taxable?e_(v.day):'')+'</td><td></td></tr>'+
         '<tr class="r2"><td class="c">'+e_(d?v.J.slipNo:'')+'</td><td class="c">'+
           (d?inp('tax',v.dr.tax===''?v.cr.tax:v.dr.tax,'c'):'')+'</td>'+
@@ -6230,7 +6265,7 @@ function jDenpyoHtml(x, d){
     /* ★★ 電話だけの1枚もの。同じ値を縦に組み直す（横スクロールさせない） */
     '<div class="dpsp">'+
       '<div class="spr"><span class="spl">年月日</span><b>'+e_(v.day)+'</b>'+
-        '<span class="spt">'+e_(v.rateTxt)+'</span></div>'+
+        (d?'':'<span class="spt">'+e_(v.rateTxt)+'</span>')+'</div>'+
       '<div class="spr"><span class="spl">借方</span>'+
         '<span class="spv">'+dcell('dr','code')+' '+dcell('dr','name')+'</span></div>'+
       (String(v.dr.sub||'')||(!v.drIsCash&&d)
@@ -6245,6 +6280,9 @@ function jDenpyoHtml(x, d){
         (v.taxable?'<span class="spt">内 消費税 '+yen(v.tax)+'／税抜 '+yen(v.net)+'</span>':'')+'</div>'+
       (d?'<div class="spr"><span class="spl">課税</span>'+
         '<span class="spv">'+inp('tax',v.dr.tax===''?v.cr.tax:v.dr.tax,'c')+'</span></div>':'')+
+      (d?'<div class="spr"><span class="spl">税率</span>'+
+        '<span class="spv">'+inp('rate',d.rate||0,'c')+
+        '<span class="spt">'+e_(v.rateTxt)+'</span></span></div>':'')+
       (d?'<div class="spr"><span class="spl">取引先</span>'+
         '<span class="spv">'+inp('partyName',v.party)+'</span></div>':'')+
       (d?'<div class="spr"><span class="spl">元帳摘要</span>'+
@@ -6320,6 +6358,7 @@ function jApply(m, x, d, el){
   if(!S.jDone) S.jIdx=Math.min(S.jIdx, Math.max(0, jTodo(m).length-1));
   else S.jIdx++;
   S.jQ='';
+  if(S.jDirect) S.jFocus=0;   /* ★ つぎの1件も、いちばん上のマスから打てる */
   render();
 }
 function jBind(el,m){
@@ -6347,10 +6386,57 @@ function jBind(el,m){
     if(!Object.keys(e.ov).length) delete e.ov;
     mp[String(x.id)]=e; jSaveMap(m);
   };
-  el.querySelectorAll('[data-ov]').forEach(function(i2){
-    i2.onchange=function(){ saveOv(i2.dataset.ov, i2.value); render(); };
-    i2.onkeydown=function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); i2.blur(); } };
+  var saveNote=function(val){
+    if(!x) return;
+    var e=mp[String(x.id)]||{}; e.note=String(val); mp[String(x.id)]=e; jSaveMap(m);
+  };
+  /* ★ いま打てるマスを、画面に出ている順に並べる。
+       表（パソコン）と1枚もの（電話）は両方 DOM にあって片方が display:none なので、
+       出ているほうだけを拾う（offsetParent が null なら出ていない） */
+  var jCells=function(){
+    var out=[];
+    el.querySelectorAll('.dp input.dpin').forEach(function(q){
+      if(q.offsetParent!==null) out.push(q);
+    });
+    return out;
+  };
+  var commitCell=function(inp){
+    if(inp.dataset && inp.dataset.ov) saveOv(inp.dataset.ov, inp.value);
+    else saveNote(inp.value);
+  };
+  /* ★★★ 伝票直接入力のとき … Enter で次のマス、F1 で1つ戻る、
+       最後のマスから Enter で［これで確定］へ（2026-09-22）。
+       打った値は描き直して税率・消費税に効かせるので、
+       描き直したあとに戻る先を S.jFocus に覚えておく */
+  var cellKey=function(inp){
+    return function(ev){
+      if(ev.key==='F1'){
+        ev.preventDefault();
+        if(!S.jDirect) return;
+        var cs=jCells(), i5=cs.indexOf(inp);
+        S.jFocus=Math.max(0, i5-1);
+        commitCell(inp); render();
+        return;
+      }
+      if(ev.key!=='Enter') return;
+      ev.preventDefault();
+      if(!S.jDirect){ inp.blur(); return; }
+      var cs2=jCells(), i6=cs2.indexOf(inp);
+      S.jFocus=(i6+1>=cs2.length) ? 'ok' : (i6+1);
+      commitCell(inp); render();
+    };
+  };
+  el.querySelectorAll('.dp input.dpin').forEach(function(i2){
+    i2.onchange=function(){ commitCell(i2); if(!S.jDirect) render(); };
+    i2.onkeydown=cellKey(i2);
   });
+  /* ★ 行番号 ⇄ 伝票直接入力 の切り替え。既定は行番号 */
+  var md=el.querySelector('#jmode');
+  if(md) md.onclick=function(){
+    S.jDirect=!S.jDirect;
+    S.jFocus=S.jDirect?0:null;
+    render();
+  };
 
   /* ★★★ 行番号 → Enter（2026-09-21）
        これ1つで「辞書がセットされる → 伝票ができる → 次の領収書が出る」。
@@ -6381,27 +6467,29 @@ function jBind(el,m){
     }
     render();
   };
-  el.querySelectorAll('#jnotesp').forEach(function(i3){
-    i3.onchange=function(){
-      if(!x) return;
-      var e=mp[String(x.id)]||{}; e.note=i3.value; mp[String(x.id)]=e; jSaveMap(m);
-    };
-  });
-  var nt=el.querySelector('#jnote');
-  if(nt) nt.onchange=function(){
-    if(!x) return;
-    var e=mp[String(x.id)]||{}; e.note=nt.value; mp[String(x.id)]=e; jSaveMap(m);
-  };
 
   /* --- 進む・もどる・とばす --- */
   var ok=el.querySelector('#jok');
-  if(ok) ok.onclick=function(){
-    if(!x) return;
-    var e=mp[String(x.id)]||{};
-    var d=e.d?jdicOf(e.d):null;
-    if(!d){ toast('辞書を選んでください'); return; }
-    jApply(m, x, d, el);
-  };
+  if(ok){
+    ok.onclick=function(){
+      if(!x) return;
+      var e=mp[String(x.id)]||{};
+      var d=e.d?jdicOf(e.d):null;
+      /* ★ 伝票直接入力 … 辞書を選んでいなくても、科目が入っていれば確定できる */
+      if(!d && S.jDirect){
+        if(!(e.ov && String(e.ov.acct||''))){ toast('科目を入れてください'); return; }
+        d=jEff(jDirectBase(x), e.ov);
+      }
+      if(!d){ toast('辞書を選んでください'); return; }
+      jApply(m, x, d, el);
+    };
+    /* ★ 最後のマスから Enter で来たら、ここで Enter を押せば確定 */
+    ok.onkeydown=function(ev){
+      if(ev.key!=='Enter') return;
+      ev.preventDefault();
+      ok.click();
+    };
+  }
   var sk=el.querySelector('#jskip');
   if(sk) sk.onclick=function(){
     if(!x) return;
@@ -6493,6 +6581,20 @@ function jBind(el,m){
     DB.jdic=(DB.jdic||[]).concat(add);
     jSaveDic(); render(); toast(add.length+'件を辞書に足しました');
   };
+
+  /* ★★★ 直接入力 … 描き直したあと、打っていたマスへ戻る（2026-09-22）。
+       マスを打つたびに描き直すのは、税率・消費税・税抜をその場で効かせるため。
+       戻り先を覚えておかないと、1マス打つごとにカーソルが飛ぶ */
+  if(S.jDirect && S.jFocus!=null){
+    var want=S.jFocus; S.jFocus=null;
+    setTimeout(function(){
+      try{
+        if(want==='ok'){ var b2=el.querySelector('#jok'); if(b2) b2.focus(); return; }
+        var cs3=jCells(), t2=cs3[want]||cs3[cs3.length-1];
+        if(t2){ t2.focus(); if(t2.select) t2.select(); }
+      }catch(e9){}
+    },0);
+  }
 }
 
 function viewCash(el){
@@ -9362,7 +9464,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-22e 仕訳辞書を「取引の種類」にそろえる（反映で直る）';
+var APP_BUILD='2026-09-22f 仕訳に伝票直接入力／3月末を 448,077 に読み直す';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
