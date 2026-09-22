@@ -571,6 +571,17 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .kbtn.x.on  {border-color:var(--gold);background:#FFF7E3}
 .know{margin:8px 0 0;padding:8px 11px;border-radius:8px;background:#F6F4EE;font-size:13px}
 
+/* ★★★ 現金実査で差額が出たときの行き先（2026-09-22）
+     合わないまま止めない。見直すか、現金過不足で落とすかを、その場で選ぶ */
+.nfix{margin:12px 0 0;padding:12px 13px;border-radius:10px;
+  border:2px solid var(--gold);background:#FFFCF3}
+.nfixt{font-size:16px;font-weight:700;color:#7A5A16;margin-bottom:9px}
+.nfixt b{font-size:21px}
+.nfixb{display:flex;gap:9px;flex-wrap:wrap}
+.nfixb .btn{flex:1;min-width:150px;font-size:16px;padding:13px 10px}
+.nfixb #nfix{background:var(--gold)}
+.nfixn{margin-top:8px;font-size:13px;line-height:1.5}
+
 /* ===== 現金実査：金種で数える（2026-09-21）===== */
 .denom{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:7px}
 .dn{display:flex;align-items:center;gap:7px;border:1.5px solid var(--line);border-radius:9px;
@@ -4854,6 +4865,19 @@ var CASH_KINDS=[
    fx:'6219', fxName:'水道光熱費', tax:'5', rate:10},
   {k:'karibarai',g:'x',dir:'out',label:'分からない', memo:'分からない', was:'仮払金',
    acct:'仮払金', fx:''},
+  /* ---- ★★ 現金過不足（2026-09-22）----------------------------------
+       現金実査で［現金過不足で合わせる］を押したときに、アプリが自分で立てる型。
+       **`auto:1` は「手で選ぶ辞書には出さないが、仕訳辞書には出す」。**
+       押して選ぶものではないので入力の辞書に並べる意味がなく、
+       事務所は仕訳を起こさないといけないので仕訳辞書には要る。
+       ★ FXに「現金過不足」という【科目】は無い。
+         足りない ＝ 7519 雑損失 ／ 余った ＝ 7118 雑収入 の、どちらも補助01「現金過不足」 */
+  {k:'kabuf',g:'out',dir:'out',label:'現金過不足（不足）', memo:'現金過不足（不足）', auto:1,
+   acct:'雑損失／現金過不足',
+   fx:'7519', fxName:'雑損失', sub:'01', subName:'現金過不足', tax:'0'},
+  {k:'kabuy',g:'in', dir:'in', label:'現金過不足（余り）', memo:'現金過不足（余り）', auto:1,
+   acct:'雑収入／現金過不足',
+   fx:'7118', fxName:'雑収入', sub:'01', subName:'現金過不足', tax:'0'},
   /* ---- 消した型（2026-09-21）。前に入れた記録の名前を引くためだけに残す。
          `gone:1` があるものは辞書にも仕訳辞書にも出さない ---- */
   {k:'yashoku',g:'out',dir:'out',label:'夜食を買った', memo:'厚生食事代', gone:1,
@@ -6411,8 +6435,12 @@ function viewCash(el){
       return '<button class="seg tap'+(SIDE===p[0]?' on':'')+'" data-cside="'+p[0]+'">'+
         p[1]+'</button>'; }).join('')+'</div>';
 
-  /* ★ 消した型（gone）は辞書に出さない。前の記録の名前を引くためだけに残してある */
-  var sideKinds = CASH_KINDS.filter(function(x){ return x.dir===SIDE && !x.gone; });
+  /* ★ 消した型（gone）は辞書に出さない。前の記録の名前を引くためだけに残してある。
+       ★★ `auto` の型（現金過不足）も出さない（2026-09-22）。
+       アプリが現金実査から自分で立てるもので、手で選ぶものではない。
+       `cashKindOf()` では引けるし、仕訳辞書には出る */
+  var sideKinds = CASH_KINDS.filter(function(x){
+    return x.dir===SIDE && !x.gone && !x.auto; });
   var kindsHtml =
   sideHtml +
   /* ★ 「入金 … 何が入ったか」「出金 … 何に払ったか」の見出しは出さない（2026-09-21）。
@@ -6543,6 +6571,23 @@ function viewCash(el){
         '<div class="num diffbig" id="ndiff" style="color:#bbb">—</div></div>'+
       '<button class="btn ghost tap" id="nclr">数え直す</button>'+
       '<button class="btn tap" id="nok" style="background:var(--green);font-size:16px;padding:13px 20px">この残高を記録</button>'+
+    '</div>'+
+    /* ★★★ 差額が出たときの行き先を2つ出す（2026-09-22）
+         現場は領収書を電卓で合計して精算しているので、その電卓がずれると
+         出納帳の精算額とずれて、残高はどうやっても合わない。
+         **合わないまま止めない。** 見直すか、現金過不足で落とすかを、その場で選ぶ。
+         ふだんから毎日締めてもらえば、この額は小さいままで済む。
+         枠はいつも置いて、差額が0のときだけ隠す（`hidden`）。
+         差額はその場で動くので、描き直さずに出し入れできないといけない */
+    '<div id="nfixbox" class="nfix" hidden>'+
+      /* ★ 「差額 ¥-700」ではなく「現金が 700円 足りません」と書く。
+           符号を読ませない。数えているのは金庫の現金なので、足りる・余るで言う */
+      '<div class="nfixt" id="nfixt">—</div>'+
+      '<div class="nfixb">'+
+        '<button class="btn ghost tap" id="nled">元帳を見直す</button>'+
+        '<button class="btn tap" id="nfix">現金過不足で合わせる</button>'+
+      '</div>'+
+      '<div class="nfixn muted" id="nfixn"></div>'+
     '</div>'+
     (counts.length
       ? '<div style="margin-top:10px">'+counts.map(function(x){
@@ -6750,15 +6795,39 @@ function viewCash(el){
   var na=el.querySelector('#na'), nd=el.querySelector('#nd'),
       nb=el.querySelector('#nb'), ndiff=el.querySelector('#ndiff');
   if(na){
+  var nfixbox=el.querySelector('#nfixbox'), nfixt=el.querySelector('#nfixt'),
+      nfixn=el.querySelector('#nfixn');
+  /* いま画面に出ている差額（＋なら余り／−なら不足）。ボタンはここを見る */
+  var curDiff=function(){
+    var raw=na.value.replace(/[^0-9]/g,'');
+    if(raw==='') return null;
+    return (parseInt(raw,10)||0) - cashBalanceAt(m,nd.value);
+  };
   function refreshDiff(){
     var b=cashBalanceAt(m,nd.value);
     nb.textContent=yen(b);
     var raw=na.value.replace(/[^0-9]/g,'');
-    if(raw===''){ ndiff.textContent='—'; ndiff.className='num diffbig'; ndiff.style.color='#bbb'; return; }
+    if(raw===''){ ndiff.textContent='—'; ndiff.className='num diffbig'; ndiff.style.color='#bbb';
+      if(nfixbox) nfixbox.hidden=true; return; }
     var df=(parseInt(raw,10)||0)-b;
     ndiff.style.color='';
     ndiff.className='num diffbig '+(df===0?'d-ok':'d-ng');
     ndiff.textContent = df===0 ? '✓ ぴったり' : (df>0?'+':'')+yen(df);
+    /* ★ 差額があるときだけ、行き先の2つを出す。
+         描き直さずに出し入れする（打っている最中にカーソルが飛ばないように） */
+    if(nfixbox){
+      nfixbox.hidden = (df===0);
+      if(df!==0){
+        var kd=cashKindOf(df>0?'kabuy':'kabuf');
+        nfixt.innerHTML='現金が <b>'+yen(Math.abs(df))+'</b> '+
+          (df>0?'余っています':'足りません')+'。どちらかを選んでください。';
+        /* ★ 勘定科目は書かない。顧問先には要らない話（事務所が決める）。
+             出納帳にどう出るかだけを、そのまま見せる */
+        nfixn.innerHTML='［現金過不足で合わせる］を押すと、'+esc(nd.value)+' の出納帳に<br>'+
+          '<b>'+esc(kd.label)+'　'+yen(Math.abs(df))+'</b> を1件入れて、'+
+          '帳簿の残高を <b>'+yen(parseInt(raw,10)||0)+'</b> にそろえます。';
+      }
+    }
   }
   na.oninput=refreshDiff; nd.onchange=refreshDiff;
 
@@ -6819,6 +6888,49 @@ function viewCash(el){
       render(); cashSaveAsync(nk,JSON.stringify(DB.count[nk]));
     };
   });
+
+  /* ★ 元帳を見直す … 出納帳のタブへ移るだけ */
+  var nled=el.querySelector('#nled');
+  if(nled) nled.onclick=function(){ S.cashPane='led'; S.cashJustShow=false; render(); };
+
+  /* ★★★ 現金過不足で合わせる（2026-09-22）
+       差額ぶんの1件を出納帳に入れて、同時にその実査も記録する。
+       ・足りない（実際 < 帳簿）→ 出金「現金過不足（不足）」＝ 7519 雑損失 01
+       ・余った（実際 > 帳簿）  → 入金「現金過不足（余り）」＝ 7118 雑収入 01
+       この1件が入ると帳簿の残高が数えた額とそろうので、実査は ✓ぴったり になる */
+  var nfixb=el.querySelector('#nfix');
+  if(nfixb) nfixb.onclick=function(){
+    var raw=na.value.replace(/[^0-9]/g,'');
+    if(raw===''){ alert('金庫にあった現金の金額を入れてください。'); na.focus(); return; }
+    var d=nd.value, actual=parseInt(raw,10)||0, df=actual-cashBalanceAt(m,d);
+    if(!df){ alert('差額はありません。'); return; }
+    /* ★ 数えた日がいま見ている月の外だと、別の月の出納帳へ入れることになる。止める */
+    if(String(d).slice(0,7)!==ym(m)){
+      alert('「数えた日」が '+(m.getMonth()+1)+'月ではありません。\n'+
+            'その月へ移ってから合わせてください。'); return; }
+    var kd=cashKindOf(df>0?'kabuy':'kabuf');
+    if(!confirm(d+' の出納帳に\n\n　'+kd.label+'　'+yen(Math.abs(df))+'\n\n'+
+                'を1件入れます。帳簿の残高が '+yen(actual)+' になって、数えた額とそろいます。\n'+
+                'よろしいですか。')) return;
+    var by={};
+    DENOMS.forEach(function(dd){
+      var n=parseInt(String((S.cashCnt||{})[dd]||'').replace(/[^0-9]/g,''),10)||0;
+      if(n) by[dd]=n; });
+    var rid=Date.now();
+    var rec={id:rid, date:d, dir:kd.dir, kind:kd.k, account:kd.acct,
+      amount:Math.abs(df), party:'', memo:kd.memo, sale:null,
+      imgUrl:null, imgPend:null, img:null, imgType:null, pics:null};
+    DB.cash[bk]=(DB.cash[bk]||[]).concat([rec]);
+    DB.count[nk]=(DB.count[nk]||[]).concat([{id:rid+1, date:d,
+      actual:actual, by:(Object.keys(by).length?by:null)}]);
+    S.cashCnt={}; S.cashJustId=rid;
+    clearCaches();
+    toast(kd.label+' '+yen(Math.abs(df))+' を入れて、残高を合わせました');
+    render();
+    /* 出納帳ぶんと実査ぶん。どちらも控えを取って送り直す道を通る */
+    cashSaveAsync(bk,JSON.stringify(DB.cash[bk]));
+    cashSaveAsync(nk,JSON.stringify(DB.count[nk]));
+  };
   }
 
   /* ---- 写真：選んだらすぐ Drive へ ---- */
@@ -8945,7 +9057,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-22a 「入れました」を［記録する］の下へ／取引の種類を縦に詰める（2列のまま）';
+var APP_BUILD='2026-09-22b 現金実査で現金過不足を出して、見直すか落とすかを選べる';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
