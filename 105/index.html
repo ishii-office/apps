@@ -628,25 +628,67 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .jbar i{display:block;height:100%;background:var(--green);transition:width .25s}
 .jchk{display:flex;align-items:center;gap:6px;font-size:14px}
 .jchk input{width:18px;height:18px}
-.jcard{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:16px;align-items:start}
-@media(max-width:900px){ .jcard{grid-template-columns:1fr} }
+/* ★★★ パソコン … 左に領収書の写真／右に伝票／その下に辞書（2026-09-22）
+     事務所が使うところ。**伝票にきれいに入ったかを、写真と見くらべて一目で確かめる**のが要。
+     辞書を右の列に入れると伝票が細くなるので、下へ全幅でどける。
+     スマホは1列になるので、そのまま 写真 → 伝票 → 辞書 の順に積まれる */
+/* ★ 伝票は11列ある（中身で 790px 要る）。1180px のままだと右が切れて
+     「取引先名」「元帳摘要」が見えない ── 一目で確かめられないと意味がないので、
+     このタブのときだけ紙面を広げる（body.jrnwide／viewCash が付け外しする） */
+body.jrnwide header, body.jrnwide main{max-width:1560px}
+.jcard{display:grid;grid-template-columns:minmax(280px,30%) minmax(0,1fr);gap:16px;align-items:start}
+/* ★★ 写真は左の列を【2段ぶん】使う。辞書は伝票の【下】（右の列）に置く。
+     こうすると 写真・伝票・辞書 が1画面に収まり、
+     辞書を転がしても写真が消えない ── 見くらべながら選べる */
+.jcard .jleft{grid-row:1 / span 2;position:sticky;top:8px}
+.jcard .jright{grid-row:1;grid-column:2}
+.jcard .jdic{grid-row:2;grid-column:2;min-width:0}
+.jcard .jleft,.jcard .jright{min-width:0}
+/* ★ minmax(0,1fr) にしないと、伝票の表（min-width:790px）が列を広げて
+     電話で画面ごと横スクロールになる。中で転がるのが正しい */
+/* スマホは1列。上から 写真 → 伝票 → 辞書（DOM の順そのまま） */
+@media(max-width:900px){
+  .jcard{grid-template-columns:minmax(0,1fr)}
+  .jcard .jleft{grid-row:auto;position:static}
+  .jcard .jright,.jcard .jdic{grid-row:auto;grid-column:auto}
+  .jshot img{max-height:46vh}
+}
 .jleft,.jright{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px}
+/* ★ 写真は【押さずに出す】。大きく見たいときだけ右下のリンクで別のタブへ */
+.jshots{display:flex;flex-direction:column;gap:8px}
+.jshot{position:relative;display:block;border:1.5px solid var(--line);border-radius:10px;
+  background:#F7F5EF;overflow:hidden;min-height:120px}
+.jshot img{display:block;width:100%;max-height:62vh;object-fit:contain;background:#F7F5EF}
+.jshot .jopen{position:absolute;right:8px;bottom:8px;font-size:12px;font-weight:700;
+  background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:7px;
+  padding:4px 9px;color:var(--ai);text-decoration:none}
+.jshot .jsn{position:absolute;left:8px;top:8px;font-size:12px;font-weight:800;color:#fff;
+  background:rgba(38,36,31,.62);border-radius:7px;padding:3px 8px}
+.jshot.loading::after{content:'写真を読み込んでいます…';position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;font-size:14px;color:#777;background:#F7F5EFEE}
+.jshot.miss img{display:none}
+.jshot.miss::after{content:'写真が出せませんでした（「大きく見る」で開けます）';
+  display:flex;align-items:center;justify-content:center;min-height:120px;
+  font-size:14px;color:#999;padding:10px;text-align:center}
+.jshot.link{display:flex;align-items:center;justify-content:center;min-height:120px;
+  color:var(--ai);font-weight:700;text-decoration:none}
 .jmeta{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
 .jday{font-size:22px;font-weight:800}
 .jamt{font-size:30px;font-weight:800;font-family:var(--mincho,inherit)}
 .jdir{font-size:13px;font-weight:800;color:#fff;border-radius:6px;padding:3px 9px}
 .jdir.in{background:var(--ice)} .jdir.out{background:var(--pink)}
 .jmemo{margin:8px 0 10px;font-size:17px;font-weight:700}
-.jshot{display:block;width:100%;max-height:520px;object-fit:contain;border:1.5px solid var(--line);
-  border-radius:10px;background:#F7F5EF}
 .jshot.none,.jshot.pdf{display:flex;align-items:center;justify-content:center;min-height:160px;
-  color:#999;font-size:15px}
+  color:#999;font-size:15px;width:100%}
 .jshot.pdf{color:var(--pink);font-weight:700;cursor:pointer}
 .jwarn{font-size:13px;color:#7A6A4A;background:#FFF8E6;border:1px solid #E3C766;
   border-radius:8px;padding:7px 10px;margin:10px 0 8px}
 .jq{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
 .jq input{font-size:16px;padding:9px 11px}
-.jdlist{max-height:380px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px;background:#FBFAF6}
+.jdic{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px}
+.jdlist{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px;background:#FBFAF6}
+/* 下に全幅で置くので、パソコンでは辞書を2列に並べて一覧性を上げる */
+@media(min-width:900px){ .jdic .jgrp{break-inside:avoid} .jdlist{column-count:2;column-gap:12px} }
 .jdlist.all{max-height:320px;margin-top:10px}
 .jgrp{margin-bottom:8px}
 .jgt{font-size:13px;font-weight:800;color:#1f7a6a;background:#EAF4F1;border-radius:6px;padding:3px 9px;margin-bottom:4px}
@@ -667,6 +709,9 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .dpname span{font-size:12px;color:#1f7a6a;font-weight:800;flex:0 0 auto}
 .dpname b{font-size:17px;font-weight:800;color:var(--ink)}
 .dpwrap{overflow-x:auto}
+.dphint{display:none;font-size:12px;color:#7a5c19;background:#FFFBF0;padding:5px 10px;
+  border-top:1px solid #BFD8D2}
+@media(max-width:900px){ .dphint{display:block} }
 .dptbl{border-collapse:collapse;width:100%;min-width:790px;font-size:12.5px;table-layout:fixed}
 .dptbl th{background:#1f7a6a;color:#fff;font-weight:700;letter-spacing:0;
   border:1px solid #fff;padding:3px 3px;text-align:center;white-space:nowrap;font-size:11px}
@@ -3168,6 +3213,8 @@ var TABS=[
 ];
 
 function go(tab){ S.tab=tab; S.cashJust=null; S.cashJustShow=false; /* 「入れました」は入れた直後だけ */
+  /* 仕訳タブで広げた紙面を戻す（付けるのは viewCash） */
+  try{ document.body.classList.remove('jrnwide'); }catch(e){}
   render(); window.scrollTo({top:0}); }
 
 /* ============================================================
@@ -5779,6 +5826,59 @@ function jSaveMap(m){
 function jSaveDic(){ listSave('jdic:master', DB.jdic||[], 'id'); }
 
 /* ---- 画面 ---- */
+/* ============================================================
+   領収書の写真を【押さずに】出す（2026-09-22）
+   ------------------------------------------------------------
+   Drive の getUrl() は .../file/d/<ID>/view という【見るためのページ】で、
+   画像の住所ではない。<img src> に入れても出ないので、いままでは
+   毎回押して別のタブでひらくしかなかった。事務所は1件ずつ写真を見ながら
+   仕訳を起こすので、そこが一番の手間になっていた。
+   ============================================================ */
+var jShotCache = {};        /* ファイルid → data URL（取り直さないため） */
+var jShotDead  = {};        /* サーバからも取れなかったもの */
+
+function driveId_(u){
+  var m = String(u||'').match(/\/d\/([A-Za-z0-9_\-]+)/) ||
+          String(u||'').match(/[?&]id=([A-Za-z0-9_\-]+)/);
+  return m ? m[1] : '';
+}
+/** Google のサムネイル。ログインしている端末ならこれだけで出る */
+function driveThumb_(id, w){ return 'https://drive.google.com/thumbnail?id='+id+'&sz=w'+(w||1600); }
+
+function jShotHtml(u, i, n){
+  var id = driveId_(u);
+  if(!id) return '<a class="jshot link" href="'+esc(u)+'" target="_blank" rel="noopener">領収書をひらく</a>';
+  var cached = jShotCache[id];
+  var src = cached || driveThumb_(id);
+  return '<div class="jshot" data-jfid="'+esc(id)+'">'+
+    (n>1?'<span class="jsn">'+(i+1)+' / '+n+'</span>':'')+
+    '<img src="'+esc(src)+'" alt="領収書" referrerpolicy="no-referrer"'+
+      (cached?'':' data-jthumb="1"')+'>'+
+    '<a class="jopen" href="'+esc(u)+'" target="_blank" rel="noopener">大きく見る ↗</a>'+
+  '</div>';
+}
+
+/** サムネイルが出なかったものを、サーバから取ってきて差し替える */
+function jShotRescue(el){
+  el.querySelectorAll('.jshot img[data-jthumb]').forEach(function(img){
+    img.onerror = function(){
+      var box = img.closest('.jshot'), id = box && box.dataset.jfid;
+      if(!id || jShotDead[id]) { if(box) box.classList.add('miss'); return; }
+      img.removeAttribute('data-jthumb');
+      box.classList.add('loading');
+      srv('receiptData',[id]).then(function(r){
+        box.classList.remove('loading');
+        if(r && r.data){ jShotCache[id]=r.data; img.src=r.data; return; }
+        jShotDead[id]=1; box.classList.add('miss');
+      }).catch(function(){
+        box.classList.remove('loading'); jShotDead[id]=1; box.classList.add('miss');
+      });
+    };
+    /* もう読み終わって失敗しているぶんも拾う */
+    if(img.complete && img.naturalWidth===0) img.onerror();
+  });
+}
+
 function viewJournal(el, m){
   var mp=jMap(m), all=jRows(m), todo=jTodo(m);
   var done=jDoneN(m);
@@ -5814,7 +5914,14 @@ function viewJournal(el, m){
     jBind(el,m); return;
   }
 
-  /* ---- 領収書の写真 ---- */
+  /* ---- 領収書の写真（2026-09-22 に【押さずに出る】ようにした）----
+       Drive の getUrl() は「見るためのページ」で、画像そのものの住所ではない。
+       だから <img src> にそのまま入れても出ず、毎回押さないと見られなかった。
+       事務所は1件ずつ写真を見ながら仕訳を起こすので、そこが仕事の速さを決める。
+         ① まず drive.google.com/thumbnail?id=… を出す（通信1回・すぐ出る）
+         ② 出なければ（Google に入っていない端末など）サーバから中身を取る
+         ③ それも駄目なら、押してひらくリンクに落ちる
+       取ってきたものは jShotCache に残すので、行き来しても取り直さない */
   var stash = x.imgPend ? rcptOf(x.id) : null;
   var raw   = x.img || (stash && stash.data) || null;
   var rtype = x.imgType || (stash && stash.type) || null;
@@ -5824,11 +5931,10 @@ function viewJournal(el, m){
     : (x.imgUrl?[x.imgUrl]:[]);
   var shot =
     urls.length
-      ? urls.map(function(u){ return '<a class="jshot" href="'+esc(u)+'" target="_blank" rel="noopener">'+
-          '<img src="'+esc(u)+'" alt="領収書"></a>'; }).join('')
+      ? '<div class="jshots">'+urls.map(function(u,i3){ return jShotHtml(u,i3,urls.length); }).join('')+'</div>'
     : (raw ? (rtype==='pdf'
         ? '<button class="jshot pdf tap" data-jpdf="'+x.id+'">PDF の領収書をひらく</button>'
-        : '<img class="jshot" src="'+raw+'" alt="領収書">')
+        : '<div class="jshot"><img src="'+raw+'" alt="領収書"></div>')
       : '<div class="jshot none">領収書の写真はありません</div>');
 
   /* ---- 辞書。行番号は【その向きの並び順】で固定。しぼり込んでも動かない ---- */
@@ -5871,6 +5977,9 @@ function viewJournal(el, m){
       '<p class="jwarn">★ 写真の <b>日付</b> と <b>金額</b> も、ここで一緒に確かめてください。</p>'+
       '<button class="btn ghost tap sm" data-jfix="'+x.id+'">出納帳を直す</button>'+
     '</div>'+
+    /* ★★★ 伝票は【写真のとなり】に置く（2026-09-22）。
+         きれいに入ったかを、写真と見くらべて一目で確かめられるように。
+         辞書は下に全幅でどける（右の列に押し込むと伝票が細くなる） */
     '<div class="jright">'+
       jDenpyoHtml(x, sel)+
       /* ★★ 行番号 → Enter。これだけで、辞書がセットされて次の領収書が出る */
@@ -5880,18 +5989,23 @@ function viewJournal(el, m){
         '<span class="jcmdh">→ Enter で、この伝票ができて次の領収書へ</span>'+
         '<span class="jcnt">'+(S.jIdx+1)+' / '+todo.length+' 件め</span>'+
       '</div>'+
-      '<div class="jq"><input id="jq" placeholder="辞書をしぼり込む（消耗品・ガソリン…）" value="'+esc(q)+'"></div>'+
-      '<div class="jdlist">'+dicHtml+'</div>'+
       '<div class="jbtns">'+
         '<button class="btn ghost tap" id="jprev">‹ もどる</button>'+
         '<button class="btn ghost tap" id="jskip">この1件はとばす</button>'+
         '<button class="btn tap jgo2" id="jok"'+(sel?'':' disabled')+'>これで確定 →</button>'+
       '</div>'+
     '</div>'+
+    /* ★ 辞書は2列ぶんの幅いっぱいに。スマホでは 写真 → 伝票 → 辞書 の順に積む */
+    '<div class="jdic">'+
+      '<div class="jq"><input id="jq" placeholder="辞書をしぼり込む（消耗品・ガソリン…）" value="'+esc(q)+'"></div>'+
+      '<div class="jdlist">'+dicHtml+'</div>'+
+    '</div>'+
   '</div>';
 
   el.innerHTML=head+body+jdicBoxHtml(dic)+jMakeBoxHtml(m, done, all.length);
   jBind(el,m);
+  /* ★ サムネイルが出なかったものだけ、サーバから取ってきて差し替える */
+  jShotRescue(el);
 }
 
 /** ★ 一括読み込みエクセルを作る枠（2026-09-21）
@@ -5977,6 +6091,9 @@ function jDenpyoHtml(x, d){
             : '')+'</td></tr>'+
       '</tbody>'+
     '</table></div>'+
+    /* ★ 電話では11列が入りきらない。中で横に動かせることを1行だけ知らせる
+         （パソコンでは出さない。見えているのに書くのは二重） */
+    '<div class="dphint">→ 横に動かすと、取引先名と元帳摘要まで見えます</div>'+
   '</div>';
 }
 
@@ -6615,6 +6732,9 @@ function viewCash(el){
     (PANE==='jrn'   ? '<div id="jrnbox"></div>' : '');
 
   /* ★ 仕訳（石井事務所）… 領収書を見ながら辞書を当てる。中身は viewJournal が組む */
+  /* ★ 仕訳のときだけ紙面を広げる（伝票11列が切れないように）。
+       タブを出るときは go() が外す */
+  try{ document.body.classList.toggle('jrnwide', PANE==='jrn'); }catch(e){}
   if(PANE==='jrn'){
     var jb=el.querySelector('#jrnbox');
     if(jb) viewJournal(jb, m);
@@ -9057,7 +9177,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-22b 現金実査で現金過不足を出して、見直すか落とすかを選べる';
+var APP_BUILD='2026-09-22c 仕訳 … 領収書を押さずに出す／左に写真・右に伝票・下に辞書';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
