@@ -9826,7 +9826,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-23b 仕訳伝票化 … 伝票一覧で最終確認できるようにする（仕訳の種類名＝元帳摘要）';
+var APP_BUILD='2026-09-23c Pages の画面が【自分が古いこと】に気づくようにする（version.txt）';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -12776,6 +12776,17 @@ function appReopen(btn){
 }
 /** URL から開いたとき ＝ いちばん外側の窓ごと開き直す */
 function appReopenWeb(say,giveUp){
+  /* ★★★ Pages から開いているときは、同じ URL を読み直しても
+       端末（とGitHubの配信）のキャッシュから【古い画面】が出てくる。
+       ホーム画面に足したアイコンだと特に居すわる。
+       だから ?v= を付け替えて、必ず取り直させる（2026-09-23） */
+  if(typeof WEB2!=='undefined' && WEB2){
+    try{
+      var u2=new URL(location.href);
+      u2.searchParams.set('v', String(Date.now()));
+      location.replace(u2.toString()); return;
+    }catch(e){}
+  }
   if(MY_URL){
     try{ window.open(MY_URL,'_top'); return; }catch(e){}
     try{ window.top.location.href=MY_URL; return; }catch(e){}
@@ -12918,6 +12929,47 @@ function appPulseStart(){
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) run(); });
 }
 appPulseStart();
+
+/* ============================================================
+   ★★★ Pages から開いた画面は【自分が古いこと】に気づけない（2026-09-23）
+   ------------------------------------------------------------
+   appPulse が見ているのは **GAS に載っているコードの版** で、
+   いま端末が抱えている index.html そのものではない。
+   Pages は画面をそのまま配るので、**端末のキャッシュに古い画面が
+   居すわると、本人も画面も永久に気づかない**（実際に起きた）。
+
+   だから公開の棚に **version.txt**（＝その画面の APP_BUILD）を
+   一緒に置いて、1分おきに直に見に行く。自分より【新しい】ときだけ止める。
+
+   ★ 「新しいときだけ」が要る。GitHub の配信は10分ほど覚えているので、
+     入れ替えた直後は version.txt のほうが古いことがある。
+     ただ「ちがう」で止めると、新しい画面が自分を古いと思って止まる。
+     版は `2026-09-23b` の形なので、頭のところを文字として比べれば足りる。
+   ============================================================ */
+function appBuildKey_(s2){
+  var m2=String(s2||'').match(/^\s*(\d{4}-\d{2}-\d{2}[a-z]*)/);
+  return m2?m2[1]:'';
+}
+function appPagesWatch(){
+  if(!(typeof WEB2!=='undefined' && WEB2)) return;
+  var run=function(){
+    if(APP_LOCKED) return;
+    try{
+      fetch('version.txt?t='+Date.now(), {cache:'no-store'})
+        .then(function(r){ return r.ok ? r.text() : null; })
+        .then(function(t){
+          if(!t || APP_LOCKED) return;
+          var v=String(t).trim();
+          var a=appBuildKey_(v), b=appBuildKey_(APP_BUILD);
+          if(a && b && a>b){ MY_VER=v; appLock(v); }
+        }).catch(function(){});
+    }catch(e){}
+  };
+  setTimeout(run, 8000);
+  setInterval(run, APP_PULSE_MS);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) run(); });
+}
+appPagesWatch();
 
 </script>
 
