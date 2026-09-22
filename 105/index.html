@@ -747,6 +747,13 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
 .dpin{width:100%;border:1px dashed #BFD8D2;border-radius:4px;background:#fff;
   font-size:12.5px;padding:2px 5px;font-family:inherit}
 .dpin:focus{border-style:solid;border-color:#1f7a6a;outline:2px solid var(--gold)}
+/* ★★★ 取引先は【コード】と【名前】の2マス（2026-09-23）。
+     コードがそのまま一括読み込みエクセルの33列目になるので、
+     ここが見えていないと「どの店で転記されるか」が分からない */
+.dpparty{display:flex;gap:5px;align-items:center}
+.dpparty .dpin.pcode{flex:0 0 74px;width:74px;letter-spacing:.06em;font-weight:700}
+.dpparty .dpin:not(.pcode){flex:1 1 auto;min-width:0}
+.dpsp .spv.dpparty .dpin.pcode{flex:0 0 74px}
 /* 税率のマスに添える「判定(標)／判定(軽)」 */
 .dprt{display:block;font-size:10px;color:#888;margin-top:1px;line-height:1.1}
 .dpsp .spv .dprt{display:none}
@@ -2765,6 +2772,34 @@ function clearCaches(){ _byId=null; _cache={ hist:{}, agg:{}, cash:{}, ar:{} }; 
 var FY_START_MONTH = 2;
 function fyOf(d){ return (d.getMonth()+1) >= FY_START_MONTH ? d.getFullYear() : d.getFullYear()-1; }
 function fyLabel(fy){ return '令和'+(fy-2018)+'年度'; }
+/** ★★ 月の【プルダウン】を作る（小口現金・注文入力で共用。2026-09-23）
+
+    ‹ › で1月ずつ送るしかないと、半年前を見るのに6回押すことになる。
+    出す範囲は **今の期の頭（2月）から、今月の翌月まで**。
+
+    ★ `DB` の中身から作ってはいけない ── その月を開いたときに読み込む作りなので、
+      **まだ開いていない月が出なくなる**。期の頭からの並びで作り、
+      すでに読み込んである月（前の期の分など）だけ `bags` から足す。 */
+function monthOpts_(m, bags, suffix){
+  var seen={}, now=new Date();
+  var st=new Date(fyOf(now), FY_START_MONTH-1, 1);
+  var en=new Date(now.getFullYear(), now.getMonth()+1, 1);
+  if(m<st) st=new Date(m.getFullYear(), m.getMonth(), 1);
+  if(m>en) en=new Date(m.getFullYear(), m.getMonth(), 1);
+  for(var d=new Date(st); d<=en; d.setMonth(d.getMonth()+1)) seen[ym(d)]=1;
+  (bags||[]).forEach(function(bag){
+    Object.keys(DB[bag]||{}).forEach(function(k){
+      var t=String(k).split(':')[1]||'';
+      if(/^\d{4}-\d{2}$/.test(t)) seen[t]=1;
+    });
+  });
+  seen[ym(m)]=1;                                /* いま見ている月は必ず出す */
+  return Object.keys(seen).sort().reverse().map(function(t){
+    return '<option value="'+t+'"'+(t===ym(m)?' selected':'')+'>'+
+      jpYear(+t.slice(0,4))+' '+(+t.slice(5,7))+'月'+(suffix||'')+'</option>';
+  }).join('');
+}
+
 function fyRange(fy){ return jpYear(fy)+FY_START_MONTH+'月 〜 '+jpYear(fy+1)+(((FY_START_MONTH+10)%12)+1)+'月'; }
 /** 期の12か月（先頭＝2月） */
 function fyCols(fy){
@@ -3690,7 +3725,11 @@ function orderPick(el){
   '<div class="row" style="justify-content:space-between;margin-bottom:10px">'+
     '<div class="row">'+
       '<button class="btn ghost tap" id="oPrev">‹ 前の月</button>'+
-      '<div class="mincho" style="font-size:22px;min-width:170px;text-align:center">'+ordMonthLabel(ref)+'</div>'+
+      /* ★★ 月は【プルダウン】で直接えらべる（2026-09-23。小口現金と同じ形）。
+           ‹ › で1月ずつ送るしかなかったので、半年前を見るのに6回押していた。
+           ‹ › も残す（1つ前・1つ後はボタンのほうが速い） */
+      '<select id="oSel" class="msel mincho">'+
+        monthOpts_(ref, ['orders'], '分')+'</select>'+
       '<button class="btn ghost tap" id="oNext">次の月 ›</button>'+
       '<button class="btn ghost tap sm" id="oToday">今月</button>'+
     '</div>'+
@@ -3778,6 +3817,11 @@ function orderPick(el){
   bindBuyCard(el);
   el.querySelector('#oPrev').onclick=function(){ mv(-1); };
   el.querySelector('#oNext').onclick=function(){ mv(1); };
+  var oSel=el.querySelector('#oSel');
+  if(oSel) oSel.onchange=function(){
+    var t=String(this.value).split('-');
+    S.ordRef=new Date(+t[0], +t[1]-1, 1); render();
+  };
   el.querySelector('#oToday').onclick=function(){ S.ordRef=new Date(); render(); };
   el.querySelectorAll('[data-sf]').forEach(function(b){ b.onclick=function(){ S.shimeFilter=+b.dataset.sf; render(); }; });
   el.querySelector('#oe').onchange=function(e){ S.onlyEntered=e.target.checked; render(); };
@@ -3907,7 +3951,11 @@ function orderLedger(el){
       '<span class="pill tag-slip" style="font-size:12px;padding:3px 9px">'+SHIME_LABEL[c.shime]+'</span>'+
       '<span style="flex:1"></span>'+
       '<button class="btn ghost tap sm" id="pPrev">‹ 前の締め</button>'+
-      '<span class="iv-period num">'+ordMonthLabel(S.ordRef)+'　'+periodLabel(H.from,H.to)+'</span>'+
+      /* ★★ ここも月のプルダウン（2026-09-23）。打っている途中で
+           「先月分はどうだったか」を見るのに、1月ずつ戻らせない */
+      '<select id="pSel" class="msel mincho" style="font-size:16px;padding:6px 26px 6px 8px">'+
+        monthOpts_(S.ordRef, ['orders'], '分')+'</select>'+
+      '<span class="iv-period num">'+periodLabel(H.from,H.to)+'</span>'+
       '<button class="btn ghost tap sm" id="pNext">次の締め ›</button>'+
     '</div>'+
     (c.note?'<div class="nc-note" style="font-size:15px">📝 '+esc(c.note)+'</div>':'')+
@@ -3934,6 +3982,11 @@ function orderLedger(el){
   el.querySelector('#oBack').onclick=function(){ S.ordClient=null; window.scrollTo({top:0}); render(); };
   el.querySelector('#pPrev').onclick=function(){ var d=new Date(S.ordRef); d.setMonth(d.getMonth()-1); S.ordRef=d; render(); };
   el.querySelector('#pNext').onclick=function(){ var d=new Date(S.ordRef); d.setMonth(d.getMonth()+1); S.ordRef=d; render(); };
+  var pSel=el.querySelector('#pSel');
+  if(pSel) pSel.onchange=function(){
+    var t=String(this.value).split('-');
+    S.ordRef=new Date(+t[0], +t[1]-1, 1); render();
+  };
   el.querySelector('#ivPrint').onclick=function(){
     printHtml('<div class="sheet">'+invoiceHtml(c,collectRows(c,H.from,H.to),H.from,H.to)+'</div>',false);
   };
@@ -6129,8 +6182,8 @@ function viewJournal(el, m){
   var sel0 = cur.d ? jdicOf(cur.d) : null;
   if(sel0) side.forEach(function(d){ if(d.id===sel0.id) sel0.no=d.no; });
   /* ★ その1件だけの直し（ov）を重ねたものを伝票に出す。辞書そのものは動かさない */
-  var sel = sel0 ? jEff(sel0, cur.ov)
-                 : ((S.jDirect || cur.d===JD_DIRECT) ? jEff(jDirectBase(x), cur.ov) : null);
+  var sel = sel0 ? jEff(sel0, cur.ov, x)
+                 : ((S.jDirect || cur.d===JD_DIRECT) ? jEff(jDirectBase(x), cur.ov, x) : null);
   if(sel && sel0) sel.no = sel0.no;
   if(cur.note!=null) x.__note = cur.note;
 
@@ -6247,6 +6300,8 @@ function jMakeBoxHtml(m, done, total){
 /** ★ 直接入力の印。辞書の id には使われない決め打ちの文字列。
     **Code.js の JD_DIRECT と同じ値。片方だけ直さない。** */
 var JD_DIRECT='__direct';
+/** 取引先コードの桁。**Code.js の JOURNAL.codeDigits と同じ値。片方だけ直さない。** */
+var JRN_CODE_DIGITS=6;
 /** ★★★ 伝票直接入力の土台（2026-09-22）
     辞書を使わずに、伝票のマスへ直に打つときの「空の1件」。
     向きだけは記録から取る（出金なら借方が相手・貸方が現金）。
@@ -6261,11 +6316,19 @@ function jDirectBase(x){
 /** その1件だけの直し（ov）を辞書に重ねた「いま効いている値」
     ★ 画面（伝票）と、サーバが書き出す44列は、**同じものから作る**。
       だから Code.js の cashJournalSource_ も同じ重ね方をする。片方だけ直さない */
-function jEff(d, ov){
+function jEff(d, ov, x){
   if(!d) return null;
   var o={}; for(var k in d) o[k]=d[k];
   if(ov) for(var k2 in ov){ if(ov[k2]!==undefined && ov[k2]!=='') o[k2]=ov[k2]; }
   o.rate = Number(o.rate)||0;
+  /* ★★★ 取引先は、顧問先が選んだものを【追認】する（2026-09-23）。
+       辞書にも直しにも取引先が入っていないときだけ、記録のほうから入れる。
+       手で打ち替えたぶん（ov）は上で重なっているので、こちらが勝つことはない。
+       **サーバ（cashJournalSource_）も同じことをする。片方だけ直さない。** */
+  if(x && !String(o.party||'') && !String(o.partyName||'')){
+    var rp=jRecParty(x);
+    if(rp && (rp.code||rp.name)){ o.party=rp.code; o.partyName=rp.name; }
+  }
   /* ★ 税率を直したら、軽減（8%）か標準（10%）かも付いてくる。
        丸京は 8%＝軽減・10%＝標準 の2つしかないので、率だけで決まる。
        **サーバ（cashJournalSource_）も同じ決め方をする。片方だけ直さない。** */
@@ -6286,7 +6349,10 @@ function jDenpyoVals(x, d){
            drIsCash:!!(d&&d.dir==='in'),
            day:String(x.date).replace(/-/g,'/'),
            rateTxt: !d ? '' : (taxable ? ('判定('+(d.red?'軽':'標')+')') : '—'),
-           party: d?(d.partyName||(d.party?d.party:'')):'',
+           /* ★ 取引先は【コード】と【名前】を別々に持つ（2026-09-23）。
+                コードがそのままエクセルの33列目になるので、画面でも別のマスで見せる */
+           partyCode: d?String(d.party||''):'',
+           party: d?String(d.partyName||''):'',
            memo: (x.__note!=null ? x.__note : (x.memo||(d?d.memo:''))) };
 }
 
@@ -6356,7 +6422,8 @@ function jDenpyoHtml(x, d, opt){
           (d?inp('tax',v.dr.tax===''?v.cr.tax:v.dr.tax,'c'):'')+'</td>'+
           '<td colspan="2">'+dcell('dr','name')+'</td><td colspan="2">'+dcell('cr','name')+'</td>'+
           '<td class="r num">'+(v.taxable?yen(v.tax):'')+'</td>'+
-          '<td colspan="4">'+(d?inp('partyName',v.party):'')+'</td></tr>'+
+          '<td colspan="4">'+(d?'<span class="dpparty">'+
+            inp('party',v.partyCode,'c pcode')+inp('partyName',v.party)+'</span>':'')+'</td></tr>'+
         '<tr class="r3"><td class="c">'+e_(d?v.J.voucherNo:'')+'</td><td class="c">'+e_(v.dr.biz)+'</td>'+
           '<td colspan="2">'+dcell('dr','subName')+'</td><td colspan="2">'+dcell('cr','subName')+'</td>'+
           '<td class="r num">'+(d?yen(v.net):'')+'</td>'+
@@ -6386,7 +6453,8 @@ function jDenpyoHtml(x, d, opt){
         '<span class="spv">'+inp('rate',d.rate||0,'c')+
         '<span class="spt">'+e_(v.rateTxt)+'</span></span></div>':'')+
       (d?'<div class="spr"><span class="spl">取引先</span>'+
-        '<span class="spv">'+inp('partyName',v.party)+'</span></div>':'')+
+        '<span class="spv dpparty">'+inp('party',v.partyCode,'c pcode')+
+        inp('partyName',v.party)+'</span></div>':'')+
       (d?'<div class="spr"><span class="spl">元帳摘要</span>'+
         '<span class="spv"><input '+(inList?'':'id="jnotesp" ')+
         'class="dpin dpnote" value="'+esc(v.memo)+'"></span></div>':'')+
@@ -6409,6 +6477,21 @@ function jPartyOf(x){
     return {name:String(sl.name||''), code:String(sl.code||''), fkey:''};
   var p=String((x&&x.party)||'');
   return p ? {name:p, code:'', fkey:''} : null;
+}
+/** ★★★ 記録が持っている取引先を【FXの6桁コード】にして返す（2026-09-23）
+
+    **顧問先が入力のときに選んだ取引先を、そのまま伝票へ追認する。**
+    事務所は写真と伝票を見て仕訳を当てるだけで、その1件が
+    ほんとうに辰之助への回収だったかまでは確かめられない。
+    だから **初期に入力されている情報を追認して進む** ── それが決まりごと。
+
+    コードは アプリ `20-021` → FX `020021`（数字だけにして6桁へ左0詰め）。
+    **サーバ（Code.js の jRecParty_）と同じ作り方。片方だけ直さない。** */
+function jRecParty(x){
+  var p=jPartyOf(x); if(!p) return null;
+  var code=String(p.code||'').replace(/[^0-9]/g,'');
+  if(code) while(code.length < JRN_CODE_DIGITS) code='0'+code;
+  return {code:code, name:String(p.name||'')};
 }
 function jPartyHtml(x, cls){
   var p=jPartyOf(x); if(!p) return '';
@@ -6435,9 +6518,9 @@ function jKindLabel(x){
 function jEffOf(x, e){
   e=e||{};
   var d0=(e.d && e.d!==JD_DIRECT) ? jdicOf(e.d) : null;
-  if(d0) return jEff(d0, e.ov);
+  if(d0) return jEff(d0, e.ov, x);
   if(e.d===JD_DIRECT || (e.ov && String(e.ov.acct||''))){
-    var dd=jEff(jDirectBase(x), e.ov);
+    var dd=jEff(jDirectBase(x), e.ov, x);
     return String(dd.acct||'') ? dd : null;
   }
   return null;
@@ -6459,6 +6542,10 @@ function jIssues(x, d){
   if(hasTax && !rate) out.push('課税区分が入っているのに税率が 0 です');
   if(!hasTax && rate) out.push('税率が入っているのに課税区分が「対象外」です');
   if(rate && rate!==8 && rate!==10) out.push('税率は 8% か 10% です');
+  /* ★ 取引先コードは【数字だけの6桁】。FX は形がちがうとその場で弾く（2026-09-23）。
+       空はよい（簡易課税なので取引先は必須ではない） */
+  if(String(d.party||'')!=='' && !/^\d{6}$/.test(String(d.party)))
+    out.push('取引先コードは数字6桁です（アプリの 20-021 なら 020021）');
   if(!(Math.round(Number(x.amount)||0)>0)) out.push('金額が 0 です');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(x.date||''))) out.push('日付の形がちがいます');
   return out;
@@ -6815,7 +6902,7 @@ function jBind(el,m){
       /* ★ 伝票直接入力 … 辞書を選んでいなくても、科目が入っていれば確定できる */
       if(!d && S.jDirect){
         if(!(e.ov && String(e.ov.acct||''))){ toast('科目を入れてください'); return; }
-        d=jEff(jDirectBase(x), e.ov);
+        d=jEff(jDirectBase(x), e.ov, x);
       }
       if(!d){ toast('辞書を選んでください'); return; }
       jApply(m, x, d, el);
@@ -7119,27 +7206,8 @@ function viewCash(el){
        ‹ › で1月ずつ送るしかなかったので、半年前を見るのに6回押していた。
        ‹ › も残す（1つ前・1つ後はボタンのほうが速い）。 */
   var monthHtml = (function(){
-    /* 出す範囲 … 今の期の頭（2月）から、今月の翌月まで。
-       ★ DB.cash はその月を開いたときに読み込むので、中身から作ってはいけない
-         （まだ開いていない月が出なくなる）。期の頭からの並びで作る。 */
-    var seen = {}, now = new Date();
-    var st = new Date(fyOf(now), FY_START_MONTH-1, 1);
-    var en = new Date(now.getFullYear(), now.getMonth()+1, 1);
-    if(m < st) st = new Date(m.getFullYear(), m.getMonth(), 1);
-    if(m > en) en = new Date(m.getFullYear(), m.getMonth(), 1);
-    for(var d=new Date(st); d<=en; d.setMonth(d.getMonth()+1)) seen[ym(d)] = 1;
-    /* すでに読み込んである月（前の期の分など）も足す */
-    ['cash','carry','count','sale'].forEach(function(bag){
-      Object.keys(DB[bag]||{}).forEach(function(k){
-        var t = String(k).split(':')[1] || '';
-        if(/^\d{4}-\d{2}$/.test(t)) seen[t] = 1;
-      });
-    });
-    seen[ym(m)] = 1;                              /* いま見ている月は必ず出す */
-    var opts = Object.keys(seen).sort().reverse().map(function(t){
-      return '<option value="'+t+'"'+(t===ym(m)?' selected':'')+'>'+
-        jpYear(+t.slice(0,4))+' '+(+t.slice(5,7))+'月 の小口現金</option>';
-    }).join('');
+    /* ★ 作り方は monthOpts_（注文入力と共用）。片方だけ直さない */
+    var opts = monthOpts_(m, ['cash','carry','count','sale'], ' の小口現金');
     return '<div class="row" style="justify-content:space-between;margin-bottom:10px;gap:8px">'+
       '<button class="btn ghost tap" id="mp">‹</button>'+
       '<div style="flex:1;min-width:0;text-align:center">'+
@@ -9897,7 +9965,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-23i 店名が数字の店（109・445）の綴りちがいで落ちていた3月の回収 14,452円 を入れる';
+var APP_BUILD='2026-09-24a 注文入力にも月のプルダウン／仕訳伝票化は顧問先が選んだ取引先をそのまま追認する';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
