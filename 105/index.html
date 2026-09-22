@@ -773,6 +773,21 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
 /* ★ 一括読み込みエクセルの枠は、タブのいちばん下にいつも置く */
 .jmk{margin-top:18px;border:2px solid var(--line);border-radius:14px}
 .jmk .jgo2{width:100%;font-size:18px;padding:14px 10px}
+/* ★★★ 顧問先が選んだ【取引の種類】と【取引先】を出す（2026-09-23）。
+     写真の無い1件（店売り・売掛の回収）は、これしか手がかりが無い */
+.jrow2{display:flex;align-items:baseline;gap:8px;margin:6px 0;min-width:0;flex-wrap:wrap}
+.jl{flex:0 0 auto;font-size:11.5px;font-weight:800;color:#1f7a6a;
+  background:#EAF4F1;border-radius:5px;padding:2px 6px}
+.jkind{font-size:17px;font-weight:800;color:var(--ink);min-width:0;word-break:break-word}
+.jparty{display:inline-flex;align-items:baseline;gap:6px;min-width:0;flex-wrap:wrap}
+.jparty b{font-size:17px;font-weight:800;color:var(--ai);word-break:break-word}
+.jpc{font-size:12px;font-weight:700;color:#777;font-variant-numeric:tabular-nums}
+.jpf{font-size:12px;color:#777;background:#F2EFE7;border-radius:5px;padding:1px 6px}
+.jmemo{font-size:14px;color:#555;min-width:0;word-break:break-word}
+/* 一覧の行 … 2段めに 取引の種類／取引先／摘要 */
+.jrh2{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin:0 0 8px}
+.jrh2 .jkind{font-size:16px}
+.jrh2 .jparty b{font-size:16px}
 /* ★★★ 仕訳伝票化の下層タブ（2026-09-22）… 辞書を当てる ／ 仕訳伝票一覧 */
 .jseg{margin:0 0 14px}
 /* ★★★ 仕訳伝票一覧 … 伝票の形で下にずらっと並べて最終確認する */
@@ -5025,7 +5040,13 @@ function denomLabel(d){
   if(d>=1000)  return (d/1000)+'千円';
   return d+'円';
 }
+/** ★ 古い記録が持っている型のよび名を、いまの型に読み替える（2026-09-23）。
+    取り込み（`seedCashSale` ほか）が `kind:'sale'` で入れていたので、
+    そのままでは型が引けず、仕訳の画面に「取引の種類」が出なかった。
+    **Code.js の `cashKindOf_` にも同じ読み替えを置く。片方だけ直さない。** */
+var CASH_KIND_ALIAS={ sale:'uri' };
 function cashKindOf(k){
+  k=String(k||''); if(CASH_KIND_ALIAS[k]) k=CASH_KIND_ALIAS[k];
   for(var i=0;i<CASH_KINDS.length;i++) if(CASH_KINDS[i].k===k) return CASH_KINDS[i];
   return null;
 }
@@ -6138,8 +6159,17 @@ function viewJournal(el, m){
         '<div class="jamt">'+yen(x.amount)+'</div>'+
         '<div class="jdir '+(x.dir==='in'?'in':'out')+'">'+(x.dir==='in'?'入金':'出金')+'</div>'+
       '</div>'+
-      '<div class="jmemo">'+esc(x.memo||'（内容なし）')+
-        (kd?'<span class="pill tag-std">'+esc(kd.label)+'</span>':'')+'</div>'+
+      /* ★★★ 顧問先が選んだ【取引の種類】と【取引先】を必ず出す（2026-09-23）。
+           取引の種類 ＝ 摘要 ＝ 仕訳辞書の名前 で1本につながっているので、
+           顧問先が何を選んだかが見えないと、こちらも仕訳辞書を選べない。
+           **写真の無い1件（店売り・売掛の回収）は、これしか手がかりが無い。** */
+      '<div class="jrow2"><span class="jl">取引の種類</span>'+
+        '<b class="jkind">'+esc(jKindLabel(x))+'</b></div>'+
+      (jPartyOf(x)
+        ? '<div class="jrow2"><span class="jl">取引先</span>'+jPartyHtml(x)+'</div>' : '')+
+      (String(x.memo||'')!==String(kd?kd.label:'')
+        ? '<div class="jrow2"><span class="jl">摘要</span>'+
+          '<span class="jmemo">'+esc(x.memo||'（内容なし）')+'</span></div>' : '')+
       shot+
       /* ★ 「写真の日付と金額も確かめて」の注意書きは出さない（2026-09-22）。
            写真と伝票が並んでいるので、見れば分かる */
@@ -6364,6 +6394,39 @@ function jDenpyoHtml(x, d, opt){
   '</div>';
 }
 
+/** ★★★ その1件の【取引先】（2026-09-23）
+
+    **写真の無い1件（店売り・売掛の現金回収）は、取引先が出ていないと
+    「どの取引か」が分からず、仕訳辞書を選べない。**
+    現金売上は `sale`、売掛の現金回収は `arPay`、
+    どちらでもないものは `party`（打ってあれば）から取る。 */
+function jPartyOf(x){
+  var sl=x&&x.sale, ap=x&&x.arPay;
+  if(ap && (ap.name||ap.code))
+    return {name:String(ap.name||''), code:String(ap.code||''),
+            fkey:String(ap['for']||'')};
+  if(sl && (sl.name||sl.code))
+    return {name:String(sl.name||''), code:String(sl.code||''), fkey:''};
+  var p=String((x&&x.party)||'');
+  return p ? {name:p, code:'', fkey:''} : null;
+}
+function jPartyHtml(x, cls){
+  var p=jPartyOf(x); if(!p) return '';
+  var f = p.fkey && (typeof forLabel==='function')
+    ? (function(){ try{ return forLabel(null,p.fkey); }catch(e){ return ''; } })() : '';
+  return '<span class="'+(cls||'jparty')+'">'+
+    (p.code?'<span class="jpc">'+esc(fmtCode(p.code))+'</span>':'')+
+    '<b>'+esc(p.name||'（取引先なし）')+'</b>'+
+    (f?'<span class="jpf">'+esc(f)+'</span>':'')+
+  '</span>';
+}
+/** 顧問先が選んだ【取引の種類】の名前。型が引けないときは摘要で代える */
+function jKindLabel(x){
+  var kd=cashKindOf((x&&x.kind)||'');
+  if(kd) return kd.label;
+  return String((x&&x.memo)||'') || '（取引の種類が入っていません）';
+}
+
 /** ★★★ その1件に、いま効いている仕訳（辞書 ＋ その1件だけの直し ov）。
     **サーバ（cashJournalSource_）と同じ決め方。片方だけ直さない。**
     ・辞書を当てていれば、それに ov を重ねたもの
@@ -6492,6 +6555,14 @@ function jListHtml(m){
         '<label class="jrok"><input type="checkbox" data-jrok="'+esc(x.id)+'"'+
           (e.ok?' checked':'')+'>確定</label>'+
         '<button class="btn ghost tap sm" data-jfix="'+esc(x.id)+'">出納帳を直す</button>'+
+      '</div>'+
+      /* ★★★ 顧問先が選んだ【取引の種類】と【取引先】（2026-09-23）。
+           1件ずつ確かめるところなので、ここに無いと何の取引か分からない */
+      '<div class="jrh2">'+
+        '<span class="jl">取引の種類</span><b class="jkind">'+esc(jKindLabel(x))+'</b>'+
+        (jPartyOf(x)?'<span class="jl">取引先</span>'+jPartyHtml(x):'')+
+        (String(x.memo||'')!==String(jKindLabel(x))
+          ? '<span class="jl">摘要</span><span class="jmemo">'+esc(x.memo||'')+'</span>' : '')+
       '</div>'+
       (open&&urls.length
         ? '<div class="jshots jrsh">'+urls.map(function(u,i3){
@@ -9826,7 +9897,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-23c Pages の画面が【自分が古いこと】に気づくようにする（version.txt）';
+var APP_BUILD='2026-09-23d 仕訳伝票化に【取引の種類】と【取引先】を出す（どの店の売上・回収かが分かる）';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
