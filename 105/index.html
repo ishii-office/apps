@@ -906,6 +906,9 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
 /* ★ 一括読み込みエクセルの枠は、タブのいちばん下にいつも置く */
 .jmk{margin-top:18px;border:2px solid var(--line);border-radius:14px}
 .jmk .jgo2{width:100%;font-size:18px;padding:14px 10px}
+/* ★ 画面の見込みと、できた行数が合わなかったとき（反映が止まっている） */
+#jmakeout .ng{color:var(--pink);font-weight:800;font-size:15px}
+#jmakeout b{color:var(--ink)}
 /* ★★★ 顧問先が選んだ【取引の種類】と【取引先】を出す（2026-09-23）。
      写真の無い1件（店売り・売掛の回収）は、これしか手がかりが無い */
 .jrow2{display:flex;align-items:baseline;gap:8px;margin:6px 0;min-width:0;flex-wrap:wrap}
@@ -6778,14 +6781,31 @@ function jdBind(el, m){
   el.querySelectorAll('[data-jkind]').forEach(function(b){ b.onclick=function(){
     if(!b.dataset.jkind) return;
     S.kindSel=b.dataset.jkind; S.cashPane='kinds'; render(); }; });
-  /* ★ 一括読み込みエクセルを作る（タブのいちばん下にいつも置いてある枠） */
+  /* ★ 一括読み込みエクセルを作る（タブのいちばん下にいつも置いてある枠）
+
+     ★★★ 画面の見込みと、できた行数が合わなければ【止めて知らせる】（2026-09-24）
+       エクセルを作るのは **サーバ（Code.js）** で、伝票を組み立てているのも
+       サーバ側の `cashJournalSource_`。**画面だけが新しくてサーバが古いと、
+       ✓ を押したのに 0 行のエクセルができる**（本番への反映が止まっているとき）。
+       黙って「作れませんでした」とだけ出すと、原因が分からないまま
+       何度も押すことになるので、**画面の見込み（jdExcel）と突き合わせて言う**。 */
   var mk=el.querySelector('#jmake');
   if(mk) mk.onclick=function(){
-    var o=el.querySelector('#jmakeout');
+    var o=el.querySelector('#jmakeout'), want=jdExcel(m).n;
     mk.disabled=true; if(o) o.textContent='作っています…';
+    var stale=function(got, why){
+      return '<b class="ng">まだ本番に反映されていません。</b><br>'+
+        'この画面では <b>'+want+' 行</b> 入るはずですが、サーバは <b>'+got+' 行</b> と'+
+        '言っています。<br>デプロイ係で「本番に反映する」を押してから、もう一度どうぞ。'+
+        (why?'<br><span class="muted">（サーバの返事：'+esc(why)+'）</span>':''); };
     srv('makeCashJournalFile',[ym(m)]).then(function(r){
       mk.disabled=false;
-      if(!r||!r.ok){ if(o) o.textContent=(r&&r.msg)||'作れませんでした'; return; }
+      if(!r||!r.ok){
+        if(o){ if(want) o.innerHTML=stale(0,(r&&r.msg)||'');
+               else o.textContent=(r&&r.msg)||'作れませんでした'; }
+        return;
+      }
+      if(want && r.count<want){ if(o) o.innerHTML=stale(r.count,''); toast('行数が合いません'); return; }
       if(o) o.innerHTML='<b>'+r.count+'件・'+yen(r.total)+'</b> を '+r.files+'本 に分けて置きました。<br>'+
         'Google ドライブ ＞ 顧問先アプリ ＞ 105_(有)丸京 ＞ '+esc(r.folder)+
         (r.skip?'<br>（とばした '+r.skip+'件 は入っていません）':'');
@@ -10628,7 +10648,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-24g 伝票チェック … 写真の下に伝票（スマホでも横スクロールなし）／年月日から Enter で確定まで';
+var APP_BUILD='2026-09-24h 伝票チェック … 写真の下に伝票／年月日から Enter で確定／反映が止まっていたら はっきり言う';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
