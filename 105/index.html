@@ -547,6 +547,68 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .kgrp.out{border-color:var(--pink)}
 .kgrp.x  {border-color:var(--gold)}
 .kgt{font-size:15px;font-weight:800;letter-spacing:1px;color:#fff;padding:8px 12px}
+/* ★★★ 取引の種類をつくる（2026-09-24） */
+.mkkind{display:block;width:100%;margin:16px 0 0;border:2px dashed var(--gold);
+  background:#FFFBF0;color:#7a5c19;border-radius:11px;font-family:inherit;
+  font-size:14px;font-weight:800;padding:11px;cursor:pointer}
+.kbback{margin:0 0 12px}
+.kbwrap{display:grid;grid-template-columns:330px minmax(0,1fr);gap:14px;align-items:start}
+@media(max-width:1000px){ .kbwrap{grid-template-columns:1fr} }
+.kbcard{border:1.5px solid var(--line);border-radius:12px;background:#fff;padding:11px 12px}
+.kbcard h3{margin:0 0 8px;font-size:15px}
+.kbed h2{margin:0 0 3px;font-size:20px}
+.kbsub{font-size:12.5px;color:#888;margin:0 0 12px}
+.kbg{margin-bottom:12px}
+.kbgh{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:#1f7a6a;
+  background:#EAF4F1;border-radius:6px;padding:3px 8px;margin:0 0 5px}
+.kbgh .n{margin-left:auto;font-weight:700;color:#7aa79b}
+.kbi{display:flex;align-items:center;gap:6px;width:100%;text-align:left;margin:0 0 3px;
+  border:1.5px solid var(--line);border-radius:8px;background:#fff;padding:5px 8px;
+  cursor:pointer;font-family:inherit;font-size:14px;color:var(--ink);line-height:1.3}
+.kbi.on{border-color:var(--green);border-width:2.5px;background:#F1F8F3;padding:4px 7px}
+.kbi b{flex:1 1 auto;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kbp{flex:0 0 auto;font-size:10.5px;font-weight:800;border-radius:999px;padding:1px 6px}
+.kbp.in{background:var(--iceBg);color:var(--ice)}
+.kbp.out{background:#FBEEF2;color:var(--pink)}
+.kbp.multi{background:#EFE7F6;color:var(--purple)}
+.kbp.ng{background:#FBE9EE;color:var(--pink)}
+.kbnew{width:100%;border:2px dashed var(--gold);background:#FFFBF0;color:#7a5c19;
+  border-radius:10px;font-family:inherit;font-size:14px;font-weight:800;padding:9px;
+  cursor:pointer;margin-top:6px}
+.kbset{border:1.5px solid var(--line);border-radius:10px;padding:10px 11px;margin-bottom:11px}
+.kbset>h4{margin:0 0 7px;font-size:13.5px;color:#1f7a6a}
+.kbset>h4 em{font-style:normal;font-weight:600;color:#999;font-size:12px;margin-left:6px}
+.kbrow{display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end}
+.kbf{display:flex;flex-direction:column;gap:3px}
+.kbf>span{font-size:11.5px;font-weight:800;color:#8a8577}
+.kbf input,.kbf select{border:1.5px solid var(--line);border-radius:8px;background:#fff;
+  font-family:inherit;font-size:14px;padding:6px 8px;color:var(--ink)}
+.kbf.wide{flex:1 1 220px}.kbf.wide input{width:100%}
+.kbadd{margin-top:9px}
+.kbhint{font-size:12.5px;color:#888;margin:7px 0 0}
+/* 伝票の中に挟む「金額の横に出す文字」の帯（組の頭） */
+.dptbl tr.rlbl td{background:#FFFBF0;border-top:2.5px solid #1f7a6a;padding:5px 7px;
+  white-space:normal}
+.dptbl tr.rlbl .no{display:inline-block;font-size:12px;font-weight:800;color:#fff;
+  background:#1f7a6a;border-radius:999px;padding:1px 9px;margin-right:8px}
+.dptbl tr.rlbl .lb{font-size:11.5px;font-weight:800;color:#8a8577;margin-right:7px}
+.dptbl tr.rlbl .lbin{width:250px;max-width:46%;border:1.5px solid var(--gold);border-radius:7px;
+  background:#fff;font-family:inherit;font-size:13.5px;font-weight:700;padding:4px 8px;color:var(--ink)}
+.dptbl tr.rlbl .kbdel{float:right;border:1px solid var(--line);background:#fff;border-radius:7px;
+  font-family:inherit;font-size:12px;padding:3px 9px;cursor:pointer;color:#999}
+.dptbl tr.r1.sep td{border-top:1px solid #BFD8D2}
+.dptbl td.fill{background:#F2EFE7;color:#9a948a;text-align:center;font-size:11px}
+.kbpv{border:1.5px solid var(--line);border-radius:10px;background:#FBFAF6;padding:10px 11px;
+  max-width:460px}
+.kbpvr{display:flex;align-items:center;gap:10px;padding:4px 0;border-bottom:1px dashed #DCE8E4}
+.kbpvr b{flex:0 0 150px;text-align:right;font-size:15px}
+.kbpvr span{flex:1 1 auto;border:1.5px solid var(--line);border-radius:8px;background:#fff;
+  padding:6px 9px;font-size:17px;font-weight:700;color:#bbb}
+.kbpvr.tot span{border:none;background:none;text-align:right;color:var(--ink)}
+.kbpvn{font-size:12.5px;color:#888;margin-top:7px}
+/* ★★ 群の見出し（2026-09-24）。色の帯にはしない ── 入金／出金の色は枠が持っている。
+     **小さく静かに。**押すものではないので、辞書のボタンより目立たせない */
+.kgt2{font-size:12px;font-weight:800;color:#8a8577;padding:6px 10px 0}
 .kgt.in{background:var(--ice)} .kgt.out{background:var(--pink)} .kgt.x{background:var(--gold)}
 /* ★ スマホでは2列。1列に並べると22個ぶん転がすことになる。
      ★★ 3列は採らない（2026-09-22 にモックで実測して決めた）。字を15pxのまま
@@ -598,6 +660,16 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 /* ★ 金額と精算日は【スマホでも1行】（2026-09-21）
      折り返すと、いちばんよく打つ2つが縦に離れて転がすことになる。
      だから flex-wrap を止めて、幅は割合でつめる。 */
+/* ★★★ 複数仕訳の金額の欄（2026-09-24）。横に「何を入れるか」が出る */
+.cmulti{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.cmrow{display:flex;align-items:center;gap:10px}
+.cmrow b{flex:0 0 150px;text-align:right;font-size:16px;font-weight:700;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmrow .cmin{flex:1 1 auto;min-width:0}
+.cmtot{display:flex;justify-content:space-between;align-items:baseline;
+  border-top:2px solid var(--line);padding-top:7px;font-size:16px;font-weight:800}
+.cmtot b{font-size:21px}
+@media(max-width:560px){ .cmrow b{flex:0 0 104px;font-size:14px} }
 .amtday{flex-wrap:nowrap}
 .amtday .amtcell{flex:0 0 auto;width:200px}
 .amtday .daycell{flex:1 1 auto;min-width:180px}
@@ -2126,6 +2198,7 @@ var DB = {
   buy:     {},            /* 'buy:YYYY-MM'　鳥居冷蔵の氷・Tao の配送料（毎月の請求書から） */
   sale:    {},            /* 'cashsale:2026-08' -> [{id,date,cid,code,name,items,total}] */
   jdic:    null,          /* 'jdic:master'      -> [仕訳辞書] */
+  kinds:   null,          /* 'kinds:master'     -> [取引の種類（事務所が直したぶん）] */
   jmap:    {},            /* 'jmap:2026-09'     -> {小口現金の記録id:{d:辞書id,note,skip}} */
   kgReady: false,         /* 'migrate:kgunit'   -> '1' なら kg 単位への切り替え済み */
   ready:false
@@ -2394,6 +2467,8 @@ var OP_SHAPE=[
   [/^buy:/,                 'map1'],
   /* 仕訳辞書（2026-09-21）… 辞書は一覧、当てたぶんは 記録ID→辞書 の表 */
   [/^jdic:master$/,         'list'],
+  /* 取引の種類（2026-09-24）… 事務所が画面から直したぶん。CASH_KINDS の上に重なる */
+  [/^kinds:master$/,        'list'],
   [/^jmap:/,                'map1']
 ];
 function opShapeOf(k){
@@ -4985,79 +5060,79 @@ var CASH_KINDS=[
        仕訳辞書の名前にもなる。別々の言葉にしない（`label` と `memo` は必ず同じ）。
      ★ 消した型は `gone:1` を立てて【残す】。消すと、前に入れた記録の名前が引けなくなる */
   /* ---- 入る ---- */
-  {k:'ar',   g:'in',  dir:'in',  label:'売掛の現金回収', memo:'売掛の現金回収',
+  {k:'ar', grp:'often',   g:'in',  dir:'in',  label:'売掛の現金回収', memo:'売掛の現金回収',
    acct:'売掛金', fx:'', arc:true},
-  {k:'uri',  g:'in',  dir:'in',  label:'店売り（現金売上）', memo:'店売り（現金売上）', was:'店売り',
+  {k:'uri', grp:'often',  g:'in',  dir:'in',  label:'店売り（現金売上）', memo:'店売り（現金売上）', was:'店売り',
    acct:'売上高（現金売上）', fx:'', sale:true},
-  {k:'bkout2',g:'in', dir:'in',  label:'京信（普通）より引出し', memo:'京信（普通）より引出し',
+  {k:'bkout2', grp:'often',g:'in', dir:'in',  label:'京信（普通）より引出し', memo:'京信（普通）より引出し',
    acct:'普通預金（京信 河原町支店 3069484）',
    fx:'1113', fxName:'普通預金', sub:'01', subName:'京信 河原町支店 3069484', tax:'0'},
-  {k:'bkout',g:'in',  dir:'in',  label:'京信（当座）より引出し', memo:'京信（当座）より引出し',
+  {k:'bkout', grp:'often',g:'in',  dir:'in',  label:'京信（当座）より引出し', memo:'京信（当座）より引出し',
    acct:'当座預金（京信 河原町支店 0002880）',
    fx:'1112', fxName:'当座預金', sub:'01', subName:'京信 河原町支店 0002880', tax:'0'},
-  {k:'shacho',g:'in', dir:'in',  label:'社長から入金', memo:'社長から入金',
+  {k:'shacho', grp:'rare',g:'in', dir:'in',  label:'社長から入金', memo:'社長から入金',
    acct:'役員借入金', fx:''},
-  {k:'kariuke', g:'x', dir:'in', label:'分からない', memo:'分からない', was:'仮受金',
+  {k:'kariuke', grp:'unknown', g:'x', dir:'in', label:'分からない', memo:'分からない', was:'仮受金',
    acct:'仮受金', fx:''},
   /* ---- 出る ---- */
-  {k:'bkin2',g:'out', dir:'out', label:'京信（普通）へ預入れ', memo:'京信（普通）へ預入れ', was:'現金より普通預金へ',
+  {k:'bkin2', grp:'often',g:'out', dir:'out', label:'京信（普通）へ預入れ', memo:'京信（普通）へ預入れ', was:'現金より普通預金へ',
    acct:'普通預金（京信 河原町支店 3069484）',
    fx:'1113', fxName:'普通預金', sub:'01', subName:'京信 河原町支店 3069484', tax:'0'},
-  {k:'bkin', g:'out', dir:'out', label:'京信（当座）へ預入れ', memo:'京信（当座）へ預入れ', was:'現金より当座へ',
+  {k:'bkin', grp:'often', g:'out', dir:'out', label:'京信（当座）へ預入れ', memo:'京信（当座）へ預入れ', was:'現金より当座へ',
    acct:'当座預金（京信 河原町支店 0002880）',
    fx:'1112', fxName:'当座預金', sub:'01', subName:'京信 河原町支店 0002880', tax:'0'},
-  {k:'fami', g:'out', dir:'out', label:'厚生費(飲み物、夜食)', memo:'厚生費(飲み物、夜食)', was:'厚生食事代',
+  {k:'fami', grp:'often', g:'out', dir:'out', label:'厚生費(飲み物、夜食)', memo:'厚生費(飲み物、夜食)', was:'厚生食事代',
    acct:'福利厚生費（軽減8%）',
    fx:'6226', fxName:'福利厚生費', tax:'5', rate:8, red:1},
-  {k:'gas',  g:'out', dir:'out', label:'バイク 燃料代', memo:'バイク 燃料代', was:'バイクガソリン代',
+  {k:'gas', grp:'often',  g:'out', dir:'out', label:'バイク 燃料代', memo:'バイク 燃料代', was:'バイクガソリン代',
    acct:'旅費交通費／燃料代',
    fx:'6112', fxName:'旅費交通費', sub:'02', subName:'燃料代', tax:'5', rate:10},
-  {k:'bike', g:'out', dir:'out', label:'バイク 修理・整備', memo:'バイク 修理・整備', was:'林モーター バイク修理',
+  {k:'bike', grp:'rare', g:'out', dir:'out', label:'バイク 修理・整備', memo:'バイク 修理・整備', was:'林モーター バイク修理',
    acct:'車両費', fx:''},
-  {k:'inoue',g:'out', dir:'out', label:'井上へ前渡し（給料の前借り）', memo:'井上へ前渡し（給料の前借り）', was:'井上 前渡し',
+  {k:'inoue', grp:'rare',g:'out', dir:'out', label:'井上へ前渡し（給料の前借り）', memo:'井上へ前渡し（給料の前借り）', was:'井上 前渡し',
    acct:'未払費用', fx:''},
-  {k:'kawara',g:'out',dir:'out', label:'河原へ給料', memo:'河原へ給料', was:'河原 給料',
+  {k:'kawara', grp:'rare',g:'out',dir:'out', label:'河原へ給料', memo:'河原へ給料', was:'河原 給料',
    acct:'給料手当', fx:''},
-  {k:'kyuryo',g:'out',dir:'out', label:'給料の支払い', memo:'給料の支払い', was:'給料',
+  {k:'kyuryo', grp:'rare',g:'out',dir:'out', label:'給料の支払い', memo:'給料の支払い', was:'給料',
    acct:'給料手当', fx:''},
-  {k:'tao',  g:'out', dir:'out', label:'氷 配送代', memo:'氷 配送代', was:'氷 配送料',
+  {k:'tao', grp:'often',  g:'out', dir:'out', label:'氷 配送代', memo:'氷 配送代', was:'氷 配送料',
    acct:'仕入高／Tao 運賃',
    fx:'5211', fxName:'仕入高', sub:'02', subName:'Tao 運賃', tax:'5', rate:10},
-  {k:'fukuro',g:'out', dir:'out', label:'遠興 袋代(手数料含)', memo:'遠興 袋代(手数料含)',
+  {k:'fukuro', grp:'rare',g:'out', dir:'out', label:'遠興 袋代(手数料含)', memo:'遠興 袋代(手数料含)',
    acct:'仕入高／袋代',
    /* ★ 5211-03 は袋代のために新しく作った補助（2026-09-21）。
         補助の名前は、新しい勘定科目一覧をもらったら合わせる */
    fx:'5211', fxName:'仕入高', sub:'03', subName:'袋代', tax:'5', rate:10},
-  {k:'shinbun',g:'out',dir:'out',label:'新聞代', memo:'新聞代', was:'新聞代 デイリースポーツ',
+  {k:'shinbun', grp:'often',g:'out',dir:'out',label:'新聞代', memo:'新聞代', was:'新聞代 デイリースポーツ',
    acct:'図書新聞費（軽減8%）',
    fx:'6118', fxName:'図書新聞費', sub:'01', subName:'図書新聞費', tax:'5', rate:8, red:1},
-  {k:'gomi', g:'out', dir:'out', label:'ゴミ処理代', memo:'ゴミ処理代', was:'ごみ処理代',
+  {k:'gomi', grp:'often', g:'out', dir:'out', label:'ゴミ処理代', memo:'ゴミ処理代', was:'ごみ処理代',
    acct:'衛生管理等諸費',
    fx:'6233', fxName:'衛生管理等諸費', tax:'5', rate:10},
-  {k:'hoken',g:'out', dir:'out', label:'バイク保険料', memo:'バイク保険料', was:'保険料',
+  {k:'hoken', grp:'rare',g:'out', dir:'out', label:'バイク保険料', memo:'バイク保険料', was:'保険料',
    acct:'保険料／バイク保険', fx:''},
-  {k:'hokent',g:'out',dir:'out', label:'トラック保険料', memo:'トラック保険料',
+  {k:'hokent', grp:'rare',g:'out',dir:'out', label:'トラック保険料', memo:'トラック保険料',
    acct:'保険料', fx:''},
-  {k:'kotsu',g:'out', dir:'out', label:'交通費', memo:'交通費',
+  {k:'kotsu', grp:'often',g:'out', dir:'out', label:'交通費', memo:'交通費',
    acct:'旅費交通費／有料交通費',
    fx:'6112', fxName:'旅費交通費', sub:'01', subName:'有料交通費', tax:'5', rate:10},
-  {k:'settai',g:'out',dir:'out', label:'接待交際', memo:'接待交際', was:'交際費',
+  {k:'settai', grp:'often',g:'out',dir:'out', label:'接待交際', memo:'接待交際', was:'交際費',
    acct:'接待交際費', fx:''},
-  {k:'kaigi', g:'out', dir:'out', label:'打ち合わせ食事代', memo:'打ち合わせ食事代',
+  {k:'kaigi', grp:'rare', g:'out', dir:'out', label:'打ち合わせ食事代', memo:'打ち合わせ食事代',
    acct:'会議費', fx:''},
-  {k:'shomo',g:'out', dir:'out', label:'消耗品', memo:'消耗品', was:'備品・消耗品費',
+  {k:'shomo', grp:'often',g:'out', dir:'out', label:'消耗品', memo:'消耗品', was:'備品・消耗品費',
    acct:'備品消耗品費',
    fx:'6225', fxName:'備品消耗品費', tax:'5', rate:10},
-  {k:'suido',g:'out', dir:'out', label:'水道代', memo:'水道代',
+  {k:'suido', grp:'rare',g:'out', dir:'out', label:'水道代', memo:'水道代',
    acct:'水道光熱費',
    fx:'6219', fxName:'水道光熱費', tax:'5', rate:10},
-  {k:'gasu', g:'out', dir:'out', label:'ガス代', memo:'ガス代',
+  {k:'gasu', grp:'rare', g:'out', dir:'out', label:'ガス代', memo:'ガス代',
    acct:'水道光熱費',
    fx:'6219', fxName:'水道光熱費', tax:'5', rate:10},
-  {k:'denki',g:'out', dir:'out', label:'電気代', memo:'電気代',
+  {k:'denki', grp:'rare',g:'out', dir:'out', label:'電気代', memo:'電気代',
    acct:'水道光熱費',
    fx:'6219', fxName:'水道光熱費', tax:'5', rate:10},
-  {k:'karibarai',g:'x',dir:'out',label:'分からない', memo:'分からない', was:'仮払金',
+  {k:'karibarai', grp:'unknown',g:'x',dir:'out',label:'分からない', memo:'分からない', was:'仮払金',
    acct:'仮払金', fx:''},
   /* ---- ★★ 現金過不足（2026-09-22）----------------------------------
        現金実査で［現金過不足で合わせる］を押したときに、アプリが自分で立てる型。
@@ -5066,23 +5141,23 @@ var CASH_KINDS=[
        事務所は仕訳を起こさないといけないので仕訳辞書には要る。
        ★ FXに「現金過不足」という【科目】は無い。
          足りない ＝ 7519 雑損失 ／ 余った ＝ 7118 雑収入 の、どちらも補助01「現金過不足」 */
-  {k:'kabuf',g:'out',dir:'out',label:'現金過不足（不足）', memo:'現金過不足（不足）', auto:1,
+  {k:'kabuf', grp:'unknown',g:'out',dir:'out',label:'現金過不足（不足）', memo:'現金過不足（不足）', auto:1,
    acct:'雑損失／現金過不足',
    fx:'7519', fxName:'雑損失', sub:'01', subName:'現金過不足', tax:'0'},
-  {k:'kabuy',g:'in', dir:'in', label:'現金過不足（余り）', memo:'現金過不足（余り）', auto:1,
+  {k:'kabuy', grp:'unknown',g:'in', dir:'in', label:'現金過不足（余り）', memo:'現金過不足（余り）', auto:1,
    acct:'雑収入／現金過不足',
    fx:'7118', fxName:'雑収入', sub:'01', subName:'現金過不足', tax:'0'},
   /* ---- 消した型（2026-09-21）。前に入れた記録の名前を引くためだけに残す。
          `gone:1` があるものは辞書にも仕訳辞書にも出さない ---- */
-  {k:'yashoku',g:'out',dir:'out',label:'夜食を買った', memo:'厚生食事代', gone:1,
+  {k:'yashoku', grp:'rare',g:'out',dir:'out',label:'夜食を買った', memo:'厚生食事代', gone:1,
    acct:'福利厚生費（軽減8%）',
    fx:'6226', fxName:'福利厚生費', tax:'5', rate:8, red:1},
-  {k:'zei',  g:'out', dir:'out', label:'税金（住民税など）', memo:'住民税', gone:1,
+  {k:'zei', grp:'rare',  g:'out', dir:'out', label:'税金（住民税など）', memo:'住民税', gone:1,
    acct:'預り金', fx:''},
-  {k:'kounetsu',g:'out',dir:'out',label:'水道・ガス・電気', memo:'水道光熱費', gone:1,
+  {k:'kounetsu', grp:'rare',g:'out',dir:'out',label:'水道・ガス・電気', memo:'水道光熱費', gone:1,
    acct:'水道光熱費',
    fx:'6219', fxName:'水道光熱費', tax:'5', rate:10},
-  {k:'tesuryo',g:'out',dir:'out',label:'顧問料・手数料', memo:'税理士報酬', gone:1,
+  {k:'tesuryo', grp:'rare',g:'out',dir:'out',label:'顧問料・手数料', memo:'税理士報酬', gone:1,
    acct:'支払手数料／その他',
    fx:'6117', fxName:'支払手数料', sub:'99', subName:'その他', tax:'5', rate:10}
 ];
@@ -5100,9 +5175,66 @@ function denomLabel(d){
 var CASH_KIND_ALIAS={ sale:'uri' };
 function cashKindOf(k){
   k=String(k||''); if(CASH_KIND_ALIAS[k]) k=CASH_KIND_ALIAS[k];
-  for(var i=0;i<CASH_KINDS.length;i++) if(CASH_KINDS[i].k===k) return CASH_KINDS[i];
+  var L=cashKinds();
+  for(var i=0;i<L.length;i++) if(L[i].k===k) return L[i];
   return null;
 }
+
+/** ★★★ 取引の種類の【群】（2026-09-24・お重さん）
+    いつもの取引 ／ たまにある取引 ／ 分からないとき。
+    辞書はこの順に出す。群の中の並びは `CASH_KINDS` の行の順のまま。 */
+var KIND_GRP=[{k:'often',label:'いつもの取引'},
+              {k:'rare', label:'たまにある取引'},
+              {k:'unknown',label:'分からないとき'}];
+
+/** ★★★ 取引の種類 ＝ 仕訳のルール（2026-09-24・お重さん）
+
+    **「仕訳の種類名」という言葉は無くした。あるのは取引の種類だけ。**
+    顧問先が取引の種類を選んだことが、そのままその取引の意思表示であり、
+    どんな伝票になるかのルールでもある。だから辞書を当てるワンクッションは要らない。
+
+    ルールは **`rows`（伝票の行）**。1行 ＝ 伝票の1行 ＝ 顧問先の金額欄ひとつ。
+    **相手はいつも 1111 現金（補助01 小口現金）** なので、持つのは現金でないほうの面だけ。
+
+      {lbl, acct, acctName, sub, subName, tax, rate, red, party, partyName, memo}
+
+    `rows` が無い型は、**いままでの平らな欄（fx / fxName / sub / tax / rate）から
+    1行ぶんを組み立てる**。だから既存の型は1行も書き替えなくてよい。
+
+    ★ 事務所が画面から直したぶんは KV `kinds:master` に入り、`k` で上に重なる。
+      **`CASH_KINDS` は種。`kinds:master` が正。** */
+function kindRows(k){
+  if(!k) return [];
+  if(k.rows && k.rows.length) return k.rows;
+  return [{lbl:'', acct:String(k.fx||''), acctName:String(k.fxName||''),
+           sub:String(k.sub||''), subName:String(k.subName||''),
+           tax:String(k.tax==null?'':k.tax), rate:Number(k.rate)||0,
+           red:k.red?1:0, party:'', partyName:'', memo:''}];
+}
+/** その型は複数仕訳か（顧問先の画面で金額の欄が増えるか） */
+function kindMulti(k){ return kindRows(k).length>1; }
+
+/** ★ いま効いている取引の種類の一覧。
+      `CASH_KINDS`（種）に KV `kinds:master`（事務所が直したぶん）を重ねる。
+      `k` が同じものは上書き、無い `k` は後ろに足す。 */
+var _kindsCache=null, _kindsSrc=null;
+function cashKinds(){
+  var ov=DB.kinds||[];
+  if(_kindsCache && _kindsSrc===ov) return _kindsCache;
+  var by={}, out=CASH_KINDS.map(function(x){ var o={}; for(var q in x) o[q]=x[q];
+    by[o.k]=o; return o; });
+  ov.forEach(function(v){
+    if(!v || !v.k) return;
+    var t=by[v.k];
+    if(!t){ t={k:String(v.k)}; by[t.k]=t; out.push(t); }
+    for(var q in v) if(q!=='k') t[q]=v[q];
+  });
+  _kindsSrc=ov; _kindsCache=out;
+  return out;
+}
+function kindsDirty(){ _kindsCache=null; }
+/** 事務所が直した取引の種類を残す（触ったところだけ送る） */
+function saveKinds(){ kindsDirty(); listSave('kinds:master', DB.kinds||[], 'k'); }
 
 var CASH_PH_OUT=['ガソリン','高速代','駐車場代','消耗品','事務用品','掃除用品',
   'お茶・お菓子','飲食代','切手・郵便','修理代','材料・仕入','新聞','電気代','水道代','電話代','会費',
@@ -5387,6 +5519,11 @@ function cashTyping(){
     var el2=document.getElementById(ids[i]);
     if(el2 && String(el2.value||'').replace(/[^0-9]/g,'')) return true;
   }
+  /* ★ 複数仕訳の金額の欄（2026-09-24）。ここを見ないと、
+       打ちかけの金額が描き直しで消える */
+  var ms=document.querySelectorAll('.cmin');
+  for(var j=0;j<ms.length;j++)
+    if(String(ms[j].value||'').replace(/[^0-9]/g,'')) return true;
   return false;
 }
 
@@ -6099,6 +6236,180 @@ function jShotRescue(el){
     /* もう読み終わって失敗しているぶんも拾う */
     if(img.complete && img.naturalWidth===0) img.onerror();
   });
+}
+
+/** ★★★ 取引の種類をつくる（2026-09-24・お重さん）
+
+    **仕訳のルール ＝ 伝票そのもの（金額と日付が空のもの）。**
+    顧問先が入れるのは 金額・日付・写真 だけ。取引先は選ばせない
+    （誰あてかは、この取引の種類のルールに書いてある）。
+
+    **伝票の行を足すと複数仕訳になり、顧問先の画面で金額の欄がその数だけ出る。**
+    横に出す文字（給料なら従業員の名前）も、行ごとにここで指示する。
+
+    ★ 複数仕訳でも【伝票は1枚】。緑の見出しの帯は1回だけ出し、
+      その下に組を続けて並べる（伝票を何枚も並べない）。 */
+function kindEff(k){
+  var L=cashKinds();
+  for(var i=0;i<L.length;i++) if(L[i].k===k) return L[i];
+  return null;
+}
+/** その取引の種類の「事務所が直したぶん」を取り出す（無ければ今の姿から作る） */
+function kindOv(k){
+  DB.kinds=DB.kinds||[];
+  for(var i=0;i<DB.kinds.length;i++) if(DB.kinds[i].k===k) return DB.kinds[i];
+  var e=kindEff(k)||{k:k};
+  var o={k:k, grp:e.grp||'often', dir:e.dir||'out', label:e.label||'',
+         rows:kindRows(e).map(function(r){ var q={}; for(var z in r) q[z]=r[z]; return q; })};
+  DB.kinds.push(o);
+  return o;
+}
+function kindTouch(){ kindsDirty(); saveKinds(); }
+
+function viewKinds(el){
+  var L=cashKinds().filter(function(x){ return !x.gone; });
+  if(!S.kindSel || !kindEff(S.kindSel)) S.kindSel=(L[0]||{}).k||'';
+  var d=kindEff(S.kindSel);
+
+  var listHtml='<div class="kbcard"><h3>取引の種類</h3>'+
+    KIND_GRP.map(function(g){
+      var ks=L.filter(function(x){ return (x.grp||'often')===g.k; });
+      if(!ks.length) return '';
+      return '<div class="kbg"><div class="kbgh">'+esc(g.label)+
+        '<span class="n">'+ks.length+'</span></div>'+
+        ks.map(function(x){
+          var rs=kindRows(x), bad=rs.some(function(r){ return !/^\d{4}$/.test(String(r.acct||''))||!String(r.acctName||''); });
+          return '<button class="kbi'+(S.kindSel===x.k?' on':'')+' tap" data-kbsel="'+esc(x.k)+'">'+
+            '<span class="kbp '+x.dir+'">'+(x.dir==='in'?'入':'出')+'</span>'+
+            '<b>'+esc(x.label)+'</b>'+
+            (rs.length>1?'<span class="kbp multi">'+rs.length+'行</span>':'')+
+            (bad?'<span class="kbp ng">科目まだ</span>':'')+'</button>';
+        }).join('')+'</div>';
+    }).join('')+
+    '<button class="kbnew tap" id="kbnew">＋ あたらしく作る</button></div>';
+
+  var edHtml='';
+  if(d){
+    var rows=kindRows(d), multi=rows.length>1;
+    var inp=function(i,key,val,cls){
+      return '<input class="dpin '+(cls||'')+'" data-kr="'+i+'" data-kk="'+key+'" value="'+
+        esc(val==null?'':String(val))+'">'; };
+    var body=rows.map(function(r,i){
+      var taxable=(String(r.tax)!=='0'&&String(r.tax)!==''&&Number(r.rate)>0);
+      var head = multi
+        ? '<tr class="rlbl"><td colspan="11"><span class="no">'+(i+1)+'</span>'+
+            '<span class="lb">金額の横に出す文字</span>'+
+            '<input class="lbin" data-kr="'+i+'" data-kk="lbl" value="'+esc(r.lbl||'')+'">'+
+            '<button class="kbdel tap" data-kbdel="'+i+'">この行を消す</button></td></tr>'
+        : '';
+      var cashCell=function(w){ return d.dir==='in'
+        ? (w==='acct'?'1111':w==='sub'?'01':w==='acctName'?'現金':'小口現金')
+        : (w==='acct'?'1111':w==='sub'?'01':w==='acctName'?'現金':'小口現金'); };
+      var sideC=function(w,cls){ return inp(i,w,r[w],cls); };
+      var isIn=(d.dir==='in');
+      return head+
+      '<tr class="r1'+(i?' sep':'')+'"><td class="fill">顧問先が入れる</td><td></td>'+
+        '<td class="c">'+(isIn?cashCell('acct'):sideC('acct','c'))+'</td>'+
+        '<td class="c">'+(isIn?cashCell('sub'):sideC('sub','c'))+'</td>'+
+        '<td class="c">'+(isIn?sideC('acct','c'):cashCell('acct'))+'</td>'+
+        '<td class="c">'+(isIn?sideC('sub','c'):cashCell('sub'))+'</td>'+
+        '<td class="fill">顧問先が入れる</td>'+
+        '<td class="c">'+inp(i,'rate',Number(r.rate)||0,'c')+
+          '<span class="dprt">'+(taxable?('判定('+(Number(r.rate)===8?'軽':'標')+')'):'—')+'</span></td>'+
+        '<td></td><td class="fill">（日付）</td><td></td></tr>'+
+      '<tr class="r2"><td class="c">'+esc(CASH_JOURNAL_C.slipNo)+'</td>'+
+        '<td class="c">'+inp(i,'tax',r.tax,'c')+'</td>'+
+        '<td colspan="2">'+(isIn?cashCell('acctName'):sideC('acctName'))+'</td>'+
+        '<td colspan="2">'+(isIn?sideC('acctName'):cashCell('acctName'))+'</td>'+
+        '<td class="fill">自動</td>'+
+        '<td colspan="4"><span class="dpparty">'+inp(i,'party',r.party,'c pcode')+
+          inp(i,'partyName',r.partyName)+'</span></td></tr>'+
+      '<tr class="r3"><td class="c">'+esc(CASH_JOURNAL_C.voucherNo)+'</td><td class="c"></td>'+
+        '<td colspan="2">'+(isIn?cashCell('subName'):sideC('subName'))+'</td>'+
+        '<td colspan="2">'+(isIn?sideC('subName'):cashCell('subName'))+'</td>'+
+        '<td class="fill">自動</td>'+
+        '<td colspan="4"><input class="dpin" data-kr="'+i+'" data-kk="memo" '+
+          'placeholder="'+esc(d.label)+'" value="'+esc(r.memo==null?'':r.memo)+'"></td></tr>';
+    }).join('');
+
+    edHtml='<div class="kbcard kbed">'+
+      '<h2>'+esc(d.label)+'</h2>'+
+      '<p class="kbsub">この名前が、顧問先の押すボタンであり、元帳の摘要であり、伝票の見出しになります。</p>'+
+      '<div class="kbset"><h4>1. 名前と置き場所</h4><div class="kbrow">'+
+        '<div class="kbf wide"><span>名前（＝摘要）</span>'+
+          '<input data-ke="label" value="'+esc(d.label)+'"></div>'+
+        '<div class="kbf"><span>群</span><select data-ke="grp">'+
+          KIND_GRP.map(function(g){ return '<option value="'+g.k+'"'+
+            ((d.grp||'often')===g.k?' selected':'')+'>'+esc(g.label)+'</option>'; }).join('')+
+        '</select></div>'+
+        '<div class="kbf"><span>向き</span><select data-ke="dir">'+
+          '<option value="in"'+(d.dir==='in'?' selected':'')+'>入金</option>'+
+          '<option value="out"'+(d.dir==='out'?' selected':'')+'>出金</option></select></div>'+
+      '</div></div>'+
+      '<div class="kbset"><h4>2. 仕訳のルール '+
+        '<em>金額と日付が空の伝票。そこは顧問先が入れます</em></h4>'+
+        '<div class="dp"><div class="dpwrap"><table class="dptbl"><colgroup>'+
+          '<col style="width:104px"><col style="width:46px"><col style="width:60px"><col style="width:40px">'+
+          '<col style="width:60px"><col style="width:40px"><col style="width:112px"><col style="width:70px">'+
+          '<col style="width:72px"><col style="width:116px"><col style="width:44px"></colgroup>'+
+        '<thead>'+
+          '<tr><th>年月日</th><th></th><th colspan="2">借 方 科 目</th><th colspan="2">貸 方 科 目</th>'+
+            '<th>取 引 金 額</th><th>税 率</th><th>小切手番号</th><th>実際の仕入れ年月日</th><th>収支</th></tr>'+
+          '<tr><th>伝番</th><th>課税</th><th colspan="2">科 目 名</th><th colspan="2">科 目 名</th>'+
+            '<th>（内、消費税等）</th><th colspan="4">取引先名（仕入先の氏名又は名称）</th></tr>'+
+          '<tr><th>証番</th><th>事業</th><th colspan="2">口 座 名</th><th colspan="2">口 座 名</th>'+
+            '<th>税 抜 き 金 額</th><th colspan="4">元帳摘要（仕入れ資産等の総称）</th></tr>'+
+        '</thead><tbody>'+body+'</tbody></table></div></div>'+
+        '<button class="btn ghost tap kbadd" id="kbadd">＋ 伝票の行を足す（金額の欄が1つ増えます）</button>'+
+        '<p class="kbhint">行を足すと<b>複数仕訳</b>になり、顧問先の画面で'+
+          '<b>金額の欄が行数ぶん</b>出ます。横に出す文字は、行ごとに書いてください。</p>'+
+      '</div>'+
+      '<div class="kbset"><h4>3. 顧問先にはこう出ます</h4><div class="kbpv">'+
+        (multi
+          ? rows.map(function(r,i){ return '<div class="kbpvr"><b>'+
+              esc(r.lbl||('その'+(i+1)))+'</b><span>0</span></div>'; }).join('')+
+            '<div class="kbpvr tot"><b>合計</b><span>¥0</span></div>'
+          : '<div class="kbpvr"><b>金額</b><span>0</span></div>')+
+        '<div class="kbpvn">精算日／領収書の写真／摘要「'+esc(d.label)+'」</div>'+
+      '</div></div>'+
+    '</div>';
+  }
+
+  el.innerHTML='<button class="btn ghost tap kbback" id="kbback">← 取引の入力に戻る</button>'+
+    '<div class="kbwrap">'+listHtml+edHtml+'</div>';
+
+  el.querySelectorAll('[data-kbsel]').forEach(function(b){ b.onclick=function(){
+    S.kindSel=b.dataset.kbsel; render(); }; });
+  var bk=el.querySelector('#kbback');
+  if(bk) bk.onclick=function(){ S.cashPane='in'; render(); };
+  var nw=el.querySelector('#kbnew');
+  if(nw) nw.onclick=function(){
+    var k='x'+Date.now();
+    DB.kinds=(DB.kinds||[]).concat([{k:k, grp:'rare', dir:'out', label:'（名前を入れてください）',
+      rows:[{lbl:'',acct:'',acctName:'',sub:'',subName:'',tax:'5',rate:10,red:0,
+             party:'',partyName:'',memo:''}]}]);
+    S.kindSel=k; kindTouch(); render(); };
+  var ad=el.querySelector('#kbadd');
+  if(ad) ad.onclick=function(){
+    var o=kindOv(S.kindSel), last=o.rows[o.rows.length-1]||{};
+    var q={}; for(var z in last) q[z]=last[z]; q.lbl='';
+    o.rows=o.rows.concat([q]); kindTouch(); render(); };
+  el.querySelectorAll('[data-kbdel]').forEach(function(b){ b.onclick=function(){
+    var o=kindOv(S.kindSel);
+    /* ★ 行は1つより少なくしない（0行の取引の種類は伝票が作れない） */
+    if(o.rows.length<=1) return;
+    o.rows=o.rows.filter(function(_,i){ return i!==+b.dataset.kbdel; });
+    kindTouch(); render(); }; });
+  el.querySelectorAll('[data-ke]').forEach(function(q){ q.onchange=function(){
+    var o=kindOv(S.kindSel); o[q.dataset.ke]=q.value; kindTouch(); render(); }; });
+  el.querySelectorAll('[data-kr]').forEach(function(q){ q.onchange=function(){
+    var o=kindOv(S.kindSel), i=+q.dataset.kr, key=q.dataset.kk;
+    o.rows[i] = o.rows[i] || {};
+    o.rows[i][key] = (key==='rate') ? (Number(q.value)||0) : q.value;
+    /* ★ 税率を直したら、軽減（8%）か標準（10%）かも付いてくる。
+         **jEff・cashJournalSource_ と同じ決め方。片方だけ直さない** */
+    if(key==='rate') o.rows[i].red = (Number(q.value)===8) ? 1 : 0;
+    kindTouch(); render(); }; });
 }
 
 function viewJournal(el, m){
@@ -7061,12 +7372,14 @@ function cashCsvText(m, list, carry){
 function viewCash(el){
   var m=S.month, bk=bkey(m), yk=ykey(m), nk=nkey(m), sk=skey(m), jk=jkey(m);
   if(!(bk in DB.cash) || !(nk in DB.count) || !(sk in DB.sale)
-     || !(jk in DB.jmap) || DB.jdic===null){
+     || !(jk in DB.jmap) || DB.jdic===null || DB.kinds===null){
     el.innerHTML='<div class="skel"></div><div class="skel"></div>';
-    storage.getMany([bk,yk,nk,sk,jk,'jdic:master']).then(function(g){
+    storage.getMany([bk,yk,nk,sk,jk,'jdic:master','kinds:master']).then(function(g){
       DB.cash[bk]=jparse(g[bk],[])||[]; DB.carry[yk]=jparse(g[yk],0)||0;
       DB.count[nk]=jparse(g[nk],[])||[]; DB.sale[sk]=jparse(g[sk],[])||[];
       DB.jmap[jk]=jparse(g[jk],{})||{}; DB.jdic=jparse(g['jdic:master'],[])||[];
+      /* ★ 取引の種類は、事務所が画面から直したぶんを上に重ねる（2026-09-24） */
+      DB.kinds=jparse(g['kinds:master'],[])||[]; kindsDirty();
       render(); });
     return;
   }
@@ -7131,6 +7444,11 @@ function viewCash(el){
   var isArc  = !!(kdNow && kdNow.arc);                    /* 売掛の現金回収 */
   var noShot = !!(kdNow && /^bk(in|out)2?$/.test(kdNow.k)); /* 京信の出し入れ … 領収書なし */
   /* ★ 2枚目からは「もう1枚」。何枚でも続けて撮れることが、押す前に分かるように */
+  /* ★ 複数仕訳の取引の種類か。そうなら金額の欄が行数ぶん出る（2026-09-24） */
+  var multiRows = (kdNow && !isArc && mo!=='sale' && kindMulti(kdNow)) ? kindRows(kdNow) : null;
+  var multiVals = multiRows
+    ? multiRows.map(function(_,i){ return (e.amts&&e.amts[i])||''; }) : [];
+  var multiSum  = multiVals.reduce(function(a,b){ return a+(Number(b)||0); },0);
   var _nPic = cashPicCount();
   var shotLabel = _nPic
     ? '📷 もう1枚とる／選ぶ'
@@ -7150,13 +7468,27 @@ function viewCash(el){
     /* ★ 金額と精算日は【1行】に（2026-09-21）。
          金額の枠が画面いっぱいに伸びていて、間が抜けていた。
          日にちは領収書の日付ではなく、小口現金が動いた日＝精算日 */
+    /* ★★★ 複数仕訳の取引の種類は、金額の欄が【行数ぶん】出る（2026-09-24・お重さん）
+         「複数仕訳の場合だけ金額の入力が増えるだけ」。
+         横に出すのは、その行に書いてある文字（給料なら従業員の名前）。
+         **取引先は選ばせない。** 誰あてかは取引の種類のルールに書いてある */
+    (isArc || !multiRows ? '' :
+    '<div class="cash-f cmulti">'+
+      multiRows.map(function(r,i){
+        return '<div class="cmrow"><b>'+esc(r.lbl||('その'+(i+1)))+'</b>'+
+          '<input id="cm'+i+'" class="num cash-amt cmin" inputmode="numeric" value="'+
+          esc(multiVals[i]||'')+'" placeholder="0"></div>';
+      }).join('')+
+      '<div class="cmtot"><span>合計</span><b id="cmtot">'+yen(multiSum)+'</b></div>'+
+    '</div>')+
     (isArc ? '' :
     '<div class="row cash-f amtday" style="gap:12px;align-items:flex-end">'+
+      (multiRows ? '' :
       '<div class="amtcell"><label class="lbl">金額</label>'+
         '<input id="cm" class="num cash-amt" inputmode="numeric" '+
           (S.saleOn?'readonly style="background:#FFFBF0" ':'')+
-          'value="'+(S.saleOn?(saleTotal(saleItems())||''):(e.amount||''))+'" placeholder="0"></div>'+
-      '<div class="daycell">'+
+          'value="'+(S.saleOn?(saleTotal(saleItems())||''):(e.amount||''))+'" placeholder="0"></div>')+
+      '<div class="daycell"'+(multiRows?' style="flex:1 1 100%"':'')+'>'+
         '<label class="lbl">精算日　<span class="daysub" style="font-weight:400">小口現金が動いた日</span></label>'+
         '<span class="dwrap'+(gap===0?' today':'')+'">'+
           '<input type="date" id="cd" class="cash-date" value="'+formDate+'">'+
@@ -7285,18 +7617,24 @@ function viewCash(el){
        ★★ `auto` の型（現金過不足）も出さない（2026-09-22）。
        アプリが現金実査から自分で立てるもので、手で選ぶものではない。
        `cashKindOf()` では引けるし、仕訳辞書には出る */
-  var sideKinds = CASH_KINDS.filter(function(x){
+  var sideKinds = cashKinds().filter(function(x){
     return x.dir===SIDE && !x.gone && !x.auto; });
   var kindsHtml =
   sideHtml +
   /* ★ 「入金 … 何が入ったか」「出金 … 何に払ったか」の見出しは出さない（2026-09-21）。
-       すぐ上のバーで［入金］［出金］を選んでいるので、見れば分かる */
-  '<div class="kgrp '+SIDE+'"><div class="kwrap">'+
-    sideKinds.map(function(x){
-      return '<button class="kbtn '+(x.g==='x'?'x':SIDE)+(S.cashKind===x.k?' on':'')+
-        ' tap" data-ck="'+x.k+'">'+esc(x.label)+'</button>';
-    }).join('')+
-  '</div></div>';
+       すぐ上のバーで［入金］［出金］を選んでいるので、見れば分かる。
+     ★★ 群（いつもの取引／たまにある取引／分からないとき）で割る（2026-09-24）。
+       **よく押すものが上に固まる。** 群の中の並びは `CASH_KINDS` の行の順のまま */
+  KIND_GRP.map(function(g){
+    var ks=sideKinds.filter(function(x){ return (x.grp||'often')===g.k; });
+    if(!ks.length) return '';
+    return '<div class="kgrp '+SIDE+'"><div class="kgt2">'+esc(g.label)+'</div><div class="kwrap">'+
+      ks.map(function(x){
+        return '<button class="kbtn '+(x.g==='x'?'x':SIDE)+(S.cashKind===x.k?' on':'')+
+          ' tap" data-ck="'+x.k+'">'+esc(x.label)+'</button>';
+      }).join('')+
+    '</div></div>';
+  }).join('');
 
   var boxesHtml =
   /* ★★ ⓪が①②③のどれを使うかを決めているので、その枠だけを出す */
@@ -7472,20 +7810,32 @@ function viewCash(el){
     (PANE==='in'
       /* ★ 辞書はいつも出したまま。型を選んだら、その下に入力欄が出る。
            「入れました」は、その入力の枠のすぐ下（＝［記録する］のすぐ下） */
-      ? kindsHtml + (kdNow ? boxesHtml : '') + justHtml
+      /* ★ いちばん下に［取引の種類をつくる］（2026-09-24）。
+           **顧問先の入力画面は変えない。作れるボタンを置くだけ** */
+      ? kindsHtml + (kdNow ? boxesHtml : '') + justHtml +
+        '<button class="mkkind tap" id="mkkind">＋ 取引の種類をつくる・直す（事務所）</button>'
       : '')+
     (PANE==='led'   ? noticeHtml + cardsHtml + ledHtml : '')+
     (PANE==='count' ? countHtml : '')+
-    (PANE==='jrn'   ? '<div id="jrnbox"></div>' : '');
+    (PANE==='jrn'   ? '<div id="jrnbox"></div>' : '')+
+    (PANE==='kinds' ? '<div id="kindbox"></div>' : '');
 
   /* ★ 仕訳伝票化 … 領収書を見ながら辞書を当て、伝票一覧で確かめる。中身は viewJournal */
   /* ★ 仕訳のときだけ紙面を広げる（伝票11列が切れないように）。
        タブを出るときは go() が外す */
-  try{ document.body.classList.toggle('jrnwide', PANE==='jrn'); }catch(e){}
+  try{ document.body.classList.toggle('jrnwide', PANE==='jrn'||PANE==='kinds'); }catch(e){}
   if(PANE==='jrn'){
     var jb=el.querySelector('#jrnbox');
     if(jb) viewJournal(jb, m);
   }
+  /* ★ 取引の種類をつくる（2026-09-24）。伝票が11列あるので、ここも紙面を広げる */
+  if(PANE==='kinds'){
+    var kb2=el.querySelector('#kindbox');
+    if(kb2) viewKinds(kb2);
+  }
+  var mk=el.querySelector('#mkkind');
+  if(mk) mk.onclick=function(){ S.cashPane='kinds'; S.cashJust=null; S.cashJustShow=false;
+    render(); };
 
   /* ★ 下層タブの切り替え。入力へ戻るときは「入れました」の1行を消す */
   el.querySelectorAll('[data-cpane]').forEach(function(b){ b.onclick=function(){
@@ -7593,7 +7943,9 @@ function viewCash(el){
     S.cashAcctPre = kd.acct||'';
     render();
     setTimeout(function(){
-      var t=document.getElementById(kd.arc?'arca':'cm'); if(t){ t.focus(); t.select&&t.select(); }
+      /* ★ 複数仕訳のときは、いちばん上の金額の欄へ（2026-09-24） */
+      var t=document.getElementById(kd.arc?'arca':'cm')||document.getElementById('cm0');
+      if(t){ t.focus(); t.select&&t.select(); }
     },60);
   }; });
   /* 入金／出金の下層タブ。向きを変えたら、選んでいた型は外す */
@@ -7637,6 +7989,18 @@ function viewCash(el){
     S.cashEdit=null; cashImgDrop();
     S.saleOn=false; S.saleClient=null; S.saleItems=null; S.saleQ=''; S.saleLump=''; render(); };
 
+  /* ★ 合計は【描き直さずに】その場で動かす。描き直すと打ちかけの金額が消える */
+  if(el.querySelector('#cmtot')){
+    var _tot=el.querySelector('#cmtot');
+    el.querySelectorAll('.cmin').forEach(function(q){
+      q.addEventListener('input',function(){
+        var t=0;
+        el.querySelectorAll('.cmin').forEach(function(z){
+          t+=parseInt(z.value.replace(/[^0-9]/g,''),10)||0; });
+        _tot.textContent=yen(t);
+      });
+    });
+  }
   if(el.querySelector('#cok')) el.querySelector('#cok').onclick=function(){
     var sale=null, sc=null;
     if(S.saleOn){
@@ -7646,9 +8010,22 @@ function viewCash(el){
       if(!tt){ alert('現金売上の金額を入れてください。\n（何貫でいくら／かち割り何kgでいくら）'); return; }
       sale={cid:sc.id, code:sc.code, name:sc.name, items:pk, total:tt};
     }
+    /* ★ 複数仕訳の取引の種類は、金額の欄が行数ぶんある。合計を amount に入れ、
+         行ごとの額は amts に残す（伝票はこれで行数ぶん立つ） */
+    var amts=null;
+    if(multiRows){
+      amts=multiRows.map(function(_,i){
+        var q=el.querySelector('#cm'+i);
+        return parseInt((q?q.value:'').replace(/[^0-9]/g,''),10)||0; });
+    }
     var amt = sale ? sale.total
-                   : (parseInt(el.querySelector('#cm').value.replace(/[^0-9]/g,''),10)||0);
-    if(!amt){ alert('金額を入れてください。'); el.querySelector('#cm').focus(); return; }
+            : (amts ? amts.reduce(function(a,b){return a+b;},0)
+                    : (parseInt(el.querySelector('#cm').value.replace(/[^0-9]/g,''),10)||0));
+    if(!amt){
+      alert('金額を入れてください。');
+      var _f=el.querySelector(multiRows?'#cm0':'#cm'); if(_f) _f.focus();
+      return;
+    }
     /* ★ 欄に出ている文字が、そのまま元帳の摘要になる（2026-09-21）。
          頭に型の名前を足さない（欄にもう入っているので、足すと二重になる）。
          消してしまったときだけ、型の名前へ戻す。 */
@@ -7672,7 +8049,7 @@ function viewCash(el){
       /* 型（kind）と科目（account）を一緒に持たせます。仕訳を作るときに使います */
       kind:(e.kind||S.cashKind||''),
       account:(e.account||S.cashAcctPre||''),
-      amount:amt, party:(sale?sale.name:(e.party||'')), memo:memo,
+      amount:amt, amts:amts, party:(sale?sale.name:(e.party||'')), memo:memo,
       sale:sale,
       imgUrl:_cashPic.url, imgPend:_cashPic.pend, img:_cashPic.img, imgType:_cashPic.type,
       pics:(_cashPic.pics.length?_cashPic.pics:null)};
@@ -9965,7 +10342,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-24c 帳面で分かった回収を入れる（5月以降の8件＋内入れ3件を 8/10 へ／シバサキ 3/12）';
+var APP_BUILD='2026-09-24e 取引の種類をつくる画面（仕訳のルール＝金額と日付が空の伝票）';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
