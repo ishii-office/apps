@@ -561,6 +561,24 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .jdrow.ok{border-color:var(--green)}
 .jdrow.bad{border-color:var(--pink)}
 .jdrow+.jdrow{margin-top:10px}
+/* ★★★ 確定ずみは【うすい緑＋たたむ】（2026-09-24・お重さん）
+     「確定ずみになると、その取引の背景も確定ずみボタンの色のように(それの薄い色)
+       色を変えてほしい。かつ、確定ずみにすると、表示として閉じるというか、
+       取引の種類だけの表示にして、伝票化画面全体を縦に短くなるようにして。
+       あと残っているのが分かりやすいでょ。」 */
+.jdrow.done{background:#EAF5EE;border-color:var(--green);padding:7px 10px}
+.jdone{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.jdone .jdok{padding:7px 14px}
+.jdone .jdok .m{font-size:18px}
+.jdone .jkind{font-size:15px;flex:1 1 auto}
+.jdone .jda{font-size:17px}
+.jdone .jopn{border:1px solid var(--green);background:#fff;color:var(--green);
+  border-radius:7px;font-family:inherit;font-size:12.5px;font-weight:700;
+  padding:5px 10px;cursor:pointer}
+@media(max-width:900px){
+  .jdone .jkind{flex:1 1 100%;order:3}
+  .jdone .jda{order:2}
+}
 .jdshot{margin:0 0 9px}
 .jdshot .jshots{gap:6px}
 .jdshot .jshot img{max-height:230px}
@@ -586,7 +604,7 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 @media(max-width:900px){
   .jdrow{padding:9px 9px}
   .jdchk .jdok{flex:1 1 auto;justify-content:center}
-  .jdshot .jshot img{max-height:46vh}
+  .jdshot .jshot img{max-height:34vh}
 }
 /* ★★★ 取引の種類をつくる（2026-09-24） */
 .mkkind{display:block;width:100%;margin:16px 0 0;border:2px dashed var(--gold);
@@ -695,6 +713,16 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .nfixb .btn{flex:1;min-width:150px;font-size:16px;padding:13px 10px}
 .nfixb #nfix{background:var(--gold)}
 .nfixn{margin-top:8px;font-size:13px;line-height:1.5}
+/* ★ 実査だけ先にやれることを、その場で言っておく */
+.nhint{margin:9px 0 0;font-size:13px;line-height:1.6}
+/* ★ 数えた日・数えた合計・帳簿・差額 の一列。電話でははみ出さないように2列に折る */
+.nrow>div{min-width:0}
+@media(max-width:560px){
+  .nrow>div{flex:1 1 46%}
+  .nrow #na{width:100%!important;font-size:22px!important}
+  .nrow .cash-date{width:100%;max-width:100%;box-sizing:border-box}
+  .nrow>.btn{flex:1 1 46%}
+}
 
 /* ===== 現金実査：金種で数える（2026-09-21）===== */
 .denom{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:7px}
@@ -853,7 +881,7 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
 .dpsp .spv .dpin.c{flex:0 0 56px;text-align:center}
 .dpsp b{font-size:16px}
 .dpsp .spv b{font-size:13.5px;font-weight:700}
-.dpsp .big .spv b{font-size:24px;font-weight:800}
+.dpsp .big .spv b:not(.fillsp){font-size:24px;font-weight:800}
 .dpsp .spt{margin-left:auto;font-size:11.5px;color:#777;text-align:right}
 .dpsp .sub .spl{color:#8aa8a0}
 /* ★ 複数仕訳（給料など）の組の頭。表のときの金色の帯と同じ役 */
@@ -864,6 +892,33 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
   background:#1f7a6a;border-radius:50%;width:19px;height:19px;line-height:19px;text-align:center}
 .dpsp .sphd b{font-size:14px;font-weight:800}
 .dpsp .sphd .num{margin-left:auto;font-size:14px;font-weight:800;color:var(--ai)}
+/* ★★★ 借方と貸方は【横に並べる】（2026-09-24・お重さん）
+     「貸方も借方も取引先とかも横にならんで(伝票の形で)出せない？
+       最低でも貸方借方は縦2列にしたくない」
+     「スクロールしまくらなくてはいけないから、できるだけスクロールしないでも
+       その画面で確認して確定ボタン押していきたい」
+     縦に積むと1件で11行になり、件数が多いとスクロールが終わらない。
+     2列にすると6行に縮んで、1画面で確かめて確定まで押せる。 */
+.dpsp .spdc{display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  padding:6px 0;border-bottom:1px dashed #DCE8E4}
+.dpsp .spside{min-width:0;border:1px solid #CFE2DC;border-radius:7px;
+  padding:4px 5px 3px;background:#FFFDF2}
+.dpsp .sph{font-size:10.5px;font-weight:800;color:#1f7a6a;letter-spacing:.12em;margin:0 0 3px}
+.dpsp .spl1{display:flex;gap:4px;align-items:center;margin:0 0 3px;min-width:0}
+.dpsp .spl1 .dpin{font-size:14px;font-weight:800;text-align:center;padding:2px 3px}
+.dpsp .spl1 .dpin.ac{flex:1 1 0;min-width:0}
+.dpsp .spl1 .dpin.sb{flex:0 0 42px}
+.dpsp .spl1 b{font-size:14px;font-weight:800;white-space:nowrap}
+.dpsp .spl1 b.sb{color:#777;font-size:12.5px}
+.dpsp .spl2{display:flex;min-width:0;margin:0 0 2px;min-height:18px}
+.dpsp .spl2 .dpin{font-size:12px;padding:2px 4px}
+.dpsp .spl2 b{font-size:12px;font-weight:700;color:#555;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* つくる画面（金額と日付は顧問先が入れるので、空のマスを灰色で置く） */
+.dpsp .fillsp{font-size:11.5px;font-weight:700;color:#9a948a;
+  background:#F2EFE7;border-radius:5px;padding:2px 9px}
+.dpsp .sphd .lbin{flex:1 1 auto;min-width:0;border:1px solid var(--gold);border-radius:5px;background:#fff;font-family:inherit;font-size:13px;padding:3px 6px}
+.dpsp .sphd .kbdel{flex:0 0 auto;border:1px solid #E4B9C0;background:#fff;color:#b05a6a;border-radius:5px;font-family:inherit;font-size:11.5px;font-weight:700;padding:3px 8px;cursor:pointer}
 /* 年月日のマス（伝票の1つめ。ここから Enter で進む） */
 .dpin.dpday{font-weight:800;letter-spacing:.02em}
 .dptbl td.k .dpin.dpday{background:#F2F8F6;text-align:center}
@@ -6447,6 +6502,43 @@ function viewKinds(el){
           'placeholder="'+esc(d.label)+'" value="'+esc(r.memo==null?'':r.memo)+'"></td></tr>';
     }).join('');
 
+    /* ★★★ 電話でも【仕訳のルールが出る】（2026-09-24・お重さん）
+         「例えば小口の出金。仕訳のルールが表示されていない。スマホ。
+           これではルールの修正ができない。」
+         .dpwrap（11列の表）は 900px より下で消えるので、
+         .dpsp を出していないと **まるごと空になって、直せなかった**。
+         中身は伝票チェックと同じ `dpSlipHtml`。**片方だけ直さない** */
+    var spbody=rows.map(function(r,i){
+      var taxable=(String(r.tax)!=='0'&&String(r.tax)!==''&&Number(r.rate)>0);
+      var isIn=(d.dir==='in');
+      var mine={code:inp(i,'acct',r.acct,'ac'), sub:inp(i,'sub',r.sub,'sb'),
+                name:inp(i,'acctName',r.acctName), subName:inp(i,'subName',r.subName)};
+      var his ={code:'<b>'+esc(CASH_JOURNAL_C.cashCode)+'</b>',
+                sub:'<b class="sb">01</b>',
+                name:'<b>'+esc(CASH_JOURNAL_C.cashName)+'</b>',
+                subName:'<b>'+esc(CASH_JOURNAL_C.cashSubName)+'</b>'};
+      var head = multi
+        ? '<div class="sphd"><span class="no">'+(i+1)+'</span>'+
+          '<input class="lbin" data-kr="'+i+'" data-kk="lbl" value="'+esc(r.lbl||'')+'">'+
+          '<button class="kbdel tap" data-kbdel="'+i+'">消す</button></div>' : '';
+      return dpSlipHtml({
+        head: head,
+        day:  (i===0 ? '<b class="fillsp">顧問先が入れます</b>' : ''),
+        no:   (i===0 ? '伝番 '+esc(CASH_JOURNAL_C.slipNo)+
+                       '／証番 '+esc(CASH_JOURNAL_C.voucherNo) : ''),
+        dr:   (isIn?his:mine), cr:(isIn?mine:his),
+        amt:  '<b class="fillsp">顧問先が入れます</b>',
+        amtNote: '消費税と税抜は自動',
+        tax:  inp(i,'tax',r.tax,'c'), biz:inp(i,'biz',r.biz,'c'),
+        rate: inp(i,'rate',Number(r.rate)||0,'c'),
+        rateTxt: (taxable?('判定('+(Number(r.rate)===8?'軽':'標')+')'):'対象外'),
+        party:'<span class="dpparty">'+inp(i,'party',r.party,'c pcode')+
+              inp(i,'partyName',r.partyName)+'</span>',
+        memo: '<input class="dpin" data-kr="'+i+'" data-kk="memo" placeholder="'+
+              esc(d.label)+'" value="'+esc(r.memo==null?'':r.memo)+'">'
+      });
+    }).join('');
+
     edHtml='<div class="kbcard kbed">'+
       '<h2>'+esc(d.label)+'</h2>'+
       '<p class="kbsub">この名前が、顧問先の押すボタンであり、元帳の摘要であり、伝票の見出しになります。</p>'+
@@ -6474,7 +6566,8 @@ function viewKinds(el){
             '<th>（内、消費税等）</th><th colspan="4">取引先名（仕入先の氏名又は名称）</th></tr>'+
           '<tr><th>証番</th><th>事業</th><th colspan="2">口 座 名</th><th colspan="2">口 座 名</th>'+
             '<th>税 抜 き 金 額</th><th colspan="4">元帳摘要（仕入れ資産等の総称）</th></tr>'+
-        '</thead><tbody>'+body+'</tbody></table></div></div>'+
+        '</thead><tbody>'+body+'</tbody></table></div>'+
+        '<div class="dpsp">'+spbody+'</div></div>'+
         '<button class="btn ghost tap kbadd" id="kbadd">＋ 伝票の行を足す（金額の欄が1つ増えます）</button>'+
         '<p class="kbhint">行を足すと<b>複数仕訳</b>になり、顧問先の画面で'+
           '<b>金額の欄が行数ぶん</b>出ます。横に出す文字は、行ごとに書いてください。</p>'+
@@ -6722,6 +6815,33 @@ function jdExcel(m){
       配線（`jdBind`）は片方だけ見ればよい ── 見えているほうだけを数える。
 
     ★ 年月日も直せる（伝票のいちばん最初のマス。ここから Enter で進む） */
+/** ★★★ 電話の1枚もの ── 伝票の形のまま短く（2026-09-24・お重さん）
+
+    **借方と貸方を【横に並べる】。** 縦に積むと1件で11行になり、
+    仕訳の件数が多いとスクロールが終わらない。2列なら6行で収まるので、
+    **1画面で確かめて、そのまま［確定する］まで押せる。**
+
+    **伝票チェック（`jdDenpyoHtml`）と、つくる画面（`viewKinds`）の両方で使う。
+      片方だけ直さない。** */
+function dpSlipHtml(o){
+  var side=function(t,c){
+    return '<div class="spside"><div class="sph">'+t+'</div>'+
+      '<div class="spl1">'+c.code+c.sub+'</div>'+
+      '<div class="spl2">'+c.name+'</div>'+
+      '<div class="spl2">'+c.subName+'</div></div>'; };
+  var r=function(lbl,val,cls){
+    return '<div class="spr'+(cls?' '+cls:'')+'"><span class="spl">'+lbl+'</span>'+
+      '<span class="spv">'+val+'</span></div>'; };
+  return (o.head||'')+
+    (o.day ? r('年月日', o.day+(o.no?'<span class="spt">'+o.no+'</span>':'')) : '')+
+    '<div class="spdc">'+side('借 方',o.dr)+side('貸 方',o.cr)+'</div>'+
+    r('取引金額', o.amt+(o.amtNote?'<span class="spt">'+o.amtNote+'</span>':''), 'big')+
+    r('課税・事業・税率', o.tax+o.biz+o.rate+
+      (o.rateTxt?'<span class="spt">'+o.rateTxt+'</span>':''))+
+    r('取引先', o.party)+
+    r('元帳摘要', o.memo);
+}
+
 function jdDenpyoHtml(x, rows){
   var J=CASH_JOURNAL_C;
   var day=String(x.date||'').replace(/-/g,'/');
@@ -6768,41 +6888,34 @@ function jdDenpyoHtml(x, rows){
       '<td colspan="4">'+inp(i,'memo',d.memo)+'</td></tr>';
   }).join('');
 
-  /* ---- 電話 … 同じ値を縦に組み直した1枚もの ---- */
+  /* ---- 電話 … 伝票の形のまま、借方と貸方を横に並べた1枚もの ---- */
   var sp=rows.map(function(q){
     var d=q.d, i=q.i;
     var taxable=(String(d.tax)!=='0'&&String(d.tax)!==''&&d.rate>0);
     var tax=taxable?Math.floor(q.amt*d.rate/(100+d.rate)):0;
     var isIn=(d.dir==='in');
-    var sideC=function(w,cls){ return inp(i,w,d[w],cls); };
     /* ★ 現金側は打てないマス。**<b> で包む**（包まないと 1111 と 01 が
-         「111101」とくっついて読めない。`.spv` は flex なので、
-         要素にすれば間が空く） */
-    var cashC=function(w){ return '<b>'+esc(cash[w])+'</b>'; };
-    var row=function(lbl,val,cls){
-      return '<div class="spr'+(cls?' '+cls:'')+'"><span class="spl">'+lbl+
-             '</span><span class="spv">'+val+'</span></div>'; };
+         「111101」とくっついて読めない） */
+    var mine={code:inp(i,'acct',d.acct,'ac'), sub:inp(i,'sub',d.sub,'sb'),
+              name:inp(i,'acctName',d.acctName), subName:inp(i,'subName',d.subName)};
+    var his ={code:'<b>'+esc(cash.acct)+'</b>', sub:'<b class="sb">'+esc(cash.sub)+'</b>',
+              name:'<b>'+esc(cash.acctName)+'</b>', subName:'<b>'+esc(cash.subName)+'</b>'};
     var head = rows.length>1
       ? '<div class="sphd"><span class="no">'+(i+1)+'</span><b>'+esc(q.lbl||('その'+(i+1)))+
         '</b><span class="num">'+yen(q.amt)+'</span></div>' : '';
-    return head+
-      (i===0 ? row('年月日', dayIn+'<span class="spt">伝番 '+esc(J.slipNo)+
-                   '／証番 '+esc(J.voucherNo)+'</span>') : '')+
-      row('借方科目', (isIn?cashC('acct'):sideC('acct','c'))+
-                      (isIn?cashC('sub'):sideC('sub','c')))+
-      row('科目名',  (isIn?cashC('acctName'):sideC('acctName')), 'sub')+
-      row('口座名',  (isIn?cashC('subName'):sideC('subName')), 'sub')+
-      row('貸方科目', (isIn?sideC('acct','c'):cashC('acct'))+
-                      (isIn?sideC('sub','c'):cashC('sub')))+
-      row('科目名',  (isIn?sideC('acctName'):cashC('acctName')), 'sub')+
-      row('口座名',  (isIn?sideC('subName'):cashC('subName')), 'sub')+
-      row('取引金額','<b class="num">'+yen(q.amt)+'</b>'+
-          (taxable?'<span class="spt">内 消費税 '+yen(tax)+'／税抜 '+yen(q.amt-tax)+'</span>':''),'big')+
-      row('課税・事業・税率', inp(i,'tax',d.tax,'c')+inp(i,'biz',d.biz,'c')+inp(i,'rate',d.rate||0,'c')+
-          '<span class="spt">'+(taxable?('判定('+(d.red?'軽':'標')+')／仕入れ '+esc(day)):'対象外')+'</span>')+
-      row('取引先','<span class="dpparty">'+inp(i,'party',d.party,'c pcode')+
-          inp(i,'partyName',d.partyName)+'</span>')+
-      row('元帳摘要', inp(i,'memo',d.memo));
+    return dpSlipHtml({
+      head: head,
+      day:  (i===0 ? dayIn : ''),
+      no:   (i===0 ? '伝番 '+esc(J.slipNo)+'／証番 '+esc(J.voucherNo) : ''),
+      dr:   (isIn?his:mine), cr:(isIn?mine:his),
+      amt:  '<b class="num">'+yen(q.amt)+'</b>',
+      amtNote: (taxable?'内 消費税 '+yen(tax)+'／税抜 '+yen(q.amt-tax):''),
+      tax:  inp(i,'tax',d.tax,'c'), biz:inp(i,'biz',d.biz,'c'), rate:inp(i,'rate',d.rate||0,'c'),
+      rateTxt: (taxable?('判定('+(d.red?'軽':'標')+')／仕入れ '+esc(day)):'対象外'),
+      party:'<span class="dpparty">'+inp(i,'party',d.party,'c pcode')+
+            inp(i,'partyName',d.partyName)+'</span>',
+      memo: inp(i,'memo',d.memo)
+    });
   }).join('');
 
   return '<div class="dp"><div class="dpwrap"><table class="dptbl"><colgroup>'+
@@ -6866,9 +6979,34 @@ function viewJournal(el, m){
       ? x.pics.map(function(pp){ return pp.url||''; }).filter(Boolean)
       : (x.imgUrl?[x.imgUrl]:[]);
     var kd=jdKind(x);
-    /* ★ 並びは 見出し → 写真 → 伝票 → ボタン（2026-09-24）。
-         写真の【下】に、できあがった伝票がそのまま出る */
+    var okb='<button class="jdok tap'+(r.st==='ok'?' on':'')+'" data-jdok="'+esc(x.id)+'"'+
+      (r.st==='bad'?' disabled':'')+'><span class="m">✓</span>'+
+      '<span class="t">'+(r.st==='ok'?'確定ずみ':'確定する')+'</span></button>';
+    var amtHtml='<div class="jda num">'+yen(x.amount)+
+      '<span>'+(x.dir==='in'?'入金':'出金')+'</span></div>';
+
+    /* ★★★ 確定ずみは【たたむ】（2026-09-24・お重さん）
+         「確定ずみにすると、表示として閉じるというか、取引の種類だけの表示にして、
+           伝票化画面全体を縦に短くなるようにして。あと残っているのが分かりやすいでょ。」
+         写真も伝票もたたんで、取引の種類の1行だけにする。
+         見直したいときは［ひらく］で開く（`S.jdOpen`） */
+    if(r.st==='ok' && !(S.jdOpen||{})[String(x.id)]){
+      return sep+'<div class="jrow jdrow ok done" data-jr="'+esc(x.id)+'">'+
+        '<div class="jdone">'+okb+
+          '<b class="jkind">'+esc(jKindLabel(x))+'</b>'+amtHtml+
+          '<button class="jopn tap" data-jopen="'+esc(x.id)+'">ひらく</button>'+
+        '</div></div>';
+    }
+
+    /* ★ 並びは 写真 → 取引の種類 → 伝票 → ボタン（2026-09-24・お重さん）。
+         「領収書の写真→取引の種類→仕訳伝票 として。」
+         先に現物を見て、それが何だったかを読み、できた伝票を確かめる順 */
     return sep+'<div class="jrow jdrow '+r.st+'" data-jr="'+esc(x.id)+'">'+
+      '<div class="jdshot">'+
+        (urls.length
+          ? '<div class="jshots">'+urls.map(function(u,i3){ return jShotHtml(u,i3,urls.length); }).join('')+'</div>'
+          : '<div class="jshot none">領収書の写真はありません</div>')+
+      '</div>'+
       '<div class="jrh2">'+
         '<span class="jl">取引の種類</span><b class="jkind">'+esc(jKindLabel(x))+'</b>'+
         (jPartyOf(x)?'<span class="jl">取引先</span>'+jPartyHtml(x):'')+
@@ -6876,23 +7014,15 @@ function viewJournal(el, m){
           ? '<span class="jl">摘要</span><span class="jmemo">'+esc(x.memo||'')+'</span>' : '')+
         '<span class="dpedit">マスは直せます（この1件だけ）</span>'+
       '</div>'+
-      '<div class="jdshot">'+
-        (urls.length
-          ? '<div class="jshots">'+urls.map(function(u,i3){ return jShotHtml(u,i3,urls.length); }).join('')+'</div>'
-          : '<div class="jshot none">領収書の写真はありません</div>')+
-      '</div>'+
       jdDenpyoHtml(x, r.rows)+
       (r.iss.length
         ? '<div class="jiss">！ '+r.iss.slice(0,3).map(esc).join('／')+
           '<button class="btn ghost tap sm" data-jkind="'+esc((kd&&kd.k)||'')+'">'+
           'この取引の種類に科目を決める</button></div>' : '')+
-      '<div class="jdchk">'+
-        '<button class="jdok tap'+(r.st==='ok'?' on':'')+'" data-jdok="'+esc(x.id)+'"'+
-          (r.st==='bad'?' disabled':'')+'><span class="m">✓</span>'+
-          '<span class="t">'+(r.st==='ok'?'確定ずみ':'確定する')+'</span></button>'+
+      '<div class="jdchk">'+okb+
         '<button class="btn ghost tap sm" data-jfix="'+esc(x.id)+'">出納帳を直す</button>'+
-        '<div class="jda num">'+yen(x.amount)+
-          '<span>'+(x.dir==='in'?'入金':'出金')+'</span></div>'+
+        (r.st==='ok'?'<button class="jopn tap" data-jclose="'+esc(x.id)+'">とじる</button>':'')+
+        amtHtml+
       '</div>'+
     '</div>';
   }).join('');
@@ -6912,7 +7042,16 @@ function jdBind(el, m){
     S.jlFilter=b.dataset.jlf; render(); }; });
   el.querySelectorAll('[data-jdok]').forEach(function(b){ b.onclick=function(){
     var id=b.dataset.jdok, e=mp[id]||(mp[id]={});
-    e.ok=!e.ok; jSaveMap(m); render(); }; });
+    e.ok=!e.ok;
+    /* ★ ✓ にしたらたたむ。外したら中身を出す（開いていた札は落とす） */
+    if(S.jdOpen) delete S.jdOpen[String(id)];
+    jSaveMap(m); render(); }; });
+  /* ★ 確定ずみをもう一度見たいとき（たたんだまま中身をのぞく） */
+  el.querySelectorAll('[data-jopen]').forEach(function(b){ b.onclick=function(){
+    (S.jdOpen||(S.jdOpen={}))[String(b.dataset.jopen)]=1; render(); }; });
+  el.querySelectorAll('[data-jclose]').forEach(function(b){ b.onclick=function(){
+    if(S.jdOpen) delete S.jdOpen[String(b.dataset.jclose)];
+    render(); }; });
   var aok=el.querySelector('#jlallok');
   if(aok) aok.onclick=function(){
     jdScan(m).forEach(function(r){
@@ -8212,7 +8351,7 @@ function viewCash(el){
         '</div>';
       }).join('')+
     '</div>'+
-    '<div class="row" style="gap:12px;align-items:flex-end;margin-top:12px;flex-wrap:wrap">'+
+    '<div class="row nrow" style="gap:12px;align-items:flex-end;margin-top:12px;flex-wrap:wrap">'+
       '<div><label class="lbl">数えた日</label><input type="date" id="nd" class="cash-date" value="'+today+'"></div>'+
       '<div><label class="lbl">数えた合計</label>'+
         '<input id="na" class="num" inputmode="numeric" placeholder="0" value="'+(denomSum||'')+'" '+
@@ -8222,8 +8361,20 @@ function viewCash(el){
       '<div><label class="lbl">差額</label>'+
         '<div class="num diffbig" id="ndiff" style="color:#bbb">—</div></div>'+
       '<button class="btn ghost tap" id="nclr">数え直す</button>'+
+      /* ★★★ 合っているときは「合っています、確定」（2026-09-24・お重さん）。
+           言葉は refreshDiff がその場で入れ替える（描き直すとカーソルが飛ぶ） */
       '<button class="btn tap" id="nok" style="background:var(--green);font-size:16px;padding:13px 20px">この残高を記録</button>'+
     '</div>'+
+    /* ★★★ 取引の入力より先に、実査だけやれる（2026-09-24・お重さん）
+         「取引の入力をして、実査して1日が終わるというルーティンにしていきたい。
+           しかし、取引の入力は翌日以降になるのが常だという事情がある。
+           なので、現金実査だけでも先にその日の残高としてやっていけるように。」
+         数えた額は、取引がまだ入っていなくても記録できる。
+         あとで取引を入れれば、帳簿が追いついて差額はひとりでに消える。
+         **だから、差額が出たからといって現金過不足で落とさせない。** */
+    '<p class="nhint muted">その日の取引をまだ入れていなくても、<b>数えた額だけ先に記録</b>できます。'+
+      'あとで取引を入れると、帳簿が追いついて差額は消えます。'+
+      '<b>その日以外の日</b>も「数えた日」を変えれば数えられます。</p>'+
     /* ★★★ 差額が出たときの行き先を2つ出す（2026-09-22）
          現場は領収書を電卓で合計して精算しているので、その電卓がずれると
          出納帳の精算額とずれて、残高はどうやっても合わない。
@@ -8237,6 +8388,8 @@ function viewCash(el){
       '<div class="nfixt" id="nfixt">—</div>'+
       '<div class="nfixb">'+
         '<button class="btn ghost tap" id="nled">元帳を見直す</button>'+
+        /* ★ 取引がまだなら、ここで落とさずに「数えた額だけ」記録して先へ進む */
+        '<button class="btn ghost tap" id="nonly">数えた額だけ記録する</button>'+
         '<button class="btn tap" id="nfix">現金過不足で合わせる</button>'+
       '</div>'+
       '<div class="nfixn muted" id="nfixn"></div>'+
@@ -8533,6 +8686,7 @@ function viewCash(el){
   if(na){
   var nfixbox=el.querySelector('#nfixbox'), nfixt=el.querySelector('#nfixt'),
       nfixn=el.querySelector('#nfixn');
+  var nokb=el.querySelector('#nok'), nfixbt=el.querySelector('#nfix');
   /* いま画面に出ている差額（＋なら余り／−なら不足）。ボタンはここを見る */
   var curDiff=function(){
     var raw=na.value.replace(/[^0-9]/g,'');
@@ -8544,6 +8698,7 @@ function viewCash(el){
     nb.textContent=yen(b);
     var raw=na.value.replace(/[^0-9]/g,'');
     if(raw===''){ ndiff.textContent='—'; ndiff.className='num diffbig'; ndiff.style.color='#bbb';
+      if(nokb) nokb.textContent='この残高を記録';
       if(nfixbox) nfixbox.hidden=true; return; }
     var df=(parseInt(raw,10)||0)-b;
     ndiff.style.color='';
@@ -8551,10 +8706,15 @@ function viewCash(el){
     ndiff.textContent = df===0 ? '✓ ぴったり' : (df>0?'+':'')+yen(df);
     /* ★ 差額があるときだけ、行き先の2つを出す。
          描き直さずに出し入れする（打っている最中にカーソルが飛ばないように） */
+    /* ★ 合っていれば「合っています、確定」。ずれていれば「この残高を記録」 */
+    if(nokb) nokb.textContent = (df===0) ? '✓ 合っています。確定する' : 'この残高を記録';
     if(nfixbox){
       nfixbox.hidden = (df===0);
       if(df!==0){
         var kd=cashKindOf(df>0?'kabuy':'kabuf');
+        /* ★ どちらに落とすかをボタンに出す（余り＝雑収入／不足＝雑損失）。
+             勘定科目そのものは出さない ── 名前＝摘要でそろえてある */
+        if(nfixbt) nfixbt.textContent = kd.label+'で合わせる';
         nfixt.innerHTML='現金が <b>'+yen(Math.abs(df))+'</b> '+
           (df>0?'余っています':'足りません')+'。どちらかを選んでください。';
         /* ★ 勘定科目は書かない。顧問先には要らない話（事務所が決める）。
@@ -8604,7 +8764,9 @@ function viewCash(el){
     sumDenoms();
   };
   sumDenoms();
-  el.querySelector('#nok').onclick=function(){
+  /* ★ 数えた額だけを記録する（帳簿は動かさない）。
+       ［この残高を記録］と、差額の枠の［数えた額だけ記録する］の2つが呼ぶ */
+  var nJustSave=function(){
     var raw=na.value.replace(/[^0-9]/g,'');
     if(raw===''){ alert('実際にあった現金の金額を入れてください。'); na.focus(); return; }
     var by={};
@@ -8618,6 +8780,9 @@ function viewCash(el){
     render();
     cashSaveAsync(nk,JSON.stringify(DB.count[nk]));
   };
+  el.querySelector('#nok').onclick=nJustSave;
+  var nonly=el.querySelector('#nonly');
+  if(nonly) nonly.onclick=nJustSave;
   el.querySelectorAll('[data-nrm]').forEach(function(b){
     b.onclick=function(){
       DB.count[nk]=(DB.count[nk]||[]).filter(function(x){ return String(x.id)!==b.dataset.nrm; });
@@ -10793,7 +10958,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-24i つくる画面 … Enter で次のマス／事業区分／ドラッグで並べ替え／科目はコードだけで足りる';
+var APP_BUILD='2026-09-24j 伝票チェック … スマホでも伝票の形（借方と貸方を横に）／確定ずみはたたむ／写真→取引の種類→伝票／現金実査は合っていれば「合っています、確定」';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
