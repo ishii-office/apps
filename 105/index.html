@@ -556,8 +556,13 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
      写真の【下】に、できあがった伝票がそのまま出る。
      横に3つ並べていたとき、まん中の伝票の幅が 790px に足りず、
      パソコンでも伝票が横スクロールになっていた。 */
-.jdrow{display:block;border:1.5px solid var(--line);border-radius:12px;
+.jdrow{display:block;border:2px solid #889994;border-radius:12px;
   background:#fff;padding:10px 12px}
+/* ★ .jrow の指定（あとに書いてある）に負けないように、2つ重ねて強くする。
+     1件がどこからどこまでか、枠でひと目で分かるのが大事 */
+.jrow.jdrow{border-width:2px;border-style:solid;border-color:#889994}
+.jrow.jdrow.ok{border-color:var(--green)}
+.jrow.jdrow.bad{border-color:var(--pink)}
 .jdrow.ok{border-color:var(--green)}
 .jdrow.bad{border-color:var(--pink)}
 .jdrow+.jdrow{margin-top:10px}
@@ -566,7 +571,8 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
        色を変えてほしい。かつ、確定ずみにすると、表示として閉じるというか、
        取引の種類だけの表示にして、伝票化画面全体を縦に短くなるようにして。
        あと残っているのが分かりやすいでょ。」 */
-.jdrow.done{background:#EAF5EE;border-color:var(--green);padding:7px 10px}
+/* ★ 確定ずみの背景は【ボタンの緑のうすい版】。うすすぎると目で拾えない */
+.jdrow.done{background:#CFE6D8;border-color:var(--green);padding:7px 10px}
 .jdone{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .jdone .jdok{padding:7px 14px}
 .jdone .jdok .m{font-size:18px}
@@ -819,9 +825,14 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
 .jshot.loading::after{content:'写真を読み込んでいます…';position:absolute;inset:0;
   display:flex;align-items:center;justify-content:center;font-size:14px;color:#777;background:#F7F5EFEE}
 .jshot.miss img{display:none}
-.jshot.miss::after{content:'写真が出せませんでした（「大きく見る」で開けます）';
-  display:flex;align-items:center;justify-content:center;min-height:120px;
-  font-size:14px;color:#999;padding:10px;text-align:center}
+.jshot.miss::after{content:'写真が出せませんでした';
+  display:flex;align-items:flex-start;justify-content:center;min-height:120px;
+  font-size:14px;color:#999;padding:14px 10px;text-align:center}
+/* ★ 出せなかったときだけ出す「もう一度読む」。1回こけただけのことが多い */
+.jshot .jretry{display:none}
+.jshot.miss .jretry{display:block;position:absolute;left:50%;top:50%;transform:translate(-50%,-10%);
+  z-index:2;border:1.5px solid var(--ai);background:#fff;color:var(--ai);border-radius:9px;
+  font-family:inherit;font-size:14px;font-weight:800;padding:8px 16px;cursor:pointer}
 .jshot.link{display:flex;align-items:center;justify-content:center;min-height:120px;
   color:var(--ai);font-weight:700;text-decoration:none}
 .jmeta{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
@@ -949,6 +960,8 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
 .dpsp .spv.dpparty .dpin.pcode{flex:0 0 74px}
 /* 税率のマスに添える「判定(標)／判定(軽)」 */
 .dprt{display:block;font-size:10px;color:#888;margin-top:1px;line-height:1.1}
+/* ★ 消費税のかからない区分では、税率のマスを出さずにこれを出す（打てない） */
+.dpro{display:inline-block;min-width:38px;text-align:center;color:#9a948a;font-weight:700}
 .dpsp .spv .dprt{display:none}
 /* ★ 最後のマスから Enter で来たとき、どこに居るか分かるように */
 #jok:focus{outline:3px solid var(--gold);outline-offset:2px}
@@ -1007,7 +1020,9 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
 .jrow{border:1.5px solid var(--line);border-radius:12px;background:#fff;padding:10px 12px 4px}
 .jrow.ok{border-color:#1f7a6a}
 .jrow.bad{border-color:var(--pink);background:#FFF6F8}
-.jrow.todo{border-style:dashed}
+/* ★★★ まだ確定していないものも【実線の濃い枠】にする（2026-09-25・お重さん）
+     「点線ではなくして。見にくい。取引の1まとまりを把握しにくい。」 */
+.jrow.todo{border-style:solid;border-color:#889994}
 .jrow.skip{opacity:.55}
 .jrh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
 .jrno{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;
@@ -1934,6 +1949,47 @@ window.addHistYear({
       makeJournal: function(ym){ return call('makeJournalFile',[ym]); },
       runKgMigration: function(){ return call('runKgMigration',[]); }
     };
+    /* ★★★ 起動の【先読み】（2026-09-25）
+
+       起動したあと、画面をひとつ描くのに さらに4回もサーバへ行っていた …
+         orders:前月 / deliv:前月 ／ ledger:manual: ar:open: invsel: seed:done
+         ／ cashsale: ／ buy:
+       どれも「その画面を出すのに要る」ものなので、**boot の1回にまとめて乗せる**。
+       サーバは KV をどのみち全部読むので、鍵を増やしても重くならない。
+
+       受け皿をここ（いちばん下の層）に置くと、**上の包み
+       （_opBase を控える／送れていないぶんを当てる）はそのまま通る**ので、
+       読み込みの決まりは1つも変わらない。
+       ★ 15秒で捨てる。書き込みがあったらその場で捨てる（古い姿を配らないため） */
+    var _pre=null;
+    window.preSet_=function(keys){ _pre={at:Date.now(), keys:keys||{}}; };
+    window.preDrop_=function(){ _pre=null; };
+    var preTake=function(ks){
+      if(!_pre) return null;
+      if(Date.now()-_pre.at>15000){ _pre=null; return null; }
+      var out={};
+      for(var i=0;i<ks.length;i++){
+        if(!Object.prototype.hasOwnProperty.call(_pre.keys, ks[i])) return null;
+        out[ks[i]]=_pre.keys[ks[i]];
+      }
+      return out;
+    };
+    var _g=storage.get, _gm=storage.getMany,
+        _s=storage.set, _sm=storage.setMany, _pt=storage.patch, _dl=storage.del;
+    storage.get=function(k){
+      var h=preTake([k]);
+      if(h) return Promise.resolve(h[k]==null?null:{key:k,value:h[k]});
+      return _g(k); };
+    storage.getMany=function(ks){
+      var h=preTake(ks||[]);
+      return h ? Promise.resolve(h) : _gm(ks); };
+    /* ★ boot 自身は【受け皿を通さず】サーバへ行く。
+         通すと、覚えたぶんを自分で読み返して、いつまでも新しくならない */
+    storage.getManyRaw=function(ks){ return _gm(ks); };
+    storage.set=function(k,v){ _pre=null; return _s(k,v); };
+    storage.setMany=function(o){ _pre=null; return _sm(o); };
+    storage.patch=function(k,sh,pt){ _pre=null; return _pt(k,sh,pt); };
+    storage.del=function(k){ _pre=null; return _dl(k); };
   }else{
     var L=window.localStorage;
     window.storage = {
@@ -2408,8 +2464,9 @@ function normalizeClient(c,i){
   };
 }
 
-async function loadClients(){
-  var got = await storage.getMany(['clients:master','clients:order','clients:migrated']);
+/** ★ 引数 got … もう読んである値。渡せば【サーバへ行かない】（起動を速くするため） */
+async function loadClients(got){
+  if(!got) got = await storage.getMany(['clients:master','clients:order','clients:migrated']);
   var list = jparse(got['clients:master'], []);
   if(!Array.isArray(list)) list=[];
   list = list.map(normalizeClient);
@@ -2424,8 +2481,11 @@ async function loadClients(){
       return codeNum(a)-codeNum(b);
     });
     /* ★ ここは【はじめの1回だけ】の移行（clients:migrated が '2' になるまで）。
-         まだ誰も触っていない状態から作るので、まるごと書いてよい。 */
-    await storage.setMany({'clients:master':JSON.stringify(list),'clients:migrated':'2'});
+         まだ誰も触っていない状態から作るので、まるごと書いてよい。
+         ★ 覚えたぶんで描いているあいだ（BOOT_STALE）は書かない。
+            サーバの本物が届いてからでよい */
+    if(!(typeof BOOT_STALE!=='undefined' && BOOT_STALE))
+      await storage.setMany({'clients:master':JSON.stringify(list),'clients:migrated':'2'});
   }
   DB.clients=list;
   clearCaches();
@@ -2814,7 +2874,8 @@ function opSend(k){
   /* ★ 版が古くなって画面を止めているあいだは書かせない。
        storage.set と同じ門（APP_LOCKED / APP_FLUSH）をここでも通す。
        srv() は storage を通らないので、付け忘れると門が効かない */
-  if(typeof APP_LOCKED!=='undefined' && APP_LOCKED && !APP_FLUSH){
+  if((typeof APP_LOCKED!=='undefined' && APP_LOCKED && !APP_FLUSH)
+     || (typeof BOOT_STALE!=='undefined' && BOOT_STALE)){
     _opBusy[k]=false;
     _opQ[k]=_opQ[k]||{shape:shape, patch:opEmpty(shape), tries:0};
     _opQ[k].patch=opMerge(shape,sending,_opQ[k].patch);
@@ -6346,17 +6407,49 @@ function jShotHtml(u, i, n){
     '<img src="'+esc(src)+'" alt="領収書" referrerpolicy="no-referrer"'+
       ' fetchpriority="high" decoding="async"'+
       (cached?'':' data-jthumb="1"')+'>'+
+    '<button class="jretry tap" data-jretry="'+esc(id)+'">もう一度読む</button>'+
     '<a class="jopen" href="'+esc(u)+'" target="_blank" rel="noopener">大きく見る ↗</a>'+
   '</div>';
 }
 
 /** サムネイルが出なかったものを、サーバから取ってきて差し替える */
+/** ★★★ 写真は【あきらめる前に3通り試す】（2026-09-25・お重さん）
+
+    「7/19厚生費、1876。写真はあるのに出せませんでしたとのエラーあり。」
+
+    Drive のサムネイルは **作られるまで少し時間がかかる**（撮った直後は 404）。
+    1回こけただけで「出せませんでした」と出していたので、
+    **あるのに出ない**ということが起きた。順に試して、全部だめなときだけ出す。
+
+      ① drive.google.com/thumbnail（もう一度・少し待って）
+      ② lh3.googleusercontent.com/d/<id>（同じ写真の別の出し口）
+      ③ サーバから中身をもらう（receiptData）
+
+    ★ それでもだめなら【もう一度読む】を出す。押せばやり直せる。
+      電波が1回こけただけのときに、開き直させない */
+var _shotStep = {};       /* ファイルid → いま何番目を試しているか */
+function shotSrc_(id, step){
+  var t = '&_=' + Date.now();
+  if(step===0) return driveThumb_(id);
+  if(step===1) return driveThumb_(id) + t;
+  if(step===2) return 'https://lh3.googleusercontent.com/d/'+id+'=w1000';
+  return '';
+}
 function jShotRescue(el){
   el.querySelectorAll('.jshot img[data-jthumb]').forEach(function(img){
+    var box = img.closest('.jshot'), id = box && box.dataset.jfid;
+    if(!id) return;
     img.onerror = function(){
-      var box = img.closest('.jshot'), id = box && box.dataset.jfid;
-      if(!id || jShotDead[id]) { if(box) box.classList.add('miss'); return; }
-      img.removeAttribute('data-jthumb');
+      if(jShotDead[id]) { box.classList.add('miss'); return; }
+      var step = (_shotStep[id]||0) + 1;
+      _shotStep[id] = step;
+      var url = shotSrc_(id, step);
+      if(url){
+        /* ★ 少し待ってから。撮った直後はサムネイルがまだ作られていない */
+        setTimeout(function(){ img.src = url; }, step===1?1200:300);
+        return;
+      }
+      /* ③ サーバから中身をもらう */
       box.classList.add('loading');
       srv('receiptData',[id]).then(function(r){
         box.classList.remove('loading');
@@ -6369,6 +6462,15 @@ function jShotRescue(el){
     /* もう読み終わって失敗しているぶんも拾う */
     if(img.complete && img.naturalWidth===0) img.onerror();
   });
+  /* ★ 「もう一度読む」… 1回こけただけのときに、開き直させない */
+  el.querySelectorAll('[data-jretry]').forEach(function(b){ b.onclick=function(ev){
+    ev.preventDefault(); ev.stopPropagation();
+    var id=b.dataset.jretry, box=b.closest('.jshot'), img=box&&box.querySelector('img');
+    jShotDead[id]=0; _shotStep[id]=0; delete jShotCache[id];
+    if(box) box.classList.remove('miss');
+    if(img){ img.setAttribute('data-jthumb','1'); img.src=shotSrc_(id,0)+'&_='+Date.now(); }
+    jShotRescue(box||el);
+  }; });
 }
 
 /** ★★★ 取引の種類をつくる（2026-09-24・お重さん）
@@ -6462,7 +6564,7 @@ function viewKinds(el){
       return '<input class="dpin '+(cls||'')+'" data-kr="'+i+'" data-kk="'+key+'" value="'+
         esc(val==null?'':String(val))+'">'; };
     var body=rows.map(function(r,i){
-      var taxable=(String(r.tax)!=='0'&&String(r.tax)!==''&&Number(r.rate)>0);
+      var taxable=taxOn_(r.tax, r.rate);
       var head = multi
         ? '<tr class="rlbl"><td colspan="11"><span class="no">'+(i+1)+'</span>'+
             '<span class="lb">金額の横に出す文字</span>'+
@@ -6482,7 +6584,7 @@ function viewKinds(el){
         '<td class="c">'+(isIn?sideC('acct','c'):cashCell('acct'))+'</td>'+
         '<td class="c">'+(isIn?sideC('sub','c'):cashCell('sub'))+'</td>'+
         '<td class="fill">顧問先が入れる</td>'+
-        '<td class="c">'+inp(i,'rate',Number(r.rate)||0,'c')+
+        '<td class="c">'+(taxFree_(r.tax)?'<span class="dpro">—</span>':inp(i,'rate',Number(r.rate)||0,'c'))+
           '<span class="dprt">'+(taxable?('判定('+(Number(r.rate)===8?'軽':'標')+')'):'—')+'</span></td>'+
         '<td></td><td class="fill">（日付）</td><td></td></tr>'+
       '<tr class="r2"><td class="c">'+esc(CASH_JOURNAL_C.slipNo)+'</td>'+
@@ -6509,7 +6611,7 @@ function viewKinds(el){
          .dpsp を出していないと **まるごと空になって、直せなかった**。
          中身は伝票チェックと同じ `dpSlipHtml`。**片方だけ直さない** */
     var spbody=rows.map(function(r,i){
-      var taxable=(String(r.tax)!=='0'&&String(r.tax)!==''&&Number(r.rate)>0);
+      var taxable=taxOn_(r.tax, r.rate);
       var isIn=(d.dir==='in');
       var mine={code:inp(i,'acct',r.acct,'ac'), sub:inp(i,'sub',r.sub,'sb'),
                 name:inp(i,'acctName',r.acctName), subName:inp(i,'subName',r.subName)};
@@ -6530,8 +6632,9 @@ function viewKinds(el){
         amt:  '<b class="fillsp">顧問先が入れます</b>',
         amtNote: '消費税と税抜は自動',
         tax:  inp(i,'tax',r.tax,'c'), biz:inp(i,'biz',r.biz,'c'),
-        rate: inp(i,'rate',Number(r.rate)||0,'c'),
-        rateTxt: (taxable?('判定('+(Number(r.rate)===8?'軽':'標')+')'):'対象外'),
+        rate: (taxFree_(r.tax)?'<span class="dpro">—</span>':inp(i,'rate',Number(r.rate)||0,'c')),
+        rateTxt: (taxable?('判定('+(Number(r.rate)===8?'軽':'標')+')')
+                         :(String(r.tax||'')==='8'?'非課税（消費税なし）':'対象外')),
         party:'<span class="dpparty">'+inp(i,'party',r.party,'c pcode')+
               inp(i,'partyName',r.partyName)+'</span>',
         memo: '<input class="dpin" data-kr="'+i+'" data-kk="memo" placeholder="'+
@@ -6718,6 +6821,21 @@ function kbRefocus(el){
       緑の見出しの帯は1回だけ。 */
 function jdKind(x){ return cashKindOf((x&&x.kind)||''); }
 /** その1件の伝票の行（ルール × 行ごとの額 × その1件だけの直し） */
+/* ★★★ 消費税のかからない課税区分（2026-09-25・お重さん）
+
+   「トラック保険料とか保険料は課税区分8の非課税なので、消費税の要求は不要。
+     というか消費税かからないから、そもそも入力は-で入力できないようにしとかないと。」
+
+   **0 ＝ 対象外／8 ＝ 非課税。どちらも税率も消費税も出さないし、入れさせない。**
+   空も同じ扱い（まだ決めていない）。
+   **Code.js の taxFree_ と同じ。片方だけ直さない** */
+function taxFree_(tx){
+  var t=String(tx==null?'':tx).trim();
+  return t===''||t==='0'||t==='8';
+}
+/** その行に消費税がかかるか（課税区分と税率の両方を見る） */
+function taxOn_(tx, rate){ return !taxFree_(tx) && Number(rate)>0; }
+
 function jdRows(x, e){
   var kd=jdKind(x);
   if(!kd) return [];
@@ -6737,8 +6855,14 @@ function jdRows(x, e){
       var rp=jRecParty(x);
       if(rp && (rp.code||rp.name)){ d.party=rp.code; d.partyName=rp.name; }
     }
-    if(rr.length===1 && e && e.note) d.memo=e.note;
-    else if(rr.length===1 && x.memo) d.memo=x.memo;
+    /* ★★★ 元帳摘要は【直した文字がいちばん強い】（2026-09-25・お重さん）
+         「伝票化のところで、元帳摘要を直接直そうとしても直らない」
+         ここで x.memo を無条件に上書きしていたので、直しが毎回消えていた。
+         **Code.js の cashJournalSource_ も同じ順。片方だけ直さない** */
+    if(!(ov && ov.memo!==undefined && ov.memo!=='')){
+      if(rr.length===1 && e && e.note) d.memo=e.note;
+      else if(rr.length===1 && x.memo) d.memo=x.memo;
+    }
     return {i:i, lbl:String(r.lbl||''), amt:(amts?Math.round(Number(amts[i])||0):(i===0?g:0)), d:d};
   });
 }
@@ -6778,9 +6902,10 @@ function jdIssues(x, e){
          **Code.js の cashJournalSource_ と同じ決め方。片方だけ直さない** */
     if(!/^\d{4}$/.test(String(r.d.acct||''))) ng.push(n+'勘定科目コードが4桁の数字ではありません');
     if(String(r.d.sub||'') && !/^\d+$/.test(String(r.d.sub))) ng.push(n+'補助コードは数字だけです');
+    /* ★ 消費税のかからない区分（0 対象外／8 非課税）は、税率を求めない */
     var tx=String(r.d.tax||'');
-    if(tx!=='0' && tx!=='' && !(r.d.rate===8||r.d.rate===10)) ng.push(n+'税率は 8% か 10% です');
-    if(tx==='0' && r.d.rate) ng.push(n+'対象外なのに税率が入っています');
+    if(!taxFree_(tx) && !(r.d.rate===8||r.d.rate===10)) ng.push(n+'税率は 8% か 10% です');
+    if(taxFree_(tx) && Number(r.d.rate)) ng.push(n+'消費税のかからない区分なのに税率が入っています');
     if(String(r.d.party||'') && !/^\d{1,6}$/.test(String(r.d.party))) ng.push(n+'取引先コードは数字です');
   });
   if(!tot) ng.push('金額が 0 です');
@@ -6854,11 +6979,13 @@ function jdDenpyoHtml(x, rows){
   /* ---- パソコン … 伝票そのまま（11列の表） ---- */
   var body=rows.map(function(q){
     var d=q.d, i=q.i;
-    var taxable=(String(d.tax)!=='0'&&String(d.tax)!==''&&d.rate>0);
+    var taxable=taxOn_(d.tax, d.rate);
     var tax=taxable?Math.floor(q.amt*d.rate/(100+d.rate)):0;
     var isIn=(d.dir==='in');
     var sideC=function(w,cls){ return inp(i,w,d[w],cls); };
     var cashC=function(w){ return esc(cash[w]); };
+    /* ★ 消費税のかからない区分は、税率のマスを出さない（打てないようにする） */
+    var rateCell = taxFree_(d.tax) ? '<span class="dpro">—</span>' : inp(i,'rate',d.rate||0,'c');
     var head = rows.length>1
       ? '<tr class="rlbl"><td colspan="11"><span class="no">'+(i+1)+'</span>'+
           '<b class="lbn">'+esc(q.lbl||('その'+(i+1)))+'</b>'+
@@ -6871,7 +6998,7 @@ function jdDenpyoHtml(x, rows){
       '<td class="c">'+(isIn?sideC('acct','c'):cashC('acct'))+'</td>'+
       '<td class="c">'+(isIn?sideC('sub','c'):cashC('sub'))+'</td>'+
       '<td class="r num">'+yen(q.amt)+'</td>'+
-      '<td class="c">'+inp(i,'rate',d.rate||0,'c')+
+      '<td class="c">'+rateCell+
         '<span class="dprt">'+(taxable?('判定('+(d.red?'軽':'標')+')'):'—')+'</span></td>'+
       '<td></td><td class="c">'+(taxable?esc(day):'')+'</td><td></td></tr>'+
     '<tr class="r2"><td class="c">'+esc(J.slipNo)+'</td><td class="c">'+inp(i,'tax',d.tax,'c')+'</td>'+
@@ -6891,7 +7018,7 @@ function jdDenpyoHtml(x, rows){
   /* ---- 電話 … 伝票の形のまま、借方と貸方を横に並べた1枚もの ---- */
   var sp=rows.map(function(q){
     var d=q.d, i=q.i;
-    var taxable=(String(d.tax)!=='0'&&String(d.tax)!==''&&d.rate>0);
+    var taxable=taxOn_(d.tax, d.rate);
     var tax=taxable?Math.floor(q.amt*d.rate/(100+d.rate)):0;
     var isIn=(d.dir==='in');
     /* ★ 現金側は打てないマス。**<b> で包む**（包まないと 1111 と 01 が
@@ -6910,8 +7037,10 @@ function jdDenpyoHtml(x, rows){
       dr:   (isIn?his:mine), cr:(isIn?mine:his),
       amt:  '<b class="num">'+yen(q.amt)+'</b>',
       amtNote: (taxable?'内 消費税 '+yen(tax)+'／税抜 '+yen(q.amt-tax):''),
-      tax:  inp(i,'tax',d.tax,'c'), biz:inp(i,'biz',d.biz,'c'), rate:inp(i,'rate',d.rate||0,'c'),
-      rateTxt: (taxable?('判定('+(d.red?'軽':'標')+')／仕入れ '+esc(day)):'対象外'),
+      tax:  inp(i,'tax',d.tax,'c'), biz:inp(i,'biz',d.biz,'c'),
+      rate: (taxFree_(d.tax) ? '<span class="dpro">—</span>' : inp(i,'rate',d.rate||0,'c')),
+      rateTxt: (taxable?('判定('+(d.red?'軽':'標')+')／仕入れ '+esc(day))
+                       :(String(d.tax||'')==='8'?'非課税（消費税なし）':'対象外')),
       party:'<span class="dpparty">'+inp(i,'party',d.party,'c pcode')+
             inp(i,'partyName',d.partyName)+'</span>',
       memo: inp(i,'memo',d.memo)
@@ -7148,6 +7277,8 @@ function jdApply(m, x, q){
   var cur=(jdRows(x, jMap(m)[String(x.id)]||{})[i]||{}).d||{};
   if(String(cur[key]==null?'':cur[key])===String(v)) return false;
   jdSetOv(m, x, i, key, (key==='rate')?(Number(v)||0):v);
+  /* ★ 消費税のかからない区分（0 対象外／8 非課税）にしたら、税率も落とす */
+  if(key==='tax' && taxFree_(v) && Number(cur.rate)) jdSetOv(m, x, i, 'rate', 0);
   return true;
 }
 /** 次のマスへ。無ければ［確定する］へ（そのまま Enter で確定できる） */
@@ -7239,7 +7370,7 @@ function jEff(d, ov, x){
 function jDenpyoVals(x, d){
   var J=CASH_JOURNAL_C;
   var g=Math.round(Number(x.amount)||0);
-  var taxable = !!(d && String(d.tax)!=='0' && String(d.tax)!=='' && d.rate>0);
+  var taxable = !!(d && taxOn_(d.tax, d.rate));
   var tax = taxable ? Math.floor(g*d.rate/(100+d.rate)) : 0;
   var cash={code:J.cashCode, name:J.cashName, sub:'', subName:J.cashSubName, tax:'0', biz:''};
   var side=d?{code:d.acct, name:d.acctName||'', sub:d.sub||'', subName:d.subName||'',
@@ -10546,35 +10677,153 @@ function bootScreen_(ng, why){
   };
 }
 
+/* ============================================================
+   ★★★ 起動を速くする（2026-09-25・お重さん「遅いのは嫌われる」）
+
+   前は **サーバへ3回、順番に**行っていた。
+     ① migrate:kgunit → ② 取引先マスタ → ③ 月の入れもの
+   GAS は1往復 0.5〜2秒（起こし直しがかかると5秒）。
+   **待ち時間がそのまま3倍**になっていた。描画そのものは 20ms しかかからない。
+   遅いのは【往復の数】であって、詰め込んだ中身ではない。
+
+   だから2つ直した。
+
+   ① **往復は1回だけ。** 要る鍵をぜんぶ並べて1回で取る。
+      サーバ側の `readAll_` はどのみち KV を全部読むので、
+      鍵を増やしても重くならない。
+
+   ② **前に読んだものを端末に覚えておいて、まずそれで描く**
+      （`mk_boot1`）。2回目からは**待たずに画面が出る**。
+      うしろでサーバから取り直して、届いたら黙って差し替える。
+
+   ★★★ 覚えたぶんで描いているあいだ（`BOOT_STALE`）は【書き込みを止める】。
+      古い姿の上に書くと、その間に他の人が入れたぶんを消してしまう。
+      止めるといっても捨てるのではなく `_opQ` に積むだけなので、
+      本物が届いた時点でそのまま送られる。
+      （`_opBase` は「サーバから読んだとき」にしか控えないので、
+        覚えたぶんで描いても差分の土台は汚れない）
+   ============================================================ */
+var BOOT_STALE = false;
+var BOOT_CACHE_KEY = 'mk_boot1';
+var BOOT_CACHE_V   = '1';          /* 形を変えたら上げる（古い控えを捨てるため） */
+var BOOT_CACHE_MAX = 900000;       /* 1つ 90万文字まで。これを超える鍵は覚えない */
+
+function bootKeys_(){
+  return ['migrate:kgunit','clients:master','clients:order','clients:migrated',
+          'printed','hist:alias','cost:setting','plan:setting',
+          okey(S.date), ckey(S.date), dkey(S.date)];
+}
+/** ★ boot 自身は使わないが、**最初の画面を出すのに要る**もの。
+      ここに並べておくと、起動のあとの4往復がぜんぶ消える（先読み） */
+function bootPreKeys_(){
+  var d=S.date, fy=fyOf(d);
+  var pm=new Date(d.getFullYear(), d.getMonth()-1, 1);   /* 前月（締めが月をまたぐ） */
+  return [okey(pm), dkey(pm),
+          'ledger:manual:'+fy, 'ledger:autofrom:'+fy, 'ar:open:'+fy, 'invsel:'+fy, 'seed:done',
+          skey(d), buyKey(d)];
+}
+function bootCacheRead_(){
+  try{
+    var raw=localStorage.getItem(BOOT_CACHE_KEY); if(!raw) return null;
+    var o=JSON.parse(raw);
+    if(!o || o.v!==BOOT_CACHE_V || !o.g) return null;
+    /* ★ 鍵の並びが同じときだけ使う（月が変わったら捨てる） */
+    if(String(o.keys||'')!==bootKeys_().concat(bootPreKeys_()).join('|')) return null;
+    return o.g;
+  }catch(e){ return null; }
+}
+function bootCacheWrite_(g){
+  try{
+    var out={}, ks=bootKeys_().concat(bootPreKeys_());
+    for(var i=0;i<ks.length;i++){
+      var v=g[ks[i]];
+      if(v==null){ out[ks[i]]=null; continue; }
+      v=String(v);
+      if(v.length>BOOT_CACHE_MAX) continue;   /* 大きすぎるものは覚えない */
+      out[ks[i]]=v;
+    }
+    localStorage.setItem(BOOT_CACHE_KEY,
+      JSON.stringify({v:BOOT_CACHE_V, keys:ks.join('|'), g:out}));
+  }catch(e){ try{ localStorage.removeItem(BOOT_CACHE_KEY); }catch(e2){} }
+}
+/** ★ 覚えたぶんで読み込んだ「あとから読むもの」を忘れる（2026-09-25）
+
+    覚えたぶんで描くと、そのついでに ensureLedger / ensureMonths /
+    saleEnsure / buyEnsure も走って、**古い値で「読み込み済み」になってしまう**。
+    本物が届いたら、ここで印を消して読み直させる。
+    そのときはもう先読みの受け皿（preSet_）に本物が入っているので、
+    **サーバへは行かない**。読み込みの中身を書き写さないので、食いちがわない。 */
+function bootPreForget_(){
+  try{
+    var d=S.date, fy=fyOf(d);
+    var pm=new Date(d.getFullYear(), d.getMonth()-1, 1);
+    delete DB.orders[okey(pm)]; delete DB.deliv[dkey(pm)];
+    delete DB.arOpen[fy];                       /* ledgerLoaded が false に戻る */
+    delete DB.sale[skey(d)];  if(window._saleFetch) _saleFetch[skey(d)]=0;
+    delete DB.buy[buyKey(d)]; if(window._buyFetch)  _buyFetch[buyKey(d)]=0;
+  }catch(e){}
+}
+
+/** 読んだ値を DB に当てる。覚えたぶんでも、サーバの本物でも同じ道を通る */
+async function bootApply_(g, stale){
+  DB.kgReady = !!(g['migrate:kgunit'] && String(g['migrate:kgunit'])==='1');
+  if(!DB.kgReady) return false;
+  await loadClients(g);
+  DB.printed=jparse(g['printed'],{})||{};
+  DB.alias=jparse(g['hist:alias'],{})||{};
+  DB.cost=normalizeCost(jparse(g['cost:setting'],null));
+  DB.plan=normalizePlan(jparse(g['plan:setting'],null));
+  DB.orders[okey(S.date)]=jparse(g[okey(S.date)],{})||{};
+  DB.confirm[ckey(S.date)]=jparse(g[ckey(S.date)],{})||{};
+  DB.deliv[dkey(S.date)]=jparse(g[dkey(S.date)],{})||{};
+  DB.ready=true;
+  clearCaches();
+  render();
+  return true;
+}
+
 async function boot(){
   var gen=++_bootGen;
   if(_bootWatch) clearTimeout(_bootWatch);
   /* ★ 12秒たっても返事が無ければ、待っている画面（＋ボタン）を出す。
-       エラーではないので、赤い字にはしない */
+       エラーではないので、赤い字にはしない。
+       ★ 覚えたぶんでもう描けているときは出さない（画面が消えてしまう） */
   _bootWatch=setTimeout(function(){
     if(gen===_bootGen && !DB.ready) bootScreen_(false,'');
   }, 12000);
 
   try{
-    /* 単位の切り替えが済んでいるかを先に見る（済むまで他の画面は出しません） */
-    var mg=await storage.get('migrate:kgunit');
-    DB.kgReady = !!(mg && String(mg.value)==='1');
-    if(!DB.kgReady){ clearTimeout(_bootWatch); renderMigration(); return; }
+    /* ── ① まず、前に読んだもので描く（2回目からは待たずに出る）── */
+    /* ★ 関所が立っていて、この端末がまだ通っていないときは覚えたぶんも出さない */
+    var gated = !!(typeof AUTH!=='undefined' && AUTH.on && !AUTH.tok);
+    var cached = (storage.gas && !gated) ? bootCacheRead_() : null;
+    if(cached){
+      BOOT_STALE = true;
+      /* あとから読むぶんも受け皿へ。入れないと、覚えたぶんで描いた瞬間に
+         ensureLedger たちが5本もサーバへ飛ぶ */
+      if(window.preSet_) preSet_(cached);
+      try{ if(await bootApply_(cached, true)) clearTimeout(_bootWatch); }
+      catch(e){ BOOT_STALE=false; }
+    }
 
-    await loadClients();
-    var g=await storage.getMany(['printed','hist:alias','cost:setting','plan:setting',
-      okey(S.date), ckey(S.date), dkey(S.date)]);
+
+    /* ── ② サーバへは【1回だけ】行く ──
+         boot が使う鍵と、最初の画面に要る鍵をまとめて取る。
+         あとのほうは受け皿（preSet_）に置いておくと、
+         それぞれの読み込み（ensureMonths / ensureLedger …）が
+         サーバへ行かずにそこから取る */
+    var all = bootKeys_().concat(bootPreKeys_());
+    var g = await (storage.getManyRaw ? storage.getManyRaw(all) : storage.getMany(all));
+    if(gen!==_bootGen) return;              /* ボタンで新しく始まっている */
+    BOOT_STALE = false;
     clearTimeout(_bootWatch);
-    DB.printed=jparse(g['printed'],{})||{};
-    DB.alias=jparse(g['hist:alias'],{})||{};
-    DB.cost=normalizeCost(jparse(g['cost:setting'],null));
-    DB.plan=normalizePlan(jparse(g['plan:setting'],null));
-    DB.orders[okey(S.date)]=jparse(g[okey(S.date)],{})||{};
-    DB.confirm[ckey(S.date)]=jparse(g[ckey(S.date)],{})||{};
-    DB.deliv[dkey(S.date)]=jparse(g[dkey(S.date)],{})||{};
-    DB.ready=true;
-    clearCaches();
-    render();
+    if(window.preSet_) preSet_(g);
+    if(storage.gas) bootCacheWrite_(g);
+    if(cached) bootPreForget_();            /* 覚えたぶんで読み込んだ印を消す */
+    if(!(await bootApply_(g, false))){ renderMigration(); return; }
+    /* 止めていたあいだに積まれたぶんを、ここで送り出す
+       （opResume は下の <script> で定義されるので、いちど後回しにする） */
+    setTimeout(function(){ try{ opResume(); }catch(e){} },0);
     /* ★ 前に送れなかったぶんを、ここで片づけます（2026-09-13）
          ・pend:  … 小口現金の保存が通らなかった控え
          ・opend: … 注文（触ったマス）の控え（2026-09-20）
@@ -10597,6 +10846,7 @@ async function boot(){
     }catch(e){}
   }catch(e){
     clearTimeout(_bootWatch);
+    BOOT_STALE=false;               /* 止めたままにしない（保存できなくなる） */
     if(gen!==_bootGen) return;      /* ボタンで新しく始まっている。黙って降りる */
     _bootTry++;
     if(_bootTry<=2){                /* 2回までは自分でやり直す */
@@ -10958,7 +11208,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-24j 伝票チェック … スマホでも伝票の形（借方と貸方を横に）／確定ずみはたたむ／写真→取引の種類→伝票／現金実査は合っていれば「合っています、確定」';
+var APP_BUILD='2026-09-25a 起動を速く（サーバへの往復 5回→1回・2回目は待たずに出る）／元帳摘要を直せる／非課税(8)は税率も消費税も求めない／枠を濃く・確定ずみの緑を濃く／写真は3通り試す';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
