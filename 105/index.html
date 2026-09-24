@@ -613,6 +613,17 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .kbp.out{background:#FBEEF2;color:var(--pink)}
 .kbp.multi{background:#EFE7F6;color:var(--purple)}
 .kbp.ng{background:#FBE9EE;color:var(--pink)}
+/* ★★ ドラッグして 群を移す・順番を入れ替える（2026-09-24。事務所の画面なのでPC前提） */
+.kbi{user-select:none}
+.kbhand{flex:0 0 auto;color:#bbb;font-size:15px;line-height:1;cursor:grab;letter-spacing:-1px}
+.kbi.dragging{opacity:.35}
+.kbi.over{box-shadow:0 -3px 0 0 var(--gold)}
+.kbi.overend{box-shadow:0 3px 0 0 var(--gold)}
+.kbg.over{background:#FFFBF0;border-radius:8px;outline:2px dashed var(--gold);outline-offset:2px}
+.kbdrop{min-height:26px;border:1.5px dashed var(--line);border-radius:8px;
+  font-size:11.5px;color:#bbb;display:flex;align-items:center;justify-content:center}
+.kbgh .hint{margin-left:auto;font-weight:700;color:#9fc0b7;font-size:11px}
+.kbgh .n{margin-left:6px}
 .kbnew{width:100%;border:2px dashed var(--gold);background:#FFFBF0;color:#7a5c19;
   border-radius:10px;font-family:inherit;font-size:14px;font-weight:800;padding:9px;
   cursor:pointer;margin-top:6px}
@@ -836,9 +847,10 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
 .dpsp .spr{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dashed #DCE8E4}
 .dpsp .spr:last-child{border-bottom:none}
 .dpsp .spl{flex:0 0 66px;font-size:11.5px;font-weight:800;color:#1f7a6a}
-.dpsp .spv{flex:1;min-width:0;display:flex;gap:6px;align-items:center}
+/* ★ マスが3つ並ぶ行（課税・事業・税率）があるので、はみ出す前に折り返す */
+.dpsp .spv{flex:1;min-width:0;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .dpsp .spv .dpin{min-width:0}
-.dpsp .spv .dpin.c{flex:0 0 66px;text-align:center}
+.dpsp .spv .dpin.c{flex:0 0 56px;text-align:center}
 .dpsp b{font-size:16px}
 .dpsp .spv b{font-size:13.5px;font-weight:700}
 .dpsp .big .spv b{font-size:24px;font-weight:800}
@@ -5286,6 +5298,15 @@ function cashKinds(){
     if(!t){ t={k:String(v.k)}; by[t.k]=t; out.push(t); }
     for(var q in v) if(q!=='k') t[q]=v[q];
   });
+  /* ★★ 事務所が並べ替えたぶん（`ord`）を効かせる（2026-09-24）。
+       つくる画面でドラッグすると、そのとき全部に 1,2,3 … が付く。
+       まだ並べ替えていないうちは `ord` が無いので、種（`CASH_KINDS`）の並びのまま */
+  out.forEach(function(o,i){ o._seq=i; });
+  out.sort(function(a,b){
+    var x=(a.ord==null||a.ord==='')?1e6+a._seq:Number(a.ord);
+    var y=(b.ord==null||b.ord==='')?1e6+b._seq:Number(b.ord);
+    return (x-y) || (a._seq-b._seq);
+  });
   _kindsSrc=ov; _kindsCache=out;
   return out;
 }
@@ -6322,6 +6343,35 @@ function kindOv(k){
   return o;
 }
 function kindTouch(){ kindsDirty(); saveKinds(); }
+/** ★ 並べ替え・群うつしのための【軽い記録】。`rows` は写さない
+      （写すと、ドラッグしただけで34件ぶんの伝票のルールが KV に流れ込む） */
+function kindRec(k){
+  DB.kinds=DB.kinds||[];
+  for(var i=0;i<DB.kinds.length;i++) if(DB.kinds[i].k===k) return DB.kinds[i];
+  var o={k:k}; DB.kinds.push(o); return o;
+}
+/** ★★ ドラッグで落としたとおりに並べ直す（2026-09-24）。
+      `src` を `dstGrp` の `beforeK` の【前】へ。`beforeK` が空なら その群の最後へ。
+      **落とすたびに全部へ `ord` を振り直す。** 一部だけに付けると、
+      付いているものと付いていないものが混ざって並びが読めなくなる */
+function kindMove(src, dstGrp, beforeK){
+  if(!src || src===beforeK) return;
+  var L=cashKinds().filter(function(x){ return !x.gone; }), keys=[];
+  KIND_GRP.forEach(function(g){
+    L.forEach(function(x){
+      if((x.grp||'often')!==g.k || x.k===src) return;
+      keys.push({k:x.k, g:g.k});
+    });
+  });
+  var at=-1, i;
+  if(beforeK) for(i=0;i<keys.length;i++) if(keys[i].k===beforeK){ at=i; break; }
+  if(at<0){ var last=-1;
+    for(i=0;i<keys.length;i++) if(keys[i].g===dstGrp) last=i;
+    at=last+1; }
+  keys.splice(at, 0, {k:src, g:dstGrp});
+  keys.forEach(function(q,n){ var r=kindRec(q.k); r.ord=n+1; r.grp=q.g; });
+  kindTouch();
+}
 
 function viewKinds(el){
   var L=cashKinds().filter(function(x){ return !x.gone; });
@@ -6329,19 +6379,24 @@ function viewKinds(el){
   var d=kindEff(S.kindSel);
 
   var listHtml='<div class="kbcard"><h3>取引の種類</h3>'+
+    /* ★★ 群が空でも枠は出す（2026-09-24）。出さないと、そこへドラッグで落とせない */
     KIND_GRP.map(function(g){
       var ks=L.filter(function(x){ return (x.grp||'often')===g.k; });
-      if(!ks.length) return '';
-      return '<div class="kbg"><div class="kbgh">'+esc(g.label)+
+      return '<div class="kbg" data-kbgrp="'+g.k+'"><div class="kbgh">'+esc(g.label)+
+        '<span class="hint">つまんで動かせます</span>'+
         '<span class="n">'+ks.length+'</span></div>'+
         ks.map(function(x){
-          var rs=kindRows(x), bad=rs.some(function(r){ return !/^\d{4}$/.test(String(r.acct||''))||!String(r.acctName||''); });
-          return '<button class="kbi'+(S.kindSel===x.k?' on':'')+' tap" data-kbsel="'+esc(x.k)+'">'+
+          /* ★ 「科目まだ」は【コードが無いとき】だけ。名前は条件ではない（2026-09-24） */
+          var rs=kindRows(x), bad=rs.some(function(r){ return !/^\d{4}$/.test(String(r.acct||'')); });
+          return '<div class="kbi'+(S.kindSel===x.k?' on':'')+' tap" draggable="true" '+
+            'data-kbsel="'+esc(x.k)+'">'+
+            '<span class="kbhand" aria-hidden="true">⠿</span>'+
             '<span class="kbp '+x.dir+'">'+(x.dir==='in'?'入':'出')+'</span>'+
             '<b>'+esc(x.label)+'</b>'+
             (rs.length>1?'<span class="kbp multi">'+rs.length+'行</span>':'')+
-            (bad?'<span class="kbp ng">科目まだ</span>':'')+'</button>';
-        }).join('')+'</div>';
+            (bad?'<span class="kbp ng">科目まだ</span>':'')+'</div>';
+        }).join('')+
+        (ks.length?'':'<div class="kbdrop">ここへ持ってくる</div>')+'</div>';
     }).join('')+
     '<button class="kbnew tap" id="kbnew">＋ あたらしく作る</button></div>';
 
@@ -6382,7 +6437,9 @@ function viewKinds(el){
         '<td class="fill">自動</td>'+
         '<td colspan="4"><span class="dpparty">'+inp(i,'party',r.party,'c pcode')+
           inp(i,'partyName',r.partyName)+'</span></td></tr>'+
-      '<tr class="r3"><td class="c">'+esc(CASH_JOURNAL_C.voucherNo)+'</td><td class="c"></td>'+
+      /* ★ 事業（区分）も入れられる（2026-09-24）。FXの10列目・25列目にそのまま乗る */
+      '<tr class="r3"><td class="c">'+esc(CASH_JOURNAL_C.voucherNo)+'</td>'+
+        '<td class="c">'+inp(i,'biz',r.biz,'c')+'</td>'+
         '<td colspan="2">'+(isIn?cashCell('subName'):sideC('subName'))+'</td>'+
         '<td colspan="2">'+(isIn?sideC('subName'):cashCell('subName'))+'</td>'+
         '<td class="fill">自動</td>'+
@@ -6461,13 +6518,98 @@ function viewKinds(el){
   el.querySelectorAll('[data-ke]').forEach(function(q){ q.onchange=function(){
     var o=kindOv(S.kindSel); o[q.dataset.ke]=q.value; kindTouch(); render(); }; });
   el.querySelectorAll('[data-kr]').forEach(function(q){ q.onchange=function(){
-    var o=kindOv(S.kindSel), i=+q.dataset.kr, key=q.dataset.kk;
-    o.rows[i] = o.rows[i] || {};
-    o.rows[i][key] = (key==='rate') ? (Number(q.value)||0) : q.value;
-    /* ★ 税率を直したら、軽減（8%）か標準（10%）かも付いてくる。
-         **jEff・cashJournalSource_ と同じ決め方。片方だけ直さない** */
-    if(key==='rate') o.rows[i].red = (Number(q.value)===8) ? 1 : 0;
-    kindTouch(); render(); }; });
+    if(kbApply(q)) render(); }; });
+
+  /* ★★★ 仕訳のルールも Enter で次のマスへ（2026-09-24）
+       伝票チェックとまったく同じ決まり ── **見えているマスだけを数え、
+       中身が変わっていなければ描き直さない**（描き直すとカーソルが飛ぶ）。
+       変わったときは `S.kbFocus` に「次はここ」を預けてから描き直す。
+       名前（1.）からも続けて回れるように、`[data-ke="label"]` も列に入れる */
+  var kbCells=function(){
+    return Array.prototype.filter.call(
+      el.querySelectorAll('input[data-ke="label"], .kbed input[data-kr]'),
+      function(q){ return q.offsetParent!==null; });
+  };
+  el.querySelectorAll('input[data-ke="label"], .kbed input[data-kr]').forEach(function(q){
+    q.onkeydown=function(ev){
+      if(ev.key!=='Enter' && ev.keyCode!==13) return;
+      ev.preventDefault();
+      var list=kbCells(), n=list.indexOf(q), chg=false;
+      if(q.dataset.kr!==undefined) chg=kbApply(q);
+      else { var o=kindOv(S.kindSel);
+             if(String(o[q.dataset.ke]==null?'':o[q.dataset.ke])!==q.value){
+               o[q.dataset.ke]=q.value; kindTouch(); chg=true; } }
+      if(chg){ S.kbFocus=n+1; render(); return; }
+      kbGo(list, n+1);
+    };
+  });
+
+  /* ★★ ドラッグで 群を移す・順番を入れ替える（2026-09-24） */
+  var srcK=null;
+  var clear=function(){ el.querySelectorAll('.over,.overend,.dragging').forEach(function(q){
+    q.classList.remove('over','overend','dragging'); }); };
+  el.querySelectorAll('.kbi[draggable]').forEach(function(b){
+    b.ondragstart=function(ev){
+      srcK=b.dataset.kbsel; b.classList.add('dragging');
+      try{ ev.dataTransfer.effectAllowed='move';
+           ev.dataTransfer.setData('text/plain', srcK); }catch(e){}
+    };
+    b.ondragend=function(){ srcK=null; clear(); };
+    b.ondragover=function(ev){
+      if(!srcK || srcK===b.dataset.kbsel) return;
+      ev.preventDefault(); ev.dataTransfer.dropEffect='move';
+      var r=b.getBoundingClientRect(), low=(ev.clientY-r.top)>r.height/2;
+      clear(); el.querySelectorAll('.kbi').forEach(function(q){
+        if(q.dataset.kbsel===srcK) q.classList.add('dragging'); });
+      b.classList.add(low?'overend':'over');
+    };
+    b.ondrop=function(ev){
+      if(!srcK || srcK===b.dataset.kbsel) return;
+      ev.preventDefault(); ev.stopPropagation();
+      var g=b.closest('.kbg'), r=b.getBoundingClientRect();
+      var low=(ev.clientY-r.top)>r.height/2, before=b.dataset.kbsel;
+      if(low){
+        /* 下半分に落としたら「その次」へ … 同じ群の次の1件の前に入れる */
+        var sib=b.nextElementSibling;
+        before=(sib && sib.classList.contains('kbi')) ? sib.dataset.kbsel : '';
+      }
+      kindMove(srcK, (g&&g.dataset.kbgrp)||'often', before);
+      srcK=null; render();
+    };
+  });
+  el.querySelectorAll('.kbg[data-kbgrp]').forEach(function(g){
+    g.ondragover=function(ev){ if(!srcK) return;
+      ev.preventDefault(); ev.dataTransfer.dropEffect='move'; g.classList.add('over'); };
+    g.ondragleave=function(){ g.classList.remove('over'); };
+    g.ondrop=function(ev){ if(!srcK) return;
+      ev.preventDefault();
+      kindMove(srcK, g.dataset.kbgrp, '');     /* その群のいちばん下へ */
+      srcK=null; render(); };
+  });
+
+  kbRefocus(el);
+}
+/** つくる画面のマスを1つ当てる。**変わったときだけ true**（＝描き直しが要る） */
+function kbApply(q){
+  var o=kindOv(S.kindSel), i=+q.dataset.kr, key=q.dataset.kk;
+  o.rows[i] = o.rows[i] || {};
+  var was=o.rows[i][key], v=(key==='rate') ? (Number(q.value)||0) : q.value;
+  if(String(was==null?'':was)===String(v)) return false;
+  o.rows[i][key]=v;
+  /* ★ 税率を直したら、軽減（8%）か標準（10%）かも付いてくる。
+       **jdRows・cashJournalSource_ と同じ決め方。片方だけ直さない** */
+  if(key==='rate') o.rows[i].red = (Number(q.value)===8) ? 1 : 0;
+  kindTouch(); return true;
+}
+function kbGo(list, n){
+  if(n>=0 && n<list.length){ list[n].focus(); if(list[n].select) list[n].select(); }
+}
+/** 描き直したあと、預けておいた「次はここ」へカーソルを戻す */
+function kbRefocus(el){
+  var n=S.kbFocus; if(n==null) return; S.kbFocus=null;
+  kbGo(Array.prototype.filter.call(
+    el.querySelectorAll('input[data-ke="label"], .kbed input[data-kr]'),
+    function(q){ return q.offsetParent!==null; }), n);
 }
 
 /** ★★★ 伝票チェック（2026-09-24・お重さん）
@@ -6538,8 +6680,10 @@ function jdIssues(x, e){
   rows.forEach(function(r){
     var n=(rows.length>1?('「'+(r.lbl||('その'+(r.i+1)))+'」'):'');
     tot+=r.amt;
+    /* ★ 見るのは【科目コード】だけ（2026-09-24・お重さん）。
+         科目の名前はエクセルに出す文字であって、入る条件ではない。
+         **Code.js の cashJournalSource_ と同じ決め方。片方だけ直さない** */
     if(!/^\d{4}$/.test(String(r.d.acct||''))) ng.push(n+'勘定科目コードが4桁の数字ではありません');
-    if(!String(r.d.acctName||'')) ng.push(n+'勘定科目名が空です');
     if(String(r.d.sub||'') && !/^\d+$/.test(String(r.d.sub))) ng.push(n+'補助コードは数字だけです');
     var tx=String(r.d.tax||'');
     if(tx!=='0' && tx!=='' && !(r.d.rate===8||r.d.rate===10)) ng.push(n+'税率は 8% か 10% です');
@@ -6616,7 +6760,8 @@ function jdDenpyoHtml(x, rows){
       '<td class="r num">'+(taxable?yen(tax):'')+'</td>'+
       '<td colspan="4"><span class="dpparty">'+inp(i,'party',d.party,'c pcode')+
         inp(i,'partyName',d.partyName)+'</span></td></tr>'+
-    '<tr class="r3"><td class="c">'+esc(J.voucherNo)+'</td><td class="c">'+esc(d.biz||'')+'</td>'+
+    '<tr class="r3"><td class="c">'+esc(J.voucherNo)+'</td>'+
+      '<td class="c">'+inp(i,'biz',d.biz,'c')+'</td>'+
       '<td colspan="2">'+(isIn?cashC('subName'):sideC('subName'))+'</td>'+
       '<td colspan="2">'+(isIn?sideC('subName'):cashC('subName'))+'</td>'+
       '<td class="r num">'+yen(q.amt-tax)+'</td>'+
@@ -6653,7 +6798,7 @@ function jdDenpyoHtml(x, rows){
       row('口座名',  (isIn?sideC('subName'):cashC('subName')), 'sub')+
       row('取引金額','<b class="num">'+yen(q.amt)+'</b>'+
           (taxable?'<span class="spt">内 消費税 '+yen(tax)+'／税抜 '+yen(q.amt-tax)+'</span>':''),'big')+
-      row('課税・税率', inp(i,'tax',d.tax,'c')+inp(i,'rate',d.rate||0,'c')+
+      row('課税・事業・税率', inp(i,'tax',d.tax,'c')+inp(i,'biz',d.biz,'c')+inp(i,'rate',d.rate||0,'c')+
           '<span class="spt">'+(taxable?('判定('+(d.red?'軽':'標')+')／仕入れ '+esc(day)):'対象外')+'</span>')+
       row('取引先','<span class="dpparty">'+inp(i,'party',d.party,'c pcode')+
           inp(i,'partyName',d.partyName)+'</span>')+
@@ -10648,7 +10793,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-24h 伝票チェック … 写真の下に伝票／年月日から Enter で確定／反映が止まっていたら はっきり言う';
+var APP_BUILD='2026-09-24i つくる画面 … Enter で次のマス／事業区分／ドラッグで並べ替え／科目はコードだけで足りる';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
