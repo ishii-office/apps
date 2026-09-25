@@ -10932,6 +10932,53 @@ boot();
 .ar-t tr.tot td{background:#D9E8F1 !important;font-weight:700;border-top:2px solid var(--ai)}
 .ar-t tr.tot td.sk{background:#C8DCE9 !important}
 .ar-t tr.now td.sk1{box-shadow:inset 4px 0 0 var(--gold)}
+/* ★★★ 縦1本の売掛帳（2026-09-25）。確認表（make_ar_check_sheet.py）と同じ並び */
+/* ★ 合わせて 100%。横スクロールさせない（右へ長い帳面をやめたのだから、
+     はみ出したら意味がない）。数字は折り返さず、区分とメモだけ折り返す */
+.ar-flat{width:100%;table-layout:fixed}
+.ar-flat th,.ar-flat td{overflow:hidden;text-overflow:ellipsis}
+/* ★ 見出しは折り返す（nowrap のままだと「値引きそ…」で切れる） */
+.ar-flat thead th{white-space:normal;line-height:1.25}
+.ar-flat th.c0,.ar-flat td.c0{width:20%;text-align:left;white-space:normal}
+.ar-flat th.c1,.ar-flat td.c1{width:10%}
+.ar-flat th.c2,.ar-flat td.c2{width:7%;text-align:center}
+.ar-flat th.c3,.ar-flat td.c3{width:10%}
+.ar-flat th.c4,.ar-flat td.c4{width:10%}
+.ar-flat th.c5,.ar-flat td.c5{width:11%}
+.ar-flat th.c6,.ar-flat td.c6{width:11%;text-align:center}
+.ar-flat th.c7,.ar-flat td.c7{width:8%;text-align:center}
+.ar-flat th.c8,.ar-flat td.c8{width:13%;white-space:normal}
+.ar-flat tbody tr.cont td.c0{border-bottom-color:#F2EEE4}
+.ar-flat tr.prev td.c0{background:#F5EEDD;font-weight:700}
+.ar-flat tr.adv td.c0{background:#EAF1F5;font-weight:700;color:var(--ice)}
+.ar-flat tr.now td.c0{box-shadow:inset 4px 0 0 var(--gold)}
+.ar-flat tr.tot td{background:#D9E8F1 !important;font-weight:700;border-top:2px solid var(--ai)}
+/* 方法の札。現金／振込／値引きほか で色を分ける（目で拾えるように） */
+.armet{display:inline-block;font-size:.86em;font-weight:700;border-radius:6px;padding:1px 7px}
+.armet.m-cash{background:#FBF1D8;color:#7a5c19}
+.armet.m-bank{background:#E6EFF6;color:#20405E}
+.armet.m-disc{background:#EFEAF7;color:#6B5B95}
+/* 小切手が当座に入った日／メモ … その場で書ける */
+.arin{width:100%;border:1px dashed #CFC7B4;border-radius:5px;background:#fff;
+  font-family:inherit;padding:2px 5px;box-sizing:border-box}
+.arin:focus{border-style:solid;border-color:var(--ai);outline:2px solid var(--gold)}
+/* ★ 電話では【小切手の日・メモ】をたたむ。9列は 390px に入らない。
+     書き込むのは事務所（パソコン）なので、電話では読めれば足りる */
+@media(max-width:700px){
+  /* ★ 字を詰めないと 390px に7列は入らない（金額が「5,0…」で切れる）。
+       マスの大きさは中で inline で書いているので、ここは !important で上書きする */
+  .ar-flat th,.ar-flat td{font-size:11.5px !important;padding:4px 3px !important}
+  .ar-flat th.c7,.ar-flat td.c7,.ar-flat th.c8,.ar-flat td.c8{display:none}
+  .ar-flat td.c0 .muted{display:none}          /* 「令和8.2」は出さない（区分で分かる） */
+  .ar-flat th.c0,.ar-flat td.c0{width:16%}
+  .ar-flat th.c1,.ar-flat td.c1{width:17%}
+  .ar-flat th.c2,.ar-flat td.c2{width:11%}
+  .ar-flat th.c3,.ar-flat td.c3{width:16%}
+  .ar-flat th.c4,.ar-flat td.c4{width:10%}
+  .ar-flat th.c5,.ar-flat td.c5{width:17%}
+  .ar-flat th.c6,.ar-flat td.c6{width:13%}
+  .ar-flat .armet{padding:1px 3px;font-size:10px;font-weight:700}
+}
 .ar-open-in{text-align:right;font-weight:700}
 .ar-sum{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
 .ar-box{border:1px solid var(--line);border-radius:10px;background:#fff;padding:9px 15px;min-width:126px}
@@ -11208,7 +11255,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-25a 起動を速く（サーバへの往復 5回→1回・2回目は待たずに出る）／元帳摘要を直せる／非課税(8)は税率も消費税も求めない／枠を濃く・確定ずみの緑を濃く／写真は3通り試す';
+var APP_BUILD='2026-09-25b 売掛帳を【縦1本】に（右へ月を並べない・回収日で分かる）／方法・小切手が当座に入った日・メモの列／起動を速く（往復5回→1回）';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -11236,6 +11283,12 @@ function arIsDisc(p){
 /** その1件が どの列に入るか。'cash' / 'bank' / 'disc' */
 function arKindOf(p){ return arIsDisc(p)?'disc':(arIsCash(p)?'cash':'bank'); }
 
+/** 回収1件ぶん（行に割れたあとの額）。売掛帳を縦1本で並べるのに使う */
+function arHit_(p, kind, amt){
+  return { pid:String(p.id||''), date:String(p.date||''), amt:amt, kind:kind,
+           method:String(p.method||''), memo:String(p.memo||''),
+           kitte:String(p.kitte||''), 'for':String(p['for']||'') };
+}
 function arLedger(c, fy){
   var cols=fyCols(fy);
   var bill=(arBilledFy(fy)[c.id]||zero12());
@@ -11243,31 +11296,36 @@ function arLedger(c, fy){
   var open=0; openList.forEach(function(o){ open+=o.amt; });
 
   function blank(){ var a=[]; for(var i=0;i<12;i++) a.push({cash:0,bank:0,disc:0,days:[],bal:null,hatsu:0}); return a; }
+  /* ★★★ 1件ずつの回収も覚えておく（2026-09-25）。
+       売掛帳を【右に月を並べる】のをやめて、**回収日で1行ずつ縦に並べる**ため。
+       1回の入金が古い月から順に当たって2つ以上の行へ割れることがあるので、
+       割れたぶんをそれぞれの行の hits に入れる。 */
   var onlyOld=(openList.length===1 && openList[0].key==='old');
   var rows=openList.map(function(o){
     var mm=String(o.key).match(/^(\d{4})-(\d{2})$/);
     return {key:arOpenRowKey(o.key), openKey:o.key, prev:true,
             label:(onlyOld?'前期繰越':arOpenLabel(o.key)),
             sub:(mm? '令和'+(+mm[1]-2018)+'.'+(+mm[2]) : '期首'),
-            arise:-1, amt:o.amt, cell:blank()};
+            arise:-1, amt:o.amt, cell:blank(), hits:[]};
   });
   if(!rows.length) rows=[{key:'prev', openKey:'old', prev:true, label:'前期繰越', sub:'期首',
-                          arise:-1, amt:0, cell:blank()}];
+                          arise:-1, amt:0, cell:blank(), hits:[]}];
   cols.forEach(function(col,i){
     rows.push({key:col.key, label:col.label+'分', sub:'令和'+(col.y-2018)+'.'+col.m,
-               arise:i, amt:Math.round(bill[i]||0), cell:blank()});
+               arise:i, amt:Math.round(bill[i]||0), cell:blank(), hits:[]});
   });
-  var adv={key:'adv', label:'前受・その他', sub:'', arise:-1, amt:0, cell:blank()};
+  var adv={key:'adv', label:'前受・その他', sub:'', arise:-1, amt:0, cell:blank(), hits:[]};
   rows.forEach(function(r){ r.left=r.amt; if(r.arise>=0) r.cell[r.arise].hatsu=r.amt; });
 
   var out={rows:rows, adv:adv, cols:cols, open:open, openList:openList,
            openBreak:(openList.length>1||(openList.length===1&&openList[0].key!=='old')), bill:bill,
            cash:0, bank:0, disc:0, future:0, futureN:0, pays:0, lastPay:''};
 
-  function put(R,j,kind,a,day){
+  function put(R,j,kind,a,day,p){
     var cc=R.cell[j];
     cc[kind]+=a; out[kind]+=a;
     if(day && cc.days.indexOf(day)<0) cc.days.push(day);
+    if(p) R.hits.push(arHit_(p,kind,a));
   }
 
   arPayList(c.id).forEach(function(p){
@@ -11294,7 +11352,7 @@ function arLedger(c, fy){
         if(!hit) continue;
         if(F.left>0 && F.arise<=j){
           var a1=Math.min(F.left,rest);
-          F.left-=a1; rest-=a1; put(F,j,kind,a1,day);
+          F.left-=a1; rest-=a1; put(F,j,kind,a1,day,p);
         }
         if(F.key===fk) break;
       }
@@ -11305,13 +11363,14 @@ function arLedger(c, fy){
       if(R.arise>j) break;
       if(R.left<=0) continue;
       var a2=Math.min(R.left,rest);
-      R.left-=a2; rest-=a2; put(R,j,kind,a2,day);
+      R.left-=a2; rest-=a2; put(R,j,kind,a2,day,p);
     }
     /* ③ それでも余ったら前受 */
     if(rest>0){
       var ac=adv.cell[j];
       ac[kind]+=rest; out[kind]+=rest;
       if(day && ac.days.indexOf(day)<0) ac.days.push(day);
+      adv.hits.push(arHit_(p,kind,rest));
       adv.amt+=rest;
     }
   });
@@ -11545,26 +11604,15 @@ function arList(el,fy){
 }
 
 /* ---------- 1店の売掛帳（クロス表・倍率つき） ---------- */
-function arZ(){ return S.arScale||1.5; }
+/* ★ 縦1本になったので 150% は要らない（列の幅は割合で決まる）。既定は 120% */
+function arZ(){ return S.arScale||1.2; }
 function arDims(){
   var z=arZ();
   var r=function(n){ return Math.round(n*z); };
   return { z:z, fs:r(12.5), pad:r(4)+'px '+r(6)+'px',
            sk1:r(84), sk2:r(70), day:r(38), money:r(70), zan:r(78), head:r(11.5) };
 }
-function arCell(cc,wide,D){
-  var money=function(v,cls){ return '<td class="'+cls+' num" style="width:'+D.money+'px;min-width:'+D.money+'px">'+(v?v.toLocaleString():'')+'</td>'; };
-  var bal=cc.bal;
-  var bcls = bal==null ? 'zan zero' : (bal>0?'zan pos':(bal<0?'zan neg':'zan zero'));
-  var btxt = bal==null ? '' : (bal===0?'0':(bal<0?'△'+Math.abs(bal).toLocaleString():bal.toLocaleString()));
-  var zan='<td class="'+bcls+' num" style="width:'+D.zan+'px;min-width:'+D.zan+'px">'+btxt+'</td>';
-  if(wide){
-    return '<td class="day" style="width:'+D.day+'px;min-width:'+D.day+'px;font-size:'+Math.round(D.fs*0.82)+'px" title="入金日">'+
-        (cc.days.length?cc.days.slice().sort(function(a,b){return a-b;}).join('・'):'')+'</td>'+
-      money(cc.cash,'cash')+money(cc.bank,'bank')+money(cc.disc,'disc')+money(cc.hatsu,'hatsu')+zan;
-  }
-  return money(cc.cash+cc.bank+cc.disc,'cash')+money(cc.hatsu,'hatsu')+zan;
-}
+/* ★ 月ごとのマス（arCell）は、横に月を並べる表をやめたので無くした（2026-09-25） */
 /* ---------- 前期繰越（期首）を発生月ごとに入れる ---------- */
 function arOpenEditorHtml(c,L,fy){
   var cur={}; (L.openList||[]).forEach(function(o){ cur[o.key]=o.amt; });
@@ -11623,68 +11671,121 @@ function wireArOpenEditor(el,c,fy){
     toast('前期繰越の内訳を直しました'); render();
   };
 }
-function arDetailHtml(c,L,fy){
-  var wide=S.arWide!==false, cols=L.cols, D=arDims();
-  var sub = wide ? ['入金日','現金回収','銀行振込回収','値引き・貸倒れ・振込手数料','発生','残高'] : ['回収','発生','残高'];
-  var span=sub.length;
-  var cs='style="font-size:'+D.fs+'px;padding:'+D.pad+'"';
-  var hs='style="font-size:'+D.head+'px;padding:'+D.pad+'"';
-  var head1='<tr><th rowspan="2" class="sk sk1" style="font-size:'+D.head+'px;padding:'+D.pad+';left:0;width:'+D.sk1+'px;min-width:'+D.sk1+'px">発生年月</th>'+
-    '<th rowspan="2" class="sk sk2" style="font-size:'+D.head+'px;padding:'+D.pad+';left:'+D.sk1+'px;width:'+D.sk2+'px;min-width:'+D.sk2+'px">発生額</th>'+
-    cols.map(function(col,i){
-      return '<th class="mg'+(i%2?' even':'')+'" colspan="'+span+'" '+hs+'>'+jpYear(col.y)+col.m+'月</th>';
-    }).join('')+'</tr>';
-  var head2='<tr>'+cols.map(function(){
-      return sub.map(function(s){ return '<th '+hs+'>'+s+'</th>'; }).join('');
-    }).join('')+'</tr>';
+/* ============================================================
+   ★★★ 売掛帳は【縦に1本】。右へ月を並べない（2026-09-25・お重さん）
 
-  var nowIdx=fyIndexOf(ym(new Date()),fy);
-  function rowHtml(R,cls){
-    var cells='';
-    for(var j=0;j<12;j++) cells+=arCell(R.cell[j],wide,D);
-    return '<tr class="'+cls+'" style="font-size:'+D.fs+'px">'+
-      '<td class="sk sk1" style="'+'font-size:'+D.fs+'px;padding:'+D.pad+';left:0;width:'+D.sk1+'px;min-width:'+D.sk1+'px">'+
-        esc(R.label)+(R.sub?'<span class="muted" style="font-size:'+Math.round(D.fs*0.72)+'px;margin-left:3px">'+esc(R.sub)+'</span>':'')+'</td>'+
-      '<td class="sk sk2 num" style="font-size:'+D.fs+'px;padding:'+D.pad+';left:'+D.sk1+'px;width:'+D.sk2+'px;min-width:'+D.sk2+'px">'+
-        (R.amt?R.amt.toLocaleString():'')+'</td>'+cells+'</tr>';
-  }
-  var body=L.rows.map(function(R){
-    return rowHtml(R,(R.arise<0?'prev':'')+(R.arise===nowIdx?' now':''));
-  }).join('');
-  if(L.adv.amt) body+=rowHtml(L.adv,'adv');
+   「現在、売掛帳、入金日、現金回収、預金回収、値引他、そして残高、と
+     並んでいるところ、それが右に月別で長い帳面になってる。そこを、
+     右にながくするのではなく、**一元化して。回収日でいつかわかればよい。**
+     …手書きの売掛帳をExcelにしてたでしょ。あれみたいにして。
+     **残高の右には回収方法と、小切手の場合、当座での実際の回収日、
+     そしてその右にメモ**。」
 
-  var tcells='';
-  for(var j=0;j<12;j++){
-    var b=L.tot.bal[j];
-    var bcls=b>0?'zan pos':(b<0?'zan neg':'zan zero');
-    var w=function(px){ return 'width:'+px+'px;min-width:'+px+'px'; };
-    if(wide){
-      tcells+='<td class="day" style="'+w(D.day)+'"></td>'+
-        '<td class="cash num" style="'+w(D.money)+'">'+(L.tot.cash[j]?L.tot.cash[j].toLocaleString():'')+'</td>'+
-        '<td class="bank num" style="'+w(D.money)+'">'+(L.tot.bank[j]?L.tot.bank[j].toLocaleString():'')+'</td>'+
-        '<td class="disc num" style="'+w(D.money)+'">'+(L.tot.disc[j]?L.tot.disc[j].toLocaleString():'')+'</td>'+
-        '<td class="hatsu num" style="'+w(D.money)+'">'+(L.tot.hatsu[j]?L.tot.hatsu[j].toLocaleString():'')+'</td>'+
-        '<td class="'+bcls+' num" style="'+w(D.zan)+'">'+(b<0?'△'+Math.abs(b).toLocaleString():b.toLocaleString())+'</td>';
-    }else{
-      var v=L.tot.cash[j]+L.tot.bank[j]+L.tot.disc[j];
-      tcells+='<td class="cash num" style="'+w(D.money)+'">'+(v?v.toLocaleString():'')+'</td>'+
-        '<td class="hatsu num" style="'+w(D.money)+'">'+(L.tot.hatsu[j]?L.tot.hatsu[j].toLocaleString():'')+'</td>'+
-        '<td class="'+bcls+' num" style="'+w(D.zan)+'">'+(b<0?'△'+Math.abs(b).toLocaleString():b.toLocaleString())+'</td>';
+   前は 12か月 × 6列 ＝ 72列 を横スクロールで出していた。
+   回収は日付を持っているので、**月の列は要らない**。
+   `tools/make_ar_check_sheet.py` の確認表とまったく同じ並びにそろえた。
+
+     区分（発生年月）／売上金額／回収日／受入金額／値引きその他／差引残高／
+     方法／小切手が当座に入った日／メモ
+
+   - **1行 ＝ 回収1件。** 1回の入金が古い月から順に割れたら、割れたぶんずつ行になる
+   - **売上金額はその発生月のいちばん上の行にだけ置く**（帳面と同じ）
+   - **差引残高はその発生月の中で積み上げる**（`売上金額 − 受入 − 値引き`）
+   - 回収がまだ無い月も1行出す（残高＝売上金額）。**滞留が目で追える**
+   - **小切手は とりあえず「現金回収」で入れる**（お重さん）。
+     当座に入った日は、この表の欄に直接書いて残す（`kitte`）
+   ============================================================ */
+function arMoneyCell_(v, cls, D){
+  return '<td class="'+cls+' num" style="font-size:'+D.fs+'px;padding:'+D.pad+'">'+
+         (v?v.toLocaleString():'')+'</td>';
+}
+/** 売掛帳の行（縦1本）を作る。表・印刷・見張りが同じものを使う */
+function arFlatRows(L){
+  var out=[];
+  var all=L.rows.slice();
+  if(L.adv.amt || (L.adv.hits&&L.adv.hits.length)) all.push(L.adv);
+  all.forEach(function(R){
+    var hits=(R.hits||[]).slice().sort(function(a,b){
+      return String(a.date).localeCompare(String(b.date)); });
+    var bal=R.amt||0;
+    if(!hits.length){
+      out.push({R:R, first:true, amt:R.amt, hit:null, bal:bal});
+      return;
     }
-  }
-  var totRow='<tr class="tot" style="font-size:'+D.fs+'px">'+
-    '<td class="sk sk1" style="font-size:'+D.fs+'px;padding:'+D.pad+';left:0;width:'+D.sk1+'px;min-width:'+D.sk1+'px">月末残高</td>'+
-    '<td class="sk sk2 num" style="font-size:'+D.fs+'px;padding:'+D.pad+';left:'+D.sk1+'px;width:'+D.sk2+'px;min-width:'+D.sk2+'px">'+
-      (L.open+L.billed).toLocaleString()+'</td>'+tcells+'</tr>';
+    hits.forEach(function(h,i){
+      bal -= h.amt;
+      out.push({R:R, first:(i===0), amt:(i===0?R.amt:0), hit:h, bal:bal});
+    });
+  });
+  return out;
+}
+function arDetailHtml(c,L,fy){
+  var D=arDims();
+  var cs='font-size:'+D.fs+'px;padding:'+D.pad;
+  var hs='font-size:'+D.head+'px;padding:'+D.pad;
+  var nowKey=ym(new Date());
+  var head='<tr>'+
+    ['区分（発生年月）','売上金額','回収日','受入金額','値引きその他','差引残高',
+     '方法','小切手が<br>当座に入った日','メモ']
+      .map(function(t,i){ return '<th class="c'+i+'" style="'+hs+'">'+t+'</th>'; }).join('')+
+    '</tr>';
 
-  return '<div class="ar-wrap"><table class="ar-t">'+
-    '<thead>'+head1+head2+'</thead><tbody>'+body+totRow+'</tbody></table></div>';
+  var lines=arFlatRows(L);
+  var body=lines.map(function(x){
+    var R=x.R, h=x.hit;
+    var cls=(R.arise<0?'prev':'')+(R.key===nowKey?' now':'')+(R.key==='adv'?' adv':'')+
+            (x.first?'':' cont');
+    var recv = h ? (h.kind==='disc'?0:h.amt) : 0;
+    var disc = h ? (h.kind==='disc'?h.amt:0) : 0;
+    var bcls = x.bal>0?'zan pos':(x.bal<0?'zan neg':'zan zero');
+    var btxt = x.bal<0 ? '△'+Math.abs(x.bal).toLocaleString() : x.bal.toLocaleString();
+    var tin=function(k,v,ph,w){
+      return '<input class="arin" data-arp="'+esc(h?h.pid:'')+'" data-ark="'+k+'" '+
+        'value="'+esc(v||'')+'" '+(ph?'placeholder="'+ph+'" ':'')+
+        'style="width:'+w+'px;font-size:'+Math.round(D.fs*0.92)+'px">'; };
+    return '<tr class="'+cls+'">'+
+      '<td class="c0" style="'+cs+'">'+(x.first
+          ? esc(R.label)+(R.sub?'<span class="muted" style="font-size:'+Math.round(D.fs*0.72)+
+              'px;margin-left:3px">'+esc(R.sub)+'</span>':'')
+          : '')+'</td>'+
+      arMoneyCell_(x.amt,'c1 hatsu',D)+
+      '<td class="c2" style="'+cs+'">'+(h?esc(mdOf_(h.date)):'')+'</td>'+
+      arMoneyCell_(recv,'c3 cash',D)+
+      arMoneyCell_(disc,'c4 disc',D)+
+      '<td class="c5 '+bcls+' num" style="'+cs+'">'+btxt+'</td>'+
+      '<td class="c6" style="'+cs+'">'+(h?'<span class="armet '+
+          (h.kind==='cash'?'m-cash':(h.kind==='bank'?'m-bank':'m-disc'))+'">'+
+          esc(h.method||'—')+'</span>':'')+'</td>'+
+      '<td class="c7" style="'+cs+'">'+(h?tin('kitte',h.kitte,'',70):'')+'</td>'+
+      '<td class="c8" style="'+cs+'">'+(h?tin('memo',h.memo,'',150):'')+'</td>'+
+    '</tr>';
+  }).join('');
+
+  var recvTot=L.cash+L.bank, discTot=L.disc;
+  var bt=L.bal;
+  var tot='<tr class="tot">'+
+    '<td class="c0" style="'+cs+'">'+jpYear(fy+1)+'1月末　残高</td>'+
+    arMoneyCell_(L.open+L.billed,'c1 hatsu',D)+
+    '<td class="c2" style="'+cs+'"></td>'+
+    arMoneyCell_(recvTot,'c3 cash',D)+
+    arMoneyCell_(discTot,'c4 disc',D)+
+    '<td class="c5 '+(bt>0?'zan pos':(bt<0?'zan neg':'zan zero'))+' num" style="'+cs+'"><b>'+
+      (bt<0?'△'+Math.abs(bt).toLocaleString():bt.toLocaleString())+'</b></td>'+
+    '<td class="c6" style="'+cs+'"></td><td class="c7" style="'+cs+'"></td>'+
+    '<td class="c8" style="'+cs+'"></td></tr>';
+
+  return '<div class="ar-wrap"><table class="ar-t ar-flat">'+
+    '<thead>'+head+'</thead><tbody>'+body+tot+'</tbody></table></div>';
+}
+/** 2026-03-26 → 3/26 */
+function mdOf_(d){
+  var m=String(d||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? ((+m[2])+'/'+(+m[3])) : String(d||'');
 }
 
 function arDetail(el,fy){
   var c=clientById(S.arClient);
   var L=arLedger(c,fy);
-  var wide=S.arWide!==false;
 
   el.innerHTML=
   '<div class="row" style="margin-bottom:8px">'+
@@ -11694,8 +11795,6 @@ function arDetail(el,fy){
     '<span class="lbl" style="margin:0">大きさ</span>'+
     [[1,'100%'],[1.25,'125%'],[1.5,'150%'],[1.8,'180%']].map(function(x){
       return '<button class="chip tap '+(arZ()===x[0]?'on':'')+'" data-az="'+x[0]+'">'+x[1]+'</button>'; }).join('')+
-    '<button class="chip tap '+(wide?'on':'')+'" id="aWide">くわしく</button>'+
-    '<button class="chip tap '+(wide?'':'on')+'" id="aNarrow">かんたん</button>'+
     '<button class="btn ghost tap sm" id="aPrint">🖨 印刷</button>'+
   '</div>'+
 
@@ -11727,12 +11826,15 @@ function arDetail(el,fy){
 
   arOpenEditorHtml(c,L,fy)+
   arDetailHtml(c,L,fy)+
-  '<p class="muted" style="margin:10px 0 0;font-size:13px">横にスクロールすると翌月以降が出ます。左の2列（発生年月・発生額）は固定です。'+
-    '<b>現金回収</b>は「小口現金（売掛の現金回収、現金売上はここ）」、<b>銀行振込回収</b>は「売掛の振込回収」タブで入れた分です'+
-    '（口座振替・相殺も銀行振込回収に入ります）。入金に「何月分」を指定していれば、その月分の行に入ります。'+
-    '<b style="color:#6B5B95">値引き</b>・<b style="color:#7A2E3F">貸倒れ</b>は、もう請求しないと決めた分です'+
-    '（端数を切った・回収をあきらめた）。お金は入っていませんが、その分だけ残高が減ります。'+
-    '「売掛の振込回収」タブの<b>［値引き］</b>／<b>［貸倒れ］</b>で入れてください。'+
+  '<p class="muted" style="margin:10px 0 0;font-size:13px">'+
+    '<b>1行＝回収1件。</b>手書きの売掛帳と同じ並びです。売上金額はその月のいちばん上の行にだけ出ます。'+
+    '1回の入金が古い月から順に当たって分かれたときは、分かれたぶんずつ行になります。'+
+    '<b>受入金額</b>は「小口現金（売掛の現金回収）」と「売掛の振込回収」で入れた分。方法でどちらかが分かります'+
+    '（口座振替・相殺も振込回収で入れます）。<b>小切手はとりあえず「現金」で入れて</b>、'+
+    '当座に入った日はこの表の欄に書いてください。'+
+    '<b style="color:#6B5B95">値引き</b>・<b style="color:#7A2E3F">貸倒れ</b>・<b>振込手数料</b>は'+
+    '「値引きその他」に入ります。お金は入っていませんが、その分だけ残高が減ります。'+
+    '回収がまだ無い月も1行出るので、<b>滞留がそのまま見えます</b>。'+
     '売掛より多く入金された分は「前受・その他」の行に △ で出ます。</p>'+
   '<div class="bar"><span>'+fmtCode(c.code)+'　'+esc(c.name)+'</span>'+
     '<span>'+fyLabel(fy)+'</span>'+
@@ -11740,9 +11842,27 @@ function arDetail(el,fy){
 
   el.querySelector('#aBack').onclick=function(){ S.arClient=null; window.scrollTo({top:0}); render(); };
   el.querySelectorAll('[data-az]').forEach(function(b){ b.onclick=function(){ S.arScale=+b.dataset.az; render(); }; });
-  el.querySelector('#aWide').onclick=function(){ S.arWide=true; render(); };
-  el.querySelector('#aNarrow').onclick=function(){ S.arWide=false; render(); };
   el.querySelector('#aPrint').onclick=function(){ arPrint(c,L,fy); };
+
+  /* ★★★ 小切手が当座に入った日／メモ は、その場で書ける（2026-09-25）。
+       書き込み先は入金の1件（`payments:<店>`）。**売掛の残高は1円も動かない**。
+       打ちおわって枠から離れたときだけ保存する（1文字ごとには送らない）。
+       同じ入金が2行に割れているときは、どちらに書いても同じ1件に入る */
+  el.querySelectorAll('.arin').forEach(function(q){
+    q.onchange=function(){
+      var pid=q.dataset.arp, key=q.dataset.ark;
+      if(!pid) return;
+      var pk='payments:'+c.id, list=DB.pay[pk]||[];
+      var x=list.filter(function(z){ return String(z.id)===String(pid); })[0];
+      if(!x) return;
+      var v=String(q.value||'').trim();
+      if(String(x[key]||'')===v) return;          /* 変わっていなければ何もしない */
+      x[key]=v;
+      cashSaveAsync(pk, JSON.stringify(list));
+      toast(key==='kitte'?'小切手が当座に入った日を入れました':'メモを入れました');
+      render();
+    };
+  });
   wireArOpenEditor(el,c,fy);
   var aj=el.querySelector('#aj'), ajs=el.querySelector('#ajs');
   function sug(){
@@ -11766,36 +11886,37 @@ function arDetail(el,fy){
 }
 
 /* ---------- 印刷（A4横） ---------- */
+/* ★ 印刷も画面と同じ【縦1本】。`arFlatRows` を共用する（2026-09-25） */
 function arPrint(c,L,fy){
-  var cols=L.cols;
-  var head='<tr><th style="width:22mm">発生年月</th><th style="width:22mm">発生額</th>'+
-    cols.map(function(col){ return '<th colspan="3">'+col.m+'月</th>'; }).join('')+'</tr>'+
-    '<tr><th></th><th></th>'+cols.map(function(){
-      return '<th>回収</th><th>発生</th><th>残高</th>'; }).join('')+'</tr>';
-  function row(R){
-    var t='';
-    for(var j=0;j<12;j++){
-      var cc=R.cell[j], v=cc.cash+cc.bank+cc.disc;
-      t+='<td class="r">'+(v?v.toLocaleString():'')+'</td>'+
-         '<td class="r">'+(cc.hatsu?cc.hatsu.toLocaleString():'')+'</td>'+
-         '<td class="r">'+(cc.bal==null?'':(cc.bal<0?'△'+Math.abs(cc.bal).toLocaleString():cc.bal.toLocaleString()))+'</td>';
-    }
-    return '<tr><td>'+esc(R.label)+'</td><td class="r">'+(R.amt?R.amt.toLocaleString():'')+'</td>'+t+'</tr>';
-  }
-  var body=L.rows.map(row).join('')+(L.adv.amt?row(L.adv):'');
-  var tr='';
-  for(var j=0;j<12;j++){
-    var b=L.tot.bal[j], v=L.tot.cash[j]+L.tot.bank[j]+L.tot.disc[j];
-    tr+='<td class="r">'+(v?v.toLocaleString():'')+'</td>'+
-        '<td class="r">'+(L.tot.hatsu[j]?L.tot.hatsu[j].toLocaleString():'')+'</td>'+
-        '<td class="r"><b>'+(b<0?'△'+Math.abs(b).toLocaleString():b.toLocaleString())+'</b></td>';
-  }
+  var head='<tr>'+['区分（発生年月）','売上金額','回収日','受入金額','値引きその他','差引残高',
+                   '方法','小切手が当座に<br>入った日','メモ']
+    .map(function(t){ return '<th>'+t+'</th>'; }).join('')+'</tr>';
+  var n=function(v){ return v?v.toLocaleString():''; };
+  var body=arFlatRows(L).map(function(x){
+    var h=x.hit;
+    var recv=h?(h.kind==='disc'?0:h.amt):0, disc=h?(h.kind==='disc'?h.amt:0):0;
+    return '<tr><td>'+(x.first?esc(x.R.label):'')+'</td>'+
+      '<td class="r">'+n(x.amt)+'</td>'+
+      '<td class="c">'+(h?esc(mdOf_(h.date)):'')+'</td>'+
+      '<td class="r">'+n(recv)+'</td>'+
+      '<td class="r">'+n(disc)+'</td>'+
+      '<td class="r">'+(x.bal<0?'△'+Math.abs(x.bal).toLocaleString():x.bal.toLocaleString())+'</td>'+
+      '<td class="c">'+(h?esc(h.method):'')+'</td>'+
+      '<td class="c">'+(h?esc(h.kitte||''):'')+'</td>'+
+      '<td>'+(h?esc(h.memo||''):'')+'</td></tr>';
+  }).join('');
+  var bt=L.bal;
   printHtml('<div class="sheet">'+
     '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">'+
       '<div style="font-size:15px;font-weight:700">売掛帳　'+fmtCode(c.code)+'　'+esc(c.name)+' 様</div>'+
       '<div style="font-size:10px">有限会社 丸京　'+fyLabel(fy)+'（'+fyRange(fy)+'）／金額は税込</div></div>'+
-    '<table class="ptbl" style="font-size:8.5px"><thead>'+head+'</thead><tbody>'+body+
-    '<tr><td><b>月末残高</b></td><td class="r"><b>'+(L.open+L.billed).toLocaleString()+'</b></td>'+tr+'</tr>'+
+    '<table class="ptbl" style="font-size:9.5px"><thead>'+head+'</thead><tbody>'+body+
+    '<tr><td><b>'+jpYear(fy+1)+'1月末　残高</b></td>'+
+      '<td class="r"><b>'+n(L.open+L.billed)+'</b></td><td></td>'+
+      '<td class="r"><b>'+n(L.cash+L.bank)+'</b></td>'+
+      '<td class="r"><b>'+n(L.disc)+'</b></td>'+
+      '<td class="r"><b>'+(bt<0?'△'+Math.abs(bt).toLocaleString():bt.toLocaleString())+'</b></td>'+
+      '<td></td><td></td><td></td></tr>'+
     '</tbody></table>'+
     '<div style="margin-top:4px;font-size:9px">前期繰越 '+yen(L.open)+'　当期発生 '+yen(L.billed)+
       '　現金回収 '+yen(L.cash)+'　振込回収 '+yen(L.bank)+
@@ -11804,7 +11925,6 @@ function arPrint(c,L,fy){
       '　<b>残高 '+yen(L.bal)+'</b></div>'+
   '</div>', true);
 }
-
 /* ---------- シートへ書き出し ---------- */
 function arToSheet(fy){
   if(!storage.gas){ alert('この機能は、Googleスプレッドシートから開いたときだけ使えます。'); return; }
