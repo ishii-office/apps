@@ -7039,7 +7039,39 @@ function kbRefocus(el){
 
     ★ 複数仕訳の取引の種類（給料など）は、**伝票1枚の中に組が続く**。
       緑の見出しの帯は1回だけ。 */
-function jdKind(x){ return cashKindOf((x&&x.kind)||''); }
+/* ★★★ 取引の種類が「分かりません」になるのを、記録そのものから当てる
+   （2026-09-27・お重さん）
+
+   お重さん「**取引の種類は選んで入れるから、分からないわけない。**」── そのとおり。
+   `kind` が空でも、記録そのものが何かを言っている。
+
+   ① `sale` が付いている … 店売り（現金売上）。ほかにありえない
+   ② `arPay` が付いている … 売掛の現金回収。ほかにありえない
+   ③ 摘要が型の名前で始まっている … その型（取り込んだ分・前の名前で入れた分）
+
+   前は `kind` が空だと即「取引の種類が分かりません（出納帳を直してください）」で、
+   **出納帳を直しようがないのに直せと言っていた**（現金売上には型を選ぶ枠が無い）。
+
+   **`Code.js` の `cashKindGuessKey_` と同じ決め方。片方だけ直さない。** */
+function cashKindGuessKey(x){
+  if(!x) return '';
+  if(x.sale)  return 'uri';
+  if(x.arPay) return 'ar';
+  var memo=String(x.memo||'').trim();
+  if(!memo) return '';
+  var best='', n=0;
+  cashKinds().forEach(function(k){
+    [k.label, k.memo, k.was].forEach(function(nm){
+      nm=String(nm||''); if(!nm) return;
+      /* 長く当たったほうを採る（「水道代」と「水道・ガス・電気」など） */
+      if((memo===nm || memo.indexOf(nm)===0) && nm.length>n){ n=nm.length; best=k.k; }
+    });
+  });
+  return best;
+}
+function jdKind(x){
+  return cashKindOf((x&&x.kind)||'') || cashKindOf(cashKindGuessKey(x));
+}
 /** その1件の伝票の行（ルール × 行ごとの額 × その1件だけの直し） */
 /* ★★★ 消費税のかからない課税区分（2026-09-25・お重さん）
 
@@ -7366,8 +7398,13 @@ function viewJournal(el, m){
       jdDenpyoHtml(x, r.rows)+
       (r.iss.length
         ? '<div class="jiss">！ '+r.iss.slice(0,3).map(esc).join('／')+
-          '<button class="btn ghost tap sm" data-jkind="'+esc((kd&&kd.k)||'')+'">'+
-          'この取引の種類に科目を決める</button></div>' : '')+
+          /* ★ 取引の種類が当てられていないときは、このボタンを出さない
+               （2026-09-27・お重さん「ボタン押してもなにも変化ない。不要なら消して」）。
+               行き先が無いので、押しても何も起きなかった */
+          ((kd&&kd.k)
+            ? '<button class="btn ghost tap sm" data-jkind="'+esc(kd.k)+'">'+
+              'この取引の種類に科目を決める</button>' : '')+
+          '</div>' : '')+
       '<div class="jdchk">'+okb+
         '<button class="btn ghost tap sm" data-jfix="'+esc(x.id)+'">出納帳を直す</button>'+
         (r.st==='ok'?'<button class="jopn tap" data-jclose="'+esc(x.id)+'">とじる</button>':'')+
@@ -7762,7 +7799,8 @@ function jPartyHtml(x, cls){
 }
 /** 顧問先が選んだ【取引の種類】の名前。型が引けないときは摘要で代える */
 function jKindLabel(x){
-  var kd=cashKindOf((x&&x.kind)||'');
+  /* ★ `kind` が空でも、記録そのものから当てる（jdKind と同じ） */
+  var kd=jdKind(x);
   if(kd) return kd.label;
   return String((x&&x.memo)||'') || '（取引の種類が入っていません）';
 }
@@ -11516,7 +11554,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-27a 小口現金は【日付の月】に入る／入れ終わったところに色／かち割り・クラッシュと日付が電話で見える／店売りの金額の二重表示をやめる／小口現金を速く';
+var APP_BUILD='2026-09-27b 小口現金は【日付の月】に入る／入れ終わったところに色／かち割り・クラッシュと日付が電話で見える／店売りの金額の二重表示をやめる／小口現金を速く／取引の種類を記録そのものから当てる';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
