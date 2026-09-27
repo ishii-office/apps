@@ -7,6 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>ANCHOVY 経営アプリ</title>
+<!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
+     同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
+     ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
+<script>window.__PAGE_VER='1790509757';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -8343,7 +8347,16 @@ function appReopen(btn){
   try{ sessionStorage.setItem('appReopenedAt', String(Date.now())); }catch(e){}
   /* ★ Pages から開いているときは、入れ物（iframe）の中ではないので
        ふつうに読み込み直せばよい。GASのときの回り道は要らない */
-  if(WEB2){ try{ location.reload(); return; }catch(e){} }
+  /* ★ Pages のときはキャッシュを外して読み直す（2026-09-27）。
+       そのまま reload すると、また古い index.html が出てくる */
+  if(WEB2){
+    try{
+      var u=new URL(location.href);
+      u.searchParams.set('v', String(Date.now()));
+      location.replace(u.toString()); return;
+    }catch(e){}
+    try{ location.reload(); return; }catch(e){}
+  }
   var say=function(t){ try{ if(btn) btn.textContent=t; }catch(e){} };
   var giveUp=function(){
     say('↻ もう一度ためす');
@@ -8472,6 +8485,49 @@ function appLock(to){
 });
 
 /** 1分おきに版を確かめる */
+/* ==================================================================
+   ★★★ Pages の画面は【自分が古いこと】に気づけない（2026-09-27。105 から移植）
+
+   `appPulse` が見ているのは **GAS に載っているコードの版**で、
+   いま端末が抱えている `index.html` そのものではない。
+   GAS から配るときは HTML もろとも入れ替わるので、これで足りていた。
+   ところが **Pages は画面をそのまま配る**ので、
+   端末のキャッシュに古い画面が居すわると、本人も画面も永久に気づかない。
+   （「直したはずのボタンが出てこない」は、たいていこれ）
+
+   だから 公開の棚に **`version.txt`** を一緒に置き、
+   画面には同じ値を **`window.__PAGE_VER`** として刷り込む（pages.yml）。
+
+   ★ 値は【そのコミットの時刻】（unix秒）。
+     ・数字なので **大小がそのまま新旧**になる
+     ・同じコミットを貼り直しても値が変わらないので、**空振りで止まらない**
+   ★ **自分より【新しい】ときだけ**止める。
+     GitHub の配信は10分ほど覚えているので、入れ替えた直後は
+     `version.txt` のほうが古いことがある。「ちがう」で止めると、
+     **新しい画面が自分を古いと思って止まる**。
+   ================================================================== */
+var APP_PAGE_VER = '';
+try{ APP_PAGE_VER = String(window.__PAGE_VER || ''); }catch(e){}
+function appPagesWatch(){
+  if(!(typeof WEB2!=='undefined' && WEB2)) return;
+  if(!/^\d+$/.test(APP_PAGE_VER)) return;      /* 刷り込まれていなければ何もしない */
+  var run=function(){
+    if(APP_LOCKED) return;
+    try{
+      fetch('version.txt?t='+Date.now(), {cache:'no-store'})
+        .then(function(r){ return r.ok ? r.text() : null; })
+        .then(function(t){
+          if(!t || APP_LOCKED) return;
+          var v=String(t).trim();
+          if(/^\d+$/.test(v) && (+v) > (+APP_PAGE_VER)){ MY_VER=v; appLock(v); }
+        }).catch(function(){});
+    }catch(e){}
+  };
+  setTimeout(run, 8000);
+  setInterval(run, APP_PULSE_MS);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) run(); });
+}
+
 function appPulseStart(){
   if(!LIVE && !WEB2) return;                      /* デモのときは回さない */
   var run=function(){
@@ -8495,6 +8551,7 @@ function appPulseStart(){
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) run(); });
 }
 appPulseStart();
+appPagesWatch();
 
 /* ★ 送れていない控えを片づける（2026-09-20）
      ・開いたとき … 前に送れなかったぶんを拾って送り直す
