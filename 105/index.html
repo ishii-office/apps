@@ -133,20 +133,20 @@
     ・【新】その他（店売上）00-001
         口座を作っていない先へ、その都度配達して現金で回収した分
         （手書きの帳面の「店売上」）。
-        小口現金 → ① 現金売上 の相手先で ［その他（店売上）00-001］ を押すだけ。
+        小口現金 → ① 現金売上 の取引先で ［その他（店売上）00-001］ を押すだけ。
         ★ 「アプリ組み込み」の取引先です（SHOP_CLIENT）。
           取引先マスタ（スプレッドシート）には入れていないので、登録の手間がありません。
-        ★ 現金売上の相手先は 00-001 にひとつにまとめました。
+        ★ 現金売上の取引先は 00-001 にひとつにまとめました。
           むかしの その他取引先（99-999）は選べません（前に入れた分の表示だけ残しています）。
           催事などで先を分けたいときは、締め日ナシで 00-002 から登録してください。
     ・① 現金売上 に「合計金額でまとめて」の入れ方を足しました
         単価がバラバラで商品ごとの金額が出せないとき用。
         数量（何貫・何kg）と、受け取った合計金額だけ入れれば、
         分析用に商品ごとへ自動で振り分けます（合計はぴったり合わせます）。
-        振り分けの重みは、相手先に登録した単価 → 無ければ CASH_STD_UNIT
+        振り分けの重みは、取引先に登録した単価 → 無ければ CASH_STD_UNIT
         （貫400／かち割り170／クラッシュ170／丸氷100）。直すのはこの1か所だけ。
         数量を入れないと、ぜんぶ「その他」に入ります。
-        相手先に単価が無い先（その他先など）を選ぶと、はじめから「まとめて」になります。
+        取引先に単価が無い先（その他先など）を選ぶと、はじめから「まとめて」になります。
         ★ 保存の形（items:{商品:{q,a}} と total）は今までと同じです。
 
    ─────────────────────────────────────────────────────────────
@@ -1127,6 +1127,10 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
 .justline .jgo{margin-left:auto;border:1.5px solid var(--green);background:#fff;
   color:var(--green);border-radius:8px;font-family:inherit;font-size:14px;font-weight:700;
   padding:7px 12px;cursor:pointer}
+/* ★★★ ［記録する］のすぐ下。入力 → 確認 → 入力 → 確認 …（2026-09-27・お重さん） */
+.btn.goled{width:100%;margin-top:9px;font-size:16px;padding:11px 12px;
+  border:1.5px solid var(--green);color:var(--green);background:#fff}
+.arc-box .btn.goled{margin-top:8px}
 /* 月の数字（前月繰越・入金計・出金計・帳簿の残高）。スマホでは2列 */
 .cashsum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
 @media(min-width:620px){ .cashsum{grid-template-columns:repeat(4,1fr)} }
@@ -1222,6 +1226,16 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
   SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;overflow:auto;
   border:1px solid var(--line);border-radius:8px;padding:8px}
 .ledmin{min-width:700px}
+/* ★★★ 出納帳の「まとまり」の行（2026-09-27） */
+.grow.ledgrp{background:#FBF7EC}
+.grow.ledgrp.open{background:#F6F2E6;border-bottom:none;padding-bottom:4px;font-size:13px}
+.grow.ledgrp .cash-memo-t{font-size:16px}
+.grow.ledgrp.open .cash-memo-t{font-size:13.5px;color:#7a6a45}
+.grpn{margin-left:8px;font-size:12.5px;font-weight:700;color:#8a7350;
+  border:1px solid var(--gold);border-radius:999px;padding:1px 8px;background:#fff}
+.daypill{font-size:13.5px;font-weight:800;color:#7A5A16;background:#FFF7E3;
+  border:1.5px solid var(--gold);border-radius:999px;padding:3px 11px}
+.ledbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 8px}
 .grow .c-zo{display:none}
 .grow .c-bal .balpre{display:none}
 
@@ -2137,7 +2151,7 @@ var DELIV_FROM = '9999-12';   /* この月より前＝すべて配達済みと�
 
 /* ---- その他取引先（99-999）── もう選べません ------------------
    むかし「一見のお客さん」用に使っていた先です。
-   2026-08-25 から、現金売上の相手先は その他（店売上）00-001 にひとつにまとめました。
+   2026-08-25 から、現金売上の取引先は その他（店売上）00-001 にひとつにまとめました。
    ★ 消していないのは、前に 99-999 で入れた現金売上を、
      そのまま元帳・売上管理に出すためです（過去の数字は変えません）。
      選ぶ画面には出しません（PICK_VCLIENTS）。
@@ -2153,7 +2167,7 @@ var OTHER_CLIENT = {
 /* ---- その他（店売上）----------------------------------------
    口座を作っていない先へ、その都度配達して現金で回収した分。
    手書きの帳面で「店売上」と書いているものです。
-   ① 現金売上 の相手先として選べます（締めナシ・コード 00-001）。
+   ① 現金売上 の取引先として選べます（締めナシ・コード 00-001）。
    ★ 取引先マスタ（スプレッドシート）には入れていません。
      アプリに組み込みなので、登録の手間なしにいつでも選べます。
    ------------------------------------------------------------ */
@@ -2453,6 +2467,31 @@ function bkeyLabel(k){
   var m=String(k||'').match(/^cashbook:\d{4}-(\d{2})$/);
   return m ? (+m[1])+'月' : '';
 }
+
+/* ★★★ 入れた直後に、その日の出納帳をたしかめる（2026-09-27・お重さん）
+
+     「取引の入力の直後に出納帳で入力内容を確認してほしい。
+       入力→確認→入力→確認、、、を常態化してもらう。」
+
+     だいたい1日ぶんをまとめて入れるので、その日を入れ終わったら
+     ［記録する］のすぐ下のボタンから、**その日の出納帳へさっと飛ぶ**。
+     いま見ている月ではなく **その日付の月**へ行く（入れ先と同じ考え）。 */
+/* ★ 日を変えたら、飛び先のボタンの文字も合わせる。**描き直さない**
+     （打ちかけの金額が消えるため。cashPaint と同じ考え） */
+function goledSync(el, sel, ds){
+  var b=el&&el.querySelector(sel); if(!b) return;
+  var d=String(ds||''); if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+  b.dataset.goled=d;
+  b.textContent=d.slice(5).replace('-','/')+' の出納帳を見る';
+}
+function cashGoLed(ds){
+  var d=String(ds||'');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) d=iso(S.date);
+  S.month=new Date(+d.slice(0,4), +d.slice(5,7)-1, 1);
+  S.cashPane='led'; S.cashDay=d; S.cashCsv=false;
+  S.cashJustShow=false;
+  render();
+}
 /**
  * 元帳の1件を、日付の月の入れものへ入れる。
  *
@@ -2624,7 +2663,7 @@ function cashOnly(c){ return !!c && (!!c.virtual || c.shime===SHIME_NONE); }
 function kakeClients(withHidden){
   return visibleClients(withHidden).filter(function(c){ return !cashOnly(c); });
 }
-/** 現金売上の相手先としてさがせる先（掛の先＋締めナシ＋組み込みの その他先） */
+/** 現金売上の取引先としてさがせる先（掛の先＋締めナシ＋組み込みの その他先） */
 function cashPickClients(){ return visibleClients(true).concat(PICK_VCLIENTS); }
 var _byId=null;
 function clientById(id){
@@ -3700,11 +3739,14 @@ var S = {
   jlOpen:{},              /* ★ 一覧で写真をひらいている行 */
   cashPane:'in',          /* 小口現金の下層タブ 'in'入力／'led'元帳／'count'現金実査 */
   cashJust:null,          /* いま入れた1件（入力の枠のすぐ下に「入れました」と出す） */
+  /* ★ 出納帳のまとめ（2026-09-27）… ledOpen[<日>|<種類>]＝そのまとまりを1件ずつ開く／
+       ledAll＝ぜんぶ1件ずつ／cashDay＝その日だけを出す（入力タブから飛んできたとき） */
+  ledOpen:{}, ledAll:false, cashDay:'',
   cashJustShow:false,     /* その1回だけ画面に入れて見せる（描き直しでは動かない） */
   cashAcctPre:'',         /* 型から入れる勘定科目 */
   saleOn:false,           /* 現金売上として記録するか */
-  saleClient:null,        /* 現金売上の相手先（取引先id／'_other'） */
-  saleQ:'',               /* 相手先の検索 */
+  saleClient:null,        /* 現金売上の取引先（取引先id／'_other'） */
+  saleQ:'',               /* 取引先の検索 */
   saleItems:null,         /* {kan:{q:'',a:''}, ...} */
   saleMode:'lump',        /* 現金売上の入れ方。いまは「合計金額でまとめて」の1本だけ */
   saleLump:'',            /* まとめて入れるときの合計金額（税込） */
@@ -4574,7 +4616,7 @@ function viewMaster(el){
     '行くたびに現金でもらう先（てきとう・bar Land など）。'+
     '<b>請求書・売掛帳・配達伝票・注文入力には出ません。</b>'+
     '売上は<b>小口現金タブの「① 現金売上」</b>で、その都度入れてください。'+
-    '<span class="muted">　口座を作っていない先の店売上は、①の相手先で <b>その他（店売上）00-001</b> を選びます'+
+    '<span class="muted">　口座を作っていない先の店売上は、①の取引先で <b>その他（店売上）00-001</b> を選びます'+
     '（登録は要りません。アプリに組み込んであります）。</span></div>';
 
   el.querySelectorAll('[data-sf]').forEach(function(b){ b.onclick=function(){ S.shimeFilter=+b.dataset.sf; render(); }; });
@@ -5387,8 +5429,14 @@ var CASH_KINDS=[
   /* ---- 入る ---- */
   {k:'ar', grp:'often',   g:'in',  dir:'in',  label:'売掛の現金回収', memo:'売掛の現金回収',
    acct:'売掛金', fx:'', arc:true},
+  /* ★★★ 店売りの仕訳（2026-09-27・お重さん）
+       科目 4111-01 氷売上／課税区分 1／消費税は【軽減】。
+       **事業区分は記録ごとに決まる**（取引先を登録していれば 1 卸売、
+       登録していない取引先（00-001）なら 2 小売）→ `kindAuto_`
+       **税率も日付で決まる**（軽減は 2027年度から2年間 1%）→ `redRateAt` */
   {k:'uri', grp:'often',  g:'in',  dir:'in',  label:'店売り（現金売上）', memo:'店売り（現金売上）', was:'店売り',
-   acct:'売上高（現金売上）', fx:'', sale:true},
+   acct:'売上高（現金売上）',
+   fx:'4111', fxName:'売上高', sub:'01', subName:'氷売上', tax:'1', rate:8, red:1, sale:true},
   {k:'bkout2', grp:'often',g:'in', dir:'in',  label:'京信（普通）より引出し', memo:'京信（普通）より引出し',
    acct:'普通預金（京信 河原町支店 3069484）',
    fx:'1113', fxName:'普通預金', sub:'01', subName:'京信 河原町支店 3069484', tax:'0'},
@@ -5528,6 +5576,52 @@ var KIND_GRP=[{k:'often',label:'いつもの取引'},
 
     ★ 事務所が画面から直したぶんは KV `kinds:master` に入り、`k` で上に重なる。
       **`CASH_KINDS` は種。`kinds:master` が正。** */
+/* ============================================================
+   ★★★ 軽減税率は【日付で決まる】（2026-09-27・お重さん）
+
+   「2027年度から軽減税率は2年間の時限措置で1％になるから、
+     その設定もできるように。」
+
+   ルールに「軽減（`red`）」と書いてあれば、税率はここから引く。
+   型ごとに 8 と書いて回らない ── **変わるときに直すのは、この表1つ**。
+
+   ★ 日付は税制改正に合わせて直すこと。いまは
+     2027-04-01 から 1%、2029-04-01 に 8% へ戻る、として入れてある。
+   **`Code.js` の `RED_RATES` と同じにする。片方だけ直さない。**
+   ============================================================ */
+var RED_RATES = [
+  { from:'2019-10-01', rate:8 },
+  { from:'2027-04-01', rate:1 },   /* 2年間の時限措置 */
+  { from:'2029-04-01', rate:8 }
+];
+/** その日の軽減税率 */
+function redRateAt(ds){
+  var d=String(ds||''), r=8;
+  for(var i=0;i<RED_RATES.length;i++) if(d>=RED_RATES[i].from) r=RED_RATES[i].rate;
+  return r;
+}
+/** 店売りで【登録していない取引先】か（00-001／取引先が付いていない）。
+    ★ コードは `00001` とも `00-001` とも書かれるので、数字だけにして見る */
+function saleUnreg_(x){
+  var c=String((x && x.sale && x.sale.code) || '').replace(/[^0-9]/g,'');
+  return !c || c===String(SHOP_CODE).replace(/[^0-9]/g,'');
+}
+/**
+ * ★★★ 記録そのものから決まるぶんを当てる（2026-09-27）
+ *
+ * ルール（取引の種類）は「いつも同じ」ところだけを持つ。
+ * 記録ごとに変わるものは、ここで当てる。**ov（その1件の直し）より先**に当てて、
+ * 事務所が1件だけ直したいときは、そちらが勝つようにする。
+ *
+ * **`Code.js` の `cashKindAuto_` と同じ。片方だけ直さない。**
+ */
+function kindAuto_(kd, d, x){
+  /* 軽減の行は、その日の税率に読み替える */
+  if(d.red && !taxFree_(d.tax)) d.rate = redRateAt(x && x.date);
+  /* 店売り … 事業区分は取引先で決まる。1＝卸売／2＝小売 */
+  if(kd && kd.k==='uri') d.biz = saleUnreg_(x) ? '2' : '1';
+}
+
 function kindRows(k){
   if(!k) return [];
   if(k.rows && k.rows.length) return k.rows;
@@ -5574,6 +5668,47 @@ var CASH_PH_OUT=['ガソリン','高速代','駐車場代','消耗品','事務�
   'お茶・お菓子','飲食代','切手・郵便','修理代','材料・仕入','新聞','電気代','水道代','電話代','会費',
   '預金へ預け入れ'];
 var CASH_PH_IN=['預金から引き出し','売掛金を現金で回収','現金売上','社長から入金','つり銭の補充'];
+
+/* ============================================================
+   ★★★ 出納帳は【同じ日のまとまり】で出す（2026-09-27・お重さん）
+
+   「店売りで登録先がある場合は出納帳でも一つ一つ出てくるが、
+     その日についての店売りは出納帳上は 店売り（登録先あり）で
+     まとめて表示するようにしようか。**取引が多すぎて出納帳が長すぎて見にくい。**
+     細かく見る場合は1取引づつにも表示できるように。
+     このことは売掛金の現金回収でも同日であれば同じね。
+     そうすると、その日については、店売り（登録なし）、店売り（登録あり）、
+     売掛金の現金回収、の3行でまずは1日分が表示されるでしょ。」
+
+   ★ まとめるのは【続いている】同じ日・同じ種類だけ。
+     間に別の取引がはさまったら、そこで切る。
+     こうしないと、まとまりの「残高」がその場の残高でなくなる。
+   ============================================================ */
+var LED_GRP = { sale0:'店売り（登録なし）', sale1:'店売り（登録あり）', arc:'売掛金の現金回収' };
+function ledGrpKey(x){
+  if(x && x.sale)  return saleUnreg_(x) ? 'sale0' : 'sale1';
+  if(x && x.arPay) return 'arc';
+  return '';                      /* そのほかは、まとめない */
+}
+/** 走行残高を付けてから、続いている同じ日・同じ種類をひとまとまりにする */
+function ledBlocks(list, start){
+  var run=Math.round(Number(start)||0), out=[];
+  (list||[]).forEach(function(x){
+    run += (x.dir==='in' ? x.amount : -x.amount);
+    var k=ledGrpKey(x), last=out[out.length-1];
+    if(k && last && last.k===k && last.date===x.date && last.dir===x.dir){
+      last.rows.push({x:x, run:run}); last.sum+=x.amount; return;
+    }
+    out.push({k:k, date:String(x.date||''), dir:x.dir,
+              rows:[{x:x, run:run}], sum:Math.round(Number(x.amount)||0)});
+  });
+  return out;
+}
+/** そのまとまりを1件ずつ開いているか */
+function ledIsOpen(b){
+  if(S.ledAll) return true;
+  return !!(S.ledOpen||{})[b.date+'|'+b.k];
+}
 
 function cashList(m){
   return (DB.cash[bkey(m)]||[]).slice().sort(function(a,b){
@@ -5878,7 +6013,7 @@ function cashPaint(el){
   if(lump){                                   /* 店売り … 受け取った合計金額 */
     var lv=num(lump); mark(lump,lv>0);
     if(!lv) need.push('受け取った合計金額');
-    if(!el.querySelector('.cs-cli .pill')) need.push('相手先');
+    if(!el.querySelector('.cs-cli .pill')) need.push('取引先');
   }else if(mins.length){                      /* 複数仕訳 … 1行でも入っていればよい */
     var t=0;
     Array.prototype.forEach.call(mins,function(q){ var v=num(q); t+=v; mark(q,v>0); });
@@ -6074,7 +6209,7 @@ var SALE_KEYS = ['kan','std','crush','maru','other'];
    商品ごとの金額を出すのが難しい。そこで
    「数量」と「受け取った合計金額」だけ入れてもらい、
    分析用に この単価の比で振り分けます。合計はぴったり合わせます。
-   ★ 相手先に単価が登録してあれば、そちらを先に使います。
+   ★ 取引先に単価が登録してあれば、そちらを先に使います。
    ★ ここを直したいときは この1か所だけ直せば足ります。
    ------------------------------------------------------------ */
 var CASH_STD_UNIT = { kan:400, std:170, crush:170, maru:100, other:1 };
@@ -6108,7 +6243,7 @@ function saleSpread(items,total,c){
 function saleReflow(){
   saleSpread(saleItems(), saleNum(S.saleLump), saleClientOf());
 }
-/** 相手先に単価が無い先（その他・店売上など）は、はじめから「まとめて」にする */
+/** 取引先に単価が無い先（その他・店売上など）は、はじめから「まとめて」にする */
 /** ★ 入れ方は「合計金額でまとめて」の1本だけ（2026-09-21）。
       切り替えは無くしたが、呼び出しを残して受け皿にしておく */
 function saleModeAuto(){ S.saleMode='lump'; }
@@ -6249,7 +6384,7 @@ function saleBoxHtml(){
     '</div>';
   }
   return '<div class="cs-box">'+
-    '<label class="lbl">相手先</label>'+
+    '<label class="lbl">取引先</label>'+
     '<div class="cs-cli">'+
       (sc
         ? '<span class="pill tag-slip" style="font-size:15px;padding:7px 13px">'+
@@ -6261,12 +6396,12 @@ function saleBoxHtml(){
           /* ★ 「その他（店売上）00-001」が【登録ずみの取引先】に見えていた（2026-09-27・お重さん）。
                まずお店をさがしてもらうのが基本。ここは、さがしても無かったときの行き先 */
           '<button class="cs-pick tap" id="csShop">'+
-            '<b>登録していないお店</b><span class="pksub">一見のお客さん・店頭売り</span></button>')+
+            '<b>登録していない取引先</b><span class="pksub">一見のお客さん・店頭売り</span></button>')+
     '</div>'+
     (sc?''
        : '<div id="cssug" class="sug" style="margin-bottom:6px"></div>'+
          '<p class="muted" style="margin:0 0 10px">まず<b>お店をさがして</b>ください。'+
-         'さがしても出てこないお店・一見のお客さんだけ［登録していないお店］を押します'+
+         'さがしても出てこないお店・一見のお客さんだけ［登録していない取引先］を押します'+
          '（<span class="num">00-001</span> その他（店売上）にまとめて入ります）。</p>')+
 
     '<div class="gscroll"><table class="cs-tbl"><thead><tr>'+
@@ -7097,6 +7232,7 @@ function jdRows(x, e){
     var d={dir:kd.dir||x.dir, acct:r.acct, acctName:r.acctName, sub:r.sub, subName:r.subName,
            tax:r.tax, biz:r.biz, rate:Number(r.rate)||0, red:r.red?1:0,
            party:r.party, partyName:r.partyName, memo:String(r.memo||kd.label||'')};
+    kindAuto_(kd, d, x);
     var ov=jdOv(e,i);
     if(ov) for(var q in ov){ if(ov[q]!==undefined && ov[q]!=='') d[q]=ov[q]; }
     if(ov && ov.rate!==undefined && ov.rate!=='') d.red=(Number(ov.rate)===8)?1:0;
@@ -7156,7 +7292,10 @@ function jdIssues(x, e){
     if(String(r.d.sub||'') && !/^\d+$/.test(String(r.d.sub))) ng.push(n+'補助コードは数字だけです');
     /* ★ 消費税のかからない区分（0 対象外／8 非課税）は、税率を求めない */
     var tx=String(r.d.tax||'');
-    if(!taxFree_(tx) && !(r.d.rate===8||r.d.rate===10)) ng.push(n+'税率は 8% か 10% です');
+    /* ★ 軽減はその日の率でよい（2027年度から2年は1%）。標準は 10% */
+    var okRate = r.d.red ? (r.d.rate===redRateAt(x&&x.date)) : (r.d.rate===8||r.d.rate===10);
+    if(!taxFree_(tx) && !okRate)
+      ng.push(n+'税率は '+(r.d.red?redRateAt(x&&x.date)+'%（軽減）':'8% か 10%')+' です');
     if(taxFree_(tx) && Number(r.d.rate)) ng.push(n+'消費税のかからない区分なのに税率が入っています');
     if(String(r.d.party||'') && !/^\d{1,6}$/.test(String(r.d.party))) ng.push(n+'取引先コードは数字です');
   });
@@ -8511,7 +8650,11 @@ function viewCash(el){
     '<div class="row" style="margin-top:12px;gap:9px">'+
       '<button class="btn tap bigbtn" id="cok" data-nav style="flex:1">'+(e.id?'この内容で直す':'記録する')+'</button>'+
       '<button class="btn ghost tap clrbtn" id="cclr">'+(e.id?'訂正しない':'クリア')+'</button>'+
-    '</div>')+
+    '</div>'+
+    /* ★★★ 記録するボタンの【すぐ下】に、その日の出納帳へ飛ぶボタン（2026-09-27・お重さん）。
+         入力 → 確認 → 入力 → 確認 … を常態にするため。1日ぶん入れ終わったら押す */
+    '<button class="btn ghost tap goled" id="cgoled" data-goled="'+esc(formDate)+'">'+
+      esc(String(formDate).slice(5).replace('-','/'))+' の出納帳を見る</button>')+
   '</div>';
 
   /* ============================================================
@@ -8560,7 +8703,11 @@ function viewCash(el){
              言わないと「入れたのに出てこない」になる */
         (S.cashJust.mv
           ? '<span class="jmv">→ '+esc(S.cashJust.mv)+'の小口現金に入れました</span>'
-          : '<button class="tap jgo" data-cpane="led">元帳で見る</button>')+
+          : '')+
+        /* ★★★ 入れたら、その日の出納帳でたしかめる（2026-09-27）。
+             月が変わっていても、その日付の月の出納帳へ飛ぶ */
+        '<button class="tap jgo" data-goled="'+esc(S.cashJust.fd||'')+'">'+
+          esc(S.cashJust.d)+' の出納帳を見る</button>'+
       '</div>'
     : '';
 
@@ -8672,6 +8819,15 @@ function viewCash(el){
       '<span class="hint">入力タブで入れたものが、ぜんぶ日付の順に並びます</span>'+
       '<button class="btn ghost tap sm" id="cbcsv" style="margin-left:auto">CSVで取り出す</button>'+
       '<span class="muted">'+list.length+'件</span></div>'+
+    /* ★★★ その日だけ／1件ずつ（2026-09-27）。見出しは CSV のままにして、下に1行置く */
+    '<div class="ledbar">'+
+      (S.cashDay
+        ? '<span class="daypill">'+esc(S.cashDay.slice(5).replace('-','/'))+' だけ</span>'+
+          '<button class="btn ghost tap sm" id="cbAllDay">ぜんぶの日を見る</button>'
+        : '')+
+      '<button class="btn ghost tap sm" id="cbOne">'+
+        (S.ledAll?'まとめて見る':'ぜんぶ1件ずつ見る')+'</button>'+
+    '</div>'+
     csvHtml+
   '<div class="gridwrap"><div class="gscroll"><div class="ledmin">'+
     '<div class="ghead" style="grid-template-columns:'+C+'"><span>日付</span><span>区分</span>'+
@@ -8682,8 +8838,36 @@ function viewCash(el){
         '<span class="muted c-memo">前月繰越</span><span class="c-in"></span><span class="c-out"></span>'+
         '<span class="r num cash-big c-bal"><span class="balpre">残 </span>'+yen(carry)+'</span>'+
         '<span class="r num c-zo"></span></div>'+
-      (list.length?list.map(function(x){
-        run += x.dir==='in'?x.amount:-x.amount;
+      (list.length?ledBlocks(list, carry).filter(function(b){
+        /* ★ 入力タブから飛んできたときは、その日だけを出す（残高はそのまま） */
+        return !S.cashDay || b.date===S.cashDay;
+      }).map(function(b){
+        /* ★★★ まとまりは1行で出す。押すと1件ずつ開く（2026-09-27） */
+        if(b.k && b.rows.length>=2 && !ledIsOpen(b)){
+          var bi=b.dir==='in', blast=b.rows[b.rows.length-1].run;
+          return '<div class="grow ledgrp'+(bi?' inrow':' outrow')+'" style="grid-template-columns:'+C+'">'+
+            '<span class="num cash-day c-day">'+esc(b.date.slice(5).replace('-','/'))+'</span>'+
+            '<span class="c-dir" style="font-weight:700;font-size:13px;color:'+(bi?'var(--ice)':'var(--pink)')+'">'+(bi?'入金':'出金')+'</span>'+
+            '<span class="c-memo"><b class="cash-memo-t">'+esc(LED_GRP[b.k]||'')+'</b>'+
+              '<span class="grpn">'+b.rows.length+'件</span>'+
+              '<span class="led-btns"><button class="led-btn tap" data-ledopen="'+esc(b.date+'|'+b.k)+'">1件ずつ見る</button></span>'+
+            '</span>'+
+            '<span class="r num cash-big c-in" style="color:var(--ice)">'+(bi?yen(b.sum):'')+'</span>'+
+            '<span class="r num cash-big c-out" style="color:var(--pink)">'+(bi?'':yen(b.sum))+'</span>'+
+            '<span class="r num cash-big c-bal"><span class="balpre">残 </span>'+yen(blast)+'</span>'+
+            '<span class="r num c-zo">'+(bi?'＋':'−')+Math.round(b.sum).toLocaleString('ja-JP')+'</span></div>';
+        }
+        var head = (b.k && b.rows.length>=2)
+          ? '<div class="grow ledgrp open" style="grid-template-columns:'+C+'">'+
+            '<span class="num cash-day c-day">'+esc(b.date.slice(5).replace('-','/'))+'</span>'+
+            '<span class="c-dir"></span>'+
+            '<span class="c-memo"><b class="cash-memo-t">'+esc(LED_GRP[b.k]||'')+'</b>'+
+              '<span class="grpn">'+b.rows.length+'件</span>'+
+              (S.ledAll?'':'<span class="led-btns"><button class="led-btn tap" data-ledshut="'+esc(b.date+'|'+b.k)+'">まとめる</button></span>')+
+            '</span><span></span><span></span><span></span><span></span></div>'
+          : '';
+        return head + b.rows.map(function(rr){
+        var x=rr.x; run=rr.run;
         var i=x.dir==='in', isNew=String(x.id)===String(S.cashJustId);
         /* 写真は Drive のリンクが本筋。送れていないぶんは端末で預かっています */
         var stash = x.imgPend ? rcptOf(x.id) : null;
@@ -8727,6 +8911,7 @@ function viewCash(el){
           '<span class="r num cash-big c-bal"><span class="balpre">残 </span>'+yen(run)+'</span>'+
           /* ★ 電話でだけ出す「増減」。入金は ＋、出金は −。右端に残高と縦に並ぶ */
           '<span class="r num c-zo">'+(i?'＋':'−')+Math.round(x.amount).toLocaleString('ja-JP')+'</span></div>';
+        }).join('');
       }).join(''):'<div style="padding:20px;text-align:center;color:#999">記録がありません。</div>')+
     '</div></div></div></div>'+
   '</div>';
@@ -8851,7 +9036,12 @@ function viewCash(el){
     if(v!=='in'){ S.cashJust=null; }
     S.cashJustShow=false;   /* タブを動かしたら、もう画面に入れて見せない */
     S.cashCsv=false;        /* 月やタブを動かしたら CSV の枠は閉じる */
+    S.cashDay='';           /* 手でタブを押したときは、その月ぜんぶを出す */
     S.cashPane=v; render(); }; });
+
+  /* ★★★ その日の出納帳へ飛ぶ（2026-09-27）。入力 → 確認 → 入力 → 確認 … */
+  el.querySelectorAll('[data-goled]').forEach(function(b){ b.onclick=function(){
+    cashGoLed(b.dataset.goled); }; });
 
   /* ★★ 出納帳を CSV で取り出す（2026-09-22）。
        ひらくと枠に出るので、そのまま選んで写せる。
@@ -8905,7 +9095,7 @@ function viewCash(el){
 
   var cfEl=el.querySelector('#cf'); if(cfEl) enterNav(cfEl);
   var goMonth=function(d){ S.month=d; S.cashEdit=null; cashImgDrop();
-    S.cashJustId=null; S.cashDate=null; S.cashCsv=false; render(); };
+    S.cashJustId=null; S.cashDate=null; S.cashCsv=false; S.cashDay=''; render(); };
   el.querySelector('#mp').onclick=function(){ goMonth(new Date(m.getFullYear(),m.getMonth()-1,1)); };
   var msel=el.querySelector('#msel');
   if(msel) msel.onchange=function(){
@@ -8978,7 +9168,7 @@ function viewCash(el){
     dn.className='dnote'+(g2===0?' today':'');
     dn.parentNode.className='dwrap'+(g2===0?' today':'');
   };
-  cd.onchange=function(){ S.cashDate=cd.value; refreshDay(); };
+  cd.onchange=function(){ S.cashDate=cd.value; refreshDay(); goledSync(el,'#cgoled',cd.value); };
   }
 
   var cn=el.querySelector('#cn');
@@ -9013,7 +9203,7 @@ function viewCash(el){
     var sale=null, sc=null;
     if(S.saleOn){
       sc=saleClientOf();
-      if(!sc){ alert('現金売上の相手先を選んでください。\nコード・店名・よみ でさがします。\nさがしても出てこないお店・一見のお客さんは［登録していないお店］を押します。'); return; }
+      if(!sc){ alert('現金売上の取引先を選んでください。\nコード・店名・よみ でさがします。\nさがしても出てこないお店・一見のお客さんは［登録していない取引先］を押します。'); return; }
       var pk=salePack(saleItems()), tt=saleTotal(saleItems());
       if(!tt){ alert('現金売上の金額を入れてください。\n（何貫でいくら／かち割り何kgでいくら）'); return; }
       sale={cid:sc.id, code:sc.code, name:sc.name, items:pk, total:tt};
@@ -9069,7 +9259,7 @@ function viewCash(el){
     S.saleOn=false; S.saleClient=null; S.saleItems=null; S.saleQ=''; S.saleLump='';
     S.cashJustId=rec.id; S.cashDate=d;
     /* ★ 入れたら すぐ辞書へ戻す。入ったことは【入力の枠のすぐ下】の1行で知らせる */
-    S.cashJust={ d:String(d).slice(5).replace('-','/'), t:(memo||'（内容なし）'), a:amt,
+    S.cashJust={ d:String(d).slice(5).replace('-','/'), fd:String(d), t:(memo||'（内容なし）'), a:amt,
                  mv:(moved?bkeyLabel(tk):'') };
     S.cashJustShow=true;
     S.cashPane='in';
@@ -9312,6 +9502,16 @@ function viewCash(el){
   }
 
   el.querySelectorAll('[data-img]').forEach(function(im){ im.onclick=function(){ lightbox(im.src); }; });
+  /* ★★★ 出納帳のまとまりを開く・とじる（2026-09-27） */
+  el.querySelectorAll('[data-ledopen]').forEach(function(b){ b.onclick=function(){
+    S.ledOpen=S.ledOpen||{}; S.ledOpen[b.dataset.ledopen]=true; render(); }; });
+  el.querySelectorAll('[data-ledshut]').forEach(function(b){ b.onclick=function(){
+    S.ledOpen=S.ledOpen||{}; delete S.ledOpen[b.dataset.ledshut]; render(); }; });
+  var cbOne=el.querySelector('#cbOne');
+  if(cbOne) cbOne.onclick=function(){ S.ledAll=!S.ledAll; render(); };
+  var cbAD=el.querySelector('#cbAllDay');
+  if(cbAD) cbAD.onclick=function(){ S.cashDay=''; render(); };
+
   el.querySelectorAll('[data-url]').forEach(function(b){ b.onclick=function(){
     var many=null; try{ many=b.dataset.urls?JSON.parse(b.dataset.urls):null; }catch(e){}
     if(many && many.length>1){ many.forEach(function(u){ window.open(u,'_blank'); }); return; }
@@ -10135,7 +10335,7 @@ function cashCardHtml(fy,ca){
             '<td class="r num" style="font-weight:700">'+yen(tot)+'</td></tr>'+
         '</tbody></table></div>'+
         '<div class="gscroll" style="margin-top:10px"><table class="ytbl" style="min-width:560px"><thead><tr>'+
-          '<th style="width:74px">コード</th><th>相手先</th><th class="r">金額（税込）</th><th>内訳</th></tr></thead><tbody>'+
+          '<th style="width:74px">コード</th><th>取引先</th><th class="r">金額（税込）</th><th>内訳</th></tr></thead><tbody>'+
           stores.map(function(x){
             var det=SALE_KEYS.filter(function(k){ return x.q[k]; }).map(function(k){
               return PROD[k].short+' '+x.q[k].toLocaleString()+PROD[k].orderUnit; }).join('／');
@@ -10830,7 +11030,7 @@ function bindAliasCard(el){
       DB.alias[norm(left)]=hit.id; ok++;
     });
     if(ok) await saveAlias();
-    alert('取り込み：'+ok+'件 成功'+(ng2.length?('／'+ng2.length+'件 は相手先が特定できませんでした：\n'+ng2.slice(0,10).join('\n')):''));
+    alert('取り込み：'+ok+'件 成功'+(ng2.length?('／'+ng2.length+'件 は取引先が特定できませんでした：\n'+ng2.slice(0,10).join('\n')):''));
     render();
   };
 }
@@ -11554,7 +11754,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-27b 小口現金は【日付の月】に入る／入れ終わったところに色／かち割り・クラッシュと日付が電話で見える／店売りの金額の二重表示をやめる／小口現金を速く／取引の種類を記録そのものから当てる';
+var APP_BUILD='2026-09-27c 店売りの仕訳は 4111-01・課税1・軽減／事業区分は登録あり1・登録なし2／軽減税率は日付の表で（2027年4月から1%）／用語を取引先にそろえる／記録するの下から その日の出納帳へ／出納帳は店売り・売掛回収を日ごとにまとめる';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -12290,6 +12490,9 @@ function arcBoxHtml(m){
       '<button class="arc-pick tap" id="arcok" style="margin-bottom:2px;padding:14px 22px;font-size:17px">記録する</button>'+
     '</div>'+
     '<div class="cneed" id="arcneed"></div>'+
+    /* ★★★ 記録するボタンの下に、その日の出納帳へ（2026-09-27・お重さん） */
+    '<button class="btn ghost tap goled" id="arcgoled" data-goled="'+esc(d)+'">'+
+      esc(String(d).slice(5).replace('-','/'))+' の出納帳を見る</button>'+
   '</div>';
 }
 function arcBind(el,m){
@@ -12322,7 +12525,7 @@ function arcBind(el,m){
   var clr=el.querySelector('#arcClr');
   if(clr) clr.onclick=function(){ S.arcClient=null; S.arcQ=''; S.arcAmt=''; S.arcFor=''; render(); };
   var dd=el.querySelector('#arcd');
-  if(dd) dd.onchange=function(){ S.arcDate=dd.value; };
+  if(dd) dd.onchange=function(){ S.arcDate=dd.value; goledSync(el,'#arcgoled',dd.value); };
   var ff=el.querySelector('#arcfor');
   if(ff) ff.onchange=function(){ S.arcFor=ff.value; };
   var aa=el.querySelector('#arca');
@@ -12334,6 +12537,9 @@ function arcBind(el,m){
   };
   var ok=el.querySelector('#arcok');
   if(ok) ok.onclick=function(){ arcSave(el,m); };
+  /* ★ この枠はあとから差し込まれるので、飛び先のボタンはここで配線する（2026-09-27） */
+  var ag=el.querySelector('#arcgoled');
+  if(ag) ag.onclick=function(){ cashGoLed(ag.dataset.goled); };
 }
 function arcSave(el,m){
   var c=S.arcClient?clientById(S.arcClient):null;
@@ -12361,7 +12567,7 @@ function arcSave(el,m){
                                        memo:'小口現金から', 'for':forKey, fromCash:true}]);
   S.cashJustId=id; S.arcClient=null; S.arcQ=''; S.arcAmt=''; S.arcFor=''; S.arcDate=d;
   cashImgDrop();
-  S.cashJust={ d:String(d).slice(5).replace('-','/'), t:'売掛の現金回収　'+c.name, a:amt,
+  S.cashJust={ d:String(d).slice(5).replace('-','/'), fd:String(d), t:'売掛の現金回収　'+c.name, a:amt,
                mv:(moved?bkeyLabel(bk):'') };
   S.cashJustShow=true;
   clearCaches();
