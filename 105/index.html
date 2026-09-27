@@ -434,11 +434,24 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .cs-pick{border:1px solid var(--gold);background:#fff;border-radius:9px;
   padding:10px 14px;font-size:18px;font-weight:700;color:#7a5c19}
 .cs-pick.on{background:var(--gold);color:#fff}
+.cs-pick b{display:block;font-size:15px}
+.pksub{display:block;font-size:11.5px;font-weight:400;opacity:.75}
 .cs-tbl{width:100%;border-collapse:collapse;background:#fff}
 .cs-tbl th{background:var(--ai);color:#fff;font-size:12.5px;font-weight:700;padding:6px 8px}
 .cs-tbl td{border:1px solid var(--line);padding:4px 6px}
 .cs-tbl td.lb{background:#FBF9F4;font-weight:700;font-size:15px;white-space:nowrap;width:120px}
 .cs-in{width:100%;text-align:right;font-size:20px;font-weight:700;padding:7px 9px}
+/* ★ 数量の枠は、これより細くしない（2026-09-27）。
+     ［−］［＋］と単位に押されて、打った数字が見えなくなっていた */
+.cs-tbl .cs-in{flex:1 1 auto;min-width:76px;max-width:130px}
+.csu{font-size:15px;font-weight:700;color:var(--ai);flex:0 0 auto;min-width:24px}
+@media(max-width:560px){
+  .cs-tbl td.lb{width:auto;font-size:14px;padding:4px}
+  .cs-tbl td{padding:4px 3px}
+  .cs-tbl .cs-in{min-width:64px;font-size:19px;padding:7px 5px}
+  .cs-step{width:32px;flex:0 0 32px}
+  .csu{min-width:20px;font-size:13px}
+}
 .cs-tot{font-size:26px;font-weight:700;color:var(--ai)}
 .cs-badge{display:inline-block;background:var(--gold);color:#fff;border-radius:5px;
   font-size:11px;font-weight:700;padding:2px 7px;margin-left:6px}
@@ -709,6 +722,34 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .kbtn.x.on  {border-color:var(--gold);background:#FFF7E3}
 .know{margin:8px 0 0;padding:8px 11px;border-radius:8px;background:#F6F4EE;font-size:13px}
 
+/* ============================================================
+   ★★★ 入れ終わったところに【色を塗る】（2026-09-27・お重さん）
+
+   「まだ入れていない欄があることに気づかずに、記録ボタンを押してしまう」
+   が起きていた。押してから叱るのではなく、**押す前に目で分かる**ようにする。
+
+   ・入った枠 … 緑になって ✓ が付く
+   ・まだの枠 … 金色の点線
+   ・記録ボタン … ぜんぶ入るまで薄いまま。足りないものを下に出す
+   描き直さずに、その場で class を付け替えるだけ（打っている最中に
+   カーソルが飛ばないように。cashTyping と同じ考え）。
+   ============================================================ */
+.okin{border-color:var(--green)!important;background:#F2F9F4!important}
+.needin{border-color:var(--gold)!important;border-style:dashed!important;background:#FFFDF6!important}
+.okwrap{position:relative;display:block}
+.okwrap::after{content:'✓';position:absolute;right:7px;top:-9px;
+  background:var(--green);color:#fff;font-size:11px;font-weight:800;
+  line-height:1;padding:3px 5px;border-radius:7px}
+.cneed{margin:10px 0 0;padding:9px 12px;border-radius:9px;
+  border:1.5px dashed var(--gold);background:#FFFCF3;
+  font-size:14.5px;font-weight:700;color:#7A5A16}
+.cneed:empty{display:none}
+.btn.want{opacity:.5}
+/* ★ 選んでいる取引の種類を、はっきり分かるように（前は枠の色だけで気づきにくかった） */
+.kbtn.on{position:relative;box-shadow:0 2px 0 rgba(0,0,0,.08)}
+.kbtn.on::after{content:'✓';margin-left:auto;padding-left:8px;
+  font-size:15px;font-weight:900;color:var(--green)}
+
 /* ★★★ 現金実査で差額が出たときの行き先（2026-09-22）
      合わないまま止めない。見直すか、現金過不足で落とすかを、その場で選ぶ */
 .nfix{margin:12px 0 0;padding:12px 13px;border-radius:10px;
@@ -762,18 +803,27 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
 .amtday .cash-amt{width:100%}
 @media(max-width:560px){
   .amtday{gap:8px!important}
-  .amtday .amtcell{width:42%;min-width:0}
+  .amtday .amtcell{width:38%;min-width:0}
   .amtday .daycell{min-width:0}
   .amtday .daysub{display:none}          /* 見出しが2行になるのを止める */
-  .amtday .dwrap{width:100%;padding:4px 6px;gap:4px}
-  .amtday .cash-date{min-width:0;width:100%;font-size:17px}
-  .amtday .dnote{white-space:nowrap}
+  /* ★★★ 日にちは【枠いっぱい】に。「◯日前」はその下へ落とす（2026-09-27・お重さん）
+       前は ［日付］［◯日前］ を1行に並べていたので、細い電話だと日付の欄が
+       50〜60px まで押されて、**打った日にちが読めなかった**。
+       日にちは読めないと意味がない。添え書きのほうを下へどける */
+  .amtday .dwrap{display:block;width:100%;padding:5px 7px}
+  .amtday .cash-date{min-width:0;width:100%;font-size:18px;padding:9px 6px;
+    box-sizing:border-box;text-align:center}
+  .amtday .dnote{display:block;text-align:center;padding-top:2px;white-space:nowrap}
+  .amtday .dnote:empty{display:none}
 }
 
 /* 売掛の現金回収 … 電話では 取引先 → 回収日 → 金額 → 記録する を縦に積む（2026-09-21） */
 @media(max-width:560px){
   .arc-box .row{flex-wrap:wrap}
   .arc-box .row > div{flex:1 1 100%;min-width:0}
+  /* ★ 回収日も枠いっぱいに。細い電話で日付が読めなくなっていた（2026-09-27） */
+  .arc-box .cash-date{width:100%;box-sizing:border-box;font-size:18px;text-align:center}
+  .arc-box .cash-amt{font-size:26px}
   .arc-box #arcok{flex:1 1 100%;margin-top:6px}
   .arc-box #arcfull{flex:1 1 100%}
 }
@@ -1072,6 +1122,8 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
   border-radius:10px;padding:11px 13px;margin:12px 0 0;font-size:16px;font-weight:700}
 .justline b{font-size:19px}
 .justline .jok{color:var(--green)}
+.justline .jmv{margin-left:auto;font-weight:800;color:#7A5A16;
+  border:1.5px solid var(--gold);background:#FFFCF3;border-radius:8px;padding:3px 9px}
 .justline .jgo{margin-left:auto;border:1.5px solid var(--green);background:#fff;
   color:var(--green);border-radius:8px;font-family:inherit;font-size:14px;font-weight:700;
   padding:7px 12px;cursor:pointer}
@@ -2387,6 +2439,40 @@ function okey(d){ return 'orders:'+ym(d); }
 function ckey(d){ return 'confirm:'+ym(d); }
 function dkey(d){ return 'deliv:'+ym(d); }
 function bkey(d){ return 'cashbook:'+ym(d); }
+/* ★★★ その記録が入るのは【日付の月】。いま見ている月ではない（2026-09-27・お重さん）
+
+     9月の画面をひらいたまま 8月28日の精算を入れたら、**8月の小口現金に入る**。
+     前はいま見ている月に入れていたので、8月の残高が合わなくなっていた。
+     「そんなことはありえない」── そのとおり。現場は月をまたいで精算する。 */
+function bkeyOf(ds){
+  var t=String(ds||'');
+  return /^\d{4}-\d{2}/.test(t) ? 'cashbook:'+t.slice(0,7) : bkey(S.date);
+}
+/** 'cashbook:2026-08' → '8月' */
+function bkeyLabel(k){
+  var m=String(k||'').match(/^cashbook:\d{4}-(\d{2})$/);
+  return m ? (+m[1])+'月' : '';
+}
+/**
+ * 元帳の1件を、日付の月の入れものへ入れる。
+ *
+ * 直しで月が変わったときは、**もとの月から消してから**入れる。
+ * 消さないと同じ記録が2つの月に残って、どちらの残高も狂う。
+ * 戻すのは入れた先の鍵（`cashbook:YYYY-MM`）。
+ */
+function cashPut(rec, oldId, oldKey){
+  var nk=bkeyOf(rec.date);
+  if(oldId && oldKey && oldKey!==nk){
+    DB.cash[oldKey]=(DB.cash[oldKey]||[]).filter(function(x){ return String(x.id)!==String(oldId); });
+    cashSaveAsync(oldKey, JSON.stringify(DB.cash[oldKey]));
+  }
+  var list=DB.cash[nk]||[];
+  DB.cash[nk]=(oldId && oldKey===nk)
+    ? list.map(function(x){ return String(x.id)===String(oldId)?rec:x; })
+    : list.concat([rec]);
+  cashSaveAsync(nk, JSON.stringify(DB.cash[nk]));
+  return nk;
+}
 function ykey(d){ return 'cashcarry:'+ym(d); }
 function nkey(d){ return 'cashcount:'+ym(d); }
 function skey(d){ return 'cashsale:'+ym(d); }   /* 小口現金の「現金売上」の内訳 */
@@ -3058,6 +3144,60 @@ function monthOpts_(m, bags, suffix){
     return '<option value="'+t+'"'+(t===ym(m)?' selected':'')+'>'+
       jpYear(+t.slice(0,4))+' '+(+t.slice(5,7))+'月'+(suffix||'')+'</option>';
   }).join('');
+}
+
+/** プルダウンに出る月を、本物の Date で返す（先読みに使う） */
+function monthList_(m){
+  var out=[], now=new Date();
+  var st=new Date(fyOf(now), FY_START_MONTH-1, 1);
+  var en=new Date(now.getFullYear(), now.getMonth()+1, 1);
+  if(m<st) st=new Date(m.getFullYear(), m.getMonth(), 1);
+  if(m>en) en=new Date(m.getFullYear(), m.getMonth(), 1);
+  for(var d=new Date(st); d<=en; d.setMonth(d.getMonth()+1))
+    out.push(new Date(d.getFullYear(), d.getMonth(), 1));
+  return out;
+}
+
+/* ============================================================
+   ★★ 月を変えたときに待たせない（2026-09-27・お重さん）
+
+   「小口現金のタブを押したとき、その中で ◯月の小口現金 をえらんだとき、
+     結構な時間を要して画面が出てくる。もっと早くして。」
+
+   遅いのは中身ではなく **そのつどサーバへ行っていた** から。GAS は1往復
+   0.5〜2秒、起こし直しがかかると5秒。だから小口現金をひらいた時点で、
+   **この期ぶんをまとめて1回で**取って置く。
+   サーバの `readAll_` はどのみち KV を全部読むので、鍵をまとめても重くならない
+   （CLAUDE.md「遅いのは【往復の数】。詰め込んだ中身ではない」と同じ考え）。
+
+   うしろで走らせるだけなので、いま見ている月の表示は待たせない。
+   ★ 当てるときにもう一度「入っていないか」を見る。
+     待っているあいだに人が入れたぶんを、古い姿で上書きしないため。
+   ============================================================ */
+var _cashWarm=0;
+function cashWarm(){
+  if(_cashWarm || !storage.gas) return;
+  var ms=monthList_(S.month||S.date), ks=[];
+  ms.forEach(function(m){
+    if(bkey(m) in DB.cash) return;
+    ks.push(bkey(m), ykey(m), nkey(m), skey(m), jkey(m));
+  });
+  if(!ks.length){ _cashWarm=1; return; }
+  _cashWarm=1;
+  storage.getMany(ks).then(function(g){
+    var got=0;
+    ms.forEach(function(m){
+      if(bkey(m) in DB.cash) return;            /* その間に読み込まれた・書かれた */
+      if(!(bkey(m) in g)) return;
+      DB.cash[bkey(m)]=jparse(g[bkey(m)],[])||[];
+      DB.carry[ykey(m)]=jparse(g[ykey(m)],0)||0;
+      DB.count[nkey(m)]=jparse(g[nkey(m)],[])||[];
+      DB.sale[skey(m)]=jparse(g[skey(m)],[])||[];
+      DB.jmap[jkey(m)]=jparse(g[jkey(m)],{})||{};
+      got++;
+    });
+    if(got) clearCaches();
+  }).catch(function(){ _cashWarm=0; });          /* こけたら、次にひらいたときやり直す */
 }
 
 function fyRange(fy){ return jpYear(fy)+FY_START_MONTH+'月 〜 '+jpYear(fy+1)+(((FY_START_MONTH+10)%12)+1)+'月'; }
@@ -5707,6 +5847,77 @@ function rcptOf(id){ return rcptAllOf(id)[0] || null; }
 /* ★ 打っている最中に描き直すと、入れかけの金額が消える（2026-09-21）。
      写真が Drive へ届いたことは、次に描き直したときに出れば足りる。
      金額を打ちかけているあいだは、描き直しを見送る。 */
+/**
+ * ★★★ 入れ終わったところに色を塗り、まだのところを知らせる（2026-09-27・お重さん）
+ *
+ * 丸京で「まだ必要箇所を入れていないのに気づかず記録ボタンを押す」が起きていた。
+ * **描き直さない。** class を付け替えるだけなので、打っている最中でも呼べる。
+ *
+ * 見ているのは3つの形 …
+ *   ふつうの型（#cm）／複数仕訳（.cmin が行数ぶん）／店売り（#csLump）
+ *   売掛の現金回収は別の枠（.arc-box）なので、そちらは arcPaint が見る。
+ */
+function cashPaint(el){
+  el = el || document;
+  var need=[];
+  var num=function(q){ return q ? (parseInt(String(q.value||'').replace(/[^0-9]/g,''),10)||0) : 0; };
+  var mark=function(q,ok){
+    if(!q) return;
+    q.classList.toggle('okin',!!ok);
+    q.classList.toggle('needin',!ok);
+  };
+  var form=el.querySelector('#cf');
+  if(!form) return;
+
+  /* 取引の種類。辞書で1つ押していないと、何の伝票かが決まらない */
+  if(!el.querySelector('.kbtn.on')) need.push('取引の種類');
+
+  /* 金額 */
+  var lump=el.querySelector('#csLump');
+  var mins=form.querySelectorAll('.cmin');
+  if(lump){                                   /* 店売り … 受け取った合計金額 */
+    var lv=num(lump); mark(lump,lv>0);
+    if(!lv) need.push('受け取った合計金額');
+    if(!el.querySelector('.cs-cli .pill')) need.push('相手先');
+  }else if(mins.length){                      /* 複数仕訳 … 1行でも入っていればよい */
+    var t=0;
+    Array.prototype.forEach.call(mins,function(q){ var v=num(q); t+=v; mark(q,v>0); });
+    if(!t) need.push('金額');
+  }else{
+    var cm=form.querySelector('#cm');
+    if(cm){ var v2=num(cm); mark(cm,v2>0); if(!v2) need.push('金額'); }
+  }
+
+  /* 精算日。既定で今日が入っているので、たいてい緑のまま */
+  var cd=form.querySelector('#cd');
+  if(cd) mark(cd, !!String(cd.value||'').trim());
+  if(cd && !String(cd.value||'').trim()) need.push('精算日');
+
+  /* 記録ボタン。足りないものを、ボタンのすぐ上に出す */
+  var box=form.querySelector('#cneed');
+  if(box) box.textContent = need.length ? ('まだ入っていません … '+need.join('／')) : '';
+  var ok=form.querySelector('#cok');
+  if(ok) ok.classList.toggle('want', need.length>0);
+}
+
+/** 売掛の現金回収の枠（取引先・回収日・金額）も同じように塗る */
+function arcPaint(el){
+  el = el || document;
+  var box=el.querySelector('.arc-box'); if(!box) return;
+  var need=[];
+  var a=box.querySelector('#arca'), d=box.querySelector('#arcd');
+  var amt=a?(parseInt(String(a.value||'').replace(/[^0-9]/g,''),10)||0):0;
+  if(a){ a.classList.toggle('okin',amt>0); a.classList.toggle('needin',!amt); }
+  if(d){ d.classList.toggle('okin',!!d.value); d.classList.toggle('needin',!d.value); }
+  if(!box.querySelector('.pill')) need.push('お店');
+  if(!amt) need.push('金額');
+  if(d && !d.value) need.push('回収日');
+  var n=box.querySelector('#arcneed');
+  if(n) n.textContent = need.length ? ('まだ入っていません … '+need.join('／')) : '';
+  var ok=box.querySelector('#arcok');
+  if(ok) ok.classList.toggle('want', need.length>0);
+}
+
 function cashTyping(){
   var ids=['cm','arca'];
   for(var i=0;i<ids.length;i++){
@@ -6047,9 +6258,16 @@ function saleBoxHtml(){
           '<button class="btn ghost tap sm" id="csClr">選び直す</button>'
         : '<input id="csq" lang="ja" value="'+esc(S.saleQ||'')+'" placeholder="コード・店名・よみ でさがす" '+
             'style="flex:1;min-width:200px;font-size:17px" autocomplete="off">'+
-          '<button class="cs-pick tap" id="csShop">その他（店売上）00-001</button>')+
+          /* ★ 「その他（店売上）00-001」が【登録ずみの取引先】に見えていた（2026-09-27・お重さん）。
+               まずお店をさがしてもらうのが基本。ここは、さがしても無かったときの行き先 */
+          '<button class="cs-pick tap" id="csShop">'+
+            '<b>登録していないお店</b><span class="pksub">一見のお客さん・店頭売り</span></button>')+
     '</div>'+
-    (sc?'':'<div id="cssug" class="sug" style="margin-bottom:10px"></div>')+
+    (sc?''
+       : '<div id="cssug" class="sug" style="margin-bottom:6px"></div>'+
+         '<p class="muted" style="margin:0 0 10px">まず<b>お店をさがして</b>ください。'+
+         'さがしても出てこないお店・一見のお客さんだけ［登録していないお店］を押します'+
+         '（<span class="num">00-001</span> その他（店売上）にまとめて入ります）。</p>')+
 
     '<div class="gscroll"><table class="cs-tbl"><thead><tr>'+
       '<th style="width:120px">商品</th><th class="r">数量</th>'+
@@ -6064,11 +6282,13 @@ function saleBoxHtml(){
             : '<div class="row" style="gap:6px;justify-content:flex-end;flex-wrap:nowrap">'+
                 '<button class="cs-step tap" tabindex="-1" data-sqstep="-'+ivStep(k)+'" data-sqk="'+k+'" '+
                   'title="−'+ivStep(k)+PROD[k].orderUnit+'">−</button>'+
-                '<input class="cs-in num" data-sq="'+k+'" inputmode="numeric" value="'+esc(v.q)+'" placeholder="0" style="max-width:110px">'+
+                '<input class="cs-in num" data-sq="'+k+'" inputmode="numeric" value="'+esc(v.q)+'" placeholder="0">'+
                 '<button class="cs-step tap" tabindex="-1" data-sqstep="'+ivStep(k)+'" data-sqk="'+k+'" '+
                   'title="＋'+ivStep(k)+PROD[k].orderUnit+'">＋</button>'+
-                '<span style="font-size:15px;font-weight:700;color:var(--ai);min-width:26px">'+PROD[k].orderUnit+'</span>'+
-                (PROD[k].bag?'<span class="muted" style="min-width:44px" data-sbag="'+k+'">'+bagsOf(k,saleNum(v.q))+'</span>':'')+
+                /* ★ 「（◯袋）」はもう出さない（2026-09-27・お重さん）。
+                     これが横幅を取って、かち割り・クラッシュの
+                     **打った数字が電話で見えなくなっていた**。1袋＝2kg は現場は知っている */
+                '<span class="csu">'+PROD[k].orderUnit+'</span>'+
               '</div>')+'</td>'+
           '<td>'+(lump
             ? '<div class="cs-alloc num" data-salloc="'+k+'">'+(saleNum(v.a)?yen(saleNum(v.a)):'—')+'</div>'
@@ -7264,12 +7484,18 @@ function jdApply(m, x, q){
     var back=function(msg){ toast(msg); q.value=String(x.date||'').replace(/-/g,'/'); return false; };
     if(!nd) return back('日付は 2026/07/02 の形で打ってください');
     if(nd===String(x.date)) return false;
-    /* ★ 月をまたがせない。出納帳は月ごとの入れもの（cashbook:<月>）なので、
-         ここで別の月の日にちを入れると、その1件が行き場を失う */
-    if(nd.slice(0,7)!==ym(m)) return back('この月（'+ym(m)+'）の日にちだけです');
+    /* ★ 月をまたいでもよい（2026-09-27）。`cashPut` が、日付の月の入れものへ
+         入れ替えてくれる。前はここで止めていたので、日をまちがえて別の月に
+         入っている1件を、伝票チェックの側から直せなかった */
+    var old=String(x.date||'');
     x.date=nd;
     clearCaches();
-    cashSaveAsync(bkey(m), JSON.stringify(DB.cash[bkey(m)]||[]));
+    if(bkeyOf(nd)!==bkey(m)){
+      cashPut(x, x.id, bkey(m));
+      toast(bkeyLabel(bkeyOf(nd))+'の小口現金へ移しました');
+    }else{
+      cashSaveAsync(bkey(m), JSON.stringify(DB.cash[bkey(m)]||[]));
+    }
     return true;
   }
   var i=+q.dataset.jo, key=q.dataset.ok, v=q.value;
@@ -8091,6 +8317,8 @@ function cashCsvText(m, list, carry){
 }
 function viewCash(el){
   var m=S.month, bk=bkey(m), yk=ykey(m), nk=nkey(m), sk=skey(m), jk=jkey(m);
+  /* ★★ この期ぶんをうしろでまとめて取っておく。月を変えても待たない（2026-09-27） */
+  setTimeout(cashWarm, 0);
   if(!(bk in DB.cash) || !(nk in DB.count) || !(sk in DB.sale)
      || !(jk in DB.jmap) || DB.jdic===null || DB.kinds===null){
     el.innerHTML='<div class="skel"></div><div class="skel"></div>';
@@ -8203,12 +8431,13 @@ function viewCash(el){
     '</div>')+
     (isArc ? '' :
     '<div class="row cash-f amtday" style="gap:12px;align-items:flex-end">'+
-      (multiRows ? '' :
+      /* ★★ 店売りのときは【金額】の欄を出さない（2026-09-27・お重さん）。
+           上の「受け取った合計金額」がそのまま金額になるので、二重表示だった */
+      (multiRows || S.saleOn ? '' :
       '<div class="amtcell"><label class="lbl">金額</label>'+
         '<input id="cm" class="num cash-amt" inputmode="numeric" '+
-          (S.saleOn?'readonly style="background:#FFFBF0" ':'')+
-          'value="'+(S.saleOn?(saleTotal(saleItems())||''):(e.amount||''))+'" placeholder="0"></div>')+
-      '<div class="daycell"'+(multiRows?' style="flex:1 1 100%"':'')+'>'+
+          'value="'+(e.amount||'')+'" placeholder="0"></div>')+
+      '<div class="daycell"'+(multiRows||S.saleOn?' style="flex:1 1 100%"':'')+'>'+
         '<label class="lbl">精算日　<span class="daysub" style="font-weight:400">小口現金が動いた日</span></label>'+
         '<span class="dwrap'+(gap===0?' today':'')+'">'+
           '<input type="date" id="cd" class="cash-date" value="'+formDate+'">'+
@@ -8240,6 +8469,7 @@ function viewCash(el){
         '</div>')+
     /* ★ 記録ボタンは1つだけ。売掛の回収は上の枠のボタンで記録する（2026-09-21） */
     (isArc ? '' :
+    '<div class="cneed" id="cneed"></div>'+
     '<div class="row" style="margin-top:12px;gap:9px">'+
       '<button class="btn tap bigbtn" id="cok" data-nav style="flex:1">'+(e.id?'この内容で直す':'記録する')+'</button>'+
       '<button class="btn ghost tap clrbtn" id="cclr">'+(e.id?'訂正しない':'クリア')+'</button>'+
@@ -8288,7 +8518,12 @@ function viewCash(el){
          折り返したときに「を入れました」だけが2行目に残って落ち着かない */
     ? '<div class="justline"><span class="jok">✓ 入れました</span>'+
         '<span>'+esc(S.cashJust.d)+'　'+esc(S.cashJust.t)+'　<b>'+yen(S.cashJust.a)+'</b></span>'+
-        '<button class="tap jgo" data-cpane="led">元帳で見る</button></div>'
+        /* ★ ほかの月へ入れたときは、そう言う（2026-09-27）。
+             言わないと「入れたのに出てこない」になる */
+        (S.cashJust.mv
+          ? '<span class="jmv">→ '+esc(S.cashJust.mv)+'の小口現金に入れました</span>'
+          : '<button class="tap jgo" data-cpane="led">元帳で見る</button>')+
+      '</div>'
     : '';
 
   var noticeHtml =
@@ -8740,7 +8975,7 @@ function viewCash(el){
     var sale=null, sc=null;
     if(S.saleOn){
       sc=saleClientOf();
-      if(!sc){ alert('現金売上の相手先を選んでください。\n口座のない先・一見のお客さんは「その他（店売上）00-001」を選びます。'); return; }
+      if(!sc){ alert('現金売上の相手先を選んでください。\nコード・店名・よみ でさがします。\nさがしても出てこないお店・一見のお客さんは［登録していないお店］を押します。'); return; }
       var pk=salePack(saleItems()), tt=saleTotal(saleItems());
       if(!tt){ alert('現金売上の金額を入れてください。\n（何貫でいくら／かち割り何kgでいくら）'); return; }
       sale={cid:sc.id, code:sc.code, name:sc.name, items:pk, total:tt};
@@ -8755,7 +8990,7 @@ function viewCash(el){
     }
     var amt = sale ? sale.total
             : (amts ? amts.reduce(function(a,b){return a+b;},0)
-                    : (parseInt(el.querySelector('#cm').value.replace(/[^0-9]/g,''),10)||0));
+                    : (function(q){ return q?(parseInt(q.value.replace(/[^0-9]/g,''),10)||0):0; })(el.querySelector('#cm')));
     if(!amt){
       alert('金額を入れてください。');
       var _f=el.querySelector(multiRows?'#cm0':'#cm'); if(_f) _f.focus();
@@ -8771,15 +9006,16 @@ function viewCash(el){
       if(!confirm('内容も写真も入っていません。このまま記録しますか？')) return;
     }
     var d=cd.value;
-    if(d.slice(0,7)!==ym(m)){
-      if(!confirm('日にちが '+d+' になっています。表示している月と違いますが、このまま記録しますか？')) return;
-    }
+    /* ★★★ 入れ先は【精算日の月】。いま見ている月ではない（2026-09-27）。
+         9月の画面で 8月の日付を入れたら、8月の小口現金に入る。
+         前はここで「ちがいますがいいですか」と聞いて、そのまま9月に入れていた */
+    var tk=bkeyOf(d), moved=(tk!==bkey(m));
     var rid=e.id||Date.now();
     /* ★ 写真は元帳に入れない（2026-09-13）
          Drive に入っていればリンクだけ。入っていなければ、写真はこの端末で
          預かって、元帳には印だけ置きます。元帳に base64 を書くと、
          1枚16万文字がその月ぶん全部に乗って、保存そのものが通らなくなります。 */
-    var _cashPic=cashPicsPack(rid,bk,ym(m),d);
+    var _cashPic=cashPicsPack(rid,tk,d.slice(0,7),d);
     var rec={id:rid, date:d, dir:S.cashDir,
       /* 型（kind）と科目（account）を一緒に持たせます。仕訳を作るときに使います */
       kind:(e.kind||S.cashKind||''),
@@ -8788,15 +9024,15 @@ function viewCash(el){
       sale:sale,
       imgUrl:_cashPic.url, imgPend:_cashPic.pend, img:_cashPic.img, imgType:_cashPic.type,
       pics:(_cashPic.pics.length?_cashPic.pics:null)};
-    DB.cash[bk]=e.id ? (DB.cash[bk]||[]).map(function(x){return x.id===e.id?rec:x;})
-                     : (DB.cash[bk]||[]).concat([rec]);
+    cashPut(rec, e.id||null, bk);
     var wasEdit=!!e.id;
     /* ★ 写真はここで手放す。世代も進めて、送信中のものが次の取引へ入らないようにする */
     S.cashEdit=null; cashImgDrop();
     S.saleOn=false; S.saleClient=null; S.saleItems=null; S.saleQ=''; S.saleLump='';
     S.cashJustId=rec.id; S.cashDate=d;
     /* ★ 入れたら すぐ辞書へ戻す。入ったことは【入力の枠のすぐ下】の1行で知らせる */
-    S.cashJust={ d:String(d).slice(5).replace('-','/'), t:(memo||'（内容なし）'), a:amt };
+    S.cashJust={ d:String(d).slice(5).replace('-','/'), t:(memo||'（内容なし）'), a:amt,
+                 mv:(moved?bkeyLabel(tk):'') };
     S.cashJustShow=true;
     S.cashPane='in';
     S.cashKind=null; S.cashMemoPre=''; S.cashAcctPre=''; S.kindOpen=false;
@@ -8804,10 +9040,13 @@ function viewCash(el){
        描き直しの途中で何かあっても、現金元帳と現金売上の控えの
        どちらかだけが保存される、ということが起きないようにします。
        前の版はこの順が逆で、控えだけ残って元帳に出ない記録ができました。 */
-    cashSaveAsync(bk,JSON.stringify(DB.cash[bk]));
-    saleSync(m,rec);
+    /* 現金売上の控えも、日付の月のほうへ。
+       直しで月が変わったときは、もとの月から先に外す（二重にしない） */
+    if(moved && e.id) saleRemove(m, rec.id);
+    saleSync(new Date(+d.slice(0,4), +d.slice(5,7)-1, 1), rec);
     clearCaches();
-    toast(wasEdit?'直しました':'記録しました');
+    toast((wasEdit?'直しました':'記録しました')+
+          (moved?'　→ '+bkeyLabel(tk)+'の小口現金に入れました':''));
     render();
     setTimeout(function(){ receiptFlush(); },1500);   /* 預かった写真を裏で Drive へ */
   };
@@ -10718,9 +10957,16 @@ function bootKeys_(){
 function bootPreKeys_(){
   var d=S.date, fy=fyOf(d);
   var pm=new Date(d.getFullYear(), d.getMonth()-1, 1);   /* 前月（締めが月をまたぐ） */
+  var m=S.month||d;
+  /* ★★ 小口現金の鍵も、はじめの1回でいっしょに取る（2026-09-27・お重さん）
+       「小口現金のタブを押してから画面が出るまで、結構な時間がかかる」。
+       中身が重いのではなく、**そこで初めてサーバへ行っていた**のが因。
+       サーバの `readAll_` はどのみち KV を全部読むので、
+       鍵を足しても重くならない（CLAUDE.md「起動で読む鍵を足すときは…」）。 */
   return [okey(pm), dkey(pm),
           'ledger:manual:'+fy, 'ledger:autofrom:'+fy, 'ar:open:'+fy, 'invsel:'+fy, 'seed:done',
-          skey(d), buyKey(d)];
+          skey(d), buyKey(d),
+          bkey(m), ykey(m), nkey(m), skey(m), jkey(m), 'jdic:master', 'kinds:master'];
 }
 function bootCacheRead_(){
   try{
@@ -10761,6 +11007,8 @@ function bootPreForget_(){
     delete DB.arOpen[fy];                       /* ledgerLoaded が false に戻る */
     delete DB.sale[skey(d)];  if(window._saleFetch) _saleFetch[skey(d)]=0;
     delete DB.buy[buyKey(d)]; if(window._buyFetch)  _buyFetch[buyKey(d)]=0;
+    /* 小口現金は bootApply_ が本物で上書きするので、ここでは消さない
+       （消すと骨組みが1回出てしまう） */
   }catch(e){}
 }
 
@@ -10776,6 +11024,19 @@ async function bootApply_(g, stale){
   DB.orders[okey(S.date)]=jparse(g[okey(S.date)],{})||{};
   DB.confirm[ckey(S.date)]=jparse(g[ckey(S.date)],{})||{};
   DB.deliv[dkey(S.date)]=jparse(g[dkey(S.date)],{})||{};
+  /* ★★ 小口現金も、はじめの1回で取った鍵からそのまま入れる（2026-09-27）。
+       ここで入れておくと、タブを押したときに骨組みを出さずにいきなり中身が出る。
+       サーバへも行かない（鍵はもう bootPreKeys_ で取ってある） */
+  var m0=S.month||S.date;
+  if(bkey(m0) in g){
+    DB.cash[bkey(m0)]=jparse(g[bkey(m0)],[])||[];
+    DB.carry[ykey(m0)]=jparse(g[ykey(m0)],0)||0;
+    DB.count[nkey(m0)]=jparse(g[nkey(m0)],[])||[];
+    DB.sale[skey(m0)]=jparse(g[skey(m0)],[])||[];
+    DB.jmap[jkey(m0)]=jparse(g[jkey(m0)],{})||{};
+    DB.jdic=jparse(g['jdic:master'],[])||[];
+    DB.kinds=jparse(g['kinds:master'],[])||[]; kindsDirty();
+  }
   DB.ready=true;
   clearCaches();
   render();
@@ -11255,7 +11516,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-09-25c 売掛帳を【縦1本】に（画面・印刷・シートぜんぶ）／方法・小切手が当座に入った日・メモの列／起動を速く（往復5回→1回）';
+var APP_BUILD='2026-09-27a 小口現金は【日付の月】に入る／入れ終わったところに色／かち割り・クラッシュと日付が電話で見える／店売りの金額の二重表示をやめる／小口現金を速く';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -11964,7 +12225,9 @@ function arcBoxHtml(m){
   var bal=c?arcBalOf(c.id):null;
   var lastDay=daysInMonth(m.getFullYear(),m.getMonth());
   var d=S.arcDate||ymd(new Date(m.getFullYear(),m.getMonth(),Math.min(new Date().getDate(),lastDay)));
-  if(d.slice(0,7)!==ym(m)) d=ymd(new Date(m.getFullYear(),m.getMonth(),Math.min(new Date().getDate(),lastDay)));
+  /* ★ 前はここで「いま見ている月」に押し戻していた（2026-09-27 にやめた）。
+       月をまたいだ回収日を入れられないと、8月の回収を9月に入れるしかなくなる。
+       入れ先は `bkeyOf(日付)` が決めるので、ここで縛らない */
   /* ★ 説明は置かない（2026-09-21）。見出しも要らない。
        「売掛の現金回収」を押してここに居るのだから、見れば分かる。
        要るのは【取引先・回収日・金額】の3つだけ */
@@ -11988,6 +12251,7 @@ function arcBoxHtml(m){
       /* ★ 記録ボタンはここ1つだけ。下の枠には出さない（2026-09-21） */
       '<button class="arc-pick tap" id="arcok" style="margin-bottom:2px;padding:14px 22px;font-size:17px">記録する</button>'+
     '</div>'+
+    '<div class="cneed" id="arcneed"></div>'+
   '</div>';
 }
 function arcBind(el,m){
@@ -12041,32 +12305,30 @@ function arcSave(el,m){
   var d=el.querySelector('#arcd').value;
   var ff=el.querySelector('#arcfor');
   var forKey=ff?ff.value:'';
-  if(d.slice(0,7)!==ym(m)){
-    if(!confirm('日にちが '+d+' になっています。表示している月と違いますが、このまま記録しますか？')) return;
-  }
+  /* ★★★ 入れ先は【回収日の月】。いま見ている月ではない（2026-09-27） */
+  var bk=bkeyOf(d), moved=(bk!==bkey(m));
   var id=Date.now();
-  var bk=bkey(m);
   /* ★ 受領書の写真も一緒に残す（2026-09-21）。
        領収書はこちらが渡すもので、もらってくるのは【受領書】。
        写真は元帳に入れない ── Drive のリンクか、この端末の預かり（印だけ） */
-  var pic=cashPicsPack(id,bk,ym(m),d);
+  var pic=cashPicsPack(id,bk,d.slice(0,7),d);
   var rec={id:id, date:d, dir:'in', account:'', amount:amt, kind:'ar',
            party:c.name, memo:'売掛の現金回収　'+c.name+(forKey?'（'+forLabel(c,forKey)+'）':''), sale:null,
            arPay:{cid:c.id, code:c.code, name:c.name, 'for':forKey},
            imgUrl:pic.url, imgPend:pic.pend, img:pic.img, imgType:pic.type,
            pics:(pic.pics.length?pic.pics:null)};
-  DB.cash[bk]=(DB.cash[bk]||[]).concat([rec]);
+  cashPut(rec, null, bk);
   var pk='payments:'+c.id;
   DB.pay[pk]=(DB.pay[pk]||[]).concat([{id:id, date:d, amount:amt, method:'現金',
                                        memo:'小口現金から', 'for':forKey, fromCash:true}]);
   S.cashJustId=id; S.arcClient=null; S.arcQ=''; S.arcAmt=''; S.arcFor=''; S.arcDate=d;
   cashImgDrop();
-  S.cashJust={ d:String(d).slice(5).replace('-','/'), t:'売掛の現金回収　'+c.name, a:amt };
+  S.cashJust={ d:String(d).slice(5).replace('-','/'), t:'売掛の現金回収　'+c.name, a:amt,
+               mv:(moved?bkeyLabel(bk):'') };
   S.cashJustShow=true;
   clearCaches();
-  toast('記録しました');
+  toast('記録しました'+(moved?'　→ '+bkeyLabel(bk)+'の小口現金に入れました':''));
   render();
-  cashSaveAsync(bk, JSON.stringify(DB.cash[bk]));
   cashSaveAsync(pk, JSON.stringify(DB.pay[pk]));
 }
 function forLabel(c,key){
@@ -12141,6 +12403,18 @@ viewCash=function(el){
         +'（金額だけを直すと、売掛の消込とずれてしまうためです）');
     };
   });
+
+  /* ★★★ 入っているところに色を塗る（2026-09-27）。
+       描き直さず class を付け替えるだけなので、打っている最中に呼んでも
+       カーソルが飛ばない。入れものの側で1回だけ拾えば、
+       中身が描き直されても効き続ける */
+  cashPaint(el); arcPaint(el);
+  if(!el._paintOn){
+    el._paintOn=true;
+    var repaint=function(){ cashPaint(el); arcPaint(el); };
+    el.addEventListener('input', repaint);
+    el.addEventListener('change', repaint);
+  }
 };
 
 /* ============================================================
