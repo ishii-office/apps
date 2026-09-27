@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790509920';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790512570';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -1472,6 +1472,19 @@ button.delu[disabled]{opacity:.45}
 .dpz .jshot.pdf{color:var(--pink);font-weight:700;cursor:pointer}
 .dpz .jwarn{font-size:13px;color:#7A6A4A;background:#FFF8E6;border:1px solid #E3C766;
   border-radius:8px;padding:7px 10px;margin:10px 0 8px}
+
+/* ★★★ 記録するボタンの【すぐ下】に、その日の出納帳へ飛ぶボタン
+     （2026-09-27・お重さん。105 から移植）。
+     入力 → 確認 → 入力 → 確認 … を常態にするため */
+.btn.goled,button.goled{display:block;width:100%;margin:9px 0 0;
+  border:2px solid var(--mkline,#DCD6C8);border-radius:12px;background:#fff;
+  font-family:inherit;font-size:16px;font-weight:800;padding:11px 10px;cursor:pointer}
+button.goled:active{background:#F3F1EA}
+/* その日だけを出しているときの札 */
+.daypill{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:800;
+  color:#7A5A16;background:#FFF7E3;border:1px solid #E3C766;border-radius:999px;
+  padding:4px 11px;margin-right:8px}
+.dayline{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 10px}
 
 /* ★★★ 取引の入力の【いちばん下】に置く、事務所むけの入口（2026-09-27。105 から移植）。
      顧問先の入力画面は1ミリも変えない。作れるボタンを足すだけ */
@@ -3699,8 +3712,15 @@ function loadLedgerOne(P){
     var flags=[];
     if(g.noProof>0) flags.push('領収書も支払証明書も無い出金が '+g.noProof+'件 あります。');
     if(g.unsettled>0) flags.push('立て替えたまま精算していないものが '+g.unsettled+'件 あります。');
-    $(P+'_flags').innerHTML = flags.length
-      ? '<div class="lg-flag">'+flags.join('<br>')+'</div>' : '';
+    /* ★★★ 入力の画面から飛んできたときは【その日だけ】を出す（2026-09-27） */
+    var dayHtml = cfg.day
+      ? '<div class="dayline"><span class="daypill">'+goledLabel_(cfg.day)+' だけ</span>'
+        + '<button class="btn ghost tap sm" id="'+P+'_allday">ぜんぶの日を見る</button></div>'
+      : '';
+    $(P+'_flags').innerHTML = dayHtml + (flags.length
+      ? '<div class="lg-flag">'+flags.join('<br>')+'</div>' : '');
+    var ad=$(P+'_allday');
+    if(ad) ad.onclick=function(){ cfg.day=''; loadLedgerOne(P); };
 
     /* ★ いわゆる現金出納帳の形。日付／摘要／増加／減少／残高 が行ごとに繰り返される。
          行が1件も無くても、表の形（見出し・繰越・計）は必ず出す。
@@ -3709,6 +3729,8 @@ function loadLedgerOne(P){
     rows+='<tr class="head"><td class="d">—</td><td class="t"><b>前月繰越残高</b></td>'
         + '<td class="n"></td><td class="n"></td><td class="n bal">'+yen(g.opening)+'</td></tr>';
     g.days.forEach(function(d,di){
+      /* ★ 絞っていても【残高はそのまま】。行を出すかどうかだけを決める */
+      if(cfg.day && d.date!==cfg.day) return;
       d.rows.forEach(function(r,ri){
         var noProof = r.out>0 && r.proof==='なし' && r.src!=='日報';
         var pic = r.img ? '<img class="im" src="'+r.img+'" alt="">'
@@ -3743,10 +3765,10 @@ function loadLedgerOne(P){
       +   '<th class="n">入金</th><th class="n">出金</th>'
       +   '<th class="n bal">残高</th></tr></thead>'
       + '<tbody>'+rows
-      + (g.days.length ? '' :
+      + (rows ? '' :
           '<tr><td class="d">—</td>'
           + '<td class="t"><b style="font-weight:600;color:var(--paper-dim)">'
-          + 'この月はまだ出入りがありません</b></td>'
+          + (cfg.day ? 'この日はまだ出入りがありません' : 'この月はまだ出入りがありません')+'</b></td>'
           + '<td class="n"></td><td class="n"></td><td class="n bal"></td></tr>')
       + '</tbody>'
       + '<tfoot><tr><td class="d">計</td><td class="t"></td>'
@@ -3777,13 +3799,50 @@ function loadLedgerOne(P){
 
 (function(){
   Object.keys(LEDGERS).forEach(function(P){
+    /* ★ 月を動かしたら、日の絞りは外す（その月ぜんぶを見たいから） */
     if($(P+'_prev')) $(P+'_prev').onclick=function(){
-      LEDGERS[P].ym=ymShift(LEDGERS[P].ym,-1); loadLedgerOne(P); };
+      LEDGERS[P].ym=ymShift(LEDGERS[P].ym,-1); LEDGERS[P].day=''; loadLedgerOne(P); };
     if($(P+'_next')) $(P+'_next').onclick=function(){
-      LEDGERS[P].ym=ymShift(LEDGERS[P].ym, 1); loadLedgerOne(P); };
+      LEDGERS[P].ym=ymShift(LEDGERS[P].ym, 1); LEDGERS[P].day=''; loadLedgerOne(P); };
     if($(P+'_wallet')) $(P+'_wallet').onchange=function(){ loadLedgerOne(P); };
   });
 })();
+
+/* ==================================================================
+   ★★★ 入力 → 確認 → 入力 → 確認 を常態にする（2026-09-27・お重さん。105 から移植）
+
+   お重さん「取引の入力の直後に出納帳で入力内容を確認してほしい。
+   入力→確認→入力→確認、、、を常態化してもらう。そのため、取引の入力の
+   「記録する」ボタンの直下にその日の入力の出納帳の画面へ飛べるようなボタンが欲しい。
+   だいたいその一日を入力してその日の取引を確認する。」
+
+   ★ 飛び先は【その日付の月】の出納帳。いま見ている月ではない
+   ★ 飛んだら【その日だけ】に絞る。残高はそのまま（絞る前と同じ数字）
+   ★ 帯タブを手で押したときと、月を動かしたときは絞りを外す
+   ================================================================== */
+function goledDay_(){
+  var i=$('c_date');
+  var v=(i && i.value) || ((S.boot&&S.boot.today)||'');
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
+}
+function goledLabel_(d){ return String(d||'').slice(5).replace('-','/'); }
+/** 取引の入力の［記録する］のすぐ下に置くボタン */
+function goledBtn_(k){
+  var d=goledDay_(); if(!d) return '';
+  return '<button class="btn goled tap" data-goled="'+d+'" data-goledk="'+k+'">'
+       + goledLabel_(d)+' の出納帳を見る</button>';
+}
+function cashGoLed(k, ds){
+  var d=String(ds||''); if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) d=goledDay_();
+  if(!d) return;
+  var P=(k==='out') ? 'lgOut' : 'lgIn';
+  var cfg=LEDGERS[P]; if(!cfg) return;
+  cfg.ym=d.slice(0,7);
+  cfg.day=d;
+  if(k==='out'){ S.oMode='book'; setPane('o_mode',O_PANES,'book'); loadLedgerOne('lgOut'); loadTemoto(); }
+  else         { S.cMode='book'; setPane('c_mode',C_PANES,'book'); loadLedgerOne('lgIn'); }
+  window.scrollTo(0,0);
+}
 
 
 /* ==================================================================
@@ -4513,7 +4572,8 @@ var O_PANES = { in:'o_paneIn', book:'o_paneBook', denpyo:'o_paneDenpyo' };
       S.cMode=b.dataset.v;
       setPane('c_mode',C_PANES,S.cMode);
       if(S.cMode==='shime') loadRecent('日報','c_recent');
-      if(S.cMode==='book')  loadLedgerOne('lgIn');
+      /* ★ 手で押したときは、その月ぜんぶを出す（日の絞りを外す） */
+      if(S.cMode==='book'){ LEDGERS.lgIn.day=''; loadLedgerOne('lgIn'); }
       /* ★ 伝票チェックは【レジ内現金】を見る（相手は 1110 レジ内現金） */
       /* ★ タブを手で押したときは、いつも【伝票チェック】から始める */
       if(S.cMode==='denpyo') denpyoOpen('レジ','c_dpz', (LEDGERS.lgIn||{}).ym, 'jd');
@@ -4525,7 +4585,7 @@ var O_PANES = { in:'o_paneIn', book:'o_paneBook', denpyo:'o_paneDenpyo' };
     b.onclick=function(){
       S.oMode=b.dataset.v;
       setPane('o_mode',O_PANES,S.oMode);
-      if(S.oMode==='book'){ loadLedgerOne('lgOut'); loadTemoto(); }
+      if(S.oMode==='book'){ LEDGERS.lgOut.day=''; loadLedgerOne('lgOut'); loadTemoto(); }
       /* ★ こちらは【レジ外現金】（相手は 1115 手許現金） */
       if(S.oMode==='denpyo') denpyoOpen('手許','o_dpz', (LEDGERS.lgOut||{}).ym, 'jd');
       window.scrollTo(0,0);
@@ -6126,6 +6186,8 @@ function ownerInHtml(k){
     +   '<button class="bigbtn tap" id="'+id('ok')+'" style="flex:1">'+(P.editId?'この内容で直す':'記録する')+'</button>'
     +   '<button class="clrbtn tap" id="'+id('clr')+'">'+(P.editId?'訂正しない':'クリア')+'</button>'
     + '</div>'
+    /* ★★★ 記録するボタンの【すぐ下】。入力 → 確認 → 入力 → 確認（2026-09-27） */
+    + goledBtn_(k)
     + (P.editId
         ? '<button class="delbtn tap" id="'+id('del')+'">この取引を削除する</button>'
         : '')
@@ -6235,6 +6297,8 @@ function drawPetty(k){
       +   '<button class="bigbtn tap" id="'+id('ok')+'" style="flex:1">'+(P.editId?'この内容で直す':'記録する')+'</button>'
       +   '<button class="clrbtn tap" id="'+id('clr')+'">'+(P.editId?'訂正しない':'クリア')+'</button>'
       + '</div>'
+      /* ★★★ 記録するボタンの【すぐ下】。入力 → 確認 → 入力 → 確認（2026-09-27） */
+      + goledBtn_(k)
       /* ★ 直しているときだけ、消す入口を出す（2026-09-08） */
       + (P.editId
           ? '<button class="delbtn tap" id="'+id('del')+'">この取引を削除する</button>'
@@ -6259,6 +6323,9 @@ function bindPetty(k){
 
   var mkb=box.querySelector('[data-mkkind]');
   if(mkb) mkb.onclick=function(){ denpyoKinds(this.dataset.mkkind); };
+
+  var glb=box.querySelector('[data-goled]');
+  if(glb) glb.onclick=function(){ cashGoLed(this.dataset.goledk, this.dataset.goled); };
 
   [].forEach.call(box.querySelectorAll('[data-ck]'),function(b){
     b.onclick=function(){ P.useId=b.dataset.ck; drawPetty(k); };
