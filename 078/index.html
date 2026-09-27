@@ -7,6 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>小林佳悟 経営アプリ</title>
+<!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
+     同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
+     ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
+<script>window.__PAGE_VER='1790509761';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -1468,6 +1472,20 @@ button.delu[disabled]{opacity:.45}
 .dpz .jshot.pdf{color:var(--pink);font-weight:700;cursor:pointer}
 .dpz .jwarn{font-size:13px;color:#7A6A4A;background:#FFF8E6;border:1px solid #E3C766;
   border-radius:8px;padding:7px 10px;margin:10px 0 8px}
+
+/* ★★★ 取引の入力の【いちばん下】に置く、事務所むけの入口（2026-09-27。105 から移植）。
+     顧問先の入力画面は1ミリも変えない。作れるボタンを足すだけ */
+.mkkind{display:block;width:100%;margin:16px 0 0;border:2px dashed #C8A24A;border-radius:12px;
+  background:#FFFCF3;color:#8A6D1F;font-family:inherit;font-size:15px;font-weight:800;
+  padding:12px 10px;cursor:pointer}
+.mkkind:active{background:#FBF3DD}
+/* ★★★ 画面だけ新しくて、サーバ（GAS）が古いときに出す枠。
+     「その操作は受け付けていません」では、何をすればよいか分からない */
+.dzstale{border:2px solid #C8A24A;border-radius:12px;background:#FFFCF3;
+  padding:14px 14px 12px;margin:4px 0 0;color:#5A4A20}
+.dzstale b{display:block;font-size:18px;margin-bottom:6px;color:#8A6D1F}
+.dzstale p{margin:0 0 8px;font-size:14.5px;line-height:1.7}
+.dzstale code{font-size:12.5px;color:#8a8a8a;word-break:break-all}
 
 .dpz .jdic{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px}
 /* ★★ 辞書は【縦に狭く・一覧で探せる】（2026-09-22）
@@ -3180,6 +3198,10 @@ function netGlitch_(e){
   var m = String((e && e.message) || e || '');
   if(m.indexOf('暗証番号')>=0 || m.indexOf('ログインし直')>=0) return false;
   if(m.indexOf('この操作はできません')>=0) return false;
+  /* ★★★ API_RULE が断ったもの（2026-09-27）。
+       送り直しても永久に同じなので、控えを24時間ためこまない。
+       サーバが古いだけのことが多いので、言葉のほうで知らせる（dzErr_） */
+  if(m.indexOf('受け付けていません')>=0) return false;
   if(m.indexOf('サーバが断りました')>=0) return false;
   if(m.indexOf('返事が読めませんでした')>=0) return false;
   if(m.indexOf('空の返事')>=0) return false;
@@ -4020,6 +4042,17 @@ function applyRole(){
   var g=$('gearBtn');
   if(g) g.style.display = isOwnerUI() ? '' : 'none';
 
+  /* ★★★ 伝票チェックは【仕訳を起こすところ】なので事務所（経営者）だけ。
+       サーバの API_RULE でも断っているが、出しておくと店長が押して
+       「その操作は受け付けていません」を見ることになる。画面からも消す */
+  [].forEach.call(document.querySelectorAll('[data-v="denpyo"]'), function(b){
+    b.style.display = isOwnerUI() ? '' : 'none';
+  });
+  if(!isOwnerUI()){
+    if(S.cMode==='denpyo'){ S.cMode='in'; setPane('c_mode',C_PANES,'in'); }
+    if(S.oMode==='denpyo'){ S.oMode='in'; setPane('o_mode',O_PANES,'in'); }
+  }
+
   /* いま見ているタブが出せないものなら、出せるものへ移す */
   if(allow.indexOf(S.view)<0 && S.view!=='setting') showView(allow[0], null);
   if(S.view==='setting' && !isOwnerUI()) showView(allow[0], null);
@@ -4482,7 +4515,8 @@ var O_PANES = { in:'o_paneIn', book:'o_paneBook', denpyo:'o_paneDenpyo' };
       if(S.cMode==='shime') loadRecent('日報','c_recent');
       if(S.cMode==='book')  loadLedgerOne('lgIn');
       /* ★ 伝票チェックは【レジ内現金】を見る（相手は 1110 レジ内現金） */
-      if(S.cMode==='denpyo') denpyoOpen('レジ','c_dpz', (LEDGERS.lgIn||{}).ym);
+      /* ★ タブを手で押したときは、いつも【伝票チェック】から始める */
+      if(S.cMode==='denpyo') denpyoOpen('レジ','c_dpz', (LEDGERS.lgIn||{}).ym, 'jd');
       window.scrollTo(0,0);
     };
   });
@@ -4493,7 +4527,7 @@ var O_PANES = { in:'o_paneIn', book:'o_paneBook', denpyo:'o_paneDenpyo' };
       setPane('o_mode',O_PANES,S.oMode);
       if(S.oMode==='book'){ loadLedgerOne('lgOut'); loadTemoto(); }
       /* ★ こちらは【レジ外現金】（相手は 1115 手許現金） */
-      if(S.oMode==='denpyo') denpyoOpen('手許','o_dpz', (LEDGERS.lgOut||{}).ym);
+      if(S.oMode==='denpyo') denpyoOpen('手許','o_dpz', (LEDGERS.lgOut||{}).ym, 'jd');
       window.scrollTo(0,0);
     };
   });
@@ -6114,7 +6148,7 @@ function drawPetty(k){
        上に【お客さん1組の売上】、その下に別枠で【事業主から入れた】。
        事業主から入れた取引は1種類しかないので、タブに割らない */
   if($('r_card')) $('r_card').hidden = !(k==='in' && isIn);
-  if(isIn){ box.innerHTML = ownerInHtml(k); bindPetty(k); return; }
+  if(isIn){ box.innerHTML = ownerInHtml(k) + mkKindBtn_(k); bindPetty(k); return; }
   var cur = (P.useId===TX_BANK)
     ? { id:TX_BANK, name:'銀行へ預け入れ', dir:'出金', note:'口座を選んでください' }
     : pettyUse(P.useId);
@@ -6209,6 +6243,9 @@ function drawPetty(k){
       +   '<b style="color:var(--mkgreen)">緑色</b>で出ます。そこに出ていれば入っています。</p>';
   }
   html += '</div>';
+  /* ★ いちばん下に［取引の種類をつくる］（2026-09-27。105 から移植）。
+       **顧問先の入力画面は変えない。作れるボタンを置くだけ** */
+  html += mkKindBtn_(k);
   box.innerHTML = html;
   bindPetty(k);
 }
@@ -6219,6 +6256,9 @@ function bindPetty(k){
   /* ★ 入れ終わったところに色を塗る（2026-09-27・105 から移植）。
        描き直さず class を付け替えるだけなので、打っている最中でもカーソルが飛ばない */
   setTimeout(function(){ pettyPaintOn(k); }, 0);
+
+  var mkb=box.querySelector('[data-mkkind]');
+  if(mkb) mkb.onclick=function(){ denpyoKinds(this.dataset.mkkind); };
 
   [].forEach.call(box.querySelectorAll('[data-ck]'),function(b){
     b.onclick=function(){ P.useId=b.dataset.ck; drawPetty(k); };
@@ -7590,7 +7630,16 @@ function appReopen(btn){
   try{ sessionStorage.setItem('appReopenedAt', String(Date.now())); }catch(e){}
   /* ★ Pages から開いているときは、入れ物（iframe）の中ではないので
        ふつうに読み込み直せばよい。GASのときの回り道は要らない */
-  if(WEB2){ try{ location.reload(); return; }catch(e){} }
+  /* ★ Pages のときはキャッシュを外して読み直す（2026-09-27）。
+       そのまま reload すると、また古い index.html が出てくる */
+  if(WEB2){
+    try{
+      var u=new URL(location.href);
+      u.searchParams.set('v', String(Date.now()));
+      location.replace(u.toString()); return;
+    }catch(e){}
+    try{ location.reload(); return; }catch(e){}
+  }
   var say=function(t){ try{ if(btn) btn.textContent=t; }catch(e){} };
   var giveUp=function(){
     say('↻ もう一度ためす');
@@ -7719,6 +7768,49 @@ function appLock(to){
 });
 
 /** 1分おきに版を確かめる */
+/* ==================================================================
+   ★★★ Pages の画面は【自分が古いこと】に気づけない（2026-09-27。105 から移植）
+
+   `appPulse` が見ているのは **GAS に載っているコードの版**で、
+   いま端末が抱えている `index.html` そのものではない。
+   GAS から配るときは HTML もろとも入れ替わるので、これで足りていた。
+   ところが **Pages は画面をそのまま配る**ので、
+   端末のキャッシュに古い画面が居すわると、本人も画面も永久に気づかない。
+   （「直したはずのボタンが出てこない」は、たいていこれ）
+
+   だから 公開の棚に **`version.txt`** を一緒に置き、
+   画面には同じ値を **`window.__PAGE_VER`** として刷り込む（pages.yml）。
+
+   ★ 値は【そのコミットの時刻】（unix秒）。
+     ・数字なので **大小がそのまま新旧**になる
+     ・同じコミットを貼り直しても値が変わらないので、**空振りで止まらない**
+   ★ **自分より【新しい】ときだけ**止める。
+     GitHub の配信は10分ほど覚えているので、入れ替えた直後は
+     `version.txt` のほうが古いことがある。「ちがう」で止めると、
+     **新しい画面が自分を古いと思って止まる**。
+   ================================================================== */
+var APP_PAGE_VER = '';
+try{ APP_PAGE_VER = String(window.__PAGE_VER || ''); }catch(e){}
+function appPagesWatch(){
+  if(!(typeof WEB2!=='undefined' && WEB2)) return;
+  if(!/^\d+$/.test(APP_PAGE_VER)) return;      /* 刷り込まれていなければ何もしない */
+  var run=function(){
+    if(APP_LOCKED) return;
+    try{
+      fetch('version.txt?t='+Date.now(), {cache:'no-store'})
+        .then(function(r){ return r.ok ? r.text() : null; })
+        .then(function(t){
+          if(!t || APP_LOCKED) return;
+          var v=String(t).trim();
+          if(/^\d+$/.test(v) && (+v) > (+APP_PAGE_VER)){ MY_VER=v; appLock(v); }
+        }).catch(function(){});
+    }catch(e){}
+  };
+  setTimeout(run, 8000);
+  setInterval(run, APP_PULSE_MS);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) run(); });
+}
+
 function appPulseStart(){
   if(!LIVE && !WEB2) return;                      /* デモのときは回さない */
   var run=function(){
@@ -7742,6 +7834,7 @@ function appPulseStart(){
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) run(); });
 }
 appPulseStart();
+appPagesWatch();
 
 /* ★ 送れていない控えを片づける（2026-09-20）
      ・開いたとき … 前に送れなかったぶんを拾って送り直す
@@ -8953,7 +9046,7 @@ var DENPYO = {
     var send=(list||[]).filter(Boolean).map(dzKindOut_);
     if(!send.length) return;
     call('saveDenpyoKinds',[{kinds:send}])
-      .catch(function(e){ toast(String(e&&e.message||e)); });
+      .catch(function(e){ dzErr_(e); });
   },
 
   /* ---- 伝票チェックの印 ---- */
@@ -8995,16 +9088,75 @@ function dzKindOut_(k){
 function dzSendMarks_(marks){
   if(!marks || !marks.length) return;
   call('saveDenpyoMarks',[{ym:S.dzYm, scope:S.dzScope, marks:marks}])
-    .catch(function(e){ toast(String(e&&e.message||e)); });
+    .catch(function(e){ dzErr_(e); });
+}
+
+/* ==================================================================
+   ★★★ 「その操作は受け付けていません」で終わらせない（2026-09-27）
+
+   画面（index.html）は GitHub Pages からすぐ届くが、
+   サーバ（Code.gs）は **デプロイ係の反映が要る**。
+   だから「画面は新しいのにサーバが古い」が起こりうる（105 と同じ）。
+   そのとき出るのが `その操作は受け付けていません（getDenpyo）`。
+   **これは壊れているのではなく、反映が止まっているだけ。** そう言う。
+   ================================================================== */
+function dzStale_(msg){
+  return /受け付けていません|is not a function|not defined|見つかりません/.test(String(msg||''));
+}
+function dzStaleHtml(msg){
+  return '<div class="dzstale">'
+    + '<b>まだ本番に反映されていません</b>'
+    + '<p>画面は新しくなっていますが、<b>サーバ（GAS）が古いまま</b>です。'
+    +   '伝票チェックはサーバ側で伝票を組み立てるので、反映されるまで動きません。</p>'
+    + '<p><b>デプロイ係</b>を開いて、このアプリのカードの'
+    +   '「本番に反映する」を押してください。そのあと下のボタンでつなぎ直します。</p>'
+    + '<button class="btn tap" id="dzRetry">もう一度つなぐ</button>'
+    + '<p style="margin:10px 0 0"><code>' + esc(String(msg||'')) + '</code></p>'
+    + '</div>';
+}
+function dzStaleBind(box){
+  var b=box.querySelector('#dzRetry');
+  if(b) b.onclick=function(){ denpyoLoad(); };
+}
+/** 書き込みがこけたとき。反映待ちなら、そうと言う */
+function dzErr_(e){
+  var msg=String((e&&e.message)||e||'');
+  if(dzStale_(msg)){
+    toast('まだ本番に反映されていません。デプロイ係で「本番に反映する」を押してください。');
+    var box=$(S.dzBox);
+    if(box){ box.innerHTML=dzStaleHtml(msg); dzStaleBind(box); }
+    return;
+  }
+  toast(msg);
 }
 
 /* ---- 読み込みと描き直し ---- */
-function denpyoOpen(scope, boxId, ym){
+function denpyoOpen(scope, boxId, ym, pane){
   S.dzScope=scope; S.dzBox=boxId;
   S.dzYm = ym || S.dzYm || ((S.boot&&S.boot.today)||'').slice(0,7) ||
            new Date().toISOString().slice(0,7);
-  S.jdPane='jd';
+  /* ★ 行き先を指せるようにする（'jd' 伝票チェック ／ 'kinds' 取引の種類をつくる）。
+       取引の入力の下のボタンから、つくる画面へ直に飛ぶため */
+  S.jdPane = pane || S.jdPane || 'jd';
   denpyoLoad();
+}
+
+/* ★★★ 取引の入力の下の［＋ 取引の種類をつくる・直す（事務所）］から飛ぶ。
+     **仕組みは 105（丸京）とまったく同じ。** 取引の種類がそのまま仕訳のルール */
+function denpyoKinds(k){
+  if(k==='out'){
+    S.oMode='denpyo'; setPane('o_mode',O_PANES,'denpyo');
+    denpyoOpen('手許','o_dpz',(LEDGERS.lgOut||{}).ym,'kinds');
+  }else{
+    S.cMode='denpyo'; setPane('c_mode',C_PANES,'denpyo');
+    denpyoOpen('レジ','c_dpz',(LEDGERS.lgIn||{}).ym,'kinds');
+  }
+}
+/** 取引の入力のいちばん下に置くボタン。事務所（経営者）にだけ出す */
+function mkKindBtn_(k){
+  if(!isOwnerUI()) return '';
+  return '<button class="mkkind tap" data-mkkind="'+k+'">'
+       + '＋ 取引の種類をつくる・直す（事務所）</button>';
 }
 function denpyoLoad(){
   var box=$(S.dzBox); if(!box) return;
@@ -9014,7 +9166,11 @@ function denpyoLoad(){
     if(r && r.no) DENPYO.no=r.no;
     drawDenpyo();
   }).catch(function(e){
-    box.innerHTML='<p class="muted">読み込めませんでした。'+esc(String(e&&e.message||e))+'</p>';
+    var msg=String((e&&e.message)||e||'');
+    if(dzStale_(msg)){ box.innerHTML=dzStaleHtml(msg); dzStaleBind(box); return; }
+    box.innerHTML='<p class="muted">読み込めませんでした。'+esc(msg)+'</p>'
+      + '<button class="btn tap" id="dzRetry">もう一度つなぐ</button>';
+    dzStaleBind(box);
   });
 }
 /** 月を動かす（丸京と同じく、出納帳とそろえる） */
