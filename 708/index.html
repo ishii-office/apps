@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790589930';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790591114';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -748,6 +748,12 @@ input#co_amt.bigamt{font-size:40px;padding:16px 15px;font-weight:700}
 #o_kind button[data-v="in"][aria-pressed="true"]{background:var(--kin-in);color:var(--uc-in-fg)}
 #c_kind button[data-v="out"][aria-pressed="true"],
 #o_kind button[data-v="out"][aria-pressed="true"]{background:var(--kin-out);color:var(--uc-out-fg)}
+#c_kind button[data-v="ho"][aria-pressed="true"]{background:var(--uc);color:var(--uc-fg)}
+/* ★ レジ内その他（保留）の残高。この枠のいちばん上に大きく */
+.mk .cbox.ho .hobal{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.mk .cbox.ho .hobal span{font-size:14px;font-weight:700;color:var(--paper-dim)}
+.mk .cbox.ho .hobal b{font-family:'Oswald',sans-serif;font-weight:600;font-size:30px}
+.mk .cbox.ho .amtline .btn.sm{flex:none;white-space:nowrap;padding:8px 10px}
 /* ★ 帯のタブに小さい印（！）を出す。締めていない日があることを、
      日付の上に帯で割り込ませずに知らせる（2026-09-08） */
 .segbar button .bang{display:inline-flex;align-items:center;justify-content:center;
@@ -1091,6 +1097,9 @@ button.ghost.danger{border-color:var(--red);color:var(--red)}
   opacity:1;margin-left:2px;letter-spacing:-.03em}
 /* ★ レジ内その他（保留）は、現在残高のすぐ右。少し控えめに（2026-09-28） */
 .hbar .bl.ho{margin-left:0;opacity:.7}
+.kbcard .kbplace{margin:0 0 10px}
+.kbcard .kbplace button{padding:9px 4px;font-size:14px}
+.kbcard .kbhid{opacity:.62;margin-top:12px}
 .hbar .bl.ho b{font-size:14px}
 .hbar .wh{flex:none;font-size:10px;font-weight:700;opacity:.9;
   white-space:nowrap;letter-spacing:-.04em}
@@ -1174,7 +1183,7 @@ button.ghost.danger{border-color:var(--red);color:var(--red)}
 input#r_amt{font-size:40px;padding:16px 15px;font-weight:700}
 
 /* 支払いのしかた。丸京の「型を選ぶ」と同じで、選ぶと何が起きるかを添える */
-.pays{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.pays{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .pays button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   padding:9px 2px;border:1.5px solid var(--line);background:var(--surface);
   color:var(--paper);border-radius:10px;font-family:inherit;font-weight:900;
@@ -1987,8 +1996,10 @@ button.goled:active{background:#F3F1EA}
   <div id="c_paneIn">
   <!-- 入力は【売上】と【現金で払った】の2つだけ。1画面で終わる形にする -->
   <div class="segbar" id="c_kind">
-    <button data-v="in" aria-pressed="true">入金（売上・役員より）</button>
+    <button data-v="in" aria-pressed="true">入金（売上他）</button>
     <button data-v="out">出金（仕入・諸経費他）</button>
+    <!-- ★★★ レジ内その他（保留・1111-99）。ここに溜めて、ここから銀行へ（2026-09-28） -->
+    <button data-v="ho">レジ内その他</button>
   </div>
 
   <!-- ② 取引ごとの入力。これがこのアプリの一丁目一番地 -->
@@ -5231,6 +5242,7 @@ function syncKind(){
   var k=$('c_kind');
   if(k) [].forEach.call(k.children,function(x){ x.setAttribute('aria-pressed', x.dataset.v===S.cKind); });
   var P=pettyState('in');
+  if(P.dir!==S.cKind){ P.useId=''; P.amount=''; P.editId=''; }
   P.dir=S.cKind;
   drawPetty('in');
   drawCrumb();
@@ -6724,13 +6736,18 @@ function drawDayHead(){
 })();
 
 /* ②の支払いボタン。押すだけで終わる。説明は書かない（2026-09-08） */
+var PAY_INPUT = ['現金','カード','QR'];
+var PAY_LABEL = { 'カード':'クレジットカード' };
 function buildPays(sel){
   var box=$('r_method'); if(!box) return;
-  var kinds=(S.closing&&S.closing.payKinds)||['現金','カード','電子マネー','QR','ツケ'];
+  /* ★★ 押せるのは 現金・クレジットカード・QR の3つ（2026-09-28・お重さん）。
+       電子マネー・ツケは要らない。前に入れた記録を直すときだけ、その支払方法も並べる */
+  var kinds=((S.closing&&S.closing.payKinds)||PAY_INPUT).slice();
   var now = sel || payPicked() || '現金';
+  if(now && kinds.indexOf(now)<0 && sel) kinds.push(now);
   if(kinds.indexOf(now)<0) now=kinds[0];
   box.innerHTML=kinds.map(function(k){
-    return '<button type="button" data-v="'+k+'" aria-pressed="'+(k===now)+'">'+k+'</button>';
+    return '<button type="button" data-v="'+k+'" aria-pressed="'+(k===now)+'">'+(PAY_LABEL[k]||k)+'</button>';
   }).join('');
   /* ★ 「QR＝レジは増えない」のような説明は置かない（2026-09-08） */
   [].forEach.call(box.children,function(b){
@@ -6916,133 +6933,79 @@ function txUnitName(id){
   return u.kind==='共通' ? '共通（全店）' : u.name;
 }
 
-/* ★ 役員から入れた ── 入金はこれ1種類なので、枠ひとつで足りる（2026-09-08）
-     レジ内タブなら【レジへ】、レジ外タブなら【レジ外へ】に固定する。
-     売上ではないので、上の売上カードとは別枠にする */
-function ownerInHtml(k){
-  var cf=PETTY[k], P=pettyState(k);
-  var id=function(n){ return 'pt'+k+'_'+n; };
-  /* ★★★ 入金の取引の種類は【つくる・直す】で増やせる（2026-09-28）。
-       1つなら選ぶ欄は出さず、2つ以上なら押して選ぶ */
-  var ins=pettyUses(k).filter(function(u){ return u.dir==='入金'; });
-  if(!ins.length){
-    return '<div class="cbox"><div class="cbox-h"><span class="ti">'+cf.head2+'への入金</span></div>'
-      + '<div class="know muted">入金の取引の種類がまだありません。'
-      + '下の［＋ 取引の種類をつくる・直す］から作れます。</div></div>';
-  }
-  var has=ins.filter(function(u){ return u.id===P.useId; }).length;
-  if(!has) P.useId = ins[0].id;
-  var cur = pettyUse(P.useId) || ins[0];
-  P.from = cf.lock ? cf.from : (k==='in' ? 'レジの現金' : '手許の現金');
+/* ==================================================================
+   ★★★ 取引の入力は【作った取引の種類】をそのまま並べる（2026-09-28・お重さん）
 
-  var html='<div class="cbox inc">'
-    + '<div class="cbox-h"><span class="ti">'
-    +   (ins.length>1 ? cf.head2+'への入金（'+(k==='in'?'売上以外':'レジ外')+'）'
-                      : cur.name.replace(/（[^）]*）$/,'')+'（'+cf.head2+'へ）')
-    + '</span>'+(ins.length>1 ? '<span class="hint">'+cur.name+'</span>' : '')+'</div>';
+   「取引の種類作ったでしょ。その種類を表示して、入金・出金のところで。
+     元からあるのいらん」
+   「出金（仕入・諸経費他）の下の枠に『レジ内現金から支払った（仕入・諸経費他）』って
+     二重になってるから、二重いらん。何があったかを選ぶので、もうダイレクトに
+     取引の種類の出金のやつを入れてくれたらええ」
 
-  /* 入金の用途が増えたときだけ、選ぶ欄を出す（ふだんは1つなので出さない） */
-  if(ins.length>1){
-    html += '<div class="kgrp"><div class="kgt in">入る</div><div class="kwrap">'
-      + ins.map(function(u){
-          return '<button class="kbtn in'+(P.useId===u.id?' on':'')+' tap" data-ck="'+u.id+'">'
-            + '<b>'+u.name+'</b>'+(useNote_(u)?'<span>'+useNote_(u)+'</span>':'')+'</button>';
-        }).join('')
-      + '</div></div>';
-  }
-
-  /* ★ どこへ入るかはタブで決まる（見出しが言っている）。金額だけでよい */
-  html += '<div class="amtline"><label class="lbl">金額</label>'
-    +   '<input id="'+id('amt')+'" class="num cash-amt" inputmode="numeric" value="'+(P.amount||'')+'" placeholder="0">'
-    +   '<span class="unit">円<em>税込</em></span></div>';
-
-  /* 店を選んでいないとき（全体）だけ、どこの経費かを聞く */
-  if(S.unit==='ALL'){
-    html += '<div class="cash-f"><label class="lbl">どこの経費か（部門）</label>'
-      + '<div class="kwrap uwrap" id="'+id('unit')+'">'
-      + txUnitList().map(function(u){
-          return '<button class="kbtn tap'+(P.unit===u.id?' on':'')+'" data-u="'+u.id+'">'
-            + '<b>'+(u.kind==='共通'?'共通（全店）':u.name)+'</b></button>';
-        }).join('')
-      + '</div></div>';
-  }
-
-  html += '<div class="cneed" id="'+id('need')+'"></div>'
-    + '<div class="row" style="gap:9px">'
-    +   '<button class="bigbtn tap" id="'+id('ok')+'" style="flex:1">'+(P.editId?'この内容で直す':'記録する')+'</button>'
-    +   '<button class="clrbtn tap" id="'+id('clr')+'">'+(P.editId?'訂正しない':'クリア')+'</button>'
-    + '</div>'
-    /* ★★★ 記録するボタンの【すぐ下】。入力 → 確認 → 入力 → 確認（2026-09-27） */
-    + goledBtn_(k)
-    + (P.editId
-        ? '<button class="delbtn tap" id="'+id('del')+'">この取引を削除する</button>'
-        : '')
-    + '</div>';
-  return html;
-}
-
+   ・入金 … レジ内はいちばん上に【お客さん1組の売上】。その下に入金の取引の種類
+   ・出金 … 出金の取引の種類をそのまま並べる。見出しを重ねない
+   ・レジ内その他（保留）… レジ内の中の、もう1つの現金（1111-99）。
+     締めの本社勘定がここに溜まり、ここから銀行へ入れる
+   ・並ぶのは【その場所の取引の種類】だけ（レジ内とレジ外は干渉しない）
+   ================================================================== */
 function drawPetty(k){
   if(k===undefined){ drawPetty('in'); drawPetty('out'); return; }
   var cf=PETTY[k], box=$(cf.box); if(!box) return;
   var P=pettyState(k);
   var id=function(n){ return 'pt'+k+'_'+n; };
-  var uses=((S.boot&&S.boot.uses)||[]);
   var shot = S.photos[cf.key];
   if(!P.unit || P.unit==='ALL') P.unit = (S.unit==='ALL' ? '' : S.unit);
 
+  var isHo = (k==='in' && P.dir==='ho');
   var isIn = (P.dir==='in');
-
-  /* ★ 入金（売上・役員より）は1画面で終わらせる（2026-09-08）
-       上に【お客さん1組の売上】、その下に別枠で【役員から入れた】。
-       役員から入れた取引は1種類しかないので、タブに割らない */
   if($('r_card')) $('r_card').hidden = !(k==='in' && isIn);
-  if(isIn){ box.innerHTML = ownerInHtml(k) + mkKindBtn_(k); bindPetty(k); return; }
-  var cur = (P.useId===TX_BANK)
-    ? { id:TX_BANK, name:cf.bankName, dir:'出金', note:'口座を選んでください' }
-    : pettyUse(P.useId);
-  /* 入金から出金へ切り替えたとき、入金の用途が残らないようにする */
-  if(cur && cur.dir==='入金'){ P.useId=''; cur=null; }
+  if(isHo){ box.innerHTML = horyuHtml(k); bindPetty(k); return; }
 
-  /* ⓪ 何があったか（用途）。丸京の kinds をそのまま */
-  /* ★ 群の見出し（出る（払った）／分からない）は出さない。
-       出金の枠にいるのだから、出るに決まっている（2026-09-08） */
-  var grp=function(g,title,list){
-    if(!list.length) return '';
+  var want = isIn ? '入金' : '出金';
+  var list = pettyUses(k).filter(function(u){ return u.dir===want; });
+  var main = list.filter(function(u){ return !isUnknownUse_(u); });
+  var unk  = list.filter(function(u){ return isUnknownUse_(u); });
+  /* レジ外の出金だけ、口座を選ぶ【銀行へ預け入れ】を添える（財布カードの［預ける］の行き先） */
+  if(k==='out' && !isIn){
+    main = main.concat([{ id:TX_BANK, name:cf.bankName, dir:'出金', note:cf.bankNote }]);
+  }
+  var cur = (P.useId===TX_BANK && k==='out' && !isIn)
+    ? { id:TX_BANK, name:cf.bankName, dir:'出金' }
+    : pettyUse(P.useId);
+  /* 入金と出金を切り替えたとき、向きのちがう取引の種類が残らないようにする */
+  if(cur && cur.id!==TX_BANK && cur.dir!==want){ P.useId=''; cur=null; }
+
+  var btns=function(g, arr){
+    if(!arr.length) return '';
     return '<div class="kgrp"><div class="kwrap">'
-      + list.map(function(u){
+      + arr.map(function(u){
           return '<button class="kbtn '+g+(P.useId===u.id?' on':'')+' tap" data-ck="'+u.id+'">'
             + '<b>'+u.name+'</b>'+(useNote_(u)?'<span>'+useNote_(u)+'</span>':'')+'</button>';
         }).join('')
       + '</div></div>';
   };
-  /* ★★★ 出るのは【この場所の取引の種類】だけ（2026-09-28）。
-       伝票チェックの［取引の種類をつくる・直す］で作った・直したものが、そのまま並ぶ */
-  uses=pettyUses(k);
-  var outs=uses.filter(function(u){ return u.dir==='出金' && !isUnknownUse_(u); });
-  var unk =uses.filter(function(u){ return u.dir==='出金' && isUnknownUse_(u); });
-  if(cf.bank){
-    outs = outs.concat([{ id:TX_BANK, name:cf.bankName, dir:'出金', note:cf.bankNote }]);
-  }
-  var pick = grp('out','出る（払った）',outs) + grp('x','分からない',unk);
 
-  var html='<div class="cbox exp">'
-    + '<div class="cbox-h"><span class="ti">'
-    +   cf.head2+'から支払った（仕入・諸経費他）'+'</span>'
-    +   '<span class="hint">'+(cur ? cur.name
-                                   : '何があったかを選ぶと、下に金額の欄が出ます')+'</span>'
-    + '</div>'
-    + (cur ? '<div class="know">いま選んでいるのは <b>'+cur.name+'</b></div>' : '')
-    + pick;
+  if(!main.length && !unk.length){
+    /* レジ内の入金は、売上のカードがあるので、ここは静かにしておく */
+    box.innerHTML = (k==='in' && isIn ? ''
+      : '<div class="cbox"><div class="know muted">'+want+'の取引の種類がまだありません。'
+        + '下の［＋ 取引の種類をつくる・直す］から作れます。</div></div>')
+      + mkKindBtn_(k);
+    bindPetty(k);
+    return;
+  }
+
+  var html='<div class="cbox '+(isIn?'inc':'exp')+'">'
+    + (k==='in' && isIn ? '<div class="eyebrow">売上のほかの入金</div>' : '')
+    + btns(isIn?'in':'out', main) + btns('x', unk);
 
   if(cur){
-    var bank = (P.useId===TX_BANK);
+    var bank = (cur.id===TX_BANK);
     html += '<div class="ptsep"></div>'
       + (P.editId
           ? '<div class="row" style="margin-bottom:10px"><span class="pill tag-maru">修正中</span>'
             + '<button class="btn tap" id="'+id('new')+'" style="margin-left:auto">＋新しく入力する</button></div>'
           : '')
-      /* ★ どこから払ったかは【タブで決まる】ので聞かない（2026-09-08）。
-           レジ内タブを触っているならレジの現金、レジ外タブならレジ外の現金 */
       + '<div class="amtline"><label class="lbl">金額</label>'
       +   '<input id="'+id('amt')+'" class="num cash-amt" inputmode="numeric" value="'+(P.amount||'')+'" placeholder="0">'
       +   '<span class="unit">円<em>税込</em></span></div>';
@@ -7051,19 +7014,16 @@ function drawPetty(k){
       html += '<div class="cash-f"><label class="lbl">どの口座へ入れたか</label>'
         + '<select id="'+id('bank')+'" style="width:100%"></select></div>';
     } else {
-      /* ★ どこの経費か（部門分け）。共通の仕入・経費は「共通（全店）」へ。
-           選んでいるものは、はっきり黒く塗る（押し忘れに見えないように。2026-09-08） */
-      html += '<div class="cash-f"><label class="lbl">どこの経費か（部門）</label>'
+      /* ★ どこの経費か（部門分け）。共通の仕入・経費は「共通（全店）」へ */
+      html += '<div class="cash-f"><label class="lbl">どこの'+(isIn?'ぶん':'経費')+'か（部門）</label>'
         + '<div class="kwrap uwrap" id="'+id('unit')+'">'
         + txUnitList().map(function(u){
             return '<button class="kbtn tap'+(P.unit===u.id?' on':'')+'" data-u="'+u.id+'">'
               + '<b>'+(u.kind==='共通'?'共通（全店）':u.name)+'</b></button>';
           }).join('')
         + '</div></div>'
-        /* ★ 摘要は用途の名前をそのまま使う。内容の例からもう一度選ばせない（二重）。
-             追加メモも置かない。金額・部門・写真で終わる（2026-09-08） */
         + '<div class="dropzone">'
-        +   '<label class="btn tap" for="'+id('photo')+'">📷 領収書の写真'
+        +   '<label class="btn tap" for="'+id('photo')+'">📷 '+(isIn?'証憑':'領収書')+'の写真'
         +     '<input type="file" id="'+id('photo')+'" accept="image/*" capture="environment"></label>'
         +   '<span style="margin-left:auto">'
         +   (shot
@@ -7072,11 +7032,12 @@ function drawPetty(k){
             : '<span class="muted">写真なし（無くても記録できます）</span>')
         +   '</span>'
         + '</div>'
-        + '<details style="margin:10px 0"><summary class="tap" style="font-size:14px;font-weight:700;padding:5px 0">従業員の立替仕入等を精算した場合</summary>'
+        + (isIn ? '' :
+          '<details style="margin:10px 0"><summary class="tap" style="font-size:14px;font-weight:700;padding:5px 0">従業員の立替仕入等を精算した場合</summary>'
         +   '<label class="lbl">立て替えた人</label><select id="'+id('lender')+'" style="width:100%"></select>'
         +   '<label class="lbl" style="margin-top:8px">精算した日（まだなら空のまま）</label>'
         +   '<input type="date" id="'+id('settled')+'" class="cash-date" value="'+(P.settled||'')+'">'
-        + '</details>';
+        + '</details>');
     }
 
     /* ★ 足りないものは【記録ボタンのすぐ上】に出す（2026-09-27・105 から移植） */
@@ -7087,19 +7048,47 @@ function drawPetty(k){
       + '</div>'
       /* ★★★ 記録するボタンの【すぐ下】。入力 → 確認 → 入力 → 確認（2026-09-27） */
       + goledBtn_(k)
-      /* ★ 直しているときだけ、消す入口を出す（2026-09-08） */
       + (P.editId
           ? '<button class="delbtn tap" id="'+id('del')+'">この取引を削除する</button>'
-          : '')
-      + '<p class="muted" style="margin:8px 0 0">押すとすぐ下の帳面に'
-      +   '<b style="color:var(--mkgreen)">緑色</b>で出ます。そこに出ていれば入っています。</p>';
+          : '');
   }
   html += '</div>';
-  /* ★ いちばん下に［取引の種類をつくる］（2026-09-27。105 から移植）。
-       **顧問先の入力画面は変えない。作れるボタンを置くだけ** */
+  /* ★ いちばん下に［取引の種類をつくる］（事務所にだけ出る） */
   html += mkKindBtn_(k);
   box.innerHTML = html;
   bindPetty(k);
+}
+
+/* ★★★ レジ内その他（保留・1111-99）（2026-09-28・お重さん）
+     「レジ内の中に、レジ内その他を作れって言ってるの。そこに滞留させるから、
+       そこから銀行に入金させるから」
+     入るのは レジ締めの【レジ外へ移す額】（業務日報の本社勘定 IV−100,000）。
+     ここから 滋賀銀 453172 へ預け入れる。仕訳は 普通預金 ／ 現金 1111-99 */
+function horyuHtml(k){
+  var cf=PETTY[k], P=pettyState(k);
+  var id=function(n){ return 'pt'+k+'_'+n; };
+  var c=S.closing||{};
+  var bal=(c.horyu==null)?null:Number(c.horyu)||0;
+  P.useId=TX_BANK;
+  return '<div class="cbox ho">'
+    + '<div class="hobal"><span>レジ内その他（銀行へ入れる前）</span>'
+    +   '<b class="num">'+(bal==null?'—':yen(bal))+'</b></div>'
+    + '<p class="muted" style="margin:6px 0 12px">レジ締めで、レジ内準備金を超えたぶん（本社勘定）がここに入ります。</p>'
+    + '<div class="eyebrow">銀行へ預け入れ</div>'
+    + '<div class="amtline"><label class="lbl">金額</label>'
+    +   '<input id="'+id('amt')+'" class="num cash-amt" inputmode="numeric" value="'+(P.amount||'')+'" placeholder="0">'
+    +   '<span class="unit">円</span>'
+    +   (bal>0 ? '<button class="btn ghost tap sm" id="'+id('all')+'" data-all="'+bal+'">全額</button>' : '')
+    + '</div>'
+    + '<div class="cash-f"><label class="lbl">どの口座へ入れたか</label>'
+    +   '<select id="'+id('bank')+'" style="width:100%"></select></div>'
+    + '<div class="cneed" id="'+id('need')+'"></div>'
+    + '<div class="row" style="gap:9px">'
+    +   '<button class="bigbtn tap" id="'+id('ok')+'" style="flex:1">預け入れを記録する</button>'
+    +   '<button class="clrbtn tap" id="'+id('clr')+'">クリア</button>'
+    + '</div>'
+    + goledBtn_(k)
+    + '</div>';
 }
 
 function bindPetty(k){
@@ -7124,6 +7113,8 @@ function bindPetty(k){
   if($(id('new'))) $(id('new')).onclick=function(){ pettyClear(k); };
 
   if($(id('amt')))   $(id('amt')).oninput =function(){ P.amount=this.value; };
+  if($(id('all')))   $(id('all')).onclick =function(){
+    P.amount=this.dataset.all; $(id('amt')).value=P.amount; pettyPaint(k); };
   if($(id('settled'))) $(id('settled')).onchange=function(){ P.settled=this.value; };
 
   var bs=$(id('bank'));
@@ -7255,7 +7246,7 @@ function drawDayLog(c){
   var box=$('c_dayLog'); if(!box) return;
   var rows=[];
   ((c&&c.sales&&c.sales.list)||[]).forEach(function(x){
-    rows.push({ t:x.time, kind:'売上', title:x.method, memo:x.memo,
+    rows.push({ t:x.time, kind:'売上', title:(PAY_LABEL[x.method]||x.method), memo:x.memo,
       amt:x.amount, inn:true, id:x.id, can:true, src:x,
       sub:(x.guests>0? x.guests+'人':'') });
   });
@@ -8945,15 +8936,27 @@ function kindPickable(){
     ★★★ レジ内とレジ外は干渉しない（2026-09-28・お重さん）。
       いま開いている伝票チェックの【場所】のものだけ並べる（場所が空のものは両方に出る）。
       伝票の当て方（jdKind）は全部を見るので、エクセルの中身は変わらない */
+function kindPlaceNow(){
+  return S.kindPlace || (DENPYO.scope ? DENPYO.scope() : '') || 'レジ';
+}
 function kindRuleList(){
-  var sc=(DENPYO.scope ? DENPYO.scope() : '');
+  var sc=kindPlaceNow();
   return cashKinds().filter(function(x){
     if(x.gone) return false;
     var p=String(x.place||'');
-    return !sc || !p || p===sc;
+    if(p==='出さない') return false;
+    return !p || p===sc;
   });
 }
-var KIND_PLACE=[{k:'レジ',label:'レジ内現金だけ'},{k:'手許',label:'レジ外現金だけ'},{k:'',label:'どちらにも'}];
+/** 【出さない】にした取引の種類（どの入力にも出ない）。戻せるように一覧の下に置く */
+function kindHiddenList(){
+  return cashKinds().filter(function(x){ return !x.gone && String(x.place||'')==='出さない'; });
+}
+/* サーバの CASH_SIDE と同じ。片方だけ直さない */
+var KIND_CASH={ 'レジ':{code:'1111',name:'現金',sub:'01',subName:'ﾚｼﾞ内現金'},
+                '手許':{code:'1111',name:'現金',sub:'02',subName:'ﾚｼﾞ外現金'} };
+var KIND_PLACE=[{k:'レジ',label:'レジ内現金'},{k:'手許',label:'レジ外現金'},
+                {k:'',label:'どちらにも'},{k:'出さない',label:'出さない（使わない）'}];
 
 /* ★★★ `kind` が空でも、記録そのものから取引の種類を当てる（2026-09-27・お重さん）
 
@@ -9341,11 +9344,19 @@ function kindMove(src, dstGrp, beforeK){
 
 function viewKinds(el){
   var L=kindRuleList();
-  if(!S.kindSel || !kindEff(S.kindSel)) S.kindSel=(L[0]||{}).k||'';
+  var inList=function(k){ return L.concat(kindHiddenList()).some(function(x){ return x.k===k; }); };
+  if(!S.kindSel || !kindEff(S.kindSel) || !inList(S.kindSel)) S.kindSel=(L[0]||{}).k||'';
   var d=kindEff(S.kindSel);
-  var J=DENPYO.cash(), No=DENPYO.no||{slip:999, voucher:'999'};
+  /* ★ 仕訳のルールの相手は、いま作っている場所の現金（レジ内 1111-01／レジ外 1111-02） */
+  var J=KIND_CASH[kindPlaceNow()] || DENPYO.cash(), No=DENPYO.no||{slip:999, voucher:'999'};
 
+  var pl=kindPlaceNow(), hidden=kindHiddenList();
   var listHtml='<div class="kbcard"><h3>取引の種類</h3>'+
+    /* ★★★ レジ内の取引の種類か、レジ外の取引の種類かを【分けて作る】（2026-09-28・お重さん） */
+    '<div class="segbar kbplace">'+
+      '<button class="tap" data-kbpl="レジ" aria-pressed="'+(pl==='レジ')+'">レジ内現金</button>'+
+      '<button class="tap" data-kbpl="手許" aria-pressed="'+(pl==='手許')+'">レジ外現金</button>'+
+    '</div>'+
     /* ★★ 群が空でも枠は出す。出さないと、そこへドラッグで落とせない */
     KIND_GRP.map(function(g){
       var ks=L.filter(function(x){ return (x.grp||'often')===g.k; });
@@ -9366,7 +9377,16 @@ function viewKinds(el){
         }).join('')+
         (ks.length?'':'<div class="kbdrop">ここへ持ってくる</div>')+'</div>';
     }).join('')+
-    '<button class="kbnew tap" id="kbnew">＋ あたらしく作る</button></div>';
+    '<button class="kbnew tap" id="kbnew">＋ '+(pl==='手許'?'レジ外現金':'レジ内現金')+'の取引の種類を作る</button>'+
+    (hidden.length
+      ? '<div class="kbg kbhid"><div class="kbgh">出さない（使っていない）'+
+          '<span class="n">'+hidden.length+'</span></div>'+
+          hidden.map(function(x){
+            return '<div class="kbi'+(S.kindSel===x.k?' on':'')+' tap" data-kbsel="'+esc(x.k)+'">'+
+              '<span class="kbp '+x.dir+'">'+(x.dir==='in'?'入':'出')+'</span>'+
+              '<b>'+esc(x.label)+'</b></div>'; }).join('')+'</div>'
+      : '')+
+    '</div>';
 
   var edHtml='';
   if(d){
@@ -9502,6 +9522,8 @@ function viewKinds(el){
 
   [].forEach.call(el.querySelectorAll('[data-kbsel]'), function(b){ b.onclick=function(){
     S.kindSel=b.dataset.kbsel; drawKinds(); }; });
+  [].forEach.call(el.querySelectorAll('[data-kbpl]'), function(b){ b.onclick=function(){
+    S.kindPlace=b.dataset.kbpl; S.kindSel=''; drawKinds(); }; });
   var bk=el.querySelector('#kbback');
   if(bk) bk.onclick=function(){ S.jdPane='jd'; drawDenpyo(); };
   var nw=el.querySelector('#kbnew');
@@ -9509,7 +9531,7 @@ function viewKinds(el){
     var k='X'+Date.now().toString(36).toUpperCase();
     /* ★ いま開いている場所（レジ内／レジ外）の取引の種類として作る */
     var o={k:k, grp:'rare', dir:'out', label:'（名前を入れてください）', memo:'',
-      place:(DENPYO.scope ? DENPYO.scope() : ''),
+      place:kindPlaceNow(),
       rows:[{lbl:'',acct:'',acctName:'',sub:'',subName:'',tax:'5',biz:'',rate:10,red:0,
              party:'',partyName:'',memo:''}]};
     DENPYO.addKind(o); S.kindSel=k; DENPYO.saveKind(o); drawKinds(); };
@@ -10024,6 +10046,7 @@ function dzErr_(e){
 /* ---- 読み込みと描き直し ---- */
 function denpyoOpen(scope, boxId, ym, pane){
   S.dzScope=scope; S.dzBox=boxId;
+  S.kindPlace=scope;   /* つくる画面は、開いたタブの場所（レジ内／レジ外）から始める */
   S.dzYm = ym || S.dzYm || ((S.boot&&S.boot.today)||'').slice(0,7) ||
            new Date().toISOString().slice(0,7);
   /* ★ 行き先を指せるようにする（'jd' 伝票チェック ／ 'kinds' 取引の種類をつくる）。
