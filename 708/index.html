@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790604787';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790607649';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -1097,6 +1097,11 @@ button.ghost.danger{border-color:var(--red);color:var(--red)}
   opacity:1;margin-left:2px;letter-spacing:-.03em}
 /* ★ レジ内その他（保留）は、現在残高のすぐ右。少し控えめに（2026-09-28） */
 .hbar .bl.ho{margin-left:0;opacity:.7}
+.srvold{position:sticky;top:0;z-index:200;margin:0 0 8px;padding:12px 14px;background:#7A1F1F;color:#fff;
+  font-size:15px;line-height:1.55;border-radius:0 0 12px 12px}
+.srvold b{display:block;font-size:17px;margin-bottom:2px}
+.srvold button{display:block;margin-top:8px;padding:9px 12px;border-radius:9px;border:0;background:#fff;
+  color:#7A1F1F;font:inherit;font-weight:900}
 .lg-nav select.lg-ymsel{flex:1;min-width:0;font-family:'Oswald',sans-serif;font-size:18px;
   font-weight:600;text-align:center;padding:8px 6px;border-radius:var(--r2)}
 .samode{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
@@ -1105,6 +1110,17 @@ button.ghost.danger{border-color:var(--red);color:var(--red)}
 .samode button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .samode .samnote{flex:1 1 100%;margin:2px 0 0;font-size:14px;color:var(--paper-dim)}
 .mk .cbox.ho.hodep{margin-top:12px}
+.mk .amtdate{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:8px;align-items:end;margin:0 0 10px}
+.mk .amtdate label{display:flex;flex-direction:column;gap:4px;min-width:0}
+.mk .amtdate .lbl{font-size:13px}
+.mk .amtdate .cash-amt{width:100%;min-width:0;font-size:28px;padding:8px 10px;text-align:right}
+.mk .amtdate .cash-date{width:100%;min-width:0;font-size:16px;padding:12px 6px;text-align:center;
+  font-family:'Oswald',sans-serif}
+.mk .dropzone .pics{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.mk .dropzone .pic{position:relative;display:inline-block}
+.mk .dropzone .pic img{height:44px;width:44px;object-fit:cover;border-radius:6px;border:1px solid var(--mkline)}
+.mk .dropzone .pic button{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;
+  border:none;background:#333;color:#fff;font-size:13px;line-height:22px;padding:0}
 .mk .cbox.ho .hohead{font-size:15px;font-weight:900;margin:0 0 10px}
 .mk .cbox.ho .hoall{margin:-4px 0 10px;text-align:right}
 .mk .cbox.ho .hobtn{display:flex;gap:9px;margin-top:14px}
@@ -1823,6 +1839,11 @@ button.goled:active{background:#F3F1EA}
      記録ボタン … ぜんぶ入るまで薄い（.want）。足りないものをボタンのすぐ上に
    ================================================================== */
 .okin{border-color:#2E7D53!important;background:#F2F9F4!important}
+/* ★★ 取引の入力では、入れ終わった欄を【はっきり濃く】する（2026-09-29・お重さん）。
+     どこまで入れたか、ひと目で分かるように */
+.mk .okin{border:2px solid #1F6B45!important;background:#D5EDDF!important;border-style:solid!important}
+.mk .okin.cash-amt,.mk .okin.cash-date{color:#0E3B26!important;font-weight:700}
+.mk .dropzone.okin{background:#D5EDDF!important}
 .needin{border-color:#C8A24A!important;border-style:dashed!important;background:#FFFDF6!important}
 .cneed{margin:10px 0 0;padding:9px 12px;border-radius:9px;
   border:1.5px dashed #C8A24A;background:#FFFCF3;
@@ -2014,7 +2035,7 @@ button.goled:active{background:#F3F1EA}
     <button data-v="in" aria-pressed="true">入金（売上他）</button>
     <button data-v="out">出金（仕入・諸経費他）</button>
     <!-- ★★★ レジ内その他（保留・1111-99）。ここに溜めて、ここから銀行へ（2026-09-28） -->
-    <button data-v="ho">レジ内その他</button>
+    <button data-v="ho">レジ内その他(保留)</button>
   </div>
 
   <!-- ② 取引ごとの入力。これがこのアプリの一丁目一番地 -->
@@ -2045,6 +2066,9 @@ button.goled:active{background:#F3F1EA}
        ⓪何があったか を選ぶ → 金額 → 内容 → 写真 → 記録する。
        中身は drawPetty() が組む -->
   <div class="mk" id="pettyBox"></div>
+  <!-- ★★★ 取引の種類をつくる・直すは【取引の入力の中】で開く（2026-09-29・お重さん）。
+       伝票チェックへは移らない -->
+  <div class="dpz kinded" id="c_kindEd" hidden></div>
 
   <!-- ④ 入れたものが、すぐここに出る。入れて確かめて、また入れる -->
   <div class="card tight" id="c_dayCard">
@@ -2218,6 +2242,7 @@ button.goled:active{background:#F3F1EA}
 
   <!-- ★ レジ外の入力。レジ内とそっくり同じ形（2026-09-07） -->
   <div class="mk" id="pettyBoxOut"></div>
+  <div class="dpz kinded" id="o_kindEd" hidden></div>
 
   <!-- ★ レジ内と同じで、入れたものがすぐ下に出る（2026-09-08）。
        入金でも出金でも、いちばん下はこの帳面 -->
@@ -4070,11 +4095,29 @@ function loadLedgerOne(P){
   fillYmSel_(P, cfg.ym);
   /* ★ 見出しと帯タブに、どの月の出納帳かを出す（2026-09-08） */
   drawBookMonth(P);
-  box.innerHTML='<p class="empty skel">読み込み中…</p>';
+  /* ★★ 速さ（2026-09-29）。前に読んだ同じ月の帳面があれば【まず描く】。
+       裏で新しいものを取りに行き、届いたら静かに差し替える */
+  var ck=cfg.scope+'|'+S.unit+'|'+cfg.ym;
+  var memo=(LEDGER_MEMO[ck]||null);
+  if(memo) ledgerRender_(P, cfg, box, memo);
+  else box.innerHTML='<p class="empty skel">読み込み中…</p>';
 
   call('getLedger',[{scope:cfg.scope, unit:S.unit, ym:cfg.ym,
                      wallet: (P==='lgOut' ? (($(P+'_wallet')||{}).value||'') : '')}])
   .then(function(g){
+    if(!g) return;
+    LEDGER_MEMO[ck]=g;
+    /* 取りに行っているあいだに月や店が変わっていたら描かない */
+    if(ck!==cfg.scope+'|'+S.unit+'|'+cfg.ym) return;
+    ledgerRender_(P, cfg, box, g);
+  }).catch(function(e){
+    console.error(e);
+    if(!memo) box.innerHTML='<p class="empty">読み込めませんでした。</p>';
+  });
+}
+var LEDGER_MEMO={};
+function ledgerRender_(P, cfg, box, g){
+  (function(){
     cfg.data=g;
     $(P+'_open').textContent  = yen(g.opening);
     $(P+'_in').textContent    = '＋'+yen(g.sumIn);
@@ -4175,10 +4218,7 @@ function loadLedgerOne(P){
         if(r && r.why) toast(r.why);
       };
     });
-  }).catch(function(e){
-    console.error(e);
-    box.innerHTML='<p class="empty">読み込めませんでした。</p>';
-  });
+  })();
 }
 
 /** 出納帳の月のプルダウン。今月から24か月前まで（選んでいる月が外なら足す） */
@@ -4521,6 +4561,24 @@ function applyRole(){
   syncTabs();
 }
 
+/* ★★★ 画面が前提にしているサーバの版（2026-09-29）。Code.gs の SERVER_BUILD と同じ値。
+     画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
+     サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
+     **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
+var SERVER_WANT = 20260929;
+function srvCheck_(build){
+  if(!LIVE && !WEB2) return;
+  var old = !(Number(build)>=SERVER_WANT);
+  var el=$('srvOld');
+  if(!old){ if(el) el.remove(); return; }
+  if(el) return;
+  el=document.createElement('div'); el.id='srvOld'; el.className='srvold';
+  el.innerHTML='<b>サーバ（GAS）がまだ古いままです</b>'
+    + '画面は新しくなりましたが、サーバにまだ反映されていないので、保存や一部の表示が動きません。'
+    + '<br>デプロイ係を開き、<b>708 株式会社ビーメイツ</b> のカードで［本番に反映する］を押してください。'
+    + '<button class="tap" onclick="location.reload()">反映したら、開き直す</button>';
+  document.body.insertBefore(el, document.body.firstChild);
+}
 var BOOT_KEY='bm_boot_v1';
 function bootSave(b){
   try{ localStorage.setItem(BOOT_KEY, JSON.stringify({at:Date.now(), b:b})); }catch(e){}
@@ -4557,6 +4615,7 @@ call('getBootstrap').then(function(b){
   if(!b || !b.units) throw new Error('サーバから空の返事が返りました');
   S.boot=b; S.stale=false; _bootRetry=0;
   bootSave(b);
+  srvCheck_(b.build);
 
   applyRole();
   buildUnitSelector();
@@ -5257,6 +5316,7 @@ function syncOKind(){
   [].forEach.call(k.children,function(x){ x.setAttribute('aria-pressed', x.dataset.v===S.oKind); });
   pettyState('out').dir = S.oKind;
   drawPetty('out');
+  if(S.kindInline==='out'){ S.kindDir=(S.oKind==='in'?'in':'out'); S.kindSel=''; drawKinds(); }
   drawCrumb();
 }
 function syncKind(){
@@ -5267,6 +5327,11 @@ function syncKind(){
   if(P.dir!==S.cKind){ P.useId=''; P.amount=''; P.editId=''; }
   P.dir=S.cKind;
   drawPetty('in');
+  /* つくる画面を開いたまま入金／出金を切り替えたら、そちらの種類に並べ直す */
+  if(S.kindInline==='in'){
+    if(S.cKind==='ho') kindsInlineClose();
+    else { S.kindDir=(S.cKind==='in'?'in':'out'); S.kindSel=''; drawKinds(); }
+  }
   drawCrumb();
 }
 
@@ -7034,10 +7099,13 @@ function drawPetty(k){
           ? '<div class="row" style="margin-bottom:10px"><span class="pill tag-maru">修正中</span>'
             + '<button class="btn tap" id="'+id('new')+'" style="margin-left:auto">＋新しく入力する</button></div>'
           : '')
-      /* ① 金額（売上なら人数も同じ行に） */
-      + '<div class="amtline"><label class="lbl">金額</label>'
-      +   '<input id="'+id('amt')+'" class="num cash-amt" inputmode="numeric" value="'+(P.amount||'')+'" placeholder="0">'
-      +   '<span class="unit">円<em>税込</em></span></div>'
+      /* ★★ ① 金額と日付を【横一列】に（2026-09-29）。日付はスマホでも全部見える幅 */
+      + '<div class="amtdate">'
+      +   '<label class="ad-a"><span class="lbl">金額（円・税込）</span>'
+      +     '<input id="'+id('amt')+'" class="num cash-amt" inputmode="numeric" value="'+(P.amount||'')+'" placeholder="0"></label>'
+      +   '<label class="ad-d"><span class="lbl">日付</span>'
+      +     '<input type="date" id="'+id('date')+'" class="cash-date" value="'+(P.date||'')+'"></label>'
+      + '</div>'
       + (sale
           ? '<div class="amtline guestline"><label class="lbl">人数</label>'
             + '<button type="button" class="stpb tap" id="'+id('gm')+'">−</button>'
@@ -7045,29 +7113,30 @@ function drawPetty(k){
             + '<button type="button" class="stpb tap" id="'+id('gp')+'">＋</button>'
             + '<span class="unit">人</span></div>'
           : '')
-      /* ② 日付 */
-      + '<div class="amtline"><label class="lbl">日付</label>'
-      +   '<input type="date" id="'+id('date')+'" class="cash-date" value="'+(P.date||'')+'"></div>';
+      ;
 
     if(bank){
       html += '<div class="cash-f"><label class="lbl">どの口座へ入れたか</label>'
         + '<select id="'+id('bank')+'" style="width:100%"></select></div>';
     } else {
-      /* ③ 写真（任意） */
-      html += '<div class="dropzone">'
+      /* ③ 写真（任意・何枚でも）2026-09-29 */
+      var pics = photoList_(k);
+      html += '<div class="dropzone" id="'+id('pz')+'">'
         +   '<label class="btn tap" for="'+id('photo')+'">📷 '+(isIn?'証憑':'領収書')+'の写真'
-        +     '<input type="file" id="'+id('photo')+'" accept="image/*" capture="environment"></label>'
-        +   '<span style="margin-left:auto">'
-        +   (shot
-            ? '<img src="'+shot+'" style="height:40px;border-radius:6px;border:1px solid var(--mkline);vertical-align:middle">'
-              + '<button class="tap" id="'+id('shotdel')+'" style="margin-left:8px;border:none;background:transparent;color:#999;font-size:12px">取消</button>'
-            : '<span class="muted">写真なし（任意）</span>')
-        +   '</span>'
+        +     (pics.length?'を足す':'')
+        +     '<input type="file" id="'+id('photo')+'" accept="image/*" multiple></label>'
+        +   (pics.length
+            ? '<span class="pics">'+pics.map(function(q,i){
+                return '<span class="pic"><img src="'+q.src+'" alt="">'
+                  + '<button class="tap" data-pdel="'+i+'" aria-label="この写真を外す">×</button></span>';
+              }).join('')+'</span>'
+            : '<span class="muted" style="margin-left:auto">写真なし（任意）</span>')
         + '</div>';
     }
 
-    html += '<div class="cneed" id="'+id('need')+'"></div>'
-      + '<div class="row" style="gap:9px">'
+    /* ★ 「まだ入っていません …」の札は出さない（2026-09-29・お重さん「不要」）。
+         入れ終わった欄が濃くなるので、それで分かる */
+    html += '<div class="row" style="gap:9px">'
       +   '<button class="bigbtn tap" id="'+id('ok')+'" style="flex:1">'+(P.editId?'この内容で直す':'記録する')+'</button>'
       +   '<button class="clrbtn tap" id="'+id('clr')+'">'+(P.editId?'訂正しない':'クリア')+'</button>'
       + '</div>'
@@ -7080,6 +7149,19 @@ function drawPetty(k){
   html += mkKindBtn_(k);
   box.innerHTML = html;
   bindPetty(k);
+}
+
+/** ★ その入力の写真（前に撮って保存してあるもの＋いま撮ったもの）。2026-09-29 */
+function photoList_(k){
+  var cf=PETTY[k], P=pettyState(k);
+  var keep=(P.photoUrls||[]).map(function(u){ return {src:u, url:u}; });
+  var raw=S.photos[cf.key];
+  var shots=Array.isArray(raw) ? raw : (raw ? [raw] : []);
+  return keep.concat(shots.map(function(d){ return {src:d, data:d}; }));
+}
+function photoShots_(k){
+  var raw=S.photos[PETTY[k].key];
+  return Array.isArray(raw) ? raw : (raw ? [raw] : []);
 }
 
 /* ★★★ レジ内その他（保留・1111-99）（2026-09-28・お重さん）
@@ -7108,7 +7190,6 @@ function horyuHtml(k){
     +     '<input type="date" id="'+id('date')+'" class="cash-date" value="'+(P.date||'')+'"></div>'
     +   '<div class="cash-f"><label class="lbl">口座</label>'
     +     '<select id="'+id('bank')+'" style="width:100%"></select></div>'
-    +   '<div class="cneed" id="'+id('need')+'"></div>'
     +   '<div class="hobtn"><button class="bigbtn tap" id="'+id('ok')+'">預け入れを記録する</button>'
     +   '<button class="clrbtn tap" id="'+id('clr')+'">クリア</button></div>'
     +   goledBtn_(k)
@@ -7151,7 +7232,8 @@ function bindPetty(k){
   if(bs){
     bs.innerHTML=((S.boot&&S.boot.banks)||[]).map(function(x){
       /* ★ 口座は FX の口座名で出す（滋賀銀 453172 など）。はじめは 1113-01 */
-      return '<option value="'+x.id+'"'+(x.id===P.bankId?' selected':'')+'>'+x.label+'</option>'; }).join('')
+      return '<option value="'+x.id+'"'+(x.id===P.bankId?' selected':'')+'>'
+        + (x.sub ? '1113-'+x.sub+'　' : '')+x.label+'</option>'; }).join('')
       || '<option value="">（口座が未登録です）</option>';
     if(!P.bankId && bs.options.length) P.bankId=bs.value;
     bs.onchange=function(){ P.bankId=this.value; };
@@ -7165,12 +7247,26 @@ function bindPetty(k){
     ls.onchange=function(){ P.lender=this.value; };
   }
 
+  /* ★ 写真は何枚でも。選んだぶんを全部縮めて足す（2026-09-29） */
   if($(id('photo'))) $(id('photo')).onchange=function(){
-    shrink(this.files&&this.files[0], function(u){ S.photos[cf.key]=u; drawPetty(k); });
+    var fs=[].slice.call(this.files||[]); if(!fs.length) return;
+    var shots=photoShots_(k).slice(), left=fs.length;
+    fs.forEach(function(f){
+      shrink(f, function(u){
+        if(u) shots.push(u);
+        if(--left===0){ S.photos[cf.key]=shots; drawPetty(k); }
+      });
+    });
   };
-  if($(id('shotdel'))) $(id('shotdel')).onclick=function(){
-    S.photos[cf.key]=''; drawPetty(k);
-  };
+  [].forEach.call(box.querySelectorAll('[data-pdel]'),function(b){
+    b.onclick=function(ev){
+      ev.preventDefault();
+      var i=Number(b.dataset.pdel), keep=(P.photoUrls||[]).slice();
+      if(i<keep.length){ keep.splice(i,1); P.photoUrls=keep; }
+      else { var sh=photoShots_(k).slice(); sh.splice(i-keep.length,1); S.photos[cf.key]=sh; }
+      drawPetty(k);
+    };
+  });
   if($(id('clr'))) $(id('clr')).onclick=function(){
     var was=P.editId;
     pettyClear(k);
@@ -7187,8 +7283,8 @@ function pettyClear(k){
   var keepDate=(S.pettyS&&S.pettyS[k]&&S.pettyS[k].date) || (($('c_date')||{}).value||'');
   S.pettyS[k]={ dir:keep, useId:'', editId:'', memo:'', extra:'',
                 amount:'', guests:2, method:'現金', from:cf.from, date:keepDate,
-                unit:(S.unit==='ALL'?'':S.unit), bankId:'', lender:'', settled:'' };
-  S.photos[cf.key]='';
+                unit:(S.unit==='ALL'?'':S.unit), bankId:'', lender:'', settled:'', photoUrls:[] };
+  S.photos[cf.key]=[];
   drawPetty(k);
 }
 
@@ -7239,7 +7335,7 @@ function pettySave(k, btn){
   if(u.sale){
     var sp={ id:(P.editKind==='sale'?P.editId:'')||'', date:ds, unit:(P.unit||S.unit),
       amount:amt, method:u.sale, guests:Number(String(P.guests||'').replace(/[^0-9]/g,''))||0,
-      memo:'', useId:u.id, photo:S.photos[cf.key]||'', photoUrl:(P.photoUrl||''),
+      memo:'', useId:u.id, photos:photoShots_(k), photoUrls:(P.photoUrls||[]),
       time:(P.editKind==='sale'?P.time:'')||'' };
     var nm0=u.name;
     pettyClear(k);
@@ -7255,8 +7351,8 @@ function pettySave(k, btn){
   var memo = P.memo || u.name;
   var body={ id:P.editId||'', date:ds, unit:(P.unit||S.unit),
     useId:P.useId, amount:amt, dir:u.dir, from:cf.from,
-    memo:memo, proof:(S.photos[cf.key] ? '領収書' : 'なし'),
-    photo:S.photos[cf.key]||'',
+    memo:memo, proof:((photoShots_(k).length || (P.photoUrls||[]).length) ? '領収書' : 'なし'),
+    photos:photoShots_(k), photoUrls:(P.photoUrls||[]),
     lender:P.lender||'', settled:P.settled||'' };
   var nm=u.name;
   /* ★ 押した瞬間に欄を空にする。保存は裏で走る（2026-09-07） */
@@ -7284,8 +7380,9 @@ function pettyEdit(hit){
                 amount:String(hit.out||hit.inn||''), guests:2, method:'現金',
                 from:hit.from||cf.from, unit:hit.unit||S.unit, bankId:'',
                 date:hit.date||(($('c_date')||{}).value||''),
+                photoUrls:((hit.imgs&&hit.imgs.length)?hit.imgs:(hit.img?[hit.img]:[])),
                 lender:hit.lender||'', settled:hit.settled||'' };
-  S.photos[cf.key]=hit.img||'';
+  S.photos[cf.key]=[];
   if(k==='out'){ S.oMode='in'; setPane('o_mode',O_PANES,'in'); S.oKind=S.pettyS[k].dir; syncOKind(); }
   else { S.cMode='in'; setPane('c_mode',C_PANES,'in'); S.cKind=S.pettyS[k].dir; syncKind(); }
   drawPetty(k);
@@ -7305,8 +7402,9 @@ function pettyEditSale(x){
   S.pettyS['in']={ dir:'in', useId:u.id, editId:x.id, editKind:'sale', time:x.time||'',
     memo:'', extra:'', amount:String(x.amount||''), guests:(x.guests==null?0:x.guests),
     method:x.method, from:cf.from, date:x.date||$('c_date').value, unit:x.unit||S.unit,
-    bankId:'', lender:'', settled:'', photoUrl:x.img||'' };
-  S.photos[cf.key]=x.img||'';
+    bankId:'', lender:'', settled:'',
+    photoUrls:((x.imgs&&x.imgs.length)?x.imgs:(x.img?[x.img]:[])) };
+  S.photos[cf.key]=[];
   S.cMode='in'; setPane('c_mode',C_PANES,'in'); S.cKind='in'; syncKind();
   drawPetty('in');
   var el=$(cf.box);
@@ -7526,7 +7624,19 @@ function loadClosing(){
     return;
   }
   if(S.saleEdit && (S.saleEdit.date!==$('c_date').value || S.saleEdit.unit!==S.unit)) saleForm(null);
+  /* ★★ 速さ（2026-09-29）。前に読んだ同じ日・同じ店の締めの前提があれば、まず描く */
+  var cck=S.unit+'|'+$('c_date').value;
+  if(CLOSING_MEMO[cck]) closingRender_(CLOSING_MEMO[cck]);
   call('getClosing',[S.unit,$('c_date').value]).then(function(c){
+    if(!c) return;
+    CLOSING_MEMO[cck]=c;
+    if(cck!==S.unit+'|'+(($('c_date')||{}).value||'')) return;
+    closingRender_(c);
+  }).catch(function(e){ console.error(e); });
+}
+var CLOSING_MEMO={};
+function closingRender_(c){
+  (function(){
     S.closing=c;
     var html='';
     if(c.status==='準備中'){
@@ -7592,7 +7702,7 @@ function loadClosing(){
     buildMenuInputs(c.menuVals);
     calcTotal(); calcJissa();
     drawNowIn();
-  }).catch(function(e){ console.error(e); });
+  })();
 }
 /* ★ カレンダーで日を選んだら、そのまま取引の入力に戻る（2026-09-07） */
 $('c_date').addEventListener('change', function(){
@@ -8749,6 +8859,7 @@ function appPulseStart(){
     if(APP_LOCKED) return;
     call('appPulse',[]).then(function(r){
       if(!r || APP_LOCKED) return;
+      srvCheck_(r.build);
       var v=String(r.ver||''), rl=String(r.reload||'');
       /* ★ Pages から開いているときは、版が差し込まれてこない。
            だから【最初に見た版】を自分の版として覚える。
@@ -9022,6 +9133,8 @@ function kindRuleList(){
     if(x.gone) return false;
     var p=String(x.place||'');
     if(p==='出さない') return false;
+    /* ★ 取引の入力の中で開いたときは、いまの入金／出金のものだけ */
+    if(S.kindInline && S.kindDir && x.dir && x.dir!==S.kindDir) return false;
     return !p || p===sc;
   });
 }
@@ -9596,7 +9709,9 @@ function viewKinds(el){
     '</div>';
   }
 
-  el.innerHTML='<button class="btn ghost tap kbback" id="kbback">← 伝票チェックに戻る</button>'+
+  el.innerHTML=(S.kindInline
+      ? '<button class="btn ghost tap kbback" id="kbback">× 閉じて取引の入力に戻る</button>'
+      : '<button class="btn ghost tap kbback" id="kbback">← 伝票チェックに戻る</button>')+
     '<div class="kbwrap">'+listHtml+edHtml+'</div>';
 
   [].forEach.call(el.querySelectorAll('[data-kbsel]'), function(b){ b.onclick=function(){
@@ -9604,7 +9719,9 @@ function viewKinds(el){
   [].forEach.call(el.querySelectorAll('[data-kbpl]'), function(b){ b.onclick=function(){
     S.kindPlace=b.dataset.kbpl; S.kindSel=''; drawKinds(); }; });
   var bk=el.querySelector('#kbback');
-  if(bk) bk.onclick=function(){ S.jdPane='jd'; drawDenpyo(); };
+  if(bk) bk.onclick=function(){
+    if(S.kindInline){ kindsInlineClose(); return; }
+    S.jdPane='jd'; drawDenpyo(); };
   var dk=el.querySelector('#kbdelk');
   if(dk) dk.onclick=function(){
     var kk=S.kindSel, o=kindEff(kk); if(!o) return;
@@ -9624,7 +9741,7 @@ function viewKinds(el){
   if(nw) nw.onclick=function(){
     var k='X'+Date.now().toString(36).toUpperCase();
     /* ★ いま開いている場所（レジ内／レジ外）の取引の種類として作る */
-    var o={k:k, grp:'rare', dir:'out', label:'（名前を入れてください）', memo:'',
+    var o={k:k, grp:'rare', dir:(S.kindDir||'out'), label:'（名前を入れてください）', memo:'',
       place:kindPlaceNow(),
       rows:[{lbl:'',acct:'',acctName:'',sub:'',subName:'',tax:'5',biz:'',rate:10,red:0,
              party:'',partyName:'',memo:''}]};
@@ -10142,6 +10259,8 @@ function dzErr_(e){
 
 /* ---- 読み込みと描き直し ---- */
 function denpyoOpen(scope, boxId, ym, pane){
+  /* 伝票チェックを開いたら、取引の入力の中のつくる画面は閉じる */
+  if(S.kindInline){ var ie=$(S.kindInline==='out'?'o_kindEd':'c_kindEd'); if(ie){ ie.hidden=true; ie.innerHTML=''; } S.kindInline=''; S.kindDir=''; }
   S.dzScope=scope; S.dzBox=boxId;
   S.kindPlace=scope;   /* つくる画面は、開いたタブの場所（レジ内／レジ外）から始める */
   S.dzYm = ym || S.dzYm || ((S.boot&&S.boot.today)||'').slice(0,7) ||
@@ -10155,13 +10274,41 @@ function denpyoOpen(scope, boxId, ym, pane){
 /* ★★★ 取引の入力の下の［＋ 取引の種類をつくる・直す（事務所）］から飛ぶ。
      **仕組みは 105（丸京）とまったく同じ。** 取引の種類がそのまま仕訳のルール */
 function denpyoKinds(k){
-  if(k==='out'){
-    S.oMode='denpyo'; setPane('o_mode',O_PANES,'denpyo');
-    denpyoOpen('手許','o_dpz',(LEDGERS.lgOut||{}).ym,'kinds');
-  }else{
-    S.cMode='denpyo'; setPane('c_mode',C_PANES,'denpyo');
-    denpyoOpen('レジ','c_dpz',(LEDGERS.lgIn||{}).ym,'kinds');
-  }
+  /* ★★★ 取引の入力の中で開く（2026-09-29・お重さん「取引の種類を入力するのはあくまで
+       取引の入力の入金・出金。その中で編集できるように」）。伝票チェックへは移らない */
+  var box = (k==='out') ? 'o_kindEd' : 'c_kindEd';
+  var scope = (k==='out') ? '手許' : 'レジ';
+  var P = pettyState(k);
+  S.kindInline = k;
+  S.dzScope = scope; S.dzBox = box; S.kindPlace = scope;
+  S.kindDir = (P.dir==='in') ? 'in' : 'out';
+  S.jdPane = 'kinds'; S.kindSel = '';
+  var el=$(box); if(!el) return;
+  el.hidden=false;
+  /* 前に読んだ種類があれば、まず描く（速さ）。裏で新しいものを取りに行く */
+  if(S.dz && S.dz.kinds && S.dz.kinds.length) drawKinds();
+  else el.innerHTML='<p class="muted">読み込み中…</p>';
+  call('getDenpyoKinds',[{scope:scope}]).then(function(r){
+    var old=S.dz||{};
+    S.dz={ kinds:(r&&r.kinds)||[], recs:old.recs||[], marks:old.marks||{},
+           cash:(r&&r.cash)||old.cash, no:(r&&r.no)||old.no };
+    if(r && r.no) DENPYO.no=r.no;
+    if(S.kindInline===k) drawKinds();
+  }).catch(function(e){
+    var msg=String((e&&e.message)||e||'');
+    if(dzStale_(msg)){ el.innerHTML=dzStaleHtml(msg); dzStaleBind(el); return; }
+    el.innerHTML='<p class="muted">読み込めませんでした。'+esc(msg)+'</p>';
+  });
+  if(el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+/** 取引の入力の中のつくる画面を閉じる */
+function kindsInlineClose(){
+  var k=S.kindInline; if(!k) return;
+  var el=$(k==='out' ? 'o_kindEd' : 'c_kindEd');
+  if(el){ el.hidden=true; el.innerHTML=''; }
+  S.kindInline=''; S.kindDir='';
+  try{ drawPetty(k); }catch(e){}
+  var bx=$(PETTY[k].box); if(bx && bx.scrollIntoView) bx.scrollIntoView({behavior:'smooth',block:'start'});
 }
 /** 取引の入力のいちばん下に置くボタン。事務所（経営者）にだけ出す */
 function mkKindBtn_(k){
@@ -10169,10 +10316,16 @@ function mkKindBtn_(k){
   return '<button class="mkkind tap" data-mkkind="'+k+'">'
        + '＋ 取引の種類をつくる・直す（事務所）</button>';
 }
+var DZ_MEMO={};
 function denpyoLoad(){
   var box=$(S.dzBox); if(!box) return;
-  box.innerHTML='<p class="muted">読み込み中…</p>';
+  /* ★★ 速さ（2026-09-29）。前に読んだ同じ月の伝票があれば、まず描く */
+  var dk=S.dzScope+'|'+S.dzYm;
+  if(DZ_MEMO[dk]){ S.dz=DZ_MEMO[dk]; if(S.dz.no) DENPYO.no=S.dz.no; drawDenpyo(); }
+  else box.innerHTML='<p class="muted">読み込み中…</p>';
   call('getDenpyo',[{ym:S.dzYm, scope:S.dzScope}]).then(function(r){
+    if(r) DZ_MEMO[dk]=r;
+    if(dk!==S.dzScope+'|'+S.dzYm) return;
     S.dz=r||{kinds:[],recs:[],marks:{}};
     if(r && r.no) DENPYO.no=r.no;
     drawDenpyo();
@@ -10266,6 +10419,11 @@ function pettyPaint(k){
     paintMark_(bk, !!bk.value);
     if(!bk.value) need.push('どの口座へ入れたか');
   }
+  /* ★ 写真・人数も、入れたら濃くする */
+  var pz=box.querySelector('#'+id('pz'));
+  if(pz) pz.classList.toggle('okin', photoList_(k).length>0);
+  var gs=box.querySelector('#'+id('guests'));
+  if(gs) gs.classList.toggle('okin', (parseInt(gs.value,10)||0)>0);
   var st=box.querySelector('#'+id('settled'));
   if(st && st.value) paintMark_(st, true);
 
