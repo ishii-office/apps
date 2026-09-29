@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790673474';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790674970';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -739,6 +739,10 @@ input#co_amt.bigamt{font-size:40px;padding:16px 15px;font-weight:700}
   border-right:1.5px solid var(--line)}
 .segbar button:last-child{border-right:0}
 /* ★ 入金・出金は2段に（2026-09-29・お重さん）。上に「出金」、下に（仕入・諸経費他） */
+.ymbar{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-weight:800;font-size:17px}
+.ymbar span{white-space:nowrap}
+.ymbar select{width:auto;flex:0 1 auto;min-width:0;font:inherit;font-size:20px;font-weight:900;padding:8px 12px;border-radius:var(--r2);
+  border:2px solid var(--uc,var(--accent));background:var(--surface);color:var(--paper);font-family:'Oswald',sans-serif}
 .inym{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-weight:700}
 .inym select{font:inherit;font-size:17px;font-weight:700;padding:8px 10px;border-radius:var(--r2);
   border:1.5px solid var(--line);background:var(--surface);color:var(--paper)}
@@ -795,7 +799,11 @@ input#co_amt.bigamt{font-size:40px;padding:16px 15px;font-weight:700}
 .fcast .fcwh em{font-style:normal;font-size:12px;color:var(--paper-dim);margin-left:auto}
 .fcast .fcwt{width:100%;table-layout:fixed;border-collapse:collapse;margin-top:6px;font-size:14px}
 .fcast .fcwt th{font-size:12px;color:var(--paper-dim);font-weight:700;text-align:right}
-.fcast .fcwt th:first-child{width:38%}
+.fcast .fcwt th:first-child{width:24%}.fcast .fcwt th.w{width:22%;text-align:center}
+.fcast .fcwt td.w{text-align:center;white-space:normal;line-height:1.15}
+.fcast .fcwt td.w .mk{font-size:15px;margin-right:2px}.fcast .fcwt td.w .pp{font-size:12px;font-weight:700;color:var(--accent-b)}
+.fcast .fcwt td.w .tt{display:block;font-size:10px;font-family:'Oswald',sans-serif}
+.fcast .fcwt td.w .tt i{font-style:normal;margin:0 2px;font-size:10px}.fcast .fcwt td.w .tt .hi{color:var(--red)}.fcast .fcwt td.w .tt .lo{color:var(--accent-b)}
 .fcast .fcwt td{padding:3px 2px;border-bottom:1px dotted var(--line);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fcast .fcwt td:first-child{text-align:left}.fcast .fcwt td em{font-style:normal;margin:0 2px;font-size:12px}
 .fcast .fcwt td i{font-style:normal;font-size:10px;color:var(--red);margin-left:3px}
@@ -2166,6 +2174,9 @@ button.goled:active{background:#F3F1EA}
   </div>
   <div id="shimeNotice"></div>
 
+  <!-- ★★★ 何月分か（2026-09-29・お重さん）。ここで選んだ月が、下のぜんぶ
+       （取引の入力・レジ締め・出納帳・売上帳・伝票チェック）の月になる。バラバラにしない -->
+  <div class="ymbar"><select id="c_ymSel" aria-label="何月分か"></select><span>の取引</span></div>
   <div class="segbar big" id="c_mode">
     <button data-v="in" aria-pressed="true">取引の入力</button>
     <button data-v="shime">レジ締め</button>
@@ -2187,7 +2198,7 @@ button.goled:active{background:#F3F1EA}
     <button data-v="in" aria-pressed="true">入金<small class="seg2">（売上他）</small></button>
     <button data-v="out">出金<small class="seg2">（仕入・諸経費他）</small></button>
     <!-- ★★★ レジ内その他（保留・1111-99）。ここに溜めて、ここから銀行へ（2026-09-28） -->
-    <button data-v="ho">レジ内その他(保留)</button>
+    <button data-v="ho">レジ内その他<small class="seg2">（保留）</small></button>
   </div>
 
   <!-- ② 取引ごとの入力。これがこのアプリの一丁目一番地 -->
@@ -2323,11 +2334,6 @@ button.goled:active{background:#F3F1EA}
   <div class="card" id="lgInCard">
     <div class="eyebrow" id="lgIn_head">レジ内現金の出納帳</div>
 
-    <div class="lg-nav">
-      <button class="ghost" id="lgIn_prev">前の月</button>
-      <select class="lg-ymsel" id="lgIn_ym" aria-label="何月の出納帳か"></select>
-      <button class="ghost" id="lgIn_next">次の月</button>
-    </div>
 
     <div class="lg-sum">
       <div><span>前月繰越残高</span><b class="num" id="lgIn_open">—</b></div>
@@ -2347,11 +2353,6 @@ button.goled:active{background:#F3F1EA}
   <div class="card" id="lgHoCard">
     <div class="eyebrow" id="lgHo_head">レジ内その他（保留）の出納帳</div>
 
-    <div class="lg-nav">
-      <button class="ghost" id="lgHo_prev">前の月</button>
-      <select class="lg-ymsel" id="lgHo_ym" aria-label="何月の出納帳か"></select>
-      <button class="ghost" id="lgHo_next">次の月</button>
-    </div>
 
     <div class="lg-sum">
       <div><span>前月繰越残高</span><b class="num" id="lgHo_open">—</b></div>
@@ -2371,11 +2372,6 @@ button.goled:active{background:#F3F1EA}
   <div id="c_paneSales" hidden>
   <div class="card" id="sbCard">
     <div class="eyebrow" id="sb_head">売上帳</div>
-    <div class="lg-nav">
-      <button class="ghost" id="sb_prev">前の月</button>
-      <select class="lg-ymsel" id="sb_ym" aria-label="何月の売上帳か"></select>
-      <button class="ghost" id="sb_next">次の月</button>
-    </div>
     <div class="lg-sum">
       <div><span>現金</span><b class="num" id="sb_cash">—</b></div>
       <div><span>クレジット</span><b class="num" id="sb_card">—</b></div>
@@ -2409,6 +2405,7 @@ button.goled:active{background:#F3F1EA}
     <span class="wh" id="o_nowSub"></span>
   </div>
 
+  <div class="ymbar"><select id="o_ymSel" aria-label="何月分か"></select><span>の取引</span></div>
   <div class="segbar big" id="o_mode">
     <button data-v="in" aria-pressed="true">取引の入力</button>
     <button data-v="book">出納帳</button>
@@ -2450,11 +2447,6 @@ button.goled:active{background:#F3F1EA}
   <div class="card" id="lgOutCard">
     <div class="eyebrow" id="lgOut_head">レジ外現金の出納帳</div>
 
-    <div class="lg-nav">
-      <button class="ghost" id="lgOut_prev">前の月</button>
-      <select class="lg-ymsel" id="lgOut_ym" aria-label="何月の出納帳か"></select>
-      <button class="ghost" id="lgOut_next">次の月</button>
-    </div>
 
     <!-- ★ 「誰の手許か」の絞り込みは外した（2026-09-09）。
          下の【レジ外現金管理者】の枠で分かる。誰が持つかは設定で決めるもの -->
@@ -4261,19 +4253,15 @@ var LEDGER_NAME = { lgIn:'レジ内現金の出納帳', lgHo:'レジ内その他
 function bookMonth_(ym){ return String(ym||'').slice(5).replace(/^0/,'')+'月'; }
 function drawBookMonth(P){
   var cfg=LEDGERS[P]; if(!cfg) return;
-  var m=bookMonth_(cfg.ym);
+  /* ★★★ 月は上の「◯月分」で決まるので、見出し・帯タブには月を入れない（2026-09-29・お重さん） */
   var h=$(P+'_head');
-  if(h) h.textContent = m+'の'+LEDGER_NAME[P];
-  if(P==='lgHo') return;   /* 帯タブの名前は、レジ内現金の出納帳のほうで決める */
-  var bar=$(P==='lgIn' ? 'c_mode' : 'o_mode');
-  var b=bar && bar.querySelector('button[data-v="book"]');
-  if(b) b.textContent = m+'の出納帳';
+  if(h) h.textContent = LEDGER_NAME[P];
 }
 
 function loadLedgerOne(P){
   var box=$(P+'_body'); if(!box) return;
   var cfg=LEDGERS[P];
-  if(!cfg.ym) cfg.ym=((S.boot&&S.boot.today)||'2026-01-01').slice(0,7);
+  cfg.ym=inYm_();   /* ★★★ 月は上の「◯月分」ひとつ */
   /* ★ 何月かはプルダウンで選ぶ（2026-09-29・お重さん）。前後の月送りも残す */
   fillYmSel_(P, cfg.ym);
   /* ★ 見出しと帯タブに、どの月の出納帳かを出す（2026-09-08） */
@@ -4405,7 +4393,7 @@ function ledgerFix_(P, r){
   if(!r) return;
   var k=(P==='lgOut') ? 'out' : 'in';
   S.backToBook = P;
-  if(r.date) S.inYm = String(r.date).slice(0,7);   /* 直すものの月にする */
+  if(r.date) ymApply_(String(r.date).slice(0,7));   /* 直すものの月にする */
   if(r.src==='取引'){
     pettyEditSale({ id:r.id, useId:r.useId, method:r.method||'現金', amount:r.inn||r.out,
       guests:r.guests, time:r.time, date:r.date, unit:r.unit, imgs:r.imgs, img:r.img });
@@ -4455,7 +4443,7 @@ var SB={ ym:'', data:null };
 var SB_MEMO={};
 function loadSalesBook(){
   var box=$('sb_body'); if(!box) return;
-  if(!SB.ym) SB.ym=(S.inYm || (LEDGERS.lgIn||{}).ym || ((S.boot&&S.boot.today)||ymdOf(new Date())).slice(0,7));
+  SB.ym=inYm_();
   var el=$('sb_ym');
   if(el){
     var now=((S.boot&&S.boot.today)||ymdOf(new Date())).slice(0,7), list=[], m=now;
@@ -4467,10 +4455,7 @@ function loadSalesBook(){
   }
   if($('sb_prev')) $('sb_prev').onclick=function(){ SB.ym=ymShift(SB.ym,-1); loadSalesBook(); };
   if($('sb_next')) $('sb_next').onclick=function(){ SB.ym=ymShift(SB.ym, 1); loadSalesBook(); };
-  var h=bookMonth_(SB.ym);
-  if($('sb_head')) $('sb_head').textContent=h+'の売上帳';
-  var bt=$('c_mode') && $('c_mode').querySelector('button[data-v="sales"]');
-  if(bt) bt.textContent=h+'の売上帳';
+  if($('sb_head')) $('sb_head').textContent='売上帳';
   var ck=S.unit+'|'+SB.ym;
   if(SB_MEMO[ck]) salesBookRender_(SB_MEMO[ck]);
   else if(SB.data && SB.data.ym===SB.ym && SB.data.unit===S.unit) salesBookRender_(SB.data);
@@ -4534,7 +4519,7 @@ function salesBookRender_(g){
         .catch(function(e){ toast(String((e&&e.message)||'削除できませんでした')); loadSalesBook(); });
     };
     el.onclick=function(){
-      S.backToBook='sales'; if(r.date) S.inYm=String(r.date).slice(0,7);
+      S.backToBook='sales'; if(r.date) ymApply_(String(r.date).slice(0,7));
       pettyEditSale({ id:r.id, useId:r.useId, method:r.method, amount:r.amount, guests:r.guests,
         time:r.time, date:r.date, unit:r.unit, imgs:r.imgs, img:r.img });
     };
@@ -4594,11 +4579,11 @@ function cashGoLed(k, ds){
   if(!d) return;
   var P=(k==='out') ? 'lgOut' : 'lgIn';
   var cfg=LEDGERS[P]; if(!cfg) return;
-  cfg.ym=d.slice(0,7);
+  ymApply_(d.slice(0,7));
   cfg.day=d;
   if(k==='out'){ S.oMode='book'; setPane('o_mode',O_PANES,'book'); loadLedgerOne('lgOut'); loadTemoto(); }
   else         { S.cMode='book'; setPane('c_mode',C_PANES,'book'); loadLedgerOne('lgIn');
-                 LEDGERS.lgHo.ym=d.slice(0,7); LEDGERS.lgHo.day=''; loadLedgerOne('lgHo'); }
+                 LEDGERS.lgHo.day=''; loadLedgerOne('lgHo'); }
   window.scrollTo(0,0);
 }
 
@@ -4885,7 +4870,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261005;
+var SERVER_WANT = 20261006;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -7212,16 +7197,19 @@ function fcWeekHtml_(w){
   var gap=w.actualTotal-w.predDone;
   return '<div class="fcwk"><div class="fcwh"><b>今週の予測</b><span>'+md(w.from)+'〜'+md(w.to)+'</span>'
     + '<em>'+(w.snapped?'日曜の朝に立てた予測':'いまの予報から')+'</em></div>'
-    + '<table class="fcwt"><thead><tr><th></th><th>予測</th><th>実績</th><th>差</th></tr></thead><tbody>'
+    + '<table class="fcwt"><thead><tr><th></th><th class="w">天気</th><th>予測</th><th>実績</th><th>差</th></tr></thead><tbody>'
     + w.rows.map(function(r){
         var t=new Date(r.date+'T00:00:00'), d=r.actual-r.pred;
-        return '<tr'+(r.done?'':' class="yet"')+'><td>'+md(r.date)+'<em>'+WXDOW[t.getDay()]+'</em>'+(r.mark||'')
+        var has=function(v){ return v!==''&&v!=null; };
+        return '<tr'+(r.done?'':' class="yet"')+'><td>'+md(r.date)+'<em>'+WXDOW[t.getDay()]+'</em>'
           + (r.holiday?'<i>'+esc(r.holiday)+'</i>':'')+'</td>'
+          + '<td class="w"><span class="mk">'+(r.mark||'')+'</span>'+(has(r.pop)?'<span class="pp">'+r.pop+'%</span>':'')
+          + ((has(r.tmax)||has(r.tmin))?'<span class="tt">'+(has(r.tmax)?'<i class="hi">'+r.tmax+'</i>':'')+(has(r.tmin)?'<i class="lo">'+r.tmin+'</i>':'')+'</span>':'')+'</td>'
           + '<td class="num">'+(r.pred?man(r.pred):'—')+'</td>'
           + '<td class="num">'+(r.done?(r.actual?man(r.actual):'0'):'')+'</td>'
           + '<td class="num '+(r.done?(d<0?'mi':'pl'):'')+'">'+(r.done&&r.pred?(d>=0?'+':'−')+man(Math.abs(d)):'')+'</td></tr>';
       }).join('')
-    + '</tbody><tfoot><tr><td>週の計</td><td class="num">'+man(w.predTotal)+'</td><td class="num">'+man(w.actualTotal)+'</td>'
+    + '</tbody><tfoot><tr><td>週の計</td><td></td><td class="num">'+man(w.predTotal)+'</td><td class="num">'+man(w.actualTotal)+'</td>'
     + '<td class="num '+(gap<0?'mi':'pl')+'">'+(w.predDone?(gap>=0?'+':'−')+man(Math.abs(gap)):'')+'</td></tr></tfoot></table>'
     + (w.predDone?'<p class="fcw">きのうまでの予測 '+man(w.predDone)+' に対して、実績 '+man(w.actualTotal)+'。</p>':'')
     + '</div>';
@@ -7687,7 +7675,7 @@ function drawPetty(k){
     return;
   }
 
-  var html=inYmHtml_(k) + '<div class="cbox '+(isIn?'inc':'exp')+'">' + pick;
+  var html='<div class="cbox '+(isIn?'inc':'exp')+'">' + pick;
 
   if(cur){
     var bank = (cur.id===TX_BANK), sale = !!cur.sale;
@@ -7702,7 +7690,7 @@ function drawPetty(k){
       +     '<input id="'+id('amt')+'" class="num cash-amt" inputmode="numeric" value="'+(P.amount||'')+'" placeholder="0"></label>'
       +   '<label class="ad-d"><span class="lbl">日付</span>'
       +     '<input type="date" id="'+id('date')+'" class="cash-date" value="'+(P.date||'')+'"'
-      +       ' min="'+inYm_()+'-01" max="'+ymLast_(inYm_())+'"></label>'
+      +       '></label>'
       + '</div>'
       + (sale
           ? '<div class="amtline guestline"><label class="lbl">人数</label>'
@@ -7771,20 +7759,59 @@ function inYmClamp_(ds){
   var t=(S.boot&&S.boot.today)||ymdOf(new Date());
   return t.slice(0,7)===ym ? t : ym+'-01';
 }
-function inYmBind_(k){
-  var el=$('pt'+k+'_ym'); if(!el) return;
-  el.onchange=function(){
-    S.inYm=this.value;
-    /* 出納帳も同じ月にそろえる（入れたらその月の出納帳で確かめるため） */
-    try{ Object.keys(LEDGERS).forEach(function(q){ LEDGERS[q].ym=S.inYm; LEDGERS[q].day=''; }); }catch(e){}
-    var d=inYmClamp_(($('c_date')||{}).value||'');
-    ['in','out'].forEach(function(q){ var Q=pettyState(q); if(!Q.editId) Q.date=d; });
-    if($('c_date') && $('c_date').value!==d){
-      $('c_date').value=d;
-      $('c_date').dispatchEvent(new Event('change'));   /* 帯・この日に入れたもの・締めの前提もその日に */
-      if(k==='out'){ S.oMode='in'; setPane('o_mode',O_PANES,'in'); syncOKind(); }
-    } else { drawPetty(k); }
-  };
+function inYmBind_(k){ ymBarSync_(); }
+/* ==================================================================
+   ★★★ 何月分か（2026-09-29・お重さん）── 画面の月はひとつだけ
+     レジ内・レジ外のバーの上の「◯年◯月分」で選んだ月が、取引の入力・レジ締め・出納帳・
+     売上帳・伝票チェックのぜんぶの月になる（前は 入力は8月・出納帳は9月…とバラバラだった）。
+     取引の日付に別の月の日を入れたら、その瞬間に画面ぜんぶがその月へ移る
+   ================================================================== */
+function ymApply_(ym){
+  if(!/^\d{4}-\d{2}$/.test(String(ym||''))) return;
+  S.inYm=ym;
+  try{ Object.keys(LEDGERS).forEach(function(q){ if(LEDGERS[q].ym!==ym){ LEDGERS[q].ym=ym; LEDGERS[q].day=''; } }); }catch(e){}
+  try{ SB.ym=ym; }catch(e){}
+  if(S.dzYm!==ym){ S.dzYm=ym; S.jdOpen={}; }
+  ymBarSync_();
+}
+function ymBarSync_(){
+  var ym=inYm_(), now=((S.boot&&S.boot.today)||ymdOf(new Date())).slice(0,7), list=[], m=ymShift(now,1);
+  for(var i=0;i<26;i++){ list.push(m); m=ymShift(m,-1); }
+  if(list.indexOf(ym)<0) list.unshift(ym);
+  ['c_ymSel','o_ymSel'].forEach(function(id){
+    var el=$(id); if(!el) return;
+    if(el.dataset.ym!==ym+'|'+now){
+      el.innerHTML=list.map(function(x){ return '<option value="'+x+'"'+(x===ym?' selected':'')+'>'
+        + x.replace('-','年').replace(/年0/,'年')+'月分</option>'; }).join('');
+      el.dataset.ym=ym+'|'+now;
+    }
+    el.value=ym;
+    if(!el.onchange) el.onchange=function(){ setYm_(this.value); };
+  });
+}
+/** 月を変える。帯の日付もその月の日にそろえ、いま見ている帯タブを描き直す */
+function setYm_(ym, opt){
+  opt=opt||{};
+  ymApply_(ym);
+  var cd=$('c_date'), t=(S.boot&&S.boot.today)||ymdOf(new Date());
+  var d=opt.date || ((cd&&cd.value&&cd.value.slice(0,7)===ym) ? cd.value : (t.slice(0,7)===ym ? t : ym+'-01'));
+  ['in','out'].forEach(function(q){ var Q=pettyState(q); if(!Q.editId) Q.date=d; });
+  if(cd && cd.value!==d){
+    cd.value=d;
+    S._ymKeep=true;
+    try{ cd.dispatchEvent(new Event('change')); } finally { S._ymKeep=false; }
+  } else ymRedraw_();
+  if(opt.date) toast(ym.replace('-','年').replace(/年0/,'年')+'月分の画面にしました');
+}
+/** いま見ている帯タブを、いまの月で描き直す */
+function ymRedraw_(){
+  drawPetty('in'); drawPetty('out');
+  if(S.cMode==='book'){ loadLedgerOne('lgIn'); loadLedgerOne('lgHo'); }
+  if(S.cMode==='sales') loadSalesBook();
+  if(S.cMode==='denpyo' && S.dzBox==='c_dpz') denpyoLoad();
+  if(S.oMode==='book'){ loadLedgerOne('lgOut'); }
+  if(S.oMode==='denpyo' && S.dzBox==='o_dpz') denpyoLoad();
+  drawCrumb && drawCrumb();
 }
 
 /** ★ その入力の写真（前に撮って保存してあるもの＋いま撮ったもの）。2026-09-29 */
@@ -7812,7 +7839,7 @@ function horyuHtml(k){
   var bal=(c.horyu==null)?null:Number(c.horyu)||0;
   P.useId=TX_BANK;
   /* ★ 上に【いまの保留額】、その下に【銀行への預け入れ】。枠を分けて重ねない（2026-09-29） */
-  return inYmHtml_(k) + '<div class="cbox ho">'
+  return '<div class="cbox ho">'
     +   '<div class="hobal"><span>現在の保留額</span><b class="num">'+(bal==null?'—':yen(bal))+'</b></div>'
     + '</div>'
     + '<div class="cbox ho hodep">'
@@ -7823,7 +7850,7 @@ function horyuHtml(k){
     +       '<input id="'+id('amt')+'" class="num cash-amt" inputmode="numeric" value="'+(P.amount||'')+'" placeholder="0"></label>'
     +     '<label class="ad-d"><span class="lbl">日付</span>'
     +       '<input type="date" id="'+id('date')+'" class="cash-date" value="'+(P.date||'')+'"'
-    +         ' min="'+inYm_()+'-01" max="'+ymLast_(inYm_())+'"></label>'
+    +         '></label>'
     +   '</div>'
     +   (bal>0 ? '<div class="hoall"><button class="btn ghost tap sm" id="'+id('all')+'" data-all="'+bal+'">'
               + '保留額をぜんぶ入れる（'+yen(bal)+'）</button></div>' : '')
@@ -7866,9 +7893,10 @@ function bindPetty(k){
 
   if($(id('amt')))   $(id('amt')).oninput =function(){ P.amount=this.value; };
   if($(id('date')))  $(id('date')).onchange=function(){
-    /* 月の外の日は選ばせない（月は上のプルダウンで変える） */
-    if(this.value && this.value.slice(0,7)!==inYm_()){ toast(inYm_().replace('-','年')+'月の日を選んでください（月は上で変えます）'); this.value=P.date||''; return; }
-    P.date=this.value; };
+    P.date=this.value;
+    /* ★★★ 別の月の日を入れたら、その瞬間に画面ぜんぶをその月へ移す（2026-09-29・お重さん） */
+    if(this.value && this.value.slice(0,7)!==inYm_()) setYm_(this.value.slice(0,7), { date:this.value, keep:true });
+  };
   inYmBind_(k);
   if($(id('guests'))) $(id('guests')).oninput=function(){ P.guests=this.value; };
   var gstep=function(d){ var g=$(id('guests')); if(!g) return;
@@ -8374,13 +8402,14 @@ function closingRender_(c){
 /* ★ カレンダーで日を選んだら、そのまま取引の入力に戻る（2026-09-07） */
 $('c_date').addEventListener('change', function(){
   if($('o_date')) $('o_date').value=this.value;
-  /* ★ 帯で日を変えたら、何月の入力かもその月にする */
-  if(this.value) S.inYm=this.value.slice(0,7);
+  /* ★ 帯で日を変えたら、画面ぜんぶの月もその月にする */
+  if(this.value) ymApply_(this.value.slice(0,7));
   /* ★ 取引の入力の日付も、帯の日付にそろえる（直している最中のものは動かさない） */
   var dv=this.value;
   if(S.pettyS) ['in','out'].forEach(function(q){
     if(S.pettyS[q] && !S.pettyS[q].editId) S.pettyS[q].date=dv; });
   drawDayHead(); loadDayAll(); loadClosing(); loadTemoto(); drawPetty('in');
+  if(S._ymKeep){ ymRedraw_(); return; }   /* 月を上で変えたときは、いま見ている帯タブのまま */
   S.cMode='in'; setPane('c_mode',C_PANES,'in'); syncKind();
 });
 
@@ -10971,8 +11000,7 @@ function denpyoOpen(scope, boxId, ym, pane){
   if(S.kindInline){ var ie=$(S.kindInline==='out'?'o_kindEd':'c_kindEd'); if(ie){ ie.hidden=true; ie.innerHTML=''; } S.kindInline=''; S.kindDir=''; }
   S.dzScope=scope; S.dzBox=boxId;
   S.kindPlace=scope;   /* つくる画面は、開いたタブの場所（レジ内／レジ外）から始める */
-  S.dzYm = ym || S.dzYm || ((S.boot&&S.boot.today)||'').slice(0,7) ||
-           new Date().toISOString().slice(0,7);
+  S.dzYm = inYm_();   /* ★★★ 月は上の「◯月分」ひとつ（2026-09-29） */
   /* ★ 行き先を指せるようにする（'jd' 伝票チェック ／ 'kinds' 取引の種類をつくる）。
        取引の入力の下のボタンから、つくる画面へ直に飛ぶため */
   S.jdPane = pane || S.jdPane || 'jd';
@@ -11055,9 +11083,7 @@ function denpyoMonth(n){
 function dzHeadHtml(){
   var t=(S.dzScope==='手許')?'レジ外現金':'レジ内現金';
   return '<div class="dzbar">'+
-    '<button class="btn ghost tap sm" id="dzPrev">‹ 前の月</button>'+
-    '<b class="dzym">'+esc(S.dzYm.replace('-','年'))+'月　'+esc(t)+' の伝票チェック</b>'+
-    '<button class="btn ghost tap sm" id="dzNext">次の月 ›</button>'+
+    '<b class="dzym">'+esc(t)+' の伝票チェック</b>'+
   '</div>';
 }
 function dzHeadBind(el){
