@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790669566';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790673474';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -784,6 +784,13 @@ input#co_amt.bigamt{font-size:40px;padding:16px 15px;font-weight:700}
 .fcast .fcd .hl{font-size:10px;font-weight:800;color:var(--red);white-space:nowrap}
 .fcast .fcd.now .hl{color:var(--on-accent)}
 .fcast .fcwk{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.fcast .fprof{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.fcast .fprof summary{font-weight:800;cursor:pointer;font-size:15px}.fcast .fprof summary small{font-weight:400;color:var(--paper-dim);font-size:12px}
+.fcast .fpr{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:6px}
+.fcast .fpr em{font-style:normal;font-size:12px;color:var(--paper-dim);width:100%}
+.fcast .fpc{display:inline-flex;align-items:baseline;gap:3px;flex:none;width:auto;font-size:13px;padding:2px 7px;border-radius:12px;background:var(--ink2);white-space:nowrap;font-family:'Oswald',sans-serif}
+.fcast .fpc b{display:inline;width:auto;min-width:0;flex:none;font-family:inherit;font-weight:800;margin:0}.fcast .fpc i{display:inline;flex:none;font-style:normal;font-size:10px;color:var(--paper-dim);margin:0}
+.fcast .fpc.up{color:var(--green)}.fcast .fpc.dn{color:var(--red)}.fcast .fpc.off{color:var(--paper-dim)}
 .fcast .fcwh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.fcast .fcwh span{font-size:14px}
 .fcast .fcwh em{font-style:normal;font-size:12px;color:var(--paper-dim);margin-left:auto}
 .fcast .fcwt{width:100%;table-layout:fixed;border-collapse:collapse;margin-top:6px;font-size:14px}
@@ -4878,7 +4885,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261004;
+var SERVER_WANT = 20261005;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -7174,12 +7181,30 @@ function loadForecast_(){
             + ((x.holiday||x.dayKind)?'<span class="hl">'+esc(x.dayKind&&x.dayKind!=='祝日'?x.dayKind:(x.holiday||x.dayKind))+'</span>':'')+'</div>';
         }).join('')+'</div>'
       + fcWeekHtml_(f.week)
+      + fcProfileHtml_(f.profile, f)
       + (days[0] && days[0].why ? '<p class="fcw">今日の見込み … '+esc(days[0].why)+'</p>' : '')
       + (f.enough ? '' : '<p class="fcw">まだ日数が少ないので目安です（売上が'+f.histDays+'日ぶん）。締めるほど当たるようになります。</p>')
       + '</div>';
   }).catch(function(){ box.innerHTML=''; });
 }
 
+/* ★★★ 実績から見た倍率（2026-09-29）… 曜日・祝日や連休・天気・降水確率が、ふつうの日より何割ちがうか */
+function fcProfileHtml_(p, f){
+  if(!p || !p.n) return '';
+  var md=function(d){ return d ? d.slice(0,4)+'/'+Number(d.slice(5,7))+'/'+Number(d.slice(8,10)) : ''; };
+  var pc=function(x){ var v=Math.round((x-1)*100); return (v>0?'+':(v<0?'−':'±'))+Math.abs(v)+'%'; };
+  var chip=function(k,x,n){ return '<span class="fpc'+(x>1.02?' up':(x<0.98?' dn':''))+'"><b>'+esc(k)+'</b>'+pc(x)+(n!=null?'<i>'+n+'日</i>':'')+'</span>'; };
+  var grp=function(t,o,order){ var ks=Object.keys(o||{}); if(order) ks.sort(function(a,b){ return order.indexOf(a)-order.indexOf(b); });
+    return ks.length ? '<div class="fpr"><em>'+t+'</em>'+ks.map(function(k){ return chip(k,o[k].f,o[k].n); }).join('')+'</div>' : ''; };
+  var dow=(p.dow||[]).map(function(x){ return x.f==null ? '<span class="fpc off"><b>'+WXDOW[x.dow]+'</b>休</span>' : chip(WXDOW[x.dow],x.f,null); }).join('');
+  return '<details class="fprof"><summary>実績から見た倍率 <small>'+md(f.histFrom)+'〜'+md(f.histTo)+'・'+f.histDays+'日</small></summary>'
+    + '<div class="fpr"><em>曜日</em>'+dow+'</div>'
+    + grp('日の種類',p.day,['GW','お盆','年末年始','連休','祝日'])
+    + grp('天気',p.wx,['晴','曇','雨','雪'])
+    + grp('降水確率',p.pop,['降水0〜20%','降水30〜50%','降水60%以上'])
+    + '<p class="fcw">ふつうの日（祝日・連休を除く）の平均 '+man(p.avg)+' とくらべた割合。天気・降水確率は、日数がたまるほど出てきます。</p>'
+    + '</details>';
+}
 /* ★★ 今週（日〜土）の予測と実績。日曜の朝に控えた予測と比べる */
 function fcWeekHtml_(w){
   if(!w || !(w.rows||[]).length) return '';
