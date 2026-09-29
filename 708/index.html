@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790642719';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790664850';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -739,6 +739,18 @@ input#co_amt.bigamt{font-size:40px;padding:16px 15px;font-weight:700}
   border-right:1.5px solid var(--line)}
 .segbar button:last-child{border-right:0}
 /* ★ 入金・出金は2段に（2026-09-29・お重さん）。上に「出金」、下に（仕入・諸経費他） */
+.inym{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-weight:700}
+.inym select{font:inherit;font-size:17px;font-weight:700;padding:8px 10px;border-radius:var(--r2);
+  border:1.5px solid var(--line);background:var(--surface);color:var(--paper)}
+.tohoryu{display:block;width:100%;margin:10px 0 2px;padding:14px 10px;border-radius:var(--r2);
+  border:2px solid var(--accent);background:var(--surface);color:var(--accent);font:inherit;font-size:17px;font-weight:800}
+.tohoryu[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.tohoryu:disabled{opacity:.45}
+#c_saBtn{flex:1 1 100%}
+.kbook .lgact{display:flex;gap:6px;margin-top:4px}
+.kbook .lgact button{font:inherit;font-size:13px;font-weight:700;padding:3px 10px;border-radius:8px;
+  border:1px solid var(--line);background:var(--surface);color:var(--paper)}
+.kbook .lgact .lgdel{color:var(--red);border-color:currentColor}
 .segbar button .seg2{display:block;font-size:13px;line-height:1.3;font-weight:600;margin-top:2px;opacity:.9}
 .segbar button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
 .segbar.big{margin-bottom:10px;border-width:2px;border-color:var(--tabc);
@@ -2107,27 +2119,33 @@ button.goled:active{background:#F3F1EA}
     <div class="total-line"><span>数えた現金（実査計）</span><b class="num" id="c_jissa">0</b></div>
 
 
-    <label>レジ外へ移す額<span style="font-weight:500;color:var(--paper-dim)">
+    <label>レジ内その他（保留）へ移す額<span style="font-weight:500;color:var(--paper-dim)">
       　（超過ぶんが既定。1円単位で合わせられないときは変えてよい）</span></label>
     <input inputmode="numeric" id="c_move" placeholder="0">
+    <!-- ★★★ 押すと、この額をレジ内その他（保留）へ移す（2026-09-29・お重さん）。
+         過不足があってもなくても押せる -->
+    <button type="button" class="tohoryu tap" id="c_toHoryu">レジ内その他（保留）へ移す</button>
+    <p class="samnote" id="c_toHoryuNote"></p>
 
     <div class="verdict" id="verdict">
       <div class="row"><span id="v_junbiLabel">レジ内準備金（前日から）</span><b class="num" id="v_junbi">—</b></div>
       <div class="row"><span>＋ 現金売上</span><b class="num" id="v_cash">—</b></div>
       <div class="row"><span>− レジから払った分</span><b class="num" id="v_petty">—</b></div>
-      <div class="row"><span>− 役員へ（貸付）</span><b class="num" id="v_draw">—</b></div>
+      <!-- ★ レジ内から役員が持ち出すことはないので、ふだんは出さない（2026-09-29）。入っていたときだけ出す -->
+      <div class="row" id="v_drawRow" style="display:none"><span>− 役員へ（貸付）</span><b class="num" id="v_draw">—</b></div>
       <div class="row"><span>＝ レジにあるはずの額</span><b class="num" id="v_riron">—</b></div>
       <div class="sa"><span id="v_saLabel">過不足</span><b class="num" id="v_sa">—</b></div>
-      <!-- ★★ 多い分・足りない分を、現金過不足として仕訳するか選ぶ（2026-09-29・お重さん）
-           する → 多い：雑収入 7118／足りない：雑損失 7519 が出納帳に出る -->
-      <div class="samode" id="c_saMode" hidden>
-        <button type="button" class="tap" data-sam="する">現金過不足として仕訳する</button>
-        <button type="button" class="tap" data-sam="しない">仕訳しない</button>
+      <!-- ★★ 過不足があるときだけ出す（2026-09-29・お重さん）。ぴったりなら何もしない。
+           多い分 → ［過不足（多い分）を雑収入に］／足りない分 → ［過不足（少ない分）を雑損失に］。
+           押すと、その仕訳が計上される（締めに入る）。「仕訳しない」は置かない -->
+      <div class="samode" id="c_saMode" style="display:none">
+        <button type="button" class="tap" id="c_saBtn">—</button>
         <p class="samnote" id="c_saNote"></p>
       </div>
     </div>
 
-    <div class="shot">
+    <!-- ★ 伝票を撮るは使わない（2026-09-29・お重さん「不要」）。仕組みだけ残して隠す -->
+    <div class="shot" style="display:none">
       <label class="btn" for="c_photo">伝票を撮る
         <input type="file" id="c_photo" accept="image/*" capture="environment"></label>
       <img id="c_thumb" style="display:none" alt="">
@@ -4167,11 +4185,17 @@ function ledgerRender_(P, cfg, box, g){
           sub.push(/まだ締めていない/.test(r.why) ? '未締め'
                  : (/締め/.test(r.why) ? '締めから' : '古い行'));
         }
+        if(r.src==='取引' && r.time) sub.unshift(r.time);
+        if(r.src==='取引' && r.guests>0) sub.push(r.guests+'人');
         rows+='<tr class="'+(r.editable?'can':(r.why?'why':''))+(noProof?' warn':'')+'"'
             + ' data-d="'+di+'" data-r="'+ri+'">'
             + '<td class="d">'+(ri===0 ? d.date.slice(5).replace('-','/') : '')+'</td>'
             + '<td class="t"><b>'+r.title+pic+'</b>'
-            +   (sub.length?'<span>'+sub.join('　')+'</span>':'')+'</td>'
+            +   (sub.length?'<span>'+sub.join('　')+'</span>':'')
+            /* ★★ 直す・削除を出納帳から（2026-09-29・お重さん） */
+            +   (r.editable ? '<span class="lgact"><button class="tap lgfix" data-lgfix="1">直す</button>'
+                  + '<button class="tap lgdel" data-lgdel="1">削除</button></span>' : '')
+            + '</td>'
             + '<td class="n in">'+(r.inn>0?yen(r.inn):'')+'</td>'
             + '<td class="n out">'+(r.out>0?yen(r.out):'')+'</td>'
             + '<td class="n bal">'+yen(r.bal)+'</td></tr>';
@@ -4195,22 +4219,11 @@ function ledgerRender_(P, cfg, box, g){
       + '</table></div>';
 
     [].forEach.call(box.querySelectorAll('tr.can'), function(el){
-      el.onclick=function(){
-        var d=cfg.data.days[Number(el.dataset.d)];
-        var r=d.rows[Number(el.dataset.r)];
-        /* ★ 銀行へ預け入れのような【手許の帳面だけの行】は、出納の直し画面では直せない。
-             消して、取引の入力から入れ直してもらう（2026-09-28） */
-        if(r && r.src==='手許' && !r.useId){
-          if(!confirm(r.title+' '+yen(r.inn||r.out)+' を消します。'
-                      +'直すときは、消してから取引の入力で入れ直してください。')) return;
-          call('deleteEntry',[{ id:r.id }]).then(function(x){
-            toast((x&&x.msg)||'消しました');
-            if(x && x.ok){ loadLedger(); loadClosing(); loadTemoto(); }
-          }).catch(function(e){ toast(String(e&&e.message||'消せませんでした')); });
-          return;
-        }
-        openEditor(r);
-      };
+      var rowOf=function(){ var d=cfg.data.days[Number(el.dataset.d)]; return d && d.rows[Number(el.dataset.r)]; };
+      var del=el.querySelector('[data-lgdel]');
+      if(del) del.onclick=function(ev){ ev.stopPropagation(); ledgerDelete_(P, cfg, box, rowOf()); };
+      /* 行（または［直す］）を押したら、その取引を入れた【取引の入力】へ移って直す */
+      el.onclick=function(){ ledgerFix_(P, rowOf()); };
     });
     /* 直せない行は、押すと「なぜ直せないか」を出す */
     [].forEach.call(box.querySelectorAll('tr.why'), function(el){
@@ -4221,6 +4234,52 @@ function ledgerRender_(P, cfg, box, g){
       };
     });
   })();
+}
+
+/** ★★ 出納帳から直す … その取引を入れた【取引の入力】の画面へ移す（2026-09-29）。
+      直し終わったら、出納帳へ戻ってくる（S.backToBook） */
+function ledgerFix_(P, r){
+  if(!r) return;
+  var k=(P==='lgOut') ? 'out' : 'in';
+  S.backToBook = P;
+  if(r.date) S.inYm = String(r.date).slice(0,7);   /* 直すものの月にする */
+  if(r.src==='取引'){
+    pettyEditSale({ id:r.id, useId:r.useId, method:r.method||'現金', amount:r.inn||r.out,
+      guests:r.guests, time:r.time, date:r.date, unit:r.unit, imgs:r.imgs, img:r.img });
+    return;
+  }
+  if(r.src==='手許' && !r.useId){
+    /* 銀行へ預け入れなど、手許の帳面だけの行 … 直すのは消して入れ直す */
+    toast('この行は直せません。［削除］してから、取引の入力で入れ直してください');
+    S.backToBook=''; return;
+  }
+  pettyEdit({ id:r.id, useId:r.useId, from:(k==='out'?'手許の現金':'レジの現金'),
+    out:r.out, inn:r.inn, memo:r.memo, unit:r.unit, date:r.date, imgs:r.imgs, img:r.img,
+    lender:r.lender, settled:r.settled });
+}
+/** ★★ 出納帳から消す … 押した瞬間に行を消して残高を積み直す。サーバは裏で（サクサク） */
+function ledgerDelete_(P, cfg, box, r){
+  if(!r) return;
+  if(!confirm(r.title+' '+yen(r.inn||r.out)+' を削除します。戻せません。よろしいですか。')) return;
+  var g=cfg.data;
+  ledgerDropRow_(g, r);
+  ledgerRender_(P, cfg, box, g);
+  try{ Object.keys(LEDGER_MEMO).forEach(function(k2){ delete LEDGER_MEMO[k2]; }); }catch(e){}
+  toast('削除しています…');
+  call(r.src==='取引' ? 'deleteSale' : 'deleteEntry',[{ id:r.id }]).then(function(x){
+    toast((x&&x.msg)||'削除しました');
+    loadLedgerOne(P); loadClosing(); if(P!=='lgIn') loadTemoto();
+  }).catch(function(e){ toast(String(e&&e.message||'削除できませんでした')); loadLedgerOne(P); });
+}
+/** 帳面の1行を抜いて、残高・合計を積み直す（画面の中だけ） */
+function ledgerDropRow_(g, r){
+  var bal=Number(g.opening)||0, sumIn=0, sumOut=0;
+  (g.days||[]).forEach(function(d){
+    d.rows=d.rows.filter(function(x){ return x!==r; });
+    d.rows.forEach(function(x){ bal+=(x.inn||0)-(x.out||0); x.bal=bal; sumIn+=x.inn||0; sumOut+=x.out||0; });
+  });
+  g.days=(g.days||[]).filter(function(d){ return d.rows.length; });
+  g.sumIn=sumIn; g.sumOut=sumOut; g.closing=bal;
 }
 
 /** 出納帳の月のプルダウン。今月から24か月前まで（選んでいる月が外なら足す） */
@@ -6722,12 +6781,13 @@ function calcVerdict(){
   if(nl) nl.innerHTML = jissa===0 ? '—'
     : '締めたあと、レジに残るのは <b>'+yen(jissa-move)+'</b>'
       + '（標準 '+yen(std)+(jissa-move===std?'　ぴったり':'　差 '+yen(jissa-move-std))+'）'
-      + '。移した '+yen(move)+' はレジ外現金に積まれます。';
+      + '。移した '+yen(move)+' はレジ内その他（保留）に積まれます。';
 
   $('v_junbi').textContent=yen(junbi);
   $('v_cash').textContent=yen(cash);
   $('v_petty').textContent=yen(petty);
   $('v_draw').textContent=yen(draw);
+  if($('v_drawRow')) $('v_drawRow').style.display = draw ? '' : 'none';
   $('v_riron').textContent=yen(riron);
   var tol=Number(S.boot.setting['過不足の許容額'])||1000;
   var vd=$('verdict');
@@ -6736,20 +6796,30 @@ function calcVerdict(){
     +(sa>0?'+':'')+yen(sa)+'</span>';
   $('v_saLabel').textContent = jissa===0 ? '過不足（まだ数えていません）'
     : (sa===0 ? 'ぴったり合っています' : (sa>0?'多い分':'不足分'));
-  /* ★★ 多い分・足りない分を出して、現金過不足として仕訳するかを選ぶ（2026-09-29） */
+  /* ★★ 過不足があるときだけ、その向きのボタンを1つ出す（2026-09-29・お重さん） */
   var sm=$('c_saMode');
   if(sm){
-    sm.hidden = (jissa===0 || sa===0);
-    if(!S.saMode) S.saMode='する';
-    [].forEach.call(sm.querySelectorAll('[data-sam]'), function(b){
-      b.setAttribute('aria-pressed', b.dataset.sam===S.saMode);
-      b.onclick=function(){ S.saMode=b.dataset.sam; calcVerdict(); };
-    });
-    var nt=$('c_saNote');
-    if(nt) nt.textContent = S.saMode==='する'
-      ? (sa>0 ? '多い '+yen(sa)+' を 雑収入 として出納帳に入れます'
-              : '足りない '+yen(-sa)+' を 雑損失 として出納帳に入れます')
-      : '仕訳しません（出納帳の残高と数えた額が合わないままになります）';
+    var show=(jissa>0 && sa!==0);
+    sm.style.display = show ? '' : 'none';
+    var sb=$('c_saBtn'), nt=$('c_saNote');
+    var done=(S.saMode==='する' && c.exist && c.exist.closed && num0(c.exist.sa)===sa);
+    if(sb){
+      sb.textContent = (done?'✓ ':'') + (sa>0 ? '過不足（多い分）'+yen(sa)+' を雑収入に' : '過不足（少ない分）'+yen(-sa)+' を雑損失に');
+      sb.setAttribute('aria-pressed', done?'true':'false');
+      sb.onclick=function(){ S.saMode='する'; closeDay_({auto:true, btn:sb,
+        done:(sa>0?'雑収入に '+yen(sa):'雑損失に '+yen(-sa))+' 計上しました'}); };
+    }
+    if(nt) nt.textContent = done ? '計上しました（出納帳に出ています）' : '押すと、その仕訳を計上します';
+  }
+  var th=$('c_toHoryu'), tn=$('c_toHoryuNote');
+  if(th){
+    var movedAlready=(c.exist && c.exist.closed && num0(c.exist.deposit)===move && move>0);
+    th.textContent=(movedAlready?'✓ ':'')+'レジ内その他（保留）へ '+(move>0?yen(move)+' ':'')+'移す';
+    th.disabled = !(jissa>0 && move>0);
+    th.setAttribute('aria-pressed', movedAlready?'true':'false');
+    th.onclick=function(){ closeDay_({auto:true, btn:th, done:'レジ内その他（保留）へ '+yen(move)+' 移しました'}); };
+    if(tn) tn.textContent = movedAlready ? '移しました（レジ内その他（保留）に積まれています）'
+      : (jissa>0 ? '' : '枚数を入れると押せます');
   }
 }
 function num0(v){ return Number(v)||0; }
@@ -7049,6 +7119,7 @@ function drawPetty(k){
   var shot = S.photos[cf.key];
   if(!P.unit || P.unit==='ALL') P.unit = (S.unit==='ALL' ? '' : S.unit);
   if(!P.date) P.date = ($('c_date')&&$('c_date').value) || '';
+  if(!P.editId) P.date = inYmClamp_(P.date);
 
   /* ★★★ お客さん1組の枠は使わない（2026-09-29・お重さん）。売上も【取引の種類】から入れる */
   if($('r_card')) $('r_card').hidden = true;
@@ -7092,7 +7163,7 @@ function drawPetty(k){
     return;
   }
 
-  var html='<div class="cbox '+(isIn?'inc':'exp')+'">' + pick;
+  var html=inYmHtml_(k) + '<div class="cbox '+(isIn?'inc':'exp')+'">' + pick;
 
   if(cur){
     var bank = (cur.id===TX_BANK), sale = !!cur.sale;
@@ -7106,7 +7177,8 @@ function drawPetty(k){
       +   '<label class="ad-a"><span class="lbl">金額（円・税込）</span>'
       +     '<input id="'+id('amt')+'" class="num cash-amt" inputmode="numeric" value="'+(P.amount||'')+'" placeholder="0"></label>'
       +   '<label class="ad-d"><span class="lbl">日付</span>'
-      +     '<input type="date" id="'+id('date')+'" class="cash-date" value="'+(P.date||'')+'"></label>'
+      +     '<input type="date" id="'+id('date')+'" class="cash-date" value="'+(P.date||'')+'"'
+      +       ' min="'+inYm_()+'-01" max="'+ymLast_(inYm_())+'"></label>'
       + '</div>'
       + (sale
           ? '<div class="amtline guestline"><label class="lbl">人数</label>'
@@ -7153,6 +7225,44 @@ function drawPetty(k){
   bindPetty(k);
 }
 
+/* ★★★ 何月の入力か（2026-09-29・お重さん）。出納帳と同じプルダウンで月を選び、
+     日付はその月の中だけにする（月をまたいで入れてしまわないように） */
+function inYm_(){
+  if(!S.inYm) S.inYm=((($('c_date')||{}).value)||((S.boot&&S.boot.today)||ymdOf(new Date()))).slice(0,7);
+  return S.inYm;
+}
+function ymLast_(ym){ var y=Number(ym.slice(0,4)), m=Number(ym.slice(5,7)); return ym+'-'+('0'+new Date(y,m,0).getDate()).slice(-2); }
+function inYmHtml_(k){
+  var ym=inYm_(), now=((S.boot&&S.boot.today)||ymdOf(new Date())).slice(0,7), list=[], m=now;
+  for(var i=0;i<24;i++){ list.push(m); m=ymShift(m,-1); }
+  if(list.indexOf(ym)<0) list.unshift(ym);
+  return '<div class="inym"><select id="pt'+k+'_ym" aria-label="何月の入力か">'
+    + list.map(function(x){ return '<option value="'+x+'"'+(x===ym?' selected':'')+'>'
+        + x.replace('-','年').replace(/年0/,'年')+'月</option>'; }).join('')
+    + '</select><span>の取引を入力</span></div>';
+}
+/** 日付をその月の中に収める（月の外なら、今日か月の1日） */
+function inYmClamp_(ds){
+  var ym=inYm_(); if(ds && ds.slice(0,7)===ym) return ds;
+  var t=(S.boot&&S.boot.today)||ymdOf(new Date());
+  return t.slice(0,7)===ym ? t : ym+'-01';
+}
+function inYmBind_(k){
+  var el=$('pt'+k+'_ym'); if(!el) return;
+  el.onchange=function(){
+    S.inYm=this.value;
+    /* 出納帳も同じ月にそろえる（入れたらその月の出納帳で確かめるため） */
+    try{ Object.keys(LEDGERS).forEach(function(q){ LEDGERS[q].ym=S.inYm; LEDGERS[q].day=''; }); }catch(e){}
+    var d=inYmClamp_(($('c_date')||{}).value||'');
+    ['in','out'].forEach(function(q){ var Q=pettyState(q); if(!Q.editId) Q.date=d; });
+    if($('c_date') && $('c_date').value!==d){
+      $('c_date').value=d;
+      $('c_date').dispatchEvent(new Event('change'));   /* 帯・この日に入れたもの・締めの前提もその日に */
+      if(k==='out'){ S.oMode='in'; setPane('o_mode',O_PANES,'in'); syncOKind(); }
+    } else { drawPetty(k); }
+  };
+}
+
 /** ★ その入力の写真（前に撮って保存してあるもの＋いま撮ったもの）。2026-09-29 */
 function photoList_(k){
   var cf=PETTY[k], P=pettyState(k);
@@ -7178,7 +7288,7 @@ function horyuHtml(k){
   var bal=(c.horyu==null)?null:Number(c.horyu)||0;
   P.useId=TX_BANK;
   /* ★ 上に【いまの保留額】、その下に【銀行への預け入れ】。枠を分けて重ねない（2026-09-29） */
-  return '<div class="cbox ho">'
+  return inYmHtml_(k) + '<div class="cbox ho">'
     +   '<div class="hobal"><span>現在の保留額</span><b class="num">'+(bal==null?'—':yen(bal))+'</b></div>'
     + '</div>'
     + '<div class="cbox ho hodep">'
@@ -7188,7 +7298,8 @@ function horyuHtml(k){
     +     '<label class="ad-a"><span class="lbl">金額（円）</span>'
     +       '<input id="'+id('amt')+'" class="num cash-amt" inputmode="numeric" value="'+(P.amount||'')+'" placeholder="0"></label>'
     +     '<label class="ad-d"><span class="lbl">日付</span>'
-    +       '<input type="date" id="'+id('date')+'" class="cash-date" value="'+(P.date||'')+'"></label>'
+    +       '<input type="date" id="'+id('date')+'" class="cash-date" value="'+(P.date||'')+'"'
+    +         ' min="'+inYm_()+'-01" max="'+ymLast_(inYm_())+'"></label>'
     +   '</div>'
     +   (bal>0 ? '<div class="hoall"><button class="btn ghost tap sm" id="'+id('all')+'" data-all="'+bal+'">'
               + '保留額をぜんぶ入れる（'+yen(bal)+'）</button></div>' : '')
@@ -7222,7 +7333,11 @@ function bindPetty(k){
   if($(id('new'))) $(id('new')).onclick=function(){ pettyClear(k); };
 
   if($(id('amt')))   $(id('amt')).oninput =function(){ P.amount=this.value; };
-  if($(id('date')))  $(id('date')).onchange=function(){ P.date=this.value; };
+  if($(id('date')))  $(id('date')).onchange=function(){
+    /* 月の外の日は選ばせない（月は上のプルダウンで変える） */
+    if(this.value && this.value.slice(0,7)!==inYm_()){ toast(inYm_().replace('-','年')+'月の日を選んでください（月は上で変えます）'); this.value=P.date||''; return; }
+    P.date=this.value; };
+  inYmBind_(k);
   if($(id('guests'))) $(id('guests')).oninput=function(){ P.guests=this.value; };
   var gstep=function(d){ var g=$(id('guests')); if(!g) return;
     var v=Math.max(0,(parseInt(g.value,10)||0)+d); g.value=v; P.guests=String(v); pettyPaint(k); };
@@ -7274,6 +7389,7 @@ function bindPetty(k){
   if($(id('clr'))) $(id('clr')).onclick=function(){
     var was=P.editId;
     pettyClear(k);
+    if(was && S.backToBook){ S.backToBook=S.backToBook; afterWrite_(k); }
     toast(was ? '訂正しませんでした' : '入力を消しました');
   };
   if($(id('ok')))  $(id('ok')).onclick =function(){ pettySave(k, this); };
@@ -7302,7 +7418,7 @@ function pettyDelete(k, btn){
   call(P.editKind==='sale' ? 'deleteSale' : 'deleteEntry',[{ id:P.editId }]).then(function(r){
     btn.disabled=false; toast(r.msg||'消しました');
     if(r.ok){
-      pettyClear(k);
+      pettyClear(k); afterWrite_(k);
       loadClosing();
       loadLedgerOne(k==='out' ? 'lgOut' : 'lgIn');
       loadTemoto();
@@ -7310,6 +7426,17 @@ function pettyDelete(k, btn){
   }).catch(function(e){ btn.disabled=false; toast(String(e&&e.message||'消せませんでした')); });
 }
 
+/** ★★ 出納帳から直しに来たときは、記録したら出納帳へ戻る（2026-09-29）。
+      書いたら前に読んだ帳面は捨てる（古い数字を一瞬でも出さない） */
+function afterWrite_(k){
+  try{ Object.keys(LEDGER_MEMO).forEach(function(q){ delete LEDGER_MEMO[q]; }); }catch(e){}
+  var back=S.backToBook; S.backToBook='';
+  if(!back) return;
+  if(back==='lgOut'){ S.oMode='book'; setPane('o_mode',O_PANES,'book'); }
+  else { S.cMode='book'; setPane('c_mode',C_PANES,'book'); }
+  var el=$(back+'Card')||$(back+'_body');
+  if(el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'start'});
+}
 function pettySave(k, btn){
   var cf=PETTY[k], P=pettyState(k);
   if(S.unit==='ALL' && !P.unit){ toast('どの店のぶんかを選んでください'); return; }
@@ -7342,7 +7469,7 @@ function pettySave(k, btn){
       memo:'', useId:u.id, photos:photoShots_(k), photoUrls:(P.photoUrls||[]),
       time:(P.editKind==='sale'?P.time:'')||'' };
     var nm0=u.name;
-    pettyClear(k);
+    pettyClear(k); afterWrite_(k);
     toast(nm0+' '+yen(amt)+' 記録中…');
     call('saveSale',[sp]).then(function(r){
       toast(r.msg);
@@ -7360,7 +7487,7 @@ function pettySave(k, btn){
     lender:P.lender||'', settled:P.settled||'' };
   var nm=u.name;
   /* ★ 押した瞬間に欄を空にする。保存は裏で走る（2026-09-07） */
-  pettyClear(k);
+  pettyClear(k); afterWrite_(k);
   toast(nm+' '+yen(amt)+' 記録中…');
   call('saveEntry',[body]).then(function(r){
     toast(r.msg);
@@ -7690,7 +7817,8 @@ function closingRender_(c){
     $('v_junbiLabel').textContent = c.junbiEditable ? '持ち出したレジ内準備金' : 'レジ内準備金（前日から）';
     if(c.junbiEditable) $('c_junbi').value = (c.exist && c.exist.junbi) || c.junbi || '';
 
-    S.saMode = (c.exist && c.exist.saMode==='しない') ? 'しない' : 'する';
+    /* ★ 過不足は【ボタンを押したときだけ】計上する（2026-09-29）。前に計上した締めはそのまま */
+    S.saMode = (c.exist && c.exist.closed && c.exist.saMode!=='しない' && num0(c.exist.sa)!==0) ? 'する' : 'しない';
     if(c.exist){
       $('c_memo').value=c.exist.memo||'';
       if($('c_move')){ $('c_move').value=c.exist.deposit||''; S.moveTouched=true; }
@@ -7711,6 +7839,8 @@ function closingRender_(c){
 /* ★ カレンダーで日を選んだら、そのまま取引の入力に戻る（2026-09-07） */
 $('c_date').addEventListener('change', function(){
   if($('o_date')) $('o_date').value=this.value;
+  /* ★ 帯で日を変えたら、何月の入力かもその月にする */
+  if(this.value) S.inYm=this.value.slice(0,7);
   /* ★ 取引の入力の日付も、帯の日付にそろえる（直している最中のものは動かさない） */
   var dv=this.value;
   if(S.pettyS) ['in','out'].forEach(function(q){
@@ -7719,14 +7849,18 @@ $('c_date').addEventListener('change', function(){
   S.cMode='in'; setPane('c_mode',C_PANES,'in'); syncKind();
 });
 
-$('c_save').onclick=function(){
+/** ★★ この日を締める（2026-09-29 に関数にした）。
+      opt.auto … 締めの中のボタン（保留へ移す・過不足を計上）から。上書きを聞かず、入れた枚数も消さない */
+function closeDay_(opt){
+  opt=opt||{};
   var u=unitObj(S.unit);
   if(S.unit==='ALL' || !u || !u.closeable){ toast('締められる店舗を選んでください'); return; }
   if(!S.closing){ toast('締めの前提を読み込めていません。画面を開き直してください'); return; }
   var jissa=Number(String($('c_jissa').textContent).replace(/[^0-9]/g,''))||0;
-  if(jissa===0 && !confirm('レジの現金を数えていません。このまま締めますか。')) return;
+  if(!opt.auto && jissa===0 && !confirm('レジの現金を数えていません。このまま締めますか。')) return;
+  if(opt.auto && jissa===0){ toast('先にレジの現金を数えてください'); return; }
 
-  var btn=this; btn.disabled=true;
+  var btn=opt.btn||$('c_save'); btn.disabled=true;
   /* 売上は送らない。サーバがその日の取引を足して作る（手打ちの合計を信じない） */
   var p={
     date:$('c_date').value, unit:S.unit,
@@ -7734,8 +7868,8 @@ $('c_save').onclick=function(){
     memo:$('c_memo').value, coins:coinObj(),
     junbi: S.closing.junbiEditable ? iv('c_junbi') : 0,
     move: $('c_move') ? iv('c_move') : '',
-    saMode: S.saMode || 'する',
-    photo:S.photos.closing||'', slots:slotItems(), menu:menuItems(), overwrite:false
+    saMode: S.saMode || 'しない',
+    photo:S.photos.closing||'', slots:slotItems(), menu:menuItems(), overwrite:!!opt.auto
   };
   call('saveClosing',[p]).then(function(r){
     if(!r.ok && r.dup){
@@ -7746,6 +7880,13 @@ $('c_save').onclick=function(){
   }).then(function(r){
     btn.disabled=false;
     if(!r) return;
+    try{ Object.keys(LEDGER_MEMO).forEach(function(q){ delete LEDGER_MEMO[q]; }); }catch(e){}
+    if(opt.auto){
+      toast(r.ok ? (opt.done||r.msg) : r.msg);
+      S.moveTouched=true;
+      loadClosing(); loadTemoto(); loadLedger(); refresh();
+      return;
+    }
     toast(r.warn ? r.warn : (r.msg+'／明日 '+yen(r.deposit)+' を銀行へ'));
     ['c_memo','c_move'].forEach(function(id){ if($(id)) $(id).value=''; });
     S.moveTouched=false;
@@ -7754,7 +7895,8 @@ $('c_save').onclick=function(){
     calcTotal(); calcJissa();
     refresh(); loadClosing(); loadRecent('日報','c_recent'); loadTemoto();
   }).catch(function(e){ btn.disabled=false; console.error(e); toast('締められませんでした。通信を確認してください'); });
-};
+}
+$('c_save').onclick=function(){ closeDay_({}); };
 
 /* ---------- 時間帯別 ---------- */
 function buildSlotInputs(vals){
