@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790666792';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790667530';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -7112,6 +7112,14 @@ function loadHeadWx_(){
     if(!w || !w.ok || !(w.days||[]).length) return;
     HWX=w; hwxDraw_();
     try{ localStorage.setItem('bm_wx_v1', JSON.stringify(w)); }catch(e){}
+    /* ★ 今日の天気を記録する（1日1回だけ。毎朝のトリガーが動いていなくても、日報とカレンダーに天気が入る） */
+    try{
+      var td=(S.boot&&S.boot.today)||ymdOf(new Date());
+      if(localStorage.getItem('bm_wx_rec')!==td && (myRole()==='経営者'||myRole()==='管理者')){
+        localStorage.setItem('bm_wx_rec', td);
+        call('fetchWeatherToday',[]).catch(function(){ try{ localStorage.removeItem('bm_wx_rec'); }catch(e){} });
+      }
+    }catch(e){}
   }).catch(function(){});
 }
 (function(){
