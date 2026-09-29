@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790665385';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790666077';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -749,6 +749,35 @@ input#co_amt.bigamt{font-size:40px;padding:16px 15px;font-weight:700}
 #c_saBtn{flex:1 1 100%}
 .sbook tr.sbday td{background:var(--ink2);font-weight:800}
 .sbook tr.sbday .t b{font-size:14px}
+.nippo .nhead{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:6px}
+.nippo h3{margin:0;font-size:24px;letter-spacing:.3em;font-weight:900}
+.nippo .nwho{border:2px solid var(--paper);min-width:110px;text-align:center}
+.nippo .nwho span{display:block;font-size:12px;font-weight:700;border-bottom:1px solid var(--paper);padding:2px}
+.nippo .nwho b{display:block;padding:4px;font-size:16px}
+.nippo .nline{display:flex;justify-content:space-between;font-size:16px;margin:4px 0 8px}
+.nippo .ntb{width:100%;border-collapse:collapse;margin:0 0 8px;font-size:15px}
+.nippo .ntb td{border:1px solid var(--line);padding:6px 6px}
+.nippo .ntb td.n{text-align:right;font-family:'Oswald',sans-serif;font-size:17px;white-space:nowrap;width:40%}
+.nippo .ntb tr.nh td{background:var(--ink2);font-weight:800}
+.nippo .ntb tr.nb td{font-weight:700}
+.nippo .ntb tr.ncap td{font-size:12px;font-weight:700;color:var(--paper-dim);background:var(--surface)}
+.nippo .ntb i{font-style:normal;font-weight:900;margin-right:4px}
+.nippo .ntb td.in1{padding-left:18px}
+.nippo .ntb td.in2{padding-left:30px}
+.nippo .ntb td span{display:block;font-size:12px;color:var(--paper-dim)}
+.nippo .ncols{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:560px){ .nippo .ncols{grid-template-columns:1fr 1fr} }
+.nippo .nden td.n{width:30%}
+.nippo .nwxh{font-weight:800;margin:4px 0}
+.nippo .nwx{border:1px solid var(--line);padding:8px;border-radius:6px}
+.nippo .nwxv b{font-size:22px;margin-right:8px}
+.nippo .nwxv span{display:inline-block;margin-right:8px;font-size:14px}
+.nippo .nwxv em{font-style:normal;font-size:12px;color:var(--paper-dim)}
+.nippo .nwxb{display:flex;gap:6px;margin-top:8px}
+.nippo .nwxb button{flex:1;padding:8px 0;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);font:inherit;font-weight:800}
+.nippo .nwxb button.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.nippo .nfoot{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--paper);padding-top:8px;font-weight:800}
+.nippo .nfoot b{font-family:'Oswald',sans-serif;font-size:22px}
 .kbook .lgact{display:flex;gap:6px;margin-top:4px}
 .kbook .lgact button{font:inherit;font-size:13px;font-weight:700;padding:3px 10px;border-radius:8px;
   border:1px solid var(--line);background:var(--surface);color:var(--paper)}
@@ -2161,6 +2190,10 @@ button.goled:active{background:#F3F1EA}
 
     <button class="go" id="c_save">この日を締める</button>
   </div>
+
+  <!-- ★★★ 業務日報（2026-09-29・お重さん）。紙の業務日報の形のまま、アプリの言葉で。
+       数えた枚数・売上・払ったものから、その場で組み上がる（打つ欄は天候だけ） -->
+  <div class="card nippo" id="nippoCard"><div id="nippoBody"></div></div>
 
   <div class="card" id="slotInputCard" style="display:none">
     <div class="eyebrow">時間帯ごとの内訳（任意）</div>
@@ -4747,7 +4780,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20260930;
+var SERVER_WANT = 20261001;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -6943,6 +6976,106 @@ function calcVerdict(){
     if(tn) tn.textContent = movedAlready ? '移しました（レジ内その他（保留）に積まれています）'
       : (jissa>0 ? '' : '枚数を入れると押せます');
   }
+  drawNippo({junbi:junbi, cash:cash, petty:petty, riron:riron, jissa:jissa, move:move, draw:draw, inject:inject});
+}
+
+/* ==================================================================
+   ★★★ 業務日報（2026-09-29・お重さん）
+   紙の業務日報（I 総売上高 → II 仕入・備品計 → III 残高 → 金種 → IV レジ現金合計 →
+   釣り銭過不足・本社勘定 → 昼夜 → 天候）の形のまま、アプリの言葉にした。
+     前日末現金残高 → レジ内準備金（前日から）
+     III 残高      → レジにあるはずの額（レジ内準備金＋現金売上−レジから払った分）
+     本社勘定      → レジ内その他（保留）へ移す額
+     本日末釣銭残高 → 締めたあとレジに残る額
+   ★ 釣り銭過不足は【紙のとおり III − IV】（多いとマイナス）。紙と照らせるように
+   ★ 天候は自動（気象庁）。違っていたら押して直せる
+   ================================================================== */
+var NIPPO_WX={ date:'', unit:'', w:null };
+function nippoFood_(x){
+  var u=pettyUse(x.useId||'')||{};
+  return /^5211$/.test(String(x.code||u.code||'')) || /食材/.test(String(x.name||u.name||''));
+}
+function drawNippo(v){
+  var box=$('nippoBody'); if(!box) return;
+  var c=S.closing||{}; if(!c || S.unit==='ALL'){ box.innerHTML=''; return; }
+  var ds=($('c_date')||{}).value||c.date||'';
+  var wd=ds?['日','月','火','水','木','金','土'][new Date(ds+'T00:00:00').getDay()]:'';
+  var by=(saleTotals().by)||{};
+  var card=num0(by['カード']), emo=num0(by['QR'])+num0(by['電子マネー']), cashS=num0(by['現金']);
+  var total=card+emo+cashS+num0(by['ツケ']);
+  var outs=((c.cashOuts)||[]).filter(function(x){ return x.from==='レジの現金' && num0(x.out)>0; });
+  var food=0, others=[];
+  outs.forEach(function(x){ if(nippoFood_(x)) food+=num0(x.out); else others.push(x); });
+  var sub4=others.reduce(function(t,x){ return t+num0(x.out); },0);
+  var coins=coinObj(), den=(S.boot.denoms||[10000,5000,2000,1000,500,100,50,10,5,1]);
+  var who=(AUTH&&AUTH.me&&AUTH.me.name)||'';
+  var gap=v.riron - v.jissa;   /* 紙のとおり III − IV */
+  var n=function(x){ return yen(Math.round(x||0)); };
+  /* 昼・夜 … 時間帯の客数（入れていれば）。無ければ、その日の客数 */
+  var slots=slotItems(), sl=((S.boot&&S.boot.slots)||[]).filter(function(q){ return q.unit===S.unit; });
+  var slotHtml = (sl.length && slots.length)
+    ? sl.map(function(q){ var it=slots.filter(function(x){ return String(x.id)===String(q.id); })[0]||{};
+        return '<tr><td>'+esc(q.name)+'</td><td class="n">'+(it.guests||0)+' 人</td></tr>'; }).join('')
+    : '<tr><td>客数</td><td class="n">'+num0(saleTotals().guests)+' 人</td></tr>';
+  var W=(NIPPO_WX.date===ds && NIPPO_WX.unit===S.unit) ? NIPPO_WX.w : null;
+  var wxHtml = '<div class="nwx">'
+    + '<div class="nwxv">'+(W&&W.kind ? '<b>'+(W.mark||'')+' '+esc(W.kind)+'</b>'
+        + (W.text?'<span>'+esc(W.text)+'</span>':'')
+        + ((W.pop!==''&&W.pop!=null)?'<span>降水確率 '+W.pop+'%</span>':'')
+        + '<em>'+(W.manual?'手入力':(W.src?esc(W.src):''))+'</em>'
+      : '<span class="muted">'+(W ? (W.none?'この日の天気は取れません。下から選んでください':'—') : '読み込み中…')+'</span>')+'</div>'
+    + '<div class="nwxb">'+['晴','曇','雨','雪'].map(function(k){
+        return '<button type="button" class="tap'+(W&&W.kind===k?' on':'')+'" data-nwx="'+k+'">'+k+'</button>'; }).join('')+'</div>'
+    + '</div>';
+  var h='<div class="nhead"><h3>業務日報</h3><div class="nwho"><span>担当者名</span><b>'+esc(who||'—')+'</b></div></div>'
+    + '<div class="nline"><b>'+esc(unitName(S.unit))+'</b><span>'+ds.replace(/-/g,'/')+'（'+wd+'）</span></div>'
+    + '<table class="ntb">'
+    + '<tr class="nb"><td>レジ内準備金（前日から）</td><td class="n">'+n(v.junbi)+'</td></tr>'
+    + '<tr class="nh"><td><i>I</i> 売上合計</td><td class="n">'+n(total)+'</td></tr>'
+    + '<tr><td class="in1">① クレジット売上</td><td class="n">'+n(card)+'</td></tr>'
+    + '<tr><td class="in1">② 電子マネー売上</td><td class="n">'+n(emo)+'</td></tr>'
+    + '<tr><td class="in1">③ 現金売上　I −（①＋②）</td><td class="n">'+n(cashS)+'</td></tr>'
+    + '<tr class="nh"><td><i>II</i> レジから払った分　③＋④</td><td class="n">'+n(food+sub4)+'</td></tr>'
+    + '<tr><td class="in1">③ 食材の仕入れ</td><td class="n">'+n(food)+'</td></tr>'
+    + (others.length ? others.map(function(x){
+        return '<tr><td class="in2">④ '+esc((pettyUse(x.useId||'')||{}).name||x.name||'')+(x.memo&&x.memo!==x.name?'<span>'+esc(x.memo)+'</span>':'')+'</td><td class="n">'+n(x.out)+'</td></tr>';
+      }).join('') : '')
+    + '<tr><td class="in1">④ 現金支出 小計</td><td class="n">'+n(sub4)+'</td></tr>'
+    + (v.draw||v.inject ? '<tr><td class="in1">役員へ／役員から</td><td class="n">'+(v.inject?'+'+n(v.inject):'')+(v.draw?' −'+n(v.draw):'')+'</td></tr>' : '')
+    + '<tr class="nh"><td><i>III</i> レジにあるはずの額</td><td class="n">'+n(v.riron)+'</td></tr>'
+    + '</table>'
+    + '<div class="ncols"><table class="ntb nden"><tr class="nh"><td colspan="3">本日末レジ現金（現金実査）</td></tr>'
+    + '<tr class="ncap"><td>金種</td><td class="n">枚数</td><td class="n">金額</td></tr>'
+    + den.map(function(d){ var k=num0(coins[d]); return '<tr><td>'+d.toLocaleString('ja-JP')+'</td><td class="n">'+(k||'')+'</td><td class="n">'+(k?n(k*d):'')+'</td></tr>'; }).join('')
+    + '<tr class="nh"><td colspan="2"><i>IV</i> 数えた現金</td><td class="n">'+n(v.jissa)+'</td></tr></table>'
+    + '<div class="nside"><table class="ntb">'
+    + '<tr><td><i>IV</i> 数えた現金（左から）</td><td class="n">'+n(v.jissa)+'</td></tr>'
+    + '<tr><td>過不足　III − IV</td><td class="n'+(gap?' neg':'')+'">'+(v.jissa?n(gap):'—')+'</td></tr>'
+    + '<tr><td>レジ内その他（保留）へ移す額</td><td class="n">'+n(v.move)+'</td></tr>'
+    + '</table>'
+    + '<table class="ntb">'+slotHtml+'</table>'
+    + '<div class="nwxh">天候</div>'+wxHtml
+    + '</div></div>'
+    + '<div class="nfoot"><span>締めたあとレジに残る額</span><b>'+n(v.jissa ? v.jissa-v.move : v.junbi)+'</b></div>';
+  box.innerHTML=h;
+  [].forEach.call(box.querySelectorAll('[data-nwx]'), function(b){ b.onclick=function(){
+    var k=b.dataset.nwx;
+    NIPPO_WX={ date:ds, unit:S.unit, w:{kind:k, mark:({'晴':'☀','曇':'☁','雨':'☂','雪':'❄'})[k]||'', manual:true, src:'手入力', saved:true} };
+    calcVerdict();
+    call('saveWeather',[{date:ds, unit:S.unit, kind:k}]).then(function(r){ toast('天候を「'+k+'」にしました'); })
+      .catch(function(e){ toast(String((e&&e.message)||'天候を記録できませんでした')); });
+  }; });
+}
+/** その日の天候を取りに行く（締めの前提を読み終えたあと。締めの画面を待たせない） */
+function loadNippoWx_(){
+  var ds=($('c_date')||{}).value||''; if(!ds || S.unit==='ALL') return;
+  if(NIPPO_WX.date===ds && NIPPO_WX.unit===S.unit && NIPPO_WX.w) return;
+  var key=ds+'|'+S.unit;
+  NIPPO_WX={ date:ds, unit:S.unit, w:null };
+  call('getWeatherDay',[{unit:S.unit, date:ds}]).then(function(w){
+    if(key!==(($('c_date')||{}).value||'')+'|'+S.unit) return;
+    NIPPO_WX.w=w||{kind:'',none:true}; calcVerdict();
+  }).catch(function(){ NIPPO_WX.w={kind:'',none:true}; try{ calcVerdict(); }catch(e){} });
 }
 function num0(v){ return Number(v)||0; }
 
@@ -7966,6 +8099,7 @@ function closingRender_(c){
     buildMenuInputs(c.menuVals);
     calcTotal(); calcJissa();
     drawNowIn();
+    loadNippoWx_();
   })();
 }
 /* ★ カレンダーで日を選んだら、そのまま取引の入力に戻る（2026-09-07） */
@@ -8001,6 +8135,9 @@ function closeDay_(opt){
     junbi: S.closing.junbiEditable ? iv('c_junbi') : 0,
     move: $('c_move') ? iv('c_move') : '',
     saMode: S.saMode || 'しない',
+    /* ★ 業務日報の天候。手で選んだものはもう記録してあるので、自動で取れたものだけ送る */
+    weather: (NIPPO_WX.w && NIPPO_WX.w.kind && !NIPPO_WX.w.manual && !NIPPO_WX.w.saved && NIPPO_WX.date===$('c_date').value)
+      ? {kind:NIPPO_WX.w.kind, pop:NIPPO_WX.w.pop, tmax:NIPPO_WX.w.tmax, tmin:NIPPO_WX.w.tmin, text:NIPPO_WX.w.text, src:NIPPO_WX.w.src} : null,
     photo:S.photos.closing||'', slots:slotItems(), menu:menuItems(), overwrite:!!opt.auto
   };
   call('saveClosing',[p]).then(function(r){
