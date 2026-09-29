@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790666077';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790666792';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -749,6 +749,79 @@ input#co_amt.bigamt{font-size:40px;padding:16px 15px;font-weight:700}
 #c_saBtn{flex:1 1 100%}
 .sbook tr.sbday td{background:var(--ink2);font-weight:800}
 .sbook tr.sbday .t b{font-size:14px}
+.hwx{margin-left:auto;flex:none;display:flex;align-items:center;gap:3px;padding:3px 7px;border-radius:999px;
+  border:1px solid var(--line);background:var(--surface);color:var(--paper);font:inherit;font-weight:800}
+.hwx .m{font-size:20px;line-height:1}.hwx .p{font-size:13px;color:var(--paper-dim)}.hwx .t{font-size:14px}
+.hwx + .gear{margin-left:0}
+@media (max-width:420px){ .hwx .t{display:none} .hd-row{gap:6px} .mark{padding:5px 8px} .mark em{margin-left:4px} }
+.hwxpanel{position:absolute;right:10px;left:10px;z-index:60;margin-top:6px;background:var(--surface);color:var(--paper);
+  border:1px solid var(--line);border-radius:12px;padding:10px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.hwxpanel .hwxh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.hwxpanel .hwxh span{font-size:12px;color:var(--paper-dim)}
+.hwxpanel .hwxd{display:grid;grid-template-columns:52px 28px 30px 1fr auto;align-items:center;gap:6px;padding:6px 2px;border-top:1px solid var(--line2)}
+.hwxpanel .hwxd.now{font-weight:800}
+.hwxpanel .dd em{font-style:normal;font-size:12px;margin-left:3px;color:var(--paper-dim)}
+.hwxpanel .mk{font-size:20px}.hwxpanel .pp{font-size:13px}
+.hwxpanel .tt i{font-style:normal;font-family:'Oswald',sans-serif;margin-left:6px}
+.hwxpanel .tt .hi{color:var(--red)}.hwxpanel .tt .lo{color:var(--accent-b)}
+.hwxpanel .tx{grid-column:2 / -1;font-size:12px;color:var(--paper-dim)}
+.fcast .fch{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.fcast .fch b{font-size:20px}.fcast .fch span{font-size:13px;color:var(--paper-dim)}
+.fcast .fch em{margin-left:auto;font-style:normal;font-size:12px;color:var(--paper-dim)}
+.fcast .fcl{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;overflow-x:auto}
+.fcast .fcd{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:8px;background:var(--ink2);min-width:44px}
+.fcast .fcd.now{background:var(--accent);color:var(--on-accent)}
+.fcast .fcd .dd{font-size:12px;font-weight:800}.fcast .fcd .dd em{font-style:normal;margin-left:2px}
+.fcast .fcd .mk{font-size:22px;line-height:1.1}.fcast .fcd .pp{font-size:11px}
+.fcast .fcd b{font-size:12.5px;white-space:nowrap;letter-spacing:-.02em}
+.fcast .fcd.now .mk{color:var(--on-accent)}.fcast .fcd .gg{font-size:11px}
+.fcast .fcw{font-size:13px;color:var(--paper-dim);margin:8px 0 0}
+.nippo .nhead2{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.nippo .nhead2 b{font-size:20px}.nippo .nhead2 span{font-size:13px;color:var(--paper-dim)}
+.a4wrap{position:relative;width:100%;overflow:hidden;border:1px solid var(--line);background:var(--surface)}
+.a4{width:794px;min-height:1123px;box-sizing:border-box;padding:48px 56px;background:var(--surface);color:var(--paper);
+  font-family:'Noto Sans JP',sans-serif;font-size:15px;line-height:1.25;position:absolute;left:0;top:0}
+.a4 h1{text-align:center;font-size:30px;margin:0 0 8px;letter-spacing:.1em;font-weight:900}
+.a4 .a4top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.a4 .shop{font-size:22px;font-weight:800;padding-top:8px}
+.a4 table{border-collapse:collapse;width:100%}
+.a4 .who{width:180px;border:2px solid var(--paper)}
+.a4 .who th{border-bottom:1px solid var(--paper);font-size:14px;padding:4px;text-align:center;color:var(--paper)}
+.a4 .who td{height:34px;text-align:center;font-size:16px;padding:4px;border:0}
+.a4 .a4date{display:flex;justify-content:space-between;align-items:baseline;margin:6px 0 8px}
+.a4 .a4date .dy{font-size:17px}.a4 .a4date .pv b{font-family:'Oswald',sans-serif;font-size:20px;margin-left:12px}
+.a4 .a4t{border:2px solid var(--paper);margin-bottom:10px}
+.a4 .a4t td{border:1px solid var(--paper);padding:3px 8px;font-size:14.5px;line-height:1.2;border-bottom:1px solid var(--paper)}
+.a4 .a4t td.n{text-align:right;font-family:'Oswald',sans-serif;font-size:17px;white-space:nowrap}
+.a4 .a4t tr.hd td{font-weight:800}
+.a4 .a4t tr.cap td{font-size:13px;text-align:center;font-weight:700;padding:3px}
+.a4 .rm{font-family:serif;font-weight:900}
+.a4 .a4t td.v4{text-align:center;vertical-align:middle}
+.a4 .a4t td.sub{padding:0}
+.a4 .t4 td{border:0;padding:3px 8px;height:22px;border-bottom:1px dashed var(--line);border-right:1px dashed var(--line)}
+.a4 .t4 td.k{width:32%}.a4 .t4 td.n{width:150px;border-right:0}
+.a4 .a4bot{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.a4 .den td.ct{text-align:center}
+.a4 .slot{width:70%}.a4 .slot td.u{width:30px;text-align:center}
+.a4 .wx td.wxh{font-weight:800;border-bottom:0}
+.a4 .wx td.wxv{height:76px;font-size:22px;text-align:center;vertical-align:middle}
+.a4 .wx small{font-size:13px}
+.a4 .a4end{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;font-weight:800}
+.a4 .a4end b{font-family:'Oswald',sans-serif;font-size:22px}
+.a4 .a4src{position:absolute;left:56px;bottom:30px;font-size:11px;color:var(--paper-dim)}
+.nippo .nact{display:flex;align-items:center;gap:6px;margin:10px 0}
+.nippo .nact span{font-weight:800;margin-right:4px}
+.nippo .nact button{flex:1;padding:9px 0;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);font:inherit;font-weight:800}
+.nippo .nact button.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.nippo .nprint{width:100%}
+#printNippo{display:none}
+@media print{
+  body.print-nippo > *:not(#printNippo){display:none!important}
+  body.print-nippo #printNippo{display:block!important}
+  body.print-nippo #printNippo .a4{position:static;width:auto;min-height:0;padding:0;transform:none!important}
+  body.print-nippo #printNippo .a4src{position:static;margin-top:12px}
+  @page{size:A4;margin:12mm}
+}
 .nippo .nhead{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:6px}
 .nippo h3{margin:0;font-size:24px;letter-spacing:.3em;font-weight:900}
 .nippo .nwho{border:2px solid var(--paper);min-width:110px;text-align:center}
@@ -1914,8 +1987,11 @@ button.goled:active{background:#F3F1EA}
     <img class="sign" alt="ANCHOVY PASTA &amp; PIZZA RESTAURANT"
       src="data:image/png;base64,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">
     <div class="mark">ANCHOVY<em>経営</em></div>
+    <!-- ★★ 大津の天気（2026-09-29・お重さん「アプリあけたら最上段のバーに天気マーク」）。押すと7日ぶん -->
+    <button type="button" class="hwx tap" id="hdWx" hidden aria-label="大津の天気"></button>
     <button class="gear" id="gearBtn" aria-pressed="false">設定</button>
   </div>
+  <div class="hwxpanel" id="hdWxPanel" hidden></div>
   <div class="unitwrap" id="unitwrap">
     <div class="unitsel" id="unitsel"></div>
     <button type="button" class="unitmore l" id="unitprev" hidden aria-label="左の店へ">‹</button>
@@ -1934,6 +2010,9 @@ button.goled:active{background:#F3F1EA}
   <div class="ptitle">経営<em id="boardUnit"></em>
     <span class="pt-r">今月の売上<b class="num" id="bSales">—</b></span></div>
   <div id="setupBox"></div>
+
+  <!-- ★★★ 売上予報（2026-09-29・お重さん）。天気と曜日と月から、過去の売上で見込む -->
+  <div id="bForecast"></div>
 
   <!-- ★ 連続締め日数と催促は経営タブに出さない（2026-09-09）。
        休みの日もあるので連続しないのが普通。締めていない日は
@@ -4780,7 +4859,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261001;
+var SERVER_WANT = 20261002;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -4826,6 +4905,7 @@ function bootRetrySoon_(){
   }, w);
 }
 function bootGo(){
+  try{ loadHeadWx_(); }catch(e){}
 call('getBootstrap').then(function(b){
   if(!b || !b.units) throw new Error('サーバから空の返事が返りました');
   S.boot=b; S.stale=false; _bootRetry=0;
@@ -5681,6 +5761,7 @@ function gotoUnit(id, view){
 function refresh(){
   loadMokuhyou();
   loadYosan();
+  loadForecast_();
   call('getDashboard',[S.unit, S.calYm||null]).then(function(d){
     S.dash=d;
 
@@ -6990,6 +7071,83 @@ function calcVerdict(){
    ★ 釣り銭過不足は【紙のとおり III − IV】（多いとマイナス）。紙と照らせるように
    ★ 天候は自動（気象庁）。違っていたら押して直せる
    ================================================================== */
+/* ==================================================================
+   ★★ 大津の天気を、いちばん上の帯に（2026-09-29・お重さん）
+   「天気はいつも気にしはるので、それがアプリを手放せなくなる秘訣」。
+   開いた瞬間に前回のものを出し、裏で新しいものに差し替える（30分おき）
+   ★ 気象庁は【降雪確率】を出していない。雪の日も【降水確率】（雪も含む）を出す
+   ================================================================== */
+var HWX=null;
+var WXDOW=['日','月','火','水','木','金','土'];
+function hwxDraw_(){
+  var b=$('hdWx'), pn=$('hdWxPanel'); if(!b) return;
+  var w=HWX; var days=(w&&w.days)||[];
+  var t=(S.boot&&S.boot.today)||ymdOf(new Date());
+  var d0=days.filter(function(x){ return x.date>=t; })[0];
+  if(!d0){ b.hidden=true; return; }
+  b.hidden=false;
+  b.innerHTML='<span class="m">'+(d0.mark||'')+'</span>'
+    + '<span class="p">'+((d0.pop!==''&&d0.pop!=null)?d0.pop+'%':'')+'</span>'
+    + '<span class="t">'+((d0.tmax!==''&&d0.tmax!=null)?d0.tmax+'°':'')+'</span>';
+  if(pn && !pn.hidden) hwxPanel_();
+}
+function hwxPanel_(){
+  var pn=$('hdWxPanel'); if(!pn) return;
+  var w=HWX||{}, t=(S.boot&&S.boot.today)||ymdOf(new Date());
+  var days=(w.days||[]).filter(function(x){ return x.date>=t; });
+  pn.innerHTML='<div class="hwxh"><b>'+esc(w.place||'大津')+'の天気</b><span>'+esc(w.src||'気象庁')+'</span></div>'
+    + '<div class="hwxl">'+days.map(function(x,i){
+        var dt=new Date(x.date+'T00:00:00');
+        return '<div class="hwxd'+(i===0?' now':'')+'"><span class="dd">'+(i===0?'今日':(i===1?'明日':(dt.getMonth()+1)+'/'+dt.getDate()))
+          + '<em>'+WXDOW[dt.getDay()]+'</em></span>'
+          + '<span class="mk">'+(x.mark||'')+'</span><b>'+esc(x.kind||'')+'</b>'
+          + '<span class="pp">'+((x.pop!==''&&x.pop!=null)?(x.kind==='雪'?'降水（雪）':'降水')+' '+x.pop+'%':'')+'</span>'
+          + '<span class="tt">'+((x.tmax!==''&&x.tmax!=null)?'<i class="hi">'+x.tmax+'°</i>':'')+((x.tmin!==''&&x.tmin!=null)?'<i class="lo">'+x.tmin+'°</i>':'')+'</span>'
+          + (x.text?'<span class="tx">'+esc(x.text)+'</span>':'')+'</div>';
+      }).join('')+'</div>';
+}
+function loadHeadWx_(){
+  try{ var c=JSON.parse(localStorage.getItem('bm_wx_v1')||'null'); if(c && !HWX){ HWX=c; hwxDraw_(); } }catch(e){}
+  call('getWeatherNow',[]).then(function(w){
+    if(!w || !w.ok || !(w.days||[]).length) return;
+    HWX=w; hwxDraw_();
+    try{ localStorage.setItem('bm_wx_v1', JSON.stringify(w)); }catch(e){}
+  }).catch(function(){});
+}
+(function(){
+  var b=$('hdWx'), pn=$('hdWxPanel');
+  if(b) b.onclick=function(){ if(!pn) return; pn.hidden=!pn.hidden; if(!pn.hidden) hwxPanel_(); };
+  if(pn) pn.onclick=function(){ pn.hidden=true; };
+  setInterval(function(){ try{ loadHeadWx_(); }catch(e){} }, 30*60*1000);
+})();
+
+/* ==================================================================
+   ★★★ 売上予報（2026-09-29・お重さん）── 経営タブのいちばん上
+   予報 ＝ その曜日の平均 × その天気の日の倍率 × その月の倍率。日数がたまるほど当たる
+   ================================================================== */
+function loadForecast_(){
+  var box=$('bForecast'); if(!box) return;
+  if(!isOwnerUI || !isOwnerUI()){ box.innerHTML=''; return; }
+  call('getSalesForecast',[S.unit]).then(function(f){
+    if(!f || !f.ok){ box.innerHTML=''; return; }
+    var days=(f.days||[]).slice(0,7);
+    box.innerHTML='<div class="fcast card"><div class="fch"><b>売上予報</b><span>天気と曜日から</span>'
+      + '<em>'+esc(f.place||'')+'</em></div>'
+      + '<div class="fcl">'+days.map(function(x,i){
+          var dt=new Date(x.date+'T00:00:00');
+          return '<div class="fcd'+(i===0?' now':'')+'"><span class="dd">'+(i===0?'今日':(i===1?'明日':(dt.getMonth()+1)+'/'+dt.getDate()))
+            + '<em>'+WXDOW[dt.getDay()]+'</em></span>'
+            + '<span class="mk">'+(x.mark||'')+'</span>'
+            + '<span class="pp">'+((x.pop!==''&&x.pop!=null)?x.pop+'%':'')+'</span>'
+            + '<b class="num">'+(x.pred?man(x.pred):'—')+'</b>'
+            + '<span class="gg">'+(x.guests?x.guests+'人':'')+'</span></div>';
+        }).join('')+'</div>'
+      + (days[0] && days[0].why ? '<p class="fcw">今日の見込み … '+esc(days[0].why)+'</p>' : '')
+      + (f.enough ? '' : '<p class="fcw">まだ日数が少ないので目安です（売上が'+f.histDays+'日ぶん）。締めるほど当たるようになります。</p>')
+      + '</div>';
+  }).catch(function(){ box.innerHTML=''; });
+}
+
 var NIPPO_WX={ date:'', unit:'', w:null };
 function nippoFood_(x){
   var u=pettyUse(x.useId||'')||{};
@@ -6999,7 +7157,8 @@ function drawNippo(v){
   var box=$('nippoBody'); if(!box) return;
   var c=S.closing||{}; if(!c || S.unit==='ALL'){ box.innerHTML=''; return; }
   var ds=($('c_date')||{}).value||c.date||'';
-  var wd=ds?['日','月','火','水','木','金','土'][new Date(ds+'T00:00:00').getDay()]:'';
+  var dt=ds?new Date(ds+'T00:00:00'):null;
+  var wd=dt?WXDOW[dt.getDay()]:'';
   var by=(saleTotals().by)||{};
   var card=num0(by['カード']), emo=num0(by['QR'])+num0(by['電子マネー']), cashS=num0(by['現金']);
   var total=card+emo+cashS+num0(by['ツケ']);
@@ -7011,53 +7170,61 @@ function drawNippo(v){
   var who=(AUTH&&AUTH.me&&AUTH.me.name)||'';
   var gap=v.riron - v.jissa;   /* 紙のとおり III − IV */
   var n=function(x){ return yen(Math.round(x||0)); };
-  /* 昼・夜 … 時間帯の客数（入れていれば）。無ければ、その日の客数 */
   var slots=slotItems(), sl=((S.boot&&S.boot.slots)||[]).filter(function(q){ return q.unit===S.unit; });
-  var slotHtml = (sl.length && slots.length)
+  var slotRows = (sl.length && slots.length)
     ? sl.map(function(q){ var it=slots.filter(function(x){ return String(x.id)===String(q.id); })[0]||{};
-        return '<tr><td>'+esc(q.name)+'</td><td class="n">'+(it.guests||0)+' 人</td></tr>'; }).join('')
-    : '<tr><td>客数</td><td class="n">'+num0(saleTotals().guests)+' 人</td></tr>';
+        return '<tr><td>'+esc(q.name)+'</td><td class="n">'+(it.guests||0)+'</td><td class="u">人</td></tr>'; }).join('')
+    : '<tr><td>客数</td><td class="n">'+num0(saleTotals().guests)+'</td><td class="u">人</td></tr>';
   var W=(NIPPO_WX.date===ds && NIPPO_WX.unit===S.unit) ? NIPPO_WX.w : null;
-  var wxHtml = '<div class="nwx">'
-    + '<div class="nwxv">'+(W&&W.kind ? '<b>'+(W.mark||'')+' '+esc(W.kind)+'</b>'
-        + (W.text?'<span>'+esc(W.text)+'</span>':'')
-        + ((W.pop!==''&&W.pop!=null)?'<span>降水確率 '+W.pop+'%</span>':'')
-        + '<em>'+(W.manual?'手入力':(W.src?esc(W.src):''))+'</em>'
-      : '<span class="muted">'+(W ? (W.none?'この日の天気は取れません。下から選んでください':'—') : '読み込み中…')+'</span>')+'</div>'
-    + '<div class="nwxb">'+['晴','曇','雨','雪'].map(function(k){
-        return '<button type="button" class="tap'+(W&&W.kind===k?' on':'')+'" data-nwx="'+k+'">'+k+'</button>'; }).join('')+'</div>'
-    + '</div>';
-  var h='<div class="nhead"><h3>業務日報</h3><div class="nwho"><span>担当者名</span><b>'+esc(who||'—')+'</b></div></div>'
-    + '<div class="nline"><b>'+esc(unitName(S.unit))+'</b><span>'+ds.replace(/-/g,'/')+'（'+wd+'）</span></div>'
-    + '<table class="ntb">'
-    + '<tr class="nb"><td>レジ内準備金（前日から）</td><td class="n">'+n(v.junbi)+'</td></tr>'
-    + '<tr class="nh"><td><i>I</i> 売上合計</td><td class="n">'+n(total)+'</td></tr>'
-    + '<tr><td class="in1">① クレジット売上</td><td class="n">'+n(card)+'</td></tr>'
-    + '<tr><td class="in1">② 電子マネー売上</td><td class="n">'+n(emo)+'</td></tr>'
-    + '<tr><td class="in1">③ 現金売上　I −（①＋②）</td><td class="n">'+n(cashS)+'</td></tr>'
-    + '<tr class="nh"><td><i>II</i> レジから払った分　③＋④</td><td class="n">'+n(food+sub4)+'</td></tr>'
-    + '<tr><td class="in1">③ 食材の仕入れ</td><td class="n">'+n(food)+'</td></tr>'
-    + (others.length ? others.map(function(x){
-        return '<tr><td class="in2">④ '+esc((pettyUse(x.useId||'')||{}).name||x.name||'')+(x.memo&&x.memo!==x.name?'<span>'+esc(x.memo)+'</span>':'')+'</td><td class="n">'+n(x.out)+'</td></tr>';
-      }).join('') : '')
-    + '<tr><td class="in1">④ 現金支出 小計</td><td class="n">'+n(sub4)+'</td></tr>'
-    + (v.draw||v.inject ? '<tr><td class="in1">役員へ／役員から</td><td class="n">'+(v.inject?'+'+n(v.inject):'')+(v.draw?' −'+n(v.draw):'')+'</td></tr>' : '')
-    + '<tr class="nh"><td><i>III</i> レジにあるはずの額</td><td class="n">'+n(v.riron)+'</td></tr>'
+  var wxTxt = W&&W.kind ? ((W.mark||'')+' '+W.kind+((W.pop!==''&&W.pop!=null)?'　降水確率 '+W.pop+'%':'')
+      +(W.text?'<br><small>'+esc(W.text)+'</small>':''))
+    : (W ? '<small>（下のボタンで選んでください）</small>' : '<small>読み込み中…</small>');
+  /* ④ の行は紙と同じく最低6行（空の行も引いておく） */
+  var r4=others.map(function(x){
+    var nm=(pettyUse(x.useId||'')||{}).name||x.name||'';
+    return '<tr><td class="k">'+esc(nm)+'</td><td class="c">'+esc(x.memo&&x.memo!==nm?x.memo:'')+'</td><td class="n">'+n(x.out)+'</td></tr>'; });
+  while(r4.length<6) r4.push('<tr><td class="k">&nbsp;</td><td class="c"></td><td class="n"></td></tr>');
+  var sheet='<div class="a4" id="nippoSheet">'
+    + '<h1>業 務 日 報</h1>'
+    + '<div class="a4top"><div class="shop">'+esc(unitName(S.unit))+'</div>'
+    +   '<table class="who"><tr><th>担当者名</th></tr><tr><td>'+esc(who||'')+'</td></tr></table></div>'
+    + '<div class="a4date"><span class="dy">'+(dt?dt.getFullYear()+' 年 '+(dt.getMonth()+1)+' 月 '+dt.getDate()+' 日（'+wd+'）':'')+'</span>'
+    +   '<span class="pv">レジ内準備金（前日から）<b>'+n(v.junbi)+'</b></span></div>'
+    + '<table class="a4t"><colgroup><col style="width:34px"><col style="width:34px"><col><col style="width:150px"></colgroup>'
+    + '<tr class="cap"><td colspan="3"></td><td class="n">金額</td></tr>'
+    + '<tr class="hd"><td class="rm">I</td><td colspan="2">売上合計（レジの取引の合計）</td><td class="n">'+n(total)+'</td></tr>'
+    + '<tr><td></td><td>①</td><td>クレジット売上</td><td class="n">'+n(card)+'</td></tr>'
+    + '<tr><td></td><td>②</td><td>電子マネー売上</td><td class="n">'+n(emo)+'</td></tr>'
+    + '<tr><td></td><td>③</td><td>現金売上　I −（①＋②）</td><td class="n">'+n(cashS)+'</td></tr>'
+    + '<tr class="hd"><td class="rm">II</td><td colspan="2">レジから払った分　③＋④</td><td class="n">'+n(food+sub4)+'</td></tr>'
+    + '<tr><td></td><td>③</td><td>食材の仕入れ</td><td class="n">'+n(food)+'</td></tr>'
+    + '<tr><td></td><td class="v4" rowspan="'+(r4.length+2)+'">④</td><td class="sub" colspan="2"><table class="t4">'
+    +   '<tr class="cap"><td class="k">取引の種類</td><td class="c">内容</td><td class="n"></td></tr>'+r4.join('')+'</table></td></tr>'
+    + '<tr><td></td><td>④ 現金支出 小計</td><td class="n">'+n(sub4)+'</td></tr>'
+    + (v.draw||v.inject ? '<tr><td></td><td></td><td>役員へ／役員から</td><td class="n">'+(v.inject?'+'+n(v.inject):'')+(v.draw?' −'+n(v.draw):'')+'</td></tr>' : '')
     + '</table>'
-    + '<div class="ncols"><table class="ntb nden"><tr class="nh"><td colspan="3">本日末レジ現金（現金実査）</td></tr>'
-    + '<tr class="ncap"><td>金種</td><td class="n">枚数</td><td class="n">金額</td></tr>'
-    + den.map(function(d){ var k=num0(coins[d]); return '<tr><td>'+d.toLocaleString('ja-JP')+'</td><td class="n">'+(k||'')+'</td><td class="n">'+(k?n(k*d):'')+'</td></tr>'; }).join('')
-    + '<tr class="nh"><td colspan="2"><i>IV</i> 数えた現金</td><td class="n">'+n(v.jissa)+'</td></tr></table>'
-    + '<div class="nside"><table class="ntb">'
-    + '<tr><td><i>IV</i> 数えた現金（左から）</td><td class="n">'+n(v.jissa)+'</td></tr>'
-    + '<tr><td>過不足　III − IV</td><td class="n'+(gap?' neg':'')+'">'+(v.jissa?n(gap):'—')+'</td></tr>'
-    + '<tr><td>レジ内その他（保留）へ移す額</td><td class="n">'+n(v.move)+'</td></tr>'
-    + '</table>'
-    + '<table class="ntb">'+slotHtml+'</table>'
-    + '<div class="nwxh">天候</div>'+wxHtml
+    + '<table class="a4t a4iii"><colgroup><col style="width:34px"><col><col style="width:150px"></colgroup>'
+    +   '<tr class="hd"><td class="rm">III</td><td>レジにあるはずの額　レジ内準備金＋③−II</td><td class="n">'+n(v.riron)+'</td></tr></table>'
+    + '<div class="a4bot"><div class="lf"><table class="a4t den"><tr class="hd"><td colspan="3" class="ct">本日末レジ現金（現金実査）</td></tr>'
+    +   '<tr class="cap"><td class="ct">金種</td><td class="ct">枚数</td><td class="ct">金額</td></tr>'
+    +   den.map(function(d){ var k=num0(coins[d]); return '<tr><td class="n">'+d.toLocaleString('ja-JP')+'</td><td class="n">'+(k||(v.jissa?'0':''))+'</td><td class="n">'+(k?n(k*d):(v.jissa?'0':''))+'</td></tr>'; }).join('')
+    +   '<tr class="hd"><td colspan="2"><span class="rm">IV</span> 数えた現金</td><td class="n">'+n(v.jissa)+'</td></tr></table></div>'
+    + '<div class="rt"><table class="a4t"><colgroup><col><col style="width:120px"></colgroup>'
+    +   '<tr><td><span class="rm">IV</span> 数えた現金（左から転記）</td><td class="n">'+n(v.jissa)+'</td></tr>'
+    +   '<tr><td>釣り銭過不足　III − IV</td><td class="n">'+(v.jissa?n(gap):'')+'</td></tr>'
+    +   '<tr><td>レジ内その他（保留）へ移す額</td><td class="n">'+n(v.move)+'</td></tr></table>'
+    +   '<table class="a4t slot">'+slotRows+'</table>'
+    +   '<table class="a4t wx"><tr><td class="wxh">天候</td></tr><tr><td class="wxv">'+wxTxt+'</td></tr></table>'
+    +   '<div class="a4end"><span>締めたあとレジに残る額</span><b>'+n(v.jissa ? v.jissa-v.move : v.junbi)+'</b></div>'
     + '</div></div>'
-    + '<div class="nfoot"><span>締めたあとレジに残る額</span><b>'+n(v.jissa ? v.jissa-v.move : v.junbi)+'</b></div>';
-  box.innerHTML=h;
+    + '<div class="a4src">ANCHOVY 経営アプリで作成　'+(W&&W.src&&!W.manual?'天候：'+esc(W.src):'')+'</div>'
+    + '</div>';
+  box.innerHTML='<div class="nhead2"><b>業務日報</b><span>A4・この日の締めから自動で作っています</span></div>'
+    + '<div class="a4wrap" id="nippoWrap">'+sheet+'</div>'
+    + '<div class="nact"><span>天候</span>'+['晴','曇','雨','雪'].map(function(k){
+        return '<button type="button" class="tap'+(W&&W.kind===k?' on':'')+'" data-nwx="'+k+'">'+k+'</button>'; }).join('')
+    + '</div><button type="button" class="go nprint tap" id="nippoPrint">PDFで印刷（A4）</button>';
+  nippoFit_();
   [].forEach.call(box.querySelectorAll('[data-nwx]'), function(b){ b.onclick=function(){
     var k=b.dataset.nwx;
     NIPPO_WX={ date:ds, unit:S.unit, w:{kind:k, mark:({'晴':'☀','曇':'☁','雨':'☂','雪':'❄'})[k]||'', manual:true, src:'手入力', saved:true} };
@@ -7065,6 +7232,26 @@ function drawNippo(v){
     call('saveWeather',[{date:ds, unit:S.unit, kind:k}]).then(function(r){ toast('天候を「'+k+'」にしました'); })
       .catch(function(e){ toast(String((e&&e.message)||'天候を記録できませんでした')); });
   }; });
+  var pb=$('nippoPrint'); if(pb) pb.onclick=nippoPrint_;
+}
+/** A4（794px）の紙を、画面の幅に縮めて見せる（スマホでもA4の形のまま） */
+function nippoFit_(){
+  var w=$('nippoWrap'), sh=$('nippoSheet'); if(!w||!sh) return;
+  var k=Math.min(1, (w.clientWidth||794)/794);
+  sh.style.transform='scale('+k+')'; sh.style.transformOrigin='0 0';
+  w.style.height=Math.ceil(sh.offsetHeight*k)+'px';
+}
+window.addEventListener('resize', function(){ try{ nippoFit_(); }catch(e){} });
+/** ★ PDFで印刷。紙だけを別の置き場へ写して、それだけを A4 で出す（ほかの印刷の決まりとぶつけない） */
+function nippoPrint_(){
+  var sh=$('nippoSheet'); if(!sh) return;
+  var pa=$('printNippo');
+  if(!pa){ pa=document.createElement('div'); pa.id='printNippo'; document.body.appendChild(pa); }
+  pa.innerHTML=sh.outerHTML.replace(/id="nippoSheet"/,'id="nippoSheetP"').replace(/style="[^"]*"/,'');
+  document.body.classList.add('print-nippo');
+  var done=function(){ document.body.classList.remove('print-nippo'); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  setTimeout(function(){ window.print(); setTimeout(done, 1500); }, 50);
 }
 /** その日の天候を取りに行く（締めの前提を読み終えたあと。締めの画面を待たせない） */
 function loadNippoWx_(){
