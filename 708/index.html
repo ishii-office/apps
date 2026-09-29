@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790674970';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790675495';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -351,6 +351,20 @@ h2:first-child{margin-top:0}
 .cal .cell .g{font-size:10px;color:var(--sub);line-height:1.1}
 .cal .cell.non .y{color:var(--line)}
 .cal .cell.today{outline:2px solid var(--accent);outline-offset:-1px}
+.cal .cell .y{white-space:nowrap;word-break:normal;font-size:12.5px}
+.cal .cell .d{white-space:nowrap;overflow:hidden}
+.cal .cell .d .pp{font-size:9px;font-weight:700;color:var(--accent-b);margin-left:1px;font-family:'Oswald',sans-serif}
+.cal .cell.wk{background:var(--ink2)}
+.cal .cell.fc{border-style:dashed;border-color:var(--accent-b)}
+.cal .cell.nx{background:var(--ink2)}
+.cal .cell .fp{font-family:'Oswald',sans-serif;font-size:12.5px;line-height:1.1;margin-top:1px;color:var(--accent-b);font-weight:600;white-space:nowrap}
+.cal .cell .fp i{display:block;font-style:normal;font-size:9px;font-weight:700;font-family:inherit;opacity:.85}
+.cal .cell .fw{font-family:'Oswald',sans-serif;font-size:10.5px;font-weight:700;line-height:1.1;color:var(--accent-b);white-space:nowrap}
+.cal .cell .fq{font-family:'Oswald',sans-serif;font-size:10px;line-height:1.1;color:var(--paper-dim);white-space:nowrap}
+.cal .cell .fq.dn{color:var(--red)}.cal .cell .fq.up{color:var(--green)}
+.cal .cell .hl{font-size:9px;font-weight:800;color:var(--red);line-height:1.1;white-space:nowrap}
+.fcal .fcplace{font-style:normal;font-size:12px;color:var(--paper-dim);margin-left:6px}
+.fclegend .fp{color:var(--accent-b);font-family:'Oswald',sans-serif}
 .cal .cell.open{box-shadow:inset 0 -3px 0 var(--warn)}   /* まだ締めていない日 */
 .cal .cell .d{display:flex;align-items:center;gap:2px}
 .cal .cell .wx{margin-left:auto;font-size:11px;opacity:.55;line-height:1}
@@ -752,6 +766,17 @@ input#co_amt.bigamt{font-size:40px;padding:16px 15px;font-weight:700}
 .tohoryu:disabled{opacity:.45}
 #c_saBtn{flex:1 1 100%}
 .sbook tr.sbday td{background:var(--ink2);font-weight:800}
+.sb2 table{table-layout:fixed;width:100%}
+.sb2 th.d,.sb2 td.d{width:22%;white-space:nowrap}
+.sb2 td.d em{font-style:normal;font-size:12px;margin-left:2px;color:var(--paper-dim)}
+.sb2 td.d i{font-style:normal;font-size:9px;margin-left:3px;padding:0 3px;border-radius:4px;background:var(--ink2);color:var(--paper-dim)}
+.sb2 tr.s0 td.d{color:var(--red)}.sb2 tr.s6 td.d{color:#2F5BA8}
+.sb2 td.n{font-family:'Oswald',sans-serif;font-size:14px;white-space:nowrap}
+.sb2 td.n.t{font-weight:700}
+.sb2 tr.can{cursor:pointer}
+.sb2 tfoot tr.mon td{background:var(--ink2);font-weight:800;border-top:2px solid var(--line)}
+.sb2 tfoot tr.cum td{background:var(--accent);color:var(--on-accent);font-weight:800}
+.sb2 tfoot td.d small{display:block;font-size:10px;font-weight:600;opacity:.85}
 .sbook tr.sbday .t b{font-size:14px}
 .hwx{margin-left:auto;flex:none;display:flex;align-items:center;gap:3px;padding:3px 7px;border-radius:999px;
   border:1px solid var(--line);background:var(--surface);color:var(--paper);font:inherit;font-weight:800}
@@ -2045,8 +2070,24 @@ button.goled:active{background:#F3F1EA}
     <span class="pt-r">今月の売上<b class="num" id="bSales">—</b></span></div>
   <div id="setupBox"></div>
 
-  <!-- ★★★ 売上予報（2026-09-29・お重さん）。天気と曜日と月から、過去の売上で見込む -->
-  <div id="bForecast"></div>
+  <!-- ★★ カレンダー（2026-09-15）
+       紙のカレンダーに、その日の売上を書き込んでいた。それをそのまま画面にする。
+       折れ線より、こちらのほうが「先週の金曜はいくらだったか」が分かる。
+       売上の無い日も出す（抜けが見えることに意味がある） -->
+  <div class="card fcal" id="calCard">
+    <div class="eyebrow">日ごとの売上と予報 <span class="flash">速報値</span><em class="fcplace" id="fcPlace"></em></div>
+    <div class="cal-head">
+      <button type="button" class="cal-nav" id="calPrev" aria-label="前の月">‹</button>
+      <div class="cal-ym num" id="calYm">—</div>
+      <button type="button" class="cal-nav" id="calNext" aria-label="次の月">›</button>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div class="gauge-cap" style="margin-top:6px"><span id="sparkL">—</span><span id="sparkR">—</span></div>
+    <!-- ★★★ 売上予報（今週の予測・実績から見た倍率）は、このカレンダーの中に（2026-09-29・お重さん「一元的に」） -->
+    <div id="bForecast"></div>
+    <!-- ★ 天気ごとの平均売上（2026-09-15）。晴れと雨でどれだけ違うか -->
+    <div id="calWx"></div>
+  </div>
 
   <!-- ★ 連続締め日数と催促は経営タブに出さない（2026-09-09）。
        休みの日もあるので連続しないのが普通。締めていない日は
@@ -2111,22 +2152,6 @@ button.goled:active{background:#F3F1EA}
     <div class="tile"><div class="k">客単価</div><div class="v" id="mAvg">—</div><div class="n">今月平均</div></div>
   </div>
 
-  <!-- ★★ カレンダー（2026-09-15）
-       紙のカレンダーに、その日の売上を書き込んでいた。それをそのまま画面にする。
-       折れ線より、こちらのほうが「先週の金曜はいくらだったか」が分かる。
-       売上の無い日も出す（抜けが見えることに意味がある） -->
-  <div class="card">
-    <div class="eyebrow">日ごとの売上 <span class="flash">速報値</span></div>
-    <div class="cal-head">
-      <button type="button" class="cal-nav" id="calPrev" aria-label="前の月">‹</button>
-      <div class="cal-ym num" id="calYm">—</div>
-      <button type="button" class="cal-nav" id="calNext" aria-label="次の月">›</button>
-    </div>
-    <div class="cal" id="cal"></div>
-    <div class="gauge-cap" style="margin-top:6px"><span id="sparkL">—</span><span id="sparkR">—</span></div>
-    <!-- ★ 天気ごとの平均売上（2026-09-15）。晴れと雨でどれだけ違うか -->
-    <div id="calWx"></div>
-  </div>
 
   <div class="card" id="slotCard" style="display:none">
     <div class="eyebrow">時間帯ごとの売上</div>
@@ -2372,12 +2397,6 @@ button.goled:active{background:#F3F1EA}
   <div id="c_paneSales" hidden>
   <div class="card" id="sbCard">
     <div class="eyebrow" id="sb_head">売上帳</div>
-    <div class="lg-sum">
-      <div><span>現金</span><b class="num" id="sb_cash">—</b></div>
-      <div><span>クレジット</span><b class="num" id="sb_card">—</b></div>
-      <div><span>電子マネー</span><b class="num" id="sb_qr">—</b></div>
-      <div><span>合計</span><b class="num" id="sb_total">—</b></div>
-    </div>
     <div class="ledger" id="sb_body"></div>
   </div>
   </div><!-- /#c_paneSales -->
@@ -4466,62 +4485,44 @@ function loadSalesBook(){
     salesBookRender_(g);
   }).catch(function(e){ if(!SB_MEMO[ck]) box.innerHTML='<p class="empty">読み込めませんでした。'+esc(String((e&&e.message)||e||''))+'</p>'; });
 }
+/* ★★★ 売上帳（2026-09-29・お重さん 2回目）… 1日1行。クレジット・電子マネー・現金を、その日の合計で横に並べる。
+     小計は置かない。計は【月合計】だけ、その下に【期首からの売上累計】。
+     行を押すと、その日の取引の入力へ（1件ずつ直すのはそこで） */
 function salesBookRender_(g){
   SB.data=g;
-  var box=$('sb_body'), z=g.sum||{};
-  $('sb_cash').textContent=yen(z.cash||0); $('sb_card').textContent=yen(z.card||0);
-  $('sb_qr').textContent=yen(z.qr||0); $('sb_total').textContent=yen(z.total||0);
-  var cell=function(v){ return v ? yen(v) : ''; };
-  var rows='';
-  (g.days||[]).forEach(function(d,di){
-    d.rows.forEach(function(r,ri){
-      var c={cash:0,card:0,qr:0};
-      if(r.src==='日報'){ c.cash=r.cash; c.card=r.card; c.qr=r.qr; }
-      else if(c[r.col]!==undefined) c[r.col]=r.amount;
-      var sub=[]; if(r.time) sub.push(r.time); if(r.guests>0) sub.push(r.guests+'人');
-      if(S.unit==='ALL' && r.unitName) sub.push(r.unitName);
-      if(r.src==='日報') sub.push('締めから');
-      rows+='<tr class="'+(r.editable?'can':'')+'" data-d="'+di+'" data-r="'+ri+'">'
-        + '<td class="d">'+(ri===0 ? d.date.slice(5).replace('-','/') : '')+'</td>'
-        + '<td class="t"><b>'+esc(r.title)+(r.img?'<img class="im" src="'+r.img+'" alt="">':'')+'</b>'
-        +   (sub.length?'<span>'+sub.join('　')+'</span>':'')
-        +   (r.editable ? '<span class="lgact"><button class="tap lgfix" data-sbfix="1">直す</button>'
-              + '<button class="tap lgdel" data-sbdel="1">削除</button></span>' : '')
-        + '</td>'
-        + '<td class="n">'+cell(c.cash)+'</td><td class="n">'+cell(c.card)+'</td><td class="n">'+cell(c.qr)+'</td></tr>';
-    });
-    rows+='<tr class="sbday"><td class="d"></td><td class="t"><b>'+d.date.slice(5).replace('-','/')+' 計</b>'
-      + (d.guests>0?'<span>'+d.guests+'人</span>':'')+'</td>'
-      + '<td class="n">'+cell(d.cash)+'</td><td class="n">'+cell(d.card)+'</td><td class="n">'+cell(d.qr)+'</td></tr>';
-  });
-  box.innerHTML='<div class="kbook sbook"><table>'
-    + '<thead><tr><th class="d">日付</th><th>摘要</th><th class="n">現金</th><th class="n">ｸﾚｼﾞｯﾄ</th><th class="n">電子ﾏﾈｰ</th></tr></thead>'
-    + '<tbody>'+(rows || '<tr><td class="d">—</td><td class="t"><b style="font-weight:600;color:var(--paper-dim)">この月はまだ売上がありません</b></td><td class="n"></td><td class="n"></td><td class="n"></td></tr>')+'</tbody>'
-    + '<tfoot><tr><td class="d">計</td><td class="t">'+(z.guests>0?z.guests+'人':'')+'</td>'
-    +   '<td class="n">'+yen(z.cash||0)+'</td><td class="n">'+yen(z.card||0)+'</td><td class="n">'+yen(z.qr||0)+'</td></tr></tfoot>'
-    + '</table></div>';
+  var box=$('sb_body'), z=g.sum||{}, cu=g.cum||{};
+  var hasO=(g.days||[]).some(function(d){ return d.other; }) || !!z.other;
+  var n=function(v){ return v ? yen(v) : ''; };
+  var W=['日','月','火','水','木','金','土'];
+  var rows=(g.days||[]).map(function(d,i){
+    var w=new Date(d.date+'T00:00:00').getDay();
+    return '<tr class="can'+(w===0?' s0':(w===6?' s6':''))+'" data-i="'+i+'">'
+      + '<td class="d">'+d.date.slice(5).replace('-','/')+'<em>'+W[w]+'</em>'+(d.src==='FX'?'<i>FX</i>':'')+'</td>'
+      + '<td class="n">'+n(d.card)+'</td><td class="n">'+n(d.qr)+'</td><td class="n">'+n(d.cash)+'</td>'
+      + (hasO?'<td class="n">'+n(d.other)+'</td>':'')
+      + '<td class="n t">'+yen(d.total)+'</td></tr>';
+  }).join('');
+  var fy=String(g.fy||''), fyTxt=fy ? Number(fy.slice(5,7))+'月から' : '';
+  box.innerHTML='<div class="kbook sbook sb2"><table>'
+    + '<thead><tr><th class="d">日付</th><th class="n">ｸﾚｼﾞｯﾄ</th><th class="n">電子ﾏﾈｰ</th><th class="n">現金</th>'
+    +   (hasO?'<th class="n">その他</th>':'')+'<th class="n">計</th></tr></thead>'
+    + '<tbody>'+(rows || '<tr><td class="d" colspan="'+(hasO?6:5)+'" style="color:var(--paper-dim)">この月はまだ売上がありません</td></tr>')+'</tbody>'
+    + '<tfoot><tr class="mon"><td class="d">月合計</td>'
+    +   '<td class="n">'+yen(z.card||0)+'</td><td class="n">'+yen(z.qr||0)+'</td><td class="n">'+yen(z.cash||0)+'</td>'
+    +   (hasO?'<td class="n">'+yen(z.other||0)+'</td>':'')+'<td class="n t">'+yen(z.total||0)+'</td></tr>'
+    + '<tr class="cum"><td class="d">期首から<small>'+esc(fyTxt)+'</small></td>'
+    +   '<td class="n">'+yen(cu.card||0)+'</td><td class="n">'+yen(cu.qr||0)+'</td><td class="n">'+yen(cu.cash||0)+'</td>'
+    +   (hasO?'<td class="n">'+yen(cu.other||0)+'</td>':'')+'<td class="n t">'+yen(cu.total||0)+'</td></tr></tfoot>'
+    + '</table></div>'
+    + (cu.lump ? '<p class="fcw">期首からの累計には、日ごとの記録が無い月の合計 '+yen(cu.lump)+'（FX の科目振替から）を含みます。</p>' : '')
+    + ((g.days||[]).some(function(d){ return d.src==='FX'; }) ? '<p class="fcw">FX … アプリを使う前の日（会計の記録から）。</p>' : '');
   [].forEach.call(box.querySelectorAll('tr.can'), function(el){
-    var r=g.days[Number(el.dataset.d)].rows[Number(el.dataset.r)];
-    var del=el.querySelector('[data-sbdel]');
-    if(del) del.onclick=function(ev){
-      ev.stopPropagation();
-      if(!confirm(r.title+' '+yen(r.amount)+' を削除します。戻せません。よろしいですか。')) return;
-      /* ★ 押した瞬間に行を消す。サーバは裏で */
-      var D=g.days[Number(el.dataset.d)];
-      D.rows=D.rows.filter(function(x){ return x!==r; });
-      D[r.col]=(D[r.col]||0)-r.amount; D.total-=r.amount; D.guests-=(r.guests||0);
-      g.sum[r.col]=(g.sum[r.col]||0)-r.amount; g.sum.total-=r.amount; g.sum.guests-=(r.guests||0);
-      g.days=g.days.filter(function(x){ return x.rows.length; });
-      salesBookRender_(g); SB_MEMO={};
-      try{ Object.keys(LEDGER_MEMO).forEach(function(q){ delete LEDGER_MEMO[q]; }); }catch(e){}
-      toast('削除しています…');
-      call('deleteSale',[{id:r.id}]).then(function(x){ toast((x&&x.msg)||'削除しました'); loadSalesBook(); loadClosing(); })
-        .catch(function(e){ toast(String((e&&e.message)||'削除できませんでした')); loadSalesBook(); });
-    };
+    var d=g.days[Number(el.dataset.i)];
     el.onclick=function(){
-      S.backToBook='sales'; if(r.date) ymApply_(String(r.date).slice(0,7));
-      pettyEditSale({ id:r.id, useId:r.useId, method:r.method, amount:r.amount, guests:r.guests,
-        time:r.time, date:r.date, unit:r.unit, imgs:r.imgs, img:r.img });
+      if(S.unit==='ALL'){ toast('店を選ぶと、その日の取引を開けます'); return; }
+      S.backToBook='sales';
+      setYm_(d.date.slice(0,7), { date:d.date });
+      S.cMode='in'; setPane('c_mode',C_PANES,'in'); syncKind(); window.scrollTo(0,0);
     };
   });
 }
@@ -4870,7 +4871,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261006;
+var SERVER_WANT = 20261007;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -6583,10 +6584,13 @@ function drawCal(cal, ym){
     el.title = c.date+'　'+yen(c.sales)+(c.guests?'　'+c.guests+'人':'')
       +(c.wx?'　'+c.wx+(c.pop!==''?'（降水確率 '+c.pop+'%）':''):'')
       +(c.sales>0&&!c.closed?'　※まだ締めていません':'');
+    el.dataset.date=c.date;
     el.onclick=function(){ openDayFromCal(c.date); };
     calHold(el, c.date);
     box.appendChild(el);
   });
+  S.calShown=ym;
+  calFcOverlay_();
 
   var live=cal.filter(function(c){ return c.sales>0; });
   var sum=live.reduce(function(a,b){ return a+b.sales; },0);
@@ -7147,30 +7151,66 @@ function loadHeadWx_(){
    ================================================================== */
 function loadForecast_(){
   var box=$('bForecast'); if(!box) return;
-  if(!isOwnerUI || !isOwnerUI()){ box.innerHTML=''; return; }
+  if(!isOwnerUI || !isOwnerUI()){ box.innerHTML=''; S.fc=null; calFcOverlay_(); return; }
   call('getSalesForecast',[S.unit]).then(function(f){
-    if(!f || !f.ok){ box.innerHTML=''; return; }
-    var days=(f.days||[]).slice(0,7);
-    box.innerHTML='<div class="fcast card"><div class="fch"><b>売上予報</b><span>曜日・祝日・天気・昨対から</span>'
-      + '<em>'+esc(f.place||'')+'</em></div>'
-      + '<div class="fcl">'+days.map(function(x,i){
-          var dt=new Date(x.date+'T00:00:00');
-          return '<div class="fcd'+(i===0?' now':'')+'"><span class="dd">'+(i===0?'今日':(i===1?'明日':(dt.getMonth()+1)+'/'+dt.getDate()))
-            + '<em>'+WXDOW[dt.getDay()]+'</em></span>'
-            + '<span class="mk">'+(x.mark||'')+'</span>'
-            + '<span class="pp">'+((x.pop!==''&&x.pop!=null)?x.pop+'%':'')+'</span>'
-            + '<span class="tt">'+((x.tmax!==''&&x.tmax!=null)?'<i class="hi">'+x.tmax+'</i>':'')
-            +   ((x.tmin!==''&&x.tmin!=null)?'<i class="lo">'+x.tmin+'</i>':'')+'</span>'
-            + '<b class="num">'+(x.pred?man(x.pred):'—')+'</b>'
-            + '<span class="gg">'+(x.guests?x.guests+'人':'')+'</span>'
-            + ((x.holiday||x.dayKind)?'<span class="hl">'+esc(x.dayKind&&x.dayKind!=='祝日'?x.dayKind:(x.holiday||x.dayKind))+'</span>':'')+'</div>';
-        }).join('')+'</div>'
+    if(!f || !f.ok){ box.innerHTML=''; S.fc=null; calFcOverlay_(); return; }
+    S.fc=f;
+    if($('fcPlace')) $('fcPlace').textContent=f.place||'';
+    var d0=(f.days||[])[0];
+    box.innerHTML='<div class="fcast">'
+      + '<p class="fcw fclegend"><b class="fp">見込</b> … 今日から先の売上予報（曜日・祝日や連休・天気・降水確率・昨対の実績から）</p>'
+      + (d0 && d0.why ? '<p class="fcw">今日の見込み … '+esc(d0.why)+'</p>' : '')
+      + (f.enough ? '' : '<p class="fcw">まだ日数が少ないので目安です（売上が'+f.histDays+'日ぶん）。締めるほど当たるようになります。</p>')
       + fcWeekHtml_(f.week)
       + fcProfileHtml_(f.profile, f)
-      + (days[0] && days[0].why ? '<p class="fcw">今日の見込み … '+esc(days[0].why)+'</p>' : '')
-      + (f.enough ? '' : '<p class="fcw">まだ日数が少ないので目安です（売上が'+f.histDays+'日ぶん）。締めるほど当たるようになります。</p>')
       + '</div>';
+    calFcOverlay_();
   }).catch(function(){ box.innerHTML=''; });
+}
+/* ★★★ 売上予報をカレンダーに重ねる（2026-09-29・お重さん「日ごとの売上のカレンダーと合体して、一元的に」）
+     ・今日から先の日 … 見込みの売上・天気・降水確率（月末を越える日は、カレンダーの続きに足す）
+     ・今週の過ぎた日 … 実績の下に、日曜に立てた予測を小さく
+     何度呼んでも同じになるように、前に足したものを消してから足す */
+function calFcOverlay_(){
+  var box=$('cal'); if(!box) return;
+  [].forEach.call(box.querySelectorAll('.fcx'),function(x){ x.remove(); });
+  [].forEach.call(box.querySelectorAll('.cell.nx'),function(x){ x.remove(); });
+  [].forEach.call(box.querySelectorAll('.cell.fc,.cell.wk'),function(x){ x.classList.remove('fc','wk'); });
+  var f=S.fc; if(!f) return;
+  var has=function(v){ return v!==''&&v!=null; };
+  var wk={}; ((f.week||{}).rows||[]).forEach(function(r){ wk[r.date]=r; });
+  var cells=box.querySelectorAll('.cell[data-date]'), lastD=cells.length ? cells[cells.length-1].dataset.date : '';
+  var today=((S.boot&&S.boot.today)||ymdOf(new Date()));
+  var addAfter = lastD && lastD.slice(0,7)===today.slice(0,7);
+  (f.days||[]).forEach(function(x){
+    var el=box.querySelector('.cell[data-date="'+x.date+'"]');
+    if(!el){
+      if(!addAfter || x.date<=lastD) return;
+      var dw=new Date(x.date+'T00:00:00').getDay();
+      el=document.createElement('div');
+      el.className='cell nx'+(dw===0?' s0':(dw===6?' s6':''));
+      el.dataset.date=x.date;
+      el.innerHTML='<div class="d">'+Number(x.date.slice(5,7))+'/'+Number(x.date.slice(8,10))+'</div>';
+      el.onclick=function(){ openDayFromCal(x.date); };
+      box.appendChild(el);
+    }
+    el.classList.add('fc');
+    var dd=el.querySelector('.d');
+    if(dd && !dd.querySelector('.wx') && x.mark) dd.insertAdjacentHTML('beforeend','<span class="wx fcx'+(x.kind==='雨'||x.kind==='雪'?' rain':'')+'">'+x.mark+'</span>');
+    el.insertAdjacentHTML('beforeend', x.closed ? '<div class="fp fcx">休</div>'
+      : '<div class="fp fcx"><i>見込</i>'+(x.pred?man(x.pred):'—')+'</div>');
+    if(has(x.pop)) el.insertAdjacentHTML('beforeend','<div class="fw fcx">☂'+x.pop+'%</div>');
+    if(x.holiday || (x.dayKind && x.dayKind!=='祝日')) el.insertAdjacentHTML('beforeend','<div class="hl fcx">'+esc(x.dayKind&&x.dayKind!=='祝日'?x.dayKind:x.holiday)+'</div>');
+  });
+  Object.keys(wk).forEach(function(d){
+    var el=box.querySelector('.cell[data-date="'+d+'"]'); if(!el) return;
+    el.classList.add('wk');
+    var r=wk[d];
+    if(r.done && r.pred && !el.classList.contains('fc')){
+      var diff=r.actual-r.pred;
+      el.insertAdjacentHTML('beforeend','<div class="fq fcx'+(diff<0?' dn':' up')+'">予'+man(r.pred)+'</div>');
+    }
+  });
 }
 
 /* ★★★ 実績から見た倍率（2026-09-29）… 曜日・祝日や連休・天気・降水確率が、ふつうの日より何割ちがうか */
