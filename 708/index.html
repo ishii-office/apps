@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790667530';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790669566';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -753,7 +753,9 @@ input#co_amt.bigamt{font-size:40px;padding:16px 15px;font-weight:700}
   border:1px solid var(--line);background:var(--surface);color:var(--paper);font:inherit;font-weight:800}
 .hwx .m{font-size:20px;line-height:1}.hwx .p{font-size:13px;color:var(--paper-dim)}.hwx .t{font-size:14px}
 .hwx + .gear{margin-left:0}
-@media (max-width:420px){ .hwx .t{display:none} .hd-row{gap:6px} .mark{padding:5px 8px} .mark em{margin-left:4px} }
+.hwx .t i{font-style:normal;font-family:'Oswald',sans-serif;margin-left:3px}
+.hwx .t .hi{color:var(--red)}.hwx .t .lo{color:var(--accent-b)}
+@media (max-width:420px){ .hd-row{gap:5px} .mark{padding:5px 7px;font-size:15px} .mark em{display:none} .hwx{padding:3px 6px} .hwx .m{font-size:18px} .hwx .p,.hwx .t{font-size:12px} }
 .hwxpanel{position:absolute;right:10px;left:10px;z-index:60;margin-top:6px;background:var(--surface);color:var(--paper);
   border:1px solid var(--line);border-radius:12px;padding:10px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
 .hwxpanel .hwxh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
@@ -773,9 +775,26 @@ input#co_amt.bigamt{font-size:40px;padding:16px 15px;font-weight:700}
 .fcast .fcd.now{background:var(--accent);color:var(--on-accent)}
 .fcast .fcd .dd{font-size:12px;font-weight:800}.fcast .fcd .dd em{font-style:normal;margin-left:2px}
 .fcast .fcd .mk{font-size:22px;line-height:1.1}.fcast .fcd .pp{font-size:11px}
+.fcast .fcd .tt{font-size:11px;font-family:'Oswald',sans-serif}
+.fcast .fcd .tt i{font-style:normal;margin:0 2px}.fcast .fcd .tt .hi{color:var(--red)}.fcast .fcd .tt .lo{color:var(--accent-b)}
+.fcast .fcd.now .tt i{color:var(--on-accent)}
 .fcast .fcd b{font-size:12.5px;white-space:nowrap;letter-spacing:-.02em}
 .fcast .fcd.now .mk{color:var(--on-accent)}.fcast .fcd .gg{font-size:11px}
 .fcast .fcw{font-size:13px;color:var(--paper-dim);margin:8px 0 0}
+.fcast .fcd .hl{font-size:10px;font-weight:800;color:var(--red);white-space:nowrap}
+.fcast .fcd.now .hl{color:var(--on-accent)}
+.fcast .fcwk{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.fcast .fcwh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.fcast .fcwh span{font-size:14px}
+.fcast .fcwh em{font-style:normal;font-size:12px;color:var(--paper-dim);margin-left:auto}
+.fcast .fcwt{width:100%;table-layout:fixed;border-collapse:collapse;margin-top:6px;font-size:14px}
+.fcast .fcwt th{font-size:12px;color:var(--paper-dim);font-weight:700;text-align:right}
+.fcast .fcwt th:first-child{width:38%}
+.fcast .fcwt td{padding:3px 2px;border-bottom:1px dotted var(--line);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fcast .fcwt td:first-child{text-align:left}.fcast .fcwt td em{font-style:normal;margin:0 2px;font-size:12px}
+.fcast .fcwt td i{font-style:normal;font-size:10px;color:var(--red);margin-left:3px}
+.fcast .fcwt tr.yet td{color:var(--paper-dim)}
+.fcast .fcwt .mi{color:var(--red)}.fcast .fcwt .pl{color:var(--green)}
+.fcast .fcwt tfoot td{font-weight:800;border-bottom:0;border-top:1px solid var(--line)}
 .nippo .nhead2{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
 .nippo .nhead2 b{font-size:20px}.nippo .nhead2 span{font-size:13px;color:var(--paper-dim)}
 .a4wrap{position:relative;width:100%;overflow:hidden;border:1px solid var(--line);background:var(--surface)}
@@ -4859,7 +4878,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261002;
+var SERVER_WANT = 20261004;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -7088,7 +7107,8 @@ function hwxDraw_(){
   b.hidden=false;
   b.innerHTML='<span class="m">'+(d0.mark||'')+'</span>'
     + '<span class="p">'+((d0.pop!==''&&d0.pop!=null)?d0.pop+'%':'')+'</span>'
-    + '<span class="t">'+((d0.tmax!==''&&d0.tmax!=null)?d0.tmax+'°':'')+'</span>';
+    + '<span class="t">'+((d0.tmax!==''&&d0.tmax!=null)?'<i class="hi">'+d0.tmax+'°</i>':'')
+    + ((d0.tmin!==''&&d0.tmin!=null)?'<i class="lo">'+d0.tmin+'°</i>':'')+'</span>';
   if(pn && !pn.hidden) hwxPanel_();
 }
 function hwxPanel_(){
@@ -7131,7 +7151,7 @@ function loadHeadWx_(){
 
 /* ==================================================================
    ★★★ 売上予報（2026-09-29・お重さん）── 経営タブのいちばん上
-   予報 ＝ その曜日の平均 × その天気の日の倍率 × その月の倍率。日数がたまるほど当たる
+   予報 ＝ 土台（曜日の平均と前週）× 昨対 × 祝日・連休 × 天気 × 降水確率（サーバの salesForecast_）
    ================================================================== */
 function loadForecast_(){
   var box=$('bForecast'); if(!box) return;
@@ -7139,7 +7159,7 @@ function loadForecast_(){
   call('getSalesForecast',[S.unit]).then(function(f){
     if(!f || !f.ok){ box.innerHTML=''; return; }
     var days=(f.days||[]).slice(0,7);
-    box.innerHTML='<div class="fcast card"><div class="fch"><b>売上予報</b><span>天気と曜日から</span>'
+    box.innerHTML='<div class="fcast card"><div class="fch"><b>売上予報</b><span>曜日・祝日・天気・昨対から</span>'
       + '<em>'+esc(f.place||'')+'</em></div>'
       + '<div class="fcl">'+days.map(function(x,i){
           var dt=new Date(x.date+'T00:00:00');
@@ -7147,15 +7167,40 @@ function loadForecast_(){
             + '<em>'+WXDOW[dt.getDay()]+'</em></span>'
             + '<span class="mk">'+(x.mark||'')+'</span>'
             + '<span class="pp">'+((x.pop!==''&&x.pop!=null)?x.pop+'%':'')+'</span>'
+            + '<span class="tt">'+((x.tmax!==''&&x.tmax!=null)?'<i class="hi">'+x.tmax+'</i>':'')
+            +   ((x.tmin!==''&&x.tmin!=null)?'<i class="lo">'+x.tmin+'</i>':'')+'</span>'
             + '<b class="num">'+(x.pred?man(x.pred):'—')+'</b>'
-            + '<span class="gg">'+(x.guests?x.guests+'人':'')+'</span></div>';
+            + '<span class="gg">'+(x.guests?x.guests+'人':'')+'</span>'
+            + ((x.holiday||x.dayKind)?'<span class="hl">'+esc(x.dayKind&&x.dayKind!=='祝日'?x.dayKind:(x.holiday||x.dayKind))+'</span>':'')+'</div>';
         }).join('')+'</div>'
+      + fcWeekHtml_(f.week)
       + (days[0] && days[0].why ? '<p class="fcw">今日の見込み … '+esc(days[0].why)+'</p>' : '')
       + (f.enough ? '' : '<p class="fcw">まだ日数が少ないので目安です（売上が'+f.histDays+'日ぶん）。締めるほど当たるようになります。</p>')
       + '</div>';
   }).catch(function(){ box.innerHTML=''; });
 }
 
+/* ★★ 今週（日〜土）の予測と実績。日曜の朝に控えた予測と比べる */
+function fcWeekHtml_(w){
+  if(!w || !(w.rows||[]).length) return '';
+  var md=function(d){ var t=new Date(d+'T00:00:00'); return (t.getMonth()+1)+'/'+t.getDate(); };
+  var gap=w.actualTotal-w.predDone;
+  return '<div class="fcwk"><div class="fcwh"><b>今週の予測</b><span>'+md(w.from)+'〜'+md(w.to)+'</span>'
+    + '<em>'+(w.snapped?'日曜の朝に立てた予測':'いまの予報から')+'</em></div>'
+    + '<table class="fcwt"><thead><tr><th></th><th>予測</th><th>実績</th><th>差</th></tr></thead><tbody>'
+    + w.rows.map(function(r){
+        var t=new Date(r.date+'T00:00:00'), d=r.actual-r.pred;
+        return '<tr'+(r.done?'':' class="yet"')+'><td>'+md(r.date)+'<em>'+WXDOW[t.getDay()]+'</em>'+(r.mark||'')
+          + (r.holiday?'<i>'+esc(r.holiday)+'</i>':'')+'</td>'
+          + '<td class="num">'+(r.pred?man(r.pred):'—')+'</td>'
+          + '<td class="num">'+(r.done?(r.actual?man(r.actual):'0'):'')+'</td>'
+          + '<td class="num '+(r.done?(d<0?'mi':'pl'):'')+'">'+(r.done&&r.pred?(d>=0?'+':'−')+man(Math.abs(d)):'')+'</td></tr>';
+      }).join('')
+    + '</tbody><tfoot><tr><td>週の計</td><td class="num">'+man(w.predTotal)+'</td><td class="num">'+man(w.actualTotal)+'</td>'
+    + '<td class="num '+(gap<0?'mi':'pl')+'">'+(w.predDone?(gap>=0?'+':'−')+man(Math.abs(gap)):'')+'</td></tr></tfoot></table>'
+    + (w.predDone?'<p class="fcw">きのうまでの予測 '+man(w.predDone)+' に対して、実績 '+man(w.actualTotal)+'。</p>':'')
+    + '</div>';
+}
 var NIPPO_WX={ date:'', unit:'', w:null };
 function nippoFood_(x){
   var u=pettyUse(x.useId||'')||{};
@@ -7185,6 +7230,8 @@ function drawNippo(v){
     : '<tr><td>客数</td><td class="n">'+num0(saleTotals().guests)+'</td><td class="u">人</td></tr>';
   var W=(NIPPO_WX.date===ds && NIPPO_WX.unit===S.unit) ? NIPPO_WX.w : null;
   var wxTxt = W&&W.kind ? ((W.mark||'')+' '+W.kind+((W.pop!==''&&W.pop!=null)?'　降水確率 '+W.pop+'%':'')
+      +(((W.tmax!==''&&W.tmax!=null)||(W.tmin!==''&&W.tmin!=null))
+        ? '<br><small>'+((W.tmax!==''&&W.tmax!=null)?'最高 '+W.tmax+'°':'')+((W.tmin!==''&&W.tmin!=null)?'　最低 '+W.tmin+'°':'')+'</small>' : '')
       +(W.text?'<br><small>'+esc(W.text)+'</small>':''))
     : (W ? '<small>（下のボタンで選んでください）</small>' : '<small>読み込み中…</small>');
   /* ④ の行は紙と同じく最低6行（空の行も引いておく） */
@@ -7235,7 +7282,9 @@ function drawNippo(v){
   nippoFit_();
   [].forEach.call(box.querySelectorAll('[data-nwx]'), function(b){ b.onclick=function(){
     var k=b.dataset.nwx;
-    NIPPO_WX={ date:ds, unit:S.unit, w:{kind:k, mark:({'晴':'☀','曇':'☁','雨':'☂','雪':'❄'})[k]||'', manual:true, src:'手入力', saved:true} };
+    var old=(W||{});   /* 降水確率・気温・天気の文は残す（天気だけ直す） */
+    NIPPO_WX={ date:ds, unit:S.unit, w:{kind:k, mark:({'晴':'☀','曇':'☁','雨':'☂','雪':'❄'})[k]||'', manual:true, src:'手入力', saved:true,
+      pop:old.pop, tmax:old.tmax, tmin:old.tmin, text:old.text} };
     calcVerdict();
     call('saveWeather',[{date:ds, unit:S.unit, kind:k}]).then(function(r){ toast('天候を「'+k+'」にしました'); })
       .catch(function(e){ toast(String((e&&e.message)||'天候を記録できませんでした')); });
