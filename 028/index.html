@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790641686';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790642883';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -663,6 +663,8 @@ input#co_amt.bigamt{font-size:40px;padding:16px 15px;font-weight:700}
   color:var(--paper-dim);font-family:inherit;font-weight:900;font-size:17px;cursor:pointer;
   border-right:1.5px solid var(--line)}
 .segbar button:last-child{border-right:0}
+/* ★ 入金・出金は2段に（2026-09-29・お重さん）。上に「出金」、下に（仕入・諸経費他） */
+.segbar button .seg2{display:block;font-size:13px;line-height:1.3;font-weight:600;margin-top:2px;opacity:.9}
 .segbar button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
 .segbar.big{margin-bottom:10px;border-width:2px;border-color:var(--tabc);
   border-radius:var(--r2)}
@@ -1983,8 +1985,8 @@ button.goled:active{background:#F3F1EA}
   <div id="c_paneIn">
   <!-- 入力は【売上】と【現金で払った】の2つだけ。1画面で終わる形にする -->
   <div class="segbar" id="c_kind">
-    <button data-v="in" aria-pressed="true">入金（売上他）</button>
-    <button data-v="out">出金（仕入・諸経費他）</button>
+    <button data-v="in" aria-pressed="true">入金<small class="seg2">（売上他）</small></button>
+    <button data-v="out">出金<small class="seg2">（仕入・諸経費他）</small></button>
     <!-- ★★★ レジ内その他（保留）。締めで出たぶんをここに溜めて、ここから銀行へ（708 から移植）。
          出すのは M_設定「レジ締めで移す先」が【レジ内その他】のときだけ（horyuUse_） -->
     <button data-v="ho" id="c_kindHo" hidden>レジ内その他(保留)</button>
@@ -2190,8 +2192,8 @@ button.goled:active{background:#F3F1EA}
 
   <div id="o_paneIn">
   <div class="segbar" id="o_kind">
-    <button data-v="in" aria-pressed="true">入金（銀行から・事業主より）</button>
-    <button data-v="out" aria-pressed="true">出金（仕入・諸経費・預入）</button>
+    <button data-v="in" aria-pressed="true">入金<small class="seg2">（銀行から・事業主より）</small></button>
+    <button data-v="out" aria-pressed="true">出金<small class="seg2">（仕入・諸経費・預入）</small></button>
   </div>
 
   <!-- ★ レジ外の入力。レジ内とそっくり同じ形（2026-09-07） -->
@@ -3703,7 +3705,7 @@ var DEMO = {};   /* デモは公開ページでは落としています */
 var S = { unit:'ALL', view:'board', pane:'in', boot:null, dash:null, geo:null,
           closing:null, photos:{}, plan:null };
 var $ = function(id){ return document.getElementById(id); };
-var yen = function(n){ return (n<0?'-':'') + '¥' + Math.abs(Math.round(n)).toLocaleString('ja-JP'); };
+var yen = function(n){ return (n<0?'-':'') + Math.abs(Math.round(n)).toLocaleString('ja-JP'); };
 var man = function(n){
   var a=Math.abs(n);
   if(a>=10000) return (n/10000).toFixed(a>=1000000?0:1).replace(/\.0$/,'')+'万';
@@ -5830,7 +5832,7 @@ function drawSlots(list){
     var tr=document.createElement('tr');
     tr.innerHTML='<td>'+s.name+' <span class="muted">'+pct(s.share)+'</span></td>'
       +'<td class="r">'+s.guests.toLocaleString('ja-JP')+'</td>'
-      +'<td class="r">'+(s.avg?yen(s.avg).replace('¥',''):'—')+'</td>'
+      +'<td class="r">'+(s.avg?yen(s.avg):'—')+'</td>'
       +'<td class="r">'+man(s.sales)+'</td>';
     tb.appendChild(tr);
   });
@@ -6086,7 +6088,7 @@ function buildDenoms(){
       +'<button type="button" data-a="-1" aria-label="減らす">−</button>'
       +'<input inputmode="numeric" value="0" aria-label="'+d+'円の枚数">'
       +'<button type="button" data-a="1" aria-label="増やす">＋</button></div>'
-      +'<div class="sub">¥0</div>';
+      +'<div class="sub">0</div>';
     var inp=row.querySelector('input');
     inp.addEventListener('input', calcJissa);
     [].forEach.call(row.querySelectorAll('button'),function(b){
@@ -6110,7 +6112,7 @@ function calcJissa(){
   [].forEach.call($('denoms').children,function(row){
     var d=Number(row.dataset.d), n=Number(row.querySelector('input').value)||0;
     var v=d*n; t+=v;
-    row.querySelector('.sub').textContent='¥'+v.toLocaleString('ja-JP');
+    row.querySelector('.sub').textContent=v.toLocaleString('ja-JP');
     row.classList.toggle('hit', n>0);
   });
   $('c_jissa').textContent=t.toLocaleString('ja-JP');
@@ -7278,7 +7280,7 @@ function buildMenuInputs(vals){
   card.style.display='block'; box.innerHTML='';
   list.forEach(function(m){
     var row=document.createElement('div'); row.className='sw';
-    row.innerHTML='<div class="nm">'+m.name+'<em>'+m.cat+' ¥'+m.price.toLocaleString('ja-JP')+'</em></div>';
+    row.innerHTML='<div class="nm">'+m.name+'<em>'+m.cat+' '+m.price.toLocaleString('ja-JP')+'</em></div>';
     var inp=document.createElement('input');
     inp.inputMode='numeric'; inp.value=vals[m.id]||''; inp.placeholder='0';
     inp.style.width='78px'; inp.style.textAlign='right'; inp.dataset.mid=m.id;
@@ -9195,7 +9197,7 @@ function viewKinds(el){
         (multi
           ? rows.map(function(r,i){ return '<div class="kbpvr"><b>'+
               esc(r.lbl||('その'+(i+1)))+'</b><span>0</span></div>'; }).join('')+
-            '<div class="kbpvr tot"><b>合計</b><span>¥0</span></div>'
+            '<div class="kbpvr tot"><b>合計</b><span>0</span></div>'
           : '<div class="kbpvr"><b>金額</b><span>0</span></div>')+
         '<div class="kbpvn">日付／領収書の写真／摘要「'+esc(d.label)+'」</div>'+
       '</div></div>'+
