@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790638336';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790641603';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -4256,7 +4256,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20260929;
+var SERVER_WANT = 20260930;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -6501,13 +6501,15 @@ function horyuHtml(k){
     + '</div>'
     + '<div class="cbox ho hodep">'
     +   '<div class="hohead">銀行への預け入れ</div>'
-    +   '<div class="amtline"><label class="lbl">金額</label>'
-    +     '<input id="'+id('amt')+'" class="num cash-amt" inputmode="numeric" value="'+(P.amount||'')+'" placeholder="0">'
-    +     '<span class="unit">円</span></div>'
+    /* ★★ 金額と日付を【横一列】に（2026-09-29・お重さん。取引の入力と同じ形） */
+    +   '<div class="amtdate">'
+    +     '<label class="ad-a"><span class="lbl">金額（円）</span>'
+    +       '<input id="'+id('amt')+'" class="num cash-amt" inputmode="numeric" value="'+(P.amount||'')+'" placeholder="0"></label>'
+    +     '<label class="ad-d"><span class="lbl">日付</span>'
+    +       '<input type="date" id="'+id('date')+'" class="cash-date" value="'+(P.date||'')+'"></label>'
+    +   '</div>'
     +   (bal>0 ? '<div class="hoall"><button class="btn ghost tap sm" id="'+id('all')+'" data-all="'+bal+'">'
               + '保留額をぜんぶ入れる（'+yen(bal)+'）</button></div>' : '')
-    +   '<div class="amtline"><label class="lbl">日付</label>'
-    +     '<input type="date" id="'+id('date')+'" class="cash-date" value="'+(P.date||'')+'"></div>'
     +   '<div class="cash-f"><label class="lbl">口座</label>'
     +     '<select id="'+id('bank')+'" style="width:100%"></select></div>'
     +   '<div class="hobtn"><button class="bigbtn tap" id="'+id('ok')+'">預け入れを記録する</button>'
@@ -8455,6 +8457,10 @@ function kindRuleList(){
     if(p==='出さない') return false;
     /* ★ 取引の入力の中で開いたときは、いまの入金／出金のものだけ */
     if(S.kindInline && S.kindDir && x.dir && x.dir!==S.kindDir) return false;
+    /* ★★★ 取引の入力の中では【その場所のものだけ】（2026-09-29・お重さん）。
+         レジ内で開いたらレジ内の種類、レジ外で開いたらレジ外の種類。もう片方のものは出さない。
+         ★ このアプリの初期の種類（場所が空）は、レジ内とレジ外の両方の入力で使うので出す */
+    if(S.kindInline) return p===sc || p==='';
     return !p || p===sc;
   });
 }
@@ -8467,6 +8473,24 @@ var KIND_CASH={ 'レジ':{code:'1110',name:'レジ内現金',sub:'',subName:''},
                 '手許':{code:'1115',name:'手許現金',sub:'',subName:''} };
 /* サーバの BANK_ACCT と同じ（普通預金） */
 var BANK_ACCT='1120';
+/* ★★★ カード・QR の売上の相手は 未収入金。サーバの URIKAKE_SIDE と同じ（2026-09-29） */
+var KIND_URIKAKE={code:'1150',name:'未収入金',sub:'',subName:''};
+/** 取引の種類が売上なら支払方法（現金／カード／QR）。サーバの saleMethodOf_ と同じ決め方 */
+function kindSaleMethod_(d){
+  if(!d || d.dir!=='in') return '';
+  var r0=(kindRows(d)[0])||{}, ac=String(r0.acct||d.acct||''), nm=String(d.label||'');
+  if(!(/^41/.test(ac) || /売上/.test(nm))) return '';
+  var sub=String(r0.sub||d.sub||''); if(/^\d$/.test(sub)) sub='0'+sub;
+  if(sub==='01' || /クレジット|カード/.test(nm)) return 'カード';
+  if(sub==='02' || /電子マネー|ＱＲ|QR|PayPay|ペイペイ/i.test(nm)) return 'QR';
+  return '現金';
+}
+/** その取引の種類の相手（現金の側）。カード・QR の売上は未収入金 */
+function kindCash_(d){
+  var m=kindSaleMethod_(d);
+  if(m==='カード' || m==='QR') return KIND_URIKAKE;
+  return KIND_CASH[kindPlaceNow()] || DENPYO.cash();
+}
 var KIND_PLACE=[{k:'レジ',label:'レジ内現金'},{k:'手許',label:'レジ外現金'},
                 {k:'',label:'どちらにも'},{k:'出さない',label:'出さない（使わない）'}];
 
@@ -8860,15 +8884,17 @@ function viewKinds(el){
   if(!S.kindSel || !kindEff(S.kindSel) || !inList(S.kindSel)) S.kindSel=(L[0]||{}).k||'';
   var d=kindEff(S.kindSel);
   /* ★ 仕訳のルールの相手は、いま作っている場所の現金（レジ内／レジ外） */
-  var J=KIND_CASH[kindPlaceNow()] || DENPYO.cash(), No=DENPYO.no||{slip:999, voucher:'999'};
+  var J=kindCash_(d), No=DENPYO.no||{slip:999, voucher:'999'};
 
   var pl=kindPlaceNow(), hidden=kindHiddenList();
   var listHtml='<div class="kbcard"><h3>取引の種類</h3>'+
     /* ★★★ レジ内の取引の種類か、レジ外の取引の種類かを【分けて作る】（2026-09-28・お重さん） */
+    /* ★ 取引の入力の中で開いたときは、場所はその入力のもの。切り替えを出さない（2026-09-29） */
+    (S.kindInline ? '' :
     '<div class="segbar kbplace">'+
       '<button class="tap" data-kbpl="レジ" aria-pressed="'+(pl==='レジ')+'">レジ内現金</button>'+
       '<button class="tap" data-kbpl="手許" aria-pressed="'+(pl==='手許')+'">レジ外現金</button>'+
-    '</div>'+
+    '</div>')+
     /* ★★ 群が空でも枠は出す。出さないと、そこへドラッグで落とせない */
     KIND_GRP.map(function(g){
       var ks=L.filter(function(x){ return (x.grp||'often')===g.k; });
@@ -8883,7 +8909,6 @@ function viewKinds(el){
             '<span class="kbhand" aria-hidden="true">⠿</span>'+
             '<span class="kbp '+x.dir+'">'+(x.dir==='in'?'入':'出')+'</span>'+
             '<b>'+esc(x.label)+'</b>'+
-            (x.auto?'<span class="kbp auto">自動</span>':'')+
             (rs.length>1?'<span class="kbp multi">'+rs.length+'行</span>':'')+
             (bad?'<span class="kbp ng">科目まだ</span>':'')+'</div>';
         }).join('')+
@@ -8980,7 +9005,7 @@ function viewKinds(el){
     edHtml='<div class="kbcard kbed">'+
       '<h2>'+esc(d.label)+'</h2>'+
       /* ★ 取引の種類を消す（2026-09-29）。帳面から自動で出る種類は消せない */
-      (d.auto ? '' : '<button class="btn ghost tap sm kbdelk" id="kbdelk">この取引の種類を消す</button>')+
+      '<button class="btn ghost tap sm kbdelk" id="kbdelk">この取引の種類を消す</button>'+
       '<p class="kbsub">この名前が、顧問先の押すボタンであり、元帳の摘要であり、伝票の見出しになります。</p>'+
       '<div class="kbset"><h4>1. 名前と置き場所</h4><div class="kbrow">'+
         '<div class="kbf wide"><span>名前（＝摘要）</span>'+
@@ -8998,8 +9023,6 @@ function viewKinds(el){
             (String(d.place||'')===q.k?' selected':'')+'>'+esc(q.label)+'</option>'; }).join('')+
         '</select></div>'+
       '</div>'+
-      (d.auto?'<p class="kbhint">この取引の種類は<b>アプリが自分で立てる</b>ものです。'+
-              '顧問先の辞書には出ませんが、仕訳は起こすので科目を決めておきます。</p>':'')+
       '</div>'+
       '<div class="kbset"><h4>2. 仕訳のルール '+
         '<em>金額と日付が空の伝票。そこは顧問先が入れます</em></h4>'+
@@ -9636,7 +9659,7 @@ function kindsInlineClose(){
 function mkKindBtn_(k){
   if(!isOwnerUI()) return '';
   return '<button class="mkkind tap" data-mkkind="'+k+'">'
-       + '＋ 取引の種類をつくる・直す（事務所）</button>';
+       + '＋ 取引の種類をつくる・直す（会計事務所）</button>';
 }
 var DZ_MEMO={};
 function denpyoLoad(){
