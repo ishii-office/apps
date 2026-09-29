@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790675495';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790675885';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -782,6 +782,8 @@ input#co_amt.bigamt{font-size:40px;padding:16px 15px;font-weight:700}
   border:1px solid var(--line);background:var(--surface);color:var(--paper);font:inherit;font-weight:800}
 .hwx .m{font-size:20px;line-height:1}.hwx .p{font-size:13px;color:var(--paper-dim)}.hwx .t{font-size:14px}
 .hwx + .gear{margin-left:0}
+.hwx[hidden],.hwxpanel[hidden]{display:none!important}
+.hwx.err{color:var(--paper-dim);font-size:12px;font-weight:700}
 .hwx .t i{font-style:normal;font-family:'Oswald',sans-serif;margin-left:3px}
 .hwx .t .hi{color:var(--red)}.hwx .t .lo{color:var(--accent-b)}
 @media (max-width:420px){ .hd-row{gap:5px} .mark{padding:5px 7px;font-size:15px} .mark em{display:none} .hwx{padding:3px 6px} .hwx .m{font-size:18px} .hwx .p,.hwx .t{font-size:12px} }
@@ -4871,7 +4873,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261007;
+var SERVER_WANT = 20261008;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -7099,7 +7101,14 @@ function hwxDraw_(){
   var w=HWX; var days=(w&&w.days)||[];
   var t=(S.boot&&S.boot.today)||ymdOf(new Date());
   var d0=days.filter(function(x){ return x.date>=t; })[0];
-  if(!d0){ b.hidden=true; return; }
+  /* ★ 取れなかったときは、空の丸を出さずに「天気 —」と出し、押すと理由が分かる（2026-09-29） */
+  if(!d0){
+    if(!HWX_ERR){ b.hidden=true; return; }
+    b.hidden=false; b.classList.add('err'); b.innerHTML='天気 —';
+    if(pn && !pn.hidden) hwxPanel_();
+    return;
+  }
+  b.classList.remove('err');
   b.hidden=false;
   b.innerHTML='<span class="m">'+(d0.mark||'')+'</span>'
     + '<span class="p">'+((d0.pop!==''&&d0.pop!=null)?d0.pop+'%':'')+'</span>'
@@ -7111,6 +7120,13 @@ function hwxPanel_(){
   var pn=$('hdWxPanel'); if(!pn) return;
   var w=HWX||{}, t=(S.boot&&S.boot.today)||ymdOf(new Date());
   var days=(w.days||[]).filter(function(x){ return x.date>=t; });
+  if(!days.length){
+    pn.innerHTML='<div class="hwxh"><b>大津の天気</b><span>気象庁</span></div>'
+      + '<p class="fcw">いま天気が取れていません。</p><p class="fcw">'+esc(HWX_ERR||'')+'</p>'
+      + '<p class="fcw">シートのメニュー［天気をいま取ってみる］で、取れるか・なぜ取れないかをその場で確かめられます。'
+      + '「権限」「許可」と出るときは、GAS エディタで fetchWeatherToday を1回実行して［許可］を押してください。</p>';
+    return;
+  }
   pn.innerHTML='<div class="hwxh"><b>'+esc(w.place||'大津')+'の天気</b><span>'+esc(w.src||'気象庁')+'</span></div>'
     + '<div class="hwxl">'+days.map(function(x,i){
         var dt=new Date(x.date+'T00:00:00');
@@ -7125,7 +7141,8 @@ function hwxPanel_(){
 function loadHeadWx_(){
   try{ var c=JSON.parse(localStorage.getItem('bm_wx_v1')||'null'); if(c && !HWX){ HWX=c; hwxDraw_(); } }catch(e){}
   call('getWeatherNow',[]).then(function(w){
-    if(!w || !w.ok || !(w.days||[]).length) return;
+    if(!w || !w.ok || !(w.days||[]).length){ HWX_ERR=(w&&w.msg)||'天気が取れませんでした'; if(!HWX) hwxDraw_(); return; }
+    HWX_ERR='';
     HWX=w; hwxDraw_();
     try{ localStorage.setItem('bm_wx_v1', JSON.stringify(w)); }catch(e){}
     /* ★ 今日の天気を記録する（1日1回だけ。毎朝のトリガーが動いていなくても、日報とカレンダーに天気が入る） */
@@ -7136,8 +7153,9 @@ function loadHeadWx_(){
         call('fetchWeatherToday',[]).catch(function(){ try{ localStorage.removeItem('bm_wx_rec'); }catch(e){} });
       }
     }catch(e){}
-  }).catch(function(){});
+  }).catch(function(e){ HWX_ERR=String((e&&e.message)||e||'つながりませんでした'); if(!HWX) hwxDraw_(); });
 }
+var HWX_ERR='';
 (function(){
   var b=$('hdWx'), pn=$('hdWxPanel');
   if(b) b.onclick=function(){ if(!pn) return; pn.hidden=!pn.hidden; if(!pn.hidden) hwxPanel_(); };
