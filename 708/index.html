@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790675885';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790676320';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -4873,7 +4873,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261008;
+var SERVER_WANT = 20261009;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -7141,7 +7141,8 @@ function hwxPanel_(){
 function loadHeadWx_(){
   try{ var c=JSON.parse(localStorage.getItem('bm_wx_v1')||'null'); if(c && !HWX){ HWX=c; hwxDraw_(); } }catch(e){}
   call('getWeatherNow',[]).then(function(w){
-    if(!w || !w.ok || !(w.days||[]).length){ HWX_ERR=(w&&w.msg)||'天気が取れませんでした'; if(!HWX) hwxDraw_(); return; }
+    /* ★★★ サーバ（GAS）が気象庁から取れないとき・記録から出したときは、端末から直に取りに行く（2026-09-29） */
+    if(!w || !w.ok || !(w.days||[]).length || w.stale){ wxDirect_((w&&w.msg)||'天気が取れませんでした', w); return; }
     HWX_ERR='';
     HWX=w; hwxDraw_();
     try{ localStorage.setItem('bm_wx_v1', JSON.stringify(w)); }catch(e){}
@@ -7153,9 +7154,82 @@ function loadHeadWx_(){
         call('fetchWeatherToday',[]).catch(function(){ try{ localStorage.removeItem('bm_wx_rec'); }catch(e){} });
       }
     }catch(e){}
-  }).catch(function(e){ HWX_ERR=String((e&&e.message)||e||'つながりませんでした'); if(!HWX) hwxDraw_(); });
+  }).catch(function(e){ wxDirect_(String((e&&e.message)||e||'つながりませんでした'), null); });
 }
 var HWX_ERR='';
+/* ==================================================================
+   ★★★ 天気は端末からも取る（2026-09-29・お重さん「自動でとれるようにして」）
+     気象庁の予報（www.jma.go.jp/bosai）は、ブラウザから直に読める。
+     GAS から取れないとき（権限の承認がまだ・混雑など）でも、アプリを開くだけで
+     ① 帯に今日の天気が出る ② 取った7日ぶんをサーバへ渡して T_天気 に溜める（3時間に1回まで）
+     読み方は Code.gs の jmaDays_ と同じ（wxJmaDays_）。片方だけ直さない
+   ================================================================== */
+var WX_PREF='250000', WX_AREA='250010';
+function wxKind_(t){
+  t=String(t||''); if(!t) return '';
+  if(/雪/.test(t)) return '雪'; if(/雨/.test(t)) return '雨';
+  var ih=t.search(/晴/), ic=t.search(/くもり|曇/);
+  if(ih>=0 && (ic<0 || ih<ic)) return '晴'; if(ic>=0) return '曇'; return '';
+}
+function wxJmaDays_(data, area){
+  var by={}, name='', MK={'晴':'☀','曇':'☁','雨':'☂','雪':'❄'};
+  var day=function(d){ return by[d]||(by[d]={date:d,kind:'',text:'',pop:'',tmax:'',tmin:''}); };
+  var s0=(data&&data[0]&&data[0].timeSeries)||[];
+  ((s0[0]&&s0[0].areas)||[]).forEach(function(a){
+    if(String(a.area&&a.area.code)!==String(area)) return;
+    name=String((a.area&&a.area.name)||'');
+    (s0[0].timeDefines||[]).forEach(function(t,i){ var D=day(String(t).slice(0,10));
+      D.text=String((a.weathers||[])[i]||'').replace(/\s+/g,' '); D.kind=wxKind_(D.text); });
+  });
+  ((s0[1]&&s0[1].areas)||[]).forEach(function(a){
+    if(String(a.area&&a.area.code)!==String(area)) return;
+    (s0[1].timeDefines||[]).forEach(function(t,i){ var raw=(a.pops||[])[i], v=Number(raw); if(raw===''||raw==null||isNaN(v)) return;
+      var D=day(String(t).slice(0,10)); D.pop=(D.pop===''?v:Math.max(D.pop,v)); });
+  });
+  ((s0[2]&&s0[2].areas)||[]).slice(0,1).forEach(function(a){
+    (s0[2].timeDefines||[]).forEach(function(t,i){ var v=Number((a.temps||[])[i]); if(isNaN(v)||(a.temps||[])[i]==='') return;
+      var D=day(String(t).slice(0,10)); D.tmin=(D.tmin===''?v:Math.min(D.tmin,v)); D.tmax=(D.tmax===''?v:Math.max(D.tmax,v)); });
+  });
+  var s1=(data&&data[1]&&data[1].timeSeries)||[];
+  ((s1[0]&&s1[0].areas)||[]).slice(0,1).forEach(function(a){
+    (s1[0].timeDefines||[]).forEach(function(t,i){ var D=day(String(t).slice(0,10)), code=Number((a.weatherCodes||[])[i]);
+      if(!D.kind && code) D.kind = code>=400?'雪':(code>=300?'雨':(code>=200?'曇':'晴'));
+      var v=(a.pops||[])[i]; if(D.pop===''&&v!==''&&v!=null&&!isNaN(Number(v))) D.pop=Number(v); });
+  });
+  ((s1[1]&&s1[1].areas)||[]).slice(0,1).forEach(function(a){
+    (s1[1].timeDefines||[]).forEach(function(t,i){ var D=day(String(t).slice(0,10)), lo=(a.tempsMin||[])[i], hi=(a.tempsMax||[])[i];
+      if(D.tmin===''&&lo!==''&&lo!=null) D.tmin=Number(lo); if(D.tmax===''&&hi!==''&&hi!=null) D.tmax=Number(hi); });
+  });
+  var days=Object.keys(by).sort().map(function(d){ var D=by[d]; D.mark=MK[D.kind]||''; return D; }).filter(function(D){ return D.kind; });
+  return { name:name, days:days };
+}
+function wxDirect_(why, srv){
+  if(typeof fetch!=='function'){ HWX_ERR=why; if(srv&&srv.ok&&(srv.days||[]).length){ HWX=srv; } hwxDraw_(); return; }
+  fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/'+WX_PREF+'.json',{cache:'no-store'})
+    .then(function(r){ if(!r.ok) throw new Error('気象庁が '+r.status+' を返しました'); return r.json(); })
+    .then(function(data){
+      var j=wxJmaDays_(data, WX_AREA), t=(S.boot&&S.boot.today)||ymdOf(new Date());
+      var days=j.days.filter(function(d){ return d.date>=t; }).slice(0,7);
+      if(!days.length) throw new Error('気象庁の返事に今日から先の天気がありませんでした');
+      HWX={ok:true, place:'大津（滋賀県'+(j.name||'南部')+'）', src:'気象庁', today:t, days:days, via:'端末'};
+      HWX_ERR=''; hwxDraw_();
+      try{ localStorage.setItem('bm_wx_v1', JSON.stringify(HWX)); }catch(e){}
+      /* ★ 取った7日ぶんをサーバへ渡して溜める（経営者・管理者。3時間に1回まで） */
+      try{
+        var now=Date.now(), last=Number(localStorage.getItem('bm_wx_push')||0);
+        if(now-last > 3*3600*1000 && (myRole()==='経営者'||myRole()==='管理者')){
+          localStorage.setItem('bm_wx_push', String(now));
+          call('saveWeatherDays',[{days:days}]).catch(function(){ try{ localStorage.removeItem('bm_wx_push'); }catch(e){} });
+        }
+      }catch(e){}
+    })
+    .catch(function(e){
+      /* 端末からも取れないときは、サーバの記録（あれば）か理由を出す */
+      if(srv && srv.ok && (srv.days||[]).length){ HWX=srv; HWX_ERR=''; }
+      else HWX_ERR=why+'／端末から：'+String((e&&e.message)||e);
+      hwxDraw_();
+    });
+}
 (function(){
   var b=$('hdWx'), pn=$('hdWxPanel');
   if(b) b.onclick=function(){ if(!pn) return; pn.hidden=!pn.hidden; if(!pn.hidden) hwxPanel_(); };
