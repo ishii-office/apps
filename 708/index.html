@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790728342';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790733410';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -4876,7 +4876,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261010;
+var SERVER_WANT = 20261011;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -7260,8 +7260,12 @@ function wxJmaDays_(data, area){
       var D=day(String(t).slice(0,10)); D.pop=(D.pop===''?v:Math.max(D.pop,v)); });
   });
   ((s0[2]&&s0[2].areas)||[]).slice(0,1).forEach(function(a){
-    (s0[2].timeDefines||[]).forEach(function(t,i){ var v=Number((a.temps||[])[i]); if(isNaN(v)||(a.temps||[])[i]==='') return;
-      var D=day(String(t).slice(0,10)); D.tmin=(D.tmin===''?v:Math.min(D.tmin,v)); D.tmax=(D.tmax===''?v:Math.max(D.tmax,v)); });
+    /* 00時の枠＝最低、09時の枠＝最高。今日の最低の枠に最高が入っていたら捨てる（Code.gs の jmaDays_ と同じ） */
+    var hi={}, lo={};
+    (s0[2].timeDefines||[]).forEach(function(t,i){ var raw=(a.temps||[])[i], v=Number(raw); if(raw===''||raw==null||isNaN(v)) return;
+      var d=String(t).slice(0,10); if(String(t).slice(11,13)==='00') lo[d]=v; else hi[d]=v; });
+    Object.keys(hi).forEach(function(d){ day(d).tmax=hi[d]; });
+    Object.keys(lo).forEach(function(d){ if(hi[d]===undefined||hi[d]!==lo[d]) day(d).tmin=lo[d]; });
   });
   var s1=(data&&data[1]&&data[1].timeSeries)||[];
   ((s1[0]&&s1[0].areas)||[]).slice(0,1).forEach(function(a){
