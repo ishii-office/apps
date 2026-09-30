@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790727401';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790728342';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -332,6 +332,7 @@ h2:first-child{margin-top:0}
 /* ★ 日ごとの売上カレンダー（2026-09-15）。紙のカレンダーの代わり */
 .cal-head{display:flex;align-items:center;gap:10px;margin:2px 0 8px}
 .cal-ym{font-size:17px;font-weight:600;flex:1;text-align:center}
+select.cal-ym{text-align-last:center;padding:6px 8px;border:1.5px solid var(--line);border-radius:var(--r2);background:var(--surface);color:var(--paper);font-family:'Oswald',sans-serif}
 .cal-nav{width:34px;height:34px;flex:none;border:1.5px solid var(--line);
   background:var(--surface);border-radius:999px;font-size:18px;line-height:1;
   color:var(--paper);cursor:pointer}
@@ -2081,7 +2082,8 @@ button.goled:active{background:#F3F1EA}
     <div class="eyebrow">日ごとの売上と予報 <span class="flash">速報値</span><em class="fcplace" id="fcPlace"></em></div>
     <div class="cal-head">
       <button type="button" class="cal-nav" id="calPrev" aria-label="前の月">‹</button>
-      <div class="cal-ym num" id="calYm">—</div>
+      <!-- ★★★ いつの月でも、すぐ開ける（2026-09-30・お重さん「いつでも過去のいついつを見れるように」） -->
+      <select class="cal-ym num" id="calYm" aria-label="何月のカレンダーか"></select>
       <button type="button" class="cal-nav" id="calNext" aria-label="次の月">›</button>
     </div>
     <div class="cal" id="cal"></div>
@@ -6559,7 +6561,7 @@ function cssv(name){
      ・日を押すと、その日のレジ内現金（締め）へ入る */
 function drawCal(cal, ym){
   var box=$('cal'); if(!box) return;
-  var ymEl=$('calYm'); if(ymEl) ymEl.textContent = ym ? (ym.slice(0,4)+'年 '+Number(ym.slice(5,7))+'月') : '—';
+  calYmFill_(ym);
   box.innerHTML='';
   if(!cal || !cal.length){ box.innerHTML='<p class="muted" style="grid-column:1/-1">まだ記録がありません</p>';
     $('sparkL').textContent='—'; $('sparkR').textContent='—'; return; }
@@ -6734,6 +6736,18 @@ function openDayFromCal(date){
   showView('cashin', null);
 }
 
+/* ★★★ カレンダーの月をプルダウンで選ぶ（2026-09-30）。過去の売上台帳の最初の月（2024年8月）から今月まで */
+var CAL_FIRST_YM='2024-08';
+function calYmFill_(ym){
+  var el=$('calYm'); if(!el || el.tagName!=='SELECT') return;
+  var now=ymdOf(new Date()).slice(0,7), list=[], m=now;
+  var first=(S.fc && S.fc.histFrom) ? String(S.fc.histFrom).slice(0,7) : CAL_FIRST_YM;
+  if(first>CAL_FIRST_YM) first=CAL_FIRST_YM;
+  for(var i=0;i<60 && m>=first;i++){ list.push(m); m=ymShift(m,-1); }
+  if(ym && list.indexOf(ym)<0) list.unshift(ym);
+  el.innerHTML=list.map(function(x){ return '<option value="'+x+'"'+(x===ym?' selected':'')+'>'+x.slice(0,4)+'年 '+Number(x.slice(5,7))+'月</option>'; }).join('');
+  el.onchange=function(){ S.calYm=this.value; refresh(); };
+}
 /* カレンダーの月送り。押した月を覚えて、経営タブを読み直す */
 function calMove(n){
   var ym = S.calYm || ymdOf(new Date()).slice(0,7);
