@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790740238';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790744032';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -367,12 +367,17 @@ select.cal-ym{text-align-last:center;padding:6px 8px;border:1.5px solid var(--li
 .cal .cell .hl{font-size:9px;font-weight:800;color:var(--red);line-height:1.1;white-space:nowrap}
 /* ★★★ カレンダーの右下（2026-09-30）… その月の予測・実績・期首からの累計・昨対。空いたマスに入れる */
 .cal .calsum{border:1px solid var(--line2);border-radius:7px;background:var(--ink2);padding:5px 7px;
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:2px 10px;align-content:center;min-height:52px}
-.cal .calsum .cs{display:flex;align-items:baseline;justify-content:space-between;gap:6px;white-space:nowrap;line-height:1.25}
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0 12px;align-content:center;min-height:52px}
+.cal .calsum .cs{display:block;line-height:1.2;padding:2px 0;border-bottom:1px solid var(--line2)}
+.cal .calsum .cs:last-of-type{border-bottom:0}
+.cal .calsum .cs em{display:block}
+.cal .calsum .cs>span{display:block;text-align:right;white-space:nowrap}
 .cal .calsum .cs em{font-style:normal;font-size:11px;font-weight:700;color:var(--sub)}
 .cal .calsum .cs b{font-family:'Oswald',sans-serif;font-weight:600;font-size:15px;color:var(--paper);font-variant-numeric:tabular-nums}
 .cal .calsum .cs i{font-style:normal;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;margin-left:3px}
 .cal .calsum .up{color:var(--green)} .cal .calsum .dn{color:var(--red)}
+.cal .cell.lastrow{align-self:start}
+.cal .calsum .cs em small{font-size:10px;font-weight:600;margin-left:2px}
 .cal .calsum .csn{grid-column:1/-1;font-size:10.5px;color:var(--paper-dim);line-height:1.3;white-space:normal}
 .fcal .fcplace{font-style:normal;font-size:12px;color:var(--paper-dim);margin-left:6px}
 .fclegend .fp{color:var(--accent-b);font-family:'Oswald',sans-serif}
@@ -4885,7 +4890,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261012;
+var SERVER_WANT = 20261013;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -5789,7 +5794,28 @@ function refresh(){
   loadYosan();
   loadForecast_();
   pastWxFill_();
+  calMonthLoad_(S.calYm||ymdOf(new Date()).slice(0,7));
+  loadDash_();
+  if(S.unit==='ALL'){
+    $('unitPlCard').style.display='block';
+    call('getUnitPl',[]).then(drawUnitPl).catch(function(e){ console.error(e); });
+  } else {
+    $('unitPlCard').style.display='none';
+  }
+}
+/* 経営タブの数字（カレンダーは calMonthLoad_ が描く）。前に読んだものを先に出して、裏で差し替える */
+var DASH_MEMO={};
+function loadDash_(){
+  var key=S.unit+'|'+(S.calYm||'');
+  if(DASH_MEMO[key]) try{ drawDash_(DASH_MEMO[key]); }catch(e){}
   call('getDashboard',[S.unit, S.calYm||null]).then(function(d){
+    DASH_MEMO[key]=d;
+    if(S.unit+'|'+(S.calYm||'')!==key) return;
+    drawDash_(d);
+  }).catch(function(e){ console.error(e); if(!DASH_MEMO[key]) toast('集計できませんでした'); });
+}
+function drawDash_(d){
+  (function(){
     S.dash=d;
 
     /* ★ 帯の右に当月売上。開いていちばん最初に見るのはこれ（2026-09-09） */
@@ -5820,7 +5846,6 @@ function refresh(){
     /* ★ 3つ目 … 店舗ごとの当月売上（2026-09-10） */
     drawUnitSales(d.unitSales);
 
-    drawCal(d.calendar, d.ym || S.calYm || ymdOf(new Date()).slice(0,7));
     drawSlots(d.slotList);
     drawMenu(d.menuTop);
     drawDetail(d.detail);
@@ -5828,14 +5853,7 @@ function refresh(){
 
     /* ★ 締めていない日の印は出さない（2026-09-29・お重さん） */
     var bd=$('tabBadge'); if(bd) bd.style.display='none';
-  }).catch(function(e){ console.error(e); toast('集計できませんでした'); });
-
-  if(S.unit==='ALL'){
-    $('unitPlCard').style.display='block';
-    call('getUnitPl',[]).then(drawUnitPl).catch(function(e){ console.error(e); });
-  } else {
-    $('unitPlCard').style.display='none';
-  }
+  })();
 }
 
 /* ==================================================================
@@ -6607,61 +6625,94 @@ function drawCal(cal, ym){
   });
   S.calShown=ym;
   calFcOverlay_();
-  calSumLoad_(ym);
 
   var live=cal.filter(function(c){ return c.sales>0; });
   var sum=live.reduce(function(a,b){ return a+b.sales; },0);
   var top=live.slice().sort(function(a,b){ return b.sales-a.sales; })[0];
   $('sparkL').textContent = live.length ? '営業 '+live.length+'日　日平均 '+yen(Math.round(sum/live.length)) : '—';
   $('sparkR').textContent = top ? 'いちばん多い日 '+Number(top.date.slice(8,10))+'日 '+yen(top.sales) : '—';
-
-  loadWeatherStat(ym);
 }
 
 /* ★★★ カレンダーの右下（2026-09-30・お重さん）… その月の予測・実績・期首からの累計・昨対
      最後の週の空いたマスに入れる（空きが2マス以下なら、下に1段足す）。前に読んだものをまず出す */
-var CALSUM_MEMO={};
-function calSumLoad_(ym){
-  var key=S.unit+'|'+ym;
-  S.calSum=CALSUM_MEMO[key]||null; calSumPlace_();
-  call('getCalSummary',[{unit:S.unit, ym:ym}]).then(function(r){
+var CALM_MEMO={}, CALM_KEY='bm_calm_v1';
+try{ CALM_MEMO=JSON.parse(localStorage.getItem(CALM_KEY)||'{}')||{}; }catch(e){ CALM_MEMO={}; }
+function calMemoSave_(){
+  try{
+    var now=ymdOf(new Date()).slice(0,7), ks=Object.keys(CALM_MEMO).filter(function(k){ return k.split('|')[1]<now; })
+      .sort(function(a,b){ return (CALM_MEMO[b].t||0)-(CALM_MEMO[a].t||0); });
+    var keep={}; ks.slice(0,30).forEach(function(k){ keep[k]=CALM_MEMO[k]; });   /* 端末に残すのは過ぎた月だけ（今月は日々変わる） */
+    localStorage.setItem(CALM_KEY, JSON.stringify(keep));
+  }catch(e){}
+}
+function calMonthDraw_(r){
+  drawCal(r.calendar, r.ym);
+  S.calSum=r.sum||null; calSumPlace_();
+  drawWxStat_(r.wx);
+}
+/* ★★ カレンダーの月（2026-09-30・お重さん「切り替えが遅すぎる」）… 1往復だけ。前に見た月はその場で出し、裏で差し替える */
+function calMonthLoad_(ym, opt){
+  opt=opt||{};
+  var key=S.unit+'|'+ym, m=CALM_MEMO[key], now=Date.now();
+  if(!opt.bg && m && m.r){ calMonthDraw_(m.r); }
+  var past = ym < ymdOf(new Date()).slice(0,7);
+  if(m && m.r && past && now-(m.t||0) < 10*60*1000){ if(!opt.bg) calPrefetch_(ym); return; }   /* 過ぎた月は10分覚えておく */
+  call('getCalMonth',[{unit:S.unit, ym:ym}]).then(function(r){
     if(!r || !r.ok) return;
-    CALSUM_MEMO[key]=r;
-    if(S.calShown===ym && (S.unit+'|'+ym)===key){ S.calSum=r; calSumPlace_(); }
-  }).catch(function(){});
+    CALM_MEMO[key]={r:r, t:Date.now()}; if(past) calMemoSave_();
+    if(!opt.bg && S.view==='board' && (S.calYm||ymdOf(new Date()).slice(0,7))===ym && S.unit+'|'+ym===key) calMonthDraw_(r);
+    if(!opt.bg) calPrefetch_(ym);
+  }).catch(function(e){ console.error(e); if(!opt.bg && !(m&&m.r)) toast('カレンダーを読めませんでした'); });
+}
+/* 前の月を先に読んでおく（押したときにその場で出るように） */
+function calPrefetch_(ym){
+  var p=ymShift(ym,-1); if(p<CAL_FIRST_YM || CALM_MEMO[S.unit+'|'+p]) return;
+  setTimeout(function(){ calMonthLoad_(p,{bg:1}); }, 800);
 }
 function calSumPlace_(){
   var box=$('cal'); if(!box) return;
   [].forEach.call(box.querySelectorAll('.calsum'),function(x){ x.remove(); });
+  [].forEach.call(box.querySelectorAll('.cell.lastrow'),function(x){ x.classList.remove('lastrow'); x.style.height=''; });
   var r=S.calSum; if(!r || !r.ok || r.future || r.ym!==S.calShown) return;
-  var n=box.querySelectorAll('.cell').length, rem=(7-n%7)%7, span=rem>=3?rem:7;
-  var ratio=function(v){ return v==null ? '' : '<i class="'+(v>=100?'up':'dn')+'">'+v.toFixed(1)+'%</i>'; };
-  var vs=function(a,b){ return (a&&b) ? ratio(Math.round(a/b*1000)/10) : ''; };
+  var cells=box.querySelectorAll('.cell'), n=cells.length, rem=(7-n%7)%7, span=rem>=3?rem:7;
+  var M=Number(r.ym.slice(5,7))+'月', LY=(Number(r.ym.slice(0,4))-1)+'年'+M;
+  var d=Number(String(r.upto||'').slice(8,10));
+  var up=function(v){ return v>=100?'up':'dn'; };
+  var ratio=function(v,pre){ return v==null ? '' : '<i class="'+up(v)+'">'+(pre||'')+v.toFixed(1)+'%</i>'; };
+  var vs=function(a,b){ return (a>0&&b>0) ? ratio(Math.round(a/b*1000)/10,'予測比 ') : ''; };
   var row=function(k,v,x){ return '<div class="cs"><em>'+k+'</em><span><b>'+v+'</b>'+(x||'')+'</span></div>'; };
   var ymTxt=function(k){ return k.slice(0,4)+'年'+Number(k.slice(5,7))+'月'; };
   var fyM=Number(String(r.fy).slice(5,7));
-  var h = row(r.cur?'予測（月初）':'予測', r.pred!=null?man(r.pred):'—')
-    + row(r.cur?'実績（今日まで）':'実績', man(r.actual), (r.pred&&!r.cur)?vs(r.actual,r.pred):'')
-    + (r.cur && r.land!=null ? row('着地見込', man(r.land), r.pred?vs(r.land,r.pred):'') : '')
-    + row(r.cur?'昨対（同じ日まで）':'昨対', r.yoy!=null?'<span class="'+(r.yoy>=100?'up':'dn')+'">'+r.yoy.toFixed(1)+'%</span>':'—')
-    + row(fyM+'月からの累計', man(r.cum), r.cumYoy!=null?'<i class="'+(r.cumYoy>=100?'up':'dn')+'">昨対 '+r.cumYoy.toFixed(1)+'%</i>':'');
+  var h = row(M+'の予測<small>（'+M+'初めの時点）</small>', r.pred!=null?man(r.pred):'—')
+    + row(M+'の実績'+(r.cur?'<small>（'+M+d+'日まで）</small>':''), r.actual?man(r.actual):'0', (r.pred&&!r.cur)?vs(r.actual,r.pred):'')
+    + (r.cur && r.land!=null ? row(M+'の着地見込<small>（月末まで）</small>', man(r.land), r.pred?vs(r.land,r.pred):'') : '')
+    + row(M+'の昨対<small>（'+LY+(r.cur?'の'+d+'日まで':'')+'と比べて）</small>', r.yoy!=null?'<span class="'+up(r.yoy)+'">'+r.yoy.toFixed(1)+'%</span>':'—')
+    + row(fyM+'月からの売上高累計', man(r.cum), r.cumYoy!=null?ratio(r.cumYoy,'昨対 '):'');
   var notes=[];
-  if(r.pred && !r.cur) notes.push('実績の右の％は予測に対する割合');
   if((r.gaps||[]).length) notes.push(r.gaps.map(ymTxt).join('・')+'の売上がまだ入っていないので、累計・昨対は低く出ます');
   if((r.gapsLy||[]).length) notes.push('去年の '+r.gapsLy.map(ymTxt).join('・')+' の売上が無いので、累計の昨対は高く出ます');
   if(r.fcNote) notes.push(r.fcNote);
   if(notes.length) h+='<div class="csn">'+esc(notes.join('。'))+'</div>';
+  /* ★ 同じ段の日のマスは、ほかの日と同じ高さのまま（まとめの高さに引っぱられて縦に伸びないように。2026-09-30） */
+  var same=[];
+  if(span<7){ var start=n-(7-rem); for(var i=start;i<n;i++) same.push(cells[i]); }
+  var hh=0; same.forEach(function(c){ hh=Math.max(hh,c.offsetHeight); });
   var el=document.createElement('div');
   el.className='calsum'; el.style.gridColumn='span '+span; el.innerHTML=h;
   box.appendChild(el);
+  if(hh) same.forEach(function(c){ c.classList.add('lastrow'); c.style.height=hh+'px'; });
 }
 
 /* ★★ 天気ごとの平均売上（2026-09-15）
      「雨だから少なかった」を、勘ではなく数字で言えるようにする。
      日数が少ないうちは強く言わない（enough）。 */
 function loadWeatherStat(ym){
+  call('getWeatherStat',[S.unit, ym]).then(drawWxStat_).catch(function(){ if($('calWx')) $('calWx').innerHTML=''; });
+}
+function drawWxStat_(w){
   var box=$('calWx'); if(!box) return;
-  call('getWeatherStat',[S.unit, ym]).then(function(w){
+  if(!w || !w.rows){ box.innerHTML=''; return; }
+  (function(){
     if(!w.rows.length){
       box.innerHTML = '<p class="muted" style="margin:10px 0 0;font-size:14px">'
         + (PWX.busy ? '過去の天気を気象庁から取っています…' : '天気がまだ入っていません。')
@@ -6686,7 +6737,7 @@ function loadWeatherStat(ym){
       + '　出典：'+esc(w.source)
       + '</p>';
     box.innerHTML = h;
-  }).catch(function(){ box.innerHTML=''; });
+  })();
 }
 
 /* ==================================================================
@@ -6699,6 +6750,9 @@ var PWX={ busy:false, done:false, err:'' };
 function pastWxFill_(){
   if(PWX.busy || PWX.done) return;
   if(!(myRole()==='経営者'||myRole()==='管理者')) return;
+  /* ★ 過去の天気はアプリに入れてある（WX_HIST）。ここは きのうのぶんを埋めるだけなので、1日1回で足りる（2026-09-30） */
+  var today=ymdOf(new Date());
+  try{ if(localStorage.getItem('bm_pwx_day')===today){ PWX.done=true; return; } localStorage.setItem('bm_pwx_day', today); }catch(e){}
   PWX.busy=true; var loops=0, got=0;
   var step=function(){
     call('fillPastWeather',[]).then(function(r){
@@ -6708,7 +6762,7 @@ function pastWxFill_(){
       fin();
     }).catch(function(e){ PWX.err='過去の天気：'+String((e&&e.message)||e); fin(); });
   };
-  var fin=function(){ PWX.busy=false; PWX.done=true; if(got>0 && S.view==='board') refresh(); };
+  var fin=function(){ PWX.busy=false; PWX.done=true; if(got>0 && S.view==='board'){ CALM_MEMO={}; calMonthLoad_(S.calYm||ymdOf(new Date()).slice(0,7)); } };
   step();
 }
 /** 端末から読む（サーバが取れないとき）。ブラウザが許さないとき（CORS）は、理由を残してやめる */
@@ -6794,7 +6848,7 @@ function calYmFill_(ym){
   for(var i=0;i<60 && m>=first;i++){ list.push(m); m=ymShift(m,-1); }
   if(ym && list.indexOf(ym)<0) list.unshift(ym);
   el.innerHTML=list.map(function(x){ return '<option value="'+x+'"'+(x===ym?' selected':'')+'>'+x.slice(0,4)+'年 '+Number(x.slice(5,7))+'月</option>'; }).join('');
-  el.onchange=function(){ S.calYm=this.value; refresh(); };
+  el.onchange=function(){ S.calYm=this.value; calMonthLoad_(S.calYm); loadDash_(); };
 }
 /* カレンダーの月送り。押した月を覚えて、経営タブを読み直す */
 function calMove(n){
@@ -6802,7 +6856,7 @@ function calMove(n){
   var y=Number(ym.slice(0,4)), m=Number(ym.slice(5,7))+n;
   while(m<1){ m+=12; y--; } while(m>12){ m-=12; y++; }
   S.calYm = y+'-'+('0'+m).slice(-2);
-  refresh();
+  calMonthLoad_(S.calYm); loadDash_();
 }
 
 function drawSlots(list){
