@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790676320';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790727401';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -355,6 +355,7 @@ h2:first-child{margin-top:0}
 .cal .cell .d{white-space:nowrap;overflow:hidden}
 .cal .cell .d .pp{font-size:9px;font-weight:700;color:var(--accent-b);margin-left:1px;font-family:'Oswald',sans-serif}
 .cal .cell.wk{background:var(--ink2)}
+.cal .cell.fx .y{color:var(--paper)}
 .cal .cell.fc{border-style:dashed;border-color:var(--accent-b)}
 .cal .cell.nx{background:var(--ink2)}
 .cal .cell .fp{font-family:'Oswald',sans-serif;font-size:12.5px;line-height:1.1;margin-top:1px;color:var(--accent-b);font-weight:600;white-space:nowrap}
@@ -4873,7 +4874,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261009;
+var SERVER_WANT = 20261010;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -5776,6 +5777,7 @@ function refresh(){
   loadMokuhyou();
   loadYosan();
   loadForecast_();
+  pastWxFill_();
   call('getDashboard',[S.unit, S.calYm||null]).then(function(d){
     S.dash=d;
 
@@ -6587,6 +6589,7 @@ function drawCal(cal, ym){
       +(c.wx?'　'+c.wx+(c.pop!==''?'（降水確率 '+c.pop+'%）':''):'')
       +(c.sales>0&&!c.closed?'　※まだ締めていません':'');
     el.dataset.date=c.date;
+    if(c.fx) el.classList.add('fx');
     el.onclick=function(){ openDayFromCal(c.date); };
     calHold(el, c.date);
     box.appendChild(el);
@@ -6611,8 +6614,8 @@ function loadWeatherStat(ym){
   call('getWeatherStat',[S.unit, ym]).then(function(w){
     if(!w.rows.length){
       box.innerHTML = '<p class="muted" style="margin:10px 0 0;font-size:14px">'
-        + '天気がまだ入っていません。<b>カレンダーの日を長押しすると、その日の天気を入れられます。</b>'
-        + '（毎朝の自動取りは、シートのメニューから入にできます）</p>';
+        + (PWX.busy ? '過去の天気を気象庁から取っています…' : '天気がまだ入っていません。')
+        + (PWX.err ? '<br>'+esc(PWX.err) : '') + '<br><b>カレンダーの日を長押しすると、その日の天気を入れられます。</b></p>';
       return;
     }
     var h = '<div class="wxstat">';
@@ -6634,6 +6637,62 @@ function loadWeatherStat(ym){
       + '</p>';
     box.innerHTML = h;
   }).catch(function(){ box.innerHTML=''; });
+}
+
+/* ==================================================================
+   ★★★ 過去の天気を埋める（2026-09-29・お重さん「当然9/28以前の天気の実績も取ってきて」）
+     経営者・管理者が経営タブを開いたら、サーバ（fillPastWeather）を、埋まるまで何回か呼ぶ（1回に4か月）。
+     サーバが気象庁へ行けないときは、端末から気象庁「過去の気象データ」を読み、saveWeatherPast で入れる。
+     埋まったらカレンダーを描き直す。1回開くごとに1回だけ（重ねて走らせない）
+   ================================================================== */
+var PWX={ busy:false, done:false, err:'' };
+function pastWxFill_(){
+  if(PWX.busy || PWX.done) return;
+  if(!(myRole()==='経営者'||myRole()==='管理者')) return;
+  PWX.busy=true; var loops=0, got=0;
+  var step=function(){
+    call('fillPastWeather',[]).then(function(r){
+      r=r||{}; got+=Number(r.rows||0);
+      if(r.ok && r.remaining>0 && r.months>0 && ++loops<8) return step();
+      if(!r.ok && (r.need||[]).length) return pastWxDirect_(r, 0, function(){ fin(); });
+      fin();
+    }).catch(function(e){ PWX.err='過去の天気：'+String((e&&e.message)||e); fin(); });
+  };
+  var fin=function(){ PWX.busy=false; PWX.done=true; if(got>0 && S.view==='board') refresh(); };
+  step();
+}
+/** 端末から読む（サーバが取れないとき）。ブラウザが許さないとき（CORS）は、理由を残してやめる */
+function pastWxDirect_(r, i, done){
+  var list=(r.need||[]).slice(0,6), ym=list[i];
+  if(!ym || !r.url || typeof fetch!=='function'){ if(r.msg && !PWX.err) PWX.err='過去の天気：'+r.msg; done(); return; }
+  var y=Number(ym.slice(0,4)), m=Number(ym.slice(5,7));
+  fetch(r.url+'&year='+y+'&month='+m+'&day=&view=').then(function(x){ if(!x.ok) throw new Error('気象庁 '+x.status); return x.text(); })
+    .then(function(html){
+      var days=wxEtrnParseCli_(html, y, m).filter(function(d){ return d.kind; });
+      if(!days.length) throw new Error('読み取れませんでした');
+      return call('saveWeatherPast',[{ym:ym, days:days}]);
+    })
+    .then(function(){ pastWxDirect_(r, i+1, done); })
+    .catch(function(e){ PWX.err='過去の天気：サーバ（'+(r.msg||'')+'）・端末（'+String((e&&e.message)||e)+'）とも取れませんでした'; done(); });
+}
+/** Code.gs の wxEtrnParse_ と同じ読み方。片方だけ直さない */
+function wxEtrnParseCli_(html, y, m){
+  var out=[], p2=function(n){ return ('0'+n).slice(-2); };
+  var strip=function(x){ return String(x).replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').trim(); };
+  var val=function(x){ var t=strip(x).replace(/[\)\]#×\s]/g,''); if(t==='--') return 0; var n=parseFloat(t); return isNaN(n)?'':n; };
+  String(html||'').split(/<tr[^>]*class="mtx"[^>]*>/).slice(1).forEach(function(tr){
+    var cells=[], re=/<td[^>]*>([\s\S]*?)<\/td>/g, mm;
+    tr=tr.split('</tr>')[0];
+    while((mm=re.exec(tr))) cells.push(mm[1]);
+    if(cells.length<21) return;
+    var day=parseInt(strip(cells[0]),10); if(!(day>=1&&day<=31)) return;
+    var rain=val(cells[3]), snow=val(cells[17]), hiru=strip(cells[19]), yoru=strip(cells[20]), kind='';
+    if(rain!==''&&rain>=1) kind=(/雪/.test(hiru+yoru)||(snow!==''&&snow>0))?'雪':'雨';
+    else kind=wxKind_(hiru)||wxKind_(yoru)||'';
+    if(kind==='雨'&&rain!==''&&rain<1) kind=/晴/.test(hiru)?'晴':'曇';
+    out.push({date:y+'-'+p2(m)+'-'+p2(day), kind:kind, rain:rain, tmax:val(cells[7]), tmin:val(cells[8]), text:hiru+(yoru?'／夜 '+yoru:'')});
+  });
+  return out;
 }
 
 /* ★ 長押しで、その日の天気を入れる（2026-09-15）
