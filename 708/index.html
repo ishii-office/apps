@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790848411';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790850200';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -1297,6 +1297,9 @@ button.ghost.danger{border-color:var(--red);color:var(--red)}
   opacity:1;margin-left:2px;letter-spacing:-.03em}
 /* ★ レジ内その他（保留）は、現在残高のすぐ右。少し控えめに（2026-09-28） */
 .hbar .bl.ho{margin-left:0;opacity:.7}
+.hbar .tanto{flex:none;max-width:7.5em;font:inherit;font-size:13px;font-weight:700;padding:2px 4px;
+  border-radius:6px;border:1px solid var(--uc-line);background:var(--ink);color:var(--paper)}
+.hbar .tanto[hidden]{display:none!important}
 .srvold{position:sticky;top:0;z-index:200;margin:0 0 8px;padding:12px 14px;background:#7A1F1F;color:#fff;
   font-size:15px;line-height:1.55;border-radius:0 0 12px 12px}
 .srvold b{display:block;font-size:17px;margin-bottom:2px}
@@ -2220,6 +2223,8 @@ button.goled:active{background:#F3F1EA}
     <span class="bl">現在残高 <b class="num" id="c_nowV">—</b></span>
     <!-- ★★★ レジ内その他（保留・1111-99）。本社勘定が溜まって、銀行へ入れる前のお金（2026-09-28） -->
     <span class="bl ho">その他（保留） <b class="num" id="c_hoV">—</b></span>
+    <!-- ★★★ レジ締めの担当者（2026-10-01・お重さん）。設定「人と権限」でレジ内の入力担当にした人だけ並ぶ -->
+    <select class="tanto" id="c_tanto" aria-label="担当者" hidden></select>
   </div>
   <div id="shimeNotice"></div>
 
@@ -4205,6 +4210,8 @@ attachShot('c_photo','c_thumb','c_shotSt','closing');
    代表の手許と、プロジェクト担当者の手許は、別のお金として持つ。
    ================================================================== */
 function loadTemoto(){
+  /* ★★★ 従業員はレジ外を見ない（サーバも断る）。聞きに行かない（2026-10-01） */
+  if(myRole()==='従業員') return Promise.resolve(null);
   /* ★ 店・プロジェクトを選んでいるなら、その店のレジ外現金にする。
        レジの中と外は店ごとにある（2026-09-06） */
   return call('getTemoto',[S.unit==='ALL' ? '' : S.unit]).then(function(t){
@@ -4307,6 +4314,8 @@ function drawBookMonth(P){
 function loadLedgerOne(P){
   var box=$(P+'_body'); if(!box) return;
   var cfg=LEDGERS[P];
+  /* ★★★ 従業員はレジ内現金の帳面だけ（サーバも断る。2026-10-01） */
+  if(myRole()==='従業員' && cfg.scope!=='レジ') return;
   cfg.ym=inYm_();   /* ★★★ 月は上の「◯月分」ひとつ */
   /* ★ 何月かはプルダウンで選ぶ（2026-09-29・お重さん）。前後の月送りも残す */
   fillYmSel_(P, cfg.ym);
@@ -4372,6 +4381,7 @@ function ledgerRender_(P, cfg, box, g){
         /* 摘要は用途の名前をそのまま使うので、同じ言葉を2度出さない（2026-09-08） */
         if(r.memo && r.memo!==r.title) sub.push(r.memo);
         if(r.title==='わからない') sub.push('事務所で判断');
+        if(r.tantoName) sub.push('担当 '+r.tantoName);   /* ★ 帯で選んだレジ担当（2026-10-01） */
         if(r.lender) sub.push(r.settled ? ('精算済 '+String(r.settled).slice(5))
                                         : ((r.lenderName||'')+' の立替・未精算'));
         if(r.walletName) sub.push(r.walletName);
@@ -4844,7 +4854,8 @@ var TABS = ['board','cashin','cashout','kintai','sim','report'];
 
      経営者 … 5本ぜんぶ。全体も出す。設定も出す
      管理者 … レジ内／レジ外／勤怠。担当店舗だけ。全体と設定は出さない
-     従業員 … 勤怠だけ。自分の店だけ。全体と設定は出さない
+     従業員 … レジ内現金だけ（取引の入力・レジ締め・出納帳・売上帳）。自分の店だけ。
+             レジ内その他（保留）・伝票チェック・レジ外・勤怠・全体・設定は出さない（2026-10-01）
 
    ★ タブを減らすのは、ここだけの例外。
      CLAUDE.md の「階層はどこも同じ形（タブを減らさない）」は
@@ -4853,7 +4864,7 @@ var TABS = ['board','cashin','cashout','kintai','sim','report'];
 var ROLE_TABS = {
   '経営者': ['board','cashin','cashout','kintai','sim','report'],
   '管理者': ['cashin','cashout','kintai','report'],
-  '従業員': ['kintai']
+  '従業員': ['cashin']   /* ★★★ 従業員はレジ内現金だけ（2026-10-01・お重さん） */
 };
 function myRole(){
   var me = (S.boot && S.boot.me) || AUTH.me;
@@ -4882,6 +4893,13 @@ function applyRole(){
     if(S.oMode==='denpyo'){ S.oMode='in'; setPane('o_mode',O_PANES,'in'); }
   }
 
+  /* ★★★ 従業員はレジ内その他（保留）を触らない。保留へはレジ締めのボタンで移る（2026-10-01） */
+  var staff = (role==='従業員');
+  [].forEach.call(document.querySelectorAll('#c_kind [data-v="ho"], #c_hbar .bl.ho, #lgHoCard'), function(b){
+    b.style.display = staff ? 'none' : '';
+  });
+  if(staff && S.cKind==='ho'){ S.cKind='in'; syncKind(); }
+
   /* いま見ているタブが出せないものなら、出せるものへ移す */
   if(allow.indexOf(S.view)<0 && S.view!=='setting') showView(allow[0], null);
   if(S.view==='setting' && !isOwnerUI()) showView(allow[0], null);
@@ -4897,7 +4915,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261015;
+var SERVER_WANT = 20261016;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -7716,9 +7734,41 @@ function drawDayHead(){
     var lb=$(k+'_dtLb');
     if(lb) lb.textContent = ds ? Number(ds.slice(5,7))+'/'+Number(ds.slice(8,10)) : '—';
   });
+  drawTanto_();
   /* レジ外の日付欄は、レジ内と同じ日を映す */
   var od=$('o_date');
   if(od && ds && od.value!==ds) od.value=ds;
+}
+/* ★★★ レジ内の担当者（2026-10-01・お重さん）。
+     並ぶのは 設定「人と権限」で【レジ内の入力担当】にした人で、その店の担当（担当店舗が空なら全店）。
+     選んだ人は店ごとに端末が覚える。入れた取引・締めに「担当者」として残る */
+function tantoList_(){
+  var a=((S.boot&&S.boot.regiStaff)||[]);
+  /* 共通（全店）の人は、どの店にも並ぶ */
+  var com=((S.boot&&S.boot.units)||[]).filter(function(u){ return u.kind==='共通'; }).map(function(u){ return u.id; });
+  return a.filter(function(x){
+    var us=x.units||[];
+    return !us.length || us.indexOf(S.unit)>=0 || us.some(function(v){ return com.indexOf(v)>=0; });
+  });
+}
+function drawTanto_(){
+  var el=$('c_tanto'); if(!el) return;
+  var a=(S.unit==='ALL') ? [] : tantoList_();
+  if(!a.length){ el.hidden=true; el.innerHTML=''; return; }
+  var key='bm_tanto_'+S.unit, v='';
+  try{ v=localStorage.getItem(key)||''; }catch(e){}
+  var me=(S.boot&&S.boot.me)||AUTH.me;
+  var ids=a.map(function(x){ return x.id; });
+  if(ids.indexOf(v)<0) v=(me && ids.indexOf(me.id)>=0) ? me.id : '';
+  el.innerHTML='<option value="">担当者</option>'+a.map(function(x){
+    return '<option value="'+esc(x.id)+'"'+(x.id===v?' selected':'')+'>'+esc(x.name)+'</option>';
+  }).join('');
+  el.hidden=false;
+  el.onchange=function(){ try{ localStorage.setItem(key, this.value); }catch(e){} };
+}
+function tantoNow_(){
+  var el=$('c_tanto');
+  return (el && !el.hidden) ? el.value : '';
 }
 /* 日付の枠を押したら必ずカレンダーが開くように（保険） */
 (function(){
@@ -7839,7 +7889,7 @@ function saleForm(e){
     var amt=iv('r_amt');
     if(amt<=0){ toast('金額を入れてください'); return; }
     var p={ date:$('c_date').value, unit:S.unit, amount:amt,
-      method:payPicked()||'現金', guests:iv('r_guests'), memo:$('r_memo').value };
+      method:payPicked()||'現金', guests:iv('r_guests'), memo:$('r_memo').value, tanto:tantoNow_() };
     if(S.saleEdit && S.saleEdit.id){
       p.id   = S.saleEdit.id;
       p.time = S.saleEdit.time || '';   /* 直しても並び順が動かないように、時刻はそのまま */
@@ -8367,7 +8417,7 @@ function pettySave(k, btn){
     var sp={ id:(P.editKind==='sale'?P.editId:'')||'', date:ds, unit:(P.unit||S.unit),
       amount:amt, method:u.sale, guests:Number(String(P.guests||'').replace(/[^0-9]/g,''))||0,
       memo:'', useId:u.id, photos:photoShots_(k), photoUrls:(P.photoUrls||[]),
-      time:(P.editKind==='sale'?P.time:'')||'' };
+      time:(P.editKind==='sale'?P.time:'')||'', tanto:(k==='in'?tantoNow_():'') };
     var nm0=u.name;
     pettyClear(k); afterWrite_(k);
     toast(nm0+' '+yen(amt)+' 記録中…');
@@ -8392,7 +8442,7 @@ function pettySave(k, btn){
     useId:P.useId, amount:amt, dir:u.dir, from:cf.from,
     memo:memo, proof:((photoShots_(k).length || (P.photoUrls||[]).length) ? '領収書' : 'なし'),
     photos:photoShots_(k), photoUrls:(P.photoUrls||[]),
-    lender:P.lender||'', settled:P.settled||'' };
+    lender:P.lender||'', settled:P.settled||'', tanto:(k==='in'?tantoNow_():'') };
   var nm=u.name;
   /* ★ 押した瞬間に欄を空にする。保存は裏で走る（2026-09-07） */
   pettyClear(k); afterWrite_(k);
@@ -8807,7 +8857,8 @@ function closeDay_(opt){
       ? {kind:NIPPO_WX.w.kind, pop:NIPPO_WX.w.pop, tmax:NIPPO_WX.w.tmax, tmin:NIPPO_WX.w.tmin, text:NIPPO_WX.w.text, src:NIPPO_WX.w.src} : null,
     photo:S.photos.closing||'', slots:slotItems(), menu:menuItems(),
     /* ★ 締め直し … 締めてある日を見ていて押したのだから、上書きを聞き直さない */
-    overwrite:!!opt.auto || !!(S.closing.exist && S.closing.exist.closed)
+    overwrite:!!opt.auto || !!(S.closing.exist && S.closing.exist.closed),
+    tanto:tantoNow_()
   };
   call('saveClosing',[p]).then(function(r){
     if(!r.ok && r.dup){
@@ -9032,6 +9083,9 @@ function drawRoleList(){
             + (us.indexOf(u.id)>=0)+'">'+u.name+'</button>';
         }).join('')
       + '</div>'
+      /* ★★★ レジ内の入力担当（2026-10-01）。ここを入れた人が、レジ内の帯の右上の「担当者」に並ぶ */
+      + '<div class="us rg" style="display:flex"><button type="button" class="regi" aria-pressed="'+(!!x.regi)+'">'
+      + (x.regi?'✓ ':'')+'レジ内の入力担当</button></div>'
       + (x.hasPw ? '<button type="button" class="pwoff">パスワードを外す</button>' : '')
       + '</div>';
   }).join('');
@@ -9067,6 +9121,17 @@ function drawRoleList(){
         }).catch(function(e){ toast(String((e&&e.message)||'変えられませんでした')); });
       };
     });
+    var rg=row.querySelector('.regi');
+    if(rg) rg.onclick=function(){
+      var on=rg.getAttribute('aria-pressed')!=='true';
+      call('setStaffRole',[{id:id, regi:on}]).then(function(r){
+        toast(r.msg);
+        if(!r.ok) return;
+        if(r.regiStaff) S.boot.regiStaff=r.regiStaff;
+        (S.boot.staff||[]).forEach(function(x){ if(x.id===id) x.regi=on; });
+        drawRoleList(); drawTanto_();
+      }).catch(function(e){ toast(String((e&&e.message)||'変えられませんでした')); });
+    };
     var off=row.querySelector('.pwoff');
     if(off) off.onclick=function(){
       call('resetStaffPw',[{id:id}]).then(function(r){
@@ -9247,6 +9312,7 @@ function loadPayroll(){
    直近リスト
    ================================================================== */
 function loadRecent(kind, target){
+  if(myRole()==='従業員') return;   /* 直近の締めは管理者から（サーバも断る） */
   var tb=$(target); tb.innerHTML='<tr><td class="muted skel">読み込み中</td></tr>';
   call('getRecent',[kind,S.unit,12]).then(function(list){
     tb.innerHTML='';
