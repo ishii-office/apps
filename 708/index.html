@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790744032';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790845104';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -1276,16 +1276,19 @@ button.ghost.danger{border-color:var(--red);color:var(--red)}
 /* ★ 日付は「09/08」だけ見せる。押す先は【本物の日付欄】そのまま（2026-09-08）。
      欄の文字だけを透明にして、上に短い表示を重ねる。
      こうすると幅が半分で済み、iPhone でも直接押してカレンダーが開く */
-.hbar .dt{position:relative;flex:none;width:58px;height:27px;border-radius:6px;
-  border:1.5px solid var(--uc-line);background:var(--uc-fill);cursor:pointer}
+/* ★★ 日付は大きく、そこだけ色を変える（2026-10-01・お重さん「何月何日の入力・締めをしているか分かりにくい」） */
+.hbar .dt{position:relative;flex:none;width:92px;height:36px;border-radius:8px;
+  border:2px solid var(--brass);background:var(--surface);cursor:pointer;
+  box-shadow:0 1px 0 rgba(0,0,0,.08)}
 .hbar .dt .lbl{position:absolute;inset:0;display:flex;align-items:center;
-  justify-content:center;font-family:'Oswald',sans-serif;font-weight:500;
-  font-size:13px;color:var(--uc-fg);pointer-events:none;letter-spacing:-.02em}
+  justify-content:center;font-family:'Oswald',sans-serif;font-weight:700;
+  font-size:22px;color:var(--paper);pointer-events:none;letter-spacing:-.01em}
 .hbar .dt input[type=date]{position:absolute;inset:0;width:100%;height:100%;
   margin:0;padding:0;border:0;background:transparent;
   color:transparent;-webkit-text-fill-color:transparent;
   -webkit-appearance:none;appearance:none;cursor:pointer;font-size:13px}
-.hbar .wd{flex:none;font-size:10px;font-weight:900;letter-spacing:-.05em;opacity:.72}
+.hbar .dt input[type=date]::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.hbar .wd{flex:none;font-size:12px;font-weight:900;letter-spacing:-.03em;opacity:.9}
 .hbar .bl{margin-left:auto;flex:none;font-size:9.5px;font-weight:700;opacity:.82;
   white-space:nowrap;letter-spacing:-.05em}
 .hbar .bl b{font-family:'Oswald',sans-serif;font-weight:600;font-size:17px;
@@ -1531,10 +1534,10 @@ button.go.sub{background:var(--surface);color:var(--red);border:2px solid var(--
 .mk .kgrp{margin:2px 0 10px}
 .mk .kgt{font-size:12px;font-weight:700;letter-spacing:1px;margin:0 0 5px;padding-left:2px}
 .mk .kgt.in{color:var(--ice)} .mk .kgt.out{color:var(--pink)} .mk .kgt.x{color:#8A6D1B}
-.mk .kwrap{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.mk .kbtn{display:flex;flex-direction:column;gap:1px;align-items:flex-start;text-align:left;
-  border:1.5px solid var(--mkline);background:#fff;border-radius:10px;padding:8px 9px;
-  cursor:pointer;font-family:inherit;line-height:1.3;min-height:44px;width:100%}
+.mk .kwrap{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.mk .kbtn{display:flex;flex-direction:column;gap:1px;align-items:flex-start;justify-content:center;text-align:left;
+  border:1.5px solid var(--mkline);background:#fff;border-radius:10px;padding:6px 9px;
+  cursor:pointer;font-family:inherit;line-height:1.25;min-height:40px;width:100%}
 .mk .kbtn b{font-size:14px;font-weight:700;color:var(--mkink);line-height:1.3}
 .mk .kbtn span{font-size:10.5px;color:#8a8a8a;line-height:1.3}
 .mk .kbtn.on{border-width:2.5px}
@@ -4379,7 +4382,7 @@ function ledgerRender_(P, cfg, box, g){
         rows+='<tr class="'+(r.editable?'can':(r.why?'why':''))+(noProof?' warn':'')+'"'
             + ' data-d="'+di+'" data-r="'+ri+'">'
             + '<td class="d">'+(ri===0 ? d.date.slice(5).replace('-','/') : '')+'</td>'
-            + '<td class="t"><b>'+r.title+pic+'</b>'
+            + '<td class="t"><b>'+esc(r.show||r.title)+pic+'</b>'
             +   (sub.length?'<span>'+sub.join('　')+'</span>':'')
             /* ★★ 直す・削除を出納帳から（2026-09-29・お重さん） */
             +   (r.editable ? '<span class="lgact"><button class="tap lgfix" data-lgfix="1">直す</button>'
@@ -4665,8 +4668,7 @@ function kbtn_(u, g, sel){
   return '<button type="button" class="kbtn '+g+(u.id===sel?' on':'')+'"'
     + ' data-u="'+u.id+'" data-p="'+u.proof+'" data-d="'+u.dir+'"'
     + ' aria-pressed="'+(u.id===sel)+'">'
-    + '<b>'+u.name+'</b>'
-    + (useNote_(u)?'<span>'+useNote_(u)+'</span>':'')+'</button>';
+    + '<b>'+u.name+'</b></button>';
 }
 function usePicked(boxId){
   var box=$(boxId); if(!box) return '';
@@ -4890,7 +4892,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261013;
+var SERVER_WANT = 20261014;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -7135,6 +7137,13 @@ function buildDenoms(){
     box.appendChild(row);
   });
 }
+function setDenoms_(coins){
+  coins=coins||{};
+  [].forEach.call(($('denoms')||{children:[]}).children,function(row){
+    var inp=row.querySelector('input'); if(inp) inp.value=Number(coins[row.dataset.d])||0;
+  });
+  calcJissa();
+}
 function coinObj(){
   var o={};
   [].forEach.call($('denoms').children,function(row){
@@ -7244,10 +7253,19 @@ function calcVerdict(){
     var movedAlready=(c.exist && c.exist.closed && num0(c.exist.deposit)===move && move>0);
     th.textContent=(movedAlready?'✓ ':'')+'レジ内その他（保留）へ '+(move>0?yen(move)+' ':'')+'移す';
     th.disabled = !(jissa>0 && move>0);
-    th.setAttribute('aria-pressed', movedAlready?'true':'false');
-    th.onclick=function(){ closeDay_({auto:true, btn:th, done:'レジ内その他（保留）へ '+yen(move)+' 移しました'}); };
-    if(tn) tn.textContent = movedAlready ? '移しました（レジ内その他（保留）に積まれています）'
-      : (jissa>0 ? '' : '枚数を入れると押せます');
+    /* ★★★ 取引の入力で レジ内その他（保留）へ入れてある日は、ここでは移せない（同じ効き目なので二重になる。2026-10-01） */
+    var viaIn=num0(c.horyuByInput);
+    if($('c_move')) $('c_move').disabled = viaIn>0;
+    if(viaIn>0){
+      th.disabled=true; th.textContent='レジ内その他（保留）へ移す（取引の入力で '+yen(viaIn)+' 入れ済み）';
+      th.setAttribute('aria-pressed','false'); th.onclick=null;
+      if(tn) tn.textContent='この日は取引の入力から移してあります。締めのボタンで移すときは、その取引を消してから';
+    } else {
+      th.setAttribute('aria-pressed', movedAlready?'true':'false');
+      th.onclick=function(){ closeDay_({auto:true, btn:th, done:'レジ内その他（保留）へ '+yen(move)+' 移しました'}); };
+      if(tn) tn.textContent = movedAlready ? '移しました（レジ内その他（保留）に積まれています）'
+        : (jissa>0 ? '' : '枚数を入れると押せます');
+    }
   }
   drawNippo({junbi:junbi, cash:cash, petty:petty, riron:riron, jissa:jissa, move:move, draw:draw, inject:inject});
 }
@@ -7685,9 +7703,10 @@ function drawDayHead(){
   ['c','o'].forEach(function(k){
     var u=$(k+'_hUnit'); if(u) u.textContent=nm;
     var d=$(k+'_hWord');
-    if(d) d.innerHTML = (g!==null&&g<0) ? '<span style="color:var(--red)">未来</span>' : (w||'');
+    var wdy = ds ? '日月火水木金土'.charAt(new Date(ds+'T00:00:00').getDay()) : '';
+    if(d) d.innerHTML = (wdy?'（'+wdy+'）':'') + ((g!==null&&g<0) ? '<span style="color:var(--red)">未来</span>' : (w||''));
     var lb=$(k+'_dtLb');
-    if(lb) lb.textContent = ds ? ds.slice(5).replace('-','/') : '—';
+    if(lb) lb.textContent = ds ? Number(ds.slice(5,7))+'/'+Number(ds.slice(8,10)) : '—';
   });
   /* レジ外の日付欄は、レジ内と同じ日を映す */
   var od=$('o_date');
@@ -7974,8 +7993,7 @@ function drawPetty(k){
       + '<div class="kwrap">'
       + arr.map(function(u){
           return '<button class="kbtn '+(g.k==='unknown'?'x':(isIn?'in':'out'))+(P.useId===u.id?' on':'')
-            + ' tap" data-ck="'+u.id+'"><b>'+u.name+'</b>'
-            + (useNote_(u)?'<span>'+useNote_(u)+'</span>':'')+'</button>';
+            + ' tap" data-ck="'+u.id+'"><b>'+u.name+'</b></button>';   /* ★ 例示・説明は出さない（2026-10-01・お重さん「不要。できるだけコンパクトに」） */
         }).join('')
       + '</div></div>';
   }).join('');
@@ -8352,6 +8370,14 @@ function pettySave(k, btn){
     return;
   }
 
+  /* ★★★ レジ締めのボタンで レジ内その他（保留）へ移してある日は、取引の入力からは入れさせない（2026-10-01） */
+  if(u.horyu && k==='in' && !P.editId){
+    var cx=S.closing||{};
+    if(cx.date===ds && cx.unit===(P.unit||S.unit) && cx.exist && cx.exist.closed && num0(cx.exist.deposit)>0){
+      alert(ds.slice(5).replace('-','/')+' はレジ締めで レジ内その他（保留）へ '+yen(cx.exist.deposit)+' を移してあります。\n同じ日に取引の入力からは入れられません（レジ締めのボタンで直してください）。');
+      return;
+    }
+  }
   /* ★ 摘要は用途の名前をそのまま使う。内容の例からもう一度選ばせない（2026-09-08） */
   var memo = P.memo || u.name;
   var body={ id:P.editId||'', date:ds, unit:(P.unit||S.unit),
@@ -8668,10 +8694,15 @@ function closingRender_(c){
           return '<button type="button" data-od="'+d+'">'
             + d.slice(5).replace('-','/')+'</button>'}).join('')+'</div></div>';
     }
+    if(c.horyuBoth){
+      html+='<div class="alert"><b>レジ内その他（保留）へ二重に移しています</b>'
+        +'この日は 取引の入力（'+yen(c.horyuByInput)+'）と レジ締めのボタン（'+yen((c.exist&&c.exist.deposit)||0)+'）の両方で移しています。'
+        +'レジ締めのボタンを残すなら、出納帳でその取引を削除してください。</div>';
+    }
     if(c.exist && c.exist.closed){
-      html+='<div class="notice"><b>この日はもう締めています</b>'
+      html+='<div class="notice"><b>この日は締めてあります</b>'
         +'数えた現金 '+yen(c.exist.jissa)+'、過不足 '+yen(c.exist.sa)
-        +'。直す場合はもう一度入力して保存すると上書きします。</div>';
+        +'。直すときは、枚数を直して［この日を締め直す］</div>';
     }
     /* ★ お知らせはレジ締めのペインに置く。日付の上には出さない（2026-09-08）。
          時間差で割り込んで、取引の入力の位置がずれるため */
@@ -8698,6 +8729,11 @@ function closingRender_(c){
       if($('c_move')){ $('c_move').value=c.exist.deposit||''; S.moveTouched=true; }
       if(c.exist.register) $('c_register').value=c.exist.register;
     }
+    /* ★★ その日を選んだら、前に数えた金種がそのまま出る（2026-10-01・お重さん）。
+         同じ日を読み直しただけ（裏の差し替え）では、打っている途中の枚数を消さない */
+    var dk=S.unit+'|'+(c.date||(($('c_date')||{}).value||''));
+    if(S._denomKey!==dk){ S._denomKey=dk; setDenoms_((c.exist && c.exist.coins) || {}); }
+    if($('c_save')) $('c_save').textContent = (c.exist && c.exist.closed) ? 'この日を締め直す' : 'この日を締める';
     drawCashOuts(c);
     buildPays();
     drawDayHead();
@@ -8748,7 +8784,9 @@ function closeDay_(opt){
     /* ★ 業務日報の天候。手で選んだものはもう記録してあるので、自動で取れたものだけ送る */
     weather: (NIPPO_WX.w && NIPPO_WX.w.kind && !NIPPO_WX.w.manual && !NIPPO_WX.w.saved && NIPPO_WX.date===$('c_date').value)
       ? {kind:NIPPO_WX.w.kind, pop:NIPPO_WX.w.pop, tmax:NIPPO_WX.w.tmax, tmin:NIPPO_WX.w.tmin, text:NIPPO_WX.w.text, src:NIPPO_WX.w.src} : null,
-    photo:S.photos.closing||'', slots:slotItems(), menu:menuItems(), overwrite:!!opt.auto
+    photo:S.photos.closing||'', slots:slotItems(), menu:menuItems(),
+    /* ★ 締め直し … 締めてある日を見ていて押したのだから、上書きを聞き直さない */
+    overwrite:!!opt.auto || !!(S.closing.exist && S.closing.exist.closed)
   };
   call('saveClosing',[p]).then(function(r){
     if(!r.ok && r.dup){
@@ -8766,13 +8804,12 @@ function closeDay_(opt){
       loadClosing(); loadTemoto(); loadLedger(); refresh();
       return;
     }
-    toast(r.warn ? r.warn : (r.msg+'／明日 '+yen(r.deposit)+' を銀行へ'));
-    ['c_memo','c_move'].forEach(function(id){ if($(id)) $(id).value=''; });
-    S.moveTouched=false;
-    buildDenoms(); clearShot('c_thumb','c_shotSt','closing','c_photo');
-    buildSlotInputs(); buildMenuInputs();
-    calcTotal(); calcJissa();
-    refresh(); loadClosing(); loadRecent('日報','c_recent'); loadTemoto();
+    toast(r.warn ? r.warn : r.msg);
+    /* ★★ 締めたあとも、数えた枚数はそのまま残す（2026-10-01・お重さん「締め直し・やり直しができるように」）。
+         直したいときは枚数を直して［この日を締め直す］を押すだけ */
+    S.moveTouched=true; S._denomKey=null;
+    clearShot('c_thumb','c_shotSt','closing','c_photo');
+    refresh(); loadClosing(); loadRecent('日報','c_recent'); loadTemoto(); loadLedger();
   }).catch(function(e){ btn.disabled=false; console.error(e); toast('締められませんでした。通信を確認してください'); });
 }
 $('c_save').onclick=function(){ closeDay_({}); };
