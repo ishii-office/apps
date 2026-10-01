@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790845104';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1790848411';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -1288,6 +1288,8 @@ button.ghost.danger{border-color:var(--red);color:var(--red)}
   color:transparent;-webkit-text-fill-color:transparent;
   -webkit-appearance:none;appearance:none;cursor:pointer;font-size:13px}
 .hbar .dt input[type=date]::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.autost{margin:2px 0 8px;font-size:13px;font-weight:700;color:var(--paper-dim);text-align:right;min-height:1em}
+.autost.ok{color:var(--green)} .autost.ng{color:var(--red)}
 .hbar .wd{flex:none;font-size:12px;font-weight:900;letter-spacing:-.03em;opacity:.9}
 .hbar .bl{margin-left:auto;flex:none;font-size:9.5px;font-weight:700;opacity:.82;
   white-space:nowrap;letter-spacing:-.05em}
@@ -2312,7 +2314,9 @@ button.goled:active{background:#F3F1EA}
     <div class="junbi-line" id="c_junbiLine">—</div>
 
     <div class="denoms" id="denoms"></div>
-    <div class="total-line"><span>数えた現金（実査計）</span><b class="num" id="c_jissa">0</b></div>
+    <div class="total-line"><span id="c_jissaLb">実査計</span><b class="num" id="c_jissa">0</b></div>
+    <!-- ★★ 数えたら、そのまま入る（2026-10-01・お重さん「締めるボタンは不要なのでは」）。押すボタンは置かない -->
+    <p class="autost" id="c_autoSt"></p>
 
 
     <label>レジ内その他（保留）へ移す額<span style="font-weight:500;color:var(--paper-dim)">
@@ -2351,7 +2355,8 @@ button.goled:active{background:#F3F1EA}
     <label>申し送り（任意）</label>
     <textarea id="c_memo" rows="2" placeholder="団体8名、釣銭切れで両替 など"></textarea>
 
-    <button class="go" id="c_save">この日を締める</button>
+    <!-- ★★ 締めるボタンは置かない（数えたら自動で入る）。古いコードが探しても落ちないよう、見えない形で残す -->
+    <button class="go" id="c_save" hidden>締める</button>
   </div>
 
   <!-- ★★★ 業務日報（2026-09-29・お重さん）。紙の業務日報の形のまま、アプリの言葉で。
@@ -4892,7 +4897,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261014;
+var SERVER_WANT = 20261015;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -7127,11 +7132,14 @@ function buildDenoms(){
       +'<button type="button" data-a="1" aria-label="増やす">＋</button></div>'
       +'<div class="sub">0</div>';
     var inp=row.querySelector('input');
-    inp.addEventListener('input', calcJissa);
+    inp.addEventListener('input', function(){ calcJissa(); autoClose_(); });
+    /* ★★ 押したら中身をまるごと選ぶ … そのまま打てば上書きになる（2026-10-01・お重さん） */
+    var selAll=function(){ setTimeout(function(){ try{ inp.select(); inp.setSelectionRange(0, String(inp.value).length); }catch(e){} }, 0); };
+    inp.addEventListener('focus', selAll); inp.addEventListener('click', selAll);
     [].forEach.call(row.querySelectorAll('button'),function(b){
       b.onclick=function(){
         var v=Math.max(0,(Number(inp.value)||0)+Number(b.dataset.a));
-        inp.value=v; calcJissa();
+        inp.value=v; calcJissa(); autoClose_();
       };
     });
     box.appendChild(row);
@@ -8699,10 +8707,11 @@ function closingRender_(c){
         +'この日は 取引の入力（'+yen(c.horyuByInput)+'）と レジ締めのボタン（'+yen((c.exist&&c.exist.deposit)||0)+'）の両方で移しています。'
         +'レジ締めのボタンを残すなら、出納帳でその取引を削除してください。</div>';
     }
+    var mdTxt=mdJp_(c.date);
     if(c.exist && c.exist.closed){
-      html+='<div class="notice"><b>この日は締めてあります</b>'
-        +'数えた現金 '+yen(c.exist.jissa)+'、過不足 '+yen(c.exist.sa)
-        +'。直すときは、枚数を直して［この日を締め直す］</div>';
+      html+='<div class="notice"><b>'+mdTxt+'は締めてあります</b>'
+        +'実査計 '+yen(c.exist.jissa)+'、過不足 '+yen(c.exist.sa)
+        +'。直すときは、枚数を直すだけで入ります</div>';
     }
     /* ★ お知らせはレジ締めのペインに置く。日付の上には出さない（2026-09-08）。
          時間差で割り込んで、取引の入力の位置がずれるため */
@@ -8726,14 +8735,24 @@ function closingRender_(c){
     S.saMode = (c.exist && c.exist.closed && c.exist.saMode!=='しない' && num0(c.exist.sa)!==0) ? 'する' : 'しない';
     if(c.exist){
       $('c_memo').value=c.exist.memo||'';
-      if($('c_move')){ $('c_move').value=c.exist.deposit||''; S.moveTouched=true; }
+      /* 移してある日だけ、その額を出す。まだなら空のまま（超過ぶんが既定で出る） */
+      if($('c_move') && num0(c.exist.deposit)>0 && !S.moveTouched){ $('c_move').value=c.exist.deposit; S.moveTouched=true; }
       if(c.exist.register) $('c_register').value=c.exist.register;
     }
     /* ★★ その日を選んだら、前に数えた金種がそのまま出る（2026-10-01・お重さん）。
          同じ日を読み直しただけ（裏の差し替え）では、打っている途中の枚数を消さない */
     var dk=S.unit+'|'+(c.date||(($('c_date')||{}).value||''));
-    if(S._denomKey!==dk){ S._denomKey=dk; setDenoms_((c.exist && c.exist.coins) || {}); }
-    if($('c_save')) $('c_save').textContent = (c.exist && c.exist.closed) ? 'この日を締め直す' : 'この日を締める';
+    if(S._denomKey!==dk){
+      /* ★★ 日付を変えたら、その日の状態にする（2026-10-01・お重さん「8/4 の移す額が 8/6 に出ていた」）。
+           前の日の枚数・移す額・申し送りを持ち越さない。その日に数えてあれば、それを出す */
+      S._denomKey=dk; clearTimeout(S._autoT);
+      setDenoms_((c.exist && c.exist.coins) || {});
+      ['c_move','c_memo','c_register'].forEach(function(id){ if($(id)) $(id).value=''; });
+      S.moveTouched=false;
+      if($('c_autoSt')){ $('c_autoSt').textContent=''; $('c_autoSt').className='autost'; }
+    }
+    if($('c_jissaLb')) $('c_jissaLb').textContent = mdTxt+'の実査計';
+    if($('c_save')) $('c_save').textContent = mdTxt+((c.exist && c.exist.closed) ? 'を締め直す' : 'を締める');
     drawCashOuts(c);
     buildPays();
     drawDayHead();
@@ -8770,7 +8789,7 @@ function closeDay_(opt){
   if(!S.closing){ toast('締めの前提を読み込めていません。画面を開き直してください'); return; }
   var jissa=Number(String($('c_jissa').textContent).replace(/[^0-9]/g,''))||0;
   if(!opt.auto && jissa===0 && !confirm('レジの現金を数えていません。このまま締めますか。')) return;
-  if(opt.auto && jissa===0){ toast('先にレジの現金を数えてください'); return; }
+  if(opt.auto && jissa===0){ if(!opt.silent) toast('先にレジの現金を数えてください'); return; }
 
   var btn=opt.btn||$('c_save'); btn.disabled=true;
   /* 売上は送らない。サーバがその日の取引を足して作る（手打ちの合計を信じない） */
@@ -8779,7 +8798,9 @@ function closeDay_(opt){
     register:iv('c_register'),
     memo:$('c_memo').value, coins:coinObj(),
     junbi: S.closing.junbiEditable ? iv('c_junbi') : 0,
-    move: $('c_move') ? iv('c_move') : '',
+    /* ★★ 数えて自動で入るとき（keepMove）は、保留へ移す額を動かさない。移すのは［保留へ移す］を押したときだけ */
+    move: opt.keepMove ? ((S.closing.exist && S.closing.exist.closed) ? num0(S.closing.exist.deposit) : 0)
+                       : ($('c_move') ? iv('c_move') : ''),
     saMode: S.saMode || 'しない',
     /* ★ 業務日報の天候。手で選んだものはもう記録してあるので、自動で取れたものだけ送る */
     weather: (NIPPO_WX.w && NIPPO_WX.w.kind && !NIPPO_WX.w.manual && !NIPPO_WX.w.saved && NIPPO_WX.date===$('c_date').value)
@@ -8798,6 +8819,15 @@ function closeDay_(opt){
     btn.disabled=false;
     if(!r) return;
     try{ Object.keys(LEDGER_MEMO).forEach(function(q){ delete LEDGER_MEMO[q]; }); }catch(e){}
+    if(opt.silent){
+      var st=$('c_autoSt');
+      if(st){ st.className='autost '+(r.ok?'ok':'ng');
+        st.textContent = r.ok ? '✓ '+mdJp_(p.date)+'の実査を入れました（'+hmNow_()+'）' : (r.msg||'入れられませんでした'); }
+      if(r.ok && r.warn && /取引の入力/.test(r.warn)) toast(r.warn);
+      if(p.date===(($('c_date')||{}).value||'')) loadClosing();
+      loadTemoto();
+      return;
+    }
     if(opt.auto){
       toast(r.ok ? (opt.done||r.msg) : r.msg);
       S.moveTouched=true;
@@ -8810,9 +8840,28 @@ function closeDay_(opt){
     S.moveTouched=true; S._denomKey=null;
     clearShot('c_thumb','c_shotSt','closing','c_photo');
     refresh(); loadClosing(); loadRecent('日報','c_recent'); loadTemoto(); loadLedger();
-  }).catch(function(e){ btn.disabled=false; console.error(e); toast('締められませんでした。通信を確認してください'); });
+  }).catch(function(e){ btn.disabled=false; console.error(e);
+    if(opt.silent){ var st=$('c_autoSt'); if(st){ st.className='autost ng'; st.textContent='通信を待っています（つながれば、ひとりでに入ります）'; } return; }
+    toast('締められませんでした。通信を確認してください'); });
 }
 $('c_save').onclick=function(){ closeDay_({}); };
+/* ★★ 数えたら自動で入る（2026-10-01・お重さん）。打つのが止まって1.5秒で入れる。
+     保留へ移す額・過不足の計上は動かさない（それぞれのボタンを押したときだけ） */
+function autoClose_(){
+  clearTimeout(S._autoT);
+  var ds=(($('c_date')||{}).value||''), un=S.unit;
+  var st=$('c_autoSt'); if(st){ st.className='autost'; st.textContent='入力中…'; }
+  S._autoT=setTimeout(function(){
+    if(ds!==(($('c_date')||{}).value||'') || un!==S.unit) return;
+    var jissa=Number(String(($('c_jissa')||{}).textContent||'').replace(/[^0-9]/g,''))||0;
+    var had=S.closing && S.closing.exist && S.closing.exist.closed;
+    if(!jissa && !had){ if(st) st.textContent=''; return; }
+    closeDay_({auto:true, silent:true, keepMove:true, btn:{}});
+  }, 1500);
+}
+if($('c_memo')) $('c_memo').addEventListener('input', function(){ if(S.closing && S.closing.exist && S.closing.exist.closed) autoClose_(); });
+function mdJp_(ds){ ds=String(ds||''); return ds ? Number(ds.slice(5,7))+'月'+Number(ds.slice(8,10))+'日' : 'この日'; }
+function hmNow_(){ var d=new Date(); return d.getHours()+':'+('0'+d.getMinutes()).slice(-2); }
 
 /* ---------- 時間帯別 ---------- */
 function buildSlotInputs(vals){
