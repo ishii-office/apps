@@ -53,6 +53,7 @@
   .gate input { width: 100%; font-size: 17px; padding: 9px 10px; }
   .gate button { width: 100%; margin-top: 18px; padding: 11px; font-size: 17px; }
   .gate .msg { margin-top: 12px; min-height: 1.4em; color: var(--err); font-weight: 700; }
+  #cCancel { background: var(--paper); color: var(--ink); border-color: var(--line); margin-top: 8px; padding: 8px; font-size: 15px; }
 
   /* ---- 上の帯 ---- */
   .top { display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
@@ -218,6 +219,19 @@
   <button type="submit" class="primary" id="gGo">入る</button>
   <div class="msg" id="gMsg" role="status"></div>
 </form>
+<form class="gate" id="chg" hidden autocomplete="off">
+  <h1>暗証番号を変えてください</h1>
+  <p id="chgLead">はじめに入った番号のままでは使えません。自分だけが知っている番号に変えてください。</p>
+  <label for="cCur">いまの暗証番号</label>
+  <input id="cCur" type="password" autocomplete="current-password" maxlength="12">
+  <label for="cNew">新しい暗証番号</label>
+  <input id="cNew" type="password" autocomplete="new-password" maxlength="12">
+  <label for="cNew2">新しい暗証番号（もう一度）</label>
+  <input id="cNew2" type="password" autocomplete="new-password" maxlength="12">
+  <button type="submit" class="primary" id="cGo">変える</button>
+  <button type="button" id="cCancel" hidden>やめる</button>
+  <div class="msg" id="cMsg" role="status"></div>
+</form>
 <div class="gate" id="fatal" hidden><h1>資料回収（事務所）</h1><p id="fatalMsg"></p></div>
 
 <!-- ===== 本体 ===== -->
@@ -381,14 +395,21 @@
 <!-- ===== 担当者（シートの窓のときだけ） ===== -->
 <div class="pane page" id="paneStaff" hidden>
   <div class="staff">
-    <p class="note">アプリ（パソコン・スマホ）に入る担当者と暗証番号です。ここ（スプレッドシートの中）でだけ変えられます。<br>
-      暗証番号は半角の英数字 4〜12 桁。番号そのものはどこにも残しません（忘れたら、ここで新しい番号にしてください）。<br>
-      番号を変える・消すと、その人の端末はもう一度入り直しになります。</p>
+    <div id="sAdmin">
+    <p class="note">アプリ（パソコン・スマホ）に入る担当者と暗証番号です。変えられるのは マスターの方 と スプレッドシートの中 だけです。<br>
+      暗証番号は半角の英数字 4〜12 桁（マスターは 6〜12 桁）。番号そのものはどこにも残しません（忘れた人には、ここで新しい番号を決めてください）。<br>
+      番号を変える・消すと、その人の端末はもう一度入り直しになります。マスターは、担当者を足したり消したりできます。</p>
     <table><thead><tr><th>名前</th><th>番号を決めた日</th><th style="width:80px"></th></tr></thead><tbody id="sBody"></tbody></table>
     <div class="add">
       <input id="sName" placeholder="名前（例：山田）" maxlength="30" aria-label="名前">
       <input id="sPin" placeholder="暗証番号" maxlength="12" autocomplete="new-password" aria-label="暗証番号">
+      <label class="chk"><input type="checkbox" id="sMaster"> マスター</label>
       <button type="button" class="primary" id="sSave">足す・番号を変える</button>
+    </div>
+    </div>
+    <div id="sMine" hidden>
+      <h3 style="margin:22px 0 6px">自分の暗証番号を変える</h3>
+      <button type="button" id="sMineGo">番号を変える…</button>
     </div>
     <p class="pagemsg" id="sMsg" role="status"></p>
     <p class="note">アプリの場所：<a href="https://ishii-office.github.io/apps/collect/office.html">https://ishii-office.github.io/apps/collect/office.html</a>（ホーム画面に置けます）</p>
@@ -433,6 +454,7 @@
         .then(function (o) {
           clearTimeout(tid);
           if (o && o.__auth) { signOut(o.msg); ng(new Error(o.msg || 'もう一度ログインしてください。')); return; }
+          if (o && o.__must) { showChange(true); ng(new Error(o.msg)); return; }
           if (!o || o.__err || !o.ok) throw new Error((o && o.msg) || 'うまくいきませんでした');
           ok(o.r);
         })
@@ -448,10 +470,10 @@
   const S = { clients: [], code: '', st: 'todo', box: '', items: [], view: [], cur: -1, counts: {}, dict: [], img: {}, rot: {}, busy: false, dirty: false, started: false, tab: 'In' };
 
   /* ================= 入口 ================= */
-  function fatal(t) { ['gate', 'top', 'ctl'].forEach(function (k) { $(k).hidden = true; }); hidePanes(); $('fatal').hidden = false; $('fatalMsg').textContent = t; }
+  function fatal(t) { ['gate', 'chg', 'top', 'ctl'].forEach(function (k) { $(k).hidden = true; }); hidePanes(); $('fatal').hidden = false; $('fatalMsg').textContent = t; }
   function hidePanes() { ['In', 'Dict', 'Out', 'Clients', 'Staff'].forEach(function (k) { $('pane' + k).hidden = true; }); }
   function showGate(msg) {
-    $('top').hidden = true; $('ctl').hidden = true; hidePanes();
+    $('top').hidden = true; $('ctl').hidden = true; $('chg').hidden = true; hidePanes();
     $('gate').hidden = false; $('gMsg').textContent = msg || '';
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
@@ -466,16 +488,14 @@
     gs('staffSignIn', name, pin).then(function (r) {
       $('gGo').disabled = false; $('gPin').value = '';
       TOK = r.tok; lsSet(LS_TOK, r.tok); lsSet(LS_NAME, r.name);
+      /* はじめの番号のままのとき：いま打った番号は、変える画面の「いまの番号」にだけ使う（端末には残さない） */
+      if (r.must) { showChange(true, pin); return; }
       start(r.name);
     }, function (err) { $('gGo').disabled = false; $('gPin').value = ''; $('gMsg').textContent = err.message; $('gPin').focus(); });
   });
 
   (function boot() {
-    if (LIVE) {
-      $('tabStaff').hidden = false;
-      gs('staffMe').then(function (r) { start(r.name); }, function (e) { fatal(e.message); });
-      return;
-    }
+    if (LIVE) { start(''); return; }
     if (!WEB2) { fatal('送り先（サーバの口）が分かりません。事務所の代表にお問い合わせください。'); return; }
     if (!TOK) { showGate(''); return; }
     start(lsGet(LS_NAME));
@@ -483,9 +503,21 @@
 
   function start(name) {
     S.started = true;
-    $('gate').hidden = true; $('top').hidden = false;
-    $('whoName').textContent = name ? name + ' さん' : '';
-    $('signOut').hidden = LIVE;
+    $('gate').hidden = true; $('chg').hidden = true;
+    gs('staffMe').then(function (me) {
+      S.me = me;
+      if (me.must) { showChange(true); return; }
+      $('top').hidden = false;
+      $('whoName').textContent = (me.name || name) ? (me.name || name) + ' さん' + (me.master && !LIVE ? '（マスター）' : '') : '';
+      $('signOut').hidden = LIVE;
+      /* 担当者のタブ：シートの窓とアプリのマスターは手入れ、アプリのふつうの担当者は自分の番号だけ */
+      $('tabStaff').hidden = false;
+      $('sAdmin').hidden = !me.master;
+      $('sMine').hidden = LIVE;
+      main();
+    }, function (e) { if (S.started) fatal(e.message); });
+  }
+  function main() {
     gs('workInit').then(function (r) {
       S.clients = r.clients;
       const now = r.today.slice(0, 7).replace('/', '-');
@@ -969,14 +1001,43 @@
       function (err) { A.busy = false; amsg(err.message, 'err'); });
   });
 
-  /* ================= 担当者（シートの窓だけ） ================= */
+  /* ================= 自分の暗証番号を変える ================= */
+  let chgMust = false;
+  function showChange(must, cur) {
+    chgMust = !!must;
+    ['gate', 'top', 'ctl'].forEach(function (k) { $(k).hidden = true; }); hidePanes();
+    $('chg').hidden = false;
+    $('chgLead').textContent = must ? 'はじめに入った番号のままでは使えません。自分だけが知っている番号に変えてください（マスターは 6〜12 桁）。'
+                                    : '新しい番号に変えると、ほかの端末は入り直しになります。';
+    $('cCancel').hidden = must;
+    $('cCur').value = cur || ''; $('cNew').value = ''; $('cNew2').value = ''; $('cMsg').textContent = '';
+    (cur ? $('cNew') : $('cCur')).focus();
+  }
+  $('cCancel').addEventListener('click', function () { $('chg').hidden = true; $('top').hidden = false; selectTab('Staff'); });
+  $('chg').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const a = $('cCur').value, b = $('cNew').value, c = $('cNew2').value;
+    if (!a || !b) { $('cMsg').textContent = 'いまの番号と新しい番号を入れてください。'; return; }
+    if (b !== c) { $('cMsg').textContent = '新しい番号が2回でちがいます。'; $('cNew2').focus(); return; }
+    $('cGo').disabled = true; $('cMsg').textContent = '';
+    gs('staffChangePin', a, b).then(function (r) {
+      $('cGo').disabled = false; $('cCur').value = ''; $('cNew').value = ''; $('cNew2').value = '';
+      TOK = r.tok; lsSet(LS_TOK, r.tok);
+      $('chg').hidden = true;
+      start(r.name);
+      if (!chgMust) setTimeout(function () { smsg('暗証番号を変えました。', 'ok'); }, 50);
+    }, function (err) { $('cGo').disabled = false; $('cMsg').textContent = err.message; });
+  });
+  $('sMineGo').addEventListener('click', function () { showChange(false); });
+
+  /* ================= 担当者（手入れはシートの窓かマスター） ================= */
   function smsg(t, kind) { $('sMsg').textContent = t || ''; $('sMsg').className = 'pagemsg' + (kind ? ' ' + kind : ''); }
-  function sLoad() { if (!LIVE) return; gs('staffList').then(sDraw, function (e) { smsg(e.message, 'err'); }); }
+  function sLoad() { if (!S.me || !S.me.master) return; gs('staffList').then(sDraw, function (e) { smsg(e.message, 'err'); }); }
   function sDraw(list) {
     const tb = $('sBody'); tb.textContent = '';
     if (!list.length) { const tr = el('tr'); const td = el('td', null, 'まだ誰もいません。下で足してください。'); td.colSpan = 3; tr.appendChild(td); tb.appendChild(tr); }
     list.forEach(function (s) {
-      const tr = el('tr'); tr.appendChild(el('td', null, s.name)); tr.appendChild(el('td', null, s.at));
+      const tr = el('tr'); tr.appendChild(el('td', null, s.name + (s.master ? '（マスター）' : ''))); tr.appendChild(el('td', null, s.at));
       const td = el('td'); const b = el('button', 'danger', '消す'); b.type = 'button';
       b.addEventListener('click', function () {
         if (!confirm(s.name + ' さんを消します。その人の端末は入れなくなります。')) return;
@@ -988,7 +1049,7 @@
   $('sSave').addEventListener('click', function () {
     const n = $('sName').value.trim(), p = $('sPin').value.trim();
     if (!n || !p) { smsg('名前と暗証番号を入れてください。', 'err'); return; }
-    gs('staffSet', n, p).then(function (l) { sDraw(l); $('sPin').value = ''; smsg(n + ' さんの暗証番号を決めました。本人に伝えてください。', 'ok'); }, function (e) { smsg(e.message, 'err'); });
+    gs('staffSet', n, p, $('sMaster').checked).then(function (l) { sDraw(l); $('sPin').value = ''; $('sMaster').checked = false; smsg(n + ' さんの暗証番号を決めました。本人に伝えてください。', 'ok'); }, function (e) { smsg(e.message, 'err'); });
   });
 </script>
 </body>
