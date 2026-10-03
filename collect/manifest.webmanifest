@@ -1,0 +1,18 @@
+{
+  "name": "資料提出（石井事務所）",
+  "short_name": "資料提出",
+  "description": "撮影するか、写真・PDFを選ぶだけで事務所に届きます",
+  "lang": "ja",
+  "dir": "ltr",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3F6F5",
+  "theme_color": "#0F6E5C",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

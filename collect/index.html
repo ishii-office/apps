@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<title>資料提出</title>
+<!-- ==================================================================
+     GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
+     GAS から配るときは入りません（要らないものを読み込ませないため）。
+
+     ★ GASの「デプロイを管理」で出てくる /exec で終わるURLを、下の '' の中に入れます。
+       デプロイを作り直してURLが変わったら、ここも直します。
+
+     空のままでも使えます。そのときは、次のリンクで各端末に渡してください。
+       https://ishii-office.github.io/apps/collect/?t=（トークン）&u=（GASのURL）
+     端末が覚えて、アドレス欄からは消えます。
+     ★ 受け付けるのは https://script.google.com/ で始まるものだけです。
+     ================================================================== -->
+<script>window.__API_URL='https://script.google.com/macros/s/AKfycbxcRaVoS6NF2sedBw_pS28o-8349pj51kbF6yTnZYTOq4DF8RmcOgtwi2uKvJ0358mhpw/exec';</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- ?t=（トークン）を、よそへ出ていくときに渡さない -->
+<meta name="referrer" content="no-referrer">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="資料提出">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0F6E5C">
+
+<style>
+  :root {
+    --bg: #F3F6F5;
+    --paper: #FFFFFF;
+    --ink: #1D2A28;
+    --sub: #5B6B68;
+    --accent: #0F6E5C;
+    --accent-press: #0B5547;
+    --line: #D6DFDC;
+    --ok: #1F7A3A;
+    --err: #B3261E;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+    font-size: 17px; line-height: 1.7;
+    padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0);
+  }
+  main { max-width: 520px; margin: 0 auto; padding: 28px 20px 48px; }
+  .client { font-size: 15px; color: var(--sub); margin: 0; }
+  h1 { font-size: 26px; line-height: 1.35; margin: 4px 0 6px; font-weight: 700; }
+  .lead { color: var(--sub); font-size: 15px; margin: 0 0 24px; }
+
+  .camera {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; min-height: 168px; border-radius: 20px;
+    background: var(--accent); color: #fff; font-size: 21px; font-weight: 700;
+    cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .camera:active { background: var(--accent-press); }
+  .camera svg { width: 52px; height: 52px; }
+  .pick {
+    display: block; width: 100%; margin-top: 12px; padding: 16px;
+    border: 2px solid var(--accent); border-radius: 14px; background: var(--paper);
+    color: var(--accent); font-size: 18px; font-weight: 700; text-align: center; cursor: pointer;
+  }
+  .pick:active { background: #E6F0EE; }
+  input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  label:focus-within, textarea:focus-visible { outline: 3px solid #7FB8AC; outline-offset: 3px; }
+
+  .memo { margin-top: 24px; }
+  .memo label { display: block; font-size: 15px; color: var(--sub); margin-bottom: 6px; }
+  textarea {
+    width: 100%; min-height: 72px; padding: 12px; font: inherit; font-size: 16px;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--ink); resize: vertical;
+  }
+
+  ul.queue { list-style: none; padding: 0; margin: 24px 0 0; }
+  .queue li {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 15px;
+  }
+  .queue .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .queue .st { flex-shrink: 0; font-weight: 700; color: var(--sub); }
+  .queue .st.ok { color: var(--ok); }
+  .queue .st.err { color: var(--err); }
+  .queue .msg { display: block; color: var(--err); font-size: 13px; font-weight: 400; white-space: normal; }
+
+  .done {
+    margin-top: 20px; padding: 14px 16px; border-radius: 12px;
+    background: #E5F2E8; color: var(--ok); font-weight: 700; display: none;
+  }
+  .ng { padding: 2em 0; line-height: 1.8; }
+  [hidden] { display: none !important; }
+  .note { margin-top: 32px; font-size: 13px; color: var(--sub); }
+  @media (prefers-reduced-motion: no-preference) {
+    .done.show { animation: pop .25s ease-out; }
+    @keyframes pop { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="ng" id="ng" hidden></div>
+  <div id="app" hidden>
+  <p class="client" id="client"></p>
+  <h1>資料をお送りください</h1>
+  <p class="lead">撮影するか、写真・PDFを選ぶだけで事務所に届きます。何枚でも続けて送れます。</p>
+
+  <label class="camera">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+      <circle cx="12" cy="13.5" r="3.8"/>
+    </svg>
+    写真を撮る
+    <input id="cam" type="file" accept="image/*" capture="environment">
+  </label>
+
+  <label class="pick">
+    写真・PDFを選ぶ
+    <input id="pick" type="file" accept="image/*,application/pdf" multiple>
+  </label>
+
+  <div class="memo">
+    <label for="memo">ひとこと（任意）　例：9月分の通帳です</label>
+    <textarea id="memo" maxlength="500"></textarea>
+  </div>
+
+  <ul class="queue" id="queue" aria-live="polite"></ul>
+  <div class="done" id="done"></div>
+
+  <p class="note">1ファイル <span id="maxMb"></span>MB まで。送った資料はこの画面からは見られません。送り間違えたときは担当スタッフにお知らせください。</p>
+  </div>
+</main>
+
+<script>window.__BOOT=null;</script>
+<script>
+  /* ==================================================================
+     ★★ 画面は GitHub Pages からも配る（https://ishii-office.github.io/apps/collect/）
+
+     ★ 送り先は「GASの中にいるか」だけで決める。道は2本だけ
+       LIVE … GASから開いた（google.script.run がある）→ google.script.run
+       WEB2 … Pagesから開いた（GASの口が分かっている）→ fetch で doPost へ
+       どちらでもなければ【送らずに止まる】。
+       ★ ブラウザの中（localStorage など）へ控えを落とす道は作らない。
+         資料は端末に残さない。届かなかったら、届かなかったと出す
+
+     ★ 公開の棚は全アプリで同じ origin（ishii-office.github.io）。
+       localStorage はアプリをまたいで見えるので、名前は必ず collect_ で始める
+
+     ★ 口（GASのURL）の渡し方
+       1. public/pages-head.html の window.__API_URL（ふつうはこれ）
+       2. リンクで渡す … …/?u=（GASのURL）→ 端末が覚えて、アドレス欄から消す
+       3. すでに覚えている
+       ?u= は https://script.google.com/ で始まるものだけ受ける。
+       ここを緩めると、別のサーバへ資料を送らせるリンクが作れてしまう
+     ================================================================== */
+  var LS_API = 'collect_api_url';
+  var LS_TOK = 'collect_token';
+  function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  function qp(k) { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } }
+
+  const LIVE = (function () {
+    try { return !!(window.google && google.script && google.script.run); } catch (e) { return false; }
+  })();
+  let API_URL = '';
+  (function () {
+    try { if (window.__API_URL) API_URL = String(window.__API_URL); } catch (e) {}
+    const u = qp('u');
+    if (u && /^https:\/\/script\.google\.com\//.test(u)) {
+      API_URL = u;
+      lsSet(LS_API, u);
+    }
+    if (u) {
+      /* ?u= はアドレス欄から消す（?t= は残す。ブックマークで開けるように） */
+      try {
+        const q = new URLSearchParams(location.search); q.delete('u');
+        const s = q.toString();
+        history.replaceState(null, '', location.pathname + (s ? '?' + s : ''));
+      } catch (e) {}
+    }
+    if (!API_URL) API_URL = lsGet(LS_API);
+  })();
+  /* Pages から開いている（Googleの中ではないが、口は分かっている） */
+  const WEB2 = !LIVE && !!API_URL;
+
+  /* トークン。GASの中では doGet が渡す。Pages では ?t=、無ければ端末が覚えたもの
+     （ホーム画面から開くと ?t= が付かないので、覚えておく） */
+  const BOOT = window.__BOOT || null;
+  let TOKEN = '';
+  if (LIVE) {
+    TOKEN = BOOT ? String(BOOT.token || '') : '';
+  } else {
+    TOKEN = qp('t') || lsGet(LS_TOK);
+  }
+  let MAX_BYTES = 20 * 1024 * 1024;
+  const MAX_EDGE = 2400;
+  const JPEG_Q = 0.85;
+
+  const queueEl = document.getElementById('queue');
+  const doneEl = document.getElementById('done');
+  let pending = [];
+  let running = false;
+  let sentCount = 0;
+
+  document.getElementById('cam').addEventListener('change', onFiles);
+  document.getElementById('pick').addEventListener('change', onFiles);
+
+  function onFiles(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    files.forEach(function (f) {
+      const li = document.createElement('li');
+      li.innerHTML = '<span class="fname"></span><span class="st">待機中</span>';
+      li.querySelector('.fname').textContent = f.name || '写真';
+      queueEl.prepend(li);
+      pending.push({ file: f, li: li });
+    });
+    doneEl.style.display = 'none';
+    run();
+  }
+
+  async function run() {
+    if (running) return;
+    running = true;
+    while (pending.length) {
+      const item = pending.shift();
+      const st = item.li.querySelector('.st');
+      st.textContent = '送信中…';
+      try {
+        const p = await prepare(item.file);
+        if (p.size > MAX_BYTES) throw new Error('ファイルが大きすぎます（' + Math.floor(MAX_BYTES / 1048576) + 'MBまで）');
+        await callServer(p);
+        st.textContent = '送信済み';
+        st.className = 'st ok';
+        sentCount++;
+      } catch (err) {
+        st.textContent = '失敗';
+        st.className = 'st err';
+        const m = document.createElement('span');
+        m.className = 'msg';
+        m.textContent = (err && err.message ? err.message : String(err)) + '　もう一度選び直してください。';
+        st.appendChild(m);
+      }
+    }
+    running = false;
+    if (sentCount) {
+      doneEl.textContent = sentCount + '件を事務所に送りました。ありがとうございます。';
+      doneEl.style.display = 'block';
+      doneEl.classList.remove('show'); void doneEl.offsetWidth; doneEl.classList.add('show');
+    }
+  }
+
+  // 画像は縮小してJPEG化、PDFはそのまま
+  async function prepare(file) {
+    const type = file.type || '';
+    if (type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
+      return { name: file.name, mime: 'application/pdf', b64: await toBase64(file), size: file.size };
+    }
+    try {
+      const blob = await shrink(file);
+      const base = (file.name || 'photo').replace(/\.[^.]+$/, '');
+      return { name: base + '.jpg', mime: 'image/jpeg', b64: await toBase64(blob), size: blob.size };
+    } catch (_) {
+      // 縮小できない形式（端末によってはHEIC）は元のまま送る
+      const mime = type || 'image/jpeg';
+      return { name: file.name || 'photo', mime: mime, b64: await toBase64(file), size: file.size };
+    }
+  }
+
+  function shrink(file) {
+    return new Promise(function (resolve, reject) {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = function () {
+        let w = img.naturalWidth, h = img.naturalHeight;
+        const r = Math.min(1, MAX_EDGE / Math.max(w, h));
+        w = Math.round(w * r); h = Math.round(h * r);
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        c.toBlob(function (b) { b ? resolve(b) : reject(new Error('変換失敗')); }, 'image/jpeg', JPEG_Q);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('読込失敗')); };
+      img.src = url;
+    });
+  }
+
+  function toBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      const r = new FileReader();
+      r.onload = function () { resolve(String(r.result).split(',')[1]); };
+      r.onerror = function () { reject(new Error('ファイルを読み込めませんでした')); };
+      r.readAsDataURL(blob);
+    });
+  }
+
+  function callServer(p) {
+    const memo = document.getElementById('memo').value;
+    return call('uploadFile', [TOKEN, p.name, p.mime, p.b64, memo], 300000);
+  }
+
+  /* サーバを呼ぶ道は、ここ1か所だけ */
+  function call(fn, args, ms) {
+    return new Promise(function (resolve, reject) {
+      if (LIVE) {
+        if (fn !== 'uploadFile') { reject(new Error(fn + ' はGASの中では呼びません')); return; }
+        const runner = google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(function (e) { reject(new Error(e && e.message ? e.message : '通信に失敗しました')); });
+        runner.uploadFile.apply(runner, args);
+        return;
+      }
+      if (!WEB2) { reject(new Error('送り先（サーバの口）が分かりません。担当の事務所スタッフにお問い合わせください')); return; }
+      let ac = null, tid = null;
+      try { ac = new AbortController(); } catch (e) {}
+      tid = setTimeout(function () {
+        try { if (ac) ac.abort(); } catch (e) {}
+        reject(new Error('サーバの返事がありませんでした。届いているかもしれないので、担当スタッフにご確認ください'));
+      }, ms || 20000);
+      fetch(API_URL, {
+        method: 'POST', redirect: 'follow', signal: ac ? ac.signal : undefined,
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ fn: fn, args: args })
+      }).then(function (r) {
+        if (!r.ok) throw new Error('サーバにつながりませんでした（' + r.status + '）');
+        return r.json().catch(function () { throw new Error('サーバの返事が読めませんでした'); });
+      }).then(function (o) {
+        clearTimeout(tid);
+        if (!o || o.__err || !o.ok) throw new Error((o && o.msg) || '送れませんでした');
+        resolve(o.r);
+      }).catch(function (e) {
+        clearTimeout(tid);
+        reject(e instanceof Error ? e : new Error(String(e)));
+      });
+    });
+  }
+
+  /* ---- 起動 ---- */
+  function showApp(name, maxMb) {
+    MAX_BYTES = Number(maxMb || 20) * 1024 * 1024;
+    document.getElementById('client').textContent = name + ' 様';
+    document.getElementById('maxMb').textContent = String(Number(maxMb || 20));
+    document.title = '資料提出｜' + name;
+    document.getElementById('ng').hidden = true;
+    document.getElementById('app').hidden = false;
+  }
+  function showNg(msg) {
+    document.getElementById('app').hidden = true;
+    const ng = document.getElementById('ng');
+    ng.textContent = msg;
+    ng.hidden = false;
+  }
+  const NG_URL = 'このURLは使用できません。お手数ですが、担当の事務所スタッフにお問い合わせください。';
+  (function boot() {
+    if (LIVE) {
+      if (BOOT) showApp(BOOT.clientName, BOOT.maxMb); else showNg(NG_URL);
+      return;
+    }
+    if (!TOKEN) { showNg(NG_URL); return; }
+    if (!WEB2) { showNg('送り先（サーバの口）が分かりません。担当の事務所スタッフにお問い合わせください。'); return; }
+    showNg('読み込み中…');
+    call('clientInfo', [TOKEN]).then(function (r) {
+      lsSet(LS_TOK, TOKEN);
+      showApp(r.clientName, r.maxMb);
+    }, function (e) {
+      if (/使用できません/.test(e.message)) { lsDel(LS_TOK); showNg(NG_URL); return; }
+      showNg('つながりませんでした。電波のよいところで開き直してください。（' + e.message + '）');
+    });
+  })();
+</script>
+</body>
+</html>
