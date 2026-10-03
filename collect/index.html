@@ -52,24 +52,44 @@
   h1 { font-size: 26px; line-height: 1.35; margin: 4px 0 6px; font-weight: 700; }
   .lead { color: var(--sub); font-size: 15px; margin: 0 0 24px; }
 
-  .camera {
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
-    width: 100%; min-height: 168px; border-radius: 20px;
-    background: var(--accent); color: #fff; font-size: 21px; font-weight: 700;
-    cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+  /* ---- ボックス（資料の種類ごとの箱） ---- */
+  .boxes { display: grid; gap: 14px; }
+  .box {
+    position: relative; padding: 16px 16px 14px; border-radius: 18px;
+    background: var(--paper); border: 2px solid var(--line);
+    transition: border-color .12s, background-color .12s;
   }
-  .camera:active { background: var(--accent-press); }
-  .camera svg { width: 52px; height: 52px; }
-  .pick {
-    display: block; width: 100%; margin-top: 12px; padding: 16px;
-    border: 2px solid var(--accent); border-radius: 14px; background: var(--paper);
-    color: var(--accent); font-size: 18px; font-weight: 700; text-align: center; cursor: pointer;
+  .box.over { border-color: var(--accent); border-style: dashed; background: #E6F0EE; }
+  .box-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  .box-name { font-size: 19px; font-weight: 700; margin: 0; }
+  .box-count { flex-shrink: 0; font-size: 14px; font-weight: 700; color: var(--ok); }
+  .box-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 56px; padding: 10px; border-radius: 12px; font-size: 17px; font-weight: 700;
+    cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; text-align: center;
   }
-  .pick:active { background: #E6F0EE; }
+  .btn svg { width: 24px; height: 24px; flex-shrink: 0; }
+  .btn.cam { background: var(--accent); color: #fff; }
+  .btn.cam:active { background: var(--accent-press); }
+  .btn.pick { border: 2px solid var(--accent); background: var(--paper); color: var(--accent); }
+  .btn.pick:active { background: #E6F0EE; }
+  .drop-hint { display: none; margin: 10px 0 0; font-size: 13px; color: var(--sub); text-align: center; }
+  /* マウスのある端末（パソコン）だけ、ドラッグの案内を出す */
+  @media (hover: hover) and (pointer: fine) { .drop-hint { display: block; } }
+  /* パソコンの広い画面では箱を2列に（ドラッグ先が一度に見えるように） */
+  @media (min-width: 900px) {
+    main { max-width: 880px; }
+    .boxes { grid-template-columns: 1fr 1fr; }
+    .lead, .memo.top { max-width: 640px; }
+  }
   input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   label:focus-within, textarea:focus-visible { outline: 3px solid #7FB8AC; outline-offset: 3px; }
+  .queue .bx { color: var(--sub); font-size: 13px; margin-right: 6px; }
 
   .memo { margin-top: 24px; }
+  .memo.top { margin: 0 0 20px; }
+  .memo.top textarea { min-height: 52px; }
   .memo label { display: block; font-size: 15px; color: var(--sub); margin-bottom: 6px; }
   textarea {
     width: 100%; min-height: 72px; padding: 12px; font: inherit; font-size: 16px;
@@ -106,26 +126,15 @@
   <div id="app" hidden>
   <p class="client" id="client"></p>
   <h1>資料をお送りください</h1>
-  <p class="lead">撮影するか、写真・PDFを選ぶだけで事務所に届きます。何枚でも続けて送れます。</p>
+  <p class="lead">資料の種類ごとに箱があります。箱の中で撮影するか、写真・PDFを選ぶだけで事務所に届きます。パソコンなら、ファイルを箱へドラッグするだけで送れます。何枚でも続けて送れます。</p>
 
-  <label class="camera">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
-      <circle cx="12" cy="13.5" r="3.8"/>
-    </svg>
-    写真を撮る
-    <input id="cam" type="file" accept="image/*" capture="environment">
-  </label>
-
-  <label class="pick">
-    写真・PDFを選ぶ
-    <input id="pick" type="file" accept="image/*,application/pdf" multiple>
-  </label>
-
-  <div class="memo">
-    <label for="memo">ひとこと（任意）　例：9月分の通帳です</label>
+  <div class="memo top">
+    <label for="memo">ひとこと（任意）　例：9月分です</label>
     <textarea id="memo" maxlength="500"></textarea>
   </div>
+
+  <div class="boxes" id="boxes"></div>
+
 
   <ul class="queue" id="queue" aria-live="polite"></ul>
   <div class="done" id="done"></div>
@@ -206,20 +215,75 @@
   let running = false;
   let sentCount = 0;
 
-  document.getElementById('cam').addEventListener('change', onFiles);
-  document.getElementById('pick').addEventListener('change', onFiles);
+  /* ---- ボックス ----
+     顧問先ごとの箱（現金の領収書・通帳…）。並びはサーバ（マスタの「ボックス」列）が決める。
+     どの箱にも「撮る」「選ぶ」と、パソコン向けのドラッグ＆ドロップがある。
+     ★ 箱の名前は事務所が書いたものなので、textContent で入れる（innerHTML にしない） */
+  const ICON_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.8"/></svg>';
+  const boxCount = {};
 
-  function onFiles(e) {
-    const files = Array.from(e.target.files || []);
-    e.target.value = '';
+  function buildBoxes(boxes) {
+    const wrap = document.getElementById('boxes');
+    wrap.textContent = '';
+    (boxes && boxes.length ? boxes : ['その他']).forEach(function (name) {
+      const el = document.createElement('section');
+      el.className = 'box';
+      el.dataset.box = name;
+      el.innerHTML =
+        '<div class="box-head"><h2 class="box-name"></h2><span class="box-count"></span></div>' +
+        '<div class="box-btns">' +
+          '<label class="btn cam">' + ICON_CAM + '撮る<input class="cam" type="file" accept="image/*" capture="environment"></label>' +
+          '<label class="btn pick">選ぶ<input class="pick" type="file" accept="image/*,application/pdf" multiple></label>' +
+        '</div>' +
+        '<p class="drop-hint">ここにファイルをドラッグ＆ドロップ</p>';
+      el.querySelector('.box-name').textContent = name;
+      el.querySelectorAll('input[type=file]').forEach(function (inp) {
+        inp.setAttribute('aria-label', name + '：' + (inp.className === 'cam' ? '撮る' : '選ぶ'));
+        inp.addEventListener('change', function (e) {
+          const files = Array.from(e.target.files || []);
+          e.target.value = '';
+          addFiles(files, name);
+        });
+      });
+      /* ドラッグ＆ドロップ。子要素をまたぐと dragleave が出るので、数えて判断する */
+      let depth = 0;
+      el.addEventListener('dragenter', function (e) { e.preventDefault(); depth++; el.classList.add('over'); });
+      el.addEventListener('dragover', function (e) { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; });
+      el.addEventListener('dragleave', function () { if (--depth <= 0) { depth = 0; el.classList.remove('over'); } });
+      el.addEventListener('drop', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        depth = 0; el.classList.remove('over');
+        addFiles(Array.from((e.dataTransfer && e.dataTransfer.files) || []), name);
+      });
+      wrap.appendChild(el);
+    });
+  }
+  /* 箱の外に落としても、ブラウザがファイルを開いて画面が消えないようにする */
+  window.addEventListener('dragover', function (e) { e.preventDefault(); });
+  window.addEventListener('drop', function (e) {
+    e.preventDefault();
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+      doneEl.textContent = '箱（現金の領収書・通帳など）の上に落としてください。';
+      doneEl.style.display = 'block';
+    }
+  });
+
+  function bumpBox(name) {
+    boxCount[name] = (boxCount[name] || 0) + 1;
+    const el = Array.from(document.querySelectorAll('.box')).find(function (b) { return b.dataset.box === name; });
+    if (el) el.querySelector('.box-count').textContent = boxCount[name] + '件 送信済み';
+  }
+
+  function addFiles(files, box) {
     files.forEach(function (f) {
       const li = document.createElement('li');
-      li.innerHTML = '<span class="fname"></span><span class="st">待機中</span>';
-      li.querySelector('.fname').textContent = f.name || '写真';
+      li.innerHTML = '<span class="fname"><span class="bx"></span><span class="fn"></span></span><span class="st">待機中</span>';
+      li.querySelector('.bx').textContent = '［' + box + '］';
+      li.querySelector('.fn').textContent = f.name || '写真';
       queueEl.prepend(li);
-      pending.push({ file: f, li: li });
+      pending.push({ file: f, li: li, box: box });
     });
-    doneEl.style.display = 'none';
+    if (files.length) doneEl.style.display = 'none';
     run();
   }
 
@@ -231,12 +295,14 @@
       const st = item.li.querySelector('.st');
       st.textContent = '送信中…';
       try {
+        if (!sendable(item.file)) throw new Error('写真（JPEG・PNGなど）かPDFだけ送れます');
         const p = await prepare(item.file);
         if (p.size > MAX_BYTES) throw new Error('ファイルが大きすぎます（' + Math.floor(MAX_BYTES / 1048576) + 'MBまで）');
-        await callServer(p);
+        await callServer(p, item.box);
         st.textContent = '送信済み';
         st.className = 'st ok';
         sentCount++;
+        bumpBox(item.box);
       } catch (err) {
         st.textContent = '失敗';
         st.className = 'st err';
@@ -252,6 +318,12 @@
       doneEl.style.display = 'block';
       doneEl.classList.remove('show'); void doneEl.offsetWidth; doneEl.classList.add('show');
     }
+  }
+
+  /* ドラッグでは何でも落とせるので、写真とPDF以外はここで止める（サーバでも断る） */
+  function sendable(f) {
+    const type = f.type || '';
+    return /^image\//.test(type) || type === 'application/pdf' || /\.(pdf|jpe?g|png|webp|heic|heif)$/i.test(f.name || '');
   }
 
   // 画像は縮小してJPEG化、PDFはそのまま
@@ -301,9 +373,9 @@
     });
   }
 
-  function callServer(p) {
+  function callServer(p, box) {
     const memo = document.getElementById('memo').value;
-    return call('uploadFile', [TOKEN, p.name, p.mime, p.b64, memo], 300000);
+    return call('uploadFile', [TOKEN, p.name, p.mime, p.b64, memo, box], 300000);
   }
 
   /* サーバを呼ぶ道は、ここ1か所だけ */
@@ -343,8 +415,9 @@
   }
 
   /* ---- 起動 ---- */
-  function showApp(name, maxMb) {
+  function showApp(name, maxMb, boxes) {
     MAX_BYTES = Number(maxMb || 20) * 1024 * 1024;
+    buildBoxes(boxes);
     document.getElementById('client').textContent = name + ' 様';
     document.getElementById('maxMb').textContent = String(Number(maxMb || 20));
     document.title = '資料提出｜' + name;
@@ -360,7 +433,7 @@
   const NG_URL = 'このURLは使用できません。お手数ですが、担当の事務所スタッフにお問い合わせください。';
   (function boot() {
     if (LIVE) {
-      if (BOOT) showApp(BOOT.clientName, BOOT.maxMb); else showNg(NG_URL);
+      if (BOOT) showApp(BOOT.clientName, BOOT.maxMb, BOOT.boxes); else showNg(NG_URL);
       return;
     }
     if (!TOKEN) { showNg(NG_URL); return; }
@@ -368,7 +441,7 @@
     showNg('読み込み中…');
     call('clientInfo', [TOKEN]).then(function (r) {
       lsSet(LS_TOK, TOKEN);
-      showApp(r.clientName, r.maxMb);
+      showApp(r.clientName, r.maxMb, r.boxes);
     }, function (e) {
       if (/使用できません/.test(e.message)) { lsDel(LS_TOK); showNg(NG_URL); return; }
       showNg('つながりませんでした。電波のよいところで開き直してください。（' + e.message + '）');
