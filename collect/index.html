@@ -39,6 +39,7 @@
     --line: #D6DFDC;
     --ok: #1F7A3A;
     --err: #B3261E;
+    --warn: #8A5A00;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--ink); }
@@ -47,12 +48,18 @@
     font-size: 17px; line-height: 1.7;
     padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0);
   }
-  main { max-width: 520px; margin: 0 auto; padding: 28px 20px 48px; }
+  main { max-width: 520px; margin: 0 auto; padding: 24px 20px 120px; }
   .client { font-size: 15px; color: var(--sub); margin: 0; }
   h1 { font-size: 26px; line-height: 1.35; margin: 4px 0 6px; font-weight: 700; }
-  .lead { color: var(--sub); font-size: 15px; margin: 0 0 24px; }
+  .lead { color: var(--sub); font-size: 15px; margin: 0 0 18px; }
+  [hidden] { display: none !important; }
 
-  /* ---- ボックス（資料の種類ごとの箱） ---- */
+  /* ---- タブ（送る／送った履歴） ---- */
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #E3EAE8; padding: 4px; border-radius: 12px; margin: 14px 0 20px; }
+  .tabs button { font: inherit; font-size: 16px; font-weight: 700; border: 0; border-radius: 9px; padding: 9px; background: transparent; color: var(--sub); cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+  /* ---- 箱（資料の種類・口座・カードごと） ---- */
   .boxes { display: grid; gap: 14px; }
   .box {
     position: relative; padding: 16px 16px 14px; border-radius: 18px;
@@ -62,46 +69,57 @@
   .box.over { border-color: var(--accent); border-style: dashed; background: #E6F0EE; }
   .box-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
   .box-name { font-size: 19px; font-weight: 700; margin: 0; }
-  .box-count { flex-shrink: 0; font-size: 14px; font-weight: 700; color: var(--ok); }
+  .box-count { flex-shrink: 0; font-size: 14px; font-weight: 700; color: var(--accent); }
   .box-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .btn {
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    min-height: 56px; padding: 10px; border-radius: 12px; font-size: 17px; font-weight: 700;
+    min-height: 56px; padding: 10px; border-radius: 12px; font: inherit; font-size: 17px; font-weight: 700;
     cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; text-align: center;
   }
   .btn svg { width: 24px; height: 24px; flex-shrink: 0; }
-  .btn.cam { background: var(--accent); color: #fff; }
+  .btn.cam { background: var(--accent); color: #fff; border: 0; }
   .btn.cam:active { background: var(--accent-press); }
   .btn.pick { border: 2px solid var(--accent); background: var(--paper); color: var(--accent); }
   .btn.pick:active { background: #E6F0EE; }
   .drop-hint { display: none; margin: 10px 0 0; font-size: 13px; color: var(--sub); text-align: center; }
-  /* マウスのある端末（パソコン）だけ、ドラッグの案内を出す */
   @media (hover: hover) and (pointer: fine) { .drop-hint { display: block; } }
-  /* パソコンの広い画面では箱を2列に（ドラッグ先が一度に見えるように） */
-  @media (min-width: 900px) {
-    main { max-width: 880px; }
-    .boxes { grid-template-columns: 1fr 1fr; }
-    .lead, .memo.top { max-width: 640px; }
-  }
   input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-  label:focus-within, textarea:focus-visible { outline: 3px solid #7FB8AC; outline-offset: 3px; }
-  .queue .bx { color: var(--sub); font-size: 13px; margin-right: 6px; }
+  label:focus-within, textarea:focus-visible, button:focus-visible { outline: 3px solid #7FB8AC; outline-offset: 3px; }
 
-  .memo { margin-top: 24px; }
-  .memo.top { margin: 0 0 20px; }
-  .memo.top textarea { min-height: 52px; }
+  /* ---- 送る前の確認 ---- */
+  .tray { margin-top: 26px; padding: 16px; border-radius: 18px; background: var(--paper); border: 2px solid var(--accent); }
+  .tray h2 { font-size: 19px; margin: 0 0 4px; }
+  .tray .sub { font-size: 14px; color: var(--sub); margin: 0 0 12px; }
+  .tray h3 { font-size: 15px; margin: 14px 0 8px; color: var(--sub); }
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .ti { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: #EEF2F1; border: 1px solid var(--line); }
+  .ti img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ti .kind { white-space: pre-line; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--sub); font-size: 14px; padding: 6px; text-align: center; word-break: break-all; }
+  .ti .del { position: absolute; top: 4px; right: 4px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; font-size: 18px; line-height: 1; cursor: pointer; }
+  .ti .tst { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 4px; font-size: 12px; font-weight: 700; text-align: center; background: rgba(255,255,255,.92); }
+  .ti .tst.err { color: var(--err); }
+  .ti.sending { opacity: .6; }
+  .memo { margin-top: 14px; }
   .memo label { display: block; font-size: 15px; color: var(--sub); margin-bottom: 6px; }
   textarea {
-    width: 100%; min-height: 72px; padding: 12px; font: inherit; font-size: 16px;
+    width: 100%; min-height: 56px; padding: 12px; font: inherit; font-size: 16px;
     border: 1px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--ink); resize: vertical;
   }
+  .send {
+    display: block; width: 100%; margin-top: 14px; min-height: 60px; border: 0; border-radius: 14px;
+    background: var(--accent); color: #fff; font: inherit; font-size: 19px; font-weight: 700; cursor: pointer;
+  }
+  .send:active { background: var(--accent-press); }
+  .send:disabled { opacity: .55; cursor: default; }
+  .err-line { color: var(--err); font-size: 13px; margin: 6px 0 0; }
 
-  ul.queue { list-style: none; padding: 0; margin: 24px 0 0; }
+  ul.queue { list-style: none; padding: 0; margin: 20px 0 0; }
   .queue li {
     display: flex; justify-content: space-between; align-items: center; gap: 12px;
-    padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 15px;
+    padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 15px;
   }
   .queue .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .queue .bx { color: var(--sub); font-size: 13px; margin-right: 6px; }
   .queue .st { flex-shrink: 0; font-weight: 700; color: var(--sub); }
   .queue .st.ok { color: var(--ok); }
   .queue .st.err { color: var(--err); }
@@ -111,13 +129,49 @@
     margin-top: 20px; padding: 14px 16px; border-radius: 12px;
     background: #E5F2E8; color: var(--ok); font-weight: 700; display: none;
   }
+  .done.warn { background: #FFF4DE; color: var(--warn); }
+
+  /* ---- 送った履歴 ---- */
+  .hist { list-style: none; margin: 0; padding: 0; }
+  .hist li { padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .hist .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .hist .at { font-size: 14px; color: var(--sub); }
+  .hist .nm { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hist .bx { font-size: 13px; color: var(--sub); margin-right: 6px; }
+  .badge { flex-shrink: 0; font-size: 13px; font-weight: 700; border-radius: 999px; padding: 2px 10px; }
+  /* ★ st- を付ける（.done は送信のお知らせ欄の名前で、隠してあるので重なると消える） */
+  .badge.st-received { background: #EEF2F1; color: var(--sub); }
+  .badge.st-done { background: #E5F2E8; color: var(--ok); }
+  .badge.st-back { background: #FDECEA; color: var(--err); }
+  .hist .note { margin: 6px 0 0; font-size: 14px; color: var(--err); }
+  .hist-empty { color: var(--sub); padding: 24px 0; text-align: center; }
+  .reload { font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+
   .ng { padding: 2em 0; line-height: 1.8; }
-  [hidden] { display: none !important; }
   .note { margin-top: 32px; font-size: 13px; color: var(--sub); }
-  @media (prefers-reduced-motion: no-preference) {
-    .done.show { animation: pop .25s ease-out; }
-    @keyframes pop { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  /* ---- 連続撮影 ---- */
+  .camv { position: fixed; inset: 0; z-index: 10; background: #000; display: flex; flex-direction: column; color: #fff; }
+  .camv video { flex: 1; min-height: 0; width: 100%; object-fit: contain; background: #000; }
+  .cam-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0)) 16px 10px; font-size: 16px; }
+  .cam-top b { font-size: 17px; }
+  .cam-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 14px 18px calc(18px + env(safe-area-inset-bottom, 0)); }
+  .shutter { width: 76px; height: 76px; border-radius: 50%; border: 5px solid #fff; background: #fff; box-shadow: inset 0 0 0 4px #000; cursor: pointer; }
+  .shutter:active { transform: scale(.94); }
+  .cam-done { justify-self: start; font: inherit; font-size: 17px; font-weight: 700; color: #fff; background: rgba(255,255,255,.18); border: 0; border-radius: 10px; padding: 10px 16px; cursor: pointer; }
+  .cam-last { justify-self: end; width: 56px; height: 72px; border-radius: 8px; overflow: hidden; border: 2px solid #fff; background: #222; }
+  .cam-last img { width: 100%; height: 100%; object-fit: cover; }
+  .flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 11; }
+  .flash.on { animation: fl .25s ease-out; }
+  @keyframes fl { from { opacity: .8; } to { opacity: 0; } }
+
+  /* パソコンの広い画面では箱を2列に（ドラッグ先が一度に見えるように） */
+  @media (min-width: 900px) {
+    main { max-width: 880px; }
+    .boxes { grid-template-columns: 1fr 1fr; }
+    .lead, .tabs { max-width: 640px; }
   }
+  @media (prefers-reduced-motion: reduce) { .flash.on { animation: none; } }
 </style>
 </head>
 <body>
@@ -126,22 +180,53 @@
   <div id="app" hidden>
   <p class="client" id="client"></p>
   <h1>資料をお送りください</h1>
-  <p class="lead">資料の種類ごとに箱があります。箱の中で撮影するか、写真・PDFを選ぶだけで事務所に届きます。パソコンなら、ファイルを箱へドラッグするだけで送れます。何枚でも続けて送れます。</p>
 
-  <div class="memo top">
-    <label for="memo">ひとこと（任意）　例：9月分です</label>
-    <textarea id="memo" maxlength="500"></textarea>
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tabSend" aria-selected="true" aria-controls="paneSend">送る</button>
+    <button type="button" role="tab" id="tabHist" aria-selected="false" aria-controls="paneHist">送った履歴</button>
   </div>
 
-  <div class="boxes" id="boxes"></div>
+  <section id="paneSend" role="tabpanel" aria-labelledby="tabSend">
+    <p class="lead">資料の種類ごとの箱で、撮影するか、写真・PDFを選んでください。パソコンなら箱へドラッグするだけです。最後に「送る」を押すと事務所に届きます。</p>
+    <div class="boxes" id="boxes"></div>
 
+    <div class="tray" id="tray" hidden>
+      <h2 id="trayTitle">送る前の確認</h2>
+      <p class="sub">要らないものは × で消してください。まだ送っていません。</p>
+      <div id="trayBody"></div>
+      <div class="memo">
+        <label for="memo">ひとこと（任意）　例：9月分です</label>
+        <textarea id="memo" maxlength="500"></textarea>
+      </div>
+      <button type="button" class="send" id="sendBtn">送る</button>
+    </div>
 
-  <ul class="queue" id="queue" aria-live="polite"></ul>
-  <div class="done" id="done"></div>
+    <ul class="queue" id="queue" aria-live="polite"></ul>
+    <div class="done" id="done" role="status"></div>
+  </section>
 
-  <p class="note">1ファイル <span id="maxMb"></span>MB まで。送った資料はこの画面からは見られません。送り間違えたときは担当スタッフにお知らせください。</p>
+  <section id="paneHist" role="tabpanel" aria-labelledby="tabHist" hidden>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="color:var(--sub);font-size:14px">新しい順・最大200件</span>
+      <button type="button" class="reload" id="histReload">更新</button>
+    </div>
+    <ul class="hist" id="hist"></ul>
+  </section>
+
+  <p class="note">1ファイル <span id="maxMb"></span>MB まで。撮った写真はこの端末には残りません。送り間違えたときは担当スタッフにお知らせください。</p>
   </div>
 </main>
+
+<div class="camv" id="camv" hidden role="dialog" aria-modal="true" aria-label="連続撮影">
+  <div class="cam-top"><b id="camBox"></b><span id="camCount">0枚</span></div>
+  <video id="video" playsinline muted autoplay></video>
+  <div class="cam-bar">
+    <button type="button" class="cam-done" id="camDone">完了</button>
+    <button type="button" class="shutter" id="shutter" aria-label="撮る"></button>
+    <div class="cam-last" id="camLast"></div>
+  </div>
+</div>
+<div class="flash" id="flash"></div>
 
 <script>window.__BOOT=null;</script>
 <script>
@@ -154,6 +239,7 @@
        どちらでもなければ【送らずに止まる】。
        ★ ブラウザの中（localStorage など）へ控えを落とす道は作らない。
          資料は端末に残さない。届かなかったら、届かなかったと出す
+         （送る前の写真は、開いているあいだのメモリにだけ持つ。閉じたら消える）
 
      ★ 公開の棚は全アプリで同じ origin（ishii-office.github.io）。
        localStorage はアプリをまたいで見えるので、名前は必ず collect_ で始める
@@ -209,36 +295,176 @@
   const MAX_EDGE = 2400;
   const JPEG_Q = 0.85;
 
-  const queueEl = document.getElementById('queue');
-  const doneEl = document.getElementById('done');
-  let pending = [];
-  let running = false;
-  let sentCount = 0;
+  const $ = function (id) { return document.getElementById(id); };
+  const queueEl = $('queue');
+  const doneEl = $('done');
+
+  /* ---- 送る前の箱（トレイ）----
+     撮った・選んだ・落としたものは、まずここに並ぶ。「送る」を押すまで送らない。
+     中身は File のまま（メモリだけ）。サムネイルは object URL で出し、消すときに返す */
+  let tray = [];          /* { id, file, box, url, err } */
+  let seq = 0;
+  let sending = false;
+  const boxSent = {};
+
+  function showDone(text, warn) {
+    doneEl.textContent = text;
+    doneEl.className = 'done' + (warn ? ' warn' : '');
+    doneEl.style.display = 'block';
+  }
+
+  /* ドラッグでは何でも落とせるので、写真とPDF以外はここで止める（サーバでも断る） */
+  function sendable(f) {
+    const type = f.type || '';
+    return /^image\//.test(type) || type === 'application/pdf' || /\.(pdf|jpe?g|png|webp|heic|heif)$/i.test(f.name || '');
+  }
+  function isPdf(f) { return f.type === 'application/pdf' || /\.pdf$/i.test(f.name || ''); }
+
+  function addFiles(files, box) {
+    files.forEach(function (f) {
+      if (!sendable(f)) {
+        /* 送れないものはトレイに入れず、その場で「失敗」と出す */
+        queueLine(f.name || 'ファイル', box, '失敗', 'err', '写真（JPEG・PNGなど）かPDFだけ送れます');
+        return;
+      }
+      let url = '';
+      if (!isPdf(f)) { try { url = URL.createObjectURL(f); } catch (e) {} }
+      tray.push({ id: ++seq, file: f, box: box, url: url, err: '' });
+    });
+    if (files.length) doneEl.style.display = 'none';
+    drawTray();
+  }
+
+  function removeItem(id) {
+    tray = tray.filter(function (it) {
+      if (it.id !== id) return true;
+      if (it.url) { try { URL.revokeObjectURL(it.url); } catch (e) {} }
+      return false;
+    });
+    drawTray();
+  }
+
+  function drawTray() {
+    const wrap = $('tray');
+    const body = $('trayBody');
+    body.textContent = '';
+    wrap.hidden = !tray.length;
+    $('trayTitle').textContent = '送る前の確認（' + tray.length + '件）';
+    const btn = $('sendBtn');
+    const failed = tray.filter(function (it) { return it.err; }).length;
+    btn.textContent = sending ? '送っています…' : (failed ? '残り ' + tray.length + '件をもう一度送る' : tray.length + '件を事務所に送る');
+    btn.disabled = sending || !tray.length;
+    /* 箱ごとにまとめる（箱の並び順で） */
+    BOXES.forEach(function (b) {
+      const list = tray.filter(function (it) { return it.box === b; });
+      if (!list.length) return;
+      const h = document.createElement('h3'); h.textContent = b + '（' + list.length + '件）'; body.appendChild(h);
+      const g = document.createElement('div'); g.className = 'thumbs';
+      list.forEach(function (it) {
+        const d = document.createElement('div'); d.className = 'ti' + (it.sending ? ' sending' : ''); d.dataset.id = String(it.id);
+        if (it.url) { const img = document.createElement('img'); img.alt = it.file.name || '写真'; img.src = it.url; d.appendChild(img); }
+        else { const k = document.createElement('div'); k.className = 'kind'; k.textContent = isPdf(it.file) ? 'PDF\n' + (it.file.name || '') : (it.file.name || ''); d.appendChild(k); }
+        if (!sending) {
+          const x = document.createElement('button'); x.type = 'button'; x.className = 'del'; x.textContent = '×';
+          x.setAttribute('aria-label', (it.file.name || '写真') + 'を消す');
+          x.addEventListener('click', function () { removeItem(it.id); });
+          d.appendChild(x);
+        }
+        if (it.sending || it.err) {
+          const s = document.createElement('div'); s.className = 'tst' + (it.err ? ' err' : '');
+          s.textContent = it.err ? '失敗' : '送信中…'; d.appendChild(s);
+        }
+        g.appendChild(d);
+      });
+      body.appendChild(g);
+      list.forEach(function (it) { if (it.err) { const p = document.createElement('p'); p.className = 'err-line'; p.textContent = (it.file.name || '写真') + '：' + it.err; body.appendChild(p); } });
+    });
+  }
+
+  function queueLine(name, box, st, cls, msg) {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="fname"><span class="bx"></span><span class="fn"></span></span><span class="st"></span>';
+    li.querySelector('.bx').textContent = '［' + box + '］';
+    li.querySelector('.fn').textContent = name;
+    const s = li.querySelector('.st'); s.textContent = st; s.className = 'st ' + (cls || '');
+    if (msg) { const m = document.createElement('span'); m.className = 'msg'; m.textContent = msg; s.appendChild(m); }
+    queueEl.prepend(li);
+    return li;
+  }
+
+  /* 送る。1件ずつ順に。届いたものはトレイから消え、届かなかったものはトレイに残る（もう一度押せる） */
+  async function sendAll() {
+    if (sending || !tray.length) return;
+    sending = true;
+    let ok = 0, ng = 0;
+    const items = tray.slice();
+    items.forEach(function (it) { it.err = ''; });
+    for (const it of items) {
+      if (tray.indexOf(it) < 0) continue;
+      it.sending = true; drawTray();
+      const li = queueLine(it.file.name || '写真', it.box, '送信中…', '');
+      const st = li.querySelector('.st');
+      try {
+        const p = await prepare(it.file);
+        if (p.size > MAX_BYTES) throw new Error('ファイルが大きすぎます（' + Math.floor(MAX_BYTES / 1048576) + 'MBまで）');
+        await callServer(p, it.box);
+        st.textContent = '送信済み'; st.className = 'st ok';
+        ok++;
+        boxSent[it.box] = (boxSent[it.box] || 0) + 1;
+        bumpBox(it.box);
+        tray = tray.filter(function (x) { return x !== it; });
+        if (it.url) { try { URL.revokeObjectURL(it.url); } catch (e) {} }
+      } catch (err) {
+        it.err = err && err.message ? err.message : String(err);
+        st.textContent = '失敗'; st.className = 'st err';
+        const m = document.createElement('span'); m.className = 'msg'; m.textContent = it.err; st.appendChild(m);
+        ng++;
+      }
+      it.sending = false; drawTray();
+    }
+    sending = false;
+    drawTray();
+    if (ok && !ng) {
+      $('memo').value = '';
+      showDone(ok + '件を事務所に送りました。ありがとうございます。');
+    } else if (ng) {
+      showDone((ok ? ok + '件は届きました。' : '') + ng + '件が届きませんでした。電波のよいところで「もう一度送る」を押してください。', true);
+    }
+  }
+  $('sendBtn').addEventListener('click', sendAll);
+
+  /* 送る前に閉じようとしたら引き止める（写真は端末に残らないので、閉じると消える） */
+  window.addEventListener('beforeunload', function (e) {
+    if (tray.length || sending) { e.preventDefault(); e.returnValue = ''; return ''; }
+  });
 
   /* ---- ボックス ----
-     顧問先ごとの箱（現金の領収書・通帳…）。並びはサーバ（マスタの「ボックス」列）が決める。
-     どの箱にも「撮る」「選ぶ」と、パソコン向けのドラッグ＆ドロップがある。
+     顧問先ごとの箱（現金の領収書・通帳：○○銀行…）。並びはサーバ（マスタの「ボックス」列）が決める。
      ★ 箱の名前は事務所が書いたものなので、textContent で入れる（innerHTML にしない） */
   const ICON_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.8"/></svg>';
-  const boxCount = {};
+  let BOXES = [];
 
   function buildBoxes(boxes) {
-    const wrap = document.getElementById('boxes');
+    BOXES = (boxes && boxes.length ? boxes : ['その他']).slice();
+    const wrap = $('boxes');
     wrap.textContent = '';
-    (boxes && boxes.length ? boxes : ['その他']).forEach(function (name) {
+    BOXES.forEach(function (name) {
       const el = document.createElement('section');
       el.className = 'box';
       el.dataset.box = name;
       el.innerHTML =
         '<div class="box-head"><h2 class="box-name"></h2><span class="box-count"></span></div>' +
         '<div class="box-btns">' +
-          '<label class="btn cam">' + ICON_CAM + '撮る<input class="cam" type="file" accept="image/*" capture="environment"></label>' +
+          '<button type="button" class="btn cam">' + ICON_CAM + '撮る</button>' +
           '<label class="btn pick">選ぶ<input class="pick" type="file" accept="image/*,application/pdf" multiple></label>' +
         '</div>' +
+        '<input class="cam1" type="file" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">' +
         '<p class="drop-hint">ここにファイルをドラッグ＆ドロップ</p>';
       el.querySelector('.box-name').textContent = name;
+      el.querySelector('button.cam').setAttribute('aria-label', name + '：撮る');
+      el.querySelector('button.cam').addEventListener('click', function () { openCamera(name, el.querySelector('input.cam1')); });
       el.querySelectorAll('input[type=file]').forEach(function (inp) {
-        inp.setAttribute('aria-label', name + '：' + (inp.className === 'cam' ? '撮る' : '選ぶ'));
+        if (inp.className === 'pick') inp.setAttribute('aria-label', name + '：選ぶ');
         inp.addEventListener('change', function (e) {
           const files = Array.from(e.target.files || []);
           e.target.value = '';
@@ -263,67 +489,115 @@
   window.addEventListener('drop', function (e) {
     e.preventDefault();
     if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
-      doneEl.textContent = '箱（現金の領収書・通帳など）の上に落としてください。';
-      doneEl.style.display = 'block';
+      showDone('箱（現金の領収書・通帳など）の上に落としてください。', true);
     }
   });
 
   function bumpBox(name) {
-    boxCount[name] = (boxCount[name] || 0) + 1;
     const el = Array.from(document.querySelectorAll('.box')).find(function (b) { return b.dataset.box === name; });
-    if (el) el.querySelector('.box-count').textContent = boxCount[name] + '件 送信済み';
+    if (el) el.querySelector('.box-count').textContent = boxSent[name] + '件 送信済み';
   }
 
-  function addFiles(files, box) {
-    files.forEach(function (f) {
-      const li = document.createElement('li');
-      li.innerHTML = '<span class="fname"><span class="bx"></span><span class="fn"></span></span><span class="st">待機中</span>';
-      li.querySelector('.bx').textContent = '［' + box + '］';
-      li.querySelector('.fn').textContent = f.name || '写真';
-      queueEl.prepend(li);
-      pending.push({ file: f, li: li, box: box });
-    });
-    if (files.length) doneEl.style.display = 'none';
-    run();
+  /* ---- 連続撮影 ----
+     カメラを開いたまま、シャッターを押すたびにトレイへ足していく（1枚ごとに開き直さない）。
+     カメラが使えない（許可されない・GASの入れ物の中など）ときは、端末のカメラで1枚ずつ撮る */
+  let stream = null, camBox = '', camN = 0;
+  async function openCamera(box, fallbackInput) {
+    camBox = box; camN = 0;
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('no camera api');
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1920 } }, audio: false
+      });
+    } catch (e) {
+      stream = null;
+      fallbackInput.click();
+      return;
+    }
+    const v = $('video');
+    v.srcObject = stream;
+    try { await v.play(); } catch (e) {}
+    $('camBox').textContent = box;
+    $('camCount').textContent = '0枚';
+    $('camLast').textContent = '';
+    $('camv').hidden = false;
   }
+  function closeCamera() {
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+    $('video').srcObject = null;
+    $('camv').hidden = true;
+    if (camN) $('tray').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('camDone').addEventListener('click', closeCamera);
+  $('shutter').addEventListener('click', function () {
+    const v = $('video');
+    let w = v.videoWidth, h = v.videoHeight;
+    if (!w || !h) return;
+    const r = Math.min(1, MAX_EDGE / Math.max(w, h));
+    w = Math.round(w * r); h = Math.round(h * r);
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    c.getContext('2d').drawImage(v, 0, 0, w, h);
+    const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+    const box = camBox;
+    c.toBlob(function (b) {
+      if (!b) return;
+      camN++;
+      const d = new Date();
+      const z = function (n) { return String(n).padStart(2, '0'); };
+      const name = '撮影_' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + '_' + camN + '.jpg';
+      const file = new File([b], name, { type: 'image/jpeg' });
+      addFiles([file], box);
+      $('camCount').textContent = camN + '枚';
+      const last = tray[tray.length - 1];
+      const cl = $('camLast'); cl.textContent = '';
+      if (last && last.url) { const img = document.createElement('img'); img.alt = ''; img.src = last.url; cl.appendChild(img); }
+    }, 'image/jpeg', JPEG_Q);
+  });
+  document.addEventListener('keydown', function (e) {
+    if ($('camv').hidden) return;
+    if (e.key === 'Escape') closeCamera();
+  });
 
-  async function run() {
-    if (running) return;
-    running = true;
-    while (pending.length) {
-      const item = pending.shift();
-      const st = item.li.querySelector('.st');
-      st.textContent = '送信中…';
-      try {
-        if (!sendable(item.file)) throw new Error('写真（JPEG・PNGなど）かPDFだけ送れます');
-        const p = await prepare(item.file);
-        if (p.size > MAX_BYTES) throw new Error('ファイルが大きすぎます（' + Math.floor(MAX_BYTES / 1048576) + 'MBまで）');
-        await callServer(p, item.box);
-        st.textContent = '送信済み';
-        st.className = 'st ok';
-        sentCount++;
-        bumpBox(item.box);
-      } catch (err) {
-        st.textContent = '失敗';
-        st.className = 'st err';
-        const m = document.createElement('span');
-        m.className = 'msg';
-        m.textContent = (err && err.message ? err.message : String(err)) + '　もう一度選び直してください。';
-        st.appendChild(m);
+  /* ---- タブ ---- */
+  function selectTab(which) {
+    const hist = which === 'hist';
+    $('tabSend').setAttribute('aria-selected', String(!hist));
+    $('tabHist').setAttribute('aria-selected', String(hist));
+    $('paneSend').hidden = hist;
+    $('paneHist').hidden = !hist;
+    if (hist) loadHistory();
+  }
+  $('tabSend').addEventListener('click', function () { selectTab('send'); });
+  $('tabHist').addEventListener('click', function () { selectTab('hist'); });
+  $('histReload').addEventListener('click', loadHistory);
+
+  const ST_LABEL = { received: '受付済み', done: '確定済み', back: '撮り直してください' };
+  function loadHistory() {
+    const ul = $('hist');
+    ul.textContent = '';
+    const w = document.createElement('li'); w.className = 'hist-empty'; w.textContent = '読み込み中…'; ul.appendChild(w);
+    call('clientHistory', [TOKEN]).then(function (list) {
+      ul.textContent = '';
+      if (!list || !list.length) {
+        const e = document.createElement('li'); e.className = 'hist-empty'; e.textContent = 'まだ送ったものはありません。'; ul.appendChild(e); return;
       }
-    }
-    running = false;
-    if (sentCount) {
-      doneEl.textContent = sentCount + '件を事務所に送りました。ありがとうございます。';
-      doneEl.style.display = 'block';
-      doneEl.classList.remove('show'); void doneEl.offsetWidth; doneEl.classList.add('show');
-    }
-  }
-
-  /* ドラッグでは何でも落とせるので、写真とPDF以外はここで止める（サーバでも断る） */
-  function sendable(f) {
-    const type = f.type || '';
-    return /^image\//.test(type) || type === 'application/pdf' || /\.(pdf|jpe?g|png|webp|heic|heif)$/i.test(f.name || '');
+      list.forEach(function (h) {
+        const li = document.createElement('li');
+        const top = document.createElement('div'); top.className = 'top';
+        const at = document.createElement('span'); at.className = 'at'; at.textContent = h.at;
+        const b = document.createElement('span'); b.className = 'badge st-' + h.status; b.textContent = ST_LABEL[h.status] || '受付済み';
+        top.appendChild(at); top.appendChild(b); li.appendChild(top);
+        const nm = document.createElement('div'); nm.className = 'nm';
+        const bx = document.createElement('span'); bx.className = 'bx'; bx.textContent = '［' + h.box + '］';
+        const fn = document.createElement('span'); fn.textContent = h.name;
+        nm.appendChild(bx); nm.appendChild(fn); li.appendChild(nm);
+        if (h.note) { const n = document.createElement('p'); n.className = 'note'; n.textContent = '事務所から：' + h.note; li.appendChild(n); }
+        ul.appendChild(li);
+      });
+    }, function (e) {
+      ul.textContent = '';
+      const li = document.createElement('li'); li.className = 'hist-empty'; li.textContent = '読み込めませんでした。（' + e.message + '）'; ul.appendChild(li);
+    });
   }
 
   // 画像は縮小してJPEG化、PDFはそのまま
@@ -374,19 +648,20 @@
   }
 
   function callServer(p, box) {
-    const memo = document.getElementById('memo').value;
+    const memo = $('memo').value;
     return call('uploadFile', [TOKEN, p.name, p.mime, p.b64, memo, box], 300000);
   }
 
   /* サーバを呼ぶ道は、ここ1か所だけ */
+  const LIVE_FN = ['uploadFile', 'clientHistory'];
   function call(fn, args, ms) {
     return new Promise(function (resolve, reject) {
       if (LIVE) {
-        if (fn !== 'uploadFile') { reject(new Error(fn + ' はGASの中では呼びません')); return; }
+        if (LIVE_FN.indexOf(fn) < 0) { reject(new Error(fn + ' はGASの中では呼びません')); return; }
         const runner = google.script.run
           .withSuccessHandler(resolve)
           .withFailureHandler(function (e) { reject(new Error(e && e.message ? e.message : '通信に失敗しました')); });
-        runner.uploadFile.apply(runner, args);
+        runner[fn].apply(runner, args);
         return;
       }
       if (!WEB2) { reject(new Error('送り先（サーバの口）が分かりません。担当の事務所スタッフにお問い合わせください')); return; }
@@ -394,7 +669,7 @@
       try { ac = new AbortController(); } catch (e) {}
       tid = setTimeout(function () {
         try { if (ac) ac.abort(); } catch (e) {}
-        reject(new Error('サーバの返事がありませんでした。届いているかもしれないので、担当スタッフにご確認ください'));
+        reject(new Error('サーバの返事がありませんでした。届いているかもしれないので、「送った履歴」でご確認ください'));
       }, ms || 20000);
       fetch(API_URL, {
         method: 'POST', redirect: 'follow', signal: ac ? ac.signal : undefined,
@@ -418,15 +693,15 @@
   function showApp(name, maxMb, boxes) {
     MAX_BYTES = Number(maxMb || 20) * 1024 * 1024;
     buildBoxes(boxes);
-    document.getElementById('client').textContent = name + ' 様';
-    document.getElementById('maxMb').textContent = String(Number(maxMb || 20));
+    $('client').textContent = name + ' 様';
+    $('maxMb').textContent = String(Number(maxMb || 20));
     document.title = '資料提出｜' + name;
-    document.getElementById('ng').hidden = true;
-    document.getElementById('app').hidden = false;
+    $('ng').hidden = true;
+    $('app').hidden = false;
   }
   function showNg(msg) {
-    document.getElementById('app').hidden = true;
-    const ng = document.getElementById('ng');
+    $('app').hidden = true;
+    const ng = $('ng');
     ng.textContent = msg;
     ng.hidden = false;
   }
