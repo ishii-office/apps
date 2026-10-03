@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<base target="_blank">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>資料回収（事務所）</title>
+<!-- ==================================================================
+     GitHub Pages から配るときだけ、ここが office.html（事務所のアプリ）の <head> に入ります。
+     GAS の /exec の URL は public/pages-head.html の1か所だけに書く（pages.yml がここへ写す）。
+     ================================================================== -->
+<script>window.__API_URL='https://script.google.com/macros/s/AKfycbxcRaVoS6NF2sedBw_pS28o-8349pj51kbF6yTnZYTOq4DF8RmcOgtwi2uKvJ0358mhpw/exec';</script>
+<!-- 合図（tok）を、よそへ出ていくときに渡さない -->
+<meta name="referrer" content="no-referrer">
+<link rel="manifest" href="office.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="資料回収 事務所">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0F6E5C">
+
+<!-- ==================================================================
+     事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
+       アプリ … https://ishii-office.github.io/apps/collect/office.html
+                担当者の名前と暗証番号で入る。doPost の STAFF_API を fetch で呼ぶ
+       シート … マスタのメニューから窓で開く。google.script.run で呼ぶ（Google のログインが関所）
+     ★ 送り先は「GASの中にいるか」だけで決める（顧問先の画面と同じ）
+     ★ 端末に覚えるのは 合図（tok）と名前と GAS の口だけ。暗証番号は覚えない。名前は collect_ で始める
+
+     入力の打ち方：日付（23 だけでよい）→ Enter → 金額 → Enter → 辞書の No → Enter で確定 → 次の写真
+                   Shift+Enter … 確定して同じ写真にもう1行 ／ Alt+→ / Alt+← … 確定せずに移動
+     ================================================================== -->
+<style>
+  :root { --bg: #F3F6F5; --paper: #FFFFFF; --ink: #1D2A28; --sub: #5B6B68; --accent: #0F6E5C; --line: #D6DFDC;
+          --err: #B3261E; --ok: #1F7A3A; --sel: #E6F0EE; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); }
+  body { font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif; font-size: 14px; display: flex; flex-direction: column; overflow: hidden; }
+  [hidden] { display: none !important; }
+  input, select, textarea, button { font: inherit; color: var(--ink); }
+  input, select, textarea { border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; background: var(--paper); max-width: 100%; }
+  button { border: 1px solid var(--line); border-radius: 7px; padding: 5px 12px; background: var(--paper); cursor: pointer; white-space: nowrap; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+  button.danger { color: var(--err); border-color: #E7C2BF; }
+  button:disabled { opacity: .5; cursor: default; }
+  :focus-visible { outline: 3px solid #7FB8AC; outline-offset: 1px; }
+
+  /* ---- 入口 ---- */
+  .gate { margin: auto; width: min(380px, calc(100% - 32px)); background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px; }
+  .gate h1 { font-size: 20px; margin: 0 0 4px; }
+  .gate p { color: var(--sub); margin: 0 0 16px; line-height: 1.6; }
+  .gate label { display: block; font-weight: 700; margin: 12px 0 4px; }
+  .gate input { width: 100%; font-size: 17px; padding: 9px 10px; }
+  .gate button { width: 100%; margin-top: 18px; padding: 11px; font-size: 17px; }
+  .gate .msg { margin-top: 12px; min-height: 1.4em; color: var(--err); font-weight: 700; }
+
+  /* ---- 上の帯 ---- */
+  .top { display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .top .brand { font-weight: 700; }
+  .top .who { margin-left: auto; color: var(--sub); display: flex; align-items: center; gap: 8px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; border-right: 1px solid var(--line); }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; font-weight: 700; }
+  .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
+  .ctl label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  #client { min-width: 220px; }
+
+  .pane { flex: 1; min-height: 0; }
+  #paneIn { display: grid; grid-template-columns: 230px 1fr 410px; }
+
+  /* 左：写真の並び */
+  #list { overflow: auto; border-right: 1px solid var(--line); background: var(--paper); margin: 0; padding: 0; list-style: none; }
+  #list li button { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 7px 9px; display: grid; grid-template-columns: auto 1fr auto; gap: 2px 8px; align-items: baseline; }
+  #list li button[aria-current="true"] { background: var(--sel); box-shadow: inset 4px 0 0 var(--accent); }
+  #list .n { font-weight: 700; color: var(--sub); }
+  #list .bx { font-size: 12px; color: var(--sub); grid-column: 2 / 4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dot { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 0 7px; }
+  .dot.todo { background: #EEF2F1; color: var(--sub); }
+  .dot.done { background: #E5F2E8; color: var(--ok); }
+  .dot.back { background: #FDECEA; color: var(--err); }
+  .empty { padding: 30px 12px; color: var(--sub); text-align: center; list-style: none; }
+
+  /* 真ん中：写真 */
+  #viewer { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: #2A302F; }
+  .vbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #1E2423; color: #fff; }
+  .vbar button, .vbar a { background: rgba(255,255,255,.12); color: #fff; border: 0; text-decoration: none; border-radius: 7px; padding: 5px 10px; }
+  .vbar .pos { min-width: 60px; text-align: center; }
+  .vbar .sp { flex: 1; }
+  #jump { display: none; background: #2F3735; color: #fff; border-color: #444; max-width: 46vw; }
+  #stage { flex: 1; min-height: 0; overflow: auto; display: flex; align-items: center; justify-content: center; }
+  #stage.zoom { display: block; }
+  #stage img { max-width: 100%; max-height: 100%; object-fit: contain; background: #fff; cursor: zoom-in; transition: transform .15s; }
+  #stage.zoom img { max-width: none; max-height: none; cursor: zoom-out; }
+  #stage .msg { color: #fff; text-align: center; line-height: 2; padding: 20px; }
+
+  /* 右：入力 */
+  #side { display: flex; flex-direction: column; min-height: 0; background: var(--paper); border-left: 1px solid var(--line); overflow: auto; }
+  .info { padding: 10px 14px; border-bottom: 1px solid var(--line); line-height: 1.6; }
+  .info .from { color: var(--sub); font-size: 13px; }
+  .info .cmemo { margin-top: 4px; padding: 4px 8px; background: #FFF8E6; border-radius: 6px; }
+  .info .backnote { margin-top: 4px; padding: 4px 8px; background: #FDECEA; color: var(--err); border-radius: 6px; }
+  .entries { padding: 6px 14px; border-bottom: 1px solid var(--line); }
+  .entries:empty { display: none; }
+  .ent { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 5px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+  .ent:last-child { border-bottom: 0; }
+  .ent .amt { font-weight: 700; }
+  .ent .sub { color: var(--sub); grid-column: 1 / 2; }
+  .ent button { grid-row: 1 / 3; grid-column: 2; align-self: center; padding: 2px 8px; font-size: 12px; }
+
+  form.entry { padding: 10px 14px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 52px 1fr; gap: 8px 10px; align-items: center; }
+  form.entry label { font-weight: 700; }
+  form.entry input { font-size: 18px; padding: 6px 9px; width: 100%; }
+  #fDate { width: 90px !important; } #fNo { width: 90px !important; } #fAmt { width: 170px !important; text-align: right; }
+  .f-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .echo { color: var(--sub); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .echo.bad { color: var(--err); }
+  #fMemo { font-size: 14px !important; }
+  .acts { grid-column: 1 / 3; display: flex; gap: 8px; flex-wrap: wrap; }
+  .acts .primary { flex: 1; padding: 9px; font-size: 16px; }
+  .keys { grid-column: 1 / 3; color: var(--sub); font-size: 12px; line-height: 1.6; }
+  #formMsg { grid-column: 1 / 3; min-height: 1.2em; font-weight: 700; }
+  #formMsg.err { color: var(--err); } #formMsg.ok { color: var(--ok); }
+  .back { padding: 8px 14px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .back .row { display: flex; gap: 6px; }
+  .back input, .back select { flex: 1; min-width: 0; }
+
+  .dict { flex: 1; min-height: 160px; display: flex; flex-direction: column; }
+  .dict-top { padding: 8px 14px 4px; display: flex; gap: 8px; align-items: center; }
+  .dict-top b { white-space: nowrap; }
+  .dict-top input { flex: 1; min-width: 0; }
+  .dict ul { list-style: none; margin: 0; padding: 0 0 8px; overflow: auto; flex: 1; }
+  .dict li button { width: 100%; text-align: left; border: 0; border-radius: 0; padding: 4px 14px; display: grid; grid-template-columns: 40px 1fr; gap: 0 8px; font-size: 13px; }
+  .dict li button:hover, .dict li button[aria-current="true"] { background: var(--sel); }
+  .dict .no { font-weight: 700; text-align: right; }
+  .dict .s { color: var(--sub); grid-column: 2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* 辞書の手入れ・書き出し・担当者 */
+  .page { overflow: auto; padding: 14px 18px; }
+  .scroll-x { overflow-x: auto; max-width: 1200px; }
+  table.dt { border-collapse: collapse; width: 100%; min-width: 760px; background: var(--paper); }
+  table.dt th, table.dt td { border: 1px solid var(--line); padding: 3px; }
+  table.dt th { background: #EEF2F1; font-size: 13px; padding: 5px; }
+  table.dt input { width: 100%; border: 0; border-radius: 0; padding: 4px 6px; }
+  table.dt td.no input { text-align: right; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; max-width: 1200px; }
+  .bar .sp { flex: 1; }
+  .note { color: var(--sub); font-size: 13px; line-height: 1.7; max-width: 1200px; }
+  .pagemsg { font-weight: 700; } .pagemsg.err { color: var(--err); } .pagemsg.ok { color: var(--ok); }
+  details { margin-top: 14px; max-width: 1200px; }
+  details textarea { width: 100%; min-height: 120px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+
+  /* 顧問先 */
+  #paneClients { display: grid; grid-template-columns: 340px 1fr; }
+  .cl-side { border-right: 1px solid var(--line); background: var(--paper); display: flex; flex-direction: column; min-height: 0; }
+  .cl-top { padding: 10px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; }
+  .cl-top input { flex: 1; min-width: 0; }
+  #alist { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; }
+  #alist li button { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 10px 12px; display: flex; gap: 8px; align-items: baseline; }
+  #alist li button[aria-current="true"] { background: var(--sel); }
+  #alist .code { color: var(--sub); min-width: 4em; }
+  #alist .off { margin-left: auto; font-size: 12px; color: var(--err); }
+  .cl-main { padding: 16px 20px; overflow: auto; }
+  .cl-main h2 { font-size: 18px; margin: 0 0 14px; }
+  .f { margin-bottom: 14px; max-width: 620px; }
+  .f > label { display: block; font-weight: 700; margin-bottom: 4px; }
+  .f input:not([type=checkbox]), .f textarea { width: 100%; font-size: 15px; padding: 7px 9px; }
+  .f textarea { min-height: 140px; line-height: 1.6; resize: vertical; }
+  .hint { color: var(--sub); font-size: 12.5px; margin-top: 4px; line-height: 1.6; }
+  .chk { display: flex; gap: 6px; align-items: center; font-weight: 400 !important; }
+  .url { display: flex; gap: 8px; }
+  .url input { color: var(--sub); }
+  .preview { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .preview span { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; background: #fff; font-size: 13px; }
+  .preview span.auto { color: var(--sub); border-style: dashed; }
+
+  /* 担当者 */
+  .staff { max-width: 640px; }
+  .staff table { border-collapse: collapse; width: 100%; background: var(--paper); margin-bottom: 14px; }
+  .staff td, .staff th { border: 1px solid var(--line); padding: 7px 10px; text-align: left; }
+  .staff th { background: #EEF2F1; font-size: 13px; }
+  .staff .add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .staff .add input { width: 180px; }
+
+  /* ---- スマホ・狭い画面 ---- */
+  @media (max-width: 900px) {
+    body { overflow: auto; height: auto; min-height: 100%; }
+    .pane { flex: none; }
+    #paneIn { display: block; }
+    #list { display: none; }
+    #jump { display: block; order: 10; flex: 1 1 100%; max-width: none; }
+    .vbar { flex-wrap: wrap; gap: 6px; padding: 6px 8px; }
+    .vbar button, .vbar a { padding: 5px 9px; }
+    #viewer { height: 46vh; min-height: 260px; }
+    #side { border-left: 0; overflow: visible; }
+    .dict ul { max-height: 50vh; }
+    #paneClients { display: block; }
+    .cl-side { border-right: 0; border-bottom: 1px solid var(--line); }
+    #alist { max-height: 32vh; }
+    .cl-main { padding: 14px; }
+    #client { min-width: 0; width: 100%; }
+    .ctl label:first-child { flex: 1 1 100%; }
+    .keys { display: none; }
+    form.entry input { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 入口（アプリのときだけ） ===== -->
+<form class="gate" id="gate" hidden autocomplete="on">
+  <h1>資料回収（事務所）</h1>
+  <p>担当者の名前と暗証番号で入ります。一度入れば、この端末は30日のあいだ覚えています。</p>
+  <label for="gName">名前</label>
+  <input id="gName" autocomplete="username" maxlength="30">
+  <label for="gPin">暗証番号</label>
+  <input id="gPin" type="password" autocomplete="current-password" maxlength="12" inputmode="text">
+  <button type="submit" class="primary" id="gGo">入る</button>
+  <div class="msg" id="gMsg" role="status"></div>
+</form>
+<div class="gate" id="fatal" hidden><h1>資料回収（事務所）</h1><p id="fatalMsg"></p></div>
+
+<!-- ===== 本体 ===== -->
+<div class="top" id="top" hidden>
+  <span class="brand">資料回収（事務所）</span>
+  <span class="seg" role="tablist" id="tabs">
+    <button type="button" role="tab" data-tab="In" aria-pressed="true">入力</button>
+    <button type="button" role="tab" data-tab="Dict" aria-pressed="false">辞書</button>
+    <button type="button" role="tab" data-tab="Out" aria-pressed="false">書き出し</button>
+    <button type="button" role="tab" data-tab="Clients" aria-pressed="false">顧問先</button>
+    <button type="button" role="tab" data-tab="Staff" aria-pressed="false" id="tabStaff" hidden>担当者</button>
+  </span>
+  <span class="who"><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
+</div>
+<div class="ctl" id="ctl" hidden>
+  <label>顧問先 <select id="client"></select></label>
+  <label title="日付を「23」だけ打ったときに使う年月">処理する月 <input type="month" id="month"></label>
+  <span class="seg" role="group" aria-label="表示する写真" id="filter">
+    <button type="button" data-st="todo" aria-pressed="true">未処理 <b id="cTodo">0</b></button>
+    <button type="button" data-st="back" aria-pressed="false">差戻し <b id="cBack">0</b></button>
+    <button type="button" data-st="done" aria-pressed="false">確定 <b id="cDone">0</b></button>
+    <button type="button" data-st="all" aria-pressed="false">全部</button>
+  </span>
+  <label>箱 <select id="box"><option value="">すべて</option></select></label>
+</div>
+
+<!-- ===== 入力 ===== -->
+<div class="pane" id="paneIn" hidden>
+  <ul id="list"><li class="empty">読み込み中…</li></ul>
+  <div id="viewer">
+    <div class="vbar">
+      <button type="button" id="prev" title="Alt+←">‹</button>
+      <span class="pos" id="pos"></span>
+      <button type="button" id="next" title="Alt+→">›</button>
+      <select id="jump" aria-label="写真を選ぶ"></select>
+      <span class="sp"></span>
+      <button type="button" id="rot" title="写真を右に回す">⟳</button>
+      <button type="button" id="zoom">拡大</button>
+      <a id="open" href="#" target="_blank" rel="noopener">Drive</a>
+    </div>
+    <div id="stage"><div class="msg">写真を選んでください</div></div>
+  </div>
+  <div id="side">
+    <div class="info" id="info"></div>
+    <div class="entries" id="ents"></div>
+    <form class="entry" id="form" autocomplete="off">
+      <label for="fDate">日付</label>
+      <div class="f-row"><input id="fDate" inputmode="numeric" placeholder="23" enterkeyhint="next"><span class="echo" id="eDate"></span></div>
+      <label for="fAmt">金額</label>
+      <div class="f-row"><input id="fAmt" inputmode="numeric" placeholder="0" enterkeyhint="next"><span class="echo" id="eAmt"></span></div>
+      <label for="fNo">辞書</label>
+      <div class="f-row"><input id="fNo" inputmode="numeric" placeholder="No" enterkeyhint="done"><span class="echo" id="eNo"></span></div>
+      <label for="fMemo">摘要</label>
+      <input id="fMemo" maxlength="200" placeholder="（辞書の摘要。打ち替えてもよい）">
+      <div class="acts">
+        <button type="submit" class="primary" id="btnOk">確定（Enter）</button>
+        <button type="button" id="btnMore" title="Shift+Enter">確定してもう1行</button>
+      </div>
+      <div id="formMsg" role="status"></div>
+      <div class="keys">日付は「23」で処理する月の23日、「9/23」「20250923」も可。Enter で次の欄へ、辞書の欄で Enter を押すと確定して次の写真へ。<br>Shift+Enter：同じ写真にもう1行　Alt+→／←：確定せずに次・前へ</div>
+    </form>
+    <div class="back" id="backBox">
+      <div class="row">
+        <select id="backPick" aria-label="差戻しの理由">
+          <option value="">差戻しの理由を選ぶ…</option>
+          <option>写真がぼやけています。撮り直してください</option>
+          <option>金額が写っていません。撮り直してください</option>
+          <option>日付が写っていません。撮り直してください</option>
+          <option>1枚に複数写っています。1枚ずつ撮ってください</option>
+          <option>領収書（レシート）ではないようです。ご確認ください</option>
+        </select>
+      </div>
+      <div class="row"><input id="backText" maxlength="200" placeholder="理由（顧問先の「送った履歴」に出ます）"><button type="button" class="danger" id="btnBack">差し戻す</button></div>
+    </div>
+    <div class="dict">
+      <div class="dict-top"><b>仕訳辞書</b><input id="dq" placeholder="科目・摘要で探す" aria-label="辞書を探す"></div>
+      <ul id="dlist"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 辞書の手入れ ===== -->
+<div class="pane page" id="paneDict" hidden>
+  <div class="bar">
+    <b id="dictTitle">仕訳辞書</b>
+    <span class="sp"></span>
+    <button type="button" id="dAdd">＋ 行を足す</button>
+    <button type="button" class="primary" id="dSave">保存</button>
+    <span class="pagemsg" id="dMsg" role="status"></span>
+  </div>
+  <div class="scroll-x">
+    <table class="dt">
+      <thead><tr><th style="width:70px">No</th><th>借方科目</th><th>貸方科目</th><th style="width:150px">税区分</th><th>摘要</th><th>メモ（事務所用）</th><th style="width:50px"></th></tr></thead>
+      <tbody id="dbody"></tbody>
+    </table>
+  </div>
+  <p class="note">No は 1〜999。入力の画面ではこの No を打って選びます。保存するまで入力の画面には出ません。<br>
+    確定した仕訳は、ここで辞書を書き替えても変わりません（確定した時の科目のまま）。</p>
+  <details>
+    <summary>Excel から貼り付けて まとめて入れる</summary>
+    <p class="note">Excel で「No・借方科目・貸方科目・税区分・摘要・メモ」の順に並べた範囲をコピーして、下に貼り付けてください（見出しの行は あっても無くてもよい）。いまの表に足します。同じ No は置き換えます。</p>
+    <textarea id="dPaste" aria-label="貼り付け"></textarea>
+    <div class="bar"><button type="button" id="dPasteGo">表に入れる</button></div>
+  </details>
+  <details id="dCopyBox">
+    <summary>ほかの顧問先の辞書を写す（この顧問先の辞書が空のときだけ）</summary>
+    <div class="bar" style="margin-top:8px"><select id="dFrom"></select><button type="button" id="dCopy">写す</button></div>
+  </details>
+</div>
+
+<!-- ===== 書き出し ===== -->
+<div class="pane page" id="paneOut" hidden>
+  <div class="bar">
+    <label>書き出す月（仕訳の日付）<input type="month" id="outMonth"></label>
+    <button type="button" class="primary" id="outGo">CSV を書き出す</button>
+    <span class="pagemsg" id="oMsg" role="status"></span>
+  </div>
+  <p class="note">その顧問先の、日付がその月の仕訳（取り消したものは除く）を CSV にして、Drive の顧問先フォルダ「書き出し」に置きます。<br>
+    書き出した仕訳は、ここでは取り消せなくなります（TKC 側と食い違わないように）。<br>
+    ★ いまは仮の形です。TKC FX クラウドの一括読込 Excel のひな形を受け取ったら、その形に合わせます。</p>
+  <p id="oLink"></p>
+</div>
+
+<!-- ===== 顧問先 ===== -->
+<div class="pane" id="paneClients" hidden>
+  <div class="cl-side">
+    <div class="cl-top">
+      <input id="aq" type="search" placeholder="コード・名前で探す" aria-label="顧問先を探す">
+      <button type="button" class="primary" id="aNew">＋ 新しい顧問先</button>
+    </div>
+    <ul id="alist"><li class="empty">読み込み中…</li></ul>
+  </div>
+  <div class="cl-main">
+    <h2 id="aTitle">顧問先を選ぶか、新しく足してください</h2>
+    <form id="aForm" hidden autocomplete="off">
+      <div class="f">
+        <label for="aCode">顧問先コード</label>
+        <input id="aCode" maxlength="20" required>
+        <div class="hint">半角の英数字。登録したあとは変えられません（Drive のフォルダ・履歴がコードでつながっているため）。</div>
+      </div>
+      <div class="f"><label for="aName">顧問先名</label><input id="aName" maxlength="60" required></div>
+      <div class="f"><label for="aStaff">担当者メール</label><input id="aStaff" type="email" maxlength="120" placeholder="（空なら、毎朝の通知は事務所の代表へ）"></div>
+      <div class="f">
+        <label for="aBoxes">箱（資料の種類・口座・カード）</label>
+        <textarea id="aBoxes" placeholder="現金の領収書&#10;通帳：○○銀行 普通&#10;通帳：△△信金 当座&#10;カード：○○カード&#10;請求書"></textarea>
+        <div class="hint">1行に1つ。口座やカードが複数あるときは、1つずつ分けて書くと、届いたものも分かれます。<br>
+          空なら「現金の領収書・通帳」。「その他」は自動で最後に付きます。30字まで。<code>/ \ : * ? " &lt; &gt; |</code> は使えません（全角の「：」は使えます）。</div>
+        <div class="preview" id="aPreview" aria-label="顧問先の画面に出る箱"></div>
+      </div>
+      <div class="f" id="aActiveRow"><label class="chk"><input id="aActive" type="checkbox"> 有効（外すと、この顧問先のURLは使えなくなります。履歴と資料は残ります）</label></div>
+      <div class="f" id="aUrlRow">
+        <label for="aUrl">提出URL（顧問先に送るもの）</label>
+        <div class="url"><input id="aUrl" readonly><button type="button" id="aCopyUrl">コピー</button></div>
+        <div class="hint"><button type="button" class="danger" id="aReissue">URLを作り直す</button>　URLが人に漏れたときだけ。前のURLは使えなくなります。</div>
+      </div>
+      <div class="bar"><button type="submit" class="primary" id="aSave">保存</button><span class="pagemsg" id="aMsg" role="status"></span></div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== 担当者（シートの窓のときだけ） ===== -->
+<div class="pane page" id="paneStaff" hidden>
+  <div class="staff">
+    <p class="note">アプリ（パソコン・スマホ）に入る担当者と暗証番号です。ここ（スプレッドシートの中）でだけ変えられます。<br>
+      暗証番号は半角の英数字 4〜12 桁。番号そのものはどこにも残しません（忘れたら、ここで新しい番号にしてください）。<br>
+      番号を変える・消すと、その人の端末はもう一度入り直しになります。</p>
+    <table><thead><tr><th>名前</th><th>番号を決めた日</th><th style="width:80px"></th></tr></thead><tbody id="sBody"></tbody></table>
+    <div class="add">
+      <input id="sName" placeholder="名前（例：山田）" maxlength="30" aria-label="名前">
+      <input id="sPin" placeholder="暗証番号" maxlength="12" autocomplete="new-password" aria-label="暗証番号">
+      <button type="button" class="primary" id="sSave">足す・番号を変える</button>
+    </div>
+    <p class="pagemsg" id="sMsg" role="status"></p>
+    <p class="note">アプリの場所：<a href="https://ishii-office.github.io/apps/collect/office.html">https://ishii-office.github.io/apps/collect/office.html</a>（ホーム画面に置けます）</p>
+  </div>
+</div>
+
+<script>
+  /* ================= 通り道 ================= */
+  var LS_API = 'collect_api_url';
+  var LS_TOK = 'collect_office_tok';
+  var LS_NAME = 'collect_office_name';
+  function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  function qp(k) { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } }
+
+  const LIVE = (function () { try { return !!(window.google && google.script && google.script.run); } catch (e) { return false; } })();
+  let API_URL = '';
+  (function () {
+    try { if (window.__API_URL) API_URL = String(window.__API_URL); } catch (e) {}
+    const u = qp('u');
+    if (u && /^https:\/\/script\.google\.com\//.test(u)) { API_URL = u; lsSet(LS_API, u); }
+    if (u) { try { const q = new URLSearchParams(location.search); q.delete('u'); const s = q.toString(); history.replaceState(null, '', location.pathname + (s ? '?' + s : '')); } catch (e) {} }
+    if (!API_URL) API_URL = lsGet(LS_API);
+  })();
+  const WEB2 = !LIVE && !!API_URL;
+  let TOK = LIVE ? '' : lsGet(LS_TOK);
+
+  function gs(fn) {
+    const args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (ok, ng) {
+      if (LIVE) {
+        const r = google.script.run.withSuccessHandler(ok).withFailureHandler(function (e) { ng(new Error(e && e.message ? e.message : String(e))); });
+        r[fn].apply(r, args); return;
+      }
+      if (!WEB2) { ng(new Error('送り先（サーバの口）が分かりません。')); return; }
+      let ac = null; try { ac = new AbortController(); } catch (e) {}
+      const tid = setTimeout(function () { try { if (ac) ac.abort(); } catch (e) {} ng(new Error('サーバの返事がありませんでした。もう一度どうぞ。')); }, 60000);
+      fetch(API_URL, { method: 'POST', redirect: 'follow', signal: ac ? ac.signal : undefined,
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args, tok: TOK }) })
+        .then(function (r) { if (!r.ok) throw new Error('サーバにつながりませんでした（' + r.status + '）'); return r.json(); })
+        .then(function (o) {
+          clearTimeout(tid);
+          if (o && o.__auth) { signOut(o.msg); ng(new Error(o.msg || 'もう一度ログインしてください。')); return; }
+          if (!o || o.__err || !o.ok) throw new Error((o && o.msg) || 'うまくいきませんでした');
+          ok(o.r);
+        })
+        .catch(function (e) { clearTimeout(tid); ng(e instanceof Error ? e : new Error(String(e))); });
+    });
+  }
+
+  const $ = function (id) { return document.getElementById(id); };
+  const el = function (tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const yen = function (n) { return Number(n).toLocaleString('ja-JP'); };
+  /* 全角の数字・記号を半角に（IME が入ったままでも打てるように） */
+  const half = function (s) { return String(s || '').replace(/[０-９／－．，]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/ー/g, '-').trim(); };
+  const S = { clients: [], code: '', st: 'todo', box: '', items: [], view: [], cur: -1, counts: {}, dict: [], img: {}, rot: {}, busy: false, dirty: false, started: false, tab: 'In' };
+
+  /* ================= 入口 ================= */
+  function fatal(t) { ['gate', 'top', 'ctl'].forEach(function (k) { $(k).hidden = true; }); hidePanes(); $('fatal').hidden = false; $('fatalMsg').textContent = t; }
+  function hidePanes() { ['In', 'Dict', 'Out', 'Clients', 'Staff'].forEach(function (k) { $('pane' + k).hidden = true; }); }
+  function showGate(msg) {
+    $('top').hidden = true; $('ctl').hidden = true; hidePanes();
+    $('gate').hidden = false; $('gMsg').textContent = msg || '';
+    $('gName').value = lsGet(LS_NAME);
+    ($('gName').value ? $('gPin') : $('gName')).focus();
+  }
+  function signOut(msg) { TOK = ''; lsDel(LS_TOK); S.started = false; showGate(msg || ''); }
+  $('signOut').addEventListener('click', function () { signOut('ログアウトしました。'); });
+  $('gate').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const name = $('gName').value.trim(), pin = $('gPin').value;
+    if (!name || !pin) { $('gMsg').textContent = '名前と暗証番号を入れてください。'; return; }
+    $('gGo').disabled = true; $('gMsg').textContent = '';
+    gs('staffSignIn', name, pin).then(function (r) {
+      $('gGo').disabled = false; $('gPin').value = '';
+      TOK = r.tok; lsSet(LS_TOK, r.tok); lsSet(LS_NAME, r.name);
+      start(r.name);
+    }, function (err) { $('gGo').disabled = false; $('gPin').value = ''; $('gMsg').textContent = err.message; $('gPin').focus(); });
+  });
+
+  (function boot() {
+    if (LIVE) {
+      $('tabStaff').hidden = false;
+      gs('staffMe').then(function (r) { start(r.name); }, function (e) { fatal(e.message); });
+      return;
+    }
+    if (!WEB2) { fatal('送り先（サーバの口）が分かりません。事務所の代表にお問い合わせください。'); return; }
+    if (!TOK) { showGate(''); return; }
+    start(lsGet(LS_NAME));
+  })();
+
+  function start(name) {
+    S.started = true;
+    $('gate').hidden = true; $('top').hidden = false;
+    $('whoName').textContent = name ? name + ' さん' : '';
+    $('signOut').hidden = LIVE;
+    gs('workInit').then(function (r) {
+      S.clients = r.clients;
+      const now = r.today.slice(0, 7).replace('/', '-');
+      if (!$('month').value) $('month').value = now;
+      if (!$('outMonth').value) $('outMonth').value = now;
+      fillClients(r.sel);
+      const first = { in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In';
+      selectTab(first);
+    }, function (e) { if (S.started) fatal(e.message); });
+  }
+
+  function fillClients(sel) {
+    const c0 = $('client'); c0.textContent = '';
+    S.clients.forEach(function (c) { const o = el('option', null, c.code + '　' + c.name); o.value = c.code; c0.appendChild(o); });
+    if (!S.clients.length) { S.code = ''; listMsg('顧問先がありません。「顧問先」で足してください。'); return; }
+    const keep = S.clients.some(function (c) { return c.code === S.code; }) ? S.code : '';
+    S.code = keep || (S.clients.some(function (c) { return c.code === sel; }) ? sel : S.clients[0].code);
+    c0.value = S.code;
+    if (!keep) switchClient();
+  }
+
+  /* ================= タブ ================= */
+  function selectTab(k) {
+    S.tab = k;
+    document.querySelectorAll('#tabs button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.tab === k)); });
+    hidePanes(); $('pane' + k).hidden = false;
+    $('ctl').hidden = !(k === 'In' || k === 'Dict' || k === 'Out');
+    if (k === 'In' && !$('form').hidden) $('fDate').focus();
+    if (k === 'Clients') aLoad();
+    if (k === 'Staff') sLoad();
+  }
+  document.querySelectorAll('#tabs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (S.dirty && b.dataset.tab !== 'Dict' && S.tab === 'Dict' && !confirm('辞書の書き替えが保存されていません。このまま移りますか？')) return;
+      selectTab(b.dataset.tab);
+    });
+  });
+  window.addEventListener('beforeunload', function (e) { if (S.dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  /* ================= 入力 ================= */
+  function baseYM() { const v = $('month').value || ''; const m = v.match(/^(\d{4})-(\d{2})$/); return m ? [Number(m[1]), Number(m[2])] : null; }
+  /* 日付：23 → 処理する月の23日 / 9/23・0923 → 処理する月の年の9月23日 / 2025/9/23・20250923 → そのまま */
+  function parseDate(s) {
+    s = half(s);
+    if (!s) return null;
+    const b = baseYM(); if (!b) return null;
+    let y = b[0], mo = b[1], d, m;
+    if ((m = s.match(/^(\d{1,2})$/))) d = Number(m[1]);
+    else if ((m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})$/)) || (m = s.match(/^(\d{2})(\d{2})$/))) { mo = Number(m[1]); d = Number(m[2]); }
+    else if ((m = s.match(/^(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})$/)) || (m = s.match(/^(\d{4})(\d{2})(\d{2})$/))) { y = Number(m[1]); mo = Number(m[2]); d = Number(m[3]); }
+    else return null;
+    const dt = new Date(y, mo - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+    return { s: y + '/' + String(mo).padStart(2, '0') + '/' + String(d).padStart(2, '0'), w: '日月火水木金土'[dt.getDay()] };
+  }
+  function parseAmt(s) { s = half(s).replace(/[,\s円]/g, ''); if (!/^\d{1,11}$/.test(s)) return null; const n = Number(s); return n > 0 ? n : null; }
+  function dictOf(s) { s = half(s); if (!/^\d{1,3}$/.test(s)) return null; const n = Number(s); return S.dict.find(function (d) { return d.no === n; }) || null; }
+
+  function echo() {
+    const d = parseDate($('fDate').value), a = parseAmt($('fAmt').value), k = dictOf($('fNo').value);
+    $('eDate').textContent = $('fDate').value ? (d ? d.s + '（' + d.w + '）' : '日付がちがいます') : '';
+    $('eDate').className = 'echo' + ($('fDate').value && !d ? ' bad' : '');
+    $('eAmt').textContent = $('fAmt').value ? (a ? yen(a) + ' 円' : '1円以上の整数で') : '';
+    $('eAmt').className = 'echo' + ($('fAmt').value && !a ? ' bad' : '');
+    $('eNo').textContent = $('fNo').value ? (k ? k.dr + ' / ' + k.cr + (k.tax ? '　' + k.tax : '') : '辞書にありません') : '';
+    $('eNo').className = 'echo' + ($('fNo').value && !k ? ' bad' : '');
+    document.querySelectorAll('#dlist li button').forEach(function (b) { b.setAttribute('aria-current', String(!!k && Number(b.dataset.no) === k.no)); });
+  }
+  ['fDate', 'fAmt'].forEach(function (id) { $(id).addEventListener('input', echo); });
+  $('month').addEventListener('change', function () { echo(); if (S.tab === 'In' && !$('form').hidden) $('fDate').focus(); });
+  let memoTouched = false;
+  $('fMemo').addEventListener('input', function () { memoTouched = true; });
+  $('fNo').addEventListener('input', function () { const k = dictOf($('fNo').value); if (!memoTouched) $('fMemo').value = k ? k.memo : ''; echo(); });
+  function fmsg(t, kind) { $('formMsg').textContent = t || ''; $('formMsg').className = kind || ''; }
+  function listMsg(t) { const l = $('list'); l.textContent = ''; l.appendChild(el('li', 'empty', t)); $('jump').textContent = ''; }
+
+  $('client').addEventListener('change', function () {
+    if (S.dirty && !confirm('辞書の書き替えが保存されていません。捨てて顧問先を替えますか？')) { this.value = S.code; return; }
+    S.code = this.value; switchClient();
+  });
+  function switchClient() {
+    S.dirty = false; S.img = {}; S.rot = {};
+    const c = S.clients.find(function (x) { return x.code === S.code; });
+    const bx = $('box'); bx.textContent = ''; const all = el('option', null, 'すべて'); all.value = ''; bx.appendChild(all);
+    (c ? c.boxes : []).forEach(function (b) { const o = el('option', null, b); o.value = b; bx.appendChild(o); });
+    S.box = '';
+    $('dictTitle').textContent = '仕訳辞書：' + (c ? c.code + '　' + c.name : '');
+    const f = $('dFrom'); f.textContent = '';
+    S.clients.filter(function (x) { return x.code !== S.code; }).forEach(function (x) { const o = el('option', null, x.code + '　' + x.name); o.value = x.code; f.appendChild(o); });
+    loadDict().then(function () { load(); });
+  }
+  $('box').addEventListener('change', function () { S.box = this.value; render(0); });
+  document.querySelectorAll('#filter button').forEach(function (b) {
+    b.addEventListener('click', function () { S.st = b.dataset.st; document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); load(); });
+  });
+
+  function load(keepId) {
+    if (!S.code) return Promise.resolve();
+    listMsg('読み込み中…');
+    const code = S.code;
+    return gs('workList', code, S.st).then(function (r) {
+      if (code !== S.code) return;
+      S.items = r.items; S.counts = r.counts; counts();
+      render(0, keepId);
+    }, function (e) { listMsg(e.message); });
+  }
+  function counts() { $('cTodo').textContent = S.counts.todo || 0; $('cBack').textContent = S.counts.back || 0; $('cDone').textContent = S.counts.done || 0; }
+  const ST_SHORT = { todo: '未', done: '確定', back: '差戻' };
+  function rowText(it) { return it.box + (it.entries.length ? '　' + it.entries.map(function (e) { return yen(e.amount); }).join('・') : ''); }
+
+  function render(start, keepId) {
+    S.view = S.items.filter(function (it) { return !S.box || it.box === S.box; });
+    const l = $('list'); l.textContent = '';
+    const j = $('jump'); j.textContent = '';
+    if (!S.view.length) {
+      l.appendChild(el('li', 'empty', S.st === 'todo' ? '未処理の写真はありません。おつかれさまでした。' : '写真がありません。'));
+      S.cur = -1; show(); return;
+    }
+    S.view.forEach(function (it, i) {
+      const li = el('li'); const b = el('button'); b.type = 'button';
+      b.appendChild(el('span', 'n', String(i + 1)));
+      b.appendChild(el('span', null, it.at.replace(/^\d{4}\//, '')));
+      b.appendChild(el('span', 'dot ' + it.status, ST_SHORT[it.status]));
+      b.appendChild(el('span', 'bx', rowText(it)));
+      b.addEventListener('click', function () { go(i); });
+      li.appendChild(b); l.appendChild(li);
+      const o = el('option', null, (i + 1) + '　' + it.at.replace(/^\d{4}\//, '') + '　' + ST_SHORT[it.status] + '　' + it.box); o.value = String(i); j.appendChild(o);
+    });
+    let i = start || 0;
+    if (keepId) { const k = S.view.findIndex(function (it) { return it.id === keepId; }); if (k >= 0) i = k; }
+    go(Math.min(i, S.view.length - 1));
+  }
+  $('jump').addEventListener('change', function () { go(Number(this.value)); });
+  function markList() {
+    document.querySelectorAll('#list li button').forEach(function (b, i) {
+      b.setAttribute('aria-current', String(i === S.cur));
+      const it = S.view[i]; if (!it) return;
+      const dot = b.querySelector('.dot'); dot.className = 'dot ' + it.status; dot.textContent = ST_SHORT[it.status];
+      b.querySelector('.bx').textContent = rowText(it);
+    });
+    document.querySelectorAll('#jump option').forEach(function (o, i) {
+      const it = S.view[i]; if (it) o.textContent = (i + 1) + '　' + it.at.replace(/^\d{4}\//, '') + '　' + ST_SHORT[it.status] + '　' + it.box;
+    });
+    $('jump').value = String(S.cur);
+    const cur = document.querySelector('#list li button[aria-current="true"]');
+    if (cur && cur.scrollIntoView && cur.offsetParent) cur.scrollIntoView({ block: 'nearest' });
+  }
+
+  function go(i) {
+    if (i < 0 || i >= S.view.length) return;
+    S.cur = i; show(); markList();
+    clearForm(); if (S.tab === 'In') $('fDate').focus({ preventScroll: true });
+  }
+  function clearForm(keepDate) {
+    if (!keepDate) $('fDate').value = '';
+    $('fAmt').value = ''; $('fNo').value = ''; $('fMemo').value = ''; memoTouched = false;
+    $('backPick').value = ''; $('backText').value = '';
+    echo();
+  }
+
+  function show() {
+    const it = S.view[S.cur];
+    $('pos').textContent = it ? (S.cur + 1) + ' / ' + S.view.length : '';
+    $('prev').disabled = !it || S.cur <= 0; $('next').disabled = !it || S.cur >= S.view.length - 1;
+    $('open').href = it ? it.url : '#';
+    const st = $('stage'); st.textContent = ''; st.classList.remove('zoom'); $('zoom').textContent = '拡大';
+    drawInfo(); drawEntries();
+    $('form').hidden = !it; $('backBox').hidden = !it;
+    if (!it) { st.appendChild(el('div', 'msg', '写真を選んでください')); return; }
+    if (it.pdf) {
+      const m = el('div', 'msg', 'PDF です。上の「Drive」で開いて見てください。'); st.appendChild(m);
+      gs('viewerThumbs', [it.id]).then(function (r) { if (S.view[S.cur] === it && r[it.id]) { const img = el('img'); img.alt = ''; img.src = r[it.id]; m.appendChild(el('br')); m.appendChild(img); } }, function () {});
+      return;
+    }
+    if (S.img[it.id]) put(it); else { st.appendChild(el('div', 'msg', '読み込み中…')); fetchImg(it).then(function () { if (S.view[S.cur] === it) put(it); }); }
+    /* 次の写真を先に取っておく（待たせない） */
+    const nx = S.view[S.cur + 1]; if (nx && !nx.pdf && !S.img[nx.id]) fetchImg(nx);
+  }
+  const pending = {};
+  function fetchImg(it) {
+    if (pending[it.id]) return pending[it.id];
+    pending[it.id] = gs('viewerImage', it.id).then(function (r) {
+      S.img[it.id] = r && r.src ? r.src : 'drive';
+      const keys = Object.keys(S.img); if (keys.length > 12) delete S.img[keys[0]];
+      delete pending[it.id];
+    }, function () { S.img[it.id] = 'drive'; delete pending[it.id]; });
+    return pending[it.id];
+  }
+  function put(it) {
+    const st = $('stage'); st.textContent = '';
+    if (S.img[it.id] === 'drive') { st.appendChild(el('div', 'msg', 'この写真はここでは出せません。上の「Drive」で見てください。')); return; }
+    const img = el('img'); img.alt = it.name; img.src = S.img[it.id];
+    img.style.transform = S.rot[it.id] ? 'rotate(' + S.rot[it.id] + 'deg)' : '';
+    img.addEventListener('click', toggleZoom);
+    st.appendChild(img);
+  }
+  function toggleZoom() { const st = $('stage'); st.classList.toggle('zoom'); $('zoom').textContent = st.classList.contains('zoom') ? '全体' : '拡大'; }
+  $('zoom').addEventListener('click', toggleZoom);
+  $('rot').addEventListener('click', function () { const it = S.view[S.cur]; if (!it) return; S.rot[it.id] = ((S.rot[it.id] || 0) + 90) % 360; const img = $('stage').querySelector('img'); if (img) img.style.transform = 'rotate(' + S.rot[it.id] + 'deg)'; });
+  $('prev').addEventListener('click', function () { go(S.cur - 1); });
+  $('next').addEventListener('click', function () { go(S.cur + 1); });
+
+  function drawInfo() {
+    const it = S.view[S.cur]; const box = $('info'); box.textContent = '';
+    if (!it) return;
+    box.appendChild(el('div', null, '［' + it.box + '］'));
+    box.appendChild(el('div', 'from', it.at + ' に届いた　' + it.name.replace(/^\d{8}_\d{6}_/, '')));
+    if (it.memo) box.appendChild(el('div', 'cmemo', '顧問先から：' + it.memo));
+    if (it.status === 'back') {
+      const n = el('div', 'backnote', '差戻し中：' + it.note + '　');
+      const b = el('button', null, '差戻しをやめる'); b.type = 'button';
+      b.addEventListener('click', function () { doReturn(''); });
+      n.appendChild(b); box.appendChild(n);
+    }
+  }
+  function drawEntries() {
+    const it = S.view[S.cur]; const box = $('ents'); box.textContent = '';
+    if (!it) return;
+    it.entries.forEach(function (e) {
+      const d = el('div', 'ent');
+      const top = el('div'); top.appendChild(el('span', null, e.date + '　')); top.appendChild(el('span', 'amt', yen(e.amount) + '円')); d.appendChild(top);
+      d.appendChild(el('div', 'sub', e.no + '　' + e.dr + ' / ' + e.cr + (e.tax ? '　' + e.tax : '') + (e.memo ? '　' + e.memo : '') + (e.out ? '　（書き出し済み）' : '')));
+      const b = el('button', 'danger', '取消'); b.type = 'button'; b.disabled = e.out;
+      b.addEventListener('click', function () { cancel(it, e); });
+      d.appendChild(b); box.appendChild(d);
+    });
+  }
+
+  function confirmEntry(more) {
+    if (S.busy) return;
+    const it = S.view[S.cur]; if (!it) return;
+    const d = parseDate($('fDate').value), a = parseAmt($('fAmt').value), k = dictOf($('fNo').value);
+    if (!d) { fmsg('日付を入れてください（例：23）', 'err'); $('fDate').focus(); return; }
+    if (!a) { fmsg('金額を入れてください', 'err'); $('fAmt').focus(); return; }
+    if (!k) { fmsg('辞書の No を入れてください', 'err'); $('fNo').focus(); return; }
+    S.busy = true; fmsg('確定しています…');
+    $('btnOk').disabled = true; $('btnMore').disabled = true;
+    gs('workConfirm', { code: S.code, fileId: it.id, date: d.s, amount: a, no: k.no, memo: $('fMemo').value }).then(function (e) {
+      S.busy = false; $('btnOk').disabled = false; $('btnMore').disabled = false;
+      if (it.status !== 'done') { S.counts[it.status]--; S.counts.done = (S.counts.done || 0) + 1; counts(); }
+      it.entries.push(e); it.status = 'done'; it.note = '';
+      fmsg('確定しました：' + d.s + '　' + yen(a) + '円　' + k.dr, 'ok');
+      if (more) { drawEntries(); drawInfo(); markList(); clearForm(true); $('fAmt').focus(); return; }
+      let n = S.cur + 1;
+      if (S.st === 'todo') { while (n < S.view.length && S.view[n].status !== 'todo') n++; }
+      if (n < S.view.length) go(n); else { drawEntries(); drawInfo(); markList(); clearForm(); fmsg('この並びの最後まで確定しました。', 'ok'); }
+    }, function (err) { S.busy = false; $('btnOk').disabled = false; $('btnMore').disabled = false; fmsg(err.message, 'err'); });
+  }
+  $('form').addEventListener('submit', function (e) { e.preventDefault(); confirmEntry(false); });
+  $('btnMore').addEventListener('click', function () { confirmEntry(true); });
+  /* Enter で次の欄へ。辞書の欄の Enter は確定 */
+  $('fDate').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || e.isComposing) return; e.preventDefault();
+    if (!parseDate(this.value)) { fmsg('日付を入れてください（例：23）', 'err'); return; }
+    fmsg(''); $('fAmt').focus(); $('fAmt').select();
+  });
+  $('fAmt').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || e.isComposing) return; e.preventDefault();
+    if (!parseAmt(this.value)) { fmsg('金額を入れてください', 'err'); return; }
+    fmsg(''); $('fNo').focus(); $('fNo').select();
+  });
+  $('fNo').addEventListener('keydown', function (e) { if (e.key !== 'Enter' || e.isComposing) return; e.preventDefault(); confirmEntry(e.shiftKey); });
+  $('fMemo').addEventListener('keydown', function (e) { if (e.key !== 'Enter' || e.isComposing) return; e.preventDefault(); confirmEntry(e.shiftKey); });
+  document.addEventListener('keydown', function (e) {
+    if (S.tab !== 'In' || !e.altKey) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(S.cur + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); go(S.cur - 1); }
+  });
+
+  function cancel(it, e) {
+    if (S.busy || !confirm(e.date + '　' + yen(e.amount) + '円 の仕訳を取り消しますか？')) return;
+    S.busy = true;
+    gs('workCancel', S.code, e.id).then(function (r) {
+      S.busy = false;
+      it.entries = it.entries.filter(function (x) { return x.id !== e.id; });
+      if (r.status !== it.status) { S.counts[it.status]--; S.counts[r.status] = (S.counts[r.status] || 0) + 1; it.status = r.status; counts(); }
+      drawEntries(); drawInfo(); markList(); fmsg('取り消しました。', 'ok');
+    }, function (err) { S.busy = false; fmsg(err.message, 'err'); });
+  }
+
+  $('backPick').addEventListener('change', function () { if (this.value) $('backText').value = this.value; });
+  $('btnBack').addEventListener('click', function () {
+    const t = $('backText').value.trim();
+    if (!t) { fmsg('差戻しの理由を入れてください（顧問先に出ます）', 'err'); $('backText').focus(); return; }
+    doReturn(t);
+  });
+  function doReturn(reason) {
+    const it = S.view[S.cur]; if (!it || S.busy) return;
+    S.busy = true;
+    gs('workReturn', S.code, it.id, reason).then(function (r) {
+      S.busy = false;
+      if (r.status !== it.status) { S.counts[it.status]--; S.counts[r.status] = (S.counts[r.status] || 0) + 1; it.status = r.status; counts(); }
+      it.note = r.note; drawInfo(); markList(); clearForm();
+      fmsg(reason ? '差し戻しました。顧問先の「送った履歴」に理由が出ます。' : '差戻しをやめました（未処理に戻しました）。', 'ok');
+      if (reason && S.st === 'todo') { let n = S.cur + 1; while (n < S.view.length && S.view[n].status !== 'todo') n++; if (n < S.view.length) go(n); }
+    }, function (err) { S.busy = false; fmsg(err.message, 'err'); });
+  }
+
+  /* ================= 辞書 ================= */
+  function loadDict() {
+    const code = S.code;
+    return gs('dictGet', code).then(function (d) { if (code !== S.code) return; S.dict = d; drawDict(); drawDictTable(); }, function (e) { fmsg(e.message, 'err'); });
+  }
+  function drawDict() {
+    const q = $('dq').value.trim().toLowerCase();
+    const ul = $('dlist'); ul.textContent = '';
+    if (!S.dict.length) { ul.appendChild(el('li', 'empty', 'この顧問先の辞書はまだ空です。上の「辞書」で作ってください。')); return; }
+    S.dict.filter(function (d) { return !q || [d.no, d.dr, d.cr, d.tax, d.memo, d.note].join(' ').toLowerCase().indexOf(q) >= 0; }).forEach(function (d) {
+      const li = el('li'); const b = el('button'); b.type = 'button'; b.dataset.no = String(d.no);
+      b.appendChild(el('span', 'no', String(d.no)));
+      b.appendChild(el('span', null, d.dr + ' / ' + d.cr));
+      b.appendChild(el('span', 's', [d.tax, d.memo, d.note].filter(Boolean).join('　')));
+      b.addEventListener('click', function () { $('fNo').value = String(d.no); $('fNo').dispatchEvent(new Event('input')); $('fNo').focus(); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+    echo();
+  }
+  $('dq').addEventListener('input', drawDict);
+
+  const DCOLS = ['no', 'dr', 'cr', 'tax', 'memo', 'note'];
+  function drawDictTable(rows) {
+    const tb = $('dbody'); tb.textContent = '';
+    (rows || S.dict).forEach(function (d) { addRow(d); });
+    if (!tb.children.length) addRow({});
+    $('dCopyBox').hidden = S.dict.length > 0;
+  }
+  function addRow(d) {
+    const tr = el('tr');
+    DCOLS.forEach(function (k) {
+      const td = el('td', k === 'no' ? 'no' : null); const i = el('input'); i.dataset.k = k;
+      i.value = d[k] == null ? '' : String(d[k]);
+      if (k === 'no') i.inputMode = 'numeric';
+      i.addEventListener('input', function () { S.dirty = true; dmsg(''); });
+      td.appendChild(i); tr.appendChild(td);
+    });
+    const td = el('td'); const x = el('button', 'danger', '×'); x.type = 'button'; x.setAttribute('aria-label', '行を消す');
+    x.addEventListener('click', function () { tr.remove(); S.dirty = true; });
+    td.appendChild(x); tr.appendChild(td);
+    $('dbody').appendChild(tr);
+    return tr;
+  }
+  function readTable() {
+    const out = [];
+    $('dbody').querySelectorAll('tr').forEach(function (tr) {
+      const o = {}; tr.querySelectorAll('input').forEach(function (i) { o[i.dataset.k] = i.value.trim(); });
+      if (!o.no && !o.dr && !o.cr && !o.tax && !o.memo && !o.note) return;
+      o.no = Number(half(o.no)); out.push(o);
+    });
+    return out;
+  }
+  function dmsg(t, kind) { $('dMsg').textContent = t || ''; $('dMsg').className = 'pagemsg' + (kind ? ' ' + kind : ''); }
+  $('dAdd').addEventListener('click', function () {
+    const nos = readTable().map(function (o) { return o.no || 0; });
+    const tr = addRow({ no: (nos.length ? Math.max.apply(null, nos) : 0) + 1 }); tr.querySelector('[data-k=dr]').focus(); S.dirty = true;
+  });
+  $('dSave').addEventListener('click', function () {
+    dmsg('保存しています…');
+    const code = S.code;
+    gs('dictSave', code, readTable()).then(function (d) {
+      if (code !== S.code) return;
+      S.dict = d; S.dirty = false; drawDict(); drawDictTable(); dmsg('保存しました（' + d.length + '行）。', 'ok');
+    }, function (e) { dmsg(e.message, 'err'); });
+  });
+  $('dPasteGo').addEventListener('click', function () {
+    const cur = readTable(); const byNo = {}; cur.forEach(function (o) { byNo[o.no] = o; });
+    let n = 0;
+    $('dPaste').value.split(/\r?\n/).forEach(function (line) {
+      const c = line.split('\t'); if (c.length < 3) return;
+      const no = Number(half(c[0])); if (!(no >= 1)) return;   /* 見出しの行などは飛ばす */
+      byNo[no] = { no: no, dr: (c[1] || '').trim(), cr: (c[2] || '').trim(), tax: (c[3] || '').trim(), memo: (c[4] || '').trim(), note: (c[5] || '').trim() }; n++;
+    });
+    if (!n) { dmsg('貼り付けた中に、読める行がありませんでした（No・借方・貸方…をタブ区切りで）。', 'err'); return; }
+    drawDictTable(Object.keys(byNo).map(function (k) { return byNo[k]; }).sort(function (a, b) { return a.no - b.no; }));
+    S.dirty = true; $('dPaste').value = '';
+    dmsg(n + '行を表に入れました。よければ「保存」を押してください。', 'ok');
+  });
+  $('dCopy').addEventListener('click', function () {
+    const from = $('dFrom').value; if (!from) return;
+    dmsg('写しています…');
+    gs('dictCopy', from, S.code).then(function (d) { S.dict = d; S.dirty = false; drawDict(); drawDictTable(); dmsg('写しました（' + d.length + '行）。', 'ok'); },
+      function (e) { dmsg(e.message, 'err'); });
+  });
+
+  /* ================= 書き出し ================= */
+  $('outGo').addEventListener('click', function () {
+    const ym = $('outMonth').value; const o = $('oMsg'); const l = $('oLink'); l.textContent = '';
+    o.textContent = '書き出しています…'; o.className = 'pagemsg';
+    gs('workExport', S.code, ym).then(function (r) {
+      o.textContent = r.count + '件を書き出しました。'; o.className = 'pagemsg ok';
+      const a = el('a', null, r.name + '（Driveで開く）'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; l.appendChild(a);
+      load(S.view[S.cur] && S.view[S.cur].id);
+    }, function (e) { o.textContent = e.message; o.className = 'pagemsg err'; });
+  });
+
+  /* ================= 顧問先 ================= */
+  const A = { list: [], cur: null, isNew: false, busy: false };
+  function amsg(t, kind) { $('aMsg').textContent = t || ''; $('aMsg').className = 'pagemsg' + (kind ? ' ' + kind : ''); }
+  function aLoad() {
+    return gs('adminList').then(function (l) { A.list = l; aDraw(); }, function (e) {
+      const ul = $('alist'); ul.textContent = ''; ul.appendChild(el('li', 'empty', e.message));
+    });
+  }
+  function aDraw() {
+    const q = $('aq').value.trim().toLowerCase();
+    const ul = $('alist'); ul.textContent = '';
+    A.list.filter(function (c) { return !q || (c.code + ' ' + c.name).toLowerCase().indexOf(q) >= 0; }).forEach(function (c) {
+      const li = el('li'); const b = el('button'); b.type = 'button';
+      b.appendChild(el('span', 'code', c.code)); b.appendChild(el('span', null, c.name));
+      if (!c.active) b.appendChild(el('span', 'off', c.issued ? '止めています' : 'URL未発行'));
+      b.setAttribute('aria-current', String(!A.isNew && A.cur === c.code));
+      b.addEventListener('click', function () { aOpen(c.code); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+  }
+  $('aq').addEventListener('input', aDraw);
+  function aOpen(code) {
+    const c = A.list.find(function (x) { return x.code === code; }); if (!c) return;
+    A.cur = code; A.isNew = false;
+    $('aTitle').textContent = c.code + '　' + c.name;
+    $('aForm').hidden = false;
+    $('aCode').value = c.code; $('aCode').readOnly = true;
+    $('aName').value = c.name; $('aStaff').value = c.staff;
+    $('aBoxes').value = c.boxesRaw ? c.boxes.join('\n') : '';
+    $('aActive').checked = c.active; $('aActiveRow').hidden = false;
+    $('aUrlRow').hidden = !c.url; $('aUrl').value = c.url;
+    $('aSave').textContent = '保存';
+    amsg(''); aPreview(); aDraw();
+  }
+  $('aNew').addEventListener('click', function () {
+    A.cur = null; A.isNew = true;
+    $('aTitle').textContent = '新しい顧問先';
+    $('aForm').hidden = false;
+    ['aCode', 'aName', 'aStaff', 'aBoxes'].forEach(function (k) { $(k).value = ''; });
+    $('aCode').readOnly = false; $('aActive').checked = true;
+    $('aActiveRow').hidden = true; $('aUrlRow').hidden = true;
+    $('aSave').textContent = '登録して URL を作る';
+    amsg(''); aPreview(); aDraw(); $('aCode').focus();
+  });
+  /* 顧問先の画面に出る箱を、その場で見せる（サーバの parseBoxes_ と同じ決まり） */
+  function boxesOf(text) {
+    const seen = {}; const out = [];
+    text.split(/[,、，\n]/).forEach(function (s) {
+      const n = s.replace(/[\\\/:*?"<>|\r\t]/g, '').trim().slice(0, 30);
+      if (n && !seen[n] && n !== 'その他' && out.length < 9) { seen[n] = 1; out.push(n); }
+    });
+    return out;
+  }
+  function aPreview() {
+    const p = $('aPreview'); p.textContent = '';
+    let list = boxesOf($('aBoxes').value);
+    const auto = !list.length;
+    if (auto) list = ['現金の領収書', '通帳'];
+    list.concat(['その他']).forEach(function (b, i) { p.appendChild(el('span', auto || i === list.length ? 'auto' : null, b)); });
+  }
+  $('aBoxes').addEventListener('input', aPreview);
+  $('aForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (A.busy) return;
+    const o = { code: $('aCode').value.trim(), name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
+      boxes: boxesOf($('aBoxes').value), active: $('aActive').checked, isNew: A.isNew };
+    A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
+    gs('adminSave', o).then(function (l) {
+      A.list = l; A.busy = false; $('aSave').disabled = false;
+      aOpen(o.code);
+      amsg(o.isNew ? '登録しました。提出URLをコピーして顧問先に送ってください。' : '保存しました。顧問先の画面には5分以内に出ます。', 'ok');
+      /* 入力の画面の顧問先・箱も新しくする */
+      gs('workInit').then(function (r) { S.clients = r.clients; fillClients(S.code); });
+    }, function (err) { A.busy = false; $('aSave').disabled = false; amsg(err.message, 'err'); });
+  });
+  $('aCopyUrl').addEventListener('click', function () {
+    const u = $('aUrl'); u.select();
+    const done = function () { amsg('コピーしました。', 'ok'); };
+    try { navigator.clipboard.writeText(u.value).then(done, function () { document.execCommand('copy'); done(); }); } catch (e) { document.execCommand('copy'); done(); }
+  });
+  $('aReissue').addEventListener('click', function () {
+    if (!A.cur || A.busy) return;
+    if (!confirm(A.cur + ' の提出URLを作り直します。前のURLは使えなくなります。よろしいですか？')) return;
+    A.busy = true; amsg('作り直しています…');
+    const code = A.cur;
+    gs('adminReissue', code).then(function (l) { A.list = l; A.busy = false; aOpen(code); amsg('作り直しました。新しいURLを顧問先に送ってください。', 'ok'); },
+      function (err) { A.busy = false; amsg(err.message, 'err'); });
+  });
+
+  /* ================= 担当者（シートの窓だけ） ================= */
+  function smsg(t, kind) { $('sMsg').textContent = t || ''; $('sMsg').className = 'pagemsg' + (kind ? ' ' + kind : ''); }
+  function sLoad() { if (!LIVE) return; gs('staffList').then(sDraw, function (e) { smsg(e.message, 'err'); }); }
+  function sDraw(list) {
+    const tb = $('sBody'); tb.textContent = '';
+    if (!list.length) { const tr = el('tr'); const td = el('td', null, 'まだ誰もいません。下で足してください。'); td.colSpan = 3; tr.appendChild(td); tb.appendChild(tr); }
+    list.forEach(function (s) {
+      const tr = el('tr'); tr.appendChild(el('td', null, s.name)); tr.appendChild(el('td', null, s.at));
+      const td = el('td'); const b = el('button', 'danger', '消す'); b.type = 'button';
+      b.addEventListener('click', function () {
+        if (!confirm(s.name + ' さんを消します。その人の端末は入れなくなります。')) return;
+        gs('staffRemove', s.name).then(function (l) { sDraw(l); smsg('消しました。', 'ok'); }, function (e) { smsg(e.message, 'err'); });
+      });
+      td.appendChild(b); tr.appendChild(td); tb.appendChild(tr);
+    });
+  }
+  $('sSave').addEventListener('click', function () {
+    const n = $('sName').value.trim(), p = $('sPin').value.trim();
+    if (!n || !p) { smsg('名前と暗証番号を入れてください。', 'err'); return; }
+    gs('staffSet', n, p).then(function (l) { sDraw(l); $('sPin').value = ''; smsg(n + ' さんの暗証番号を決めました。本人に伝えてください。', 'ok'); }, function (e) { smsg(e.message, 'err'); });
+  });
+</script>
+</body>
+</html>
