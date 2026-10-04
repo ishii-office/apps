@@ -27,8 +27,10 @@
      ★ 送り先は「GASの中にいるか」だけで決める（顧問先の画面と同じ）
      ★ 端末に覚えるのは 合図（tok）と名前と GAS の口だけ。暗証番号は覚えない。名前は collect_ で始める
 
-     入力の打ち方（ビーメイツ 708 の伝票チェックと同じ形。写真 → 伝票 → ✓ を上から下へ並べる）：
-                   日付（23 だけでよい）→ Enter → 金額 → Enter → 辞書の No → Enter で確定 → 次の未確定へ
+     入力の打ち方（ビーメイツ 708 の伝票化と同じ形。写真を上から下へ並べる）：
+                   写真の下に【辞書一覧】→ 選ぶ（押す／No＋Enter）→ 一覧が【完成した伝票】になる
+                   → 日付（23 だけでよい）→ Enter → 金額 → Enter で確定 → 次の未確定の辞書一覧へ
+                   まちがえたら「辞書を選び直す」で一覧へ戻る
                    Shift+Enter … 確定して同じ写真にもう1行 ／ 確定しなくても 下へスクロールすれば次が見える
      ================================================================== -->
 <style>
@@ -105,13 +107,12 @@
      色は .dpz の中で決め直す（外のスタイルに触らない）
      ================================================================== */
   .dpz { --ai: #1f7a6a; --green: #2E7D53; --pink: #B4566B; --gold: #C8A24A; --dline: #DCD6C8; }
-  #paneIn { display: grid; grid-template-columns: minmax(0, 1fr) 320px; }
-  .jmain { overflow: auto; padding: 0 16px 40px; min-width: 0; }
+  #paneIn { overflow: auto; }
+  .jmain { padding: 0 16px 40px; min-width: 0; max-width: 1280px; }
   .jlhead { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 0; background: var(--bg); border-bottom: 1px solid var(--line); }
   .jlsum { font-weight: 700; }
   .jlsum .warn { color: #b07800; margin-left: 10px; } .jlsum .ng { color: var(--pink); margin-left: 10px; }
   .jlsave { font-size: 12.5px; color: var(--sub); } .jlsave.err { color: var(--err); font-weight: 700; }
-  #dictOpen { margin-left: auto; }
   .jmsg { position: sticky; bottom: 0; min-height: 0; font-weight: 700; }
   .jmsg:not(:empty) { padding: 6px 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; margin-top: 10px; }
   .jmsg.err { color: var(--err); } .jmsg.ok { color: var(--ok); }
@@ -166,8 +167,6 @@
 
   /* 辞書の No（伝票の上の1マス） */
   .dpz .jno { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; flex-wrap: wrap; }
-  .dpz .jno label { font-weight: 800; color: var(--ai); }
-  .dpz .jno .dpin.no { width: 72px; font-size: 18px; font-weight: 800; text-align: center; }
   .dpz .jno .jkind { font-weight: 800; }
   .dpz .jno .jkind.bad { color: var(--err); font-weight: 700; }
   .dpz .jdchk { display: flex; gap: 10px; align-items: center; margin-top: 9px; flex-wrap: wrap; }
@@ -226,18 +225,19 @@
   .dpz .dpsp .spl2 .dpin { font-size: 12px; padding: 2px 4px; }
   .dpz .dpsp .spv .dprt { display: none; }
 
-  /* 右の辞書（電話では下から出す） */
-  .jdict { border-left: 1px solid var(--line); background: var(--paper); display: flex; flex-direction: column; min-height: 0; }
-  .jdict-top { display: flex; gap: 6px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line); }
-  .jdict-top input { flex: 1; min-width: 0; }
-  #dictClose { display: none; }
-  .jdict-hint { margin: 4px 10px; font-size: 12px; color: var(--sub); }
-  #dlist { list-style: none; margin: 0; padding: 0 0 10px; overflow: auto; flex: 1; }
-  #dlist li button { width: 100%; text-align: left; border: 0; border-radius: 0; border-bottom: 1px solid #EEF2F1; padding: 6px 10px; display: grid; grid-template-columns: 38px 1fr; gap: 1px 8px; font-size: 13px; }
-  #dlist li button:hover, #dlist li button[aria-current="true"] { background: var(--sel); }
-  #dlist .no { font-weight: 800; text-align: right; color: var(--ai); }
-  #dlist .s { grid-column: 2; color: var(--sub); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
+  /* 写真の下の辞書一覧（選ぶと伝票になる） */
+  .dpz .jpick { border: 1.5px solid var(--ai); border-radius: 8px; background: #fff; overflow: hidden; margin-bottom: 4px; }
+  .dpz .jpickh { display: flex; gap: 10px; align-items: center; padding: 6px 10px; background: var(--ai); color: #fff; }
+  .dpz .jpickh b { white-space: nowrap; }
+  .dpz .jpickh .dpin.q { flex: 1; min-width: 0; font-size: 14px; padding: 4px 8px; border-style: solid; }
+  .dpz .jplist { list-style: none; margin: 0; padding: 0; max-height: 46vh; overflow: auto; }
+  .dpz .jplist li button { width: 100%; text-align: left; border: 0; border-radius: 0; border-bottom: 1px solid #E3EEEA; padding: 8px 10px; display: grid; grid-template-columns: 40px 1fr; gap: 1px 10px; background: #fff; white-space: normal; }
+  .dpz .jplist li button:hover, .dpz .jplist li button:focus { background: #F2F8F6; }
+  .dpz .jplist .no { font-weight: 800; color: var(--ai); text-align: right; font-size: 16px; grid-row: span 2; align-self: center; }
+  .dpz .jplist .t { font-weight: 800; font-size: 15px; }
+  .dpz .jplist .s { color: var(--sub); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dpz .jplist .empty { padding: 12px; color: var(--sub); }
+  .dpz .jno .jnono { font-weight: 800; color: var(--ai); font-size: 16px; }
   /* 辞書の手入れ（伝票） */
   .dpz .kbcard { border: 1.5px solid var(--dline); border-radius: 12px; background: #fff; padding: 12px; max-width: 1100px; }
   .dpz .kbrow { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 6px; }
@@ -288,9 +288,8 @@
     #paneIn { display: block; }
     .jmain { overflow: visible; padding: 0 8px 80px; }
     .jlhead { top: 0; }
-    .jdict { position: fixed; left: 0; right: 0; bottom: 0; height: 62vh; z-index: 20; border-left: 0; border-top: 2px solid var(--ai); box-shadow: 0 -6px 20px rgba(0,0,0,.2); transform: translateY(105%); transition: transform .18s; }
-    .jdict.open { transform: none; }
-    #dictClose { display: inline-block; }
+    .dpz .jplist { max-height: 60vh; }
+    .dpz .jplist li button { padding: 11px 10px; }
     .dpz .jdrow { padding: 9px 8px; }
     .dpz .jdchk .jdok { flex: 1 1 auto; justify-content: center; }
     .dpz .jback { flex: 1 1 100%; order: 3; }
@@ -366,16 +365,10 @@
     <div class="jlhead">
       <span class="jlsum" id="jlsum"></span>
       <span class="jlsave" id="saving" role="status"></span>
-      <button type="button" class="btn ghost sm" id="dictOpen">辞書を見る</button>
     </div>
     <div class="jlist" id="jlist"><div class="cbox muted">読み込み中…</div></div>
     <div class="jmsg" id="formMsg" role="status"></div>
   </div>
-  <aside class="jdict" id="jdict" aria-label="仕訳辞書">
-    <div class="jdict-top"><b>仕訳辞書</b><input id="dq" type="search" placeholder="No・見出し・科目・コード" aria-label="辞書を探す"><button type="button" class="btn ghost sm" id="dictClose">閉じる</button></div>
-    <p class="jdict-hint">押すと、いま入れている伝票の No に入ります</p>
-    <ul id="dlist"></ul>
-  </aside>
 </div>
 
 <!-- ===== 辞書（伝票の形） ===== -->
@@ -649,7 +642,7 @@
     document.querySelectorAll('#tabs button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.tab === k)); });
     hidePanes(); $('pane' + k).hidden = false;
     $('ctl').hidden = !(k === 'In' || k === 'Dict' || k === 'Out');
-    if (k === 'In' && S.act && !NARROW.matches) { const r = rowOf(S.act); const f = r && r.querySelector('[data-k="date"]'); if (f) f.focus({ preventScroll: true }); }
+    if (k === 'In' && S.act && !NARROW.matches) { const r = rowOf(S.act); const f = firstField(r); if (f) f.focus({ preventScroll: true }); }
     if (k === 'Clients') aLoad();
     if (k === 'Staff') sLoad();
   }
@@ -879,7 +872,7 @@
     markAct();
     /* パソコンは いまの1件の日付の欄へ（電話はキーボードが勝手に出ないように 置かない） */
     const ae = document.activeElement;
-    if (S.tab === 'In' && !NARROW.matches && (!ae || ae === document.body)) { const r = rowOf(S.act); const f = r && r.querySelector('[data-k="date"]'); if (f) f.focus({ preventScroll: true }); }
+    if (S.tab === 'In' && !NARROW.matches && (!ae || ae === document.body)) { const r = rowOf(S.act); const f = firstField(r); if (f) f.focus({ preventScroll: true }); }
   }
   function rowOf(id) { return $('jlist').querySelector('.jdrow[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'); }
   function itemOf(id) { return S.view.find(function (it) { return it.id === id; }); }
@@ -894,7 +887,7 @@
     /* 描き直しても 打っている欄からは追い出さない（保存の返事は 打っている最中に来る） */
     const ae = document.activeElement;
     const keep = ae && row.contains(ae) && ae.dataset ? (ae.dataset.k ? '[data-k="' + ae.dataset.k + '"]' : ae.dataset.a ? '[data-a="' + ae.dataset.a + '"]' : '') : '';
-    const sel = keep && typeof ae.selectionStart === 'number' ? [ae.selectionStart, ae.selectionEnd] : null;
+    const selR = keep && typeof ae.selectionStart === 'number' ? [ae.selectionStart, ae.selectionEnd] : null;
     row.className = 'jdrow' + (it.status === 'done' ? ' done' : '') + (it.status === 'back' ? ' back' : '') + (fold ? ' fold' : '') + (S.act === it.id ? ' act' : '');
     row.textContent = '';
     if (fold) {
@@ -945,24 +938,35 @@
       });
       row.appendChild(es);
     }
-    /* 辞書の No */
+    /* 写真の下は【辞書一覧】か【伝票】のどちらか。選ぶと伝票になる。「辞書を選び直す」で一覧へ戻る */
     const k = dictOf(c.no);
-    const nb = el('div', 'jno');
-    const lb = el('label', null, '辞書 No'); nb.appendChild(lb);
-    const ni = el('input', 'dpin no'); ni.dataset.k = 'no'; ni.value = c.no; ni.inputMode = 'numeric'; ni.autocomplete = 'off'; ni.setAttribute('aria-label', '辞書の No');
-    nb.appendChild(ni);
-    nb.appendChild(el('span', 'jkind' + (c.no && !k ? ' bad' : ''), c.no ? (k ? (k.title || dictLine(k)) : '辞書にありません') : '番号を打つか、辞書から選ぶ'));
-    row.appendChild(nb);
-    /* 伝票 */
-    const sl = el('div', 'jslip');
-    sl.innerHTML = voucherHtml(slipVals(it.id), 'in', k ? Object.assign({}, k) : null);
-    row.appendChild(sl);
+    if (!k) {
+      const pk = el('div', 'jpick');
+      const ph = el('div', 'jpickh');
+      ph.appendChild(el('b', null, '辞書から選ぶ'));
+      const q = el('input', 'dpin q'); q.dataset.k = 'q'; q.value = c.q || ''; q.autocomplete = 'off';
+      q.placeholder = 'No・見出しで絞る'; q.setAttribute('aria-label', '辞書を絞る');
+      ph.appendChild(q); pk.appendChild(ph);
+      const ul = el('ul', 'jplist'); pickList(ul, c.q); pk.appendChild(ul);
+      row.appendChild(pk);
+    } else {
+      const nb = el('div', 'jno');
+      nb.appendChild(el('span', 'jnono', 'No ' + k.no));
+      nb.appendChild(el('span', 'jkind', k.title || dictLine(k)));
+      const rb = el('button', 'btn ghost sm', '辞書を選び直す'); rb.type = 'button'; rb.dataset.a = 'repick'; nb.appendChild(rb);
+      row.appendChild(nb);
+      const sl = el('div', 'jslip');
+      sl.innerHTML = voucherHtml(slipVals(it.id), 'in', Object.assign({}, k));
+      row.appendChild(sl);
+    }
     /* ✓ と 差戻し */
     const ck = el('div', 'jdchk');
+    if (k) {
     const ok = el('button', 'jdok' + (k && parseDate(c.date) && parseAmt(c.amount) ? ' go' : '')); ok.type = 'button'; ok.dataset.a = 'ok';
     ok.appendChild(el('span', 'm', '✓')); ok.appendChild(el('span', null, it.status === 'done' ? 'もう1行 確定する' : '確定する'));
     ck.appendChild(ok);
     const more = el('button', 'btn ghost sm', '確定して同じ写真にもう1行'); more.type = 'button'; more.dataset.a = 'more'; ck.appendChild(more);
+    }
     if (!it.entries.length) {
       const bk = el('div', 'jback');
       const sel = el('select'); sel.setAttribute('aria-label', '差戻しの理由を選ぶ'); sel.appendChild(el('option', null, '差戻しの理由…')).value = '';
@@ -974,7 +978,7 @@
     }
     ck.appendChild(el('span', 'jda', parseAmt(c.amount) ? yen(parseAmt(c.amount)) + '円' : ''));
     row.appendChild(ck);
-    if (keep) { const f = row.querySelector(keep); if (f) { f.focus({ preventScroll: true }); if (sel) try { f.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
+    if (keep) { const f = row.querySelector(keep); if (f) { f.focus({ preventScroll: true }); if (selR) try { f.setSelectionRange(selR[0], selR[1]); } catch (e) {} } }
   }
   /* 伝票に出す値：辞書 ＋ この1件だけの直し ＋ 日付・金額 */
   function slipVals(id) {
@@ -986,16 +990,44 @@
     v.date = c.date; v.amount = c.amount;
     return v;
   }
-  function refreshNo(it) {
-    const row = rowOf(it.id); if (!row) return;
-    const c = card(it.id), k = dictOf(c.no);
-    const kn = row.querySelector('.jno .jkind');
-    kn.className = 'jkind' + (c.no && !k ? ' bad' : '');
-    kn.textContent = c.no ? (k ? (k.title || dictLine(k)) : '辞書にありません') : '番号を打つか、辞書から選ぶ';
-    row.querySelector('.jslip').innerHTML = voucherHtml(slipVals(it.id), 'in', k ? Object.assign({}, k) : null);
-    readyMark(it);
-    markDict();
+  /* 辞書一覧（その1件の写真の下）。q で絞る */
+  function dictHit(q) {
+    q = half(q || '').toLowerCase();
+    if (!q) return S.dict;
+    return S.dict.filter(function (d) { return [d.no, d.title, d.dr, d.cr, d.drCode, d.crCode, d.tax, d.memo, d.note, d.partyName].join(' ').toLowerCase().indexOf(q) >= 0; });
   }
+  function pickList(ul, q) {
+    ul.textContent = '';
+    if (!S.dict.length) { ul.appendChild(el('li', 'empty', 'この顧問先の辞書はまだ空です。上の「辞書」で作ってください。')); return; }
+    const hit = dictHit(q);
+    if (!hit.length) { ul.appendChild(el('li', 'empty', '当てはまる辞書がありません')); return; }
+    hit.forEach(function (d) {
+      const li = el('li'); const b = el('button'); b.type = 'button'; b.dataset.a = 'pick'; b.dataset.no = String(d.no);
+      b.appendChild(el('span', 'no', String(d.no)));
+      b.appendChild(el('span', 't', d.title || d.memo || d.dr));
+      b.appendChild(el('span', 's', dictLine(d) + (d.tax ? '　課税 ' + d.tax : '')));
+      li.appendChild(b); ul.appendChild(li);
+    });
+  }
+  /* 辞書を選んだ → その場で伝票になり、日付の欄へ */
+  function pickNo(it, no) {
+    const c = card(it.id);
+    c.no = String(no); c.ov = {}; c.memo = null; c.q = '';
+    S.act = it.id; drawCard(it); markAct(); fmsg('');
+    const row = rowOf(it.id); const f = row && row.querySelector('[data-k="date"]');
+    if (f) { f.focus({ preventScroll: true }); if (f.select) f.select(); }
+    if (row && NARROW.matches) { const sl = row.querySelector('.jno'); if (sl) sl.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+  }
+  function repick(it) {
+    const c = card(it.id);
+    c.no = ''; c.ov = {}; c.memo = null; c.q = '';
+    drawCard(it); markAct();
+    const row = rowOf(it.id); const f = row && row.querySelector('[data-k="q"]');
+    if (f && !NARROW.matches) f.focus({ preventScroll: true });
+    if (row) { const pk = row.querySelector('.jpick'); if (pk) pk.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+  }
+  /* その1件で いちばん先に打つ欄（辞書がまだなら絞る欄、選んであれば日付） */
+  function firstField(row) { return row && (row.querySelector('[data-k="q"]') || row.querySelector('[data-k="date"]')); }
   function readyMark(it) {
     const row = rowOf(it.id); if (!row) return;
     const c = card(it.id);
@@ -1004,11 +1036,6 @@
   }
   function markAct() {
     $('jlist').querySelectorAll('.jdrow').forEach(function (r) { r.classList.toggle('act', r.dataset.id === S.act); });
-    markDict();
-  }
-  function markDict() {
-    const c = S.act ? card(S.act) : null; const k = c ? dictOf(c.no) : null;
-    document.querySelectorAll('#dlist li button').forEach(function (b) { b.setAttribute('aria-current', String(!!k && Number(b.dataset.no) === k.no)); });
   }
   /* 次の未確定へ（下へ）。最後まで行ったら上から探す */
   function nextTodo(fromId) {
@@ -1020,9 +1047,10 @@
     S.act = id; markAct(); prioritize();
     const row = rowOf(id); if (!row) return;
     if (row.classList.contains('fold')) { S.open[id] = true; drawCard(itemOf(id)); }
-    const f = row.querySelector('[data-k="' + (key || 'date') + '"]') || row.querySelector('[data-k="no"]');
+    const f = (key && row.querySelector('[data-k="' + key + '"]')) || firstField(row);
     row.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    if (f) { f.focus({ preventScroll: true }); if (f.select) f.select(); }
+    /* 電話は 絞る欄にキーボードを勝手に出さない（一覧を指で押すので） */
+    if (f && !(NARROW.matches && f.dataset.k === 'q')) { f.focus({ preventScroll: true }); if (f.select) f.select(); }
   }
 
   /* ---- 一覧の配線（1か所で受ける） ---- */
@@ -1035,7 +1063,7 @@
     const t = e.target, row = t.closest('.jdrow'); if (!row || !t.dataset.k) return;
     const it = itemOf(row.dataset.id); if (!it) return;
     const c = card(it.id), k = t.dataset.k;
-    if (k === 'no') { c.no = half(t.value); c.ov = {}; c.memo = null; refreshNo(it); return; }
+    if (k === 'q') { c.q = t.value; pickList(row.querySelector('.jplist'), c.q); return; }
     if (k === 'date') c.date = t.value;
     else if (k === 'amount') c.amount = t.value;
     else if (k === 'memo') c.memo = t.value;
@@ -1059,8 +1087,13 @@
     if (!k) return;
     e.preventDefault();
     if (k === 'date') { if (!parseDate(c.date)) { fmsg('日付を入れてください（例：23）', 'err'); return; } fmsg(''); go1(row, 'amount'); return; }
-    if (k === 'amount') { if (!parseAmt(c.amount)) { fmsg('金額を入れてください', 'err'); return; } fmsg(''); go1(row, 'no'); return; }
-    if (k === 'no') { confirmEntry(it, e.shiftKey); return; }
+    if (k === 'q') {
+      const qq = half(c.q || ''); const hit = dictHit(qq);
+      const d = (/^\d{1,3}$/.test(qq) && dictOf(qq)) || (hit.length === 1 ? hit[0] : null);
+      if (d) pickNo(it, d.no); else fmsg(qq ? '辞書の No を1つに決めてください（' + hit.length + '件あります）' : '辞書の No を打つか、下の一覧から選んでください', 'err');
+      return;
+    }
+    if (k === 'amount') { if (!parseAmt(c.amount)) { fmsg('金額を入れてください', 'err'); return; } fmsg(''); confirmEntry(it, e.shiftKey); return; }
     if (e.ctrlKey || e.metaKey) { confirmEntry(it, e.shiftKey); return; }
     const ins = Array.prototype.slice.call(row.querySelectorAll('.jslip [data-k]'));
     const n = ins[ins.indexOf(t) + 1];
@@ -1076,8 +1109,10 @@
     const row = t.closest('.jdrow'); if (!row) return;
     const it = itemOf(row.dataset.id); if (!it) return;
     const a = t.dataset.a;
-    if (a === 'open') { S.open[it.id] = true; S.act = it.id; drawCard(it); markAct(); focusCard(it.id, 'date'); return; }
+    if (a === 'open') { S.open[it.id] = true; S.act = it.id; drawCard(it); markAct(); focusCard(it.id); return; }
     if (a === 'fold') { delete S.open[it.id]; drawCard(it); return; }
+    if (a === 'pick') { pickNo(it, Number(t.dataset.no)); return; }
+    if (a === 'repick') { repick(it); return; }
     if (a === 'ok') { confirmEntry(it, false); return; }
     if (a === 'more') { confirmEntry(it, true); return; }
     if (a === 'cancel') { const en = it.entries.find(function (x) { return x.id === t.dataset.e; }); if (en) cancel(it, en); return; }
@@ -1091,11 +1126,11 @@
     if (a === 'zoom') { const s = row.querySelector('.jshot'); s.classList.toggle('zoom'); t.textContent = s.classList.contains('zoom') ? '全体' : '拡大'; return; }
   });
   $('month').addEventListener('change', function () {
-    (S.view || []).forEach(function (it) { const row = rowOf(it.id); if (row && !row.classList.contains('fold')) { calcCells(row.querySelector('.jslip'), slipVals(it.id), true); readyMark(it); } });
-    if (S.tab === 'In' && S.act && !NARROW.matches) { const r = rowOf(S.act); const f = r && r.querySelector('[data-k="date"]'); if (f) f.focus({ preventScroll: true }); }
+    (S.view || []).forEach(function (it) { const row = rowOf(it.id); if (row && row.querySelector('.jslip')) { calcCells(row.querySelector('.jslip'), slipVals(it.id), true); readyMark(it); } });
+    if (S.tab === 'In' && S.act && !NARROW.matches) { const r = rowOf(S.act); const f = firstField(r); if (f) f.focus({ preventScroll: true }); }
   });
   /* 幅が変わったら（電話を横にした など）伝票を組み直す */
-  try { NARROW.addEventListener('change', function () { (S.view || []).forEach(function (it) { const row = rowOf(it.id); if (row && !row.classList.contains('fold')) refreshNo(it); }); if (S.dsel != null || !$('slip').hidden) slipRedraw(); }); } catch (e) {}
+  try { NARROW.addEventListener('change', function () { (S.view || []).forEach(function (it) { const row = rowOf(it.id); if (row && !row.classList.contains('fold')) drawCard(it); }); if (S.dsel != null || !$('slip').hidden) slipRedraw(); }); } catch (e) {}
 
   /* ================= 写真・PDF（速さのため：まとめて先に取る） =================
      ・一覧を開いたら、小さい絵（サムネイル）を全部まとめて取る → どこへスクロールしてもすぐ何か出る
@@ -1270,7 +1305,7 @@
     const d = parseDate(c.date), a = parseAmt(c.amount), k = dictOf(c.no);
     if (!d) { fmsg('日付を入れてください（例：23）', 'err'); go1(row, 'date'); return; }
     if (!a) { fmsg('金額を入れてください', 'err'); go1(row, 'amount'); return; }
-    if (!k) { fmsg('辞書の No を入れてください', 'err'); go1(row, 'no'); return; }
+    if (!k) { fmsg('辞書から選んでください', 'err'); const q = row.querySelector('[data-k="q"]'); if (q) q.focus(); return; }
     const v = slipVals(it.id);
     if (row.querySelector('.jslip .dpin.bad')) { fmsg('勘定科目の表にないコードがあります', 'err'); row.querySelector('.jslip .dpin.bad').focus(); return; }
     const ov = Object.keys(c.ov).length ? Object.assign({}, c.ov) : null;
@@ -1306,7 +1341,7 @@
     if (more) { S.open[it.id] = true; drawCard(it); markAct(); focusCard(it.id, 'amount'); return; }
     drawCard(it);
     const nx = nextTodo(it.id);
-    if (nx) focusCard(nx.id, 'date'); else { markAct(); fmsg('この並びは全部確定しました。おつかれさまでした。', 'ok'); }
+    if (nx) focusCard(nx.id); else { markAct(); fmsg('この並びは全部確定しました。おつかれさまでした。', 'ok'); }
   }
 
   function cancel(it, e) {
@@ -1329,37 +1364,14 @@
       if (r.status !== it.status) { S.counts[it.status]--; S.counts[r.status] = (S.counts[r.status] || 0) + 1; it.status = r.status; }
       it.note = r.note; counts(); drawCard(it); markAct();
       fmsg(reason ? '差し戻しました。顧問先の「送った履歴」に理由が出ます。' : '差戻しをやめました（未処理に戻しました）。', 'ok');
-      if (reason) { const nx = nextTodo(it.id); if (nx && nx.status === 'todo') focusCard(nx.id, 'date'); }
+      if (reason) { const nx = nextTodo(it.id); if (nx && nx.status === 'todo') focusCard(nx.id); }
     }, function (err) { S.busy = false; fmsg(err.message, 'err'); });
   }
 
-  /* ================= 右の辞書（電話では下から出す） ================= */
+  /* 辞書が変わったら、写真の下の一覧と伝票を描き直す */
   function drawDict() {
-    const q = $('dq').value.trim().toLowerCase();
-    const ul = $('dlist'); ul.textContent = '';
-    if (!S.dict.length) { ul.appendChild(el('li', 'empty', 'この顧問先の辞書はまだ空です。上の「辞書」で作ってください。')); return; }
-    S.dict.filter(function (d) { return !q || [d.no, d.title, d.dr, d.cr, d.drCode, d.crCode, d.tax, d.memo, d.note, d.partyName].join(' ').toLowerCase().indexOf(q) >= 0; }).forEach(function (d) {
-      const li = el('li'); const b = el('button'); b.type = 'button'; b.dataset.no = String(d.no);
-      b.appendChild(el('span', 'no', String(d.no)));
-      b.appendChild(el('span', null, (d.title ? d.title + '　' : '') + dictLine(d)));
-      b.appendChild(el('span', 's', [d.tax ? '課税 ' + d.tax : '', d.memo].filter(Boolean).join('　')));
-      b.addEventListener('click', function () { pickNo(d.no); });
-      li.appendChild(b); ul.appendChild(li);
-    });
-    markDict();
+    (S.view || []).forEach(function (it) { const r = rowOf(it.id); if (r && !r.classList.contains('fold')) drawCard(it); });
   }
-  function pickNo(no) {
-    const it = S.act && itemOf(S.act); if (!it) return;
-    if (it.status === 'done' && !S.open[it.id]) { S.open[it.id] = true; drawCard(it); }
-    const row = rowOf(it.id); if (!row) return;
-    const ni = row.querySelector('[data-k="no"]'); ni.value = String(no);
-    ni.dispatchEvent(new Event('input', { bubbles: true }));
-    $('jdict').classList.remove('open');
-    ni.focus({ preventScroll: true }); row.scrollIntoView({ block: 'nearest' });
-  }
-  $('dq').addEventListener('input', drawDict);
-  $('dictOpen').addEventListener('click', function () { $('jdict').classList.add('open'); if (!NARROW.matches) $('dq').focus(); });
-  $('dictClose').addEventListener('click', function () { $('jdict').classList.remove('open'); });
 
   /* ================= 辞書の手入れ（伝票の形。ビーメイツ 708 の「取引の種類」と同じ） ================= */
   S.acct = []; S.acctMap = {}; S.dsel = null; S.dsub = 'v';
@@ -1481,7 +1493,7 @@
       S.dict = d; S.dirty = false; drawDict();
       openSlip(selNo != null && d.some(function (x) { return x.no === selNo; }) ? selNo : null);
       dmsg(okMsg, 'ok');
-      (S.view || []).forEach(function (it) { if (C[it.id] && C[it.id].no && rowOf(it.id) && !rowOf(it.id).classList.contains('fold')) refreshNo(it); });
+      (S.view || []).forEach(function (it) { if (rowOf(it.id) && !rowOf(it.id).classList.contains('fold')) drawCard(it); });
     }, function (e) { dmsg(e.message, 'err'); });
   }
   function saveSlip() {
