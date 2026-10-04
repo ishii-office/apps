@@ -138,12 +138,6 @@
 
   /* 辞書の手入れ・書き出し・担当者 */
   .page { overflow: auto; padding: 14px 18px; }
-  .scroll-x { overflow-x: auto; max-width: 1200px; }
-  table.dt { border-collapse: collapse; width: 100%; min-width: 760px; background: var(--paper); }
-  table.dt th, table.dt td { border: 1px solid var(--line); padding: 3px; }
-  table.dt th { background: #EEF2F1; font-size: 13px; padding: 5px; }
-  table.dt input { width: 100%; border: 0; border-radius: 0; padding: 4px 6px; }
-  table.dt td.no input { text-align: right; }
   .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; max-width: 1200px; }
   .bar .sp { flex: 1; }
   .note { color: var(--sub); font-size: 13px; line-height: 1.7; max-width: 1200px; }
@@ -151,6 +145,70 @@
   details { margin-top: 14px; max-width: 1200px; }
   details textarea { width: 100%; min-height: 120px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
 
+  /* 辞書（伝票の形） */
+  #paneDict { display: grid; grid-template-columns: 330px 1fr; }
+  .dk-side { border-right: 1px solid var(--line); background: var(--paper); display: flex; flex-direction: column; min-height: 0; }
+  #dvSide { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+  .dk-top { padding: 8px 10px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; }
+  .dk-top input { flex: 1; min-width: 0; }
+  #dIndex { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; }
+  #dIndex li button { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 7px 10px; display: grid; grid-template-columns: 42px 1fr; gap: 1px 8px; }
+  #dIndex li button[aria-current="true"] { background: var(--sel); box-shadow: inset 4px 0 0 var(--accent); }
+  #dIndex .no { font-weight: 700; text-align: right; }
+  #dIndex .t { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #dIndex .s { grid-column: 2; color: var(--sub); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dk-main { overflow: auto; padding: 14px 18px; min-width: 0; }
+  .dk-main h2 { font-size: 17px; margin: 0 0 10px; }
+
+  /* 振替伝票 */
+  .slip { max-width: 1000px; background: #FFFDF6; border: 2px solid #9DB8AF; border-radius: 6px; }
+  .slip-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 8px 12px; border-bottom: 2px solid #9DB8AF; background: #EAF3F0; }
+  .slip-name { font-weight: 700; letter-spacing: .1em; color: var(--accent); }
+  .slip-head label { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+  .sh-no input { width: 64px; text-align: right; font-size: 17px; }
+  .sh-title { flex: 1; min-width: 200px; }
+  .sh-title input { flex: 1; min-width: 0; }
+  .slip-body { display: grid; grid-template-columns: 1fr 1.1fr 1fr; }
+  .side { margin: 0; border: 0; padding: 10px 12px 12px; min-width: 0; }
+  .side.dr { border-right: 1px solid #C9D9D4; }
+  .side.cr { border-left: 1px solid #C9D9D4; }
+  .side legend, .side .legend { float: left; width: 100%; padding: 2px 0 6px; margin: 0 0 6px; font-weight: 700; text-align: center; letter-spacing: .3em; border-bottom: 1px dashed #C9D9D4; }
+  .side.dr legend { color: #1F5FA6; } .side.cr legend { color: #A63A1F; }
+  .fld, .code-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: 6px; margin-bottom: 7px; clear: both; }
+  .code-row { grid-template-columns: 52px 90px minmax(0, 1fr); }
+  .fld label, .code-row label { font-size: 12.5px; color: var(--sub); }
+  .fld input, .code-row input { width: 100%; min-width: 0; font-size: 15px; }
+  .code-row input.code { font-family: ui-monospace, Menlo, monospace; font-size: 16px; font-weight: 700; }
+  .acct { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .acct.bad { color: var(--err); font-weight: 400; font-size: 12.5px; }
+  .side.mid textarea { width: 100%; min-height: 96px; font-size: 15px; resize: vertical; clear: both; margin-bottom: 8px; }
+  .slip-acts { padding: 10px 12px 0; margin: 0; }
+  .slip .note { padding: 0 12px 10px; margin: 8px 0 0; }
+
+  /* 勘定科目の表 */
+  .acct-rows { max-width: 640px; display: grid; gap: 4px; margin-bottom: 10px; }
+  .acct-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) minmax(0, 150px) 36px; gap: 4px; }
+  .acct-row input { min-width: 0; width: 100%; }
+  .acct-row input.code { font-family: ui-monospace, Menlo, monospace; }
+  .acct-row.head { font-size: 12.5px; color: var(--sub); font-weight: 700; }
+
+  /* 入力の右：選んだ辞書を伝票の形で */
+  .mini { grid-column: 1 / 3; display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #C9D9D4; border-radius: 6px; background: #FFFDF6; font-size: 12.5px; }
+  .mini > div { padding: 4px 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mini .h { font-weight: 700; text-align: center; border-bottom: 1px dashed #C9D9D4; }
+  .mini .h.dr { color: #1F5FA6; border-right: 1px solid #C9D9D4; } .mini .h.cr { color: #A63A1F; }
+  .mini .dr { border-right: 1px solid #C9D9D4; }
+  .mini b { font-family: ui-monospace, Menlo, monospace; margin-right: 4px; }
+
+  /* PDF */
+  .pdfpages { width: 100%; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .pdfpages canvas { width: 100%; max-width: 900px; height: auto; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+  #stage.zoom .pdfpages canvas { max-width: none; width: 200%; }
+  .loading { position: relative; }
+  .loading::after { content: '読み込み中…'; position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: rgba(0,0,0,.6); color: #fff; padding: 3px 10px; border-radius: 999px; font-size: 13px; }
+  .thumb-big { max-width: 100%; max-height: 100%; filter: blur(.4px); opacity: .92; }
+  #saving { font-size: 12.5px; color: var(--sub); }
+  #saving.err { color: var(--err); font-weight: 700; }
   /* 顧問先 */
   #paneClients { display: grid; grid-template-columns: 340px 1fr; }
   .cl-side { border-right: 1px solid var(--line); background: var(--paper); display: flex; flex-direction: column; min-height: 0; }
@@ -196,6 +254,15 @@
     #side { border-left: 0; overflow: visible; }
     .dict ul { max-height: 50vh; }
     #paneClients { display: block; }
+    #paneDict { display: block; }
+    .dk-side { border-right: 0; border-bottom: 1px solid var(--line); }
+    #dIndex { max-height: 30vh; }
+    .dk-main { padding: 12px 10px; }
+    .slip-body { grid-template-columns: minmax(0, 1fr); }
+    .side.dr { border-right: 0; border-bottom: 1px solid #C9D9D4; }
+    .side.cr { border-left: 0; border-top: 1px solid #C9D9D4; }
+    .sh-title { min-width: 0; flex: 1 1 100%; }
+    .acct-row { grid-template-columns: 70px minmax(0, 1fr) minmax(0, 96px) 32px; }
     .cl-side { border-right: 0; border-bottom: 1px solid var(--line); }
     #alist { max-height: 32vh; }
     .cl-main { padding: 14px; }
@@ -244,7 +311,7 @@
     <button type="button" role="tab" data-tab="Clients" aria-pressed="false">顧問先</button>
     <button type="button" role="tab" data-tab="Staff" aria-pressed="false" id="tabStaff" hidden>担当者</button>
   </span>
-  <span class="who"><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
+  <span class="who"><span id="saving" role="status"></span><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
 <div class="ctl" id="ctl" hidden>
   <label>顧問先 <select id="client"></select></label>
@@ -284,6 +351,7 @@
       <div class="f-row"><input id="fAmt" inputmode="numeric" placeholder="0" enterkeyhint="next"><span class="echo" id="eAmt"></span></div>
       <label for="fNo">辞書</label>
       <div class="f-row"><input id="fNo" inputmode="numeric" placeholder="No" enterkeyhint="done"><span class="echo" id="eNo"></span></div>
+      <div class="mini" id="mini" hidden></div>
       <label for="fMemo">摘要</label>
       <input id="fMemo" maxlength="200" placeholder="（辞書の摘要。打ち替えてもよい）">
       <div class="acts">
@@ -313,33 +381,96 @@
   </div>
 </div>
 
-<!-- ===== 辞書の手入れ ===== -->
-<div class="pane page" id="paneDict" hidden>
-  <div class="bar">
-    <b id="dictTitle">仕訳辞書</b>
-    <span class="sp"></span>
-    <button type="button" id="dAdd">＋ 行を足す</button>
-    <button type="button" class="primary" id="dSave">保存</button>
-    <span class="pagemsg" id="dMsg" role="status"></span>
+<!-- ===== 辞書（伝票の形） ===== -->
+<div class="pane" id="paneDict" hidden>
+  <div class="dk-side">
+    <div class="dk-top">
+      <span class="seg" id="dSub" role="group" aria-label="辞書と科目の表">
+        <button type="button" data-sub="v" aria-pressed="true">仕訳辞書</button>
+        <button type="button" data-sub="a" aria-pressed="false">勘定科目の表</button>
+      </span>
+    </div>
+    <div id="dvSide">
+      <div class="dk-top"><input id="dSearch" type="search" placeholder="No・見出し・科目・コード" aria-label="辞書を探す"><button type="button" class="primary" id="dNew">＋ 新しい伝票</button></div>
+      <ul id="dIndex"></ul>
+    </div>
   </div>
-  <div class="scroll-x">
-    <table class="dt">
-      <thead><tr><th style="width:70px">No</th><th>借方科目</th><th>貸方科目</th><th style="width:150px">税区分</th><th>摘要</th><th>メモ（事務所用）</th><th style="width:50px"></th></tr></thead>
-      <tbody id="dbody"></tbody>
-    </table>
+  <div class="dk-main">
+    <div id="dvMain">
+      <h2 id="dictTitle">仕訳辞書</h2>
+      <form class="slip" id="slip" autocomplete="off" hidden>
+        <div class="slip-head">
+          <span class="slip-name">振替伝票（仕訳辞書）</span>
+          <label class="sh-no">No <input id="sNo" inputmode="numeric" maxlength="3"></label>
+          <label class="sh-title">見出し <input id="sTitle" maxlength="40" placeholder="例：ガソリン代"></label>
+        </div>
+        <div class="slip-body">
+          <fieldset class="side dr">
+            <legend>借　方</legend>
+            <div class="code-row"><label for="sDrCode">コード</label><input id="sDrCode" class="code" inputmode="numeric" maxlength="10"><span class="acct" id="eDrCode"></span></div>
+            <div class="fld"><label for="sDr">科目</label><input id="sDr" list="acctNames" maxlength="40"></div>
+            <div class="fld"><label for="sDrSub">補助</label><input id="sDrSub" maxlength="40"></div>
+            <div class="fld"><label for="sTax">税区分</label><input id="sTax" list="taxList" maxlength="20"></div>
+          </fieldset>
+          <div class="side mid">
+            <div class="legend">摘　要</div>
+            <textarea id="sMemo" maxlength="200" placeholder="入力のときに そのまま入る摘要"></textarea>
+            <div class="fld"><label for="sNote">メモ</label><input id="sNote" maxlength="200" placeholder="事務所用（顧問先には出ない）"></div>
+          </div>
+          <fieldset class="side cr">
+            <legend>貸　方</legend>
+            <div class="code-row"><label for="sCrCode">コード</label><input id="sCrCode" class="code" inputmode="numeric" maxlength="10"><span class="acct" id="eCrCode"></span></div>
+            <div class="fld"><label for="sCr">科目</label><input id="sCr" list="acctNames" maxlength="40"></div>
+            <div class="fld"><label for="sCrSub">補助</label><input id="sCrSub" maxlength="40"></div>
+            <div class="fld"><label for="sCrTax">税区分</label><input id="sCrTax" list="taxList" maxlength="20"></div>
+          </fieldset>
+        </div>
+        <div class="bar slip-acts">
+          <button type="submit" class="primary" id="sSaveSlip">この伝票を保存（Ctrl+Enter）</button>
+          <button type="button" id="sDup">写して新しい伝票</button>
+          <button type="button" class="danger" id="sDel">この伝票を消す</button>
+          <span class="pagemsg" id="dMsg" role="status"></span>
+        </div>
+        <p class="note">コードを打てば科目名が出ます（勘定科目の表から）。Enter で次の欄へ。<br>
+          確定した仕訳は、ここで辞書を書き替えても変わりません（確定した時の科目のまま）。</p>
+      </form>
+      <datalist id="acctNames"></datalist>
+      <datalist id="taxList">
+        <option value="課税仕入10%"></option><option value="課税仕入8%（軽減）"></option>
+        <option value="課税売上10%"></option><option value="課税売上8%（軽減）"></option>
+        <option value="非課税"></option><option value="不課税"></option><option value="対象外"></option>
+      </datalist>
+      <details>
+        <summary>Excel から貼り付けて まとめて入れる</summary>
+        <p class="note">Excel で次の順に並べた範囲をコピーして、下に貼り付けてください（見出しの行は あっても無くてもよい）。同じ No は置き換えます。<br>
+          No・見出し・借方コード・借方科目・借方補助・借方税区分・貸方コード・貸方科目・貸方補助・貸方税区分・摘要・メモ</p>
+        <textarea id="dPaste" aria-label="貼り付け"></textarea>
+        <div class="bar"><button type="button" id="dPasteGo">入れて保存する</button></div>
+      </details>
+      <details id="dCopyBox">
+        <summary>ほかの顧問先の辞書を写す（この顧問先の辞書が空のときだけ）</summary>
+        <div class="bar" style="margin-top:8px"><select id="dFrom"></select><button type="button" id="dCopy">写す</button></div>
+      </details>
+    </div>
+
+    <div id="daMain" hidden>
+      <h2>勘定科目の表（事務所で1つ）</h2>
+      <p class="note">辞書でコードを打つと、ここの科目名が出ます。TKC の科目一覧（コード・科目名）を Excel でコピーして、下の「貼り付け」から入れると早いです。<br>
+        <span id="aRo">変えられるのは マスターの方だけです。</span></p>
+      <div class="acct-rows" id="aRows"></div>
+      <div class="bar" id="aBar">
+        <button type="button" id="aAdd">＋ 行を足す</button>
+        <button type="button" class="primary" id="aSaveAcct">保存</button>
+        <span class="pagemsg" id="aMsg2" role="status"></span>
+      </div>
+      <details id="aPasteBox">
+        <summary>Excel から貼り付けて まとめて入れる</summary>
+        <p class="note">「コード・科目名・税区分（なくてもよい）」の順。同じコードは置き換えます。</p>
+        <textarea id="aPaste" aria-label="科目の貼り付け"></textarea>
+        <div class="bar"><button type="button" id="aPasteGo">表に入れる</button></div>
+      </details>
+    </div>
   </div>
-  <p class="note">No は 1〜999。入力の画面ではこの No を打って選びます。保存するまで入力の画面には出ません。<br>
-    確定した仕訳は、ここで辞書を書き替えても変わりません（確定した時の科目のまま）。</p>
-  <details>
-    <summary>Excel から貼り付けて まとめて入れる</summary>
-    <p class="note">Excel で「No・借方科目・貸方科目・税区分・摘要・メモ」の順に並べた範囲をコピーして、下に貼り付けてください（見出しの行は あっても無くてもよい）。いまの表に足します。同じ No は置き換えます。</p>
-    <textarea id="dPaste" aria-label="貼り付け"></textarea>
-    <div class="bar"><button type="button" id="dPasteGo">表に入れる</button></div>
-  </details>
-  <details id="dCopyBox">
-    <summary>ほかの顧問先の辞書を写す（この顧問先の辞書が空のときだけ）</summary>
-    <div class="bar" style="margin-top:8px"><select id="dFrom"></select><button type="button" id="dCopy">写す</button></div>
-  </details>
 </div>
 
 <!-- ===== 書き出し ===== -->
@@ -518,6 +649,7 @@
     }, function (e) { if (S.started) fatal(e.message); });
   }
   function main() {
+    loadAcct();
     gs('workInit').then(function (r) {
       S.clients = r.clients;
       const now = r.today.slice(0, 7).replace('/', '-');
@@ -555,7 +687,7 @@
       selectTab(b.dataset.tab);
     });
   });
-  window.addEventListener('beforeunload', function (e) { if (S.dirty) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', function (e) { if (S.dirty || S.saving) { e.preventDefault(); e.returnValue = ''; } });
 
   /* ================= 入力 ================= */
   function baseYM() { const v = $('month').value || ''; const m = v.match(/^(\d{4})-(\d{2})$/); return m ? [Number(m[1]), Number(m[2])] : null; }
@@ -582,8 +714,18 @@
     $('eDate').className = 'echo' + ($('fDate').value && !d ? ' bad' : '');
     $('eAmt').textContent = $('fAmt').value ? (a ? yen(a) + ' 円' : '1円以上の整数で') : '';
     $('eAmt').className = 'echo' + ($('fAmt').value && !a ? ' bad' : '');
-    $('eNo').textContent = $('fNo').value ? (k ? k.dr + ' / ' + k.cr + (k.tax ? '　' + k.tax : '') : '辞書にありません') : '';
+    $('eNo').textContent = $('fNo').value ? (k ? (k.title || k.dr) : '辞書にありません') : '';
     $('eNo').className = 'echo' + ($('fNo').value && !k ? ' bad' : '');
+    /* 選んだ辞書を 伝票の形で（借方｜貸方、コードつき） */
+    const mini = $('mini'); mini.textContent = ''; mini.hidden = !k;
+    if (k) {
+      mini.appendChild(el('div', 'h dr', '借方')); mini.appendChild(el('div', 'h cr', '貸方'));
+      [[k.drCode, k.dr, k.drSub, k.tax, 'dr'], [k.crCode, k.cr, k.crSub, k.crTax, 'cr']].forEach(function (x) {
+        const d = el('div', x[4]); if (x[0]) d.appendChild(el('b', null, x[0]));
+        d.appendChild(document.createTextNode(x[1] + (x[2] ? '／' + x[2] : '') + (x[3] ? '（' + x[3] + '）' : '')));
+        mini.appendChild(d);
+      });
+    }
     document.querySelectorAll('#dlist li button').forEach(function (b) { b.setAttribute('aria-current', String(!!k && Number(b.dataset.no) === k.no)); });
   }
   ['fDate', 'fAmt'].forEach(function (id) { $(id).addEventListener('input', echo); });
@@ -599,7 +741,9 @@
     S.code = this.value; switchClient();
   });
   function switchClient() {
-    S.dirty = false; S.img = {}; S.rot = {};
+    S.dirty = false; S.rot = {}; S.dsel = null;
+    Object.keys(IMG).forEach(function (k) { delete IMG[k]; }); QUEUE = [];
+    const st = $('stage'); st.dataset.id = '';
     const c = S.clients.find(function (x) { return x.code === S.code; });
     const bx = $('box'); bx.textContent = ''; const all = el('option', null, 'すべて'); all.value = ''; bx.appendChild(all);
     (c ? c.boxes : []).forEach(function (b) { const o = el('option', null, b); o.value = b; bx.appendChild(o); });
@@ -648,7 +792,9 @@
     });
     let i = start || 0;
     if (keepId) { const k = S.view.findIndex(function (it) { return it.id === keepId; }); if (k >= 0) i = k; }
-    go(Math.min(i, S.view.length - 1));
+    S.cur = Math.min(i, S.view.length - 1);
+    startPrefetch();
+    go(S.cur);
   }
   $('jump').addEventListener('change', function () { go(Number(this.value)); });
   function markList() {
@@ -668,7 +814,7 @@
 
   function go(i) {
     if (i < 0 || i >= S.view.length) return;
-    S.cur = i; show(); markList();
+    S.cur = i; show(); markList(); prioritize();
     clearForm(); if (S.tab === 'In') $('fDate').focus({ preventScroll: true });
   }
   function clearForm(keepDate) {
@@ -678,45 +824,153 @@
     echo();
   }
 
-  function show() {
+  /* ================= 写真・PDF（速さのため：まとめて先に取る） =================
+     ・一覧を開いたら、小さい絵（サムネイル）を全部まとめて取る → どこへ飛んでもすぐ何か出る
+     ・本物（写真・PDF）は いまの写真から順に、3件ずつ・2本並べて先に取っておく
+     ・取ったものは この画面を開いているあいだだけ手元に置く（40件まで。端末には残さない）
+     ・PDF もアプリの中で出す（pdf.js）。Drive を開きにいかなくてよい */
+  const IMG = {};            /* id → { t:'img', src } | { t:'pdf', b64 } | { t:'drive' } */
+  const THUMB = {};          /* id → dataURL | null */
+  const INFLIGHT = {};
+  let QUEUE = [];
+  let running = 0;
+  const KEEP = 40;
+  function startPrefetch() {
+    const ids = S.view.map(function (it) { return it.id; });
+    /* サムネイル：12件ずつ */
+    const need = ids.filter(function (id) { return !(id in THUMB); });
+    (function next() {
+      const b = need.splice(0, 12); if (!b.length) return;
+      gs('viewerThumbs', b).then(function (r) {
+        b.forEach(function (id) { THUMB[id] = r[id] || null; });
+        const it = S.view[S.cur]; if (it && b.indexOf(it.id) >= 0 && !IMG[it.id]) show(true);
+        next();
+      }, function () { next(); });
+    })();
+    prioritize();
+  }
+  /* いまの写真・次・その次・前 を先頭に、あとは並び順 */
+  function prioritize() {
+    const ids = S.view.map(function (it) { return it.id; });
+    const c = Math.max(0, S.cur);
+    const order = [c, c + 1, c + 2, c - 1, c + 3, c + 4].filter(function (i) { return i >= 0 && i < ids.length; }).map(function (i) { return ids[i]; });
+    ids.slice(c + 5).concat(ids.slice(0, Math.max(0, c - 1))).forEach(function (id) { if (order.indexOf(id) < 0) order.push(id); });
+    QUEUE = order.filter(function (id) { return !IMG[id] && !INFLIGHT[id]; }).slice(0, KEEP);
+    pump();
+  }
+  function pump() {
+    while (running < 2 && QUEUE.length) {
+      const batch = QUEUE.splice(0, 3).filter(function (id) { return !IMG[id] && !INFLIGHT[id]; });
+      if (!batch.length) continue;
+      running++;
+      batch.forEach(function (id) { INFLIGHT[id] = 1; });
+      gs('viewerImages', batch).then(function (r) {
+        batch.forEach(function (id) {
+          delete INFLIGHT[id];
+          const v = r[id] || { t: 'drive' };
+          if (v.t === 'later') { QUEUE.unshift(id); return; }   /* 大きすぎて入りきらなかった → 1件で取り直す */
+          IMG[id] = v;
+        });
+        trim();
+        running--;
+        const it = S.view[S.cur]; if (it && batch.indexOf(it.id) >= 0) show(true);
+        pump();
+      }, function () { batch.forEach(function (id) { delete INFLIGHT[id]; }); running--; pump(); });
+    }
+  }
+  /* 手元に置くのは 40件まで。いまの写真から遠いものから捨てる */
+  function trim() {
+    const keys = Object.keys(IMG); if (keys.length <= KEEP) return;
+    const pos = {}; S.view.forEach(function (it, i) { pos[it.id] = i; });
+    keys.sort(function (a, b) { return Math.abs((pos[b] ?? 1e9) - S.cur) - Math.abs((pos[a] ?? 1e9) - S.cur); });
+    keys.slice(0, keys.length - KEEP).forEach(function (k) { delete IMG[k]; });
+  }
+
+  let pdfjsP = null;
+  function pdfjs() {
+    if (pdfjsP) return pdfjsP;
+    const base = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+    pdfjsP = new Promise(function (ok, ng) {
+      if (window.pdfjsLib) { ok(window.pdfjsLib); return; }
+      const sc = document.createElement('script'); sc.src = base + 'pdf.min.js';
+      sc.onload = function () {
+        const lib = window.pdfjsLib; if (!lib) { ng(new Error('PDF を開く道具が読み込めませんでした')); return; }
+        /* 別の場所から働き手（worker）を直に呼べないので、中身を取ってきて手元で起こす。だめなら pdf.js が自分で何とかする */
+        fetch(base + 'pdf.worker.min.js').then(function (r) { return r.text(); }).then(function (t) {
+          lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([t], { type: 'text/javascript' }));
+        }).catch(function () { lib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js'; }).then(function () { ok(lib); });
+      };
+      sc.onerror = function () { pdfjsP = null; ng(new Error('PDF を開く道具が読み込めませんでした')); };
+      document.head.appendChild(sc);
+    });
+    return pdfjsP;
+  }
+  function b64bytes(b64) { const s = atob(b64); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+  let renderSeq = 0;
+  function renderPdf(it, v, st) {
+    const seq = ++renderSeq;
+    const box = el('div', 'pdfpages'); st.appendChild(box);
+    box.style.transform = S.rot[it.id] ? 'rotate(' + S.rot[it.id] + 'deg)' : '';
+    pdfjs().then(function (lib) { return lib.getDocument({ data: b64bytes(v.b64) }).promise; }).then(function (doc) {
+      let p = Promise.resolve();
+      for (let n = 1; n <= doc.numPages; n++) {
+        p = p.then(function () {
+          if (seq !== renderSeq) return;
+          return doc.getPage(n).then(function (page) {
+            if (seq !== renderSeq) return;
+            const w = Math.min(1800, Math.max(600, st.clientWidth * (window.devicePixelRatio || 1)));
+            const vp0 = page.getViewport({ scale: 1 });
+            const vp = page.getViewport({ scale: w / vp0.width });
+            const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+            c.setAttribute('aria-label', it.name + ' ' + n + 'ページ');
+            box.appendChild(c);
+            return page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+          });
+        });
+      }
+      return p;
+    }).catch(function (e) {
+      if (seq !== renderSeq) return;
+      box.appendChild(el('div', 'msg', 'PDF を出せませんでした（' + e.message + '）。上の「Drive」で見てください。'));
+    });
+  }
+
+  function show(again) {
     const it = S.view[S.cur];
     $('pos').textContent = it ? (S.cur + 1) + ' / ' + S.view.length : '';
     $('prev').disabled = !it || S.cur <= 0; $('next').disabled = !it || S.cur >= S.view.length - 1;
     $('open').href = it ? it.url : '#';
-    const st = $('stage'); st.textContent = ''; st.classList.remove('zoom'); $('zoom').textContent = '拡大';
-    drawInfo(); drawEntries();
-    $('form').hidden = !it; $('backBox').hidden = !it;
+    const st = $('stage');
+    if (!again) { drawInfo(); drawEntries(); $('form').hidden = !it; $('backBox').hidden = !it; st.classList.remove('zoom'); $('zoom').textContent = '拡大'; }
+    if (st.dataset.id === (it ? it.id : '') && st.dataset.kind === kindOf(it)) return;   /* もう同じものが出ている */
+    renderSeq++;
+    st.textContent = ''; st.classList.remove('loading');
+    st.dataset.id = it ? it.id : ''; st.dataset.kind = kindOf(it);
     if (!it) { st.appendChild(el('div', 'msg', '写真を選んでください')); return; }
-    if (it.pdf) {
-      const m = el('div', 'msg', 'PDF です。上の「Drive」で開いて見てください。'); st.appendChild(m);
-      gs('viewerThumbs', [it.id]).then(function (r) { if (S.view[S.cur] === it && r[it.id]) { const img = el('img'); img.alt = ''; img.src = r[it.id]; m.appendChild(el('br')); m.appendChild(img); } }, function () {});
+    const v = IMG[it.id];
+    if (!v) {
+      st.classList.add('loading');
+      if (THUMB[it.id]) { const im = el('img', 'thumb-big'); im.alt = ''; im.src = THUMB[it.id]; st.appendChild(im); }
+      if (!INFLIGHT[it.id]) prioritize();
       return;
     }
-    if (S.img[it.id]) put(it); else { st.appendChild(el('div', 'msg', '読み込み中…')); fetchImg(it).then(function () { if (S.view[S.cur] === it) put(it); }); }
-    /* 次の写真を先に取っておく（待たせない） */
-    const nx = S.view[S.cur + 1]; if (nx && !nx.pdf && !S.img[nx.id]) fetchImg(nx);
+    if (v.t === 'pdf') { renderPdf(it, v, st); return; }
+    if (v.t === 'img') {
+      const img = el('img'); img.alt = it.name; img.src = v.src;
+      img.style.transform = S.rot[it.id] ? 'rotate(' + S.rot[it.id] + 'deg)' : '';
+      img.addEventListener('click', toggleZoom);
+      st.appendChild(img); return;
+    }
+    if (THUMB[it.id]) { const im = el('img'); im.alt = it.name; im.src = THUMB[it.id]; st.appendChild(im); }
+    st.appendChild(el('div', 'msg', 'この資料は大きいか、ここでは出せない形です。上の「Drive」で見てください。'));
   }
-  const pending = {};
-  function fetchImg(it) {
-    if (pending[it.id]) return pending[it.id];
-    pending[it.id] = gs('viewerImage', it.id).then(function (r) {
-      S.img[it.id] = r && r.src ? r.src : 'drive';
-      const keys = Object.keys(S.img); if (keys.length > 12) delete S.img[keys[0]];
-      delete pending[it.id];
-    }, function () { S.img[it.id] = 'drive'; delete pending[it.id]; });
-    return pending[it.id];
-  }
-  function put(it) {
-    const st = $('stage'); st.textContent = '';
-    if (S.img[it.id] === 'drive') { st.appendChild(el('div', 'msg', 'この写真はここでは出せません。上の「Drive」で見てください。')); return; }
-    const img = el('img'); img.alt = it.name; img.src = S.img[it.id];
-    img.style.transform = S.rot[it.id] ? 'rotate(' + S.rot[it.id] + 'deg)' : '';
-    img.addEventListener('click', toggleZoom);
-    st.appendChild(img);
-  }
+  function kindOf(it) { if (!it) return ''; const v = IMG[it.id]; return v ? v.t : (THUMB[it.id] ? 'thumb' : 'none'); }
   function toggleZoom() { const st = $('stage'); st.classList.toggle('zoom'); $('zoom').textContent = st.classList.contains('zoom') ? '全体' : '拡大'; }
   $('zoom').addEventListener('click', toggleZoom);
-  $('rot').addEventListener('click', function () { const it = S.view[S.cur]; if (!it) return; S.rot[it.id] = ((S.rot[it.id] || 0) + 90) % 360; const img = $('stage').querySelector('img'); if (img) img.style.transform = 'rotate(' + S.rot[it.id] + 'deg)'; });
+  $('rot').addEventListener('click', function () {
+    const it = S.view[S.cur]; if (!it) return; S.rot[it.id] = ((S.rot[it.id] || 0) + 90) % 360;
+    const t = $('stage').querySelector('img, .pdfpages'); if (t) t.style.transform = 'rotate(' + S.rot[it.id] + 'deg)';
+  });
   $('prev').addEventListener('click', function () { go(S.cur - 1); });
   $('next').addEventListener('click', function () { go(S.cur + 1); });
 
@@ -739,32 +993,55 @@
     it.entries.forEach(function (e) {
       const d = el('div', 'ent');
       const top = el('div'); top.appendChild(el('span', null, e.date + '　')); top.appendChild(el('span', 'amt', yen(e.amount) + '円')); d.appendChild(top);
-      d.appendChild(el('div', 'sub', e.no + '　' + e.dr + ' / ' + e.cr + (e.tax ? '　' + e.tax : '') + (e.memo ? '　' + e.memo : '') + (e.out ? '　（書き出し済み）' : '')));
-      const b = el('button', 'danger', '取消'); b.type = 'button'; b.disabled = e.out;
+      d.appendChild(el('div', 'sub', e.no + '　' + sideTxt(e.drCode, e.dr) + ' → ' + sideTxt(e.crCode, e.cr) + (e.memo ? '　' + e.memo : '') +
+        (e.out ? '　（書き出し済み）' : '') + (e.pending ? '　（保存中…）' : '')));
+      const b = el('button', 'danger', '取消'); b.type = 'button'; b.disabled = e.out || e.pending;
       b.addEventListener('click', function () { cancel(it, e); });
       d.appendChild(b); box.appendChild(d);
     });
   }
 
+  /* 確定：サーバの返事を待たずに次の写真へ進む（速さのため）。保存は後ろで続ける。
+     しくじったら、その仕訳を外して写真を元に戻し、上に赤で出す（黙って消えない） */
+  let tmpSeq = 0;
+  S.saving = 0;
+  function savingMark(err) {
+    const m = $('saving');
+    if (err) { m.textContent = err; m.className = 'err'; return; }
+    m.className = ''; m.textContent = S.saving ? '保存中…（' + S.saving + '）' : '';
+  }
   function confirmEntry(more) {
-    if (S.busy) return;
     const it = S.view[S.cur]; if (!it) return;
     const d = parseDate($('fDate').value), a = parseAmt($('fAmt').value), k = dictOf($('fNo').value);
     if (!d) { fmsg('日付を入れてください（例：23）', 'err'); $('fDate').focus(); return; }
     if (!a) { fmsg('金額を入れてください', 'err'); $('fAmt').focus(); return; }
     if (!k) { fmsg('辞書の No を入れてください', 'err'); $('fNo').focus(); return; }
-    S.busy = true; fmsg('確定しています…');
-    $('btnOk').disabled = true; $('btnMore').disabled = true;
-    gs('workConfirm', { code: S.code, fileId: it.id, date: d.s, amount: a, no: k.no, memo: $('fMemo').value }).then(function (e) {
-      S.busy = false; $('btnOk').disabled = false; $('btnMore').disabled = false;
-      if (it.status !== 'done') { S.counts[it.status]--; S.counts.done = (S.counts.done || 0) + 1; counts(); }
-      it.entries.push(e); it.status = 'done'; it.note = '';
-      fmsg('確定しました：' + d.s + '　' + yen(a) + '円　' + k.dr, 'ok');
-      if (more) { drawEntries(); drawInfo(); markList(); clearForm(true); $('fAmt').focus(); return; }
-      let n = S.cur + 1;
-      if (S.st === 'todo') { while (n < S.view.length && S.view[n].status !== 'todo') n++; }
-      if (n < S.view.length) go(n); else { drawEntries(); drawInfo(); markList(); clearForm(); fmsg('この並びの最後まで確定しました。', 'ok'); }
-    }, function (err) { S.busy = false; $('btnOk').disabled = false; $('btnMore').disabled = false; fmsg(err.message, 'err'); });
+    const memo = $('fMemo').value;
+    const tmp = { id: 'tmp' + (++tmpSeq), pending: true, date: d.s, amount: a, no: k.no, dr: k.dr, drCode: k.drCode, drSub: k.drSub, tax: k.tax,
+      cr: k.cr, crCode: k.crCode, crSub: k.crSub, crTax: k.crTax, memo: memo || k.memo };
+    const before = it.status;
+    it.entries.push(tmp);
+    if (before !== 'done') { S.counts[before]--; S.counts.done = (S.counts.done || 0) + 1; counts(); }
+    it.status = 'done'; it.note = '';
+    S.saving++; savingMark();
+    fmsg('確定：' + d.s + '　' + yen(a) + '円　' + sideTxt(k.drCode, k.dr), 'ok');
+    gs('workConfirm', { code: S.code, fileId: it.id, date: d.s, amount: a, no: k.no, memo: memo }).then(function (e) {
+      S.saving--; savingMark();
+      const i = it.entries.indexOf(tmp); if (i >= 0) it.entries[i] = e;
+      if (S.view[S.cur] === it) drawEntries();
+    }, function (err) {
+      S.saving--;
+      it.entries = it.entries.filter(function (x) { return x !== tmp; });
+      if (!it.entries.length && it.status === 'done') { S.counts.done--; S.counts[before] = (S.counts[before] || 0) + 1; it.status = before; counts(); }
+      const n = S.view.indexOf(it) + 1;
+      savingMark('保存できませんでした（' + n + '枚目：' + err.message + '）');
+      markList(); if (S.view[S.cur] === it) { drawEntries(); drawInfo(); }
+      fmsg(n + '枚目の確定が保存できませんでした：' + err.message, 'err');
+    });
+    if (more) { drawEntries(); drawInfo(); markList(); clearForm(true); $('fAmt').focus(); return; }
+    let n = S.cur + 1;
+    if (S.st === 'todo') { while (n < S.view.length && S.view[n].status !== 'todo') n++; }
+    if (n < S.view.length) go(n); else { drawEntries(); drawInfo(); markList(); clearForm(); fmsg('この並びの最後まで確定しました。', 'ok'); }
   }
   $('form').addEventListener('submit', function (e) { e.preventDefault(); confirmEntry(false); });
   $('btnMore').addEventListener('click', function () { confirmEntry(true); });
@@ -816,20 +1093,33 @@
     }, function (err) { S.busy = false; fmsg(err.message, 'err'); });
   }
 
-  /* ================= 辞書 ================= */
+  /* ================= 辞書（伝票の形） ================= */
+  S.acct = []; S.acctMap = {}; S.dsel = null; S.dsub = 'v';
+  function loadAcct() {
+    return gs('acctGet').then(function (a) {
+      S.acct = a; S.acctMap = {}; a.forEach(function (x) { S.acctMap[x.code] = x; });
+      const dl = $('acctNames'); dl.textContent = '';
+      a.forEach(function (x) { const o = el('option'); o.value = x.name; o.label = x.code; dl.appendChild(o); });
+      drawAcct(); slipEcho();
+    }, function () {});
+  }
   function loadDict() {
     const code = S.code;
-    return gs('dictGet', code).then(function (d) { if (code !== S.code) return; S.dict = d; drawDict(); drawDictTable(); }, function (e) { fmsg(e.message, 'err'); });
+    return gs('dictGet', code).then(function (d) { if (code !== S.code) return; S.dict = d; drawDict(); drawIndex(); if (S.dsel != null && !S.dict.some(function (x) { return x.no === S.dsel; })) S.dsel = null; openSlip(S.dsel); }, function (e) { fmsg(e.message, 'err'); });
   }
+  const sideTxt = function (code, name) { return (code ? code + ' ' : '') + name; };
+  function dictLine(d) { return sideTxt(d.drCode, d.dr) + ' → ' + sideTxt(d.crCode, d.cr); }
+
+  /* 入力の右に並べる辞書 */
   function drawDict() {
     const q = $('dq').value.trim().toLowerCase();
     const ul = $('dlist'); ul.textContent = '';
     if (!S.dict.length) { ul.appendChild(el('li', 'empty', 'この顧問先の辞書はまだ空です。上の「辞書」で作ってください。')); return; }
-    S.dict.filter(function (d) { return !q || [d.no, d.dr, d.cr, d.tax, d.memo, d.note].join(' ').toLowerCase().indexOf(q) >= 0; }).forEach(function (d) {
+    S.dict.filter(function (d) { return !q || [d.no, d.title, d.dr, d.cr, d.drCode, d.crCode, d.tax, d.memo, d.note].join(' ').toLowerCase().indexOf(q) >= 0; }).forEach(function (d) {
       const li = el('li'); const b = el('button'); b.type = 'button'; b.dataset.no = String(d.no);
       b.appendChild(el('span', 'no', String(d.no)));
-      b.appendChild(el('span', null, d.dr + ' / ' + d.cr));
-      b.appendChild(el('span', 's', [d.tax, d.memo, d.note].filter(Boolean).join('　')));
+      b.appendChild(el('span', null, (d.title ? d.title + '　' : '') + dictLine(d)));
+      b.appendChild(el('span', 's', [d.tax, d.memo].filter(Boolean).join('　')));
       b.addEventListener('click', function () { $('fNo').value = String(d.no); $('fNo').dispatchEvent(new Event('input')); $('fNo').focus(); });
       li.appendChild(b); ul.appendChild(li);
     });
@@ -837,73 +1127,193 @@
   }
   $('dq').addEventListener('input', drawDict);
 
-  const DCOLS = ['no', 'dr', 'cr', 'tax', 'memo', 'note'];
-  function drawDictTable(rows) {
-    const tb = $('dbody'); tb.textContent = '';
-    (rows || S.dict).forEach(function (d) { addRow(d); });
-    if (!tb.children.length) addRow({});
+  /* 辞書の目次（左） */
+  function drawIndex() {
+    const q = $('dSearch').value.trim().toLowerCase();
+    const ul = $('dIndex'); ul.textContent = '';
+    if (!S.dict.length) ul.appendChild(el('li', 'empty', 'まだ伝票がありません。「＋ 新しい伝票」で作ってください。'));
+    S.dict.filter(function (d) { return !q || [d.no, d.title, d.dr, d.cr, d.drCode, d.crCode, d.memo].join(' ').toLowerCase().indexOf(q) >= 0; }).forEach(function (d) {
+      const li = el('li'); const b = el('button'); b.type = 'button';
+      b.appendChild(el('span', 'no', String(d.no)));
+      b.appendChild(el('span', 't', d.title || d.memo || d.dr));
+      b.appendChild(el('span', 's', dictLine(d)));
+      b.setAttribute('aria-current', String(S.dsel === d.no));
+      b.addEventListener('click', function () { if (slipDirtyOk()) openSlip(d.no); });
+      li.appendChild(b); ul.appendChild(li);
+    });
     $('dCopyBox').hidden = S.dict.length > 0;
   }
-  function addRow(d) {
-    const tr = el('tr');
-    DCOLS.forEach(function (k) {
-      const td = el('td', k === 'no' ? 'no' : null); const i = el('input'); i.dataset.k = k;
-      i.value = d[k] == null ? '' : String(d[k]);
-      if (k === 'no') i.inputMode = 'numeric';
-      i.addEventListener('input', function () { S.dirty = true; dmsg(''); });
-      td.appendChild(i); tr.appendChild(td);
-    });
-    const td = el('td'); const x = el('button', 'danger', '×'); x.type = 'button'; x.setAttribute('aria-label', '行を消す');
-    x.addEventListener('click', function () { tr.remove(); S.dirty = true; });
-    td.appendChild(x); tr.appendChild(td);
-    $('dbody').appendChild(tr);
-    return tr;
+  $('dSearch').addEventListener('input', drawIndex);
+
+  const SF = { sNo: 'no', sTitle: 'title', sDrCode: 'drCode', sDr: 'dr', sDrSub: 'drSub', sTax: 'tax', sCrCode: 'crCode', sCr: 'cr', sCrSub: 'crSub', sCrTax: 'crTax', sMemo: 'memo', sNote: 'note' };
+  function slipDirtyOk() { return !S.dirty || confirm('この伝票の書き替えが保存されていません。捨てますか？'); }
+  function openSlip(no, preset) {
+    const d = preset || (no == null ? null : S.dict.find(function (x) { return x.no === no; }));
+    S.dsel = preset ? null : (d ? d.no : null);
+    $('slip').hidden = !d;
+    Object.keys(SF).forEach(function (id) { $(id).value = d && d[SF[id]] != null ? String(d[SF[id]]) : ''; });
+    $('sDel').hidden = !S.dsel; $('sDup').hidden = !S.dsel;
+    S.dirty = !!preset; dmsg(''); slipEcho(); drawIndex();
   }
-  function readTable() {
-    const out = [];
-    $('dbody').querySelectorAll('tr').forEach(function (tr) {
-      const o = {}; tr.querySelectorAll('input').forEach(function (i) { o[i.dataset.k] = i.value.trim(); });
-      if (!o.no && !o.dr && !o.cr && !o.tax && !o.memo && !o.note) return;
-      o.no = Number(half(o.no)); out.push(o);
-    });
-    return out;
-  }
-  function dmsg(t, kind) { $('dMsg').textContent = t || ''; $('dMsg').className = 'pagemsg' + (kind ? ' ' + kind : ''); }
-  $('dAdd').addEventListener('click', function () {
-    const nos = readTable().map(function (o) { return o.no || 0; });
-    const tr = addRow({ no: (nos.length ? Math.max.apply(null, nos) : 0) + 1 }); tr.querySelector('[data-k=dr]').focus(); S.dirty = true;
+  function nextNo() { return S.dict.reduce(function (m, d) { return Math.max(m, d.no); }, 0) + 1; }
+  $('dNew').addEventListener('click', function () {
+    if (!slipDirtyOk()) return;
+    openSlip(null, { no: nextNo() });
+    $('sTitle').focus();
   });
-  $('dSave').addEventListener('click', function () {
+  $('sDup').addEventListener('click', function () {
+    if (!slipDirtyOk()) return;
+    const cur = readSlip(); cur.no = nextNo(); cur.title = (cur.title || '') + '（写し）';
+    openSlip(null, cur); $('sTitle').focus(); $('sTitle').select();
+  });
+  function readSlip() { const o = {}; Object.keys(SF).forEach(function (id) { o[SF[id]] = $(id).value.trim(); }); o.no = Number(half(o.no)); o.drCode = half(o.drCode); o.crCode = half(o.crCode); return o; }
+
+  /* コード → 科目名。科目名 → コード（表にあれば） */
+  function slipEcho() {
+    [['sDrCode', 'sDr', 'eDrCode', 'sTax'], ['sCrCode', 'sCr', 'eCrCode', 'sCrTax']].forEach(function (k) {
+      const c = half($(k[0]).value), a = S.acctMap[c], e = $(k[2]);
+      if (!c) { e.textContent = ''; e.className = 'acct'; return; }
+      if (a) { e.textContent = a.name; e.className = 'acct'; return; }
+      e.textContent = S.acct.length ? '表にないコード' : ''; e.className = 'acct bad';
+    });
+  }
+  function onCode(codeId, nameId, taxId) {
+    const a = S.acctMap[half($(codeId).value)];
+    if (a) { $(nameId).value = a.name; if (a.tax && !$(taxId).value) $(taxId).value = a.tax; }
+    slipEcho();
+  }
+  function onName(codeId, nameId, taxId) {
+    const n = $(nameId).value.trim();
+    const hit = S.acct.filter(function (a) { return a.name === n; });
+    if (hit.length === 1) { $(codeId).value = hit[0].code; if (hit[0].tax && !$(taxId).value) $(taxId).value = hit[0].tax; }
+    slipEcho();
+  }
+  $('sDrCode').addEventListener('input', function () { onCode('sDrCode', 'sDr', 'sTax'); });
+  $('sCrCode').addEventListener('input', function () { onCode('sCrCode', 'sCr', 'sCrTax'); });
+  $('sDr').addEventListener('change', function () { onName('sDrCode', 'sDr', 'sTax'); });
+  $('sCr').addEventListener('change', function () { onName('sCrCode', 'sCr', 'sCrTax'); });
+  Object.keys(SF).forEach(function (id) { $(id).addEventListener('input', function () { S.dirty = true; dmsg(''); }); });
+  /* Enter で次の欄へ（摘要の中は改行しない）。Ctrl+Enter で保存 */
+  const ORDER = ['sNo', 'sTitle', 'sDrCode', 'sDr', 'sDrSub', 'sTax', 'sMemo', 'sCrCode', 'sCr', 'sCrSub', 'sCrTax', 'sNote'];
+  ORDER.forEach(function (id, i) {
+    $(id).addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' || e.isComposing) return;
+      e.preventDefault();
+      if (e.ctrlKey || e.metaKey || i === ORDER.length - 1) { saveSlip(); return; }
+      const n = $(ORDER[i + 1]); n.focus(); if (n.select) n.select();
+    });
+  });
+  function dmsg(t, kind) { $('dMsg').textContent = t || ''; $('dMsg').className = 'pagemsg' + (kind ? ' ' + kind : ''); }
+  function saveDict(list, okMsg, selNo) {
     dmsg('保存しています…');
     const code = S.code;
-    gs('dictSave', code, readTable()).then(function (d) {
+    return gs('dictSave', code, list).then(function (d) {
       if (code !== S.code) return;
-      S.dict = d; S.dirty = false; drawDict(); drawDictTable(); dmsg('保存しました（' + d.length + '行）。', 'ok');
+      S.dict = d; S.dirty = false; drawDict();
+      openSlip(selNo != null && d.some(function (x) { return x.no === selNo; }) ? selNo : null);
+      dmsg(okMsg, 'ok');
     }, function (e) { dmsg(e.message, 'err'); });
+  }
+  function saveSlip() {
+    const o = readSlip();
+    if (!(o.no >= 1 && o.no <= 999)) { dmsg('No は 1〜999 の数で入れてください。', 'err'); $('sNo').focus(); return; }
+    if (o.no !== S.dsel && S.dict.some(function (x) { return x.no === o.no; })) { dmsg('No ' + o.no + ' はもう使っています。', 'err'); $('sNo').focus(); return; }
+    const list = S.dict.filter(function (x) { return x.no !== S.dsel; }).concat([o]);
+    saveDict(list, 'No ' + o.no + ' を保存しました。', o.no);
+  }
+  $('slip').addEventListener('submit', function (e) { e.preventDefault(); saveSlip(); });
+  $('sDel').addEventListener('click', function () {
+    if (S.dsel == null || !confirm('No ' + S.dsel + ' の伝票を消します。よろしいですか？（確定した仕訳は変わりません）')) return;
+    saveDict(S.dict.filter(function (x) { return x.no !== S.dsel; }), '消しました。', null);
   });
   $('dPasteGo').addEventListener('click', function () {
-    const cur = readTable(); const byNo = {}; cur.forEach(function (o) { byNo[o.no] = o; });
+    const byNo = {}; S.dict.forEach(function (d) { byNo[d.no] = d; });
     let n = 0;
     $('dPaste').value.split(/\r?\n/).forEach(function (line) {
-      const c = line.split('\t'); if (c.length < 3) return;
+      const c = line.split('\t').map(function (x) { return x.trim(); }); if (c.length < 3) return;
       const no = Number(half(c[0])); if (!(no >= 1)) return;   /* 見出しの行などは飛ばす */
-      byNo[no] = { no: no, dr: (c[1] || '').trim(), cr: (c[2] || '').trim(), tax: (c[3] || '').trim(), memo: (c[4] || '').trim(), note: (c[5] || '').trim() }; n++;
+      byNo[no] = c.length >= 10
+        ? { no: no, title: c[1], drCode: half(c[2]), dr: c[3], drSub: c[4], tax: c[5], crCode: half(c[6]), cr: c[7], crSub: c[8], crTax: c[9], memo: c[10] || '', note: c[11] || '' }
+        : { no: no, dr: c[1], cr: c[2], tax: c[3] || '', memo: c[4] || '', note: c[5] || '' };   /* 前の形（No・借方・貸方・税区分・摘要・メモ） */
+      n++;
     });
-    if (!n) { dmsg('貼り付けた中に、読める行がありませんでした（No・借方・貸方…をタブ区切りで）。', 'err'); return; }
-    drawDictTable(Object.keys(byNo).map(function (k) { return byNo[k]; }).sort(function (a, b) { return a.no - b.no; }));
-    S.dirty = true; $('dPaste').value = '';
-    dmsg(n + '行を表に入れました。よければ「保存」を押してください。', 'ok');
+    if (!n) { dmsg('貼り付けた中に、読める行がありませんでした（タブ区切りで）。', 'err'); return; }
+    if (!confirm(n + '件を辞書に入れて保存します。')) return;
+    saveDict(Object.keys(byNo).map(function (k) { return byNo[k]; }), n + '件を入れました。', null).then(function () { $('dPaste').value = ''; });
   });
   $('dCopy').addEventListener('click', function () {
     const from = $('dFrom').value; if (!from) return;
     dmsg('写しています…');
-    gs('dictCopy', from, S.code).then(function (d) { S.dict = d; S.dirty = false; drawDict(); drawDictTable(); dmsg('写しました（' + d.length + '行）。', 'ok'); },
+    gs('dictCopy', from, S.code).then(function (d) { S.dict = d; S.dirty = false; drawDict(); drawIndex(); openSlip(null); dmsg('写しました（' + d.length + '件）。', 'ok'); },
       function (e) { dmsg(e.message, 'err'); });
+  });
+  document.querySelectorAll('#dSub button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      S.dsub = b.dataset.sub;
+      document.querySelectorAll('#dSub button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      $('dvSide').hidden = S.dsub !== 'v'; $('dvMain').hidden = S.dsub !== 'v'; $('daMain').hidden = S.dsub !== 'a';
+    });
+  });
+
+  /* ---- 勘定科目の表 ---- */
+  function canAcct() { return !!(S.me && S.me.master); }
+  function drawAcct(rows) {
+    const box = $('aRows'); box.textContent = '';
+    const ro = !canAcct();
+    $('aRo').hidden = !ro; $('aBar').hidden = ro; $('aPasteBox').hidden = ro;
+    const head = el('div', 'acct-row head'); ['コード', '科目名', '税区分', ''].forEach(function (t) { head.appendChild(el('span', null, t)); }); box.appendChild(head);
+    (rows || S.acct).forEach(function (a) { acctRow(a, ro); });
+    if (!ro && !(rows || S.acct).length) acctRow({}, false);
+  }
+  function acctRow(a, ro) {
+    const r = el('div', 'acct-row');
+    [['code', 'code'], ['name', ''], ['tax', '']].forEach(function (k) {
+      const i = el('input', k[1] || null); i.dataset.k = k[0]; i.value = a[k[0]] || ''; i.readOnly = ro;
+      if (k[0] === 'tax') i.setAttribute('list', 'taxList');
+      if (k[0] === 'code') i.inputMode = 'numeric';
+      r.appendChild(i);
+    });
+    const x = el('button', 'danger', '×'); x.type = 'button'; x.hidden = ro; x.setAttribute('aria-label', '行を消す');
+    x.addEventListener('click', function () { r.remove(); });
+    r.appendChild(x);
+    $('aRows').appendChild(r);
+    return r;
+  }
+  function readAcct() {
+    const out = [];
+    $('aRows').querySelectorAll('.acct-row:not(.head)').forEach(function (r) {
+      const o = {}; r.querySelectorAll('input').forEach(function (i) { o[i.dataset.k] = i.value.trim(); });
+      if (!o.code && !o.name) return; o.code = half(o.code); out.push(o);
+    });
+    return out;
+  }
+  function amsg2(t, k) { $('aMsg2').textContent = t || ''; $('aMsg2').className = 'pagemsg' + (k ? ' ' + k : ''); }
+  $('aAdd').addEventListener('click', function () { acctRow({}, false).querySelector('input').focus(); });
+  $('aSaveAcct').addEventListener('click', function () {
+    amsg2('保存しています…');
+    gs('acctSave', readAcct()).then(function (a) {
+      S.acct = a; S.acctMap = {}; a.forEach(function (x) { S.acctMap[x.code] = x; });
+      loadAcct(); amsg2('保存しました（' + a.length + '科目）。', 'ok');
+    }, function (e) { amsg2(e.message, 'err'); });
+  });
+  $('aPasteGo').addEventListener('click', function () {
+    const by = {}; readAcct().forEach(function (a) { by[a.code] = a; });
+    let n = 0;
+    $('aPaste').value.split(/\r?\n/).forEach(function (line) {
+      const c = line.split('\t').map(function (x) { return x.trim(); }); if (c.length < 2) return;
+      const code = half(c[0]); if (!/^[0-9A-Za-z\-]{1,10}$/.test(code) || !c[1]) return;
+      by[code] = { code: code, name: c[1], tax: c[2] || '' }; n++;
+    });
+    if (!n) { amsg2('読める行がありませんでした（コード・科目名をタブ区切りで）。', 'err'); return; }
+    drawAcct(Object.keys(by).map(function (k) { return by[k]; }));
+    $('aPaste').value = '';
+    amsg2(n + '行を入れました。よければ「保存」を押してください。', 'ok');
   });
 
   /* ================= 書き出し ================= */
   $('outGo').addEventListener('click', function () {
     const ym = $('outMonth').value; const o = $('oMsg'); const l = $('oLink'); l.textContent = '';
+    if (S.saving) { o.textContent = 'まだ保存中の確定があります。少し待ってからもう一度どうぞ。'; o.className = 'pagemsg err'; return; }
     o.textContent = '書き出しています…'; o.className = 'pagemsg';
     gs('workExport', S.code, ym).then(function (r) {
       o.textContent = r.count + '件を書き出しました。'; o.className = 'pagemsg ok';
