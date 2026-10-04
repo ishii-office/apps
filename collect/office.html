@@ -154,6 +154,7 @@
   .dpz .jshot.zoom .pdfpages canvas { width: 200%; max-width: none; }
   .dpz .jshot .msg { padding: 30px 12px; text-align: center; color: #777; }
   .dpz .jshot.loading::after { content: '読み込み中…'; position: absolute; left: 50%; top: 10px; transform: translateX(-50%); background: rgba(0,0,0,.6); color: #fff; padding: 3px 10px; border-radius: 999px; font-size: 13px; }
+  .dpz .jshot iframe.gview { display: block; width: 100%; height: 78vh; border: 0; background: #fff; }
   .dpz .jshot .thumb { display: block; margin: 0 auto; max-width: 100%; max-height: 50vh; opacity: .9; }
   .dpz .jtools { display: flex; gap: 6px; justify-content: flex-end; margin: 6px 0 8px; }
   .dpz .jtools button, .dpz .jtools a { font-size: 12.5px; border: 1px solid var(--dline); background: #fff; border-radius: 7px; padding: 3px 10px; color: var(--ink); text-decoration: none; cursor: pointer; }
@@ -913,7 +914,9 @@
     shot.dataset.shot = it.id;
     row.appendChild(shot);
     const t = el('div', 'jtools');
-    [['rot', '回す'], ['zoom', shot.classList.contains('zoom') ? '全体' : '拡大']].forEach(function (x) { const b = el('button', null, x[1]); b.type = 'button'; b.dataset.a = x[0]; t.appendChild(b); });
+    const tl = [['rot', '回す'], ['zoom', shot.classList.contains('zoom') ? '全体' : '拡大']];
+    if (it.pdf) tl.unshift(['gview', S.gview[it.id] ? 'アプリの表示' : 'Googleの表示']);
+    tl.forEach(function (x) { const b = el('button', null, x[1]); b.type = 'button'; b.dataset.a = x[0]; t.appendChild(b); });
     const a = el('a', null, 'Drive'); a.href = it.url; a.target = '_blank'; a.rel = 'noopener'; t.appendChild(a);
     row.appendChild(t);
     if (!oldShot) { paint(it.id); if (shotObs) shotObs.observe(shot); }
@@ -1123,6 +1126,7 @@
       const g = row.querySelector('.jshot img:not(.thumb), .jshot .pdfpages'); if (g) g.style.transform = 'rotate(' + S.rot[it.id] + 'deg)';
       return;
     }
+    if (a === 'gview') { if (S.gview[it.id]) delete S.gview[it.id]; else S.gview[it.id] = 1; t.textContent = S.gview[it.id] ? 'アプリの表示' : 'Googleの表示'; paint(it.id); return; }
     if (a === 'zoom') { const s = row.querySelector('.jshot'); s.classList.toggle('zoom'); t.textContent = s.classList.contains('zoom') ? '全体' : '拡大'; return; }
   });
   $('month').addEventListener('change', function () {
@@ -1207,21 +1211,25 @@
 
   /* ★ PDF の字が消えないように：埋め込まれていない日本語の字体は cMap が無いと出ない（請求書の PDF に多い）。
        cMapUrl・standardFontDataUrl を必ず渡す。外すと「数字だけ出て日本語が真っ白」になる */
-  const PDFJS_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  /* ★★ pdf.js は npm の pdfjs-dist を jsdelivr から読む（2026-10-04）。
+       cdnjs の場所を cMapUrl に渡していたが、実機では日本語が真っ白のままだった（取れていない）。
+       npm の包み（pdfjs-dist）には cmaps/・standard_fonts/ が必ず入っている。
+       iPhone の Safari でも動くように legacy の組み立てを使う */
+  const PDFJS_BASE = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
+  const PDFJS_BUILD = PDFJS_BASE + 'legacy/build/';
   const PDF_OPT = { cMapUrl: PDFJS_BASE + 'cmaps/', cMapPacked: true, standardFontDataUrl: PDFJS_BASE + 'standard_fonts/' };
   let pdfjsP = null;
   function pdfjs() {
     if (pdfjsP) return pdfjsP;
-    const base = PDFJS_BASE;
     pdfjsP = new Promise(function (ok, ng) {
       if (window.pdfjsLib) { ok(window.pdfjsLib); return; }
-      const sc = document.createElement('script'); sc.src = base + 'pdf.min.js';
+      const sc = document.createElement('script'); sc.src = PDFJS_BUILD + 'pdf.min.js';
       sc.onload = function () {
         const lib = window.pdfjsLib; if (!lib) { ng(new Error('PDF を開く道具が読み込めませんでした')); return; }
         /* 別の場所から働き手（worker）を直に呼べないので、中身を取ってきて手元で起こす。だめなら pdf.js が自分で何とかする */
-        fetch(base + 'pdf.worker.min.js').then(function (r) { return r.text(); }).then(function (t) {
+        fetch(PDFJS_BUILD + 'pdf.worker.min.js').then(function (r) { return r.text(); }).then(function (t) {
           lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([t], { type: 'text/javascript' }));
-        }).catch(function () { lib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js'; }).then(function () { ok(lib); });
+        }).catch(function () { lib.GlobalWorkerOptions.workerSrc = PDFJS_BUILD + 'pdf.worker.min.js'; }).then(function () { ok(lib); });
       };
       sc.onerror = function () { pdfjsP = null; ng(new Error('PDF を開く道具が読み込めませんでした')); };
       document.head.appendChild(sc);
@@ -1259,9 +1267,10 @@
       box.appendChild(el('div', 'msg', 'PDF を出せませんでした（' + e.message + '）。下の「Drive」で見てください。'));
     });
   }
-  function kindOf(id) { const v = IMG[id]; return v ? v.t : (THUMB[id] ? 'thumb' : 'none'); }
+  S.gview = {};   /* Google（Drive）の表示で見ている PDF */
+  function kindOf(id) { if (S.gview[id]) return 'gview'; const v = IMG[id]; return v ? v.t : (THUMB[id] ? 'thumb' : 'none'); }
   /* 画面から遠い写真の中身を捨てる（PDF の絵がいちばん重い） */
-  function dropShot(st) { if (st.dataset.kind === 'pdf' || st.dataset.kind === 'img') { st.textContent = ''; st.dataset.kind = ''; st.dataset.seq = ''; } }
+  function dropShot(st) { if (st.dataset.kind === 'pdf' || st.dataset.kind === 'img' || st.dataset.kind === 'gview') { st.textContent = ''; st.dataset.kind = ''; st.dataset.seq = ''; } }
   /* 写真の箱に中身を出す */
   function paint(id) {
     const row = rowOf(id); if (!row) return;
@@ -1271,6 +1280,11 @@
     if (st.dataset.kind === k) return;   /* もう同じものが出ている */
     st.textContent = ''; st.classList.remove('loading'); st.dataset.kind = k; st.dataset.seq = '';
     const it = itemOf(id) || { name: '' };
+    /* Google の表示：Drive が描いたものを、アプリの中にそのまま出す（Drive へは移らない） */
+    if (k === 'gview') {
+      const fr = el('iframe', 'gview'); fr.src = 'https://drive.google.com/file/d/' + encodeURIComponent(id) + '/preview';
+      fr.title = it.name; fr.setAttribute('allow', 'autoplay'); st.appendChild(fr); return;
+    }
     const v = IMG[id];
     if (!v) {
       st.classList.add('loading');
