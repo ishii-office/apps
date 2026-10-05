@@ -86,6 +86,10 @@
   #dvSide { display: flex; flex-direction: column; min-height: 0; flex: 1; }
   .dk-top { padding: 8px 10px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; }
   .dk-top input { flex: 1; min-width: 0; }
+  .dk-top .dbox { display: flex; align-items: center; gap: 8px; font-weight: 700; width: 100%; }
+  .dk-top .dbox select { flex: 1; min-width: 0; }
+  #dIndex li.grp { padding: 4px 10px; background: #EEF4F2; color: var(--accent); font-weight: 800; font-size: 12.5px; }
+  .dpz .sidetxt { color: var(--sub); font-weight: 700; }
   #dIndex { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; }
   #dIndex li button { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 7px 10px; display: grid; grid-template-columns: 42px 1fr; gap: 1px 8px; }
   #dIndex li button[aria-current="true"] { background: var(--sel); box-shadow: inset 4px 0 0 var(--accent); }
@@ -232,11 +236,13 @@
   .dpz .jpickh b { white-space: nowrap; }
   .dpz .jpickh .dpin.q { flex: 1; min-width: 0; font-size: 14px; padding: 4px 8px; border-style: solid; }
   .dpz .jplist { list-style: none; margin: 0; padding: 0; max-height: 46vh; overflow: auto; }
-  .dpz .jplist li button { width: 100%; text-align: left; border: 0; border-radius: 0; border-bottom: 1px solid #E3EEEA; padding: 8px 10px; display: grid; grid-template-columns: 40px 1fr; gap: 1px 10px; background: #fff; white-space: normal; }
+  .dpz .jplist li button { width: 100%; text-align: left; border: 0; border-radius: 0; border-bottom: 1px solid #E3EEEA; padding: 8px 10px; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto auto; gap: 10px; align-items: baseline; background: #fff; }
   .dpz .jplist li button:hover, .dpz .jplist li button:focus { background: #F2F8F6; }
-  .dpz .jplist .no { font-weight: 800; color: var(--ai); text-align: right; font-size: 16px; grid-row: span 2; align-self: center; }
-  .dpz .jplist .t { font-weight: 800; font-size: 15px; }
-  .dpz .jplist .s { color: var(--sub); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dpz .jplist .no { font-weight: 800; color: var(--ai); text-align: right; font-size: 15px; }
+  .dpz .jplist .t { font-weight: 800; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dpz .jplist .c { font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+  .dpz .jplist .x { color: var(--sub); font-size: 12.5px; white-space: nowrap; }
+  .dpz .jplist .grp { padding: 4px 10px; background: #EEF4F2; color: var(--ai); font-weight: 800; font-size: 12.5px; letter-spacing: .05em; }
   .dpz .jplist .empty { padding: 12px; color: var(--sub); }
   .dpz .jno .jnono { font-weight: 800; color: var(--ai); font-size: 16px; }
   /* 辞書の手入れ（伝票） */
@@ -382,34 +388,42 @@
       </span>
     </div>
     <div id="dvSide">
-      <div class="dk-top"><input id="dSearch" type="search" placeholder="No・見出し・科目・コード" aria-label="辞書を探す"><button type="button" class="primary" id="dNew">＋ 新しい伝票</button></div>
+      <div class="dk-top"><label class="dbox">回収ボックス <select id="dBox" aria-label="どの回収ボックスの辞書か"></select></label></div>
+      <div class="dk-top"><input id="dSearch" type="search" placeholder="No・取引の種類・科目・コード" aria-label="辞書を探す"><button type="button" class="primary" id="dNew">＋ 辞書を登録</button></div>
       <ul id="dIndex"></ul>
     </div>
   </div>
   <div class="dk-main">
     <div id="dvMain">
-      <h2 id="dictTitle">仕訳辞書</h2>
+      <h2 id="dictTitle">仕訳辞書の登録・編集</h2>
       <div class="kbcard" id="slip" hidden>
         <div class="kbrow">
           <label class="kbf no">No <input id="sNo" inputmode="numeric" maxlength="3"></label>
-          <label class="kbf wide">見出し <input id="sTitle" maxlength="40" placeholder="例：ガソリン代"></label>
-          <label class="kbf">消費税の側 <select id="sSide"><option value="dr">借方の科目</option><option value="cr">貸方の科目</option></select></label>
+          <label class="kbf wide">取引の種類 <input id="sTitle" maxlength="40" placeholder="例：打ち合わせ食事代"></label>
         </div>
-        <p class="kbsub">金額と日付が空の伝票。そこは入力のときに入れます。コードを打てば科目名は勘定科目の表から入ります。</p>
+        <div class="kbrow">
+          <label class="kbf">群 <select id="sGrp"><option value="いつも">いつもの取引</option><option value="たまに">たまにある取引</option><option value="わからない">わからない場合</option></select></label>
+          <label class="kbf">回収ボックス <select id="sBox"></select></label>
+          <span class="kbf sidetxt" id="sSideTxt"></span>
+        </div>
+        <p class="kbsub">金額と日付が空の伝票。そこは入力のときに入れます。コードを打てば科目名は勘定科目の表から入ります。
+          元帳摘要ははじめ 取引の種類 と同じ（書き足し・書き替えできます）。消費税は損益科目の側に自動で付きます。</p>
         <div id="dslip"></div>
         <label class="kbf wide">メモ（事務所用） <input id="sNote" maxlength="200"></label>
         <div class="bar slip-acts">
-          <button type="button" class="btn" id="sSaveSlip">この伝票を保存（Ctrl+Enter）</button>
-          <button type="button" class="btn ghost" id="sDup">写して新しい伝票</button>
-          <button type="button" class="btn ghost danger" id="sDel">この伝票を消す</button>
+          <button type="button" class="btn" id="sSaveSlip">この辞書を保存（Ctrl+Enter）</button>
+          <button type="button" class="btn ghost" id="sDup">写して新しく登録</button>
+          <button type="button" class="btn ghost danger" id="sDel">この辞書を消す</button>
           <span class="pagemsg" id="dMsg" role="status"></span>
         </div>
       </div>
       <datalist id="acctNames"></datalist>
       <details>
         <summary>Excel から貼り付けて まとめて入れる</summary>
-        <p class="note">Excel で次の順に並べた範囲をコピーして、下に貼り付けてください（見出しの行は あっても無くてもよい）。同じ No は置き換えます。<br>
-          No・見出し・借方コード・借方補助・借方科目・借方口座名・貸方コード・貸方補助・貸方科目・貸方口座名・課税区分・事業区分・税率・消費税の側（借／貸）・取引先コード・取引先名・元帳摘要・メモ</p>
+        <p class="note">Excel で次の順に並べた範囲をコピーして、下に貼り付けてください（見出しの行は あっても無くてもよい）。同じ No は置き換えます。
+          入るのは 左で選んでいる回収ボックスの辞書です。<br>
+          No・取引の種類・借方コード・借方補助・借方科目・借方口座名・貸方コード・貸方補助・貸方科目・貸方口座名・課税区分・事業区分・税率（10／軽8／軽1／8／5）・（空）・取引先コード・取引先名・元帳摘要・メモ・群（いつも／たまに／わからない）<br>
+          ★ 会計システム（TKC）の仕訳辞書をそのまま流し込めるようにします。書き出した形を見せてもらえれば、それに合わせます。</p>
         <textarea id="dPaste" aria-label="貼り付け"></textarea>
         <div class="bar"><button type="button" id="dPasteGo">入れて保存する</button></div>
       </details>
@@ -685,6 +699,13 @@
   const RED_RATES = [{ from: '2019/10/01', rate: 8 }, { from: '2027/04/01', rate: 1 }, { from: '2029/04/01', rate: 8 }];
   function redRateAt(ds) { let r = 8; RED_RATES.forEach(function (x) { if (String(ds) >= x.from) r = x.rate; }); return r; }
   function taxFree(tx) { const t = String(tx == null ? '' : tx).trim(); return t === '' || t === '0' || t === '8'; }
+  /* 税率の選び方（2026-10-05）。軽減は日付で率が決まる（2027/4/1 から1%）。8%（旧）・5%・3% は昔の取引のため */
+  const RATE_OPTS = [['10', '10%'], ['r8', '軽減8%'], ['r1', '軽減1%'], ['8', '8%（旧）'], ['5', '5%'], ['3', '3%'], ['0', 'なし']];
+  function rateCode(v) { const r = Number(String(v.rate == null ? '' : v.rate).replace(/[r%]/g, '')) || 0; return r ? ((v.red === true || String(v.red) === '1' || String(v.red) === 'true') ? 'r' : '') + r : '0'; }
+  function rateLabel(v) { if (taxFree(v.tax)) return ''; const c = rateCode(v); const o = RATE_OPTS.find(function (x) { return x[0] === c; }); if (c === '0') return ''; return o ? o[1] : c.replace('r', '軽減') + '%'; }
+  /* ★ 消費税の側は【損益科目の側】（コードが 4〜9 で始まる）。サーバの taxSide_ と同じ。片方だけ直さない */
+  function plAcct(code) { return /^[4-9]/.test(String(code || '').trim()); }
+  function taxSide(drCode, crCode, given) { const a = plAcct(drCode), b = plAcct(crCode); if (a && !b) return 'dr'; if (b && !a) return 'cr'; return given === 'cr' ? 'cr' : 'dr'; }
   function rateOf(v, ds) { if (taxFree(v.tax)) return 0; const r = Number(String(v.rate == null ? '' : v.rate).replace('%', '')) || 0; return v.red && ds ? redRateAt(ds) : r; }
 
   /* ================= 振替伝票（パソコンは11列の表、電話は同じ値を縦に組み直した1枚もの） =================
@@ -703,11 +724,19 @@
     const rate = rateOf(v, ds);
     const taxable = !taxFree(v.tax) && rate > 0;
     const tax = taxable && amt ? Math.floor(amt * rate / (100 + rate)) : 0;
-    const mk = function (s) { return v.side === s && !taxFree(v.tax) ? '<span class="side-mk" title="消費税はこちらの科目に付きます">税</span>' : ''; };
+    const mk = function (s) { return '<span class="side-mk" data-side="' + s + '" title="消費税はこちらの科目に付きます"' + (v.side === s && !taxFree(v.tax) ? '' : ' hidden') + '>税</span>'; };
+    /* 税率はえらぶ（打たない） */
+    const rsel = function () {
+      const cur = rateCode(v), o = base && 'rate' in base && rateCode(base) !== cur;
+      let h = '<select class="dpin c' + (o ? ' ov' : '') + '" data-k="rate" aria-label="税率">';
+      const opts = RATE_OPTS.some(function (x) { return x[0] === cur; }) ? RATE_OPTS : RATE_OPTS.concat([[cur, cur.replace('r', '軽減') + '%']]);
+      opts.forEach(function (x) { h += '<option value="' + x[0] + '"' + (x[0] === cur ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; });
+      return h + '</select>';
+    };
     const dayIn = isIn ? inp('date', v.date, 'dpday c', '日付') : '<span class="fillsp">入力のとき</span>';
     const amtIn = isIn ? inp('amount', v.amount, 'amt', '金額') : '<span class="fillsp">入力のとき</span>';
     const dayTxt = isIn ? '<span class="dprt c-day">' + esc(ds ? ds + '（' + parseDate(v.date).w + '）' : (v.date ? '日付がちがいます' : '')) + '</span>' : '';
-    const rt = '<span class="dprt c-rt">' + (taxable ? '判定(' + (v.red ? '軽' : '標') + ')' : (String(v.tax || '') === '8' ? '非課税' : '対象外')) + '</span>';
+    const rt = '<span class="dprt c-rt">' + rtText(v, taxable, rate) + '</span>';
     const taxTxt = '<span class="c-tax">' + (taxable && amt ? yen(tax) : '') + '</span>';
     const netTxt = '<span class="c-net">' + (amt ? yen(amt - tax) : '') + '</span>';
     const buyTxt = '<span class="c-buy">' + (taxable && ds ? esc(ds) : '') + '</span>';
@@ -728,7 +757,7 @@
         '<td class="c">' + mk('dr') + inp('drCode', v.drCode, 'c') + '</td><td class="c">' + inp('drSub', v.drSub, 'c') + '</td>' +
         '<td class="c">' + mk('cr') + inp('crCode', v.crCode, 'c') + '</td><td class="c">' + inp('crSub', v.crSub, 'c') + '</td>' +
         '<td class="r num">' + amtIn + '</td>' +
-        '<td class="c">' + inp('rate', v.rate || 0, 'c') + rt + '</td>' +
+        '<td class="c">' + rsel() + rt + '</td>' +
         '<td></td><td class="c">' + buyTxt + '</td><td></td></tr>' +
         '<tr class="r2"><td class="c">999</td><td class="c">' + inp('tax', v.tax, 'c') + '</td>' +
         '<td colspan="2">' + inp('dr', v.dr) + '</td><td colspan="2">' + inp('cr', v.cr) + '</td>' +
@@ -752,7 +781,7 @@
       r('年月日', dayIn + dayTxt + '<span class="spt">伝番 999／証番 999</span>') +
       '<div class="spdc">' + side('借 方', 'dr') + side('貸 方', 'cr') + '</div>' +
       r('取引金額', amtIn + '<span class="spt">内 消費税 ' + taxTxt + '／税抜 ' + netTxt + '</span>') +
-      r('課税・事業・税率', inp('tax', v.tax, 'c') + inp('biz', v.biz, 'c') + inp('rate', v.rate || 0, 'c') + '<span class="spt">' + rt + ' ' + buyTxt + '</span>') +
+      r('課税・事業・税率', inp('tax', v.tax, 'c') + inp('biz', v.biz, 'c') + rsel() + '<span class="spt">' + rt + ' ' + buyTxt + '</span>') +
       r('取引先', '<span class="dpparty">' + inp('party', v.party, 'c pcode') + inp('partyName', v.partyName) + '</span>') +
       r('元帳摘要', inp('memo', v.memo)) +
       '</div></div>';
@@ -763,6 +792,7 @@
     const o = {};
     box.querySelectorAll('[data-k]').forEach(function (i) { o[i.dataset.k] = i.value.trim(); });
     ['drCode', 'crCode', 'drSub', 'crSub', 'party', 'rate', 'tax', 'biz'].forEach(function (k) { if (k in o) o[k] = half(o[k]); });
+    if ('rate' in o) { o.red = /^r/.test(o.rate); o.rate = Number(String(o.rate).replace('r', '')) || 0; }
     return o;
   }
   /* 打ったコード → 科目名（勘定科目の表から）。表にないコードは赤く */
@@ -784,11 +814,12 @@
     const tax = taxable && amt ? Math.floor(amt * rate / (100 + rate)) : 0;
     const set = function (c, t) { box.querySelectorAll('.' + c).forEach(function (e) { e.textContent = t; }); };
     set('c-tax', taxable && amt ? yen(tax) : ''); set('c-net', amt ? yen(amt - tax) : '');
-    set('c-rt', taxable ? '判定(' + (v.red ? '軽' : '標') + ')' : (String(v.tax || '') === '8' ? '非課税' : '対象外'));
+    set('c-rt', rtText(v, taxable, rate));
     set('c-buy', taxable && ds ? ds : '');
     if (isIn) { const p = parseDate(v.date); set('c-day', p ? p.s + '（' + p.w + '）' : (v.date ? '日付がちがいます' : '')); }
-    box.querySelectorAll('.side-mk').forEach(function (e) { e.hidden = taxFree(v.tax); });
+    box.querySelectorAll('.side-mk').forEach(function (e) { e.hidden = taxFree(v.tax) || e.dataset.side !== v.side; });
   }
+  function rtText(v, taxable, rate) { return taxable ? '判定(' + (v.red ? '軽' : '標') + ')' + rate + '%' : (String(v.tax || '') === '8' ? '非課税' : '対象外'); }
 
   /* ================= 入力の一覧 ================= */
   const C = {};         /* 写真ごとの打ちかけ { date, amount, no, ov:{}, memo } … この画面を開いているあいだだけ */
@@ -810,7 +841,16 @@
     const bx = $('box'); bx.textContent = ''; const all = el('option', null, 'すべて'); all.value = ''; bx.appendChild(all);
     (c ? c.boxes : []).forEach(function (b) { const o = el('option', null, b); o.value = b; bx.appendChild(o); });
     S.box = '';
-    $('dictTitle').textContent = '仕訳辞書：' + (c ? c.code + '　' + c.name : '');
+    $('dictTitle').textContent = '仕訳辞書の登録・編集：' + (c ? c.code + '　' + c.name : '');
+    /* 回収ボックスの選び肢：その顧問先の箱 ＋ その他 ＋ 共通（どの箱にも出す） */
+    S.boxes = (c ? c.boxes : []).filter(function (b) { return b !== 'その他'; }).concat(['その他']);
+    [$('dBox'), $('sBox')].forEach(function (sel) {
+      sel.textContent = '';
+      S.boxes.forEach(function (b) { const o = el('option', null, b); o.value = b; sel.appendChild(o); });
+      const o = el('option', null, '共通（どの箱にも出す）'); o.value = ''; sel.appendChild(o);
+    });
+    S.dbox = S.boxes[0] || '';
+    $('dBox').value = S.dbox;
     const f = $('dFrom'); f.textContent = '';
     S.clients.filter(function (x) { return x.code !== S.code; }).forEach(function (x) { const o = el('option', null, x.code + '　' + x.name); o.value = x.code; f.appendChild(o); });
     loadDict().then(function () { load(); });
@@ -950,7 +990,7 @@
       const q = el('input', 'dpin q'); q.dataset.k = 'q'; q.value = c.q || ''; q.autocomplete = 'off';
       q.placeholder = 'No・見出しで絞る'; q.setAttribute('aria-label', '辞書を絞る');
       ph.appendChild(q); pk.appendChild(ph);
-      const ul = el('ul', 'jplist'); pickList(ul, c.q); pk.appendChild(ul);
+      const ul = el('ul', 'jplist'); pickList(ul, c.q, it.box); pk.appendChild(ul);
       row.appendChild(pk);
     } else {
       const nb = el('div', 'jno');
@@ -994,22 +1034,33 @@
     return v;
   }
   /* 辞書一覧（その1件の写真の下）。q で絞る */
-  function dictHit(q) {
+  /* ★ 辞書は【回収ボックスごと】。その箱の辞書と、箱が空の辞書（共通）だけを出す */
+  const GROUPS = [['いつも', 'いつもの取引'], ['たまに', 'たまにある取引'], ['わからない', 'わからない場合']];
+  function boxDict(box) { return S.dict.filter(function (d) { return !d.box || d.box === box; }); }
+  function dictHit(q, box) {
+    const list = boxDict(box);
     q = half(q || '').toLowerCase();
-    if (!q) return S.dict;
-    return S.dict.filter(function (d) { return [d.no, d.title, d.dr, d.cr, d.drCode, d.crCode, d.tax, d.memo, d.note, d.partyName].join(' ').toLowerCase().indexOf(q) >= 0; });
+    if (!q) return list;
+    return list.filter(function (d) { return [d.no, d.title, d.dr, d.cr, d.drCode, d.crCode, d.tax, d.memo, d.note, d.partyName].join(' ').toLowerCase().indexOf(q) >= 0; });
   }
-  function pickList(ul, q) {
+  /* 1行に：No・取引の種類・借方/貸方のコード・課税区分・税率 */
+  function pickList(ul, q, box) {
     ul.textContent = '';
-    if (!S.dict.length) { ul.appendChild(el('li', 'empty', 'この顧問先の辞書はまだ空です。上の「辞書」で作ってください。')); return; }
-    const hit = dictHit(q);
+    if (!boxDict(box).length) { ul.appendChild(el('li', 'empty', '「' + box + '」の辞書はまだありません。上の「辞書」で作ってください。')); return; }
+    const hit = dictHit(q, box);
     if (!hit.length) { ul.appendChild(el('li', 'empty', '当てはまる辞書がありません')); return; }
-    hit.forEach(function (d) {
-      const li = el('li'); const b = el('button'); b.type = 'button'; b.dataset.a = 'pick'; b.dataset.no = String(d.no);
-      b.appendChild(el('span', 'no', String(d.no)));
-      b.appendChild(el('span', 't', d.title || d.memo || d.dr));
-      b.appendChild(el('span', 's', dictLine(d) + (d.tax ? '　課税 ' + d.tax : '')));
-      li.appendChild(b); ul.appendChild(li);
+    GROUPS.forEach(function (g) {
+      const rows = hit.filter(function (d) { return (d.grp || 'いつも') === g[0]; });
+      if (!rows.length) return;
+      ul.appendChild(el('li', 'grp', g[1]));
+      rows.forEach(function (d) {
+        const li = el('li'); const b = el('button'); b.type = 'button'; b.dataset.a = 'pick'; b.dataset.no = String(d.no);
+        b.appendChild(el('span', 'no', String(d.no)));
+        b.appendChild(el('span', 't', d.title || d.memo || d.dr));
+        b.appendChild(el('span', 'c', (d.drCode || d.dr) + ' / ' + (d.crCode || d.cr)));
+        b.appendChild(el('span', 'x', [d.tax ? '課' + d.tax : '', rateLabel(d)].filter(Boolean).join(' ')));
+        li.appendChild(b); ul.appendChild(li);
+      });
     });
   }
   /* 辞書を選んだ → その場で伝票になり、日付の欄へ */
@@ -1066,16 +1117,23 @@
     const t = e.target, row = t.closest('.jdrow'); if (!row || !t.dataset.k) return;
     const it = itemOf(row.dataset.id); if (!it) return;
     const c = card(it.id), k = t.dataset.k;
-    if (k === 'q') { c.q = t.value; pickList(row.querySelector('.jplist'), c.q); return; }
+    if (k === 'q') { c.q = t.value; pickList(row.querySelector('.jplist'), c.q, it.box); return; }
     if (k === 'date') c.date = t.value;
     else if (k === 'amount') c.amount = t.value;
     else if (k === 'memo') c.memo = t.value;
+    else if (k === 'rate') {
+      const base = dictOf(c.no) || {};
+      const nv = readVoucher(row.querySelector('.jslip'));
+      if (rateCode(base) === rateCode(nv)) { delete c.ov.rate; delete c.ov.red; } else { c.ov.rate = nv.rate; c.ov.red = nv.red; }
+      t.classList.toggle('ov', 'rate' in c.ov);
+    }
     else {
       const base = dictOf(c.no) || {};
       onCodeCell(t, row.querySelector('.jslip'));
       const val = /Code$|Sub$|^party$|^rate$|^tax$|^biz$/.test(k) ? half(t.value) : t.value.trim();
       if (String(base[k] == null ? '' : base[k]) === val) delete c.ov[k]; else c.ov[k] = val;
       t.classList.toggle('ov', k in c.ov);
+      if (k === 'drCode' || k === 'crCode') { const v0 = slipVals(it.id); const sd = taxSide(v0.drCode, v0.crCode, base.side); if (sd !== (base.side || 'dr')) c.ov.side = sd; else delete c.ov.side; }
     }
     calcCells(row.querySelector('.jslip'), slipVals(it.id), true);
     readyMark(it);
@@ -1091,8 +1149,8 @@
     e.preventDefault();
     if (k === 'date') { if (!parseDate(c.date)) { fmsg('日付を入れてください（例：23）', 'err'); return; } fmsg(''); go1(row, 'amount'); return; }
     if (k === 'q') {
-      const qq = half(c.q || ''); const hit = dictHit(qq);
-      const d = (/^\d{1,3}$/.test(qq) && dictOf(qq)) || (hit.length === 1 ? hit[0] : null);
+      const qq = half(c.q || ''); const hit = dictHit(qq, it.box);
+      const d = (/^\d{1,3}$/.test(qq) && hit.find(function (x) { return x.no === Number(qq); })) || (hit.length === 1 ? hit[0] : null);
       if (d) pickNo(it, d.no); else fmsg(qq ? '辞書の No を1つに決めてください（' + hit.length + '件あります）' : '辞書の No を打つか、下の一覧から選んでください', 'err');
       return;
     }
@@ -1407,22 +1465,30 @@
     }, function (e) { fmsg(e.message, 'err'); });
   }
 
-  /* 辞書の目次（左） */
+  /* 辞書の目次（左）。選んでいる回収ボックスのぶんを 群ごとに */
   function drawIndex() {
     const q = $('dSearch').value.trim().toLowerCase();
     const ul = $('dIndex'); ul.textContent = '';
-    if (!S.dict.length) ul.appendChild(el('li', 'empty', 'まだ伝票がありません。「＋ 新しい伝票」で作ってください。'));
-    S.dict.filter(function (d) { return !q || [d.no, d.title, d.dr, d.cr, d.drCode, d.crCode, d.memo, d.partyName].join(' ').toLowerCase().indexOf(q) >= 0; }).forEach(function (d) {
-      const li = el('li'); const b = el('button'); b.type = 'button';
-      b.appendChild(el('span', 'no', String(d.no)));
-      b.appendChild(el('span', 't', d.title || d.memo || d.dr));
-      b.appendChild(el('span', 's', dictLine(d)));
-      b.setAttribute('aria-current', String(S.dsel === d.no));
-      b.addEventListener('click', function () { if (slipDirtyOk()) openSlip(d.no); });
-      li.appendChild(b); ul.appendChild(li);
+    const mine = S.dict.filter(function (d) { return (d.box || '') === (S.dbox || ''); });
+    if (!mine.length) ul.appendChild(el('li', 'empty', 'この回収ボックスの辞書はまだありません。「＋ 辞書を登録」で作ってください。'));
+    const hit = mine.filter(function (d) { return !q || [d.no, d.title, d.dr, d.cr, d.drCode, d.crCode, d.memo, d.partyName].join(' ').toLowerCase().indexOf(q) >= 0; });
+    GROUPS.forEach(function (g) {
+      const rows = hit.filter(function (d) { return (d.grp || 'いつも') === g[0]; });
+      if (!rows.length) return;
+      ul.appendChild(el('li', 'grp', g[1]));
+      rows.forEach(function (d) {
+        const li = el('li'); const b = el('button'); b.type = 'button';
+        b.appendChild(el('span', 'no', String(d.no)));
+        b.appendChild(el('span', 't', d.title || d.memo || d.dr));
+        b.appendChild(el('span', 's', (d.drCode || d.dr) + ' / ' + (d.crCode || d.cr) + [d.tax ? '　課' + d.tax : '', rateLabel(d)].join(' ')));
+        b.setAttribute('aria-current', String(S.dsel === d.no));
+        b.addEventListener('click', function () { if (slipDirtyOk()) openSlip(d.no); });
+        li.appendChild(b); ul.appendChild(li);
+      });
     });
     $('dCopyBox').hidden = S.dict.length > 0;
   }
+  $('dBox').addEventListener('change', function () { if (!slipDirtyOk()) { this.value = S.dbox; return; } S.dbox = this.value; openSlip(null); });
   $('dSearch').addEventListener('input', drawIndex);
 
   function slipDirtyOk() { return !S.dirty || confirm('この伝票の書き替えが保存されていません。捨てますか？'); }
@@ -1432,8 +1498,11 @@
     $('slip').hidden = !d;
     if (d) {
       $('sNo').value = d.no == null ? '' : String(d.no); $('sTitle').value = d.title || ''; $('sNote').value = d.note || '';
-      $('sSide').value = d.side === 'cr' ? 'cr' : 'dr';
+      $('sGrp').value = d.grp || 'いつも'; $('sBox').value = d.box == null ? S.dbox : d.box;
+      $('sTitle').dataset.prev = d.title || '';
+      S.dside = d.side === 'cr' ? 'cr' : 'dr';
       $('dslip').innerHTML = voucherHtml(d, 'dict');
+      sideTxt_();
       $('dslip').querySelectorAll('[data-k$="Code"]').forEach(function (i) { codeMark(i); });
       $('dslip').querySelectorAll('[data-k="dr"], [data-k="cr"]').forEach(function (i) { i.setAttribute('list', 'acctNames'); });
     }
@@ -1451,7 +1520,7 @@
   function nextNo() { return S.dict.reduce(function (m, d) { return Math.max(m, d.no); }, 0) + 1; }
   $('dNew').addEventListener('click', function () {
     if (!slipDirtyOk()) return;
-    openSlip(null, { no: nextNo(), side: 'dr' });
+    openSlip(null, { no: nextNo(), side: 'dr', box: S.dbox, grp: 'いつも', rate: 10 });
     $('sTitle').focus();
   });
   $('sDup').addEventListener('click', function () {
@@ -1461,8 +1530,9 @@
   });
   function readSlip() {
     const o = readVoucher($('dslip'));
-    o.no = Number(half($('sNo').value)); o.title = $('sTitle').value.trim(); o.note = $('sNote').value.trim(); o.side = $('sSide').value;
-    o.red = Number(o.rate) === 8;
+    o.no = Number(half($('sNo').value)); o.title = $('sTitle').value.trim(); o.note = $('sNote').value.trim();
+    o.grp = $('sGrp').value; o.box = $('sBox').value;
+    o.side = taxSide(o.drCode, o.crCode, S.dside);
     return o;
   }
   /* 打ったコード → 科目名・税区分（表にあれば）。科目名 → コード（表に1つだけあれば） */
@@ -1477,10 +1547,13 @@
         const s = k.slice(0, 2);
         $('dslip').querySelector('[data-k="' + s + '"]').value = a.name;
         const tx = $('dslip').querySelector('[data-k="tax"]');
-        if (a.tax && !tx.value && $('sSide').value === s) tx.value = a.tax;
+        if (a.tax && !tx.value && plAcct(a.code)) tx.value = a.tax;
       }
+      /* 両方とも貸借対照表の科目（預け入れ・振替など）は 課税区分 0 から（登録はできる） */
+      const v0 = readVoucher($('dslip')); const tx = $('dslip').querySelector('[data-k="tax"]');
+      if (v0.drCode && v0.crCode && !plAcct(v0.drCode) && !plAcct(v0.crCode) && !tx.value) tx.value = '0';
     }
-    const v = readSlip(); calcCells($('dslip'), v, false);
+    const v = readSlip(); S.dside = v.side; calcCells($('dslip'), v, false); sideTxt_();
   });
   $('dslip').addEventListener('change', function (e) {
     const t = e.target, k = t.dataset.k; if (k !== 'dr' && k !== 'cr') return;
@@ -1488,12 +1561,24 @@
     if (hit.length === 1) { const ci = $('dslip').querySelector('[data-k="' + k + 'Code"]'); ci.value = hit[0].code; codeMark(ci); }
   });
   ['sNo', 'sTitle', 'sNote'].forEach(function (id) { $(id).addEventListener('input', function () { S.dirty = true; dmsg(''); }); });
-  $('sSide').addEventListener('change', function () { S.dirty = true; slipRedraw(); });
+  ['sGrp', 'sBox'].forEach(function (id) { $(id).addEventListener('change', function () { S.dirty = true; dmsg(''); }); });
+  /* 取引の種類 ＝ 元帳摘要の初期表示。摘要を書き替えていなければ ついていく */
+  $('sTitle').addEventListener('input', function () {
+    const m = $('dslip').querySelector('[data-k="memo"]'); if (!m) return;
+    if (!m.value || m.value === this.dataset.prev) m.value = this.value;
+    this.dataset.prev = this.value;
+  });
+  function sideTxt_() {
+    const v = readSlip();
+    const pl = plAcct(v.drCode) || plAcct(v.crCode);
+    $('sSideTxt').textContent = taxFree(v.tax) ? '消費税：なし（課税区分 ' + (v.tax || '空') + '）' :
+      '消費税の側：' + (v.side === 'cr' ? '貸方' : '借方') + (pl ? '（損益科目の側・自動）' : '');
+  }
   /* Enter で次の欄へ。Ctrl+Enter（最後の欄は Enter）で保存 */
   $('slip').addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' || e.isComposing || e.target.tagName === 'BUTTON') return;
     e.preventDefault();
-    const ins = Array.prototype.slice.call($('slip').querySelectorAll('#sNo, #sTitle, #sSide, #dslip [data-k], #sNote'));
+    const ins = Array.prototype.slice.call($('slip').querySelectorAll('#sNo, #sTitle, #dslip [data-k], #sNote'));
     const i = ins.indexOf(e.target);
     if (e.ctrlKey || e.metaKey || i === ins.length - 1) { saveSlip(); return; }
     const n = ins[i + 1]; if (n) { n.focus(); if (n.select) n.select(); }
@@ -1515,6 +1600,7 @@
     if (!(o.no >= 1 && o.no <= 999)) { dmsg('No は 1〜999 の数で入れてください。', 'err'); $('sNo').focus(); return; }
     if (o.no !== S.dsel && S.dict.some(function (x) { return x.no === o.no; })) { dmsg('No ' + o.no + ' はもう使っています。', 'err'); $('sNo').focus(); return; }
     const list = S.dict.filter(function (x) { return x.no !== S.dsel; }).concat([o]);
+    S.dbox = o.box; $('dBox').value = o.box;
     saveDict(list, 'No ' + o.no + ' を保存しました。', o.no);
   }
   $('sSaveSlip').addEventListener('click', saveSlip);
@@ -1530,11 +1616,16 @@
     $('dPaste').value.split(/\r?\n/).forEach(function (line) {
       const c = line.split('\t').map(function (x) { return x.trim(); }); if (c.length < 3) return;
       const no = Number(half(c[0])); if (!(no >= 1)) return;   /* 見出しの行などは飛ばす */
+      /* 税率：10／軽8・r8／軽1・r1／8（旧）／5／3。「8」だけのときは軽減として読む（いまの 8% は軽減しかないため） */
+      const rt = half(c[12] || '').replace(/[%％]/g, '');
+      const red = /^(軽|r)/i.test(rt) || rt === '8';
+      const rn = Number(rt.replace(/^(軽減|軽|r|旧)/i, '')) || 0;
+      const grp = /たまに/.test(c[18] || '') ? 'たまに' : /わから/.test(c[18] || '') ? 'わからない' : 'いつも';
       byNo[no] = c.length >= 10
         ? { no: no, title: c[1], drCode: half(c[2]), drSub: half(c[3]), dr: c[4], drSubName: c[5], crCode: half(c[6]), crSub: half(c[7]), cr: c[8], crSubName: c[9],
-            tax: half(c[10] || ''), biz: half(c[11] || ''), rate: half(c[12] || ''), side: /^(貸|cr)/i.test(c[13] || '') ? 'cr' : 'dr',
-            party: half(c[14] || ''), partyName: c[15] || '', memo: c[16] || '', note: c[17] || '', red: Number(half(c[12] || '')) === 8 }
-        : { no: no, dr: c[1], cr: c[2], tax: c[3] || '', memo: c[4] || '', note: c[5] || '' };   /* 前の形（No・借方・貸方・税区分・摘要・メモ） */
+            tax: half(c[10] || ''), biz: half(c[11] || ''), rate: rn, red: red && !/^旧/.test(rt), side: /^(貸|cr)/i.test(c[13] || '') ? 'cr' : 'dr',
+            party: half(c[14] || ''), partyName: c[15] || '', memo: c[16] || '', note: c[17] || '', grp: grp, box: S.dbox }
+        : { no: no, dr: c[1], cr: c[2], tax: c[3] || '', memo: c[4] || '', note: c[5] || '', box: S.dbox };   /* 前の形（No・借方・貸方・税区分・摘要・メモ） */
       n++;
     });
     if (!n) { dmsg('貼り付けた中に、読める行がありませんでした（タブ区切りで）。', 'err'); return; }
