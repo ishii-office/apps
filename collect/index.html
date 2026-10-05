@@ -52,6 +52,9 @@
   .client { font-size: 15px; color: var(--sub); margin: 0; }
   h1 { font-size: 26px; line-height: 1.35; margin: 4px 0 6px; font-weight: 700; }
   .lead { color: var(--sub); font-size: 15px; margin: 0 0 18px; }
+  .period { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; padding: 12px 14px; border-radius: 14px; background: var(--paper); border: 2px solid var(--accent); }
+  .period label { font-weight: 700; font-size: 16px; }
+  .period select { flex: 1; min-width: 0; font-size: 18px; font-weight: 700; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
   [hidden] { display: none !important; }
 
   /* ---- タブ（送る／送った履歴） ---- */
@@ -188,6 +191,7 @@
 
   <section id="paneSend" role="tabpanel" aria-labelledby="tabSend">
     <p class="lead">資料の種類ごとの箱で、撮影するか、写真・PDFを選んでください。パソコンなら箱へドラッグするだけです。最後に「送る」を押すと事務所に届きます。</p>
+    <div class="period"><label for="period">何月分の資料ですか</label><select id="period"></select></div>
     <div class="boxes" id="boxes"></div>
 
     <div class="tray" id="tray" hidden>
@@ -195,7 +199,7 @@
       <p class="sub">要らないものは × で消してください。まだ送っていません。</p>
       <div id="trayBody"></div>
       <div class="memo">
-        <label for="memo">ひとこと（任意）　例：9月分です</label>
+        <label for="memo">ひとこと（任意）　例：レシートが1枚足りません</label>
         <textarea id="memo" maxlength="500"></textarea>
       </div>
       <button type="button" class="send" id="sendBtn">送る</button>
@@ -302,7 +306,15 @@
   /* ---- 送る前の箱（トレイ）----
      撮った・選んだ・落としたものは、まずここに並ぶ。「送る」を押すまで送らない。
      中身は File のまま（メモリだけ）。サムネイルは object URL で出し、消すときに返す */
-  let tray = [];          /* { id, file, box, url, err } */
+  let tray = [];          /* { id, file, box, period, url, err } */
+  /* ★ 何月分か（8月分の現金・8月分の通帳）。箱ごとに月で分かれて事務所に届く */
+  function ymOf(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  function ymLabel(v) { const m = String(v || '').match(/^(\d{4})-(\d{2})$/); return m ? m[1] + '年' + Number(m[2]) + '月分' : ''; }
+  (function () {
+    const sel = $('period'); const now = new Date();
+    for (let i = 0; i <= 12; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); const o = document.createElement('option'); o.value = ymOf(d); o.textContent = ymLabel(o.value); sel.appendChild(o); }
+    sel.value = ymOf(new Date(now.getFullYear(), now.getMonth() - (now.getDate() <= 15 ? 1 : 0), 1));
+  })();
   let seq = 0;
   let sending = false;
   const boxSent = {};
@@ -329,7 +341,7 @@
       }
       let url = '';
       if (!isPdf(f)) { try { url = URL.createObjectURL(f); } catch (e) {} }
-      tray.push({ id: ++seq, file: f, box: box, url: url, err: '' });
+      tray.push({ id: ++seq, file: f, box: box, period: $('period').value, url: url, err: '' });
     });
     if (files.length) doneEl.style.display = 'none';
     drawTray();
@@ -355,10 +367,14 @@
     btn.textContent = sending ? '送っています…' : (failed ? '残り ' + tray.length + '件をもう一度送る' : tray.length + '件を事務所に送る');
     btn.disabled = sending || !tray.length;
     /* 箱ごとにまとめる（箱の並び順で） */
-    BOXES.forEach(function (b) {
-      const list = tray.filter(function (it) { return it.box === b; });
+    const keys = [];
+    BOXES.forEach(function (b) { tray.forEach(function (it) { const k = it.period + '|' + b; if (it.box === b && keys.indexOf(k) < 0) keys.push(k); }); });
+    keys.sort(function (a, b) { return a.split('|')[0] < b.split('|')[0] ? 1 : a.split('|')[0] > b.split('|')[0] ? -1 : 0; });
+    keys.forEach(function (key) {
+      const pp = key.split('|')[0], b = key.slice(pp.length + 1);
+      const list = tray.filter(function (it) { return it.box === b && it.period === pp; });
       if (!list.length) return;
-      const h = document.createElement('h3'); h.textContent = b + '（' + list.length + '件）'; body.appendChild(h);
+      const h = document.createElement('h3'); h.textContent = ymLabel(pp) + '　' + b + '（' + list.length + '件）'; body.appendChild(h);
       const g = document.createElement('div'); g.className = 'thumbs';
       list.forEach(function (it) {
         const d = document.createElement('div'); d.className = 'ti' + (it.sending ? ' sending' : ''); d.dataset.id = String(it.id);
@@ -407,7 +423,7 @@
       try {
         const p = await prepare(it.file);
         if (p.size > MAX_BYTES) throw new Error('ファイルが大きすぎます（' + Math.floor(MAX_BYTES / 1048576) + 'MBまで）');
-        await callServer(p, it.box);
+        await callServer(p, it.box, it.period);
         st.textContent = '送信済み'; st.className = 'st ok';
         ok++;
         boxSent[it.box] = (boxSent[it.box] || 0) + 1;
@@ -588,7 +604,7 @@
         const b = document.createElement('span'); b.className = 'badge st-' + h.status; b.textContent = ST_LABEL[h.status] || '受付済み';
         top.appendChild(at); top.appendChild(b); li.appendChild(top);
         const nm = document.createElement('div'); nm.className = 'nm';
-        const bx = document.createElement('span'); bx.className = 'bx'; bx.textContent = '［' + h.box + '］';
+        const bx = document.createElement('span'); bx.className = 'bx'; bx.textContent = (h.period ? ymLabel(h.period) + ' ' : '') + '［' + h.box + '］';
         const fn = document.createElement('span'); fn.textContent = h.name;
         nm.appendChild(bx); nm.appendChild(fn); li.appendChild(nm);
         if (h.note) { const n = document.createElement('p'); n.className = 'note'; n.textContent = '事務所から：' + h.note; li.appendChild(n); }
@@ -647,9 +663,9 @@
     });
   }
 
-  function callServer(p, box) {
+  function callServer(p, box, period) {
     const memo = $('memo').value;
-    return call('uploadFile', [TOKEN, p.name, p.mime, p.b64, memo, box], 300000);
+    return call('uploadFile', [TOKEN, p.name, p.mime, p.b64, memo, box, period || ''], 300000);
   }
 
   /* サーバを呼ぶ道は、ここ1か所だけ */
