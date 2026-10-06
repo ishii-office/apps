@@ -66,6 +66,12 @@
   .seg button { border: 0; border-radius: 0; border-right: 1px solid var(--line); }
   .seg button:last-child { border-right: 0; }
   .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; font-weight: 700; }
+  /* スマホ：タブは3列に並べて 全部見えるように（右が見切れていた） */
+  @media (max-width: 700px) {
+    #tabs { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+    #tabs button { padding: 8px 2px; font-size: 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    #tabs button:nth-child(3n) { border-right: 0; }
+  }
   .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
   .ctl label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
   #client { min-width: 220px; }
@@ -368,6 +374,13 @@
   .dcb { display: flex; flex-wrap: wrap; gap: 6px; }
   .dcbar .danger { color: #B3261E; border-color: #E7B4AF; }
   .dpicking { padding-bottom: 120px; }
+  .dmsg .undo { margin-left: 10px; font: inherit; font-size: 13px; font-weight: 800; color: var(--accent); background: #fff; border: 1.5px solid var(--accent); border-radius: 8px; padding: 3px 10px; cursor: pointer; }
+  .trash-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 10px; }
+  .trash-h b { font-size: 16px; margin-right: 6px; }
+  .dgrid.trash { padding: 0; }
+  .dgrid.trash .dimg img { opacity: .55; filter: grayscale(.6); }
+  .trash-b { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+  .trash-b .dmon-b { flex: 1; padding: 4px 2px; }
   .dghost { position: fixed; z-index: 60; width: 80px; height: 106px; border-radius: 8px; overflow: hidden; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.35); background: #fff; border: 2px solid var(--accent); font-size: 11px; }
   .dghost img { width: 100%; height: 100%; object-fit: cover; }
   .dimg img { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
@@ -513,6 +526,7 @@
     <span class="dtools">
       <button type="button" id="dPick" aria-pressed="false">選ぶ</button>
       <button type="button" id="dPdfAll">一括PDF切り出し</button>
+      <button type="button" id="dTrash" hidden>破棄したもの</button>
     </span>
     <div class="dmsg" id="dcMsg" role="status"></div>
   </div>
@@ -1040,7 +1054,7 @@
     S.dirty = false; S.rot = {}; S.dsel = null; S.open = {}; S.act = '';
     Object.keys(C).forEach(function (k) { delete C[k]; });
     Object.keys(IMG).forEach(function (k) { delete IMG[k]; }); QUEUE = [];
-    S.dcsel = {}; S.dcpick = false;
+    S.dcsel = {}; S.dcpick = false; S.trashView = false; S.trash = null; S.trashN = 0;
     const c = S.clients.find(function (x) { return x.code === S.code; });
     const bx = $('box'); bx.textContent = ''; const all = el('option', null, 'すべて'); all.value = ''; bx.appendChild(all);
     (c ? c.boxes : []).forEach(function (b) { const o = el('option', null, b); o.value = b; bx.appendChild(o); });
@@ -1069,11 +1083,15 @@
 
   function load() {
     if (!S.code) return Promise.resolve();
-    listMsg('読み込み中…');
-    const code = S.code;
-    return gs('workList', code, S.st).then(function (r) {
-      if (code !== S.code) return;
-      S.items = r.items; S.counts = r.counts; counts();
+    const code = S.code, st = S.st;
+    /* ★ 速さ：同じ顧問先の一覧が手元にあれば 消さずに出したまま、裏で新しいものに差し替える。
+         未処理／確定 などの切り替えは 手元の中から先に絞って見せる */
+    if (S.itemsCode === code && S.items && S.items.length) {
+      if (S.itemsSt !== st && S.itemsSt === 'all') { S.items = S.items.filter(function (it) { return st === 'all' || stTag(it)[0] === st; }); S.itemsSt = st; render(); }
+    } else listMsg('読み込み中…');
+    return gs('workList', code, st).then(function (r) {
+      if (code !== S.code || st !== S.st) return;
+      S.items = r.items; S.counts = r.counts; S.itemsCode = code; S.itemsSt = st; counts();
       render();
     }, function (e) { listMsg(e.message); });
   }
@@ -1153,10 +1171,12 @@
   function docsLoad() {
     if (!S.code) return;
     const code = S.code;
-    if (!S.docs) { $('dBody').textContent = ''; $('dBody').appendChild(el('div', 'cbox muted', '読み込み中…')); }
+    /* ★ 速さ：前に読んだものを すぐ出して、裏で新しいものに差し替える（タブを移るたびに待たせない） */
+    if (S.docs) docsDraw();
+    else { $('dBody').textContent = ''; $('dBody').appendChild(el('div', 'cbox muted', '読み込み中…')); }
     gs('workList', code, 'all').then(function (r) {
       if (code !== S.code) return;
-      S.docs = r.items; perFill(r.items); docsDraw();
+      S.docs = r.items; S.trashN = (r.counts && r.counts.trash) || 0; perFill(r.items); docsDraw();
       const need = r.items.map(function (it) { return it.id; }).filter(function (id) { return !(id in THUMB); });
       (function next() { const b = need.splice(0, 40); if (!b.length) return;
         gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); $('dBody').querySelectorAll('img.dthumb[data-id]').forEach(function (im) { if (!im.src && THUMB[im.dataset.id]) im.src = THUMB[im.dataset.id]; }); next(); }, next); })();
@@ -1171,6 +1191,9 @@
   function docsDraw() {
     const body = $('dBody'); body.textContent = '';
     if (dObs) dObs.disconnect();
+    $('dTrash').hidden = !S.trashN && !S.trashView;
+    $('dTrash').textContent = '破棄したもの（' + (S.trashN || 0) + '）';
+    if (S.trashView) { trashDraw(body); dcBar(); return; }
     const list = (S.docs || []).filter(function (it) { return (!S.box || it.box === S.box || it.box.indexOf(S.box + '/') === 0) && (!S.per || it.period === S.per); })
       .sort(function (a, b) { return a.period !== b.period ? (a.period < b.period ? 1 : -1) : b.t - a.t; });
     $('dsum').textContent = list.length + '件';
@@ -1479,29 +1502,106 @@
   $('dPick').addEventListener('click', function () { S.dcpick = !S.dcpick; if (!S.dcpick) S.dcsel = {}; docsDraw(); });
   function selItems() { return (S.dcview || []).filter(function (x) { return S.dcsel[x.id]; }); }
   $('dPdfAll').addEventListener('click', function () { cutPdf(S.dcview || [], ''); });
+  $('dTrash').addEventListener('click', function () { S.trashView = !S.trashView; S.trash = null; docsDraw(); if (S.trashView) trashLoad(); });
   $('dcPdf').addEventListener('click', function () { cutPdf(selItems(), '選択'); });
   $('dcMove').addEventListener('click', function () { dMoveOpen(selItems()); });
   $('dcDel').addEventListener('click', function () { discard(selItems(), '選んだ'); });
   $('dcNone').addEventListener('click', function () { S.dcsel = {}; docsDraw(); });
   $('dcEnd').addEventListener('click', function () { S.dcpick = false; S.dcsel = {}; docsDraw(); });
 
+  /* 破棄：★ 押しまちがい・勘違いがあるので すぐには消さない。【破棄したもの】へ退避するだけ（いつでも戻せる）。
+     だから「本当に？」とは聞かない。押した瞬間に一覧から外し、［元に戻す］を出す */
   function discard(items, what) {
     const done = items.filter(function (x) { return x.status === 'done'; }).length;
     const list = items.filter(function (x) { return x.status !== 'done'; });
     if (!list.length) { dcMsg('破棄できるものがありません（確定済みは破棄できません）。', true); return; }
-    if (!confirm(what + ' ' + list.length + '件を破棄しますか？\n・顧問先には知らせません（顧問先の画面は 送信済みのまま）\n・事務所の一覧から消え、Drive のファイルはゴミ箱へ（30日は戻せます）' + (done ? '\n・確定済みの ' + done + '件は残します' : ''))) return;
-    const code = S.code;
-    dcMsg('破棄しています…');
-    gs('workDiscard', code, list.map(function (x) { return x.id; })).then(function (r) {
+    const code = S.code, ids = list.map(function (x) { return x.id; });
+    const keepDocs = S.docs, keepItems = S.items;
+    const gone = {}; ids.forEach(function (id) { gone[id] = 1; });
+    S.docs = (S.docs || []).filter(function (x) { return !gone[x.id]; });
+    S.items = (S.items || []).filter(function (x) { return !gone[x.id]; });
+    S.dcpick = false; S.dcsel = {}; S.trashN = (S.trashN || 0) + list.length;
+    docsDraw(); if (S.tab === 'In') render();
+    dcUndo(list.length + '件を破棄しました（破棄したものに 退避）。' + (done ? '確定済みの ' + done + '件は残しました。' : ''), function () { restore(ids); });
+    gs('workDiscard', code, ids).then(function () {}, function (e) {
       if (code !== S.code) return;
-      const gone = {}; list.forEach(function (x) { gone[x.id] = 1; delete S.dcsel[x.id]; });
-      S.docs = (S.docs || []).filter(function (x) { return !gone[x.id]; });
-      S.items = (S.items || []).filter(function (x) { return !gone[x.id]; });
-      S.dcpick = false; S.dcsel = {};
+      S.docs = keepDocs; S.items = keepItems; S.trashN = Math.max(0, (S.trashN || 0) - list.length);
       docsDraw(); if (S.tab === 'In') render();
-      dcMsg(r.n + '件を破棄しました。' + (r.kept ? '（確定済みの ' + r.kept + '件は残しました）' : ''));
-    }, function (e) { dcMsg('破棄できませんでした。' + e.message, true); });
+      dcMsg('破棄できませんでした。' + e.message, true);
+    });
   }
+  /* お知らせに［元に戻す］を添える */
+  function dcUndo(text, fn) {
+    const m = $('dcMsg'); m.textContent = text; m.className = 'dmsg';
+    const b = el('button', 'undo', '元に戻す'); b.type = 'button';
+    b.addEventListener('click', function () { b.disabled = true; fn(); });
+    m.appendChild(b);
+  }
+  function restore(ids) {
+    const code = S.code;
+    dcMsg('戻しています…');
+    gs('workRestore', code, ids).then(function (r) {
+      if (code !== S.code) return;
+      S.trashN = Math.max(0, (S.trashN || 0) - r.n);
+      S.trash = (S.trash || []).filter(function (x) { return ids.indexOf(x.id) < 0; });
+      dcMsg(r.n + '件を 元の箱に戻しました。');
+      docsLoad(); load();
+    }, function (e) { dcMsg('戻せませんでした。' + e.message, true); });
+  }
+  function purge(ids) {
+    if (!ids.length) return;
+    if (!confirm(ids.length + '件を 完全に消しますか？\n（Drive のゴミ箱に入り、30日で消えます。アプリからは戻せません）')) return;
+    const code = S.code;
+    S.trash = (S.trash || []).filter(function (x) { return ids.indexOf(x.id) < 0; });
+    S.trashN = Math.max(0, (S.trashN || 0) - ids.length);
+    docsDraw();
+    gs('workPurge', code, ids).then(function (r) { if (code === S.code) dcMsg(r.n + '件を 完全に消しました。'); },
+      function (e) { dcMsg('消せませんでした。' + e.message, true); trashLoad(); });
+  }
+  /* ---- 破棄したもの（退避）：戻す・完全に消す ---- */
+  function trashLoad() {
+    const code = S.code;
+    gs('workTrashList', code).then(function (l) {
+      if (code !== S.code) return;
+      S.trash = l; S.trashN = l.length; docsDraw();
+      const need = l.map(function (x) { return x.id; }).filter(function (id) { return !(id in THUMB); });
+      (function next() { const b = need.splice(0, 40); if (!b.length) return;
+        gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); if (S.trashView) docsDraw(); next(); }, next); })();
+    }, function (e) { dcMsg(e.message, true); });
+  }
+  function trashDraw(body) {
+    const l = S.trash || [];
+    const hd = el('div', 'trash-h');
+    hd.appendChild(el('b', null, '破棄したもの（' + l.length + '件）'));
+    const back = el('button', 'dmon-b', '← 回収資料に戻る'); back.type = 'button';
+    back.addEventListener('click', function () { S.trashView = false; docsDraw(); });
+    hd.appendChild(back);
+    if (l.length) {
+      const ra = el('button', 'dmon-b', '全部戻す'); ra.type = 'button';
+      ra.addEventListener('click', function () { restore(l.map(function (x) { return x.id; })); });
+      const pa = el('button', 'dmon-b danger', '全部 完全に消す'); pa.type = 'button';
+      pa.addEventListener('click', function () { purge(l.map(function (x) { return x.id; })); });
+      hd.appendChild(ra); hd.appendChild(pa);
+    }
+    body.appendChild(hd);
+    if (!S.trash) { body.appendChild(el('div', 'cbox muted', '読み込み中…')); return; }
+    if (!l.length) { body.appendChild(el('div', 'cbox muted', '破棄したものは ありません。')); return; }
+    const grid = el('div', 'dgrid trash');
+    l.forEach(function (it) {
+      const tile = el('div', 'dtile'); tile.dataset.id = it.id;
+      const im = el('img', 'dthumb'); im.alt = it.name; if (THUMB[it.id]) im.src = THUMB[it.id]; im.onerror = function () { im.removeAttribute('src'); };
+      const b = el('div', 'dimg'); b.appendChild(im); if (it.pdf) b.appendChild(el('span', 'pdf', 'PDF'));
+      b.appendChild(el('span', 'stt gone', perLabel(it.period) + '［' + boxLabel(it.box) + '］'));
+      tile.appendChild(b);
+      const bt = el('div', 'trash-b');
+      const r1 = el('button', 'dmon-b', '戻す'); r1.type = 'button'; r1.addEventListener('click', function () { restore([it.id]); });
+      const p1 = el('button', 'dmon-b danger', '完全に消す'); p1.type = 'button'; p1.addEventListener('click', function () { purge([it.id]); });
+      bt.appendChild(r1); bt.appendChild(p1); tile.appendChild(bt);
+      grid.appendChild(tile);
+    });
+    body.appendChild(grid);
+  }
+
 
   /* PDF を作る道具（pdf-lib）。jsdelivr から読む（pdf.js と同じ置き場） */
   const PDFLIB_URL = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
@@ -2169,6 +2269,7 @@
     tmps.forEach(function (x) { it.entries.push(x); });
     if (before !== 'done') { S.counts[before]--; S.counts.done = (S.counts.done || 0) + 1; }
     it.status = 'done'; it.note = '';
+    docSync(it);
     counts();
     S.saving++; savingMark();
     fmsg('確定：' + d.s + '　' + yen(Math.max(sm.dr, sm.cr)) + '円　' + (k.title || dictLine(k)) + (lines.length > 1 ? '（' + lines.length + '行）' : ''), 'ok');
@@ -2185,6 +2286,7 @@
       S.saving--;
       it.entries = it.entries.filter(function (x) { return tmps.indexOf(x) < 0; });
       if (!it.entries.length && it.status === 'done') { S.counts.done--; S.counts[before] = (S.counts[before] || 0) + 1; it.status = before; }
+      docSync(it);
       if (code !== S.code) { savingMark('保存できませんでした（' + err.message + '）'); return; }
       counts();
       const n = S.view.indexOf(it) + 1;
@@ -2201,16 +2303,36 @@
     if (nx) focusCard(nx.id); else { markAct(); fmsg('この並びは全部確定しました。おつかれさまでした。', 'ok'); }
   }
 
+  /* 取消：★ 返事を待たずに その場で取り消した形にする（速さのため）。保存は後ろで続ける。
+     しくじったら 仕訳を元に戻して 赤で出す。回収資料の一覧にも すぐ映す */
   function cancel(it, e, then) {
-    if (S.busy || (!then && !confirm(e.date + '　' + yen(e.amount) + '円 の仕訳を取り消しますか？'))) return;
-    S.busy = true;
-    gs('workCancel', S.code, e.id).then(function (r) {
-      S.busy = false;
-      it.entries = it.entries.filter(function (x) { return x.id !== e.id; });
-      if (r.status !== it.status) { S.counts[it.status]--; S.counts[r.status] = (S.counts[r.status] || 0) + 1; it.status = r.status; }
-      counts(); openOnly(it.id);
-      if (then) then(); else { drawCard(it); markAct(); fmsg('取り消しました。', 'ok'); }
-    }, function (err) { S.busy = false; fmsg(err.message, 'err'); });
+    if (!then && !confirm(e.date + '　' + yen(e.amount) + '円 の仕訳を取り消しますか？')) return;
+    const before = it.status, keep = it.entries.slice();
+    it.entries = it.entries.filter(function (x) { return x.id !== e.id; });
+    const now = it.entries.length ? 'done' : (before === 'done' ? 'todo' : before);
+    if (now !== before) { S.counts[before]--; S.counts[now] = (S.counts[now] || 0) + 1; it.status = now; }
+    docSync(it);
+    counts(); openOnly(it.id);
+    if (then) then(); else { drawCard(it); markAct(); fmsg('取り消しました。', 'ok'); }
+    if (/^tmp/.test(String(e.id))) return;   /* まだ保存中の確定（サーバに無い）*/
+    const code = S.code;
+    S.saving++; savingMark();
+    gs('workCancel', code, e.id).then(function (r) {
+      S.saving--; savingMark();
+      if (code !== S.code || !r || r.status === it.status) return;
+      S.counts[it.status]--; S.counts[r.status] = (S.counts[r.status] || 0) + 1; it.status = r.status; docSync(it); counts(); if (rowOf(it.id)) drawCard(it);
+    }, function (err) {
+      S.saving--;
+      if (code !== S.code) { savingMark('取り消せませんでした（' + err.message + '）'); return; }
+      if (it.status !== before) { S.counts[it.status]--; S.counts[before] = (S.counts[before] || 0) + 1; it.status = before; }
+      it.entries = keep; docSync(it); counts(); if (rowOf(it.id)) drawCard(it);
+      savingMark('取り消せませんでした（' + err.message + '）');
+      fmsg('取り消せませんでした：' + err.message + '（仕訳は元のままです）', 'err');
+    });
+  }
+  /* 仕訳化で変わった状態を 回収資料の一覧（S.docs）にも映す（タブを移ったとき すぐ正しく出るように） */
+  function docSync(it) {
+    (S.docs || []).forEach(function (x) { if (x.id === it.id) { x.status = it.status; x.entries = it.entries.slice(); x.note = it.note; } });
   }
   /* 訂正：その仕訳を取り消して、同じ中身を伝票に戻す（打ち直さなくてよい） */
   function fixEntry(it, e) {
@@ -2228,18 +2350,26 @@
     });
   }
   function doReturn(it, reason) {
-    if (S.busy) return;
     const row = rowOf(it.id);
     if (reason === '' && it.status !== 'back') { fmsg('差戻しの理由を入れてください（顧問先に出ます）', 'err'); if (row) { const b = row.querySelector('[data-a="backtext"]'); if (b) b.focus(); } return; }
-    S.busy = true;
-    gs('workReturn', S.code, it.id, reason).then(function (r) {
-      S.busy = false;
-      if (r.status !== it.status) { S.counts[it.status]--; S.counts[r.status] = (S.counts[r.status] || 0) + 1; it.status = r.status; }
-      it.note = r.note; counts(); drawCard(it); markAct();
-      fmsg(reason ? '差し戻しました。顧問先の「送った履歴」に理由が出ます。' : '差戻しをやめました（未処理に戻しました）。', 'ok');
-      if (reason) { const nx = nextTodo(it.id); if (nx && nx.status === 'todo') focusCard(nx.id); }
-    }, function (err) { S.busy = false; fmsg(err.message, 'err'); });
+    /* ★ 返事を待たずに その場で差し戻した形にする。しくじったら元に戻して赤で出す */
+    const before = { status: it.status, note: it.note };
+    const now = reason ? 'back' : 'todo';
+    if (now !== it.status) { S.counts[it.status]--; S.counts[now] = (S.counts[now] || 0) + 1; it.status = now; }
+    it.note = reason; docSync(it); counts(); drawCard(it); markAct();
+    fmsg(reason ? '差し戻しました。顧問先の画面のいちばん上に「撮り直しのお願い」として出ます。' : '差戻しをやめました（未処理に戻しました）。', 'ok');
+    if (reason) { const nx = nextTodo(it.id); if (nx && nx.status === 'todo') focusCard(nx.id); }
+    const code = S.code;
+    S.saving++; savingMark();
+    gs('workReturn', code, it.id, reason).then(function () { S.saving--; savingMark(); }, function (err) {
+      S.saving--;
+      if (code !== S.code) { savingMark('差し戻せませんでした（' + err.message + '）'); return; }
+      if (it.status !== before.status) { S.counts[it.status]--; S.counts[before.status] = (S.counts[before.status] || 0) + 1; it.status = before.status; }
+      it.note = before.note; docSync(it); counts(); if (rowOf(it.id)) drawCard(it);
+      savingMark('差し戻せませんでした（' + err.message + '）'); fmsg('差し戻せませんでした：' + err.message, 'err');
+    });
   }
+
 
   /* 辞書が変わったら、写真の下の一覧と伝票を描き直す */
   function drawDict() {
