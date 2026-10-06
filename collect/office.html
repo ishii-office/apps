@@ -151,6 +151,9 @@
   .dpz .jdhead .bx { font-weight: 700; color: var(--ink); }
   .dpz .jdhead .fn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
   .dpz .stt { font-size: 12px; font-weight: 800; border-radius: 999px; padding: 0 8px; }
+  .dpz .stt.gone { background: #E4E4E4; color: #555; text-decoration: line-through; }
+  .dtile.gone .dimg img { opacity: .4; filter: grayscale(1); }
+  .cmemo.gone { color: #555; }
   .dpz .stt.todo { background: #EEF2F1; color: var(--sub); } .dpz .stt.done { background: #E5F2E8; color: var(--ok); } .dpz .stt.back { background: #FDECEA; color: var(--err); }
 
   /* 写真・PDF（元のまま出す） */
@@ -969,15 +972,22 @@
   function counts() {
     $('cTodo').textContent = S.counts.todo || 0; $('cBack').textContent = S.counts.back || 0; $('cDone').textContent = S.counts.done || 0;
     const v = S.view || [];
-    const n = { todo: 0, done: 0, back: 0 }; v.forEach(function (it) { n[it.status]++; });
+    const n = { todo: 0, done: 0, back: 0, gone: 0 }; v.forEach(function (it) { n[stTag(it)[0]]++; });
     const s = $('jlsum'); s.textContent = '';
     if (!v.length) return;
     s.appendChild(document.createTextNode(v.length + '件　確定 ' + n.done));
     if (n.todo) s.appendChild(el('span', 'warn', '未確定 ' + n.todo));
     if (n.back) s.appendChild(el('span', 'ng', '差戻し ' + n.back));
+    if (n.gone) s.appendChild(el('span', null, '顧問先が削除 ' + n.gone));
   }
 
   const ST_TXT = { todo: '未確定', done: '確定', back: '差戻し' };
+  /* 顧問先が消したもの・撮り直しが届いたものは 印を変える（2026-10-06） */
+  function stTag(it) {
+    if (it.gone && it.status !== 'done') return ['gone', '顧問先が削除'];
+    if (it.status === 'back' && it.redo) return ['back', '差戻し→撮り直し届'];
+    return [it.status, ST_TXT[it.status]];
+  }
   const BACK_WHY = ['写真がぼやけて読めません。撮り直してください。', '端が切れています。全体が入るように撮り直してください。',
     '日付・金額が読めません。', '領収書ではないようです。', '同じものが2回届いています。'];
 
@@ -1040,7 +1050,7 @@
       if (code !== S.code) return;
       S.docs = r.items; perFill(r.items); docsDraw();
       const need = r.items.map(function (it) { return it.id; }).filter(function (id) { return !(id in THUMB); });
-      (function next() { const b = need.splice(0, 12); if (!b.length) return;
+      (function next() { const b = need.splice(0, 40); if (!b.length) return;
         gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); $('dBody').querySelectorAll('img.dthumb[data-id]').forEach(function (im) { if (!im.src && THUMB[im.dataset.id]) im.src = THUMB[im.dataset.id]; }); next(); }, next); })();
     }, function (e) { $('dBody').textContent = ''; $('dBody').appendChild(el('div', 'cbox', e.message)); });
   }
@@ -1064,7 +1074,9 @@
       const b = el('button', 'dimg'); b.type = 'button'; b.title = '押すと大きく';
       const im = el('img', 'dthumb'); im.alt = it.name; im.dataset.id = it.id; im.loading = 'lazy'; if (THUMB[it.id]) im.src = THUMB[it.id];
       b.appendChild(im); if (it.pdf) b.appendChild(el('span', 'pdf', 'PDF'));
-      b.appendChild(el('span', 'stt ' + it.status, ST_TXT[it.status]));
+      const tg = stTag(it);
+      b.appendChild(el('span', 'stt ' + tg[0], tg[1]));
+      if (tg[0] === 'gone') tile.classList.add('gone');
       tile.appendChild(b);
       tile.appendChild(el('div', 'dname', it.name.replace(/^\d{8}_\d{6}_/, '')));
       tile.appendChild(el('div', 'dat', it.at + ' 届' + (it.memo ? '　' + it.memo : '')));
@@ -1116,7 +1128,8 @@
     if (it.status === 'done') { h.dataset.a = 'fold'; h.title = '押すと たたむ'; h.classList.add('canfold'); }
     h.appendChild(el('span', 'n', String(i + 1)));
     h.appendChild(el('span', 'bx', '［' + it.box + '］'));
-    h.appendChild(el('span', 'stt ' + it.status, ST_TXT[it.status]));
+    const tg = stTag(it);
+    h.appendChild(el('span', 'stt ' + tg[0], tg[1]));
     h.appendChild(el('span', null, it.at + ' 届'));
     h.appendChild(el('span', 'fn', it.name.replace(/^\d{8}_\d{6}_/, '')));
     row.appendChild(h);
@@ -1134,6 +1147,8 @@
     else if (shotObs) shotObs.observe(shot);
 
     if (it.memo) row.appendChild(el('div', 'cmemo', '顧問先から：' + it.memo));
+    if (it.gone && it.status !== 'done') row.appendChild(el('div', 'cmemo gone', '顧問先が ' + it.gone + ' に消しました（Drive には残っています）'));
+    if (it.status === 'back' && it.redo) row.appendChild(el('div', 'cmemo', '撮り直しが ' + it.redo + ' に届いています'));
     if (it.status === 'back') {
       const n = el('div', 'backnote', '差戻し中：' + it.note + '　');
       const b = el('button', 'btn ghost sm', '差戻しをやめる'); b.type = 'button'; b.dataset.a = 'unback';
@@ -1434,7 +1449,7 @@
     const ids = S.view.map(function (it) { return it.id; });
     const need = ids.filter(function (id) { return !(id in THUMB); });
     (function next() {
-      const b = need.splice(0, 12); if (!b.length) return;
+      const b = need.splice(0, 40); if (!b.length) return;
       gs('viewerThumbs', b).then(function (r) {
         b.forEach(function (id) { THUMB[id] = r[id] || null; if (!IMG[id]) paint(id); });
         next();
@@ -2027,7 +2042,7 @@
       if (code !== S.code) return;
       O.items = r.items; O.ym = ym; oDraw();
       const need = r.items.map(function (it) { return it.id; }).filter(function (id) { return !(id in THUMB); });
-      (function next() { const b = need.splice(0, 12); if (!b.length) return;
+      (function next() { const b = need.splice(0, 40); if (!b.length) return;
         gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); oThumbs(); next(); }, next); })();
     }, function (e) { $('oBody').textContent = ''; $('oBody').appendChild(el('div', 'cbox', e.message)); });
   }

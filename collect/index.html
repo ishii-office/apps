@@ -57,10 +57,6 @@
   .period select { flex: 1; min-width: 0; font-size: 18px; font-weight: 700; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
   [hidden] { display: none !important; }
 
-  /* ---- タブ（送る／送った履歴） ---- */
-  .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #E3EAE8; padding: 4px; border-radius: 12px; margin: 14px 0 20px; }
-  .tabs button { font: inherit; font-size: 16px; font-weight: 700; border: 0; border-radius: 9px; padding: 9px; background: transparent; color: var(--sub); cursor: pointer; }
-  .tabs button[aria-selected="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 
   /* ---- 箱（資料の種類・口座・カードごと） ---- */
   .boxes { display: grid; gap: 14px; }
@@ -93,8 +89,6 @@
   .btn.cam:active { background: var(--accent-press); }
   .btn.pick { border: 2px solid var(--accent); background: var(--paper); color: var(--accent); }
   .btn.pick:active { background: #E6F0EE; }
-  .pending { margin: 0 0 18px; padding: 10px 12px; border-radius: 12px; background: #FFF8E6; border: 1px solid #F0DDB0; }
-  .pending .ph { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   label:focus-within, textarea:focus-visible, button:focus-visible { outline: 3px solid #7FB8AC; outline-offset: 3px; }
 
@@ -108,9 +102,6 @@
   .ti img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .ti .kind { white-space: pre-line; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--sub); font-size: 14px; padding: 6px; text-align: center; word-break: break-all; }
   .ti .del { position: absolute; top: 4px; right: 4px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; font-size: 18px; line-height: 1; cursor: pointer; }
-  .ti .tst { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 4px; font-size: 12px; font-weight: 700; text-align: center; background: rgba(255,255,255,.92); }
-  .ti .tst.err { color: var(--err); }
-  .ti.sending { opacity: .6; }
   .memo { margin-top: 14px; }
   .memo label { display: block; font-size: 15px; color: var(--sub); margin-bottom: 6px; }
   textarea {
@@ -125,39 +116,60 @@
   .send:disabled { opacity: .55; cursor: default; }
   .err-line { color: var(--err); font-size: 13px; margin: 6px 0 0; }
 
-  ul.queue { list-style: none; padding: 0; margin: 20px 0 0; }
-  .queue li {
-    display: flex; justify-content: space-between; align-items: center; gap: 12px;
-    padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 15px;
-  }
-  .queue .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .queue .bx { color: var(--sub); font-size: 13px; margin-right: 6px; }
-  .queue .st { flex-shrink: 0; font-weight: 700; color: var(--sub); }
-  .queue .st.ok { color: var(--ok); }
-  .queue .st.err { color: var(--err); }
-  .queue .msg { display: block; color: var(--err); font-size: 13px; font-weight: 400; white-space: normal; }
-
   .done {
     margin-top: 20px; padding: 14px 16px; border-radius: 12px;
     background: #E5F2E8; color: var(--ok); font-weight: 700; display: none;
   }
   .done.warn { background: #FFF4DE; color: var(--warn); }
 
-  /* ---- 送った履歴 ---- */
-  .hist { list-style: none; margin: 0; padding: 0; }
-  .hist li { padding: 12px 0; border-bottom: 1px solid var(--line); }
-  .hist .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
-  .hist .at { font-size: 14px; color: var(--sub); }
-  .hist .nm { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .hist .bx { font-size: 13px; color: var(--sub); margin-right: 6px; }
-  .badge { flex-shrink: 0; font-size: 13px; font-weight: 700; border-radius: 999px; padding: 2px 10px; }
-  /* ★ st- を付ける（.done は送信のお知らせ欄の名前で、隠してあるので重なると消える） */
-  .badge.st-received { background: #EEF2F1; color: var(--sub); }
-  .badge.st-done { background: #E5F2E8; color: var(--ok); }
-  .badge.st-back { background: #FDECEA; color: var(--err); }
-  .hist .note { margin: 6px 0 0; font-size: 14px; color: var(--err); }
-  .hist-empty { color: var(--sub); padding: 24px 0; text-align: center; }
   .reload { font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+
+  /* ---- 送ったもの：箱の中の 月分ごとの小箱 ---- */
+  .hbox { margin-top: 14px; display: grid; gap: 8px; }
+  .mon { border: 1.5px dashed #B5D3CA; border-radius: 12px; background: #fff; overflow: hidden; }
+  .mon.open { border-style: solid; border-color: #8FBFB2; }
+  .mon-h { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; border: 0; background: transparent; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
+  .mon-ico { width: 22px; height: 22px; color: var(--accent); flex-shrink: 0; }
+  .mon-h .ml { font-weight: 700; font-size: 16px; }
+  .mon-h .mc { flex: 1; font-size: 13px; color: var(--sub); text-align: right; }
+  .mon-h .chev { color: var(--accent); transition: transform .15s; }
+  .mon:not(.open) .chev { transform: rotate(-90deg); }
+  .hgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0 8px 10px; }
+  .ht { position: relative; aspect-ratio: 3 / 4; border-radius: 8px; overflow: hidden; background: #EEF2F1; border: 1px solid var(--line); }
+  .ht img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ht .kind { white-space: pre-line; position: absolute; inset: 0 0 22px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--sub); font-size: 12px; padding: 4px; text-align: center; word-break: break-all; overflow: hidden; }
+  .ht.wait { background: linear-gradient(110deg, #EEF2F1 30%, #F7FAF9 50%, #EEF2F1 70%); background-size: 200% 100%; animation: shim 1.2s linear infinite; }
+  @keyframes shim { to { background-position: -200% 0; } }
+  .ht.sending img { opacity: .55; }
+  .ht.isback { border: 2px solid var(--err); cursor: pointer; }
+  .hst { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 3px; font-size: 11.5px; line-height: 1.5; font-weight: 700; text-align: center; background: rgba(255,255,255,.94); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hst.ok { color: var(--ok); }
+  .hst.done { color: #fff; background: var(--ok); }
+  .hst.wait { color: var(--warn); }
+  .hst.back { color: #fff; background: var(--err); }
+  .hx { position: absolute; top: 3px; right: 3px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
+
+  /* ---- 撮り直しのお願い ---- */
+  .notice { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; margin: 0 0 12px; padding: 12px 16px; border-radius: 14px;
+            border: 2px solid var(--err); background: #FDECEA; color: var(--err); font: inherit; font-size: 17px; cursor: pointer; text-align: left; }
+  .notice .nt { display: flex; flex-direction: column; }
+  .notice small { font-size: 13px; color: #8C2A22; font-weight: 400; }
+  .notice > span:last-child { font-size: 26px; line-height: 1; }
+  .sheetv { position: fixed; inset: 0; z-index: 12; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; }
+  .sheet { width: 100%; max-width: 560px; max-height: 92vh; overflow: auto; background: var(--paper); border-radius: 18px 18px 0 0; padding: 16px 16px calc(20px + env(safe-area-inset-bottom, 0)); }
+  .sheet-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .sheet h2 { font-size: 20px; margin: 0; }
+  .sheet .sub { font-size: 14px; color: var(--sub); margin: 6px 0 10px; }
+  .blist { list-style: none; margin: 0; padding: 0; }
+  .bl { display: grid; grid-template-columns: 96px 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .bl-w { font-weight: 700; font-size: 15px; }
+  .bl-n { color: var(--err); font-size: 15px; margin: 2px 0; }
+  .bl-a { color: var(--sub); font-size: 13px; }
+  .bl-b { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .bl-b .btn { min-height: 46px; font-size: 16px; }
+  .linkbtn { margin-top: 6px; border: 0; background: none; color: var(--sub); font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; padding: 4px 0; }
+  .blist .empty { padding: 20px 0; color: var(--sub); }
+  body.noscroll { overflow: hidden; }
 
   .ng { padding: 2em 0; line-height: 1.8; }
   .note { margin-top: 32px; font-size: 13px; color: var(--sub); }
@@ -181,7 +193,8 @@
   @media (min-width: 900px) {
     main { max-width: 880px; }
     .boxes { grid-template-columns: 1fr 1fr; }
-    .lead, .tabs { max-width: 640px; }
+    .lead { max-width: 640px; }
+    .hgrid { grid-template-columns: repeat(4, 1fr); }
   }
   @media (prefers-reduced-motion: reduce) { .flash.on { animation: none; } }
 </style>
@@ -193,13 +206,9 @@
   <p class="client" id="client"></p>
   <h1>資料をお送りください</h1>
 
-  <div class="tabs" role="tablist">
-    <button type="button" role="tab" id="tabSend" aria-selected="true" aria-controls="paneSend">送る</button>
-    <button type="button" role="tab" id="tabHist" aria-selected="false" aria-controls="paneHist">送った履歴</button>
-  </div>
-
-  <section id="paneSend" role="tabpanel" aria-labelledby="tabSend">
-    <p class="lead">資料の種類ごとの箱で、撮影するか、写真・PDFを選んでください。パソコンなら箱へドラッグするだけです。最後に「送る」を押すと事務所に届きます。</p>
+  <section id="paneSend">
+    <p class="lead">資料の種類ごとの箱で、撮影するか、写真・PDFを選んでください。パソコンなら箱へドラッグするだけです。最後に「送る」を押すと事務所に届きます。送ったものは 各箱の下に 月分ごとに並びます。</p>
+    <button type="button" class="notice" id="notice" hidden><span class="nt"><b id="noticeT"></b><small>押すと 写真と理由が出ます</small></span><span aria-hidden="true">›</span></button>
     <div class="period"><label for="period">何月分の資料ですか</label><select id="period"></select></div>
     <div class="boxes" id="boxes"></div>
 
@@ -220,21 +229,9 @@
       <div id="outBody"></div>
     </div>
 
-    <ul class="queue" id="queue" aria-live="polite"></ul>
     <div class="done" id="done" role="status"></div>
   </section>
 
-  <section id="paneHist" role="tabpanel" aria-labelledby="tabHist" hidden>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <span style="color:var(--sub);font-size:14px">新しい順・最大200件</span>
-      <button type="button" class="reload" id="histReload">更新</button>
-    </div>
-    <div class="pending" id="pending" hidden>
-      <div class="ph"><b id="pendTitle">まだ届いていないもの</b><button type="button" class="reload" id="pendGo">今すぐ送る</button></div>
-      <ul class="hist" id="pendList"></ul>
-    </div>
-    <ul class="hist" id="hist"></ul>
-  </section>
 
   <p class="note">1ファイル <span id="maxMb"></span>MB まで。「送る」を押したら閉じても大丈夫です（届いたら端末からは消えます）。送り間違えたときは担当スタッフにお知らせください。</p>
   </div>
@@ -250,6 +247,14 @@
   </div>
 </div>
 <div class="flash" id="flash"></div>
+
+<div class="sheetv" id="backv" hidden role="dialog" aria-modal="true" aria-labelledby="backT">
+  <div class="sheet">
+    <div class="sheet-h"><h2 id="backT">撮り直しのお願い</h2><button type="button" class="reload" id="backClose">閉じる</button></div>
+    <p class="sub">事務所から 撮り直しのお願いです。「撮り直す」を押すと、その箱・その月分でカメラが開きます。</p>
+    <ul class="blist" id="backList"></ul>
+  </div>
+</div>
 
 <script>window.__BOOT=null;</script>
 <script>
@@ -320,8 +325,8 @@
   const JPEG_Q = 0.72;
 
   const $ = function (id) { return document.getElementById(id); };
-  const queueEl = $('queue');
   const doneEl = $('done');
+  const mk = function (tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
   /* ---- 送る前の箱（トレイ）と 送り出し箱 ----
      ・撮った・選んだ・落としたものは、まずトレイに並ぶ。「送る」を押すまで送らない（メモリだけ）
@@ -330,13 +335,19 @@
      ・2枚ずつ並べて送る。届かなければ 自動で何度でも送り直す（ボタンは要らない）
      ・送り直しでも二度入らないように、1枚ごとに合図（opId）を付ける（サーバが同じ合図を覚えている）
      ・何月分かは【送る瞬間】の選択で決める。月を変えれば、送っている途中のものも その月になる
+       （撮り直しだけは 差し戻された写真の月分のまま）
      ・届いたものは 端末の控えから消す（端末に資料を残さない） */
-  let tray = [];          /* { id, file, box, url } … 送る前 */
-  let outbox = [];        /* { id, box, name, mime, bytes, url, memo, st:'wait'|'send'|'ng', tries, next, err } … 送り出し箱 */
+  let tray = [];          /* { id, file, box, url, per?, redo? } … 送る前 */
+  let outbox = [];        /* { id, box, name, mime, bytes, url, thumb, memo, per, redo, st:'wait'|'send'|'ng', tries, next, err } … 送り出し箱 */
   /* ★ 何月分か（8月分の現金・8月分の通帳）。箱ごとに月で分かれて事務所に届く */
   function ymOf(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
   function ymLabel(v) { const m = String(v || '').match(/^(\d{4})-(\d{2})$/); return m ? m[1] + '年' + Number(m[2]) + '月分' : ''; }
   const LS_PER = 'collect_period';
+  function setPeriod(v) {
+    const sel = $('period');
+    if (!Array.from(sel.options).some(function (o) { return o.value === v; })) return false;
+    sel.value = v; lsSet(LS_PER, JSON.stringify({ v: v, t: Date.now() })); return true;
+  }
   (function () {
     const sel = $('period'); const now = new Date();
     for (let i = 0; i <= 12; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); const o = document.createElement('option'); o.value = ymOf(d); o.textContent = ymLabel(o.value); sel.appendChild(o); }
@@ -346,12 +357,12 @@
     if (keep && keep.v && Date.now() - keep.t < 31 * 864e5 && Array.from(sel.options).some(function (o) { return o.value === keep.v; })) sel.value = keep.v;
     sel.addEventListener('change', function () {
       lsSet(LS_PER, JSON.stringify({ v: sel.value, t: Date.now() }));
-      drawTray(); drawOut();
+      drawTray(); drawAll();
     });
   })();
   function period() { return $('period').value; }
+  function perOf(it) { return it.per || period(); }
   let seq = 0;
-  const boxSent = {};
 
   function showDone(text, warn) {
     doneEl.textContent = text;
@@ -366,18 +377,21 @@
   }
   function isPdf(f) { return f.type === 'application/pdf' || /\.pdf$/i.test(f.name || ''); }
 
+  /* 撮り直し（差し戻された写真）のために いま撮っている・選んでいるか。2分で切れる・その箱だけ */
+  let REDO = null;   /* { k, box, per, t } */
+  function redoFor(box) { return REDO && REDO.box === box && Date.now() - REDO.t < 120000 ? REDO : null; }
+
   function addFiles(files, box) {
+    const bad = [];
+    const r = redoFor(box);
     files.forEach(function (f) {
-      if (!sendable(f)) {
-        /* 送れないものはトレイに入れず、その場で「失敗」と出す */
-        queueLine(f.name || 'ファイル', box, '失敗', 'err', '写真（JPEG・PNGなど）かPDFだけ送れます');
-        return;
-      }
+      if (!sendable(f)) { bad.push(f.name || 'ファイル'); return; }   /* 送れないものはトレイに入れない */
       let url = '';
       if (!isPdf(f)) { try { url = URL.createObjectURL(f); } catch (e) {} }
-      tray.push({ id: ++seq, file: f, box: box, url: url });
+      tray.push({ id: ++seq, file: f, box: box, url: url, per: r ? r.per : '', redo: r ? r.k : '' });
     });
-    if (files.length) showDone('');
+    if (bad.length) showDone(bad.join('、') + ' は送れません。写真（JPEG・PNGなど）かPDFだけ送れます。', true);
+    else if (files.length) showDone('');
     drawTray();
   }
 
@@ -390,33 +404,7 @@
     drawTray();
   }
 
-  /* 箱 × 月分 でまとめて サムネイルを並べる（トレイと送り出し箱で同じ形） */
-  function thumbsInto(body, list, opt) {
-    BOXES.forEach(function (b) {
-      const g0 = list.filter(function (it) { return it.box === b; });
-      if (!g0.length) return;
-      const h = document.createElement('h3'); h.textContent = ymLabel(period()) + '　' + b + '（' + g0.length + '件）'; body.appendChild(h);
-      const g = document.createElement('div'); g.className = 'thumbs';
-      g0.forEach(function (it) {
-        const d = document.createElement('div'); d.className = 'ti' + (it.st === 'send' ? ' sending' : ''); d.dataset.id = String(it.id);
-        if (it.url) { const img = document.createElement('img'); img.alt = it.name || (it.file && it.file.name) || '写真'; img.src = it.url; d.appendChild(img); }
-        else { const k = document.createElement('div'); k.className = 'kind'; const nm = it.name || (it.file && it.file.name) || ''; k.textContent = (/\.pdf$/i.test(nm) || it.mime === 'application/pdf' || (it.file && isPdf(it.file)) ? 'PDF\n' : '') + nm; d.appendChild(k); }
-        if (opt.del) {
-          const x = document.createElement('button'); x.type = 'button'; x.className = 'del'; x.textContent = '×';
-          x.setAttribute('aria-label', ((it.file && it.file.name) || '写真') + 'を消す');
-          x.addEventListener('click', function () { opt.del(it); });
-          d.appendChild(x);
-        }
-        if (opt.status) {
-          const s = document.createElement('div'); s.className = 'tst' + (it.st === 'ng' ? ' err' : '');
-          s.textContent = it.st === 'send' ? '送信中…' : it.st === 'ng' ? '送れません' : (it.tries ? '電波待ち' : '順番待ち'); d.appendChild(s);
-        }
-        g.appendChild(d);
-      });
-      body.appendChild(g);
-    });
-  }
-
+  /* トレイ：箱 × 月分 でまとめて サムネイルを並べる */
   function drawTray() {
     const wrap = $('tray');
     const body = $('trayBody');
@@ -425,34 +413,39 @@
     $('trayTitle').textContent = '送る前の確認（' + tray.length + '件）';
     $('sendBtn').textContent = tray.length + '件を事務所に送る';
     $('sendBtn').disabled = !tray.length;
-    thumbsInto(body, tray, { del: function (it) { removeItem(it.id); } });
+    BOXES.forEach(function (b) {
+      const pers = [];
+      tray.forEach(function (it) { if (it.box === b && pers.indexOf(perOf(it)) < 0) pers.push(perOf(it)); });
+      pers.forEach(function (p) {
+        const g0 = tray.filter(function (it) { return it.box === b && perOf(it) === p; });
+        body.appendChild(mk('h3', null, ymLabel(p) + '　' + b + '（' + g0.length + '件）' + (g0.some(function (it) { return it.redo; }) ? '　撮り直し' : '')));
+        const g = mk('div', 'thumbs');
+        g0.forEach(function (it) {
+          const d = mk('div', 'ti'); d.dataset.id = String(it.id);
+          if (it.url) { const img = mk('img'); img.alt = it.file.name || '写真'; img.src = it.url; d.appendChild(img); }
+          else d.appendChild(mk('div', 'kind', (isPdf(it.file) ? 'PDF\n' : '') + (it.file.name || '')));
+          const x = mk('button', 'del', '×'); x.type = 'button';
+          x.setAttribute('aria-label', (it.file.name || '写真') + 'を消す');
+          x.addEventListener('click', function () { removeItem(it.id); });
+          d.appendChild(x);
+          g.appendChild(d);
+        });
+        body.appendChild(g);
+      });
+    });
   }
 
-  /* 送り出し箱（送っている途中・電波待ち） */
+  /* 送り出し箱（送っている途中・電波待ち）。写真そのものは 各箱の下に「送信中…」で並ぶ。ここは ひとことだけ */
   function drawOut() {
     const wrap = $('outbox'), body = $('outBody');
     body.textContent = '';
     const left = outbox.length;
     wrap.hidden = !left;
     $('outTitle').textContent = '送っています（残り ' + left + '件）';
-    const ng = outbox.filter(function (it) { return it.st === 'ng'; });
     const waitNet = outbox.some(function (it) { return it.st === 'wait' && it.tries; });
     $('outSub').textContent = waitNet ? '電波がつながりにくいようです。届くまで 自動で送り直します。閉じても、次に開いたときに続きを送ります。'
                                       : 'このまま閉じても大丈夫です。届いていないものは、次に開いたときに自動で送ります。';
-    thumbsInto(body, outbox, { status: true, del: function (it) { if (it.st === 'ng' || confirm('この1枚を送るのをやめますか？')) dropOut(it); } });
-    ng.forEach(function (it) { const p = document.createElement('p'); p.className = 'err-line'; p.textContent = (it.name || '写真') + '：' + it.err; body.appendChild(p); });
-    drawPending();
-  }
-
-  function queueLine(name, box, st, cls, msg) {
-    const li = document.createElement('li');
-    li.innerHTML = '<span class="fname"><span class="bx"></span><span class="fn"></span></span><span class="st"></span>';
-    li.querySelector('.bx').textContent = '［' + box + '］';
-    li.querySelector('.fn').textContent = name;
-    const s = li.querySelector('.st'); s.textContent = st; s.className = 'st ' + (cls || '');
-    if (msg) { const m = document.createElement('span'); m.className = 'msg'; m.textContent = msg; s.appendChild(m); }
-    queueEl.prepend(li);
-    return li;
+    outbox.filter(function (it) { return it.st === 'ng'; }).forEach(function (it) { body.appendChild(mk('p', 'err-line', (it.name || '写真') + '：' + it.err)); });
   }
 
   /* ---- 端末の控え（IndexedDB）。届くまでのあいだだけ。名前は collect_ で始める ---- */
@@ -479,7 +472,6 @@
       });
     }
     return {
-      ok: true,
       put: function (o) { return tx('readwrite', function (s) { return s.put(o); }).then(function () { return true; }, function () { return false; }); },
       del: function (id) { return tx('readwrite', function (s) { return s.delete(id); }).catch(function () {}); },
       all: function () { return tx('readonly', function (s) { return s.getAll(); }).catch(function () { return []; }); }
@@ -501,15 +493,16 @@
     const memo = $('memo').value; $('memo').value = '';
     showDone('');
     for (const it of items) {
-      const o = { id: opId(), token: TOKEN, box: it.box, name: it.file.name || '写真', mime: '', bytes: null, url: it.url, memo: memo, st: 'prep', tries: 0, next: 0, err: '' };
-      outbox.push(o); drawOut();
+      const o = { id: opId(), token: TOKEN, box: it.box, name: it.file.name || '写真', mime: '', bytes: null, url: it.url, thumb: '', memo: memo,
+                  per: it.per || '', redo: it.redo || '', st: 'prep', tries: 0, next: 0, err: '' };
+      outbox.push(o); drawOut(); drawAll();
       try {
         const p = await prepare(it.file);
         if (p.size > MAX_BYTES) throw Object.assign(new Error('ファイルが大きすぎます（' + Math.floor(MAX_BYTES / 1048576) + 'MBまで）'), { hard: true });
-        o.name = p.name; o.mime = p.mime; o.bytes = p.buf; o.st = 'wait';
-        if (!(await OUTDB.put({ id: o.id, token: o.token, box: o.box, name: o.name, mime: o.mime, bytes: o.bytes, memo: o.memo, at: Date.now() }))) saved = false;
+        o.name = p.name; o.mime = p.mime; o.bytes = p.buf; o.thumb = p.thumb || ''; o.st = 'wait';
+        if (!(await OUTDB.put({ id: o.id, token: o.token, box: o.box, name: o.name, mime: o.mime, bytes: o.bytes, thumb: o.thumb, memo: o.memo, per: o.per, redo: o.redo, at: Date.now() }))) saved = false;
       } catch (e) { o.st = 'ng'; o.err = e.message || String(e); }
-      drawOut(); pump();
+      drawOut(); drawAll(); pump();
     }
   }
   $('sendBtn').addEventListener('click', sendAll);
@@ -523,44 +516,48 @@
     while (running < 2) {
       const it = outbox.find(function (x) { return x.st === 'wait' && x.next <= now; });
       if (!it) break;
-      running++; it.st = 'send'; drawOut();
+      running++; it.st = 'send'; drawAll();
       (function (it) {
-        call('uploadFile', [TOKEN, it.name, it.mime, bytesB64(it.bytes), it.memo, it.box, period(), it.id], 120000).then(function () {
+        const per = perOf(it);
+        call('uploadFile', [TOKEN, it.name, it.mime, bytesB64(it.bytes), it.memo, it.box, per, it.id, it.thumb || '', it.redo || ''], 120000).then(function (r) {
           running--;
           outbox = outbox.filter(function (x) { return x !== it; });
           OUTDB.del(it.id);
-          if (it.url) { try { URL.revokeObjectURL(it.url); } catch (e) {} }
           okCount++;
-          boxSent[it.box] = (boxSent[it.box] || 0) + 1; bumpBox(it.box);
-          const li = queueLine(it.name, it.box, '送信済み', 'ok');
-          li.querySelector('.bx').textContent = ymLabel(period()) + ' ［' + it.box + '］';
+          /* 届いたものは その箱の その月分の いちばん上に「送信済み」で出す */
+          const k = (r && r.k) || ('local_' + it.id);
+          if (!HIST.some(function (h) { return h.k === k; })) {
+            HIST.unshift({ k: k, at: (r && r.at) || '', box: (r && r.box) || it.box, period: (r && r.period) || per, name: it.name, pdf: it.mime === 'application/pdf',
+                           status: 'received', note: '', redo: false, fresh: true });
+          }
+          if (it.thumb) TH[k] = it.thumb; else if (it.url && !it.mime.match(/pdf/)) TH[k] = it.url;
+          if (it.redo) HIST.forEach(function (h) { if (h.k === it.redo) h.redo = true; });
           if (!outbox.length) { showDone(okCount + '件を事務所に送りました。ありがとうございます。'); okCount = 0; }
-          drawOut(); pump();
+          drawOut(); drawAll(); pump();
         }, function (e) {
           running--;
           it.err = e && e.message ? e.message : String(e);
           if (permanent(it.err)) { it.st = 'ng'; OUTDB.del(it.id); }
           else { it.st = 'wait'; it.tries++; it.next = Date.now() + WAIT[Math.min(it.tries - 1, WAIT.length - 1)] * 1000; }
-          drawOut(); pump();
+          drawOut(); drawAll(); pump();
         });
       })(it);
     }
   }
   setInterval(pump, 2000);
   window.addEventListener('online', function () { outbox.forEach(function (x) { if (x.st === 'wait') x.next = 0; }); pump(); });
-  function dropOut(it) { outbox = outbox.filter(function (x) { return x !== it; }); OUTDB.del(it.id); if (it.url) { try { URL.revokeObjectURL(it.url); } catch (e) {} } drawOut(); }
-  /* 今すぐ送り直す（履歴から） */
-  function retryNow() { outbox.forEach(function (x) { if (x.st === 'wait') x.next = 0; }); pump(); }
+  function dropOut(it) { outbox = outbox.filter(function (x) { return x !== it; }); OUTDB.del(it.id); if (it.url) { try { URL.revokeObjectURL(it.url); } catch (e) {} } drawOut(); drawAll(); }
 
   /* 開いたとき：前に送りきれなかったものを 控えから戻して 自動で送る */
   function resumeOutbox() {
     OUTDB.all().then(function (list) {
       list.filter(function (r) { return r && r.token === TOKEN && r.bytes; }).sort(function (a, b) { return a.at - b.at; }).forEach(function (r) {
         if (outbox.some(function (x) { return x.id === r.id; })) return;
-        let url = ''; if (/^image\//.test(r.mime)) { try { url = URL.createObjectURL(new Blob([r.bytes], { type: r.mime })); } catch (e) {} }
-        outbox.push({ id: r.id, token: r.token, box: r.box, name: r.name, mime: r.mime, bytes: r.bytes, url: url, memo: r.memo || '', st: 'wait', tries: 0, next: 0, err: '' });
+        let url = r.thumb || ''; if (!url && /^image\//.test(r.mime)) { try { url = URL.createObjectURL(new Blob([r.bytes], { type: r.mime })); } catch (e) {} }
+        outbox.push({ id: r.id, token: r.token, box: r.box, name: r.name, mime: r.mime, bytes: r.bytes, url: url, thumb: r.thumb || '', memo: r.memo || '',
+                      per: r.per || '', redo: r.redo || '', st: 'wait', tries: 0, next: 0, err: '' });
       });
-      if (outbox.length) { drawOut(); pump(); }
+      if (outbox.length) { drawOut(); drawAll(); pump(); }
     });
   }
 
@@ -569,31 +566,180 @@
     if (tray.length || (!saved && outbox.length)) { e.preventDefault(); e.returnValue = ''; return ''; }
   });
 
-  /* 送った履歴のいちばん上に「まだ届いていないもの」（自動で送り直している。今すぐ送るもできる） */
-  function drawPending() {
-    const w = $('pending'), ul = $('pendList'); if (!w) return;
-    ul.textContent = '';
-    w.hidden = !outbox.length;
-    $('pendTitle').textContent = 'まだ届いていないもの（' + outbox.length + '件）';
-    outbox.forEach(function (it) {
-      const li = document.createElement('li');
-      li.innerHTML = '<div class="top"><span class="nm"><span class="bx"></span><span class="fn"></span></span><span class="badge"></span></div>';
-      li.querySelector('.bx').textContent = ymLabel(period()) + ' ［' + it.box + '］';
-      li.querySelector('.fn').textContent = it.name;
-      const b = li.querySelector('.badge');
-      b.textContent = it.st === 'send' ? '送信中…' : it.st === 'ng' ? '送れません' : '自動で送り直し中';
-      b.className = 'badge ' + (it.st === 'ng' ? 'st-back' : 'st-received');
-      if (it.st === 'ng') { const n = document.createElement('p'); n.className = 'note'; n.textContent = it.err; li.appendChild(n); }
-      ul.appendChild(li);
+  /* ================= 送ったもの（箱の中に 月分ごとの小箱） =================
+     ★ 履歴は「箱を開けて見る」（2026-10-06）。現金の領収書の箱の下に 2026年9月分・2026年8月分… の小箱。
+       開くと 送った写真が3枚ずつ並び、1枚ごとに いまの様子（送信中・送信済み 何日何時・確定・撮り直し）。
+       × で消せる（事務所には「顧問先が削除」と残る。確定したものは消せない）
+     ★ 差し戻しは ここでは知らせない（見に来ないので）。「何月分の資料ですか」の上に お知らせを出す */
+  let HIST = [];          /* サーバの送ったもの（新しい順）{ k, at, box, period, name, pdf, status, note, redo } */
+  let HLOADED = false, HAT = 0;
+  const TH = {};          /* k → 小さい絵（dataURL）| null */
+  const THF = {};         /* 取りにいっている k */
+  const OPEN = {};        /* 箱|月分 → 開いているか（押した人の選んだもの） */
+  function loadHist() {
+    HAT = Date.now();
+    return call('clientHistory', [TOKEN], 30000).then(function (list) {
+      const fresh = HIST.filter(function (h) { return h.fresh && !(list || []).some(function (x) { return x.k === h.k; }); });
+      HIST = fresh.concat(list || []); HLOADED = true; drawAll();
+    }, function () { HAT = 0; });
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && TOKEN && Date.now() - HAT > 60000) loadHist(); });
+
+  function shortAt(at) { const m = String(at || '').match(/^\d{4}\/(\d+\/\d+) (\d\d:\d\d)/); return m ? m[1] + ' ' + m[2] : ''; }
+  function stOf(h) {
+    if (h.status === 'back' && !h.redo) return ['back', '撮り直し'];
+    if (h.status === 'back') return ['ok', '撮り直し済み'];
+    if (h.status === 'done') return ['done', '✓ 確定済み'];
+    return ['ok', '✓ ' + (shortAt(h.at) || '送信済み')];
+  }
+  function drawAll() {
+    document.querySelectorAll('.box').forEach(function (el) { drawHist(el); });
+    drawNotice();
+    loadThumbs();
+  }
+  function drawHist(el) {
+    const box = el.dataset.box;
+    const hb = el.querySelector('.hbox'); hb.textContent = '';
+    const outs = outbox.filter(function (it) { return it.box === box; });
+    const hs = HIST.filter(function (h) { return h.box === box; });
+    el.querySelector('.box-count').textContent = hs.length ? '送った ' + hs.length + '件' : '';
+    if (!outs.length && !hs.length) { hb.hidden = true; return; }
+    hb.hidden = false;
+    const pers = [];
+    outs.forEach(function (it) { if (pers.indexOf(perOf(it)) < 0) pers.push(perOf(it)); });
+    hs.forEach(function (h) { if (pers.indexOf(h.period) < 0) pers.push(h.period); });
+    pers.sort().reverse();
+    pers.forEach(function (p) {
+      const o = outs.filter(function (it) { return perOf(it) === p; });
+      const h = hs.filter(function (x) { return x.period === p; });
+      const key = box + '|' + p;
+      const open = key in OPEN ? OPEN[key] : (p === period() || o.length > 0);
+      const mon = mk('div', 'mon' + (open ? ' open' : ''));
+      const hd = mk('button', 'mon-h'); hd.type = 'button'; hd.setAttribute('aria-expanded', String(open));
+      hd.innerHTML = ICON_BOX_S + '<span class="ml"></span><span class="mc"></span><span class="chev" aria-hidden="true">▾</span>';
+      hd.querySelector('.ml').textContent = ymLabel(p) || '月分なし';
+      const backs = h.filter(function (x) { return x.status === 'back' && !x.redo; }).length;
+      hd.querySelector('.mc').textContent = (o.length ? '送信中 ' + o.length + '・' : '') + (o.length + h.length) + '件' + (backs ? '（撮り直し ' + backs + '）' : '');
+      hd.addEventListener('click', function () { OPEN[key] = !open; drawHist(el); loadThumbs(); });
+      mon.appendChild(hd);
+      if (open) {
+        const g = mk('div', 'hgrid');
+        o.slice().reverse().forEach(function (it) { g.appendChild(outTile(it)); });
+        h.forEach(function (x) { g.appendChild(histTile(x)); });
+        mon.appendChild(g);
+      }
+      hb.appendChild(mon);
     });
   }
-  $('pendGo').addEventListener('click', retryNow);
+  function tileBase(src, name, pdf) {
+    const d = mk('div', 'ht');
+    if (src) { const img = mk('img'); img.alt = name || '写真'; img.src = src; img.loading = 'lazy'; d.appendChild(img); }
+    else if (pdf) d.appendChild(mk('div', 'kind', 'PDF\n' + (name || '')));
+    else d.classList.add('wait');
+    return d;
+  }
+  function outTile(it) {
+    const d = tileBase(it.thumb || it.url, it.name, it.mime === 'application/pdf' || /\.pdf$/i.test(it.name || ''));
+    d.classList.add('sending');
+    const t = it.st === 'send' ? '送信中…' : it.st === 'prep' ? '準備中…' : it.st === 'ng' ? '送れません' : it.tries ? '電波待ち（自動で再送）' : '送信待ち';
+    d.appendChild(mk('div', 'hst ' + (it.st === 'ng' ? 'back' : 'wait'), t));
+    if (it.st !== 'send') {
+      const x = mk('button', 'hx', '×'); x.type = 'button'; x.setAttribute('aria-label', '送るのをやめる');
+      x.addEventListener('click', function () { if (it.st === 'ng' || confirm('この1枚を送るのをやめますか？')) dropOut(it); });
+      d.appendChild(x);
+    }
+    return d;
+  }
+  function histTile(h) {
+    const d = tileBase(TH[h.k], h.name, h.pdf);
+    d.dataset.k = h.k;
+    if (TH[h.k] === null && !h.pdf) { d.classList.remove('wait'); d.appendChild(mk('div', 'kind', h.name)); }
+    const s = stOf(h);
+    d.appendChild(mk('div', 'hst ' + s[0], s[1]));
+    if (h.status === 'back' && !h.redo) { d.classList.add('isback'); d.addEventListener('click', function (e) { if (e.target.closest('.hx')) return; openBack(); }); }
+    if (h.status !== 'done') {
+      const x = mk('button', 'hx', '×'); x.type = 'button'; x.setAttribute('aria-label', h.name + 'を消す');
+      x.addEventListener('click', function () { delHist(h); });
+      d.appendChild(x);
+    }
+    return d;
+  }
+  function delHist(h) {
+    if (!confirm('この1枚を消しますか？\n（事務所には「消した」と伝わります）')) return;
+    if (/^local_/.test(h.k)) { HIST = HIST.filter(function (x) { return x !== h; }); drawAll(); return; }
+    call('clientDelete', [TOKEN, h.k], 30000).then(function () {
+      HIST = HIST.filter(function (x) { return x !== h; }); drawAll(); showDone('消しました。');
+    }, function (e) { showDone('消せませんでした。' + e.message, true); });
+  }
+  /* 開いている小箱の 小さい絵を 40件ずつ取る */
+  function loadThumbs() {
+    const need = [];
+    document.querySelectorAll('.ht.wait[data-k]').forEach(function (d) { const k = d.dataset.k; if (!(k in TH) && !THF[k] && !/^local_/.test(k)) need.push(k); });
+    if (!need.length) return;
+    for (let i = 0; i < need.length; i += 40) {
+      const b = need.slice(i, i + 40);
+      b.forEach(function (k) { THF[k] = 1; });
+      call('clientThumbs', [TOKEN, b], 30000).then(function (r) {
+        b.forEach(function (k) { delete THF[k]; TH[k] = (r && r[k]) || null; });
+        document.querySelectorAll('.ht.wait[data-k]').forEach(function (d) {
+          const src = TH[d.dataset.k]; if (!src) return;
+          const img = mk('img'); img.alt = ''; img.src = src; d.insertBefore(img, d.firstChild); d.classList.remove('wait');
+        });
+      }, function () { b.forEach(function (k) { delete THF[k]; }); });
+    }
+  }
+
+  /* ---- 撮り直しのお願い（事務所が差し戻したもの）---- */
+  function backs() { return HIST.filter(function (h) { return h.status === 'back' && !h.redo; }); }
+  function drawNotice() {
+    const n = backs().length;
+    $('notice').hidden = !n;
+    $('noticeT').textContent = '撮り直しのお願いが ' + n + '件あります';
+    if (!$('backv').hidden) drawBackList();
+  }
+  function openBack() { $('backv').hidden = false; document.body.classList.add('noscroll'); drawBackList(); loadThumbs(); }
+  function closeBack() { $('backv').hidden = true; document.body.classList.remove('noscroll'); }
+  $('notice').addEventListener('click', openBack);
+  $('backClose').addEventListener('click', closeBack);
+  function drawBackList() {
+    const ul = $('backList'); ul.textContent = '';
+    const list = backs();
+    if (!list.length) { ul.appendChild(mk('li', 'empty', '撮り直しのお願いは もうありません。ありがとうございました。')); return; }
+    list.forEach(function (h) {
+      const li = mk('li', 'bl');
+      const t = tileBase(TH[h.k], h.name, h.pdf); t.dataset.k = h.k; li.appendChild(t);
+      const r = mk('div', 'bl-r');
+      r.appendChild(mk('div', 'bl-w', ymLabel(h.period) + '［' + h.box + '］'));
+      r.appendChild(mk('div', 'bl-n', '事務所から：' + (h.note || '撮り直してください')));
+      r.appendChild(mk('div', 'bl-a', shortAt(h.at) + ' に送ったもの'));
+      const bt = mk('div', 'bl-b');
+      const b1 = mk('button', 'btn cam', '撮り直す'); b1.type = 'button';
+      const b2 = mk('button', 'btn pick', '選び直す'); b2.type = 'button';
+      const b3 = mk('button', 'linkbtn', 'このまま消す'); b3.type = 'button';
+      b1.addEventListener('click', function () { startRedo(h, 'cam'); });
+      b2.addEventListener('click', function () { startRedo(h, 'pick'); });
+      b3.addEventListener('click', function () { delHist(h); });
+      bt.appendChild(b1); bt.appendChild(b2); r.appendChild(bt); r.appendChild(b3);
+      li.appendChild(r); ul.appendChild(li);
+    });
+  }
+  /* その箱・その月分で 撮る／選ぶ。送ると 差し戻しの写真に「撮り直し届」が付いて お知らせから消える */
+  function startRedo(h, how) {
+    const el = Array.from(document.querySelectorAll('.box')).find(function (b) { return b.dataset.box === h.box; })
+            || Array.from(document.querySelectorAll('.box')).find(function (b) { return b.dataset.box === 'その他'; });
+    if (!el) return;
+    REDO = { k: h.k, box: el.dataset.box, per: h.period, t: Date.now() };
+    closeBack();
+    if (how === 'cam') openCamera(el.dataset.box, el.querySelector('input.cam1'));
+    else el.querySelector('input.pick').click();
+  }
 
   /* ---- ボックス ----
      顧問先ごとの箱（現金の領収書・通帳：○○銀行…）。並びはサーバ（マスタの「ボックス」列）が決める。
      ★ 箱の名前は事務所が書いたものなので、textContent で入れる（innerHTML にしない） */
   const ICON_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.8"/></svg>';
   const ICON_BOX = '<svg class="box-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l2.2-4.4A1 1 0 0 1 6.1 4h11.8a1 1 0 0 1 .9.6L21 9"/><path d="M3 9h5l1.5 3h5L16 9h5v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>';
+  const ICON_BOX_S = ICON_BOX.replace('box-ico', 'mon-ico');
   const ICON_DROP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11"/><path d="M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>';
   let BOXES = [];
 
@@ -612,16 +758,19 @@
           '<label class="btn pick">選ぶ<input class="pick" type="file" accept="image/*,application/pdf" multiple></label>' +
         '</div>' +
         '<input class="cam1" type="file" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">' +
-        '<div class="drop">' + ICON_DROP + 'ここへドラッグ＆ドロップ</div>';
+        '<div class="drop">' + ICON_DROP + 'ここへドラッグ＆ドロップ</div>' +
+        '<div class="hbox" hidden></div>';
       el.querySelector('.box-name').textContent = name;
       el.querySelector('button.cam').setAttribute('aria-label', name + '：撮る');
-      el.querySelector('button.cam').addEventListener('click', function () { openCamera(name, el.querySelector('input.cam1')); });
+      el.querySelector('button.cam').addEventListener('click', function () { REDO = null; openCamera(name, el.querySelector('input.cam1')); });
+      el.querySelector('label.pick').addEventListener('click', function (e) { if (e.isTrusted) REDO = null; });
       el.querySelectorAll('input[type=file]').forEach(function (inp) {
         if (inp.className === 'pick') inp.setAttribute('aria-label', name + '：選ぶ');
         inp.addEventListener('change', function (e) {
           const files = Array.from(e.target.files || []);
           e.target.value = '';
           addFiles(files, name);
+          REDO = null;
         });
       });
       /* ドラッグ＆ドロップ。子要素をまたぐと dragleave が出るので、数えて判断する */
@@ -632,6 +781,7 @@
       el.addEventListener('drop', function (e) {
         e.preventDefault(); e.stopPropagation();
         depth = 0; el.classList.remove('over');
+        REDO = null;
         addFiles(Array.from((e.dataTransfer && e.dataTransfer.files) || []), name);
       });
       wrap.appendChild(el);
@@ -645,11 +795,6 @@
       showDone('箱（現金の領収書・通帳など）の上に落としてください。', true);
     }
   });
-
-  function bumpBox(name) {
-    const el = Array.from(document.querySelectorAll('.box')).find(function (b) { return b.dataset.box === name; });
-    if (el) el.querySelector('.box-count').textContent = boxSent[name] + '件 送信済み';
-  }
 
   /* ---- 連続撮影 ----
      カメラを開いたまま、シャッターを押すたびにトレイへ足していく（1枚ごとに開き直さない）。
@@ -670,7 +815,7 @@
     const v = $('video');
     v.srcObject = stream;
     try { await v.play(); } catch (e) {}
-    $('camBox').textContent = box;
+    $('camBox').textContent = box + (redoFor(box) ? '（撮り直し）' : '');
     $('camCount').textContent = '0枚';
     $('camLast').textContent = '';
     $('camv').hidden = false;
@@ -679,6 +824,7 @@
     if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
     $('video').srcObject = null;
     $('camv').hidden = true;
+    REDO = null;
     if (camN) $('tray').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   $('camDone').addEventListener('click', closeCamera);
@@ -707,51 +853,10 @@
     }, 'image/jpeg', JPEG_Q);
   });
   document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !$('backv').hidden) { closeBack(); return; }
     if ($('camv').hidden) return;
     if (e.key === 'Escape') closeCamera();
   });
-
-  /* ---- タブ ---- */
-  function selectTab(which) {
-    const hist = which === 'hist';
-    $('tabSend').setAttribute('aria-selected', String(!hist));
-    $('tabHist').setAttribute('aria-selected', String(hist));
-    $('paneSend').hidden = hist;
-    $('paneHist').hidden = !hist;
-    if (hist) loadHistory();
-  }
-  $('tabSend').addEventListener('click', function () { selectTab('send'); });
-  $('tabHist').addEventListener('click', function () { selectTab('hist'); });
-  $('histReload').addEventListener('click', loadHistory);
-
-  const ST_LABEL = { received: '受付済み', done: '確定済み', back: '撮り直してください' };
-  function loadHistory() {
-    const ul = $('hist');
-    ul.textContent = '';
-    const w = document.createElement('li'); w.className = 'hist-empty'; w.textContent = '読み込み中…'; ul.appendChild(w);
-    call('clientHistory', [TOKEN]).then(function (list) {
-      ul.textContent = '';
-      if (!list || !list.length) {
-        const e = document.createElement('li'); e.className = 'hist-empty'; e.textContent = 'まだ送ったものはありません。'; ul.appendChild(e); return;
-      }
-      list.forEach(function (h) {
-        const li = document.createElement('li');
-        const top = document.createElement('div'); top.className = 'top';
-        const at = document.createElement('span'); at.className = 'at'; at.textContent = h.at;
-        const b = document.createElement('span'); b.className = 'badge st-' + h.status; b.textContent = ST_LABEL[h.status] || '受付済み';
-        top.appendChild(at); top.appendChild(b); li.appendChild(top);
-        const nm = document.createElement('div'); nm.className = 'nm';
-        const bx = document.createElement('span'); bx.className = 'bx'; bx.textContent = (h.period ? ymLabel(h.period) + ' ' : '') + '［' + h.box + '］';
-        const fn = document.createElement('span'); fn.textContent = h.name;
-        nm.appendChild(bx); nm.appendChild(fn); li.appendChild(nm);
-        if (h.note) { const n = document.createElement('p'); n.className = 'note'; n.textContent = '事務所から：' + h.note; li.appendChild(n); }
-        ul.appendChild(li);
-      });
-    }, function (e) {
-      ul.textContent = '';
-      const li = document.createElement('li'); li.className = 'hist-empty'; li.textContent = '読み込めませんでした。（' + e.message + '）'; ul.appendChild(li);
-    });
-  }
 
   // 画像は縮小してJPEG化、PDFはそのまま
   async function prepare(file) {
@@ -760,9 +865,9 @@
       return { name: file.name, mime: 'application/pdf', buf: await toBuf(file), size: file.size };
     }
     try {
-      const blob = await shrink(file);
+      const sh = await shrink(file);
       const base = (file.name || 'photo').replace(/\.[^.]+$/, '');
-      return { name: base + '.jpg', mime: 'image/jpeg', buf: await toBuf(blob), size: blob.size };
+      return { name: base + '.jpg', mime: 'image/jpeg', buf: await toBuf(sh.blob), size: sh.blob.size, thumb: sh.thumb };
     } catch (_) {
       // 縮小できない形式（端末によってはHEIC）は元のまま送る
       const mime = type || 'image/jpeg';
@@ -784,7 +889,17 @@
         ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
         ctx.drawImage(img, 0, 0, w, h);
         URL.revokeObjectURL(url);
-        c.toBlob(function (b) { b ? resolve(b) : reject(new Error('変換失敗')); }, 'image/jpeg', JPEG_Q);
+        /* 一覧に出す小さい絵（長い辺300px）。事務所と顧問先の一覧が これで速く出る */
+        let thumb = '';
+        try {
+          const tr = Math.min(1, 300 / Math.max(w, h));
+          const t = document.createElement('canvas'); t.width = Math.max(1, Math.round(w * tr)); t.height = Math.max(1, Math.round(h * tr));
+          t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+          thumb = t.toDataURL('image/jpeg', 0.6);
+          if (thumb.length > 44000) thumb = t.toDataURL('image/jpeg', 0.4);
+          if (thumb.length > 44000) thumb = '';
+        } catch (e) { thumb = ''; }
+        c.toBlob(function (b) { b ? resolve({ blob: b, thumb: thumb }) : reject(new Error('変換失敗')); }, 'image/jpeg', JPEG_Q);
       };
       img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('読込失敗')); };
       img.src = url;
@@ -803,7 +918,7 @@
 
 
   /* サーバを呼ぶ道は、ここ1か所だけ */
-  const LIVE_FN = ['uploadFile', 'clientHistory'];
+  const LIVE_FN = ['uploadFile', 'clientHistory', 'clientThumbs', 'clientDelete'];
   function call(fn, args, ms) {
     return new Promise(function (resolve, reject) {
       if (LIVE) {
@@ -819,7 +934,7 @@
       try { ac = new AbortController(); } catch (e) {}
       tid = setTimeout(function () {
         try { if (ac) ac.abort(); } catch (e) {}
-        reject(new Error('サーバの返事がありませんでした。届いているかもしれないので、「送った履歴」でご確認ください'));
+        reject(new Error('サーバの返事がありませんでした。届いているかもしれないので、箱の下の「送ったもの」でご確認ください'));
       }, ms || 20000);
       fetch(API_URL, {
         method: 'POST', redirect: 'follow', signal: ac ? ac.signal : undefined,
@@ -849,6 +964,7 @@
     $('ng').hidden = true;
     $('app').hidden = false;
     resumeOutbox();
+    loadHist();
   }
   function showNg(msg) {
     $('app').hidden = true;
