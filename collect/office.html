@@ -313,12 +313,47 @@
   .dtile.sel .dck { background: var(--accent); }
   .dtile.sel .dck::after { content: '✓'; position: absolute; inset: 0; color: #fff; font-weight: 900; font-size: 17px; line-height: 22px; text-align: center; }
   .dtile.sel { outline: 3px solid var(--accent); outline-offset: -1px; }
-  .dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; max-width: 1400px; }
+  /* 顧問先の画面と同じ：点線の箱 → 月分の小箱 → 写真 */
+  .dbox { max-width: 1400px; margin: 0 0 14px; padding: 12px 14px; border-radius: 16px; background: linear-gradient(180deg, #fff 0%, #F1F8F5 100%); border: 2.5px dashed #8FBFB2; }
+  .dbox-h { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .dbox-h h3 { margin: 0; font-size: 18px; }
+  .dbox-i { width: 26px; height: 26px; color: var(--accent); flex-shrink: 0; }
+  .dbox-c { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--accent); }
+  .dmon { border: 1.5px dashed #B5D3CA; border-radius: 12px; background: #fff; margin-top: 8px; overflow: hidden; }
+  .dmon.open { border-style: solid; border-color: #8FBFB2; }
+  .dmon.target { outline: 3px solid var(--accent); background: #DCEFE8; }
+  body.ddragging .dmon { outline: 2px dashed #8FBFB2; outline-offset: -2px; }
+  .dmon-hd { display: flex; align-items: center; gap: 6px; padding-right: 8px; flex-wrap: wrap; }
+  .dmon-h { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 0; background: transparent; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
+  .dmon-i { width: 20px; height: 20px; color: var(--accent); flex-shrink: 0; }
+  .dmon-h b { font-size: 15.5px; }
+  .dmon-c { flex: 1; font-size: 12.5px; color: var(--sub); text-align: right; }
+  .dmon-h .chev { color: var(--accent); }
+  .dmon:not(.open) .chev { transform: rotate(-90deg); display: inline-block; }
+  .dmon-b { font: inherit; font-size: 12.5px; font-weight: 700; padding: 5px 9px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
+  .dmon-b.danger { color: #B3261E; border-color: #E7B4AF; }
+  .dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 0 8px 10px; }
+  @media (max-width: 600px) { .dgrid { grid-template-columns: repeat(3, 1fr); gap: 6px; } .dbox { padding: 10px; }
+    .dmon-h { flex-basis: 100%; } .dmon-hd { padding: 0 8px 6px 0; justify-content: flex-end; } }
+  img.dthumb:not([src]) { visibility: hidden; }
+  .dtile.isback .dimg { outline: 2px solid #B3261E; }
+  .dtile.lifted { opacity: .35; }
+  .dghost { position: fixed; z-index: 60; width: 80px; height: 106px; border-radius: 8px; overflow: hidden; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.35); background: #fff; border: 2px solid var(--accent); font-size: 11px; }
+  .dghost img { width: 100%; height: 100%; object-fit: cover; }
+  .dimg img { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+  .dmove { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; }
+  .dmove-s { width: 100%; max-width: 480px; background: #fff; border-radius: 16px 16px 0 0; padding: 16px 16px calc(18px + env(safe-area-inset-bottom, 0)); }
+  .dmove-s h3 { margin: 0 0 6px; }
+  .dmove-s label { display: block; font-size: 13px; color: var(--sub); margin-top: 8px; }
+  .dmove-s select { display: block; width: 100%; font-size: 16px; padding: 7px; margin-top: 2px; }
+  .dmv-now { font-size: 13px; color: var(--sub); margin: 0; }
+  .dmv-b { display: flex; gap: 8px; margin-top: 12px; }
   .dtile { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px; min-width: 0; }
   .dimg { position: relative; display: block; width: 100%; aspect-ratio: 3 / 4; padding: 0; border: 0; background: #F4F2EC; overflow: hidden; border-radius: 6px; }
   .dimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .dimg .pdf { position: absolute; left: 4px; bottom: 4px; background: #B3261E; color: #fff; font-size: 11px; font-weight: 800; padding: 0 5px; border-radius: 3px; }
-  .dimg .stt { position: absolute; right: 4px; top: 4px; }
+  .dimg .stt { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 0; text-align: center; padding: 2px 3px; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dimg .pdf { bottom: 24px; }
   .dname { font-size: 12.5px; font-weight: 700; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dat { font-size: 11.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dview { position: fixed; inset: 0; z-index: 50; background: rgba(20,30,28,.92); display: flex; flex-direction: column; }
@@ -449,7 +484,6 @@
       <button type="button" id="dPick" aria-pressed="false">選ぶ</button>
       <button type="button" id="dPdfAll">一括PDF切り出し</button>
       <button type="button" id="dPdfSel" hidden>選んだものをPDF切り出し</button>
-      <button type="button" class="danger" id="dDelMon">この月分を一括破棄</button>
       <button type="button" class="danger" id="dDelSel" hidden>選んだものを破棄</button>
     </span>
     <div class="dmsg" id="dcMsg" role="status"></div>
@@ -621,9 +655,20 @@
 <div class="dview dpz" id="dview" hidden role="dialog" aria-modal="true" aria-label="資料を大きく見る">
   <div class="dvbar"><b id="dvName"></b><span class="sp"></span>
     <button type="button" class="btn sm" id="dvGo">仕訳化する</button>
+    <button type="button" class="btn ghost sm" id="dvMove">別の月分へ移す</button>
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
     <button type="button" class="btn ghost sm" id="dvClose">閉じる</button></div>
   <div class="jshot" id="dvBody"></div>
+</div>
+
+<div class="dmove" id="dmove" hidden role="dialog" aria-modal="true" aria-labelledby="dmvT">
+  <div class="dmove-s">
+    <h3 id="dmvT">別の月分へ移す</h3>
+    <p class="dmv-now" id="dmvNow"></p>
+    <label>何年何月分 <select id="dmvPer"></select></label>
+    <label>箱 <select id="dmvBox"></select></label>
+    <div class="dmv-b"><button type="button" class="btn" id="dmvGo">移す</button><button type="button" class="btn ghost" id="dmvCancel">やめる</button></div>
+  </div>
 </div>
 
 <!-- ===== テンキー（スマホ：日付・金額・辞書の No。電卓と同じ並び） ===== -->
@@ -1076,44 +1121,216 @@
         gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); $('dBody').querySelectorAll('img.dthumb[data-id]').forEach(function (im) { if (!im.src && THUMB[im.dataset.id]) im.src = THUMB[im.dataset.id]; }); next(); }, next); })();
     }, function (e) { $('dBody').textContent = ''; $('dBody').appendChild(el('div', 'cbox', e.message)); });
   }
+  /* ★ 顧問先の画面と同じ見え方（2026-10-06）：箱 → 月分の小箱 → 写真が並ぶ。押すと すぐ大きく。
+       事務所だけのもの … PDF切り出し・破棄・選ぶ・別の月分へ移す（月分を整理する）・仕訳化へ */
+  const DOPEN = {};      /* 箱|月分 → 開いているか（押して選んだもの） */
   function docsDraw() {
     const body = $('dBody'); body.textContent = '';
+    if (dObs) dObs.disconnect();
     const list = (S.docs || []).filter(function (it) { return (!S.box || it.box === S.box) && (!S.per || it.period === S.per); })
-      .sort(function (a, b) { return a.period !== b.period ? (a.period < b.period ? 1 : -1) : a.box !== b.box ? boxIdx(a.box) - boxIdx(b.box) : a.t - b.t; });
+      .sort(function (a, b) { return a.period !== b.period ? (a.period < b.period ? 1 : -1) : a.box !== b.box ? boxIdx(a.box) - boxIdx(b.box) : b.t - a.t; });
     $('dsum').textContent = list.length + '件';
     S.dcview = list;
     body.classList.toggle('dpicking', !!S.dcpick);
     docsTools();
     if (!list.length) { body.appendChild(el('div', 'cbox muted', 'まだ資料は届いていません。')); return; }
-    let grp = '', grid = null;
-    list.forEach(function (it) {
-      const gk = it.period + '|' + it.box;
-      if (gk !== grp) {
-        grp = gk;
-        const n = list.filter(function (x) { return x.period + '|' + x.box === gk; }).length;
-        const sep = el('div', 'jdsep'); sep.appendChild(el('b', null, perLabel(it.period))); sep.appendChild(el('span', null, it.box + '　' + n + '件')); sep.appendChild(el('i'));
-        body.appendChild(sep);
-        grid = el('div', 'dgrid'); body.appendChild(grid);
-      }
-      const tile = el('div', 'dtile');
-      const b = el('button', 'dimg'); b.type = 'button'; b.title = '押すと大きく';
-      const im = el('img', 'dthumb'); im.alt = it.name; im.dataset.id = it.id; im.loading = 'lazy'; if (THUMB[it.id]) im.src = THUMB[it.id];
-      b.appendChild(im); if (it.pdf) b.appendChild(el('span', 'pdf', 'PDF'));
-      const tg = stTag(it);
-      b.appendChild(el('span', 'stt ' + tg[0], tg[1]));
-      if (tg[0] === 'gone') tile.classList.add('gone');
-      tile.appendChild(b);
-      tile.appendChild(el('div', 'dname', it.name.replace(/^\d{8}_\d{6}_/, '')));
-      tile.appendChild(el('div', 'dat', it.at + ' 届' + (it.memo ? '　' + it.memo : '')));
-      b.addEventListener('click', function () {
-        if (!S.dcpick) { docsOpen(it); return; }
-        if (S.dcsel[it.id]) delete S.dcsel[it.id]; else S.dcsel[it.id] = 1;
-        tile.classList.toggle('sel', !!S.dcsel[it.id]); docsTools();
+    const boxes = [];
+    list.forEach(function (it) { if (boxes.indexOf(it.box) < 0) boxes.push(it.box); });
+    boxes.sort(function (a, b) { return boxIdx(a) - boxIdx(b); });
+    boxes.forEach(function (bx) {
+      const inBox = list.filter(function (x) { return x.box === bx; });
+      const sec = el('section', 'dbox'); sec.dataset.box = bx;
+      const hd = el('div', 'dbox-h'); hd.innerHTML = D_ICON;
+      hd.appendChild(el('h3', null, bx));
+      hd.appendChild(el('span', 'dbox-c', inBox.length + '件'));
+      sec.appendChild(hd);
+      const pers = [];
+      inBox.forEach(function (x) { if (pers.indexOf(x.period) < 0) pers.push(x.period); });
+      pers.forEach(function (p, pi) {
+        const items = inBox.filter(function (x) { return x.period === p; });
+        const key = bx + '|' + p;
+        const open = key in DOPEN ? DOPEN[key] : (S.per ? true : pi === 0);
+        const mon = el('div', 'dmon' + (open ? ' open' : '')); mon.dataset.box = bx; mon.dataset.per = p;
+        mon.addEventListener('dragover', function (e) { if (!DDRAG) return; e.preventDefault(); e.stopPropagation(); mon.classList.add('target'); });
+        mon.addEventListener('dragleave', function () { mon.classList.remove('target'); });
+        mon.addEventListener('drop', function (e) { if (!DDRAG) return; e.preventDefault(); e.stopPropagation(); mon.classList.remove('target'); const it0 = DDRAG; DDRAG = null; DDROP = true;
+          if (it0.box === bx && it0.period === p) dMoveOpen(it0); else dMove(it0, bx, p); });
+        const row = el('div', 'dmon-hd');
+        const tg = el('button', 'dmon-h'); tg.type = 'button'; tg.setAttribute('aria-expanded', String(open));
+        tg.innerHTML = D_ICON_S;
+        tg.appendChild(el('b', null, perLabel(p)));
+        const n = { todo: 0, back: 0, done: 0, gone: 0 }; items.forEach(function (x) { n[stTag(x)[0]] = (n[stTag(x)[0]] || 0) + 1; });
+        tg.appendChild(el('span', 'dmon-c', items.length + '件' + (n.todo ? '・未確定 ' + n.todo : '') + (n.back ? '・差戻し ' + n.back : '')));
+        tg.appendChild(el('span', 'chev', '▾'));
+        tg.addEventListener('click', function () { DOPEN[key] = !open; docsDraw(); });
+        row.appendChild(tg);
+        if (open && !S.dcpick) {
+          const pb = el('button', 'dmon-b', 'PDF切り出し'); pb.type = 'button';
+          pb.addEventListener('click', function () { cutPdf(items, ''); });
+          row.appendChild(pb);
+          const can = items.filter(function (x) { return x.status !== 'done'; });
+          if (can.length) {
+            const db = el('button', 'dmon-b danger', '一括破棄'); db.type = 'button';
+            db.addEventListener('click', function () { discard(can, bx + ' ' + perLabel(p) + 'の'); });
+            row.appendChild(db);
+          }
+        }
+        mon.appendChild(row);
+        if (open) {
+          const grid = el('div', 'dgrid');
+          items.forEach(function (it) { grid.appendChild(dTile(it)); });
+          mon.appendChild(grid);
+        }
+        sec.appendChild(mon);
       });
-      if (S.dcpick) { b.appendChild(el('span', 'dck')); if (S.dcsel[it.id]) tile.classList.add('sel'); }
-      grid.appendChild(tile);
+      body.appendChild(sec);
     });
   }
+  const D_ICON = '<svg class="dbox-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l2.2-4.4A1 1 0 0 1 6.1 4h11.8a1 1 0 0 1 .9.6L21 9"/><path d="M3 9h5l1.5 3h5L16 9h5v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>';
+  const D_ICON_S = D_ICON.replace('dbox-i', 'dmon-i');
+  function dTile(it) {
+    const tile = el('div', 'dtile'); tile.dataset.id = it.id;
+    const b = el('button', 'dimg'); b.type = 'button'; b.title = '押すと大きく';
+    const im = el('img', 'dthumb'); im.alt = it.name; im.dataset.id = it.id; if (THUMB[it.id]) im.src = THUMB[it.id];
+    im.onerror = function () { im.removeAttribute('src'); };
+    b.appendChild(im); if (it.pdf) b.appendChild(el('span', 'pdf', 'PDF'));
+    const tg = stTag(it);
+    const at = (String(it.at).match(/\d+\/\d+ \d\d:\d\d$/) || [''])[0];
+    b.appendChild(el('span', 'stt ' + tg[0], tg[0] === 'todo' ? at + ' 届' : tg[0] === 'done' ? '✓ 確定' : tg[1]));
+    if (tg[0] === 'gone') tile.classList.add('gone');
+    if (it.status === 'back' && !it.redo) tile.classList.add('isback');
+    tile.appendChild(b);
+    if (it.memo) tile.appendChild(el('div', 'dat', it.memo));
+    b.addEventListener('click', function () {
+      if (Date.now() - DLP_END < 700) return;
+      if (!S.dcpick) { docsOpen(it); return; }
+      if (S.dcsel[it.id]) delete S.dcsel[it.id]; else S.dcsel[it.id] = 1;
+      tile.classList.toggle('sel', !!S.dcsel[it.id]); docsTools();
+    });
+    if (S.dcpick) { b.appendChild(el('span', 'dck')); if (S.dcsel[it.id]) tile.classList.add('sel'); }
+    else {
+      /* 別の月分へ移す：長押しして滑らせる（パソコンはつかんで落とす）。小箱の外で離すと 月分を選ぶ */
+      b.draggable = true;
+      b.addEventListener('dragstart', function (e) { DDRAG = it; DDROP = false; try { e.dataTransfer.setData('text/plain', it.name); e.dataTransfer.effectAllowed = 'move'; } catch (x) {} document.body.classList.add('ddragging'); tile.classList.add('lifted'); });
+      b.addEventListener('dragend', function () { document.body.classList.remove('ddragging'); tile.classList.remove('lifted'); const it0 = DDRAG; DDRAG = null; if (it0 && !DDROP) dMoveOpen(it0); });
+      b.addEventListener('touchstart', function (e) { dlpBegin(e, it, tile); }, { passive: true });
+      b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    }
+    if (dObs && !it.pdf) dObs.observe(tile);
+    return tile;
+  }
+
+  /* ---- くっきりした中身を 見えているものから先に取っておく（押した瞬間に出す）---- */
+  let DQ = [], drun = 0; const DWAIT = {};
+  const dObs = window.IntersectionObserver ? new IntersectionObserver(function (ents) {
+    ents.forEach(function (en) { if (en.isIntersecting) { dObs.unobserve(en.target); dWant(en.target.dataset.id, false); } });
+  }, { rootMargin: '500px 0px' }) : null;
+  function dWant(id, first, cb) {
+    if (cb) DWAIT[id] = cb;
+    if (IMG[id]) { if (cb) { delete DWAIT[id]; cb(); } return; }
+    if (INFLIGHT[id]) return;
+    DQ = DQ.filter(function (x) { return x !== id; });
+    if (first) DQ.unshift(id); else DQ.push(id);
+    dPump();
+  }
+  function dPump() {
+    while (drun < 2 && DQ.length) {
+      const b = DQ.splice(0, 3).filter(function (id) { return !IMG[id] && !INFLIGHT[id]; });
+      if (!b.length) continue;
+      drun++;
+      b.forEach(function (id) { INFLIGHT[id] = 1; });
+      gs('viewerImages', b).then(function (r) {
+        b.forEach(function (id) {
+          delete INFLIGHT[id];
+          const v = r[id] || { t: 'drive' };
+          if (v.t === 'later') { DQ.unshift(id); return; }
+          IMG[id] = v;
+          if (DWAIT[id]) { const f = DWAIT[id]; delete DWAIT[id]; f(); }
+        });
+        drun--; dPump();
+      }, function () { b.forEach(function (id) { delete INFLIGHT[id]; }); drun--; });
+    }
+  }
+
+  /* ---- 別の月分へ移す ---- */
+  let DDRAG = null, DDROP = false, DLP = null, DLP_END = 0;
+  function dlpBegin(e, it, tile) {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    DLP = { it: it, tile: tile, x: t.clientX, y: t.clientY, on: false, ghost: null, tgt: null };
+    DLP.timer = setTimeout(function () {
+      if (!DLP) return;
+      DLP.on = true;
+      try { if (navigator.vibrate) navigator.vibrate(25); } catch (x) {}
+      const g = el('div', 'dghost'); const im = tile.querySelector('img');
+      if (im && im.src) { const c = el('img'); c.src = im.src; c.alt = ''; g.appendChild(c); } else g.textContent = it.name;
+      document.body.appendChild(g); DLP.ghost = g;
+      tile.classList.add('lifted'); document.body.classList.add('ddragging');
+      dlpMove(DLP.x, DLP.y);
+    }, 450);
+  }
+  function dlpMove(x, y) {
+    DLP.x = x; DLP.y = y;
+    if (DLP.ghost) { DLP.ghost.style.left = (x - 40) + 'px'; DLP.ghost.style.top = (y - 60) + 'px'; }
+    const e0 = document.elementFromPoint(x, y);
+    const mon = e0 && e0.closest ? e0.closest('.dmon') : null;
+    if (DLP.tgt && DLP.tgt !== mon) DLP.tgt.classList.remove('target');
+    DLP.tgt = mon && !(mon.dataset.box === DLP.it.box && mon.dataset.per === DLP.it.period) ? mon : null;
+    if (DLP.tgt) DLP.tgt.classList.add('target');
+    if (y < 90) window.scrollBy(0, -14); else if (y > window.innerHeight - 90) window.scrollBy(0, 14);
+  }
+  document.addEventListener('touchmove', function (e) {
+    if (!DLP) return;
+    const t = e.touches[0];
+    if (!DLP.on) { if (Math.abs(t.clientX - DLP.x) > 10 || Math.abs(t.clientY - DLP.y) > 10) { clearTimeout(DLP.timer); DLP = null; } return; }
+    e.preventDefault(); dlpMove(t.clientX, t.clientY);
+  }, { passive: false });
+  function dlpEnd(cancel) {
+    if (!DLP) return;
+    clearTimeout(DLP.timer);
+    const L = DLP; DLP = null;
+    if (!L.on) return;
+    DLP_END = Date.now();
+    if (L.ghost) L.ghost.remove();
+    L.tile.classList.remove('lifted'); document.body.classList.remove('ddragging');
+    if (L.tgt) L.tgt.classList.remove('target');
+    if (cancel) return;
+    if (L.tgt) dMove(L.it, L.tgt.dataset.box, L.tgt.dataset.per); else dMoveOpen(L.it);
+  }
+  document.addEventListener('touchend', function (e) { if (DLP && DLP.on) e.preventDefault(); dlpEnd(false); }, { passive: false });
+  document.addEventListener('touchcancel', function () { dlpEnd(true); });
+  function dMove(it, box, per) {
+    if (!it || (it.box === box && it.period === per)) return;
+    const was = { box: it.box, period: it.period }, code = S.code;
+    it.box = box; it.period = per; DOPEN[box + '|' + per] = true; perFill(S.docs); docsDraw();
+    gs('workMove', code, it.id, per, box).then(function (r) {
+      if (code !== S.code) return;
+      it.box = r.box; it.period = r.period;
+      (S.items || []).forEach(function (x) { if (x.id === it.id) { x.box = r.box; x.period = r.period; } });
+      perFill(S.docs); docsDraw(); dcMsg(perLabel(it.period) + '［' + it.box + '］へ移しました。');
+    }, function (e) { it.box = was.box; it.period = was.period; docsDraw(); dcMsg('移せませんでした。' + e.message, true); });
+  }
+  let DMV = null;
+  function dMoveOpen(it) {
+    DMV = it;
+    const ps = $('dmvPer'); ps.textContent = '';
+    const now = new Date();
+    for (let d = new Date(now.getFullYear(), now.getMonth(), 1); ; d = new Date(d.getFullYear(), d.getMonth() - 1, 1)) {
+      const v = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      if (v < '2024-01') break;
+      const o = el('option', null, perLabel(v)); o.value = v; ps.appendChild(o);
+    }
+    ps.value = it.period;
+    const bs = $('dmvBox'); bs.textContent = '';
+    (S.boxes || []).concat(S.boxes && S.boxes.indexOf(it.box) < 0 ? [it.box] : []).forEach(function (b) { const o = el('option', null, b); o.value = b; bs.appendChild(o); });
+    bs.value = it.box;
+    $('dmvNow').textContent = 'いま：' + perLabel(it.period) + '［' + it.box + '］　' + it.name.replace(/^\d{8}_\d{6}_/, '');
+    $('dmove').hidden = false;
+  }
+  function dMoveClose() { $('dmove').hidden = true; DMV = null; }
+  $('dmvCancel').addEventListener('click', dMoveClose);
+  $('dmvGo').addEventListener('click', function () { const it = DMV; const per = $('dmvPer').value, box = $('dmvBox').value; dMoveClose(); dMove(it, box, per); });
+
   /* ---- PDF切り出し・破棄（2026-10-06）----
      ・一括PDF切り出し … いま並んでいるもの全部（月分・箱で絞った中身）を 1冊の PDF に
      ・選ぶ → 選んだものだけ PDF に／破棄
@@ -1128,16 +1345,11 @@
     $('dPdfSel').textContent = '選んだものをPDF切り出し（' + n + '）'; $('dPdfSel').disabled = !n;
     $('dDelSel').textContent = '選んだものを破棄（' + n + '）'; $('dDelSel').disabled = !n;
     $('dPdfAll').textContent = '一括PDF切り出し（' + (S.dcview || []).length + '）'; $('dPdfAll').disabled = !(S.dcview || []).length;
-    const monN = (S.dcview || []).filter(function (x) { return x.status !== 'done'; }).length;
-    $('dDelMon').textContent = S.per ? perLabel(S.per) + 'を一括破棄（' + monN + '）' : 'この月分を一括破棄';
-    $('dDelMon').disabled = !S.per || !monN;
-    $('dDelMon').title = S.per ? '' : '上の「月分」で月を選ぶと押せます';
   }
   $('dPick').addEventListener('click', function () { S.dcpick = !S.dcpick; if (!S.dcpick) S.dcsel = {}; docsDraw(); });
   function selItems() { return (S.dcview || []).filter(function (x) { return S.dcsel[x.id]; }); }
   $('dPdfAll').addEventListener('click', function () { cutPdf(S.dcview || [], ''); });
   $('dPdfSel').addEventListener('click', function () { cutPdf(selItems(), '選択'); });
-  $('dDelMon').addEventListener('click', function () { if (S.per) discard((S.dcview || []).filter(function (x) { return x.status !== 'done'; }), perLabel(S.per) + 'の'); });
   $('dDelSel').addEventListener('click', function () { discard(selItems(), '選んだ'); });
 
   function discard(items, what) {
@@ -1152,6 +1364,7 @@
       const gone = {}; list.forEach(function (x) { gone[x.id] = 1; delete S.dcsel[x.id]; });
       S.docs = (S.docs || []).filter(function (x) { return !gone[x.id]; });
       S.items = (S.items || []).filter(function (x) { return !gone[x.id]; });
+      S.dcpick = false; S.dcsel = {};
       docsDraw(); if (S.tab === 'In') render();
       dcMsg(r.n + '件を破棄しました。' + (r.kept ? '（確定済みの ' + r.kept + '件は残しました）' : ''));
     }, function (e) { dcMsg('破棄できませんでした。' + e.message, true); });
@@ -1239,11 +1452,21 @@
     const v = $('dview'); v.hidden = false; document.body.classList.add('dv-on');
     $('dvName').textContent = perLabel(it.period) + '　［' + it.box + '］　' + it.name.replace(/^\d{8}_\d{6}_/, '');
     $('dvDrive').href = it.url;
+    $('dvMove').onclick = function () { docsClose(); dMoveOpen(it); };
     $('dvGo').onclick = function () { docsClose(); S.per = it.period; $('per').value = it.period; S.box = ''; $('box').value = '';
       selectTab('In'); const go = function () { if (rowOf(it.id)) focusCard(it.id); }; if (S.items.some(function (x) { return x.id === it.id; })) { render(); go(); } else { S.st = 'all'; document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.st === 'all')); }); load().then(go); } };
-    oBig(it, $('dvBody'));
+    /* ★ すぐ出す：くっきりした中身が手元にあれば それを、無ければ 小さい絵を先に出して 届いたら差し替える */
+    const box = $('dvBody');
+    if (IMG[it.id]) { oBig(it, box); return; }
+    box.textContent = '';
+    if (THUMB[it.id]) { const im = el('img'); im.src = THUMB[it.id]; im.alt = it.name; box.appendChild(im); }
+    else box.classList.add('loading');
+    S.dvId = it.id;
+    dWant(it.id, true, function () { if (S.dvId === it.id && !$('dview').hidden) oBig(it, box); });
   }
-  function docsClose() { $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
+  /* 写真を押すと戻る（顧問先の画面と同じ） */
+  $('dvBody').addEventListener('click', function (e) { if (e.target.tagName === 'IMG') docsClose(); });
+  function docsClose() { S.dvId = ''; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
   $('dvClose').addEventListener('click', docsClose);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dview').hidden) docsClose(); });
 
