@@ -300,7 +300,19 @@
   .staff .add input { width: 180px; }
 
   /* 回収資料 */
-  .dhead { margin: 0 0 4px; }
+  .dhead { margin: 0 0 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+  .dtools { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dtools button { font: inherit; font-size: 13.5px; font-weight: 700; padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
+  .dtools button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .dtools button.danger { color: #B3261E; border-color: #E7B4AF; }
+  .dtools button:disabled { opacity: .45; cursor: default; }
+  .dmsg { flex-basis: 100%; font-size: 13px; font-weight: 700; color: var(--sub); min-height: 0; }
+  .dmsg.err { color: #B3261E; }
+  .dpicking .dimg { cursor: pointer; }
+  .dck { position: absolute; left: 6px; top: 6px; width: 26px; height: 26px; border-radius: 6px; border: 2px solid #fff; background: rgba(0,0,0,.35); box-shadow: 0 0 0 1px rgba(0,0,0,.2); }
+  .dtile.sel .dck { background: var(--accent); }
+  .dtile.sel .dck::after { content: '✓'; position: absolute; inset: 0; color: #fff; font-weight: 900; font-size: 17px; line-height: 22px; text-align: center; }
+  .dtile.sel { outline: 3px solid var(--accent); outline-offset: -1px; }
   .dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; max-width: 1400px; }
   .dtile { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px; min-width: 0; }
   .dimg { position: relative; display: block; width: 100%; aspect-ratio: 3 / 4; padding: 0; border: 0; background: #F4F2EC; overflow: hidden; border-radius: 6px; }
@@ -432,7 +444,16 @@
 
 <!-- ===== 回収資料（送ってもらった資料を ただ並べる。仕訳化しないで 会計ソフトの仕訳辞書で入れるときにも使う） ===== -->
 <div class="pane page dpz" id="paneDocs" hidden>
-  <div class="dhead"><span class="jlsum" id="dsum"></span></div>
+  <div class="dhead"><span class="jlsum" id="dsum"></span>
+    <span class="dtools">
+      <button type="button" id="dPick" aria-pressed="false">選ぶ</button>
+      <button type="button" id="dPdfAll">一括PDF切り出し</button>
+      <button type="button" id="dPdfSel" hidden>選んだものをPDF切り出し</button>
+      <button type="button" class="danger" id="dDelMon">この月分を一括破棄</button>
+      <button type="button" class="danger" id="dDelSel" hidden>選んだものを破棄</button>
+    </span>
+    <div class="dmsg" id="dcMsg" role="status"></div>
+  </div>
   <div id="dBody"><div class="cbox muted">読み込み中…</div></div>
 </div>
 
@@ -664,7 +685,7 @@
   const yen = function (n) { return Number(n).toLocaleString('ja-JP'); };
   /* 全角の数字・記号を半角に（IME が入ったままでも打てるように） */
   const half = function (s) { return String(s || '').replace(/[０-９／－．，]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/ー/g, '-').trim(); };
-  const S = { clients: [], code: '', st: 'todo', box: '', items: [], view: [], cur: -1, counts: {}, dict: [], img: {}, rot: {}, busy: false, dirty: false, started: false, tab: 'In' };
+  const S = { clients: [], code: '', st: 'todo', box: '', items: [], view: [], cur: -1, counts: {}, dict: [], img: {}, rot: {}, busy: false, dirty: false, started: false, tab: 'In', dcpick: false, dcsel: {}, dcview: [] };
 
   /* ================= 入口 ================= */
   function fatal(t) { ['gate', 'chg', 'top', 'ctl'].forEach(function (k) { $(k).hidden = true; }); hidePanes(); $('fatal').hidden = false; $('fatalMsg').textContent = t; }
@@ -933,6 +954,7 @@
     S.dirty = false; S.rot = {}; S.dsel = null; S.open = {}; S.act = '';
     Object.keys(C).forEach(function (k) { delete C[k]; });
     Object.keys(IMG).forEach(function (k) { delete IMG[k]; }); QUEUE = [];
+    S.dcsel = {}; S.dcpick = false;
     const c = S.clients.find(function (x) { return x.code === S.code; });
     const bx = $('box'); bx.textContent = ''; const all = el('option', null, 'すべて'); all.value = ''; bx.appendChild(all);
     (c ? c.boxes : []).forEach(function (b) { const o = el('option', null, b); o.value = b; bx.appendChild(o); });
@@ -1059,6 +1081,9 @@
     const list = (S.docs || []).filter(function (it) { return (!S.box || it.box === S.box) && (!S.per || it.period === S.per); })
       .sort(function (a, b) { return a.period !== b.period ? (a.period < b.period ? 1 : -1) : a.box !== b.box ? boxIdx(a.box) - boxIdx(b.box) : a.t - b.t; });
     $('dsum').textContent = list.length + '件';
+    S.dcview = list;
+    body.classList.toggle('dpicking', !!S.dcpick);
+    docsTools();
     if (!list.length) { body.appendChild(el('div', 'cbox muted', 'まだ資料は届いていません。')); return; }
     let grp = '', grid = null;
     list.forEach(function (it) {
@@ -1080,10 +1105,135 @@
       tile.appendChild(b);
       tile.appendChild(el('div', 'dname', it.name.replace(/^\d{8}_\d{6}_/, '')));
       tile.appendChild(el('div', 'dat', it.at + ' 届' + (it.memo ? '　' + it.memo : '')));
-      b.addEventListener('click', function () { docsOpen(it); });
+      b.addEventListener('click', function () {
+        if (!S.dcpick) { docsOpen(it); return; }
+        if (S.dcsel[it.id]) delete S.dcsel[it.id]; else S.dcsel[it.id] = 1;
+        tile.classList.toggle('sel', !!S.dcsel[it.id]); docsTools();
+      });
+      if (S.dcpick) { b.appendChild(el('span', 'dck')); if (S.dcsel[it.id]) tile.classList.add('sel'); }
       grid.appendChild(tile);
     });
   }
+  /* ---- PDF切り出し・破棄（2026-10-06）----
+     ・一括PDF切り出し … いま並んでいるもの全部（月分・箱で絞った中身）を 1冊の PDF に
+     ・選ぶ → 選んだものだけ PDF に／破棄
+     ・破棄 … 資料として要らないものを 事務所が捨てる。★ 顧問先には知らせない（顧問先の画面は 送信済みのまま）
+       事務所の一覧からは消え、Drive のファイルはゴミ箱へ（30日は戻せる）。確定済みは破棄しない */
+  function dcMsg(t, err) { const m = $('dcMsg'); m.textContent = t || ''; m.className = 'dmsg' + (err ? ' err' : ''); }
+  function docsTools() {
+    const n = Object.keys(S.dcsel).filter(function (id) { return (S.dcview || []).some(function (x) { return x.id === id; }); }).length;
+    $('dPick').setAttribute('aria-pressed', String(!!S.dcpick));
+    $('dPick').textContent = S.dcpick ? '選ぶのをやめる' : '選ぶ';
+    $('dPdfSel').hidden = $('dDelSel').hidden = !S.dcpick;
+    $('dPdfSel').textContent = '選んだものをPDF切り出し（' + n + '）'; $('dPdfSel').disabled = !n;
+    $('dDelSel').textContent = '選んだものを破棄（' + n + '）'; $('dDelSel').disabled = !n;
+    $('dPdfAll').textContent = '一括PDF切り出し（' + (S.dcview || []).length + '）'; $('dPdfAll').disabled = !(S.dcview || []).length;
+    const monN = (S.dcview || []).filter(function (x) { return x.status !== 'done'; }).length;
+    $('dDelMon').textContent = S.per ? perLabel(S.per) + 'を一括破棄（' + monN + '）' : 'この月分を一括破棄';
+    $('dDelMon').disabled = !S.per || !monN;
+    $('dDelMon').title = S.per ? '' : '上の「月分」で月を選ぶと押せます';
+  }
+  $('dPick').addEventListener('click', function () { S.dcpick = !S.dcpick; if (!S.dcpick) S.dcsel = {}; docsDraw(); });
+  function selItems() { return (S.dcview || []).filter(function (x) { return S.dcsel[x.id]; }); }
+  $('dPdfAll').addEventListener('click', function () { cutPdf(S.dcview || [], ''); });
+  $('dPdfSel').addEventListener('click', function () { cutPdf(selItems(), '選択'); });
+  $('dDelMon').addEventListener('click', function () { if (S.per) discard((S.dcview || []).filter(function (x) { return x.status !== 'done'; }), perLabel(S.per) + 'の'); });
+  $('dDelSel').addEventListener('click', function () { discard(selItems(), '選んだ'); });
+
+  function discard(items, what) {
+    const done = items.filter(function (x) { return x.status === 'done'; }).length;
+    const list = items.filter(function (x) { return x.status !== 'done'; });
+    if (!list.length) { dcMsg('破棄できるものがありません（確定済みは破棄できません）。', true); return; }
+    if (!confirm(what + ' ' + list.length + '件を破棄しますか？\n・顧問先には知らせません（顧問先の画面は 送信済みのまま）\n・事務所の一覧から消え、Drive のファイルはゴミ箱へ（30日は戻せます）' + (done ? '\n・確定済みの ' + done + '件は残します' : ''))) return;
+    const code = S.code;
+    dcMsg('破棄しています…');
+    gs('workDiscard', code, list.map(function (x) { return x.id; })).then(function (r) {
+      if (code !== S.code) return;
+      const gone = {}; list.forEach(function (x) { gone[x.id] = 1; delete S.dcsel[x.id]; });
+      S.docs = (S.docs || []).filter(function (x) { return !gone[x.id]; });
+      S.items = (S.items || []).filter(function (x) { return !gone[x.id]; });
+      docsDraw(); if (S.tab === 'In') render();
+      dcMsg(r.n + '件を破棄しました。' + (r.kept ? '（確定済みの ' + r.kept + '件は残しました）' : ''));
+    }, function (e) { dcMsg('破棄できませんでした。' + e.message, true); });
+  }
+
+  /* PDF を作る道具（pdf-lib）。jsdelivr から読む（pdf.js と同じ置き場） */
+  const PDFLIB_URL = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+  let pdflibP = null;
+  function pdflib() {
+    if (pdflibP) return pdflibP;
+    pdflibP = new Promise(function (ok, ng) {
+      if (window.PDFLib) { ok(window.PDFLib); return; }
+      const sc = document.createElement('script'); sc.src = PDFLIB_URL;
+      sc.onload = function () { window.PDFLib ? ok(window.PDFLib) : ng(new Error('PDF を作る道具が読み込めませんでした')); };
+      sc.onerror = function () { pdflibP = null; ng(new Error('PDF を作る道具が読み込めませんでした')); };
+      document.head.appendChild(sc);
+    });
+    return pdflibP;
+  }
+  /* 中身を取る（手元にあれば それを使う）。6件ずつ */
+  async function fetchFulls(items, prog) {
+    const out = {};
+    items.forEach(function (it) { if (IMG[it.id] && IMG[it.id].t !== 'later') out[it.id] = IMG[it.id]; });
+    let need = items.map(function (it) { return it.id; }).filter(function (id) { return !out[id]; });
+    let done = items.length - need.length; prog(done);
+    while (need.length) {
+      const b = need.splice(0, 6);
+      const r = await gs('viewerImages', b);
+      b.forEach(function (id) { const v = r[id] || { t: 'drive' }; if (v.t === 'later') need.unshift(id); else { out[id] = v; done++; } });
+      prog(done);
+    }
+    return out;
+  }
+  function toJpeg(src) {
+    return new Promise(function (ok, ng) {
+      const im = new Image();
+      im.onload = function () { const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0); ok(b64bytes(c.toDataURL('image/jpeg', 0.9).split(',')[1])); };
+      im.onerror = function () { ng(new Error('写真が読めません')); };
+      im.src = src;
+    });
+  }
+  async function cutPdf(items, tag) {
+    if (!items.length) return;
+    const btns = ['dPdfAll', 'dPdfSel'].map($); btns.forEach(function (b) { b.disabled = true; });
+    try {
+      dcMsg('PDFを作っています… 0 / ' + items.length);
+      const L = await pdflib();
+      const fulls = await fetchFulls(items, function (n) { dcMsg('PDFを作っています… 写真を集めています ' + n + ' / ' + items.length); });
+      const doc = await L.PDFDocument.create();
+      let skip = 0, i = 0;
+      for (const it of items) {
+        i++; dcMsg('PDFを作っています… ' + i + ' / ' + items.length);
+        const v = fulls[it.id];
+        try {
+          if (v && v.t === 'pdf') {
+            const src = await L.PDFDocument.load(b64bytes(v.b64), { ignoreEncryption: true });
+            const pages = await doc.copyPages(src, src.getPageIndices());
+            pages.forEach(function (pg) { doc.addPage(pg); });
+          } else if (v && v.t === 'img') {
+            const m = v.src.match(/^data:image\/(jpeg|png);base64,(.*)$/);
+            const img = m ? (m[1] === 'png' ? await doc.embedPng(b64bytes(m[2])) : await doc.embedJpg(b64bytes(m[2]))) : await doc.embedJpg(await toJpeg(v.src));
+            const land = img.width > img.height;
+            const W = land ? 842 : 595, H = land ? 595 : 842, M = 18;
+            const sc = Math.min((W - M * 2) / img.width, (H - M * 2) / img.height);
+            const w = img.width * sc, h = img.height * sc;
+            doc.addPage([W, H]).drawImage(img, { x: (W - w) / 2, y: (H - h) / 2, width: w, height: h });
+          } else skip++;
+        } catch (e) { skip++; }
+      }
+      if (!doc.getPageCount()) { dcMsg('PDFに入れられるものがありませんでした（HEIC の写真などは Drive で開いてください）。', true); return; }
+      const bytes = await doc.save();
+      const c = S.clients.find(function (x) { return x.code === S.code; }) || { name: '' };
+      const fname = [S.code, c.name, S.per ? perLabel(S.per) : '全月分', S.box || '全部の箱', tag].filter(Boolean).join('_').replace(/[\\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') + '.pdf';
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      const a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      dcMsg('PDFを切り出しました：' + fname + '（' + doc.getPageCount() + 'ページ）' + (skip ? '　入れられなかったもの ' + skip + '件（HEIC など。Drive で開いてください）' : ''));
+    } catch (e) {
+      dcMsg('PDFを作れませんでした。' + e.message, true);
+    } finally { docsTools(); }
+  }
+
   /* 大きく見る（画面いっぱい）。仕訳化へも ここから */
   function docsOpen(it) {
     const v = $('dview'); v.hidden = false; document.body.classList.add('dv-on');
