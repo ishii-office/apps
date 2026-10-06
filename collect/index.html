@@ -52,9 +52,9 @@
   .client { font-size: 15px; color: var(--sub); margin: 0; }
   h1 { font-size: 26px; line-height: 1.35; margin: 4px 0 6px; font-weight: 700; }
   .lead { color: var(--sub); font-size: 15px; margin: 0 0 18px; }
-  .period { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; padding: 12px 14px; border-radius: 14px; background: var(--paper); border: 2px solid var(--accent); }
+  .period { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 16px; padding: 12px 14px; border-radius: 14px; background: var(--paper); border: 2px solid var(--accent); }
   .period label { font-weight: 700; font-size: 16px; }
-  .period select { flex: 1; min-width: 0; font-size: 18px; font-weight: 700; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+  .period select { flex: 1; min-width: 170px; font-size: 18px; font-weight: 700; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
   [hidden] { display: none !important; }
 
 
@@ -128,7 +128,10 @@
   .hbox { margin-top: 14px; display: grid; gap: 8px; }
   .mon { border: 1.5px dashed #B5D3CA; border-radius: 12px; background: #fff; overflow: hidden; }
   .mon.open { border-style: solid; border-color: #8FBFB2; }
-  .mon-h { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; border: 0; background: transparent; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
+  .mon-hd { display: flex; align-items: center; gap: 6px; padding-right: 8px; }
+  .mon-del { flex-shrink: 0; font: inherit; font-size: 13px; font-weight: 700; color: var(--err); background: #fff; border: 1.5px solid #E7B4AF; border-radius: 8px; padding: 5px 9px; cursor: pointer; }
+  .mon-del:active { background: #FDECEA; }
+  .mon-h { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; border: 0; background: transparent; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
   .mon-ico { width: 22px; height: 22px; color: var(--accent); flex-shrink: 0; }
   .mon-h .ml { font-weight: 700; font-size: 16px; }
   .mon-h .mc { flex: 1; font-size: 13px; color: var(--sub); text-align: right; }
@@ -209,7 +212,7 @@
   <section id="paneSend">
     <p class="lead">資料の種類ごとの箱で、撮影するか、写真・PDFを選んでください。パソコンなら箱へドラッグするだけです。最後に「送る」を押すと事務所に届きます。送ったものは 各箱の下に 月分ごとに並びます。</p>
     <button type="button" class="notice" id="notice" hidden><span class="nt"><b id="noticeT"></b><small>押すと 写真と理由が出ます</small></span><span aria-hidden="true">›</span></button>
-    <div class="period"><label for="period">何月分の資料ですか</label><select id="period"></select></div>
+    <div class="period"><label for="period">何年何月分の資料ですか</label><select id="period"></select></div>
     <div class="boxes" id="boxes"></div>
 
     <div class="tray" id="tray" hidden>
@@ -576,7 +579,7 @@
      ★ 履歴は「箱を開けて見る」（2026-10-06）。現金の領収書の箱の下に 2026年9月分・2026年8月分… の小箱。
        開くと 送った写真が3枚ずつ並び、1枚ごとに いまの様子（送信中・送信済み 何日何時・確定・撮り直し）。
        × で消せる（事務所には「顧問先が削除」と残る。確定したものは消せない）
-     ★ 差し戻しは ここでは知らせない（見に来ないので）。「何月分の資料ですか」の上に お知らせを出す */
+     ★ 差し戻しは ここでは知らせない（見に来ないので）。「何年何月分の資料ですか」の上に お知らせを出す */
   let HIST = [];          /* サーバの送ったもの（新しい順）{ k, at, box, period, name, pdf, status, note, redo } */
   let HLOADED = false, HAT = 0;
   const TH = {};          /* k → 小さい絵（dataURL）| null */
@@ -621,13 +624,23 @@
       const key = box + '|' + p;
       const open = key in OPEN ? OPEN[key] : (p === period() || o.length > 0);
       const mon = mk('div', 'mon' + (open ? ' open' : ''));
+      const hrow = mk('div', 'mon-hd');
       const hd = mk('button', 'mon-h'); hd.type = 'button'; hd.setAttribute('aria-expanded', String(open));
       hd.innerHTML = ICON_BOX_S + '<span class="ml"></span><span class="mc"></span><span class="chev" aria-hidden="true">▾</span>';
       hd.querySelector('.ml').textContent = ymLabel(p) || '月分なし';
       const backs = h.filter(function (x) { return x.status === 'back' && !x.redo; }).length;
       hd.querySelector('.mc').textContent = (o.length ? '送信中 ' + o.length + '・' : '') + (o.length + h.length) + '件' + (backs ? '（撮り直し ' + backs + '）' : '');
       hd.addEventListener('click', function () { OPEN[key] = !open; drawHist(el); loadThumbs(); });
-      mon.appendChild(hd);
+      hrow.appendChild(hd);
+      /* ★ この月分をやり直したいとき：まとめて消す（開いているときだけ。確定済みは残る） */
+      const can = o.filter(function (it) { return it.st !== 'send'; }).length + h.filter(function (x) { return x.status !== 'done'; }).length;
+      if (open && can) {
+        const del = mk('button', 'mon-del', 'まとめて消す'); del.type = 'button';
+        del.setAttribute('aria-label', box + ' ' + ymLabel(p) + 'を まとめて消す');
+        del.addEventListener('click', function () { delMonth(box, p, o, h); });
+        hrow.appendChild(del);
+      }
+      mon.appendChild(hrow);
       if (open) {
         const g = mk('div', 'hgrid');
         o.slice().reverse().forEach(function (it) { g.appendChild(outTile(it)); });
@@ -677,6 +690,22 @@
       HIST = HIST.filter(function (x) { return x !== h; }); drawAll(); showDone('消しました。');
     }, function (e) { showDone('消せませんでした。' + e.message, true); });
   }
+  /* 月分の小箱を まとめて消す（撮り直したいとき）。送信中でないものは送るのをやめ、届いたものは消す（確定済みは残る） */
+  function delMonth(box, p, outs, hs) {
+    const hk = hs.filter(function (x) { return x.status !== 'done'; });
+    const ok = outs.filter(function (it) { return it.st !== 'send'; });
+    const n = hk.length + ok.length;
+    if (!confirm(box + '　' + ymLabel(p) + ' の ' + n + '件を まとめて消しますか？\n（事務所には「消した」と伝わります。確定済みのものは残ります）')) return;
+    ok.forEach(function (it) { dropOut(it); });
+    const local = hk.filter(function (x) { return /^local_/.test(x.k); }), remote = hk.filter(function (x) { return !/^local_/.test(x.k); });
+    HIST = HIST.filter(function (x) { return local.indexOf(x) < 0; });
+    if (!remote.length) { drawAll(); showDone(n + '件を消しました。'); return; }
+    call('clientDeleteMany', [TOKEN, remote.map(function (x) { return x.k; })], 60000).then(function (r) {
+      HIST = HIST.filter(function (x) { return remote.indexOf(x) < 0; });
+      drawAll(); showDone((ok.length + local.length + ((r && r.n) || 0)) + '件を消しました。' + (r && r.kept ? '（確定済みの ' + r.kept + '件は残しました）' : ''));
+    }, function (e) { drawAll(); showDone('消せませんでした。' + e.message, true); });
+  }
+
   /* 開いている小箱の 小さい絵を 40件ずつ取る */
   function loadThumbs() {
     const need = [];
@@ -924,7 +953,7 @@
 
 
   /* サーバを呼ぶ道は、ここ1か所だけ */
-  const LIVE_FN = ['uploadFile', 'clientHistory', 'clientThumbs', 'clientDelete'];
+  const LIVE_FN = ['uploadFile', 'clientHistory', 'clientThumbs', 'clientDelete', 'clientDeleteMany'];
   function call(fn, args, ms) {
     return new Promise(function (resolve, reject) {
       if (LIVE) {
