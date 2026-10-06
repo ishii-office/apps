@@ -64,12 +64,21 @@
 
   /* ---- 箱（資料の種類・口座・カードごと） ---- */
   .boxes { display: grid; gap: 14px; }
+  /* ★ 箱らしく（2026-10-06）：点線の囲い・うすい緑・箱の絵。ここへ入れるのだと ひと目で分かるように */
   .box {
-    position: relative; padding: 16px 16px 14px; border-radius: 18px;
-    background: var(--paper); border: 2px solid var(--line);
-    transition: border-color .12s, background-color .12s;
+    position: relative; padding: 14px 16px 14px; border-radius: 18px;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F1F8F5 100%); border: 2.5px dashed #8FBFB2;
+    transition: border-color .12s, background-color .12s, transform .12s;
   }
-  .box.over { border-color: var(--accent); border-style: dashed; background: #E6F0EE; }
+  .box-ico { width: 30px; height: 30px; color: var(--accent); flex-shrink: 0; }
+  .box-head .ttl { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .box.over { border-color: var(--accent); border-style: solid; background: #DCEFE8; transform: scale(1.01); }
+  .drop { display: none; margin-top: 12px; padding: 14px 10px; border: 2px dashed #8FBFB2; border-radius: 12px; background: #fff;
+          color: var(--accent); font-weight: 700; font-size: 15px; text-align: center; }
+  .drop svg { width: 28px; height: 28px; vertical-align: middle; margin-right: 6px; }
+  .box.over .drop { background: #DCEFE8; border-color: var(--accent); }
+  @media (hover: hover) and (pointer: fine) { .drop { display: block; } }
+  .outbox { border-color: #8FBFB2; }
   .box-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
   .box-name { font-size: 19px; font-weight: 700; margin: 0; }
   .box-count { flex-shrink: 0; font-size: 14px; font-weight: 700; color: var(--accent); }
@@ -84,8 +93,8 @@
   .btn.cam:active { background: var(--accent-press); }
   .btn.pick { border: 2px solid var(--accent); background: var(--paper); color: var(--accent); }
   .btn.pick:active { background: #E6F0EE; }
-  .drop-hint { display: none; margin: 10px 0 0; font-size: 13px; color: var(--sub); text-align: center; }
-  @media (hover: hover) and (pointer: fine) { .drop-hint { display: block; } }
+  .pending { margin: 0 0 18px; padding: 10px 12px; border-radius: 12px; background: #FFF8E6; border: 1px solid #F0DDB0; }
+  .pending .ph { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   label:focus-within, textarea:focus-visible, button:focus-visible { outline: 3px solid #7FB8AC; outline-offset: 3px; }
 
@@ -196,13 +205,19 @@
 
     <div class="tray" id="tray" hidden>
       <h2 id="trayTitle">送る前の確認</h2>
-      <p class="sub">要らないものは × で消してください。まだ送っていません。</p>
+      <p class="sub">要らないものは × で消してください。まだ送っていません。<b>「送る」を押したら、閉じても大丈夫です。</b></p>
       <div id="trayBody"></div>
       <div class="memo">
         <label for="memo">ひとこと（任意）　例：レシートが1枚足りません</label>
         <textarea id="memo" maxlength="500"></textarea>
       </div>
       <button type="button" class="send" id="sendBtn">送る</button>
+    </div>
+
+    <div class="tray outbox" id="outbox" hidden>
+      <h2 id="outTitle">送っています</h2>
+      <p class="sub" id="outSub"></p>
+      <div id="outBody"></div>
     </div>
 
     <ul class="queue" id="queue" aria-live="polite"></ul>
@@ -214,10 +229,14 @@
       <span style="color:var(--sub);font-size:14px">新しい順・最大200件</span>
       <button type="button" class="reload" id="histReload">更新</button>
     </div>
+    <div class="pending" id="pending" hidden>
+      <div class="ph"><b id="pendTitle">まだ届いていないもの</b><button type="button" class="reload" id="pendGo">今すぐ送る</button></div>
+      <ul class="hist" id="pendList"></ul>
+    </div>
     <ul class="hist" id="hist"></ul>
   </section>
 
-  <p class="note">1ファイル <span id="maxMb"></span>MB まで。撮った写真はこの端末には残りません。送り間違えたときは担当スタッフにお知らせください。</p>
+  <p class="note">1ファイル <span id="maxMb"></span>MB まで。「送る」を押したら閉じても大丈夫です（届いたら端末からは消えます）。送り間違えたときは担当スタッフにお知らせください。</p>
   </div>
 </main>
 
@@ -296,33 +315,48 @@
     TOKEN = qp('t') || lsGet(LS_TOK);
   }
   let MAX_BYTES = 20 * 1024 * 1024;
-  const MAX_EDGE = 2400;
-  const JPEG_Q = 0.85;
+  /* ★ 速さ（2026-10-06）：領収書・通帳が読める大きさまで軽くして送る（2400px・0.85 → 1600px・0.72。1枚が 1/4 ほどになる） */
+  const MAX_EDGE = 1600;
+  const JPEG_Q = 0.72;
 
   const $ = function (id) { return document.getElementById(id); };
   const queueEl = $('queue');
   const doneEl = $('done');
 
-  /* ---- 送る前の箱（トレイ）----
-     撮った・選んだ・落としたものは、まずここに並ぶ。「送る」を押すまで送らない。
-     中身は File のまま（メモリだけ）。サムネイルは object URL で出し、消すときに返す */
-  let tray = [];          /* { id, file, box, period, url, err } */
+  /* ---- 送る前の箱（トレイ）と 送り出し箱 ----
+     ・撮った・選んだ・落としたものは、まずトレイに並ぶ。「送る」を押すまで送らない（メモリだけ）
+     ・「送る」を押したら 送り出し箱へ。写真を軽くして（長い辺1600px）、届くまでのあいだだけ 端末に控えを置く（IndexedDB）
+       → ★ 押したら閉じてもよい。届いていないものは 次に開いたとき 自動で送る（2026-10-06）
+     ・2枚ずつ並べて送る。届かなければ 自動で何度でも送り直す（ボタンは要らない）
+     ・送り直しでも二度入らないように、1枚ごとに合図（opId）を付ける（サーバが同じ合図を覚えている）
+     ・何月分かは【送る瞬間】の選択で決める。月を変えれば、送っている途中のものも その月になる
+     ・届いたものは 端末の控えから消す（端末に資料を残さない） */
+  let tray = [];          /* { id, file, box, url } … 送る前 */
+  let outbox = [];        /* { id, box, name, mime, bytes, url, memo, st:'wait'|'send'|'ng', tries, next, err } … 送り出し箱 */
   /* ★ 何月分か（8月分の現金・8月分の通帳）。箱ごとに月で分かれて事務所に届く */
   function ymOf(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
   function ymLabel(v) { const m = String(v || '').match(/^(\d{4})-(\d{2})$/); return m ? m[1] + '年' + Number(m[2]) + '月分' : ''; }
+  const LS_PER = 'collect_period';
   (function () {
     const sel = $('period'); const now = new Date();
     for (let i = 0; i <= 12; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); const o = document.createElement('option'); o.value = ymOf(d); o.textContent = ymLabel(o.value); sel.appendChild(o); }
     sel.value = ymOf(new Date(now.getFullYear(), now.getMonth() - (now.getDate() <= 15 ? 1 : 0), 1));
+    /* 選んだ月は覚えておく（開き直しても 送っている途中のものの月が変わらないように）。ひと月より前に選んだものは使わない */
+    let keep = ''; try { keep = JSON.parse(lsGet(LS_PER) || 'null'); } catch (e) {}
+    if (keep && keep.v && Date.now() - keep.t < 31 * 864e5 && Array.from(sel.options).some(function (o) { return o.value === keep.v; })) sel.value = keep.v;
+    sel.addEventListener('change', function () {
+      lsSet(LS_PER, JSON.stringify({ v: sel.value, t: Date.now() }));
+      drawTray(); drawOut();
+    });
   })();
+  function period() { return $('period').value; }
   let seq = 0;
-  let sending = false;
   const boxSent = {};
 
   function showDone(text, warn) {
     doneEl.textContent = text;
     doneEl.className = 'done' + (warn ? ' warn' : '');
-    doneEl.style.display = 'block';
+    doneEl.style.display = text ? 'block' : 'none';
   }
 
   /* ドラッグでは何でも落とせるので、写真とPDF以外はここで止める（サーバでも断る） */
@@ -341,9 +375,9 @@
       }
       let url = '';
       if (!isPdf(f)) { try { url = URL.createObjectURL(f); } catch (e) {} }
-      tray.push({ id: ++seq, file: f, box: box, period: $('period').value, url: url, err: '' });
+      tray.push({ id: ++seq, file: f, box: box, url: url });
     });
-    if (files.length) doneEl.style.display = 'none';
+    if (files.length) showDone('');
     drawTray();
   }
 
@@ -356,45 +390,58 @@
     drawTray();
   }
 
+  /* 箱 × 月分 でまとめて サムネイルを並べる（トレイと送り出し箱で同じ形） */
+  function thumbsInto(body, list, opt) {
+    BOXES.forEach(function (b) {
+      const g0 = list.filter(function (it) { return it.box === b; });
+      if (!g0.length) return;
+      const h = document.createElement('h3'); h.textContent = ymLabel(period()) + '　' + b + '（' + g0.length + '件）'; body.appendChild(h);
+      const g = document.createElement('div'); g.className = 'thumbs';
+      g0.forEach(function (it) {
+        const d = document.createElement('div'); d.className = 'ti' + (it.st === 'send' ? ' sending' : ''); d.dataset.id = String(it.id);
+        if (it.url) { const img = document.createElement('img'); img.alt = it.name || (it.file && it.file.name) || '写真'; img.src = it.url; d.appendChild(img); }
+        else { const k = document.createElement('div'); k.className = 'kind'; const nm = it.name || (it.file && it.file.name) || ''; k.textContent = (/\.pdf$/i.test(nm) || it.mime === 'application/pdf' || (it.file && isPdf(it.file)) ? 'PDF\n' : '') + nm; d.appendChild(k); }
+        if (opt.del) {
+          const x = document.createElement('button'); x.type = 'button'; x.className = 'del'; x.textContent = '×';
+          x.setAttribute('aria-label', ((it.file && it.file.name) || '写真') + 'を消す');
+          x.addEventListener('click', function () { opt.del(it); });
+          d.appendChild(x);
+        }
+        if (opt.status) {
+          const s = document.createElement('div'); s.className = 'tst' + (it.st === 'ng' ? ' err' : '');
+          s.textContent = it.st === 'send' ? '送信中…' : it.st === 'ng' ? '送れません' : (it.tries ? '電波待ち' : '順番待ち'); d.appendChild(s);
+        }
+        g.appendChild(d);
+      });
+      body.appendChild(g);
+    });
+  }
+
   function drawTray() {
     const wrap = $('tray');
     const body = $('trayBody');
     body.textContent = '';
     wrap.hidden = !tray.length;
     $('trayTitle').textContent = '送る前の確認（' + tray.length + '件）';
-    const btn = $('sendBtn');
-    const failed = tray.filter(function (it) { return it.err; }).length;
-    btn.textContent = sending ? '送っています…' : (failed ? '残り ' + tray.length + '件をもう一度送る' : tray.length + '件を事務所に送る');
-    btn.disabled = sending || !tray.length;
-    /* 箱ごとにまとめる（箱の並び順で） */
-    const keys = [];
-    BOXES.forEach(function (b) { tray.forEach(function (it) { const k = it.period + '|' + b; if (it.box === b && keys.indexOf(k) < 0) keys.push(k); }); });
-    keys.sort(function (a, b) { return a.split('|')[0] < b.split('|')[0] ? 1 : a.split('|')[0] > b.split('|')[0] ? -1 : 0; });
-    keys.forEach(function (key) {
-      const pp = key.split('|')[0], b = key.slice(pp.length + 1);
-      const list = tray.filter(function (it) { return it.box === b && it.period === pp; });
-      if (!list.length) return;
-      const h = document.createElement('h3'); h.textContent = ymLabel(pp) + '　' + b + '（' + list.length + '件）'; body.appendChild(h);
-      const g = document.createElement('div'); g.className = 'thumbs';
-      list.forEach(function (it) {
-        const d = document.createElement('div'); d.className = 'ti' + (it.sending ? ' sending' : ''); d.dataset.id = String(it.id);
-        if (it.url) { const img = document.createElement('img'); img.alt = it.file.name || '写真'; img.src = it.url; d.appendChild(img); }
-        else { const k = document.createElement('div'); k.className = 'kind'; k.textContent = isPdf(it.file) ? 'PDF\n' + (it.file.name || '') : (it.file.name || ''); d.appendChild(k); }
-        if (!sending) {
-          const x = document.createElement('button'); x.type = 'button'; x.className = 'del'; x.textContent = '×';
-          x.setAttribute('aria-label', (it.file.name || '写真') + 'を消す');
-          x.addEventListener('click', function () { removeItem(it.id); });
-          d.appendChild(x);
-        }
-        if (it.sending || it.err) {
-          const s = document.createElement('div'); s.className = 'tst' + (it.err ? ' err' : '');
-          s.textContent = it.err ? '失敗' : '送信中…'; d.appendChild(s);
-        }
-        g.appendChild(d);
-      });
-      body.appendChild(g);
-      list.forEach(function (it) { if (it.err) { const p = document.createElement('p'); p.className = 'err-line'; p.textContent = (it.file.name || '写真') + '：' + it.err; body.appendChild(p); } });
-    });
+    $('sendBtn').textContent = tray.length + '件を事務所に送る';
+    $('sendBtn').disabled = !tray.length;
+    thumbsInto(body, tray, { del: function (it) { removeItem(it.id); } });
+  }
+
+  /* 送り出し箱（送っている途中・電波待ち） */
+  function drawOut() {
+    const wrap = $('outbox'), body = $('outBody');
+    body.textContent = '';
+    const left = outbox.length;
+    wrap.hidden = !left;
+    $('outTitle').textContent = '送っています（残り ' + left + '件）';
+    const ng = outbox.filter(function (it) { return it.st === 'ng'; });
+    const waitNet = outbox.some(function (it) { return it.st === 'wait' && it.tries; });
+    $('outSub').textContent = waitNet ? '電波がつながりにくいようです。届くまで 自動で送り直します。閉じても、次に開いたときに続きを送ります。'
+                                      : 'このまま閉じても大丈夫です。届いていないものは、次に開いたときに自動で送ります。';
+    thumbsInto(body, outbox, { status: true, del: function (it) { if (it.st === 'ng' || confirm('この1枚を送るのをやめますか？')) dropOut(it); } });
+    ng.forEach(function (it) { const p = document.createElement('p'); p.className = 'err-line'; p.textContent = (it.name || '写真') + '：' + it.err; body.appendChild(p); });
+    drawPending();
   }
 
   function queueLine(name, box, st, cls, msg) {
@@ -408,56 +455,146 @@
     return li;
   }
 
-  /* 送る。1件ずつ順に。届いたものはトレイから消え、届かなかったものはトレイに残る（もう一度押せる） */
+  /* ---- 端末の控え（IndexedDB）。届くまでのあいだだけ。名前は collect_ で始める ---- */
+  const OUTDB = (function () {
+    let dbp = null;
+    function db() {
+      if (dbp) return dbp;
+      dbp = new Promise(function (ok, ng) {
+        try {
+          const r = indexedDB.open('collect_outbox', 1);
+          r.onupgradeneeded = function () { r.result.createObjectStore('q', { keyPath: 'id' }); };
+          r.onsuccess = function () { ok(r.result); };
+          r.onerror = function () { ng(r.error); };
+        } catch (e) { ng(e); }
+      });
+      return dbp;
+    }
+    function tx(mode, fn) {
+      return db().then(function (d) {
+        return new Promise(function (ok, ng) {
+          const t = d.transaction('q', mode); const req = fn(t.objectStore('q'));
+          t.oncomplete = function () { ok(req && req.result); }; t.onerror = function () { ng(t.error); }; t.onabort = function () { ng(t.error); };
+        });
+      });
+    }
+    return {
+      ok: true,
+      put: function (o) { return tx('readwrite', function (s) { return s.put(o); }).then(function () { return true; }, function () { return false; }); },
+      del: function (id) { return tx('readwrite', function (s) { return s.delete(id); }).catch(function () {}); },
+      all: function () { return tx('readonly', function (s) { return s.getAll(); }).catch(function () { return []; }); }
+    };
+  })();
+  let saved = true;   /* 控えを置けたか（置けない端末では 送り終わるまで閉じないように引き止める） */
+
+  function opId() { return 'op_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10); }
+  function bytesB64(buf) {
+    const u = new Uint8Array(buf); let s = '';
+    for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
+
+  /* 「送る」：トレイを空にして 送り出し箱へ。軽くしたら すぐ送り始める */
   async function sendAll() {
-    if (sending || !tray.length) return;
-    sending = true;
-    let ok = 0, ng = 0;
-    const items = tray.slice();
-    items.forEach(function (it) { it.err = ''; });
+    if (!tray.length) return;
+    const items = tray.slice(); tray = []; drawTray();
+    const memo = $('memo').value; $('memo').value = '';
+    showDone('');
     for (const it of items) {
-      if (tray.indexOf(it) < 0) continue;
-      it.sending = true; drawTray();
-      const li = queueLine(it.file.name || '写真', it.box, '送信中…', '');
-      const st = li.querySelector('.st');
+      const o = { id: opId(), token: TOKEN, box: it.box, name: it.file.name || '写真', mime: '', bytes: null, url: it.url, memo: memo, st: 'prep', tries: 0, next: 0, err: '' };
+      outbox.push(o); drawOut();
       try {
         const p = await prepare(it.file);
-        if (p.size > MAX_BYTES) throw new Error('ファイルが大きすぎます（' + Math.floor(MAX_BYTES / 1048576) + 'MBまで）');
-        await callServer(p, it.box, it.period);
-        st.textContent = '送信済み'; st.className = 'st ok';
-        ok++;
-        boxSent[it.box] = (boxSent[it.box] || 0) + 1;
-        bumpBox(it.box);
-        tray = tray.filter(function (x) { return x !== it; });
-        if (it.url) { try { URL.revokeObjectURL(it.url); } catch (e) {} }
-      } catch (err) {
-        it.err = err && err.message ? err.message : String(err);
-        st.textContent = '失敗'; st.className = 'st err';
-        const m = document.createElement('span'); m.className = 'msg'; m.textContent = it.err; st.appendChild(m);
-        ng++;
-      }
-      it.sending = false; drawTray();
-    }
-    sending = false;
-    drawTray();
-    if (ok && !ng) {
-      $('memo').value = '';
-      showDone(ok + '件を事務所に送りました。ありがとうございます。');
-    } else if (ng) {
-      showDone((ok ? ok + '件は届きました。' : '') + ng + '件が届きませんでした。電波のよいところで「もう一度送る」を押してください。', true);
+        if (p.size > MAX_BYTES) throw Object.assign(new Error('ファイルが大きすぎます（' + Math.floor(MAX_BYTES / 1048576) + 'MBまで）'), { hard: true });
+        o.name = p.name; o.mime = p.mime; o.bytes = p.buf; o.st = 'wait';
+        if (!(await OUTDB.put({ id: o.id, token: o.token, box: o.box, name: o.name, mime: o.mime, bytes: o.bytes, memo: o.memo, at: Date.now() }))) saved = false;
+      } catch (e) { o.st = 'ng'; o.err = e.message || String(e); }
+      drawOut(); pump();
     }
   }
   $('sendBtn').addEventListener('click', sendAll);
 
-  /* 送る前に閉じようとしたら引き止める（写真は端末に残らないので、閉じると消える） */
+  /* 送り出し：2本ずつ。届かなければ 2秒→5秒→10秒→20秒→30秒→60秒（以後60秒おき）で送り直す */
+  const WAIT = [2, 5, 10, 20, 30, 60];
+  let running = 0, okCount = 0;
+  function permanent(msg) { return /使用できません|写真（JPEG|大きすぎ|のみ送信/.test(String(msg || '')); }
+  function pump() {
+    const now = Date.now();
+    while (running < 2) {
+      const it = outbox.find(function (x) { return x.st === 'wait' && x.next <= now; });
+      if (!it) break;
+      running++; it.st = 'send'; drawOut();
+      (function (it) {
+        call('uploadFile', [TOKEN, it.name, it.mime, bytesB64(it.bytes), it.memo, it.box, period(), it.id], 120000).then(function () {
+          running--;
+          outbox = outbox.filter(function (x) { return x !== it; });
+          OUTDB.del(it.id);
+          if (it.url) { try { URL.revokeObjectURL(it.url); } catch (e) {} }
+          okCount++;
+          boxSent[it.box] = (boxSent[it.box] || 0) + 1; bumpBox(it.box);
+          const li = queueLine(it.name, it.box, '送信済み', 'ok');
+          li.querySelector('.bx').textContent = ymLabel(period()) + ' ［' + it.box + '］';
+          if (!outbox.length) { showDone(okCount + '件を事務所に送りました。ありがとうございます。'); okCount = 0; }
+          drawOut(); pump();
+        }, function (e) {
+          running--;
+          it.err = e && e.message ? e.message : String(e);
+          if (permanent(it.err)) { it.st = 'ng'; OUTDB.del(it.id); }
+          else { it.st = 'wait'; it.tries++; it.next = Date.now() + WAIT[Math.min(it.tries - 1, WAIT.length - 1)] * 1000; }
+          drawOut(); pump();
+        });
+      })(it);
+    }
+  }
+  setInterval(pump, 2000);
+  window.addEventListener('online', function () { outbox.forEach(function (x) { if (x.st === 'wait') x.next = 0; }); pump(); });
+  function dropOut(it) { outbox = outbox.filter(function (x) { return x !== it; }); OUTDB.del(it.id); if (it.url) { try { URL.revokeObjectURL(it.url); } catch (e) {} } drawOut(); }
+  /* 今すぐ送り直す（履歴から） */
+  function retryNow() { outbox.forEach(function (x) { if (x.st === 'wait') x.next = 0; }); pump(); }
+
+  /* 開いたとき：前に送りきれなかったものを 控えから戻して 自動で送る */
+  function resumeOutbox() {
+    OUTDB.all().then(function (list) {
+      list.filter(function (r) { return r && r.token === TOKEN && r.bytes; }).sort(function (a, b) { return a.at - b.at; }).forEach(function (r) {
+        if (outbox.some(function (x) { return x.id === r.id; })) return;
+        let url = ''; if (/^image\//.test(r.mime)) { try { url = URL.createObjectURL(new Blob([r.bytes], { type: r.mime })); } catch (e) {} }
+        outbox.push({ id: r.id, token: r.token, box: r.box, name: r.name, mime: r.mime, bytes: r.bytes, url: url, memo: r.memo || '', st: 'wait', tries: 0, next: 0, err: '' });
+      });
+      if (outbox.length) { drawOut(); pump(); }
+    });
+  }
+
+  /* 送る前（トレイ）に閉じようとしたら引き止める。送り出し箱は控えがあるので引き止めない（控えを置けない端末だけ引き止める） */
   window.addEventListener('beforeunload', function (e) {
-    if (tray.length || sending) { e.preventDefault(); e.returnValue = ''; return ''; }
+    if (tray.length || (!saved && outbox.length)) { e.preventDefault(); e.returnValue = ''; return ''; }
   });
+
+  /* 送った履歴のいちばん上に「まだ届いていないもの」（自動で送り直している。今すぐ送るもできる） */
+  function drawPending() {
+    const w = $('pending'), ul = $('pendList'); if (!w) return;
+    ul.textContent = '';
+    w.hidden = !outbox.length;
+    $('pendTitle').textContent = 'まだ届いていないもの（' + outbox.length + '件）';
+    outbox.forEach(function (it) {
+      const li = document.createElement('li');
+      li.innerHTML = '<div class="top"><span class="nm"><span class="bx"></span><span class="fn"></span></span><span class="badge"></span></div>';
+      li.querySelector('.bx').textContent = ymLabel(period()) + ' ［' + it.box + '］';
+      li.querySelector('.fn').textContent = it.name;
+      const b = li.querySelector('.badge');
+      b.textContent = it.st === 'send' ? '送信中…' : it.st === 'ng' ? '送れません' : '自動で送り直し中';
+      b.className = 'badge ' + (it.st === 'ng' ? 'st-back' : 'st-received');
+      if (it.st === 'ng') { const n = document.createElement('p'); n.className = 'note'; n.textContent = it.err; li.appendChild(n); }
+      ul.appendChild(li);
+    });
+  }
+  $('pendGo').addEventListener('click', retryNow);
 
   /* ---- ボックス ----
      顧問先ごとの箱（現金の領収書・通帳：○○銀行…）。並びはサーバ（マスタの「ボックス」列）が決める。
      ★ 箱の名前は事務所が書いたものなので、textContent で入れる（innerHTML にしない） */
   const ICON_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.8"/></svg>';
+  const ICON_BOX = '<svg class="box-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l2.2-4.4A1 1 0 0 1 6.1 4h11.8a1 1 0 0 1 .9.6L21 9"/><path d="M3 9h5l1.5 3h5L16 9h5v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>';
+  const ICON_DROP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11"/><path d="M7.5 9.5L12 14l4.5-4.5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>';
   let BOXES = [];
 
   function buildBoxes(boxes) {
@@ -469,13 +606,13 @@
       el.className = 'box';
       el.dataset.box = name;
       el.innerHTML =
-        '<div class="box-head"><h2 class="box-name"></h2><span class="box-count"></span></div>' +
+        '<div class="box-head"><span class="ttl">' + ICON_BOX + '<h2 class="box-name"></h2></span><span class="box-count"></span></div>' +
         '<div class="box-btns">' +
           '<button type="button" class="btn cam">' + ICON_CAM + '撮る</button>' +
           '<label class="btn pick">選ぶ<input class="pick" type="file" accept="image/*,application/pdf" multiple></label>' +
         '</div>' +
         '<input class="cam1" type="file" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">' +
-        '<p class="drop-hint">ここにファイルをドラッグ＆ドロップ</p>';
+        '<div class="drop">' + ICON_DROP + 'ここへドラッグ＆ドロップ</div>';
       el.querySelector('.box-name').textContent = name;
       el.querySelector('button.cam').setAttribute('aria-label', name + '：撮る');
       el.querySelector('button.cam').addEventListener('click', function () { openCamera(name, el.querySelector('input.cam1')); });
@@ -620,16 +757,16 @@
   async function prepare(file) {
     const type = file.type || '';
     if (type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
-      return { name: file.name, mime: 'application/pdf', b64: await toBase64(file), size: file.size };
+      return { name: file.name, mime: 'application/pdf', buf: await toBuf(file), size: file.size };
     }
     try {
       const blob = await shrink(file);
       const base = (file.name || 'photo').replace(/\.[^.]+$/, '');
-      return { name: base + '.jpg', mime: 'image/jpeg', b64: await toBase64(blob), size: blob.size };
+      return { name: base + '.jpg', mime: 'image/jpeg', buf: await toBuf(blob), size: blob.size };
     } catch (_) {
       // 縮小できない形式（端末によってはHEIC）は元のまま送る
       const mime = type || 'image/jpeg';
-      return { name: file.name || 'photo', mime: mime, b64: await toBase64(file), size: file.size };
+      return { name: file.name || 'photo', mime: mime, buf: await toBuf(file), size: file.size };
     }
   }
 
@@ -654,19 +791,16 @@
     });
   }
 
-  function toBase64(blob) {
+  function toBuf(blob) {
+    if (blob.arrayBuffer) return blob.arrayBuffer();
     return new Promise(function (resolve, reject) {
       const r = new FileReader();
-      r.onload = function () { resolve(String(r.result).split(',')[1]); };
+      r.onload = function () { resolve(r.result); };
       r.onerror = function () { reject(new Error('ファイルを読み込めませんでした')); };
-      r.readAsDataURL(blob);
+      r.readAsArrayBuffer(blob);
     });
   }
 
-  function callServer(p, box, period) {
-    const memo = $('memo').value;
-    return call('uploadFile', [TOKEN, p.name, p.mime, p.b64, memo, box, period || ''], 300000);
-  }
 
   /* サーバを呼ぶ道は、ここ1か所だけ */
   const LIVE_FN = ['uploadFile', 'clientHistory'];
@@ -714,6 +848,7 @@
     document.title = '資料提出｜' + name;
     $('ng').hidden = true;
     $('app').hidden = false;
+    resumeOutbox();
   }
   function showNg(msg) {
     $('app').hidden = true;
