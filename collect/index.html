@@ -152,6 +152,25 @@
   .hst.back { color: #fff; background: var(--err); }
   .hx { position: absolute; top: 3px; right: 3px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
 
+  /* ---- 大きく見る・移す ---- */
+  .ht img { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .ht { cursor: zoom-in; }
+  .ht.movable { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .ht.lifted { opacity: .35; }
+  body.dragging .mon { outline: 2px dashed #8FBFB2; outline-offset: -2px; }
+  .mon.target { outline: 3px solid var(--accent) !important; background: #DCEFE8; }
+  .ghost { position: fixed; z-index: 20; width: 80px; height: 106px; border-radius: 8px; overflow: hidden; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.35); background: #fff; border: 2px solid var(--accent); font-size: 11px; }
+  .ghost img { width: 100%; height: 100%; object-fit: cover; }
+  .zoomv { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.92); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: zoom-out; padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0); }
+  .zoomv img { max-width: 100%; max-height: calc(100% - 90px); object-fit: contain; }
+  .zcap { color: #fff; font-size: 15px; font-weight: 700; padding: 10px 16px 0; text-align: center; white-space: pre-line; }
+  .zload { color: #cfe; font-size: 13px; padding-top: 4px; }
+  .zhint { color: #aaa; font-size: 12px; padding: 4px 0 10px; }
+  .mv { display: grid; grid-template-columns: 88px 1fr; gap: 12px; margin: 8px 0 12px; }
+  .mvth { cursor: default; }
+  .mvl { display: block; font-size: 14px; color: var(--sub); margin-top: 6px; }
+  .mvl select { display: block; width: 100%; margin-top: 2px; font-size: 17px; font-weight: 700; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+
   /* ---- 撮り直しのお願い ---- */
   .notice { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; margin: 0 0 12px; padding: 12px 16px; border-radius: 14px;
             border: 2px solid var(--err); background: #FDECEA; color: var(--err); font: inherit; font-size: 17px; cursor: pointer; text-align: left; }
@@ -250,6 +269,28 @@
   </div>
 </div>
 <div class="flash" id="flash"></div>
+
+<div class="zoomv" id="zoomv" hidden role="dialog" aria-modal="true" aria-label="大きく見る">
+  <img id="zoomImg" alt="">
+  <div class="zcap" id="zoomCap"></div>
+  <div class="zload" id="zoomLoad" hidden>くっきりした写真を読み込み中…</div>
+  <div class="zhint">もう一度押すと 戻ります</div>
+</div>
+
+<div class="sheetv" id="movev" hidden role="dialog" aria-modal="true" aria-labelledby="mvT">
+  <div class="sheet">
+    <div class="sheet-h"><h2 id="mvT">別の月分へ移す</h2></div>
+    <div class="mv">
+      <div class="ht mvth" id="mvThumb"></div>
+      <div class="mv-r">
+        <p class="sub" id="mvNow"></p>
+        <label class="mvl">何年何月分<select id="mvPer"></select></label>
+        <label class="mvl">箱<select id="mvBox"></select></label>
+      </div>
+    </div>
+    <div class="bl-b"><button type="button" class="btn cam" id="mvGo">移す</button><button type="button" class="btn pick" id="mvCancel">やめる</button></div>
+  </div>
+</div>
 
 <div class="sheetv" id="backv" hidden role="dialog" aria-modal="true" aria-labelledby="backT">
   <div class="sheet">
@@ -624,6 +665,11 @@
       const key = box + '|' + p;
       const open = key in OPEN ? OPEN[key] : (p === period() || o.length > 0);
       const mon = mk('div', 'mon' + (open ? ' open' : ''));
+      mon.dataset.box = box; mon.dataset.per = p;
+      /* パソコン：写真をつかんで 別の月分の小箱へ落とすと 移る */
+      mon.addEventListener('dragover', function (e) { if (!DRAGH) return; e.preventDefault(); e.stopPropagation(); mon.classList.add('target'); });
+      mon.addEventListener('dragleave', function () { mon.classList.remove('target'); });
+      mon.addEventListener('drop', function (e) { if (!DRAGH) return; e.preventDefault(); e.stopPropagation(); mon.classList.remove('target'); const h0 = DRAGH; DRAGH = null; moveTo(h0, box, p); });
       const hrow = mk('div', 'mon-hd');
       const hd = mk('button', 'mon-h'); hd.type = 'button'; hd.setAttribute('aria-expanded', String(open));
       hd.innerHTML = ICON_BOX_S + '<span class="ml"></span><span class="mc"></span><span class="chev" aria-hidden="true">▾</span>';
@@ -662,6 +708,7 @@
     d.classList.add('sending');
     const t = it.st === 'send' ? '送信中…' : it.st === 'prep' ? '準備中…' : it.st === 'ng' ? '送れません' : it.tries ? '電波待ち（自動で再送）' : '送信待ち';
     d.appendChild(mk('div', 'hst ' + (it.st === 'ng' ? 'back' : 'wait'), t));
+    d.addEventListener('click', function (e) { if (e.target.closest('.hx')) return; zoomOpen(it.url || it.thumb, '', it.name + '（' + t + '）'); });
     if (it.st !== 'send') {
       const x = mk('button', 'hx', '×'); x.type = 'button'; x.setAttribute('aria-label', '送るのをやめる');
       x.addEventListener('click', function () { if (it.st === 'ng' || confirm('この1枚を送るのをやめますか？')) dropOut(it); });
@@ -675,7 +722,20 @@
     if (TH[h.k] === null && !h.pdf) { d.classList.remove('wait'); d.appendChild(mk('div', 'kind', h.name)); }
     const s = stOf(h);
     d.appendChild(mk('div', 'hst ' + s[0], s[1]));
-    if (h.status === 'back' && !h.redo) { d.classList.add('isback'); d.addEventListener('click', function (e) { if (e.target.closest('.hx')) return; openBack(); }); }
+    if (h.status === 'back' && !h.redo) d.classList.add('isback');
+    /* ★ 押すと すぐ大きく（手元の小さい絵をまず出し、届いた中身に差し替える）。もう一度押すと戻る */
+    d.addEventListener('click', function (e) {
+      if (e.target.closest('.hx') || Date.now() - LP_END < 700) return;
+      zoomOpen(TH[h.k], h.k, ymLabel(h.period) + '［' + h.box + '］　' + s[1] + (h.note ? '\n事務所から：' + h.note : ''));
+    });
+    /* ★ 間違えた月分に入れたとき：長押しして 別の月分の小箱へ滑らせる（パソコンはつかんで落とす）。確定済みは動かさない */
+    if (h.status !== 'done' && !/^local_/.test(h.k)) {
+      d.classList.add('movable'); d.draggable = true;
+      d.addEventListener('dragstart', function (e) { DRAGH = h; try { e.dataTransfer.setData('text/plain', ''); e.dataTransfer.effectAllowed = 'move'; } catch (x) {} });
+      d.addEventListener('dragend', function () { setTimeout(function () { DRAGH = null; }, 0); });
+      d.addEventListener('touchstart', function (e) { lpBegin(e, h, d); }, { passive: true });
+      d.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    }
     if (h.status !== 'done') {
       const x = mk('button', 'hx', '×'); x.type = 'button'; x.setAttribute('aria-label', h.name + 'を消す');
       x.addEventListener('click', function () { delHist(h); });
@@ -690,6 +750,107 @@
       HIST = HIST.filter(function (x) { return x !== h; }); drawAll(); showDone('消しました。');
     }, function (e) { showDone('消せませんでした。' + e.message, true); });
   }
+  /* ---- 大きく見る（押すと すぐ。もう一度押すと戻る）---- */
+  const FULL = {}, FULLK = [];
+  let ZK = '';
+  function zoomOpen(src, k, cap) {
+    const v = $('zoomv'), img = $('zoomImg');
+    ZK = k || '';
+    img.removeAttribute('src'); if (src) img.src = src;
+    $('zoomCap').textContent = cap || '';
+    v.hidden = false; document.body.classList.add('noscroll');
+    $('zoomLoad').hidden = true;
+    if (!k || /^local_/.test(k)) return;
+    if (FULL[k]) { img.src = FULL[k]; return; }
+    $('zoomLoad').hidden = false;
+    call('clientImage', [TOKEN, k], 60000).then(function (r) {
+      if (r && r.src) { FULL[k] = r.src; FULLK.push(k); if (FULLK.length > 15) delete FULL[FULLK.shift()]; }
+      if (ZK !== k || $('zoomv').hidden) return;
+      $('zoomLoad').hidden = true;
+      if (r && r.src) img.src = r.src;
+    }, function () { if (ZK === k) $('zoomLoad').hidden = true; });
+  }
+  function zoomClose() { $('zoomv').hidden = true; ZK = ''; $('zoomImg').removeAttribute('src'); if ($('backv').hidden && $('movev').hidden) document.body.classList.remove('noscroll'); }
+  $('zoomv').addEventListener('click', zoomClose);
+
+  /* ---- 別の月分へ移す（長押しして滑らせる・パソコンはつかんで落とす・どこにも落とさなければ 月分を選ぶ）---- */
+  let DRAGH = null;     /* パソコンでつかんでいる写真 */
+  let LP = null, LP_END = 0;
+  function lpBegin(e, h, d) {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    LP = { h: h, d: d, x: t.clientX, y: t.clientY, on: false, ghost: null, tgt: null };
+    LP.timer = setTimeout(function () {
+      if (!LP) return;
+      LP.on = true;
+      try { if (navigator.vibrate) navigator.vibrate(25); } catch (x) {}
+      const g = mk('div', 'ghost'); const im = d.querySelector('img');
+      if (im) { const c = mk('img'); c.src = im.src; c.alt = ''; g.appendChild(c); } else g.textContent = h.name;
+      document.body.appendChild(g); LP.ghost = g;
+      d.classList.add('lifted'); document.body.classList.add('dragging');
+      lpMoveTo(LP.x, LP.y);
+    }, 450);
+  }
+  function lpMoveTo(x, y) {
+    LP.x = x; LP.y = y;
+    if (LP.ghost) { LP.ghost.style.left = (x - 40) + 'px'; LP.ghost.style.top = (y - 60) + 'px'; }
+    const el = document.elementFromPoint(x, y);
+    const mon = el && el.closest ? el.closest('.mon') : null;
+    if (LP.tgt && LP.tgt !== mon) LP.tgt.classList.remove('target');
+    LP.tgt = mon && !(mon.dataset.box === LP.h.box && mon.dataset.per === LP.h.period) ? mon : null;
+    if (LP.tgt) LP.tgt.classList.add('target');
+    /* 画面の端に来たら 少しずつ送る（遠くの月分まで滑らせられるように） */
+    if (y < 90) window.scrollBy(0, -14); else if (y > window.innerHeight - 90) window.scrollBy(0, 14);
+  }
+  document.addEventListener('touchmove', function (e) {
+    if (!LP) return;
+    const t = e.touches[0];
+    if (!LP.on) { if (Math.abs(t.clientX - LP.x) > 10 || Math.abs(t.clientY - LP.y) > 10) { clearTimeout(LP.timer); LP = null; } return; }
+    e.preventDefault();
+    lpMoveTo(t.clientX, t.clientY);
+  }, { passive: false });
+  function lpEnd(cancel) {
+    if (!LP) return;
+    clearTimeout(LP.timer);
+    const L = LP; LP = null;
+    if (!L.on) return;
+    LP_END = Date.now();
+    if (L.ghost) L.ghost.remove();
+    L.d.classList.remove('lifted'); document.body.classList.remove('dragging');
+    if (L.tgt) L.tgt.classList.remove('target');
+    if (cancel) return;
+    if (L.tgt) moveTo(L.h, L.tgt.dataset.box, L.tgt.dataset.per);
+    else openMove(L.h);
+  }
+  document.addEventListener('touchend', function (e) { if (LP && LP.on) e.preventDefault(); lpEnd(false); }, { passive: false });
+  document.addEventListener('touchcancel', function () { lpEnd(true); });
+
+  function moveTo(h, box, per) {
+    if (!h || (h.box === box && h.period === per)) return;
+    const was = { box: h.box, period: h.period };
+    h.box = box; h.period = per; OPEN[box + '|' + per] = true; drawAll();
+    call('clientMove', [TOKEN, h.k, per, box], 30000).then(function (r) {
+      if (r) { h.box = r.box; h.period = r.period; }
+      drawAll(); showDone(ymLabel(h.period) + '［' + h.box + '］へ移しました。');
+    }, function (e) { h.box = was.box; h.period = was.period; drawAll(); showDone('移せませんでした。' + e.message, true); });
+  }
+  /* 月分を選んで移す（長押しして どこにも落とさなかったとき） */
+  let MOVEH = null;
+  function openMove(h) {
+    MOVEH = h;
+    const ms = $('mvPer'); ms.innerHTML = $('period').innerHTML; ms.value = h.period;
+    const bs = $('mvBox'); bs.textContent = '';
+    BOXES.forEach(function (b) { const o = mk('option', null, b); o.value = b; bs.appendChild(o); });
+    bs.value = h.box;
+    const th = $('mvThumb'); th.textContent = '';
+    if (TH[h.k]) { const im = mk('img'); im.src = TH[h.k]; im.alt = ''; th.appendChild(im); }
+    $('mvNow').textContent = 'いま：' + ymLabel(h.period) + '［' + h.box + '］';
+    $('movev').hidden = false; document.body.classList.add('noscroll');
+  }
+  function closeMove() { $('movev').hidden = true; MOVEH = null; if ($('backv').hidden) document.body.classList.remove('noscroll'); }
+  $('mvCancel').addEventListener('click', closeMove);
+  $('mvGo').addEventListener('click', function () { const h = MOVEH; const per = $('mvPer').value, box = $('mvBox').value; closeMove(); moveTo(h, box, per); });
+
   /* 月分の小箱を まとめて消す（撮り直したいとき）。送信中でないものは送るのをやめ、届いたものは消す（確定済みは残る） */
   function delMonth(box, p, outs, hs) {
     const hk = hs.filter(function (x) { return x.status !== 'done'; });
@@ -888,6 +1049,8 @@
     }, 'image/jpeg', JPEG_Q);
   });
   document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !$('zoomv').hidden) { zoomClose(); return; }
+    if (e.key === 'Escape' && !$('movev').hidden) { closeMove(); return; }
     if (e.key === 'Escape' && !$('backv').hidden) { closeBack(); return; }
     if ($('camv').hidden) return;
     if (e.key === 'Escape') closeCamera();
@@ -927,11 +1090,12 @@
         /* 一覧に出す小さい絵（長い辺300px）。事務所と顧問先の一覧が これで速く出る */
         let thumb = '';
         try {
-          const tr = Math.min(1, 300 / Math.max(w, h));
+          const tr = Math.min(1, 400 / Math.max(w, h));
           const t = document.createElement('canvas'); t.width = Math.max(1, Math.round(w * tr)); t.height = Math.max(1, Math.round(h * tr));
           t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
           thumb = t.toDataURL('image/jpeg', 0.6);
-          if (thumb.length > 44000) thumb = t.toDataURL('image/jpeg', 0.4);
+          if (thumb.length > 44000) thumb = t.toDataURL('image/jpeg', 0.45);
+          if (thumb.length > 44000) thumb = t.toDataURL('image/jpeg', 0.3);
           if (thumb.length > 44000) thumb = '';
         } catch (e) { thumb = ''; }
         c.toBlob(function (b) { b ? resolve({ blob: b, thumb: thumb }) : reject(new Error('変換失敗')); }, 'image/jpeg', JPEG_Q);
@@ -953,7 +1117,7 @@
 
 
   /* サーバを呼ぶ道は、ここ1か所だけ */
-  const LIVE_FN = ['uploadFile', 'clientHistory', 'clientThumbs', 'clientDelete', 'clientDeleteMany'];
+  const LIVE_FN = ['uploadFile', 'clientHistory', 'clientThumbs', 'clientDelete', 'clientDeleteMany', 'clientImage', 'clientMove'];
   function call(fn, args, ms) {
     return new Promise(function (resolve, reject) {
       if (LIVE) {
