@@ -587,7 +587,7 @@
     return call('clientHistory', [TOKEN], 30000).then(function (list) {
       const fresh = HIST.filter(function (h) { return h.fresh && !(list || []).some(function (x) { return x.k === h.k; }); });
       HIST = fresh.concat(list || []); HLOADED = true; drawAll();
-    }, function () { HAT = 0; });
+    }, function () { HAT = 0; setTimeout(function () { if (!HLOADED) loadHist(); }, 15000); });
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden && TOKEN && Date.now() - HAT > 60000) loadHist(); });
 
@@ -961,7 +961,10 @@
   }
 
   /* ---- 起動 ---- */
+  let appOn = false;
   function showApp(name, maxMb, boxes) {
+    if (appOn) return;
+    appOn = true;
     MAX_BYTES = Number(maxMb || 20) * 1024 * 1024;
     buildBoxes(boxes);
     $('client').textContent = name + ' 様';
@@ -979,6 +982,11 @@
     ng.hidden = false;
   }
   const NG_URL = 'このURLは使用できません。お手数ですが、担当の事務所スタッフにお問い合わせください。';
+  /* ★★ 開くときに待たせない・止まらない（2026-10-06。4台で同時に送っていたら「つながりませんでした」で開けなかった）
+       ・前に開いたときの顧問先名・箱を覚えておき（collect_info。資料ではない）、すぐ画面を出す。新しいものは裏で取って差し替える
+       ・初めての端末でも、つながらなければ あきらめずに 自動で聞き直す（3秒→6秒→10秒→20秒…）。止めるのは「使用できません」のときだけ */
+  const LS_INFO = 'collect_info';
+  function infoGet() { try { const o = JSON.parse(lsGet(LS_INFO) || 'null'); return o && o.t === TOKEN ? o : null; } catch (e) { return null; } }
   (function boot() {
     if (LIVE) {
       if (BOOT) showApp(BOOT.clientName, BOOT.maxMb, BOOT.boxes); else showNg(NG_URL);
@@ -986,14 +994,24 @@
     }
     if (!TOKEN) { showNg(NG_URL); return; }
     if (!WEB2) { showNg('送り先（サーバの口）が分かりません。担当の事務所スタッフにお問い合わせください。'); return; }
-    showNg('読み込み中…');
-    call('clientInfo', [TOKEN]).then(function (r) {
-      lsSet(LS_TOK, TOKEN);
-      showApp(r.clientName, r.maxMb, r.boxes);
-    }, function (e) {
-      if (/使用できません/.test(e.message)) { lsDel(LS_TOK); showNg(NG_URL); return; }
-      showNg('つながりませんでした。電波のよいところで開き直してください。（' + e.message + '）');
-    });
+    const kept = infoGet();
+    if (kept) showApp(kept.name, kept.maxMb, kept.boxes); else showNg('読み込み中…');
+    const BOOT_WAIT = [3, 6, 10, 20, 30];
+    let n = 0;
+    (function ask() {
+      call('clientInfo', [TOKEN], 30000).then(function (r) {
+        lsSet(LS_TOK, TOKEN);
+        lsSet(LS_INFO, JSON.stringify({ t: TOKEN, name: r.clientName, maxMb: r.maxMb, boxes: r.boxes }));
+        if (!kept) { showApp(r.clientName, r.maxMb, r.boxes); return; }
+        /* 箱が変わっていたら 組み直す（送る前の写真がトレイにあるときは そのまま） */
+        if (JSON.stringify(kept.boxes) !== JSON.stringify(r.boxes) && !tray.length) { buildBoxes(r.boxes); drawAll(); }
+        $('client').textContent = r.clientName + ' 様';
+      }, function (e) {
+        if (/使用できません/.test(e.message)) { lsDel(LS_TOK); lsDel(LS_INFO); showNg(NG_URL); return; }
+        if (!kept) showNg('つながるのを待っています…（混み合っているか、電波が弱いようです。このまま開いておけば つながり次第 出ます）');
+        setTimeout(ask, BOOT_WAIT[Math.min(n++, BOOT_WAIT.length - 1)] * 1000);
+      });
+    })();
   })();
 </script>
 </body>
