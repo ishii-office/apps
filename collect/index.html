@@ -343,6 +343,7 @@
   function ymOf(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
   function ymLabel(v) { const m = String(v || '').match(/^(\d{4})-(\d{2})$/); return m ? m[1] + '年' + Number(m[2]) + '月分' : ''; }
   const LS_PER = 'collect_period';
+  const PERIOD_FROM = '2024-01';   /* 選べるいちばん古い月分（サーバの periodOk_ と同じ） */
   function setPeriod(v) {
     const sel = $('period');
     if (!Array.from(sel.options).some(function (o) { return o.value === v; })) return false;
@@ -350,7 +351,12 @@
   }
   (function () {
     const sel = $('period'); const now = new Date();
-    for (let i = 0; i <= 12; i++) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); const o = document.createElement('option'); o.value = ymOf(d); o.textContent = ymLabel(o.value); sel.appendChild(o); }
+    /* ★ 過去の資料も送れるように 2024年1月分まで選べる（2026-10-06）。長いので 年ごとにまとめる */
+    let grp = null;
+    for (let d = new Date(now.getFullYear(), now.getMonth(), 1); ymOf(d) >= PERIOD_FROM; d = new Date(d.getFullYear(), d.getMonth() - 1, 1)) {
+      if (!grp || grp.dataset.y !== String(d.getFullYear())) { grp = document.createElement('optgroup'); grp.label = d.getFullYear() + '年'; grp.dataset.y = String(d.getFullYear()); sel.appendChild(grp); }
+      const o = document.createElement('option'); o.value = ymOf(d); o.textContent = ymLabel(o.value); grp.appendChild(o);
+    }
     sel.value = ymOf(new Date(now.getFullYear(), now.getMonth() - (now.getDate() <= 15 ? 1 : 0), 1));
     /* 選んだ月は覚えておく（開き直しても 送っている途中のものの月が変わらないように）。ひと月より前に選んだものは使わない */
     let keep = ''; try { keep = JSON.parse(lsGet(LS_PER) || 'null'); } catch (e) {}
