@@ -104,8 +104,8 @@
   .dk-main h2 { font-size: 17px; margin: 0 0 10px; }
 
   /* 勘定科目の表 */
-  .acct-rows { max-width: 640px; display: grid; gap: 4px; margin-bottom: 10px; }
-  .acct-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) minmax(0, 150px) 36px; gap: 4px; }
+  .acct-rows { max-width: 760px; display: grid; gap: 4px; margin-bottom: 10px; }
+  .acct-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) 56px minmax(0, 1fr) 36px; gap: 4px; }
   .acct-row input { min-width: 0; width: 100%; }
   .acct-row input.code { font-family: ui-monospace, Menlo, monospace; }
   .acct-row.head { font-size: 12.5px; color: var(--sub); font-weight: 700; }
@@ -364,7 +364,7 @@
     .dk-side { border-right: 0; border-bottom: 1px solid var(--line); }
     #dIndex { max-height: 30vh; }
     .dk-main { padding: 12px 10px; }
-    .acct-row { grid-template-columns: 70px minmax(0, 1fr) minmax(0, 96px) 32px; }
+    .acct-row { grid-template-columns: 58px minmax(0, 1fr) 44px minmax(0, 1fr) 30px; }
     .cl-side { border-right: 0; border-bottom: 1px solid var(--line); }
     #alist { max-height: 32vh; }
     .cl-main { padding: 14px; }
@@ -408,7 +408,7 @@
     <button type="button" role="tab" data-tab="Docs" aria-pressed="false">回収資料</button>
     <button type="button" role="tab" data-tab="In" aria-pressed="true">仕訳化</button>
     <button type="button" role="tab" data-tab="Dict" aria-pressed="false">辞書</button>
-    <button type="button" role="tab" data-tab="Out" aria-pressed="false">一括取込ファイル</button>
+    <button type="button" role="tab" data-tab="Out" aria-pressed="false">取込ファイル</button>
     <button type="button" role="tab" data-tab="Clients" aria-pressed="false">顧問先</button>
     <button type="button" role="tab" data-tab="Staff" aria-pressed="false" id="tabStaff" hidden>担当者</button>
   </span>
@@ -464,13 +464,13 @@
     <div id="dvMain">
       <h2 id="dictTitle">仕訳辞書の登録・編集</h2>
       <div class="kbcard" id="slip" hidden>
+        <div class="kbrow">
+          <label class="kbf">回収ボックス <select id="sBox"></select></label>
+        </div>
         <div class="kbrow one">
           <label class="kbf no">No <input id="sNo" inputmode="numeric" maxlength="3"></label>
           <label class="kbf wide">取引の種類 <input id="sTitle" maxlength="40" placeholder="例：打ち合わせ食事代"></label>
           <label class="kbf">グループ <select id="sGrp"><option value="いつも">いつもの取引</option><option value="たまに">たまにある取引</option><option value="わからない">わからない場合</option></select></label>
-        </div>
-        <div class="kbrow">
-          <label class="kbf">回収ボックス <select id="sBox"></select></label>
         </div>
         <div id="dslip"></div>
         <div class="bar"><button type="button" class="btn ghost sm" id="sAddLine">＋ 仕訳の行を足す（複数仕訳）</button></div>
@@ -499,8 +499,8 @@
     </div>
 
     <div id="daMain" hidden>
-      <h2>勘定科目の表（事務所で1つ）</h2>
-      <p class="note">辞書でコードを打つと、ここの科目名が出ます。TKC の科目一覧（コード・科目名）を Excel でコピーして、下の「貼り付け」から入れると早いです。<br>
+      <h2 id="aTitle2">勘定科目と口座（この顧問先）</h2>
+      <p class="note">顧問先ごとに1つ。辞書でコードを打つと 科目名が、口座コードを打つと 口座名が出ます。TKC の科目・補助（口座）一覧を Excel でコピーして、下の「貼り付け」から入れると早いです。<br>
         <span id="aRo">変えられるのは マスターの方だけです。</span></p>
       <div class="acct-rows" id="aRows"></div>
       <div class="bar" id="aBar">
@@ -510,7 +510,7 @@
       </div>
       <details id="aPasteBox">
         <summary>Excel から貼り付けて まとめて入れる</summary>
-        <p class="note">「コード・科目名・税区分（なくてもよい）」の順。同じコードは置き換えます。</p>
+        <p class="note">「科目コード・科目名・口座コード・口座名」の順（口座の無い科目は 口座コード・口座名を空に）。同じ科目・口座は置き換えます。</p>
         <textarea id="aPaste" aria-label="科目の貼り付け"></textarea>
         <div class="bar"><button type="button" id="aPasteGo">表に入れる</button></div>
       </details>
@@ -518,16 +518,16 @@
   </div>
 </div>
 
-<!-- ===== 一括取込ファイル（確定した伝票と写真を並べて見る → 変換） ===== -->
+<!-- ===== 取込ファイル（確定した伝票と写真を並べて見る → 変換） ===== -->
 <div class="pane page dpz" id="paneOut" hidden>
   <div class="bar">
     <label>月（仕訳の日付）<input type="month" id="outMonth"></label>
     <span class="sp"></span>
-    <button type="button" class="primary" id="outGo">一括取込ファイルへ変換</button>
+    <button type="button" class="primary" id="outGo">取込ファイルへ変換</button>
     <span class="pagemsg" id="oMsg" role="status"></span>
   </div>
   <p id="oLink"></p>
-  <p class="note">確定した伝票を 回収ボックスごとに並べます。見て よければ［一括取込ファイルへ変換］。TKC FX クラウド「仕訳帳(Excel)の読込」の形（44列）で
+  <p class="note">確定した伝票を 回収ボックスごとに並べます。見て よければ［取込ファイルへ変換］。TKC FX クラウド「仕訳帳(Excel)の読込」の形（44列）で
     Drive の顧問先フォルダ「一括読み込みエクセル」に置きます（1ファイル60行まで・日付をまたがない）。変換した仕訳は取り消せなくなります。</p>
   <div id="oBody"><div class="cbox muted">読み込み中…</div></div>
 </div>
@@ -712,7 +712,6 @@
     }, function (e) { if (S.started) fatal(e.message); });
   }
   function main() {
-    loadAcct();
     gs('workInit').then(function (r) {
       S.clients = r.clients;
       const now = r.today.slice(0, 7).replace('/', '-');
@@ -948,7 +947,9 @@
     const f = $('dFrom'); f.textContent = '';
     S.clients.filter(function (x) { return x.code !== S.code; }).forEach(function (x) { const o = el('option', null, x.code + '　' + x.name); o.value = x.code; f.appendChild(o); });
     S.docs = null; S.per = ''; $('per').value = '';
-    loadDict().then(function () { load(); if (S.tab === 'Out') oLoad(); if (S.tab === 'Docs') docsLoad(); });
+    $('aTitle2').textContent = '勘定科目と口座：' + (c ? c.code + '　' + c.name : '');
+    /* 勘定科目を先に（辞書のコードを確かめるのに使う） */
+    loadAcct().then(loadDict).then(function () { load(); if (S.tab === 'Out') oLoad(); if (S.tab === 'Docs') docsLoad(); });
   }
   $('box').addEventListener('change', function () { S.box = this.value; if (S.tab === 'Docs') docsDraw(); else render(); });
   document.querySelectorAll('#filter button').forEach(function (b) {
@@ -1333,7 +1334,7 @@
       t.classList.toggle('ov', 'rate' in l.ov);
     }
     else {
-      onCodeCell(t, box);
+      onCodeCell(t, box); subFill(box, k);
       const val = /Code$|Sub$|^party$|^rate$|^tax$|^biz$/.test(k) ? half(t.value) : t.value.trim();
       if (String(base[k] == null ? '' : base[k]) === val) delete l.ov[k]; else l.ov[k] = val;
       t.classList.toggle('ov', k in l.ov);
@@ -1635,8 +1636,10 @@
       const v = slipVals(it.id, ln);
       if (!v.drCode && !v.crCode && !v.dr && !v.cr) { fmsg((ln + 1) + '行目の科目を入れてください', 'err'); go1(row, 'drCode', ln); return; }
       const w = c.L.length > 1 ? (ln + 1) + '行目：' : '';
-      if ((v.drCode || v.crCode) && (plAcct(v.drCode) || plAcct(v.crCode)) && String(v.tax || '').trim() === '') { fmsg(w + '課税区分が入っていません（損益科目の行）', 'err'); go1(row, 'tax', ln); return; }
-      if ((v.drCode || v.crCode) && !taxFree(v.tax) && !(Number(v.rate) > 0)) { fmsg(w + '税率が入っていません（課税区分 ' + v.tax + '）', 'err'); go1(row, 'rate', ln); return; }
+      /* ★ 簡易課税の顧問先が先なので、止めるのは売上（4 で始まる科目）の行だけ。サーバの taxNeed_ と同じ */
+      const sale = /^4/.test(String(v.drCode || '')) || /^4/.test(String(v.crCode || ''));
+      if (sale && String(v.tax || '').trim() === '') { fmsg(w + '売上の行に 課税区分が入っていません', 'err'); go1(row, 'tax', ln); return; }
+      if (sale && !taxFree(v.tax) && !(Number(v.rate) > 0)) { fmsg(w + '売上の行に 税率が入っていません（課税区分 ' + v.tax + '）', 'err'); go1(row, 'rate', ln); return; }
     }
     const saved = JSON.parse(JSON.stringify(c));
     const lines = c.L.map(function (l, ln) { const v = slipVals(it.id, ln); return { amount: parseAmt(l.amount), ov: Object.keys(l.ov).length ? Object.assign({}, l.ov) : null, memo: l.memo != null ? l.memo : '', v: v }; });
@@ -1724,13 +1727,25 @@
 
   /* ================= 辞書の手入れ（伝票の形。ビーメイツ 708 の「取引の種類」と同じ） ================= */
   S.acct = []; S.acctMap = {}; S.dsel = null; S.dsub = 'v';
+  /* 勘定科目と口座（顧問先ごと）。コード → 科目、コード|口座コード → 口座名 */
+  function acctSet(a) {
+    S.acct = a; S.acctMap = {}; S.subMap = {};
+    a.forEach(function (x) { if (!S.acctMap[x.code]) S.acctMap[x.code] = x; if (x.sub) S.subMap[x.code + '|' + x.sub] = x.subName; });
+    const dl = $('acctNames'); dl.textContent = ''; const seen = {};
+    a.forEach(function (x) { if (seen[x.code]) return; seen[x.code] = 1; const o = el('option'); o.value = x.name; o.label = x.code; dl.appendChild(o); });
+  }
   function loadAcct() {
-    return gs('acctGet').then(function (a) {
-      S.acct = a; S.acctMap = {}; a.forEach(function (x) { S.acctMap[x.code] = x; });
-      const dl = $('acctNames'); dl.textContent = '';
-      a.forEach(function (x) { const o = el('option'); o.value = x.name; o.label = x.code; dl.appendChild(o); });
-      drawAcct();
-    }, function () {});
+    if (!S.code) return Promise.resolve();
+    const code = S.code;
+    return gs('acctGet', code).then(function (a) { if (code !== S.code) return; acctSet(a); drawAcct(); }, function () {});
+  }
+  /* 口座コードを打ったら 口座名（表にあれば） */
+  function subFill(box, k) {
+    if (k !== 'drSub' && k !== 'crSub') return;
+    const s0 = k.slice(0, 2), c = half((box.querySelector('[data-k="' + s0 + 'Code"]') || {}).value || ''), sb = half((box.querySelector('[data-k="' + k + '"]') || {}).value || '');
+    const nm = S.subMap && S.subMap[c + '|' + (/^\d$/.test(sb) ? '0' + sb : sb)];
+    const n = box.querySelector('[data-k="' + k + 'Name"]');
+    if (nm && n && n.value !== nm) { n.value = nm; n.dispatchEvent(new Event('input', { bubbles: true })); }
   }
   function loadDict() {
     const code = S.code;
@@ -1843,6 +1858,7 @@
     S.dirty = true; dmsg('');
     const k = t.dataset.k;
     const w = t.closest('.dline'); if (!w) return;
+    subFill(w, k);
     if (k === 'drCode' || k === 'crCode') {
       codeMark(t);
       const a = S.acctMap[half(t.value)];
@@ -1949,18 +1965,18 @@
     const box = $('aRows'); box.textContent = '';
     const ro = !canAcct();
     $('aRo').hidden = !ro; $('aBar').hidden = ro; $('aPasteBox').hidden = ro;
-    const head = el('div', 'acct-row head'); ['コード', '科目名', '税区分', ''].forEach(function (t) { head.appendChild(el('span', null, t)); }); box.appendChild(head);
+    const head = el('div', 'acct-row head'); ['コード', '科目名', '口座', '口座名', ''].forEach(function (t) { head.appendChild(el('span', null, t)); }); box.appendChild(head);
     (rows || S.acct).forEach(function (a) { acctRow(a, ro); });
     if (!ro && !(rows || S.acct).length) acctRow({}, false);
   }
   function acctRow(a, ro) {
     const r = el('div', 'acct-row');
-    [['code', 'code'], ['name', ''], ['tax', '']].forEach(function (k) {
+    [['code', 'code'], ['name', ''], ['sub', 'code'], ['subName', '']].forEach(function (k) {
       const i = el('input', k[1] || null); i.dataset.k = k[0]; i.value = a[k[0]] || ''; i.readOnly = ro;
-      if (k[0] === 'tax') i.setAttribute('list', 'taxList');
-      if (k[0] === 'code') i.inputMode = 'numeric';
+      if (k[0] === 'code' || k[0] === 'sub') i.inputMode = 'numeric';
       r.appendChild(i);
     });
+    r.dataset.tax = a.tax || '';
     const x = el('button', 'danger', '×'); x.type = 'button'; x.hidden = ro; x.setAttribute('aria-label', '行を消す');
     x.addEventListener('click', function () { r.remove(); });
     r.appendChild(x);
@@ -1971,7 +1987,7 @@
     const out = [];
     $('aRows').querySelectorAll('.acct-row:not(.head)').forEach(function (r) {
       const o = {}; r.querySelectorAll('input').forEach(function (i) { o[i.dataset.k] = i.value.trim(); });
-      if (!o.code && !o.name) return; o.code = half(o.code); out.push(o);
+      if (!o.code && !o.name) return; o.code = half(o.code); o.sub = half(o.sub || ''); o.tax = r.dataset.tax || ''; out.push(o);
     });
     return out;
   }
@@ -1979,20 +1995,20 @@
   $('aAdd').addEventListener('click', function () { acctRow({}, false).querySelector('input').focus(); });
   $('aSaveAcct').addEventListener('click', function () {
     amsg2('保存しています…');
-    gs('acctSave', readAcct()).then(function (a) {
-      S.acct = a; S.acctMap = {}; a.forEach(function (x) { S.acctMap[x.code] = x; });
-      loadAcct(); amsg2('保存しました（' + a.length + '科目）。', 'ok');
+    gs('acctSave', S.code, readAcct()).then(function (a) {
+      acctSet(a); drawAcct(); amsg2('保存しました（' + a.length + '行）。', 'ok');
     }, function (e) { amsg2(e.message, 'err'); });
   });
   $('aPasteGo').addEventListener('click', function () {
-    const by = {}; readAcct().forEach(function (a) { by[a.code] = a; });
+    const by = {}; readAcct().forEach(function (a) { by[a.code + '|' + (a.sub || '')] = a; });
     let n = 0;
     $('aPaste').value.split(/\r?\n/).forEach(function (line) {
       const c = line.split('\t').map(function (x) { return x.trim(); }); if (c.length < 2) return;
       const code = half(c[0]); if (!/^[0-9A-Za-z\-]{1,10}$/.test(code) || !c[1]) return;
-      by[code] = { code: code, name: c[1], tax: c[2] || '' }; n++;
+      let sb = half(c[2] || ''); if (/^\d$/.test(sb)) sb = '0' + sb;
+      by[code + '|' + sb] = { code: code, name: c[1], sub: sb, subName: c[3] || '', tax: '' }; n++;
     });
-    if (!n) { amsg2('読める行がありませんでした（コード・科目名をタブ区切りで）。', 'err'); return; }
+    if (!n) { amsg2('読める行がありませんでした（科目コード・科目名・口座コード・口座名をタブ区切りで）。', 'err'); return; }
     drawAcct(Object.keys(by).map(function (k) { return by[k]; }));
     $('aPaste').value = '';
     amsg2(n + '行を入れました。よければ「保存」を押してください。', 'ok');
@@ -2104,7 +2120,7 @@
     if (S.saving) { o.textContent = 'まだ保存中の確定があります。少し待ってからもう一度どうぞ。'; o.className = 'pagemsg err'; return; }
     o.textContent = '変換しています…'; o.className = 'pagemsg';
     gs('workExport', S.code, ym).then(function (r) {
-      o.textContent = r.count + '件を一括取込ファイルにしました。'; o.className = 'pagemsg ok';
+      o.textContent = r.count + '件を取込ファイルにしました。'; o.className = 'pagemsg ok';
       (r.urls || [r.url]).forEach(function (u, i) {
         const a = el('a', null, ((r.names || [r.name])[i] || r.name) + '（Driveで開く）'); a.href = u; a.target = '_blank'; a.rel = 'noopener';
         const d = el('div'); d.appendChild(a); l.appendChild(d);
