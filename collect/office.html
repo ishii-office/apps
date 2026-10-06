@@ -70,7 +70,10 @@
   @media (max-width: 700px) {
     #tabs { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
     #tabs button { padding: 8px 2px; font-size: 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-    #tabs button:nth-child(3n) { border-right: 0; }
+    /* 左上から時計回り：回収資料 → 仕訳化 → 取込ファイル → 担当者 → 顧問先 → 仕訳辞書 */
+    #tabs button[data-tab="Docs"] { grid-area: 1 / 1; } #tabs button[data-tab="In"] { grid-area: 1 / 2; }
+    #tabs button[data-tab="Out"] { grid-area: 1 / 3; border-right: 0; } #tabs button[data-tab="Staff"] { grid-area: 2 / 3; border-right: 0; }
+    #tabs button[data-tab="Clients"] { grid-area: 2 / 2; } #tabs button[data-tab="Dict"] { grid-area: 2 / 1; }
   }
   .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
   .ctl label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -500,10 +503,10 @@
   <span class="seg" role="tablist" id="tabs">
     <button type="button" role="tab" data-tab="Docs" aria-pressed="false">回収資料</button>
     <button type="button" role="tab" data-tab="In" aria-pressed="true">仕訳化</button>
-    <button type="button" role="tab" data-tab="Dict" aria-pressed="false">辞書</button>
     <button type="button" role="tab" data-tab="Out" aria-pressed="false">取込ファイル</button>
-    <button type="button" role="tab" data-tab="Clients" aria-pressed="false">顧問先</button>
     <button type="button" role="tab" data-tab="Staff" aria-pressed="false" id="tabStaff" hidden>担当者</button>
+    <button type="button" role="tab" data-tab="Clients" aria-pressed="false">顧問先</button>
+    <button type="button" role="tab" data-tab="Dict" aria-pressed="false">仕訳辞書</button>
   </span>
   <span class="who"><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
@@ -628,7 +631,7 @@
   </div>
   <p id="oLink"></p>
   <p class="note">確定した伝票を 回収ボックスごとに並べます。見て よければ［取込ファイルへ変換］。TKC FX クラウド「仕訳帳(Excel)の読込」の形（44列）で
-    Drive の顧問先フォルダ「一括読み込みエクセル」に置きます（1ファイル60行まで・日付をまたがない）。変換した仕訳は取り消せなくなります。</p>
+    そのまま この端末に保存します（1ファイル60行まで・日付をまたがない）。控えは顧問先フォルダ「一括読み込みエクセル」に作った日時つきで残ります。変換した仕訳は取り消せなくなります。</p>
   <div id="oBody"><div class="cbox muted">読み込み中…</div></div>
 </div>
 
@@ -1867,7 +1870,7 @@
   /* 1行に：No・取引の種類・借方/貸方のコード・課税区分・税率 */
   function pickList(ul, q, box) {
     ul.textContent = '';
-    if (!boxDict(box).length) { ul.appendChild(el('li', 'empty', '「' + box + '」の辞書はまだありません。上の「辞書」で作ってください。')); return; }
+    if (!boxDict(box).length) { ul.appendChild(el('li', 'empty', '「' + box + '」の辞書はまだありません。上の「仕訳辞書」で作ってください。')); return; }
     const hit = dictHit(q, box);
     if (!hit.length) { ul.appendChild(el('li', 'empty', '当てはまる辞書がありません')); return; }
     GROUPS.forEach(function (g) {
@@ -2772,9 +2775,14 @@
     o.textContent = '変換しています…'; o.className = 'pagemsg';
     gs('workExport', S.code, ym).then(function (r) {
       o.textContent = r.count + '件を取込ファイルにしました。'; o.className = 'pagemsg ok';
-      (r.urls || [r.url]).forEach(function (u, i) {
-        const a = el('a', null, ((r.names || [r.name])[i] || r.name) + '（Driveで開く）'); a.href = u; a.target = '_blank'; a.rel = 'noopener';
+      /* ★ そのまま端末に落とす（保存先を選ばせない。Drive も開かない）。控えは Drive に作った日時つきで残る */
+      (r.dl || []).forEach(function (f, i) {
+        const bin = atob(f.b64); const u8 = new Uint8Array(bin.length);
+        for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
+        const href = URL.createObjectURL(new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+        const a = el('a', null, f.name); a.href = href; a.download = f.name;
         const d = el('div'); d.appendChild(a); l.appendChild(d);
+        setTimeout(function () { a.click(); }, i * 400);
       });
       load(); oLoad();
     }, function (e) { o.textContent = e.message; o.className = 'pagemsg err'; });
