@@ -914,6 +914,10 @@
   const RED_RATES = [{ from: '2019/10/01', rate: 8 }, { from: '2027/04/01', rate: 1 }, { from: '2029/04/01', rate: 8 }];
   function redRateAt(ds) { let r = 8; RED_RATES.forEach(function (x) { if (String(ds) >= x.from) r = x.rate; }); return r; }
   function taxFree(tx) { const t = String(tx == null ? '' : tx).trim(); return t === '' || t === '0' || t === '8'; }
+  /* FX のマニュアルどおり：売上（1・11）は切り捨て、仕入れ側は四捨五入。仕入れ日は課税仕入れに関わる区分だけ（Code.js の taxAmt_ / buyKind_ と同じ） */
+  const BUY_KINDS = ['5', '51', '52', '53', '55', '6', '61', '62', '63', '65', '7', '71', '72', '73', '75', '8', '57', '58', '67', '68', '77', '78'];
+  function taxAmt(gross, rate, tx) { const t = String(tx == null ? '' : tx).trim(), x = gross * rate / (100 + rate); return t === '1' || t === '11' ? Math.floor(x) : Math.round(x); }
+  function buyKind(tx) { return BUY_KINDS.indexOf(String(tx == null ? '' : tx).trim()) >= 0; }
   /* 税率の選び方（2026-10-05）。軽減は日付で率が決まる（2027/4/1 から1%）。8%（旧）・5%・3% は昔の取引のため */
   const RATE_OPTS = [['10', '10%'], ['r8', '軽減8%'], ['r1', '軽減1%'], ['8', '8%（旧）'], ['5', '5%'], ['3', '3%'], ['0', 'なし']];
   function rateCode(v) { const r = Number(String(v.rate == null ? '' : v.rate).replace(/[r%]/g, '')) || 0; return r ? ((v.red === true || String(v.red) === '1' || String(v.red) === 'true') ? 'r' : '') + r : '0'; }
@@ -939,7 +943,7 @@
     const amt = isIn ? parseAmt(v.amount) : null;
     const rate = rateOf(v, ds);
     const taxable = !taxFree(v.tax) && rate > 0;
-    const tax = taxable && amt ? Math.floor(amt * rate / (100 + rate)) : 0;
+    const tax = taxable && amt ? taxAmt(amt, rate, v.tax) : 0;
     const mk = function (s) { return '<span class="side-mk" data-side="' + s + '" title="消費税はこちらの科目に付きます"' + (v.side === s && !taxFree(v.tax) ? '' : ' hidden') + '>税</span>'; };
     /* 税率はえらぶ（打たない） */
     const rsel = function () {
@@ -955,7 +959,7 @@
     const rt = '<span class="dprt c-rt">' + rtText(v, taxable, rate) + '</span>';
     const taxTxt = '<span class="c-tax">' + (taxable && amt ? yen(tax) : '') + '</span>';
     const netTxt = '<span class="c-net">' + (amt ? yen(amt - tax) : '') + '</span>';
-    const buyTxt = '<span class="c-buy">' + (taxable && ds ? esc(ds) : '') + '</span>';
+    const buyTxt = '<span class="c-buy">' + (buyKind(v.tax) && ds ? esc(ds) : '') + '</span>';
     if (!NARROW.matches) {
       return '<div class="dp"><table class="dptbl"><colgroup>' +
         '<col style="width:104px"><col style="width:52px"><col style="width:70px"><col style="width:44px">' +
@@ -1027,11 +1031,11 @@
     const amt = isIn ? parseAmt(v.amount) : null;
     const rate = rateOf(v, ds);
     const taxable = !taxFree(v.tax) && rate > 0;
-    const tax = taxable && amt ? Math.floor(amt * rate / (100 + rate)) : 0;
+    const tax = taxable && amt ? taxAmt(amt, rate, v.tax) : 0;
     const set = function (c, t) { box.querySelectorAll('.' + c).forEach(function (e) { e.textContent = t; }); };
     set('c-tax', taxable && amt ? yen(tax) : ''); set('c-net', amt ? yen(amt - tax) : '');
     set('c-rt', rtText(v, taxable, rate));
-    set('c-buy', taxable && ds ? ds : '');
+    set('c-buy', buyKind(v.tax) && ds ? ds : '');
     if (isIn) { const p = parseDate(v.date, v.per); set('c-day', p ? p.s + '（' + p.w + '）' : (v.date ? '日付がちがいます' : '')); }
     box.querySelectorAll('.side-mk').forEach(function (e) { e.hidden = taxFree(v.tax) || e.dataset.side !== v.side; });
   }
@@ -2774,7 +2778,7 @@
     if (S.saving) { o.textContent = 'まだ保存中の確定があります。少し待ってからもう一度どうぞ。'; o.className = 'pagemsg err'; return; }
     o.textContent = '変換しています…'; o.className = 'pagemsg';
     gs('workExport', S.code, ym).then(function (r) {
-      o.textContent = r.count + '件を取込ファイルにしました。'; o.className = 'pagemsg ok';
+      o.textContent = r.count + '件を取込ファイルにしました。' + (r.cut ? '（摘要が FX の上限 全角40文字を超えた ' + r.cut + '件は、そこで切りました）' : ''); o.className = 'pagemsg ok';
       /* ★ そのまま端末に落とす（保存先を選ばせない。Drive も開かない）。控えは Drive に作った日時つきで残る */
       (r.dl || []).forEach(function (f, i) {
         const bin = atob(f.b64); const u8 = new Uint8Array(bin.length);
