@@ -54,7 +54,25 @@
   .lead { color: var(--sub); font-size: 15px; margin: 0 0 18px; }
   .period { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 16px; padding: 12px 14px; border-radius: 14px; background: var(--paper); border: 2px solid var(--accent); }
   .period label { font-weight: 700; font-size: 16px; }
-  .period select { flex: 1; min-width: 170px; font-size: 18px; font-weight: 700; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+  .period .pers { flex: 1; display: flex; gap: 8px; min-width: 210px; }
+  .period select, .mvl select { flex: 1; min-width: 0; font-size: 18px; font-weight: 700; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+  .mvl .pers { display: flex; gap: 6px; }
+  /* ★ はじめは箱の一覧だけ（2026-10-07）。押した箱を開くと 撮る・選ぶ と 送ったもの（年分 › 月分） */
+  .boxes.list > .box > :not(.box-head) { display: none !important; }
+  .boxes.list > .box { cursor: pointer; padding-bottom: 14px; }
+  .boxes.list > .box > .box-head { margin-bottom: 0; }
+  .box-head .go { display: none; color: var(--accent); font-size: 22px; font-weight: 700; margin-left: 6px; }
+  .boxes.list > .box > .box-head .go { display: inline; }
+  .boxback { font: inherit; font-size: 16px; font-weight: 700; color: var(--accent); background: var(--paper); border: 2px solid var(--accent); border-radius: 12px; padding: 10px 16px; margin: 0 0 12px; cursor: pointer; }
+  /* 年分の小箱（その中に月分の小箱） */
+  .yr { border: 1.5px dashed #B5D3CA; border-radius: 12px; background: #FAFDFC; overflow: hidden; }
+  .yr.open { border-style: solid; border-color: #8FBFB2; }
+  .yr-h { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; border: 0; background: transparent; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
+  .yr-h .yl { font-weight: 700; font-size: 17px; }
+  .yr-h .yc { flex: 1; font-size: 13px; color: var(--sub); text-align: right; }
+  .yr-h .chev { color: var(--accent); transition: transform .15s; }
+  .yr:not(.open) .yr-h .chev { transform: rotate(-90deg); }
+  .yk { display: grid; gap: 8px; padding: 0 8px 8px; }
   [hidden] { display: none !important; }
 
 
@@ -267,10 +285,12 @@
   <h1>資料をお送りください</h1>
 
   <section id="paneSend">
-    <p class="lead">資料の種類ごとの箱で、撮影するか、写真・PDFを選んでください。パソコンなら箱へドラッグするだけです。最後に「送る」を押すと事務所に届きます。送ったものは 各箱の下に 月分ごとに並びます。</p>
+    <p class="lead" id="leadList">資料の箱を選んでください。パソコンなら 箱へドラッグするだけでも入ります。</p>
+    <p class="lead" id="leadBox" hidden>撮影するか、写真・PDFを選んで、最後に「送る」を押すと事務所に届きます。送ったものは 箱の中に 年分・月分ごとに並びます。</p>
     <button type="button" class="notice" id="notice" hidden><span class="nt"><b id="noticeT"></b><small>押すと 写真と理由が出ます</small></span><span aria-hidden="true">›</span></button>
-    <div class="period"><label for="period">何年何月分の資料ですか</label><select id="period"></select></div>
-    <div class="boxes" id="boxes"></div>
+    <div class="period"><label for="perY">何年何月分の資料ですか</label><span class="pers"><select id="perY" aria-label="何年"></select><select id="perM" aria-label="何月分"></select></span></div>
+    <button type="button" class="boxback" id="boxBack" hidden>‹ 箱の一覧へ</button>
+    <div class="boxes list" id="boxes"></div>
 
     <div class="tray" id="tray" hidden>
       <h2 id="trayTitle">送る前の確認</h2>
@@ -329,7 +349,7 @@
       <div class="ht mvth" id="mvThumb"></div>
       <div class="mv-r">
         <p class="sub" id="mvNow"></p>
-        <label class="mvl">何年何月分<select id="mvPer"></select></label>
+        <label class="mvl">何年何月分<span class="pers"><select id="mvY" aria-label="何年"></select><select id="mvM" aria-label="何月分"></select></span></label>
         <label class="mvl">箱<select id="mvBox"></select></label>
       </div>
     </div>
@@ -433,29 +453,51 @@
   function ymLabel(v) { const m = String(v || '').match(/^(\d{4})-(\d{2})$/); return m ? m[1] + '年' + Number(m[2]) + '月分' : ''; }
   const LS_PER = 'collect_period';
   const PERIOD_FROM = '2024-01';   /* 選べるいちばん古い月分（サーバの periodOk_ と同じ） */
+  /* ★ 何年 と 何月分 を別々のプルダウンに（2026-10-07。1つにすると 月がたつほど長くなって選びにくい） */
+  function nowYm() { return ymOf(new Date()); }
+  function perFill(ySel, mSel, keep) {
+    const now = new Date(), y0 = Number(PERIOD_FROM.slice(0, 4));
+    ySel.textContent = ''; mSel.textContent = '';
+    if (keep) { const o = mk('option', null, '（そのまま）'); o.value = ''; ySel.appendChild(o); }
+    for (let y = now.getFullYear(); y >= y0; y--) { const o = mk('option', null, y + '年'); o.value = String(y); ySel.appendChild(o); }
+    for (let m = 1; m <= 12; m++) { const o = mk('option', null, m + '月分'); o.value = String(m).padStart(2, '0'); mSel.appendChild(o); }
+  }
+  /* 先の月・2024年1月より前は選べない */
+  function perFix(ySel, mSel) {
+    const y = ySel.value, cur = nowYm();
+    mSel.disabled = !y;
+    Array.from(mSel.options).forEach(function (o) { const v = y + '-' + o.value; o.disabled = !y || v > cur || v < PERIOD_FROM; });
+    if (y && mSel.selectedOptions[0] && mSel.selectedOptions[0].disabled) {
+      const ok = Array.from(mSel.options).filter(function (o) { return !o.disabled; });
+      if (ok.length) mSel.value = (y + '-' + mSel.value > cur ? ok[ok.length - 1] : ok[0]).value;
+    }
+  }
+  function perGet(ySel, mSel) { return ySel.value ? ySel.value + '-' + mSel.value : ''; }
+  function perSet(ySel, mSel, v) {
+    const m = String(v || '').match(/^(\d{4})-(\d{2})$/);
+    if (!m || v > nowYm() || v < PERIOD_FROM) return false;
+    ySel.value = m[1]; mSel.value = m[2]; perFix(ySel, mSel); return true;
+  }
   function setPeriod(v) {
-    const sel = $('period');
-    if (!Array.from(sel.options).some(function (o) { return o.value === v; })) return false;
-    sel.value = v; lsSet(LS_PER, JSON.stringify({ v: v, t: Date.now() })); return true;
+    if (!perSet($('perY'), $('perM'), v)) return false;
+    lsSet(LS_PER, JSON.stringify({ v: v, t: Date.now() })); return true;
   }
   (function () {
-    const sel = $('period'); const now = new Date();
-    /* ★ 過去の資料も送れるように 2024年1月分まで選べる（2026-10-06）。長いので 年ごとにまとめる */
-    let grp = null;
-    for (let d = new Date(now.getFullYear(), now.getMonth(), 1); ymOf(d) >= PERIOD_FROM; d = new Date(d.getFullYear(), d.getMonth() - 1, 1)) {
-      if (!grp || grp.dataset.y !== String(d.getFullYear())) { grp = document.createElement('optgroup'); grp.label = d.getFullYear() + '年'; grp.dataset.y = String(d.getFullYear()); sel.appendChild(grp); }
-      const o = document.createElement('option'); o.value = ymOf(d); o.textContent = ymLabel(o.value); grp.appendChild(o);
-    }
-    sel.value = ymOf(new Date(now.getFullYear(), now.getMonth() - (now.getDate() <= 15 ? 1 : 0), 1));
+    const ys = $('perY'), ms = $('perM'); const now = new Date();
+    perFill(ys, ms, false);
+    perSet(ys, ms, ymOf(new Date(now.getFullYear(), now.getMonth() - (now.getDate() <= 15 ? 1 : 0), 1)));
     /* 選んだ月は覚えておく（開き直しても 送っている途中のものの月が変わらないように）。ひと月より前に選んだものは使わない */
     let keep = ''; try { keep = JSON.parse(lsGet(LS_PER) || 'null'); } catch (e) {}
-    if (keep && keep.v && Date.now() - keep.t < 31 * 864e5 && Array.from(sel.options).some(function (o) { return o.value === keep.v; })) sel.value = keep.v;
-    sel.addEventListener('change', function () {
-      lsSet(LS_PER, JSON.stringify({ v: sel.value, t: Date.now() }));
-      drawTray(); drawAll();
+    if (keep && keep.v && Date.now() - keep.t < 31 * 864e5) perSet(ys, ms, keep.v);
+    [ys, ms].forEach(function (sel) {
+      sel.addEventListener('change', function () {
+        perFix(ys, ms);
+        lsSet(LS_PER, JSON.stringify({ v: period(), t: Date.now() }));
+        drawTray(); drawAll();
+      });
     });
   })();
-  function period() { return $('period').value; }
+  function period() { return perGet($('perY'), $('perM')); }
   function perOf(it) { return it.per || period(); }
   let seq = 0;
 
@@ -671,8 +713,15 @@
   const TH = {};          /* k → 小さい絵（dataURL）| null */
   const THF = {};         /* 取りにいっている k */
   const OPEN = {};        /* 箱|月分 → 開いているか（押した人の選んだもの） */
+  /* ★ 開いたらすぐ出す（2026-10-07）：前に見た「送ったもの」の一覧（名前・月分・様子だけ。写真は持たない）を
+       端末に覚えておき、開いた瞬間に描く。新しい一覧は裏で取って差し替える */
+  const LS_HIST = 'collect_hist';
+  function histKeep() {
+    try { const o = JSON.parse(lsGet(LS_HIST) || 'null'); return o && o.t === TOKEN && Array.isArray(o.list) ? o.list : null; } catch (e) { return null; }
+  }
   function loadHist() {
     HAT = Date.now();
+    if (!HLOADED && !HIST.length) { const kept = histKeep(); if (kept) { HIST = kept; drawAll(); } }
     return call('clientHistory', [TOKEN], 30000).then(function (list) {
       const fresh = HIST.filter(function (h) { return h.fresh && !(list || []).some(function (x) { return x.k === h.k; }); });
       HIST = fresh.concat(list || []); HLOADED = true; drawAll();
@@ -687,7 +736,15 @@
     if (h.status === 'done') return ['done', '✓ 確定済み'];
     return ['ok', '✓ ' + (shortAt(h.at) || '送信済み')];
   }
+  /* 送ったものの一覧が変わるたびに 端末の控えも書き直す（GAS の画面では端末に何も置かない） */
+  let histSaved = '';
+  function histSave() {
+    if (LIVE || !TOKEN || (!HLOADED && !HIST.length)) return;
+    const v = JSON.stringify({ t: TOKEN, list: HIST.filter(function (h) { return !/^local_/.test(h.k); }).map(function (h) { const o = Object.assign({}, h); delete o.fresh; return o; }) });
+    if (v !== histSaved) { histSaved = v; lsSet(LS_HIST, v); }
+  }
   function drawAll() {
+    histSave();
     if (fullObs) fullObs.disconnect();
     document.querySelectorAll('.box').forEach(function (el) { drawHist(el); });
     drawNotice();
@@ -708,6 +765,25 @@
     outs.forEach(function (it) { if (pers.indexOf(perOf(it)) < 0) pers.push(perOf(it)); });
     hs.forEach(function (h) { if (pers.indexOf(h.period) < 0) pers.push(h.period); });
     pers.sort().reverse();
+    /* ★ 箱 › 年分 › 月分（2026-10-07）。開いているのは いま選んでいる年・送信中のある年・いちばん新しい年 */
+    const years = [];
+    pers.forEach(function (p) { const y = String(p || '').slice(0, 4) || '----'; if (years.indexOf(y) < 0) years.push(y); });
+    const yk = {};
+    years.forEach(function (y, i) {
+      const ps = pers.filter(function (p) { return (String(p || '').slice(0, 4) || '----') === y; });
+      const n = outs.filter(function (it) { return ps.indexOf(perOf(it)) >= 0; }).length + hs.filter(function (h) { return ps.indexOf(h.period) >= 0; }).length;
+      const key = box + '|y' + y;
+      const open = key in OPEN ? OPEN[key] : (y === period().slice(0, 4) || i === 0 || outs.some(function (it) { return perOf(it).slice(0, 4) === y; }));
+      const yr = mk('div', 'yr' + (open ? ' open' : '')); yr.dataset.y = y;
+      const yh = mk('button', 'yr-h'); yh.type = 'button'; yh.setAttribute('aria-expanded', String(open));
+      yh.innerHTML = ICON_BOX_S + '<span class="yl"></span><span class="yc"></span><span class="chev" aria-hidden="true">▾</span>';
+      yh.querySelector('.yl').textContent = /^\d{4}$/.test(y) ? y + '年分' : '月分なし';
+      yh.querySelector('.yc').textContent = n + '件';
+      yh.addEventListener('click', function () { OPEN[key] = !open; drawHist(el); loadThumbs(); });
+      const kids = mk('div', 'yk'); kids.hidden = !open;
+      yr.appendChild(yh); yr.appendChild(kids); hb.appendChild(yr);
+      yk[y] = kids;
+    });
     pers.forEach(function (p) {
       const o = outs.filter(function (it) { return perOf(it) === p; });
       const h = hs.filter(function (x) { return x.period === p; });
@@ -750,7 +826,7 @@
         h.forEach(function (x) { g.appendChild(histTile(x)); });
         mon.appendChild(g);
       }
-      hb.appendChild(mon);
+      yk[String(p || '').slice(0, 4) || '----'].appendChild(mon);
     });
   }
   function tileBase(src, name, pdf) {
@@ -979,9 +1055,8 @@
     if (!list.length) return;
     MOVEL = list;
     const h = list[0];
-    const ms = $('mvPer'); ms.innerHTML = $('period').innerHTML;
-    const keep = mk('option', null, '（月分はそのまま）'); keep.value = ''; ms.insertBefore(keep, ms.firstChild);
-    ms.value = list.length > 1 ? '' : h.period;
+    perFill($('mvY'), $('mvM'), true);
+    if (list.length > 1 || !perSet($('mvY'), $('mvM'), h.period)) { $('mvY').value = ''; perFix($('mvY'), $('mvM')); }
     const bs = $('mvBox'); bs.textContent = '';
     if (list.length > 1) { const k2 = mk('option', null, '（箱はそのまま）'); k2.value = ''; bs.appendChild(k2); }
     BOXES.forEach(function (b) { const o = mk('option', null, '　'.repeat(b.split('/').length - 1) + (b.indexOf('/') >= 0 ? '└ ' : '') + b.split('/').pop()); o.value = b; bs.appendChild(o); });
@@ -994,7 +1069,8 @@
   }
   function closeMove() { $('movev').hidden = true; MOVEL = null; if ($('backv').hidden) document.body.classList.remove('noscroll'); }
   $('mvCancel').addEventListener('click', closeMove);
-  $('mvGo').addEventListener('click', function () { const l = MOVEL; const per = $('mvPer').value, box = $('mvBox').value; closeMove(); if (l) moveItems(l, box, per); });
+  $('mvY').addEventListener('change', function () { perFix($('mvY'), $('mvM')); });
+  $('mvGo').addEventListener('click', function () { const l = MOVEL; const per = perGet($('mvY'), $('mvM')), box = $('mvBox').value; closeMove(); if (l) moveItems(l, box, per); });
 
   /* ---- 選ぶ（選んだものを まとめて消す・移す）---- */
   let PICK = false, SEL = {};
@@ -1038,7 +1114,8 @@
   /* 開いている小箱の 小さい絵を 40件ずつ取る */
   function loadThumbs() {
     const need = [];
-    document.querySelectorAll('.ht.wait[data-k]').forEach(function (d) { const k = d.dataset.k; if (!(k in TH) && !THF[k] && !/^local_/.test(k)) need.push(k); });
+    /* 見えているものだけ（閉じた箱・閉じた年分の中は 開いたときに取る） */
+    document.querySelectorAll('.ht.wait[data-k]').forEach(function (d) { const k = d.dataset.k; if (d.offsetParent !== null && !(k in TH) && !THF[k] && !/^local_/.test(k)) need.push(k); });
     if (!need.length) return;
     for (let i = 0; i < need.length; i += 40) {
       const b = need.slice(i, i + 40);
@@ -1094,6 +1171,7 @@
     if (!el) return;
     REDO = { k: h.k, box: el.dataset.box, per: h.period, t: Date.now() };
     closeBack();
+    openBox(el.dataset.box.split('/')[0]);   /* その箱を開いておく（送ったあと そこに並ぶ） */
     if (how === 'cam') openCamera(el.dataset.box, el.querySelector('input.cam1'));
     else el.querySelector('input.pick').click();
   }
@@ -1119,7 +1197,7 @@
       el.className = 'box' + (depth ? ' sub d' + Math.min(depth, 3) : '');
       el.dataset.box = name;
       el.innerHTML =
-        '<div class="box-head"><span class="ttl">' + ICON_BOX + '<h2 class="box-name"></h2></span><span class="box-count"></span></div>' +
+        '<div class="box-head"><span class="ttl">' + ICON_BOX + '<h2 class="box-name"></h2></span><span class="box-count"></span><span class="go" aria-hidden="true">›</span></div>' +
         '<div class="box-btns">' +
           '<button type="button" class="btn cam">' + ICON_CAM + '撮る</button>' +
           '<label class="btn pick">選ぶ<input class="pick" type="file" accept="image/*,application/pdf" multiple></label>' +
@@ -1149,12 +1227,28 @@
         REDO = null;
         addFiles(Array.from((e.dataTransfer && e.dataTransfer.files) || []), name);
       });
+      /* 箱の一覧で押したら その箱を開く */
+      if (!depth) el.addEventListener('click', function (e) { if (!$('boxes').classList.contains('list') || e.target.closest('.ht,.yr,.mon')) return; openBox(name); });
       /* 中の箱は 親の箱の中に入れる */
       const parent = byPath[segs.slice(0, -1).join('/')];
       (parent ? parent.querySelector(':scope > .kids') : wrap).appendChild(el);
       byPath[name] = el;
     });
+    /* 開いていた箱はそのまま。箱が1つしか無ければ 一覧を飛ばして開く */
+    const tops = BOXES.filter(function (b) { return b.indexOf('/') < 0; });
+    openBox(tops.length === 1 ? tops[0] : (tops.indexOf(CUR) >= 0 ? CUR : ''));
   }
+  /* ★ はじめは箱の一覧（2026-10-07）。押した箱だけを開く。［‹ 箱の一覧へ］で戻る */
+  let CUR = '';
+  function openBox(name) {
+    CUR = name || '';
+    $('boxes').classList.toggle('list', !CUR);
+    document.querySelectorAll('#boxes > .box').forEach(function (b) { b.hidden = !!CUR && b.dataset.box !== CUR; });
+    $('boxBack').hidden = !CUR; $('leadList').hidden = !!CUR; $('leadBox').hidden = !CUR;
+    if (CUR) window.scrollTo(0, 0);
+    loadThumbs();
+  }
+  $('boxBack').addEventListener('click', function () { openBox(''); });
   /* 箱の外に落としても、ブラウザがファイルを開いて画面が消えないようにする。いちばん内側の箱だけ光らせる */
   let overEl = null;
   window.addEventListener('dragover', function (e) {
@@ -1380,7 +1474,7 @@
         if (JSON.stringify(kept.boxes) !== JSON.stringify(r.boxes) && !tray.length) { buildBoxes(r.boxes); drawAll(); }
         $('client').textContent = r.clientName + ' 様';
       }, function (e) {
-        if (/使用できません/.test(e.message)) { lsDel(LS_TOK); lsDel(LS_INFO); showNg(NG_URL); return; }
+        if (/使用できません/.test(e.message)) { lsDel(LS_TOK); lsDel(LS_INFO); lsDel(LS_HIST); showNg(NG_URL); return; }
         if (!kept) showNg('つながるのを待っています…（混み合っているか、電波が弱いようです。このまま開いておけば つながり次第 出ます）');
         setTimeout(ask, BOOT_WAIT[Math.min(n++, BOOT_WAIT.length - 1)] * 1000);
       });

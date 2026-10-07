@@ -344,6 +344,13 @@
   .dbox-i { width: 26px; height: 26px; color: var(--accent); flex-shrink: 0; }
   .dbox-c { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--accent); }
   .dmon { border: 1.5px dashed #B5D3CA; border-radius: 12px; background: #fff; margin-top: 8px; overflow: hidden; }
+  .dyr { border: 1.5px dashed #B5D3CA; border-radius: 12px; background: #FAFDFC; margin-top: 8px; overflow: hidden; }
+  .dyr.open { border-style: solid; border-color: #8FBFB2; }
+  .dyr-h { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 12px; border: 0; background: transparent; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
+  .dyr-h b { font-size: 16px; }
+  .dyr-h .chev { color: var(--accent); }
+  .dyr:not(.open) .dyr-h .chev { transform: rotate(-90deg); display: inline-block; }
+  .dyk { padding: 0 8px 8px; }
   .dmon.open { border-style: solid; border-color: #8FBFB2; }
   .dmon.target { outline: 3px solid var(--accent); background: #DCEFE8; }
   body.ddragging .dmon { outline: 2px dashed #8FBFB2; outline-offset: -2px; }
@@ -394,6 +401,7 @@
   .dmove-s h3 { margin: 0 0 6px; }
   .dmove-s label { display: block; font-size: 13px; color: var(--sub); margin-top: 8px; }
   .dmove-s select { display: block; width: 100%; font-size: 16px; padding: 7px; margin-top: 2px; }
+  .dmv-pers { display: flex; gap: 6px; } .dmv-pers select { flex: 1; min-width: 0; }
   .dmv-now { font-size: 13px; color: var(--sub); margin: 0; }
   .dmv-b { display: flex; gap: 8px; margin-top: 12px; }
   .dtile { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px; min-width: 0; }
@@ -411,8 +419,8 @@
   .dview .jshot img { max-height: none; }
   body.dv-on { overflow: hidden; }
   .ctl[data-tab="Docs"] label:has(#month), .ctl[data-tab="Docs"] #filter,
-  .ctl[data-tab="Dict"] label:has(#month), .ctl[data-tab="Dict"] #filter, .ctl[data-tab="Dict"] label:has(#per), .ctl[data-tab="Dict"] label:has(#box),
-  .ctl[data-tab="Out"] label:has(#month), .ctl[data-tab="Out"] #filter, .ctl[data-tab="Out"] label:has(#per), .ctl[data-tab="Out"] label:has(#box) { display: none; }
+  .ctl[data-tab="Dict"] label:has(#month), .ctl[data-tab="Dict"] #filter, .ctl[data-tab="Dict"] label:has(#perY), .ctl[data-tab="Dict"] label:has(#perM), .ctl[data-tab="Dict"] label:has(#box),
+  .ctl[data-tab="Out"] label:has(#month), .ctl[data-tab="Out"] #filter, .ctl[data-tab="Out"] label:has(#perY), .ctl[data-tab="Out"] label:has(#perM), .ctl[data-tab="Out"] label:has(#box) { display: none; }
 
   /* 一括取込ファイル */
   .obox { margin: 14px 0 22px; max-width: 1200px; }
@@ -521,7 +529,8 @@
     <button type="button" data-st="done" aria-pressed="false">確定 <b id="cDone">0</b></button>
     <button type="button" data-st="all" aria-pressed="false">全部</button>
   </span>
-  <label>月分 <select id="per"><option value="">すべて</option></select></label>
+  <label>年 <select id="perY"><option value="">すべて</option></select></label>
+  <label>月分 <select id="perM" disabled><option value="">すべて</option></select></label>
   <label>箱 <select id="box"><option value="">すべて</option></select></label>
 </div>
 
@@ -747,7 +756,7 @@
   <div class="dmove-s">
     <h3 id="dmvT">別の月分・箱へ移す</h3>
     <p class="dmv-now" id="dmvNow"></p>
-    <label>何年何月分 <select id="dmvPer"></select></label>
+    <label>何年何月分 <span class="dmv-pers"><select id="dmvY" aria-label="何年"></select><select id="dmvM" aria-label="何月分"></select></span></label>
     <label>箱 <select id="dmvBox"></select></label>
     <div class="dmv-b"><button type="button" class="btn" id="dmvGo">移す</button><button type="button" class="btn ghost" id="dmvCancel">やめる</button></div>
   </div>
@@ -1103,7 +1112,7 @@
     $('dBox').value = S.dbox;
     const f = $('dFrom'); f.textContent = '';
     S.clients.filter(function (x) { return x.code !== S.code; }).forEach(function (x) { const o = el('option', null, x.code + '　' + x.name); o.value = x.code; f.appendChild(o); });
-    S.docs = null; S.per = ''; $('per').value = '';
+    S.docs = null; S.per = ''; $('perY').value = ''; $('perM').value = '';
     $('aTitle2').textContent = '勘定科目と口座：' + (c ? c.code + '　' + c.name : '');
     /* 勘定科目を先に（辞書のコードを確かめるのに使う） */
     loadAcct().then(loadDict).then(function () { load(); if (S.tab === 'Out') oLoad(); if (S.tab === 'Docs') docsLoad(); });
@@ -1152,7 +1161,7 @@
   /* 一覧を組む。届いた日ごとに区切りを入れる */
   function render() {
     /* 月分 → 箱 → 届いた順 に並べ、「2026年8月分 ／ 現金の領収書」で区切る */
-    S.view = S.items.filter(function (it) { return (!S.box || it.box === S.box) && (!S.per || it.period === S.per); })
+    S.view = S.items.filter(function (it) { return (!S.box || it.box === S.box) && perHit(it); })
       .sort(function (a, b) { return a.period !== b.period ? (a.period < b.period ? -1 : 1) : a.box !== b.box ? boxIdx(a.box) - boxIdx(b.box) : a.t - b.t; });
     perFill();
     const l = $('jlist'); l.textContent = '';
@@ -1184,17 +1193,38 @@
   }
   function perLabel(v) { const m = String(v || '').match(/^(\d{4})-(\d{2})$/); return m ? m[1] + '年' + Number(m[2]) + '月分' : '月分なし'; }
   function boxIdx(b) { const c = S.clients.find(function (x) { return x.code === S.code; }); const i = c ? c.boxes.indexOf(b) : -1; return i < 0 ? 99 : i; }
-  /* 月分の選び肢：いま読んでいる資料にある月分（新しい順） */
+  /* ★ 年 と 月分 は別々のプルダウン（2026-10-07。月分を1つに並べると どんどん長くなる）
+       S.per … '' すべて ／ 'YYYY' その年 ／ 'YYYY-MM' その月分。選び肢は いま読んでいる資料にあるものだけ */
+  function perHit(it) { return !S.per || String(it.period || '').indexOf(S.per) === 0; }
+  function perTag(v) { return /^\d{4}$/.test(String(v || '')) ? v + '年分' : perLabel(v); }
+  let PERS = [];
   function perFill(items) {
-    const sel = $('per'); const cur = sel.value;
     const ps = {}; (items || S.items || []).forEach(function (it) { if (it.period) ps[it.period] = 1; }); (S.docs || []).forEach(function (it) { if (it.period) ps[it.period] = 1; });
-    const keys = Object.keys(ps).sort().reverse();
-    if (sel.options.length - 1 === keys.length && keys.every(function (k, i) { return sel.options[i + 1].value === k; })) return;
-    sel.textContent = ''; const all = el('option', null, 'すべて'); all.value = ''; sel.appendChild(all);
-    keys.forEach(function (k) { const o = el('option', null, perLabel(k)); o.value = k; sel.appendChild(o); });
-    sel.value = keys.indexOf(cur) >= 0 ? cur : '';
+    PERS = Object.keys(ps).sort().reverse();
+    const ys = $('perY'), cy = ys.value;
+    const years = PERS.map(function (k) { return k.slice(0, 4); }).filter(function (y, i, a) { return a.indexOf(y) === i; });
+    if (!(ys.options.length - 1 === years.length && years.every(function (y, i) { return ys.options[i + 1].value === y; }))) {
+      ys.textContent = ''; const all = el('option', null, 'すべて'); all.value = ''; ys.appendChild(all);
+      years.forEach(function (y) { const o = el('option', null, y + '年'); o.value = y; ys.appendChild(o); });
+      ys.value = years.indexOf(cy) >= 0 ? cy : '';
+    }
+    perFillM();
   }
-  $('per').addEventListener('change', function () { S.per = this.value; if (S.tab === 'Docs') docsDraw(); else render(); });
+  function perFillM() {
+    const y = $('perY').value, ms = $('perM'), cm = ms.value;
+    ms.textContent = ''; const all = el('option', null, 'すべて'); all.value = ''; ms.appendChild(all);
+    PERS.filter(function (k) { return y && k.indexOf(y + '-') === 0; }).forEach(function (k) { const o = el('option', null, Number(k.slice(5)) + '月分'); o.value = k.slice(5); ms.appendChild(o); });
+    ms.disabled = !y;
+    ms.value = Array.prototype.some.call(ms.options, function (o) { return o.value === cm; }) ? cm : '';
+  }
+  function perPick(v) {   /* 'YYYY-MM' か 'YYYY' か '' に合わせる */
+    v = String(v || '');
+    $('perY').value = v.slice(0, 4); if ($('perY').value !== v.slice(0, 4)) $('perY').value = '';
+    perFillM(); $('perM').value = v.length > 4 ? v.slice(5, 7) : '';
+    S.per = $('perY').value ? $('perY').value + ($('perM').value ? '-' + $('perM').value : '') : '';
+  }
+  $('perY').addEventListener('change', function () { perFillM(); $('perM').value = ''; S.per = this.value; if (S.tab === 'Docs') docsDraw(); else render(); });
+  $('perM').addEventListener('change', function () { S.per = $('perY').value + (this.value ? '-' + this.value : ''); if (S.tab === 'Docs') docsDraw(); else render(); });
 
   /* ================= 回収資料 =================
      送ってもらった資料を ただ並べる（月分 ／ 箱 ごと）。仕訳化するかどうかに関係なく 全部。
@@ -1226,7 +1256,7 @@
     $('dTrash').hidden = !S.trashN && !S.trashView;
     $('dTrash').textContent = '破棄したもの（' + (S.trashN || 0) + '）';
     if (S.trashView) { trashDraw(body); dcBar(); return; }
-    const list = (S.docs || []).filter(function (it) { return (!S.box || it.box === S.box || it.box.indexOf(S.box + '/') === 0) && (!S.per || it.period === S.per); })
+    const list = (S.docs || []).filter(function (it) { return (!S.box || it.box === S.box || it.box.indexOf(S.box + '/') === 0) && perHit(it); })
       .sort(function (a, b) { return a.period !== b.period ? (a.period < b.period ? 1 : -1) : b.t - a.t; });
     $('dsum').textContent = list.length + '件';
     S.dcview = list;
@@ -1263,9 +1293,27 @@
       sec.appendChild(hd);
       const pers = [];
       inBox.forEach(function (x) { if (pers.indexOf(x.period) < 0) pers.push(x.period); });
+      /* ★ 箱 › 年分 › 月分（2026-10-07）。はじめは いちばん新しい年分が開いている */
+      const ywrap = {};
+      pers.map(function (p) { return String(p || '').slice(0, 4) || '----'; }).filter(function (y, i, a) { return a.indexOf(y) === i; }).forEach(function (y, yi) {
+        const yItems = inBox.filter(function (x) { return (String(x.period || '').slice(0, 4) || '----') === y; });
+        const yKey = bx + '|y' + y;
+        const yOpen = yKey in DOPEN ? DOPEN[yKey] : (S.per ? true : yi === 0);
+        const yr = el('div', 'dyr' + (yOpen ? ' open' : '')); yr.dataset.y = y;
+        const yh = el('button', 'dyr-h'); yh.type = 'button'; yh.setAttribute('aria-expanded', String(yOpen));
+        yh.innerHTML = D_ICON_S;
+        yh.appendChild(el('b', null, /^\d{4}$/.test(y) ? y + '年分' : '月分なし'));
+        yh.appendChild(el('span', 'dmon-c', yItems.length + '件'));
+        yh.appendChild(el('span', 'chev', '▾'));
+        yh.addEventListener('click', function () { DOPEN[yKey] = !yOpen; docsDraw(); });
+        const yk = el('div', 'dyk'); yk.hidden = !yOpen;
+        yr.appendChild(yh); yr.appendChild(yk); sec.appendChild(yr);
+        ywrap[y] = yk;
+      });
       pers.forEach(function (p, pi) {
         const items = inBox.filter(function (x) { return x.period === p; });
         const key = bx + '|' + p;
+        const yk = ywrap[String(p || '').slice(0, 4) || '----'];
         const open = key in DOPEN ? DOPEN[key] : (S.per ? true : pi === 0);
         const mon = el('div', 'dmon' + (open ? ' open' : '')); mon.dataset.box = bx; mon.dataset.per = p;
         const row = el('div', 'dmon-hd');
@@ -1297,12 +1345,12 @@
           }
         }
         mon.appendChild(row);
-        if (open) {
+        if (open && !yk.hidden) {
           const grid = el('div', 'dgrid');
           items.forEach(function (it) { grid.appendChild(dTile(it)); });
           mon.appendChild(grid);
         }
-        sec.appendChild(mon);
+        yk.appendChild(mon);
       });
       sec.appendChild(el('div', 'dkids'));
       const parent = nodes[segs.slice(0, -1).join('/')];
@@ -1488,15 +1536,15 @@
     if (!list.length) return;
     DMV = list;
     const it = list[0], many = list.length > 1;
-    const ps = $('dmvPer'); ps.textContent = '';
-    if (many) { const o0 = el('option', null, '（月分はそのまま）'); o0.value = ''; ps.appendChild(o0); }
+    /* ★ 何年 と 何月分 は別々のプルダウン（2026-10-07） */
+    const ys = $('dmvY'), ms = $('dmvM'); ys.textContent = ''; ms.textContent = '';
+    if (many) { const o0 = el('option', null, '（そのまま）'); o0.value = ''; ys.appendChild(o0); }
     const now = new Date();
-    for (let d = new Date(now.getFullYear(), now.getMonth(), 1); ; d = new Date(d.getFullYear(), d.getMonth() - 1, 1)) {
-      const v = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-      if (v < '2024-01') break;
-      const o = el('option', null, perLabel(v)); o.value = v; ps.appendChild(o);
-    }
-    ps.value = many ? '' : it.period;
+    for (let y = now.getFullYear(); y >= 2024; y--) { const o = el('option', null, y + '年'); o.value = String(y); ys.appendChild(o); }
+    for (let m = 1; m <= 12; m++) { const o = el('option', null, m + '月分'); o.value = String(m).padStart(2, '0'); ms.appendChild(o); }
+    const pm = String(it.period || '').match(/^(\d{4})-(\d{2})$/);
+    if (!many && pm && ys.querySelector('option[value="' + pm[1] + '"]')) { ys.value = pm[1]; ms.value = pm[2]; } else if (many) ys.value = '';
+    dmvFix();
     const bs = $('dmvBox'); bs.textContent = '';
     if (many) { const o0 = el('option', null, '（箱はそのまま）'); o0.value = ''; bs.appendChild(o0); }
     (S.boxes || []).concat(!many && (S.boxes || []).indexOf(it.box) < 0 ? [it.box] : []).forEach(function (b) {
@@ -1505,9 +1553,17 @@
     $('dmvNow').textContent = many ? list.length + '件を移します' : 'いま：' + perLabel(it.period) + '［' + boxLabel(it.box) + '］　' + it.name.replace(/^\d{8}_\d{6}_/, '');
     $('dmove').hidden = false;
   }
+  /* 先の月は選べない・年が「そのまま」なら月も選ばない */
+  function dmvFix() {
+    const y = $('dmvY').value, ms = $('dmvM'), now = new Date(), cur = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    ms.disabled = !y;
+    Array.prototype.forEach.call(ms.options, function (o) { o.disabled = !y || (y + '-' + o.value) > cur; });
+    if (y && ms.selectedOptions[0] && ms.selectedOptions[0].disabled) { const ok = Array.prototype.filter.call(ms.options, function (o) { return !o.disabled; }); if (ok.length) ms.value = ok[ok.length - 1].value; }
+  }
+  $('dmvY').addEventListener('change', dmvFix);
   function dMoveClose() { $('dmove').hidden = true; DMV = null; }
   $('dmvCancel').addEventListener('click', dMoveClose);
-  $('dmvGo').addEventListener('click', function () { const l = DMV; const per = $('dmvPer').value, box = $('dmvBox').value; dMoveClose(); if (l) dMove(l, box, per); });
+  $('dmvGo').addEventListener('click', function () { const l = DMV; const per = $('dmvY').value ? $('dmvY').value + '-' + $('dmvM').value : '', box = $('dmvBox').value; dMoveClose(); if (l) dMove(l, box, per); });
 
   /* ---- 選んだものを まとめて（下のバー）：PDF切り出し・移す・破棄 ---- */
   function dcBar() {
@@ -1702,7 +1758,7 @@
       if (!doc.getPageCount()) { dcMsg('PDFに入れられるものがありませんでした（HEIC の写真などは Drive で開いてください）。', true); return; }
       const bytes = await doc.save();
       const c = S.clients.find(function (x) { return x.code === S.code; }) || { name: '' };
-      const fname = [S.code, c.name, S.per ? perLabel(S.per) : '全月分', S.box || '全部の箱', tag].filter(Boolean).join('_').replace(/[\\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') + '.pdf';
+      const fname = [S.code, c.name, S.per ? perTag(S.per) : '全月分', S.box || '全部の箱', tag].filter(Boolean).join('_').replace(/[\\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') + '.pdf';
       const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
       const a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
@@ -1718,7 +1774,7 @@
     $('dvName').textContent = perLabel(it.period) + '　［' + it.box + '］　' + it.name.replace(/^\d{8}_\d{6}_/, '');
     $('dvDrive').href = it.url;
     $('dvMove').onclick = function () { docsClose(); dMoveOpen([it]); };
-    $('dvGo').onclick = function () { docsClose(); S.per = it.period; $('per').value = it.period; S.box = ''; $('box').value = '';
+    $('dvGo').onclick = function () { docsClose(); perPick(it.period); S.box = ''; $('box').value = '';
       selectTab('In'); const go = function () { if (rowOf(it.id)) focusCard(it.id); }; if (S.items.some(function (x) { return x.id === it.id; })) { render(); go(); } else { S.st = 'all'; document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.st === 'all')); }); load().then(go); } };
     /* ★ すぐ出す：くっきりした中身が手元にあれば それを、無ければ 小さい絵を先に出して 届いたら差し替える */
     const box = $('dvBody');
