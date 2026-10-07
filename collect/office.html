@@ -564,6 +564,16 @@
     </div>
   </div>
   <div class="dk-main">
+    <details id="fxBox">
+      <summary>会計システム（FX クラウド）とやりとりする</summary>
+      <div class="bar">
+        <label class="btn">FX から取り込む<input type="file" id="fxIn" multiple accept=".csv,.json,.txt" hidden></label>
+        <label class="btn ghost">FX の仕訳辞書に足して返す<input type="file" id="fxOut" accept=".json" hidden></label>
+        <span class="pagemsg" id="fxMsg" role="status"></span>
+      </div>
+      <p class="note">取り込む … FX から切り出した 勘定科目・口座・取引先の一覧（CSV）と 仕訳辞書（JSON）。まとめて選べます。<br>
+        足して返す … FX から切り出したばかりの仕訳辞書（JSON）を選ぶと、アプリで作った辞書を後ろに足したファイルが落ちます。それを FX で読み込みます。</p>
+    </details>
     <div id="dvMain">
       <h2 id="dictTitle">仕訳辞書の登録・編集</h2>
       <div class="kbcard" id="slip" hidden>
@@ -2395,8 +2405,199 @@
   function loadAcct() {
     if (!S.code) return Promise.resolve();
     const code = S.code;
+    gs('partyGet', code).then(function (p) { if (code === S.code) partySet(p); }, function () {});
     return gs('acctGet', code).then(function (a) { if (code !== S.code) return; acctSet(a); drawAcct(); }, function () {});
   }
+  /* 取引先（FX の取引先別管理の一覧）。コード → 取引先名 */
+  S.party = []; S.partyMap = {};
+  function partySet(p) { S.party = p || []; S.partyMap = {}; S.party.forEach(function (x) { if (x.name && !S.partyMap[x.code]) S.partyMap[x.code] = x.name; }); }
+
+  /* ================= 会計システム（FX クラウド）とやりとりする（2026-10-07） =================
+     ・取り込む … 勘定科目一覧（口座別管理・取引先別管理つき）・口座一覧・取引先一覧（CSV）・仕訳辞書（JSON）
+       中身の見出しで見分けるので、何をどの順に選んでもよい
+     ・足して返す … FX から切り出したばかりの仕訳辞書（JSON）に、アプリで作った辞書を後ろに足して落とす
+       FX にもうあるもの（FX辞書ID か 名前が同じもの）は足さない */
+  function fxMsg(t, k) { $('fxMsg').textContent = t || ''; $('fxMsg').className = 'pagemsg' + (k ? ' ' + k : ''); }
+  function csvRows(text) {
+    text = String(text || '').replace(/^\ufeff/, '');
+    const out = []; let row = [], cur = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; continue; }
+      if (ch === '"') q = true; else if (ch === ',') { row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.length > 1 || row[0] !== '') out.push(row); row = []; }
+      else cur += ch;
+    }
+    if (cur !== '' || row.length) { row.push(cur); out.push(row); }
+    return out;
+  }
+  function readText(f) { return new Promise(function (ok, ng) { const r = new FileReader(); r.onload = function () { ok(String(r.result || '')); }; r.onerror = function () { ng(new Error(f.name + ' が読めませんでした。')); }; r.readAsText(f, 'UTF-8'); }); }
+  /* 中身で見分ける */
+  function fxKind(text) {
+    const t = text.replace(/^\ufeff/, '').trim();
+    if (/^\[/.test(t)) { try { const j = JSON.parse(t); if (Array.isArray(j) && (!j.length || j[0].nm_jourdic !== undefined)) return { kind: 'dict', data: j }; } catch (e) {} return null; }
+    const rows = csvRows(t); if (!rows.length) return null;
+    const h = rows[0].map(function (x) { return x.trim(); }), at = function (n) { return h.indexOf(n); };
+    if (at('口座別管理') >= 0 && at('勘定科目コード') >= 0) return { kind: 'acct', h: at, rows: rows.slice(1) };
+    if (at('補助コード') >= 0 && at('口座名') >= 0) return { kind: 'sub', h: at, rows: rows.slice(1) };
+    if (at('取引先コード') >= 0 && at('取引先名') >= 0) return { kind: 'party', h: at, rows: rows.slice(1) };
+    return null;
+  }
+  /* 勘定科目一覧から、仕訳に使う科目だけ（小計・合計の行、名前の無いコードは外す。小計の行はフリガナが全角） */
+  function fxAcctUse(code, name, kana) { return /^\d{4}$/.test(code) && !!name && !/00$/.test(code) && !/[ァ-ヶ]/.test(kana || ''); }
+  function fxBuildAcct(A, B) {
+    const subs = {};
+    if (B) B.rows.forEach(function (r) {
+      const c = half(r[B.h('勘定科目コード')] || ''), sb = half(r[B.h('補助コード')] || ''), nm = (r[B.h('口座名')] || '').trim();
+      if (!c || !sb || !nm) return;   /* Z（名前の無い補助）は使わない */
+      (subs[c] = subs[c] || []).push({ sub: /^\d$/.test(sb) ? '0' + sb : sb, subName: nm, name: (r[B.h('勘定科目名')] || '').trim() });
+    });
+    const out = [];
+    if (A) {
+      A.rows.forEach(function (r) {
+        const c = half(r[A.h('勘定科目コード')] || ''), nm = (r[A.h('勘定科目名')] || '').trim();
+        if (!fxAcctUse(c, nm, r[A.h('フリガナ')])) return;
+        const f = { subMgmt: String(r[A.h('口座別管理')]).trim() === '1' ? 1 : 0, partyMgmt: String(r[A.h('取引先別管理')]).trim() === '1' ? 1 : 0 };
+        const ss = subs[c] || [];
+        if (ss.length) ss.forEach(function (x) { out.push(Object.assign({ code: c, name: nm, sub: x.sub, subName: x.subName, tax: '' }, f)); });
+        else out.push(Object.assign({ code: c, name: nm, sub: '', subName: '', tax: '' }, f));
+      });
+      return out;
+    }
+    /* 口座一覧だけ … いまの表に口座を入れ替えて足す */
+    const by = {}; S.acct.forEach(function (a) { by[a.code + '|' + (a.sub || '')] = a; });
+    Object.keys(subs).forEach(function (c) {
+      const base = S.acctMap[c] || { name: subs[c][0].name, subMgmt: 1, partyMgmt: 0 };
+      delete by[c + '|'];
+      subs[c].forEach(function (x) { by[c + '|' + x.sub] = { code: c, name: base.name, sub: x.sub, subName: x.subName, tax: base.tax || '', subMgmt: base.subMgmt || 1, partyMgmt: base.partyMgmt || 0 }; });
+    });
+    return Object.keys(by).map(function (k) { return by[k]; });
+  }
+  /* FX の仕訳辞書 → アプリの辞書。行（pos_dsp）ごとに 借方（dc=1）と貸方（dc=0）を組にする */
+  function fxTagBox(tag) {
+    const t = String(tag || '').replace(/^[\d０-９]+[\s　]*/, '').trim();
+    const k = function (x) { return String(x || '').replace(/[\s　/／]/g, ''); };
+    const hit = (S.boxes || []).filter(function (b) { return b !== 'その他' && t && (k(b) === k(t) || k(t).indexOf(k(b.split('/').pop())) >= 0); })[0];
+    return hit || 'その他';
+  }
+  function fxLine(d, c) {
+    const one = function (x) { return x ? { code: x.cd_act || '', sub: x.cd_auxact ? (/^\d$/.test(x.cd_auxact) ? '0' + x.cd_auxact : x.cd_auxact) : '' } : { code: '', sub: '' }; };
+    const a = one(d), b = one(c);
+    const tx = function (x) { return x && String(x.tptn || '') !== '' && String(x.tptn) !== '0' ? String(x.tptn) : ''; };
+    const side = tx(d) ? 'dr' : tx(c) ? 'cr' : 'dr';
+    const tsrc = side === 'dr' ? d : c;
+    const tax = tx(d) || tx(c) || ((d && d.tptn === '0') || (c && c.tptn === '0') ? '0' : '');
+    const red = !!(tsrc && Number(tsrc.is_reduce_cmtxrate) === 1);
+    const free = tax === '' || tax === '0' || tax === '8';
+    const pc = (d && d.cd_cstm) || (c && c.cd_cstm) || '';
+    const pn = (d && d.nm_cstm) || (c && c.nm_cstm) || '';
+    return { drCode: a.code, dr: (S.acctMap[a.code] || {}).name || '', drSub: a.sub, drSubName: (S.subMap || {})[a.code + '|' + a.sub] || '',
+      crCode: b.code, cr: (S.acctMap[b.code] || {}).name || '', crSub: b.sub, crSubName: (S.subMap || {})[b.code + '|' + b.sub] || '',
+      tax: tax, biz: tsrc && (tax === '1' || tax === '11') ? String(tsrc.tbptn || '') : '', rate: free ? 0 : (red ? 8 : 10), red: !free && red,
+      side: side, party: pc, partyName: pn || S.partyMap[pc] || '',
+      memo: String(((d || c || {}).rcj_slip) || '').replace(/^\/～\/\s*/, '').slice(0, 200) };
+  }
+  function fxDictToApp(json) {
+    const list = S.dict.slice();
+    const used = {}; list.forEach(function (x) { used[x.no] = 1; });
+    let next = 1; const nextNo = function () { while (used[next]) next++; used[next] = 1; return next; };
+    let add = 0, upd = 0, skip = 0;
+    json.forEach(function (e) {
+      const title = String(e.nm_jourdic || '').trim();
+      const ds = (e.details || []).slice();
+      if (!title || !ds.length || /^■.*■$/.test(title)) { skip++; return; }   /* ■毎日の取引■ などは 見出しの行 */
+      const pos = {}, order = [];
+      ds.forEach(function (x) { const k = String(x.pos_dsp); if (!pos[k]) { pos[k] = { d: [], c: [] }; order.push(k); } pos[k][Number(x.is_ocr_dc) === 1 ? 'd' : 'c'].push(x); });
+      order.sort(function (a, b) { return Number(a) - Number(b); });
+      const lines = [];
+      order.forEach(function (k) { const g = pos[k], n = Math.max(g.d.length, g.c.length); for (let i = 0; i < n; i++) lines.push(fxLine(g.d[i], g.c[i])); });
+      if (!lines.length) { skip++; return; }
+      const fxId = String(e.id_jourdic == null ? '' : e.id_jourdic), tag = (e.tags || [])[0] || '';
+      let at = list.findIndex(function (x) { return fxId && String(x.fxId || '') === fxId; });
+      if (at < 0) at = list.findIndex(function (x) { return !x.fxId && x.title === title; });
+      const o = Object.assign({}, lines[0], { title: title.slice(0, 40), memo: lines[0].memo || title, note: '', grp: 'いつも', box: fxTagBox(tag),
+        fxId: fxId, fxTag: tag, lines: lines.slice(0, 30) });
+      if (at >= 0) { o.no = list[at].no; o.grp = list[at].grp || 'いつも'; o.note = list[at].note || ''; list[at] = o; upd++; }
+      else { if (Object.keys(used).length >= 999) { skip++; return; } o.no = nextNo(); list.push(o); add++; }
+    });
+    return { list: list, add: add, upd: upd, skip: skip };
+  }
+  $('fxIn').addEventListener('change', function (ev) {
+    const files = Array.prototype.slice.call(ev.target.files || []); ev.target.value = '';
+    if (!files.length || !S.code) return;
+    const code = S.code;
+    fxMsg('読んでいます…');
+    Promise.all(files.map(function (f) { return readText(f).then(function (t) { return { f: f, k: fxKind(t) }; }); })).then(function (rs) {
+      const got = {}; const bad = [];
+      rs.forEach(function (r) { if (r.k) got[r.k.kind] = r.k; else bad.push(r.f.name); });
+      if (!Object.keys(got).length) { fxMsg('FX の一覧（勘定科目・口座・取引先の CSV、仕訳辞書の JSON）ではありませんでした：' + bad.join('、'), 'err'); return; }
+      const done = [];
+      let p = Promise.resolve();
+      if (got.acct || got.sub) p = p.then(function () {
+        const rows = fxBuildAcct(got.acct, got.sub);
+        return gs('acctSave', code, rows).then(function (a) { if (code !== S.code) return; acctSet(a); drawAcct(); done.push('勘定科目・口座 ' + a.length + '行'); });
+      });
+      if (got.party) p = p.then(function () {
+        const H = got.party.h, rows = [];
+        got.party.rows.forEach(function (r) {
+          const a = half(r[H('勘定科目コード')] || ''), c = half(r[H('取引先コード')] || ''), n = (r[H('取引先名')] || '').trim();
+          if (/^\d{4}$/.test(a) && /^\d{6}$/.test(c)) rows.push({ acct: a, code: c, name: /^[-‐ー－―]$/.test(n) ? '' : n });
+        });
+        return gs('partySave', code, rows).then(function (pp) { if (code !== S.code) return; partySet(pp); done.push('取引先 ' + pp.length + '件'); });
+      });
+      if (got.dict) p = p.then(function () {
+        const r = fxDictToApp(got.dict.data);
+        return gs('dictSave', code, r.list).then(function (d) {
+          if (code !== S.code) return;
+          S.dict = d; S.dirty = false; drawDict(); drawIndex(); openSlip(null);
+          done.push('仕訳辞書 ' + r.add + '件を足し・' + r.upd + '件を置き換え' + (r.skip ? '（見出しなど ' + r.skip + '件は入れず）' : ''));
+        });
+      });
+      return p.then(function () { fxMsg('取り込みました：' + done.join('／') + (bad.length ? '。読めなかったもの：' + bad.join('、') : ''), 'ok'); });
+    }).catch(function (e) { fxMsg(e.message, 'err'); });
+  });
+  /* アプリの辞書 → FX の仕訳辞書の1件 */
+  function fxEntryOf(d, id, ord) {
+    const ls = d.lines && d.lines.length ? d.lines : [d];
+    const det = []; let k = 0;
+    ls.forEach(function (l, i) {
+      const memo = String(l.memo || d.memo || d.title || '');
+      const tax = String(l.tax || '');
+      const one = function (dc, code, sub) {
+        if (!code) return;
+        const mine = (l.side === 'cr' ? 'cr' : 'dr') === (dc ? 'dr' : 'cr');
+        det.push({ id_jourdetail: ++k, is_ocr_dc: dc, is_funddetails: 0, id_jourdetail_from: 0, cd_dep: '', cd_act: String(code), cd_auxact: String(sub || ''),
+          cd_cstm: String(l.party || ''), nm_cstm: l.party ? '' : String(l.partyName || ''), invoiceissuernumber: '',
+          tptn: mine ? tax : (tax === '' ? '' : '0'), tbptn: mine && (tax === '1' || tax === '11') ? String(l.biz || '') : '',
+          is_reduce_cmtxrate: mine && l.red ? 1 : 0, is_judgeymd: 0, is_judgeymd_reduce: 0, amnt_tr: 0, cat_amnttr: 1,
+          is_autocalccmtx: 0, amnt_cmtx: 0, cat_purday: mine && buyKind(tax) ? 10 : 9, rcj_slip: memo.slice(0, 40), rc_slip: '', pos_dsp: i + 1 });
+      };
+      one(1, l.drCode, l.drSub); one(0, l.crCode, l.crSub);
+    });
+    return { cd_coopsystem: '', nm_jourdic: d.title || ('No ' + d.no), is_cpjour: ls.length > 1 ? 1 : 0, is_jourmonthly: 0, ord_dsp: ord,
+      id_jourdic: id, cd_fbcat: '', cd_fbbdcat: '', details: det, tags: [d.fxTag || d.box || ''].filter(Boolean) };
+  }
+  $('fxOut').addEventListener('change', function (ev) {
+    const f = (ev.target.files || [])[0]; ev.target.value = '';
+    if (!f) return;
+    readText(f).then(function (text) {
+      const k = fxKind(text);
+      if (!k || k.kind !== 'dict') { fxMsg(f.name + ' は FX の仕訳辞書（JSON）ではありませんでした。', 'err'); return; }
+      const arr = k.data;
+      const ids = {}, titles = {}; let maxId = 0, maxOrd = 0;
+      arr.forEach(function (e) { ids[String(e.id_jourdic)] = 1; titles[String(e.nm_jourdic || '').trim()] = 1;
+        maxId = Math.max(maxId, Number(e.id_jourdic) || 0); if (Number(e.ord_dsp) < 1000) maxOrd = Math.max(maxOrd, Number(e.ord_dsp) || 0); });
+      const add = S.dict.filter(function (d) { return !(d.fxId && ids[String(d.fxId)]) && !titles[String(d.title || '').trim()] && (d.drCode || d.crCode); })
+        .sort(function (a, b) { return a.no - b.no; });
+      if (!add.length) { fxMsg('足すものはありません（アプリの辞書は みな FX にあります）。', 'ok'); return; }
+      add.forEach(function (d) { arr.push(fxEntryOf(d, ++maxId, ++maxOrd)); });
+      const out = (/^\ufeff/.test(text) ? '\ufeff' : '') + JSON.stringify(arr, null, 2);
+      const a = el('a'); a.href = URL.createObjectURL(new Blob([out], { type: 'application/json' }));
+      a.download = f.name.replace(/\.json$/i, '') + '_アプリの辞書を足した.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      fxMsg(add.length + '件を足しました（' + add.map(function (d) { return d.title; }).slice(0, 5).join('、') + (add.length > 5 ? ' ほか' : '') + '）。落ちたファイルを FX の仕訳辞書で読み込んでください。', 'ok');
+    }).catch(function (e) { fxMsg(e.message, 'err'); });
+  });
   /* 口座コードを打ったら 口座名（表にあれば） */
   function subFill(box, k) {
     if (k !== 'drSub' && k !== 'crSub') return;
