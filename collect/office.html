@@ -118,6 +118,8 @@
   .acct-row input { min-width: 0; width: 100%; }
   .acct-row input.code { font-family: ui-monospace, Menlo, monospace; }
   .acct-row.head { font-size: 12.5px; color: var(--sub); font-weight: 700; }
+  .acct-row .anm { align-self: center; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+  .acct-row input.bad { border-color: #c0392b; background: #fdecea; }
 
   /* ==================================================================
      伝票チェックの形・振替伝票（ビーメイツ 708_bmates_gas の .dpz をそのまま持ってきた）
@@ -555,6 +557,7 @@
       <span class="seg" id="dSub" role="group" aria-label="辞書と科目の表">
         <button type="button" data-sub="v" aria-pressed="true">仕訳辞書</button>
         <button type="button" data-sub="a" aria-pressed="false">勘定科目の表</button>
+        <button type="button" data-sub="p" aria-pressed="false">取引先</button>
       </span>
     </div>
     <div id="dvSide">
@@ -627,6 +630,18 @@
         <textarea id="aPaste" aria-label="科目の貼り付け"></textarea>
         <div class="bar"><button type="button" id="aPasteGo">表に入れる</button></div>
       </details>
+    </div>
+
+    <div id="dpMain" hidden>
+      <h2>取引先（この顧問先）</h2>
+      <p class="note">FX の「取引先別管理」の科目ごとの取引先。辞書・伝票で取引先コードを打つと 名前が出ます。<span id="pRo">変えられるのは マスターの方だけです。</span></p>
+      <div class="bar"><input id="pSearch" type="search" placeholder="科目・コード・名前で探す" aria-label="取引先を探す"></div>
+      <div class="acct-rows" id="pRows"></div>
+      <div class="bar" id="pBar">
+        <button type="button" id="pAdd">＋ 行を足す</button>
+        <button type="button" class="primary" id="pSaveParty">保存</button>
+        <span class="pagemsg" id="pMsg" role="status"></span>
+      </div>
     </div>
   </div>
 </div>
@@ -2410,7 +2425,61 @@
   }
   /* 取引先（FX の取引先別管理の一覧）。コード → 取引先名 */
   S.party = []; S.partyMap = {};
-  function partySet(p) { S.party = p || []; S.partyMap = {}; S.party.forEach(function (x) { if (x.name && !S.partyMap[x.code]) S.partyMap[x.code] = x.name; }); }
+  function partySet(p) { S.party = p || []; S.partyMap = {}; S.party.forEach(function (x) { if (x.name && !S.partyMap[x.code]) S.partyMap[x.code] = x.name; }); if (S.dsub === 'p') drawParty(); }
+  /* ---- 取引先の表（科目コード・取引先コード・取引先名。マスターだけ変えられる） ---- */
+  function drawParty(rows) {
+    const box = $('pRows'); box.textContent = '';
+    const ro = !canAcct();
+    $('pRo').hidden = !ro; $('pBar').hidden = ro;
+    const head = el('div', 'acct-row head'); ['科目', '科目名', '取引先', '取引先名', ''].forEach(function (t) { head.appendChild(el('span', null, t)); }); box.appendChild(head);
+    (rows || S.party).forEach(function (x) { partyRow(x, ro); });
+    if (!ro && !(rows || S.party).length) partyRow({}, false);
+    partyFilter();
+  }
+  function partyRow(x, ro) {
+    const r = el('div', 'acct-row');
+    const mk = function (k, cls, ph) { const i = el('input', cls || null); i.dataset.k = k; i.value = x[k] || ''; i.readOnly = ro; if (ph) i.placeholder = ph; return i; };
+    const a = mk('acct', 'code', '2112'), nm = el('span', 'anm'), c = mk('code', 'code', '000001'), n = mk('name', null);
+    a.inputMode = 'numeric'; c.inputMode = 'numeric';
+    const showName = function () {
+      const v = half(a.value), hit = S.acctMap[v];
+      nm.textContent = hit ? hit.name : ''; a.classList.toggle('bad', !!v && !/^\d{4}$/.test(v));
+    };
+    a.addEventListener('input', showName); showName();
+    c.addEventListener('blur', function () { const v = half(c.value); if (/^\d{1,5}$/.test(v)) c.value = ('000000' + v).slice(-6); c.classList.toggle('bad', !!v && !/^\d{6}$/.test(half(c.value))); });
+    r.appendChild(a); r.appendChild(nm); r.appendChild(c); r.appendChild(n);
+    const del = el('button', 'danger', '×'); del.type = 'button'; del.hidden = ro; del.setAttribute('aria-label', '行を消す');
+    del.addEventListener('click', function () { r.remove(); });
+    r.appendChild(del);
+    $('pRows').appendChild(r);
+    return r;
+  }
+  function partyFilter() {
+    const q = ($('pSearch').value || '').trim().toLowerCase();
+    $('pRows').querySelectorAll('.acct-row:not(.head)').forEach(function (r) {
+      const t = Array.prototype.map.call(r.querySelectorAll('input,.anm'), function (i) { return i.value != null && i.tagName === 'INPUT' ? i.value : i.textContent; }).join(' ').toLowerCase();
+      r.hidden = !!q && t.indexOf(q) < 0;
+    });
+  }
+  function readParty() {
+    const out = [];
+    $('pRows').querySelectorAll('.acct-row:not(.head)').forEach(function (r) {
+      const o = {}; r.querySelectorAll('input').forEach(function (i) { o[i.dataset.k] = i.value.trim(); });
+      o.acct = half(o.acct); o.code = half(o.code); if (/^\d{1,5}$/.test(o.code)) o.code = ('000000' + o.code).slice(-6);
+      if (!o.acct && !o.code && !o.name) return; out.push(o);
+    });
+    return out;
+  }
+  function pmsg(t, k) { $('pMsg').textContent = t || ''; $('pMsg').className = 'pagemsg' + (k ? ' ' + k : ''); }
+  $('pSearch').addEventListener('input', partyFilter);
+  $('pAdd').addEventListener('click', function () { $('pSearch').value = ''; partyFilter(); partyRow({}, false).querySelector('input').focus(); });
+  $('pSaveParty').addEventListener('click', function () {
+    const code = S.code;
+    pmsg('保存しています…');
+    gs('partySave', code, readParty()).then(function (p) {
+      if (code !== S.code) return; partySet(p); drawParty(); pmsg('保存しました（' + p.length + '件）。', 'ok');
+    }, function (e) { pmsg(e.message, 'err'); });
+  });
 
   /* ================= 会計システム（FX クラウド）とやりとりする（2026-10-07） =================
      ・取り込む … 勘定科目一覧（口座別管理・取引先別管理つき）・口座一覧・取引先一覧（CSV）・仕訳辞書（JSON）
@@ -2600,6 +2669,13 @@
   });
   /* 口座コードを打ったら 口座名（表にあれば） */
   function subFill(box, k) {
+    /* 取引先コードを打ったら 取引先名（取引先の表にあれば。5桁までは頭に0を足して6桁で引く） */
+    if (k === 'party') {
+      let pc = half((box.querySelector('[data-k="party"]') || {}).value || ''); if (/^\d{1,5}$/.test(pc)) pc = ('000000' + pc).slice(-6);
+      const pnm = S.partyMap && S.partyMap[pc], pn = box.querySelector('[data-k="partyName"]');
+      if (pnm && pn && pn.value !== pnm) { pn.value = pnm; pn.dispatchEvent(new Event('input', { bubbles: true })); }
+      return;
+    }
     if (k !== 'drSub' && k !== 'crSub') return;
     const s0 = k.slice(0, 2), c = half((box.querySelector('[data-k="' + s0 + 'Code"]') || {}).value || ''), sb = half((box.querySelector('[data-k="' + k + '"]') || {}).value || '');
     const nm = S.subMap && S.subMap[c + '|' + (/^\d$/.test(sb) ? '0' + sb : sb)];
@@ -2814,7 +2890,8 @@
     b.addEventListener('click', function () {
       S.dsub = b.dataset.sub;
       document.querySelectorAll('#dSub button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
-      $('dvSide').hidden = S.dsub !== 'v'; $('dvMain').hidden = S.dsub !== 'v'; $('daMain').hidden = S.dsub !== 'a';
+      $('dvSide').hidden = S.dsub !== 'v'; $('dvMain').hidden = S.dsub !== 'v'; $('daMain').hidden = S.dsub !== 'a'; $('dpMain').hidden = S.dsub !== 'p';
+      if (S.dsub === 'p') drawParty();
     });
   });
 
