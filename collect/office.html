@@ -128,6 +128,23 @@
   .dpz { --ai: #1f7a6a; --green: #2E7D53; --pink: #B4566B; --gold: #C8A24A; --dline: #DCD6C8; }
   #paneIn { overflow: auto; }
   .jmain { padding: 0 16px 40px; min-width: 0; max-width: 1280px; }
+  /* ★ 仕訳化の並べ方（2026-10-08）：縦（写真の下に辞書・伝票）／横2列（左に写真・右に辞書と伝票）／写真を別窓（FX の証憑と同じ。本体は辞書が2列） */
+  .jlay-h .jdrow:not(.fold) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 14px; align-items: start; }
+  .jlay-h .jdrow > .jdhead { grid-column: 1 / -1; }
+  .jlay-h .jcolL { position: sticky; top: 56px; min-width: 0; }
+  .jlay-h .jcolR { min-width: 0; }
+  .jlay-h .jshot { max-height: calc(100vh - 140px); }
+  .jlay-h .jshot img { max-height: calc(100vh - 150px); }
+  .jlay-w .jdrow .jshot, .jlay-w .jdrow .jtools { display: none; }
+  .jlay-w .jplist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 70vh; column-gap: 1px; background: #E3EEEA; }
+  .jlay-w .jplist li { background: #fff; min-width: 0; }
+  .jlay-w .jplist .grp, .jlay-w .jplist .empty { grid-column: 1 / -1; }
+  .jlay-w .jplist li button { grid-template-columns: 30px minmax(0, 1fr); }
+  .jlay-w .jplist li button .c, .jlay-w .jplist li button .x { grid-column: 2; font-size: 12px; }
+  .jpop { font: inherit; font-size: 12.5px; font-weight: 700; border: 1.5px solid var(--ai); color: var(--ai); background: #fff; border-radius: 7px; padding: 2px 9px; cursor: pointer; }
+  .jlay-v .jpop, .jlay-h .jpop { display: none; }
+  .jlhead .seg button { font: inherit; font-size: 13px; font-weight: 700; padding: 5px 10px; background: #fff; cursor: pointer; }
+  .jlhead .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
   .jlhead { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 0; background: var(--bg); border-bottom: 1px solid var(--line); }
   .jlsum { font-weight: 700; }
   .jlsum .warn { color: #b07800; margin-left: 10px; } .jlsum .ng { color: var(--pink); margin-left: 10px; }
@@ -329,6 +346,8 @@
   .dtools button { font: inherit; font-size: 13.5px; font-weight: 700; padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
   .dtools button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
   .dtools button.danger { color: #B3261E; border-color: #E7B4AF; }
+  #sBody td button + button { margin-left: 6px; }
+  #sBody td:last-child { white-space: nowrap; }
   .dcols { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
   .dcols > span { font-size: 12.5px; color: var(--sub); padding: 0 8px; }
   .dtools .dcols button { border: 0; border-left: 1px solid var(--line); border-radius: 0; padding: 6px 12px; }
@@ -566,6 +585,8 @@
   <div class="jmain" id="jmain">
     <div class="jlhead">
       <span class="jlsum" id="jlsum"></span>
+      <span class="seg" id="jLay" role="group" aria-label="並べ方"><button type="button" data-l="v" aria-pressed="true">縦</button><button type="button" data-l="h" aria-pressed="false">横2列</button><button type="button" data-l="w" aria-pressed="false">写真を別窓</button></span>
+      <button type="button" class="jpop" id="jPopGo" hidden>📎 写真の窓をひらく</button>
       <span class="jlsave" id="saving" role="status"></span>
     </div>
     <div class="jlist" id="jlist"><div class="cbox muted">読み込み中…</div></div>
@@ -733,7 +754,7 @@
     <p class="note">アプリ（パソコン・スマホ）に入る担当者と暗証番号です。変えられるのは マスターの方 と スプレッドシートの中 だけです。<br>
       暗証番号は半角の英数字 4〜12 桁（マスターは 6〜12 桁）。番号そのものはどこにも残しません（忘れた人には、ここで新しい番号を決めてください）。<br>
       番号を変える・消すと、その人の端末はもう一度入り直しになります。マスターは、担当者を足したり消したりできます。</p>
-    <table><thead><tr><th>名前</th><th>番号を決めた日</th><th style="width:80px"></th></tr></thead><tbody id="sBody"></tbody></table>
+    <table><thead><tr><th>名前</th><th>番号を決めた日</th><th style="width:230px"></th></tr></thead><tbody id="sBody"></tbody></table>
     <div class="add">
       <input id="sName" placeholder="名前（例：山田）" maxlength="30" aria-label="名前">
       <input id="sPin" placeholder="暗証番号" maxlength="12" autocomplete="new-password" aria-label="暗証番号">
@@ -790,6 +811,7 @@
   var LS_TOK = 'collect_office_tok';
   var LS_NAME = 'collect_office_name';
   var LS_DCOLS = 'collect_office_dcols';
+  var LS_JLAY = 'collect_office_jlay';
   function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
@@ -1173,8 +1195,85 @@
   const BACK_WHY = ['写真がぼやけて読めません。撮り直してください。', '端が切れています。全体が入るように撮り直してください。',
     '日付・金額が読めません。', '領収書ではないようです。', '同じものが2回届いています。'];
 
+  /* ================= ★ 並べ方と 写真の別窓（2026-10-08） =================
+     ・縦 … いままで（写真の下に 辞書の一覧 → 伝票）
+     ・横2列 … 左に写真、右に 辞書の一覧・伝票（スマホでも 1画面で見ながら打てる）
+     ・写真を別窓 … FX クラウドの証憑と同じ。いま打っている1件の写真を 別の窓に出し、本体は 辞書が2列でずらっと並ぶ。
+       打つ1件が変わると 別の窓の写真もついてくる。各件の［📎 写真］でも出せる。端末が覚える */
+  function jlay() { const v = lsGet(LS_JLAY); return v === 'h' || v === 'w' ? v : 'v'; }
+  function jlayPaint() {
+    const l = jlay(), m = $('jmain');
+    ['v', 'h', 'w'].forEach(function (k) { m.classList.toggle('jlay-' + k, l === k); });
+    $('jLay').querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.l === l)); });
+    $('jPopGo').hidden = l !== 'w' || !!(POP && !POP.closed);
+  }
+  let POP = null, POPID = '', POPK = '', POPURL = '';
+  function popOpen() {
+    if (POP && !POP.closed) { try { POP.focus(); } catch (e) {} return POP; }
+    POP = window.open('', 'collect_shot', 'width=760,height=960');
+    if (!POP) { fmsg('写真の窓を開けませんでした（このサイトのポップアップを許可してください）。', 'err'); jlayPaint(); return null; }
+    const d = POP.document;
+    d.open();
+    d.write('<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>写真</title>' +
+      '<style>html,body{margin:0;height:100%;background:#2b2f2e;color:#fff;font-family:system-ui,"Hiragino Sans","Noto Sans JP",sans-serif}' +
+      '#h{position:sticky;top:0;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:8px 12px;background:#0F6E5C;font-size:14px}' +
+      '#h b{font-size:16px}#h .sp{flex:1}#h button,#h a{font:inherit;font-size:13px;color:#0F6E5C;background:#fff;border:0;border-radius:7px;padding:4px 10px;cursor:pointer;text-decoration:none}' +
+      '#b{padding:8px;text-align:center}#b img{max-width:100%;background:#fff;transition:transform .15s;cursor:zoom-in}#b.zoom img{max-width:none;width:200%;cursor:zoom-out}' +
+      '#b iframe{width:100%;height:calc(100vh - 70px);border:0;background:#fff}#b .msg{padding:40px 10px;color:#ddd}</style></head>' +
+      '<body><div id="h"></div><div id="b"></div></body></html>');
+    d.close();
+    POPID = ''; POPK = '';
+    POP.addEventListener('beforeunload', function () { setTimeout(jlayPaint, 300); });
+    jlayPaint();
+    return POP;
+  }
+  function popSync(force) {
+    if (jlay() !== 'w' || !POP || POP.closed) { if (POP && POP.closed) { POP = null; jlayPaint(); } return; }
+    const id = S.act, it = itemOf(id); if (!it) return;
+    const k = kindOf(id);
+    if (!force && id === POPID && k === POPK) return;
+    POPID = id; POPK = k;
+    const d = POP.document, h = d.getElementById('h'), b = d.getElementById('b');
+    if (!h || !b) return;
+    const i = S.view.indexOf(it);
+    h.textContent = ''; b.textContent = ''; b.className = '';
+    const mk = function (tag, txt) { const x = d.createElement(tag); if (txt != null) x.textContent = txt; return x; };
+    h.appendChild(mk('b', (i + 1) + '件目')); h.appendChild(mk('span', perLabel(it.period) + '［' + it.box + '］'));
+    h.appendChild(mk('span', it.name.replace(/^\d{8}_\d{6}_/, ''))); h.appendChild(mk('span')).className = 'sp';
+    d.title = (i + 1) + '件目 ' + it.box;
+    if (POPURL) { try { URL.revokeObjectURL(POPURL); } catch (e) {} POPURL = ''; }
+    const v = IMG[id];
+    if (v && v.t === 'img') {
+      const im = mk('img'); im.src = v.src; im.alt = it.name;
+      let rot = S.rot[id] || 0; const setR = function () { im.style.transform = rot ? 'rotate(' + rot + 'deg)' : ''; };
+      setR();
+      im.addEventListener('click', function () { b.classList.toggle('zoom'); });
+      const rb = mk('button', '回す'); rb.type = 'button'; rb.addEventListener('click', function () { rot = (rot + 90) % 360; S.rot[id] = rot; setR(); });
+      h.appendChild(rb); b.appendChild(im);
+    } else if (v && v.t === 'pdf') {
+      POPURL = URL.createObjectURL(new Blob([b64bytes(v.b64)], { type: 'application/pdf' }));
+      const fr = mk('iframe'); fr.src = POPURL; fr.title = it.name; b.appendChild(fr);
+    } else {
+      if (THUMB[id]) { const im = mk('img'); im.src = THUMB[id]; im.alt = it.name; b.appendChild(im); }
+      b.appendChild(mk('div', v ? 'ここでは出せない形です。Drive で開いてください。' : '読み込み中…')).className = 'msg';
+      if (!v) prioritize();
+    }
+    const a = mk('a', 'Drive'); a.href = it.url; a.target = '_blank'; a.rel = 'noopener'; h.appendChild(a);
+  }
+  $('jLay').addEventListener('click', function (e) {
+    const b = e.target.closest('button[data-l]'); if (!b) return;
+    lsSet(LS_JLAY, b.dataset.l);
+    if (b.dataset.l === 'w') popOpen();
+    jlayPaint(); render(); popSync(true);
+  });
+  $('jPopGo').addEventListener('click', function () { popOpen(); popSync(true); });
+  /* 別窓を閉じたら［写真の窓をひらく］を出す（閉じたことは 窓の側からは知らせてくれないことがある） */
+  setInterval(function () { if (POP && POP.closed) { POP = null; jlayPaint(); } }, 1000);
+  window.addEventListener('beforeunload', function () { if (POP && !POP.closed) try { POP.close(); } catch (e) {} });
+
   /* 一覧を組む。届いた日ごとに区切りを入れる */
   function render() {
+    jlayPaint();
     /* 月分 → 箱 → 届いた順 に並べ、「2026年8月分 ／ 現金の領収書」で区切る */
     S.view = S.items.filter(function (it) { return (!S.box || it.box === S.box) && perHit(it); })
       .sort(function (a, b) { return a.period !== b.period ? (a.period < b.period ? -1 : 1) : a.box !== b.box ? boxIdx(a.box) - boxIdx(b.box) : a.t - b.t; });
@@ -1901,6 +2000,7 @@
     h.appendChild(el('span', 'stt ' + tg[0], tg[1]));
     h.appendChild(el('span', null, it.at + ' 届'));
     h.appendChild(el('span', 'fn', it.name.replace(/^\d{8}_\d{6}_/, '')));
+    const pb = el('button', 'jpop', '📎 写真'); pb.type = 'button'; pb.dataset.a = 'pop'; pb.title = '別の窓に この写真を出す'; h.appendChild(pb);
     row.appendChild(h);
 
     const shot = oldShot || el('div', 'jshot');
@@ -1991,6 +2091,15 @@
     ck.appendChild(el('span', 'jda'));
     row.appendChild(ck);
     readyMark(it);
+    if (jlay() === 'h') {
+      /* 横2列：左に写真（と道具）、右にそれ以外 */
+      const L = el('div', 'jcolL'), R = el('div', 'jcolR');
+      Array.prototype.slice.call(row.children).forEach(function (x) {
+        if (x.classList.contains('jdhead')) return;
+        (x.classList.contains('jshot') || x.classList.contains('jtools') ? L : R).appendChild(x);
+      });
+      row.appendChild(L); row.appendChild(R);
+    }
     if (keep) { const f = row.querySelector(keep); if (f) { f.focus({ preventScroll: true }); if (selR) try { f.setSelectionRange(selR[0], selR[1]); } catch (e) {} } }
   }
   /* 伝票に出す値：辞書のその行 ＋ この1件だけの直し ＋ 日付・金額 */
@@ -2078,6 +2187,7 @@
   }
   function markAct() {
     $('jlist').querySelectorAll('.jdrow').forEach(function (r) { r.classList.toggle('act', r.dataset.id === S.act); });
+    popSync();
   }
   /* 次の未確定へ（下へ）。最後まで行ったら上から探す */
   function nextTodo(fromId) {
@@ -2169,6 +2279,7 @@
     if (a === 'open') { openOnly(it.id); S.act = it.id; drawCard(it); markAct(); focusCard(it.id); return; }
     if (a === 'fold') { if (e.target.closest('button, a, input, select')) return; delete S.open[it.id]; drawCard(it); return; }
     if (a === 'pick') { pickNo(it, Number(t.dataset.no)); return; }
+    if (a === 'pop') { S.act = it.id; markAct(); prioritize(); popOpen(); popSync(true); return; }
     if (a === 'repick') { repick(it); return; }
     if (a === 'ok') { confirmEntry(it, false); return; }
     if (a === 'more') { confirmEntry(it, true); return; }
@@ -2253,6 +2364,7 @@
         trim();
         running--;
         batch.forEach(paint);
+        if (batch.indexOf(S.act) >= 0) popSync(true);
         pump();
       }, function () { batch.forEach(function (id) { delete INFLIGHT[id]; }); running--; pump(); });
     }
@@ -3383,7 +3495,18 @@
     if (!list.length) { const tr = el('tr'); const td = el('td', null, 'まだ誰もいません。下で足してください。'); td.colSpan = 3; tr.appendChild(td); tb.appendChild(tr); }
     list.forEach(function (s) {
       const tr = el('tr'); tr.appendChild(el('td', null, s.name + (s.master ? '（マスター）' : ''))); tr.appendChild(el('td', null, s.at));
-      const td = el('td'); const b = el('button', 'danger', '消す'); b.type = 'button';
+      const td = el('td');
+      /* ★ あとからマスターにする・外す（暗証番号はそのまま） */
+      const rb = el('button', null, s.master ? 'マスターを外す' : 'マスターにする'); rb.type = 'button'; rb.dataset.role = s.name;
+      rb.addEventListener('click', function () {
+        if (!confirm(s.master ? s.name + ' さんのマスターを外します。' : s.name + ' さんをマスターにします（担当者の手入れができるようになります）。')) return;
+        gs('staffRole', s.name, !s.master).then(function (l) {
+          sDraw(l); const n = l.find(function (x) { return x.name === s.name; }) || {};
+          smsg(n.master ? s.name + ' さんをマスターにしました。' + (n.must ? '次に入ったとき、マスター用の暗証番号（6〜12桁）に変えてもらいます。' : '') : s.name + ' さんのマスターを外しました。', 'ok');
+        }, function (e) { smsg(e.message, 'err'); });
+      });
+      td.appendChild(rb);
+      const b = el('button', 'danger', '消す'); b.type = 'button';
       b.addEventListener('click', function () {
         if (!confirm(s.name + ' さんを消します。その人の端末は入れなくなります。')) return;
         gs('staffRemove', s.name).then(function (l) { sDraw(l); smsg('消しました。', 'ok'); }, function (e) { smsg(e.message, 'err'); });
