@@ -194,7 +194,7 @@
   .mon-hd { flex-wrap: wrap; justify-content: flex-end; }
   .mon-h { flex: 1 1 230px; }
   .mon-h .ml { white-space: nowrap; }
-  .mon-hd > .mon-sel, .mon-hd > .mon-del { margin-bottom: 6px; }
+  .mon-hd > .mon-sel, .mon-hd > .mon-del, .mon-hd > .mon-pdf { margin-bottom: 6px; }
   .box.sub .box-btns + .cam1 + .drop { display: none; }
   @media (hover: hover) and (pointer: fine) { .box.sub .drop { display: block; padding: 8px; font-size: 14px; } }
   .box.sub { padding: 10px 10px; }
@@ -217,7 +217,7 @@
   .ht.sel { outline: 3px solid var(--accent); outline-offset: -1px; }
   .ht.sel .ck { background: var(--accent); }
   .ht.sel .ck::after { content: '✓'; position: absolute; inset: 0; color: #fff; font-weight: 900; font-size: 17px; line-height: 22px; text-align: center; }
-  .mon-sel { flex-shrink: 0; font: inherit; font-size: 13px; font-weight: 700; color: var(--accent); background: #fff; border: 1.5px solid #8FBFB2; border-radius: 8px; padding: 5px 9px; cursor: pointer; }
+  .mon-sel, .mon-pdf { flex-shrink: 0; font: inherit; font-size: 13px; font-weight: 700; color: var(--accent); background: #fff; border: 1.5px solid #8FBFB2; border-radius: 8px; padding: 5px 9px; cursor: pointer; }
   .selbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9; background: #fff; border-top: 2px solid var(--accent); box-shadow: 0 -4px 16px rgba(0,0,0,.12);
             padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0)); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-content: center; }
   .selbar b { font-size: 16px; }
@@ -330,7 +330,7 @@
 
 <div class="selbar" id="selbar" hidden>
   <b id="selN">0件を選んでいます</b>
-  <div class="selb"><button type="button" class="btn pick" id="selMove">移す</button><button type="button" class="btn danger" id="selDel">消す</button>
+  <div class="selb"><button type="button" class="btn pick" id="selMove">移す</button><button type="button" class="btn danger" id="selDel">消す</button><button type="button" class="btn pick" id="selPdf">PDF</button>
     <button type="button" class="linkbtn" id="selNone">全部外す</button><button type="button" class="linkbtn" id="selEnd">やめる</button></div>
 </div>
 
@@ -819,6 +819,14 @@
         del.addEventListener('click', function () { delMonth(box, p, o, h); });
         hrow.appendChild(del);
       }
+      /* ★ 送ったものを 1冊の PDF にしてダウンロード（2026-10-08） */
+      const sent = h.filter(function (x) { return !/^local_/.test(x.k); });
+      if (open && !PICK && sent.length) {
+        const pb = mk('button', 'mon-pdf', 'PDF'); pb.type = 'button';
+        pb.setAttribute('aria-label', boxLabel(box) + ' ' + ymLabel(p) + 'を PDF でダウンロード');
+        pb.addEventListener('click', function () { savePdf(sent, boxLabel(box) + '_' + ymLabel(p)); });
+        hrow.appendChild(pb);
+      }
       mon.appendChild(hrow);
       if (open) {
         const g = mk('div', 'hgrid');
@@ -1081,6 +1089,7 @@
     const n = selList().length;
     $('selN').textContent = n + '件を選んでいます';
     $('selMove').disabled = $('selDel').disabled = !n;
+    $('selPdf').disabled = !selList().some(function (x) { return !/^local_/.test(x.k); });
     document.body.classList.toggle('picking', PICK);
   }
   $('selMove').addEventListener('click', function () { openMove(selList()); });
@@ -1092,7 +1101,83 @@
       drawAll(); showDone(((r && r.n) || 0) + '件を消しました。' + (r && r.kept ? '（確定済みの ' + r.kept + '件は残しました）' : ''));
     }, function (e) { showDone('消せませんでした。' + e.message, true); });
   });
+  $('selPdf').addEventListener('click', function () { const l = selList().filter(function (x) { return !/^local_/.test(x.k); }); if (l.length) savePdf(l, '選んだもの'); });
   $('selNone').addEventListener('click', function () { SEL = {}; drawAll(); });
+
+  /* ---- ★ PDF でダウンロード（2026-10-08）。送ったもの（写真・PDF）を 1冊に綴じて この端末に保存する。
+     写真は A4 に1枚ずつ（横長は横向き）、PDF はそのままのページ。HEIC など綴じられないものは数だけ知らせる ---- */
+  const PDFLIB_URL = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+  let pdflibP = null, PDF_BUSY = false;
+  function pdflib() {
+    if (pdflibP) return pdflibP;
+    pdflibP = new Promise(function (ok, ng) {
+      if (window.PDFLib) { ok(window.PDFLib); return; }
+      const sc = document.createElement('script'); sc.src = PDFLIB_URL;
+      sc.onload = function () { window.PDFLib ? ok(window.PDFLib) : ng(new Error('PDF を作る道具が読み込めませんでした')); };
+      sc.onerror = function () { pdflibP = null; ng(new Error('PDF を作る道具が読み込めませんでした（電波を確かめてください）')); };
+      document.head.appendChild(sc);
+    });
+    return pdflibP;
+  }
+  function b64bytes(b64) { const t = atob(b64); const u = new Uint8Array(t.length); for (let i = 0; i < t.length; i++) u[i] = t.charCodeAt(i); return u; }
+  function jpegOf(src) {
+    return new Promise(function (ok, ng) {
+      const im = new Image();
+      im.onload = function () { const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0); ok(b64bytes(c.toDataURL('image/jpeg', 0.9).split(',')[1])); };
+      im.onerror = function () { ng(new Error('写真が読めません')); };
+      im.src = src;
+    });
+  }
+  async function pdfFiles(list, prog) {
+    const out = {}, want = [];
+    list.forEach(function (h) { if (FULL[h.k]) out[h.k] = { t: 'img', src: FULL[h.k] }; else want.push(h.k); });
+    let done = list.length - want.length;
+    while (want.length) {
+      const b = want.splice(0, 3);
+      const r = await call('clientFiles', [TOKEN, b], 120000);
+      b.forEach(function (k) { const v = r ? r[k] : null; if (v === 'later') want.unshift(k); else { out[k] = v || null; done++; } });
+      prog(done);
+    }
+    return out;
+  }
+  async function savePdf(list, tag) {
+    if (PDF_BUSY || !list.length) return;
+    PDF_BUSY = true;
+    const n = list.length;
+    try {
+      showDone('PDFを作っています… 0 / ' + n);
+      const L = await pdflib();
+      const files = await pdfFiles(list, function (d) { showDone('PDFを作っています… ' + d + ' / ' + n); });
+      const doc = await L.PDFDocument.create();
+      let skip = 0;
+      for (const h of list) {
+        const v = files[h.k];
+        try {
+          if (v && v.t === 'pdf') {
+            const src = await L.PDFDocument.load(b64bytes(v.b64), { ignoreEncryption: true });
+            (await doc.copyPages(src, src.getPageIndices())).forEach(function (pg) { doc.addPage(pg); });
+          } else if (v && v.t === 'img') {
+            const m = v.src.match(/^data:image\/(jpeg|png);base64,(.*)$/);
+            const img = m ? (m[1] === 'png' ? await doc.embedPng(b64bytes(m[2])) : await doc.embedJpg(b64bytes(m[2]))) : await doc.embedJpg(await jpegOf(v.src));
+            const land = img.width > img.height;
+            const W = land ? 842 : 595, H = land ? 595 : 842, M = 18;
+            const sc = Math.min((W - M * 2) / img.width, (H - M * 2) / img.height);
+            const w = img.width * sc, hh = img.height * sc;
+            doc.addPage([W, H]).drawImage(img, { x: (W - w) / 2, y: (H - hh) / 2, width: w, height: hh });
+          } else skip++;
+        } catch (e) { skip++; }
+      }
+      if (!doc.getPageCount()) { showDone('PDFに入れられるものがありませんでした。', true); return; }
+      const bytes = await doc.save();
+      const fname = [($('client').textContent || '').replace(/\s*様$/, ''), tag].filter(Boolean).join('_').replace(/[\\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') + '.pdf';
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      const a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      showDone('PDFを保存しました：' + fname + '（' + doc.getPageCount() + 'ページ）' + (skip ? '　入れられなかったもの ' + skip + '件' : ''));
+    } catch (e) {
+      showDone('PDFを作れませんでした。' + e.message, true);
+    } finally { PDF_BUSY = false; }
+  }
   $('selEnd').addEventListener('click', function () { PICK = false; SEL = {}; drawAll(); });
 
   /* 月分の小箱を まとめて消す（撮り直したいとき）。送信中でないものは送るのをやめ、届いたものは消す（確定済みは残る） */
@@ -1391,7 +1476,7 @@
 
 
   /* サーバを呼ぶ道は、ここ1か所だけ */
-  const LIVE_FN = ['uploadFile', 'clientHistory', 'clientThumbs', 'clientDelete', 'clientDeleteMany', 'clientImage', 'clientImages', 'clientMove', 'clientMoveMany'];
+  const LIVE_FN = ['uploadFile', 'clientHistory', 'clientThumbs', 'clientDelete', 'clientDeleteMany', 'clientImage', 'clientImages', 'clientFiles', 'clientMove', 'clientMoveMany'];
   function call(fn, args, ms) {
     return new Promise(function (resolve, reject) {
       if (LIVE) {
