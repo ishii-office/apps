@@ -444,6 +444,12 @@
   .dimg .dscan { position: absolute; left: 4px; top: 4px; font-size: 10.5px; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: var(--ok); color: #fff; }
   .dimg .dscan.paper { background: #B26A00; }
   .dpz .stt.scan { background: #E5F2E8; color: var(--ok); } .dpz .stt.scan.paper { background: #FFF1DC; color: #8A5300; }
+  .fxdrop { border: 2px dashed #8FBFB2; border-radius: 10px; padding: 14px; margin: 6px 0; background: #FAFDFC; font-size: 13.5px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+  .fxdrop.over { border-style: solid; border-color: var(--accent); background: #DCEFE8; }
+  .fxh { margin: 14px 0 4px; font-size: 14px; }
+  .fxtag { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .fxtag .n { color: var(--sub); font-size: 12px; }
+  #fxBox.off .fxdrop, #fxBox.off .fxo, #fxBox.off #fxTagSave { opacity: .45; pointer-events: none; }
   .dsearch { margin: 4px 0 10px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; }
   .dsearch summary { cursor: pointer; padding: 8px 12px; font-weight: 700; font-size: 14px; }
   .dsr-f { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 0 12px 10px; font-size: 13.5px; }
@@ -636,14 +642,32 @@
   </div>
   <div class="dk-main">
     <details id="fxBox">
-      <summary>会計システム（FX クラウド）とやりとりする</summary>
+      <summary>会計システム（FX）とやりとりする</summary>
       <div class="bar">
-        <label class="btn">FX から取り込む<input type="file" id="fxIn" multiple accept=".csv,.json,.txt" hidden></label>
-        <label class="btn ghost">FX の仕訳辞書に足して返す<input type="file" id="fxOut" accept=".json" hidden></label>
-        <span class="pagemsg" id="fxMsg" role="status"></span>
+        <label>やりとりする会計ソフト <select id="fxSys" aria-label="やりとりする会計ソフト">
+          <option value="fxmc">FXマイスタークラウド</option><option value="fx2c">FX2クラウド</option>
+          <option value="e21">e21マイスター（スタンドアロン）</option><option value="fx2">FX2（スタンドアロン）</option></select></label>
+        <span class="note" id="fxSysNote"></span>
       </div>
-      <p class="note">取り込む … FX から切り出した 勘定科目・口座・取引先の一覧（CSV）と 仕訳辞書（JSON）。まとめて選べます。<br>
-        足して返す … FX から切り出したばかりの仕訳辞書（JSON）を選ぶと、アプリで作った辞書を後ろに足したファイルが落ちます。それを FX で読み込みます。</p>
+      <h4 class="fxh">FX → アプリ</h4>
+      <div class="fxdrop" id="fxDrop">FX から切り出した 勘定科目・口座・取引先（CSV）と 仕訳辞書（JSON）を ここへドラッグ＆ドロップ（まとめて何枚でも）
+        <label class="btn sm">ファイルを選ぶ<input type="file" id="fxIn" multiple accept=".csv,.json,.txt" hidden></label></div>
+      <p class="note">FX で直したら、切り出し直して もう一度入れると 上書きして新しくなります（FX にあるものは FX の中身に置き換え、アプリにだけあるものは残します）。</p>
+      <h4 class="fxh">アプリ → FX</h4>
+      <div class="bar">
+        <button type="button" class="btn ghost sm fxo" id="fxOutAcct">勘定科目</button>
+        <button type="button" class="btn ghost sm fxo" id="fxOutSub">口座</button>
+        <button type="button" class="btn ghost sm fxo" id="fxOutParty">取引先</button>
+        <button type="button" class="btn ghost sm fxo" id="fxOutDict">仕訳辞書（アプリの辞書をぜんぶ）</button>
+        <label class="btn ghost sm fxo">FX の仕訳辞書に足して返す<input type="file" id="fxOut" accept=".json" hidden></label>
+      </div>
+      <p class="note">FX の取り込みに使う形（切り出しと同じ形）で落ちます。アプリで足した取引先・辞書を FX に入れるときに使います。<br>
+        足して返す … FX から切り出したばかりの仕訳辞書（JSON）を選ぶと、FX にまだ無い アプリの辞書だけを後ろに足したファイルが落ちます。</p>
+      <h4 class="fxh">FX のタグ → 回収ボックス</h4>
+      <p class="note">FX の仕訳辞書のタグ（現金・預金など）を、どの回収ボックスの辞書にするかを決めます。決めておくと、取り込むたびにその箱に入ります。</p>
+      <div id="fxTags"></div>
+      <div class="bar"><button type="button" class="btn sm" id="fxTagSave">この対応で保存して 辞書の箱を付け直す</button></div>
+      <span class="pagemsg" id="fxMsg" role="status"></span>
     </details>
     <div id="dvMain">
       <h2 id="dictTitle">仕訳辞書の登録・編集</h2>
@@ -2845,12 +2869,70 @@
     return Object.keys(by).map(function (k) { return by[k]; });
   }
   /* FX の仕訳辞書 → アプリの辞書。行（pos_dsp）ごとに 借方（dc=1）と貸方（dc=0）を組にする */
-  function fxTagBox(tag) {
+  function fxTagAuto(tag) {
     const t = String(tag || '').replace(/^[\d０-９]+[\s　]*/, '').trim();
     const k = function (x) { return String(x || '').replace(/[\s　/／]/g, ''); };
     const hit = (S.boxes || []).filter(function (b) { return b !== 'その他' && t && (k(b) === k(t) || k(t).indexOf(k(b.split('/').pop())) >= 0); })[0];
     return hit || 'その他';
   }
+  /* ★ タグ → 回収ボックス（2026-10-08）。決めてあればそれ、無ければ名前で当てる */
+  function fxTagBox(tag) {
+    const m = (S.fxConf && S.fxConf.tags) || {};
+    const b = m[String(tag || '').trim()];
+    return b && (S.boxes || []).indexOf(b) >= 0 ? b : fxTagAuto(tag);
+  }
+  function fxConfLoad() {
+    const code = S.code; if (!code) return;
+    gs('fxConfGet', code).then(function (c) { if (code !== S.code) return; S.fxConf = c; $('fxSys').value = c.sys; fxSysPaint(); fxTagsDraw(); }, function () {});
+  }
+  const FX_READY = { fxmc: 1, fx2c: 1 };
+  function fxSysPaint() {
+    const v = $('fxSys').value, ok = !!FX_READY[v];
+    $('fxBox').classList.toggle('off', !ok);
+    $('fxSysNote').textContent = ok ? 'クラウド版：一括読込 Excel・切り出しの CSV／JSON でやりとりします。' : 'スタンドアロン版のファイルの形は確認中です。届いたら対応します（いまは取り込み・書き出しはできません）。';
+  }
+  $('fxSys').addEventListener('change', function () {
+    fxSysPaint();
+    if (!S.code) return;
+    const c = Object.assign({}, S.fxConf || { tags: {} }, { sys: this.value });
+    gs('fxConfSave', S.code, c).then(function (r) { S.fxConf = r; fxMsg('やりとりする会計ソフトを 覚えました。', 'ok'); }, function (e) { fxMsg(e.message, 'err'); });
+  });
+  function fxTagList() {
+    const m = (S.fxConf && S.fxConf.tags) || {}, n = {};
+    Object.keys(m).forEach(function (t) { n[t] = n[t] || 0; });
+    (S.dict || []).forEach(function (d) { if (d.fxTag) n[d.fxTag] = (n[d.fxTag] || 0) + 1; });
+    return Object.keys(n).sort().map(function (t) { return { tag: t, n: n[t] }; });
+  }
+  function fxTagsDraw() {
+    const box = $('fxTags'); box.textContent = '';
+    const list = fxTagList(), m = (S.fxConf && S.fxConf.tags) || {};
+    if (!list.length) { box.appendChild(el('div', 'note', 'FX の仕訳辞書を取り込むと、ここにタグが並びます。')); return; }
+    list.forEach(function (x) {
+      const row = el('div', 'fxtag'); row.dataset.tag = x.tag;
+      const l = el('span', null, x.tag); l.appendChild(el('span', 'n', '　' + x.n + '件')); row.appendChild(l);
+      row.appendChild(el('span', null, '→'));
+      const sel = el('select'); sel.setAttribute('aria-label', x.tag + ' を入れる回収ボックス');
+      const o0 = el('option', null, '名前で当てる（いまは ' + fxTagAuto(x.tag) + '）'); o0.value = ''; sel.appendChild(o0);
+      (S.boxes || []).forEach(function (b) { const o = el('option', null, b); o.value = b; sel.appendChild(o); });
+      sel.value = m[x.tag] && (S.boxes || []).indexOf(m[x.tag]) >= 0 ? m[x.tag] : '';
+      row.appendChild(sel); box.appendChild(row);
+    });
+  }
+  $('fxTagSave').addEventListener('click', function () {
+    if (!S.code) return;
+    const code = S.code, tags = {};
+    $('fxTags').querySelectorAll('.fxtag').forEach(function (r) { const v = r.querySelector('select').value; tags[r.dataset.tag] = v; });
+    const c = { sys: $('fxSys').value, tags: tags };
+    fxMsg('保存しています…');
+    gs('fxConfSave', code, c).then(function (r) {
+      if (code !== S.code) return;
+      S.fxConf = r;
+      let n = 0;
+      const list = S.dict.map(function (d) { if (!d.fxTag) return d; const b = fxTagBox(d.fxTag); if (b !== d.box) { n++; return Object.assign({}, d, { box: b }); } return d; });
+      if (!n) { fxTagsDraw(); fxMsg('タグの対応を保存しました（箱が変わる辞書はありません）。', 'ok'); return; }
+      return gs('dictSave', code, list).then(function (d) { if (code !== S.code) return; S.dict = d; drawDict(); drawIndex(); openSlip(null); fxTagsDraw(); fxMsg('タグの対応を保存し、' + n + '件の辞書の箱を付け直しました。', 'ok'); });
+    }).catch(function (e) { fxMsg(e.message, 'err'); });
+  });
   function fxLine(d, c) {
     const one = function (x) { return x ? { code: x.cd_act || '', sub: x.cd_auxact ? (/^\d$/.test(x.cd_auxact) ? '0' + x.cd_auxact : x.cd_auxact) : '' } : { code: '', sub: '' }; };
     const a = one(d), b = one(c);
@@ -2895,7 +2977,34 @@
   }
   $('fxIn').addEventListener('change', function (ev) {
     const files = Array.prototype.slice.call(ev.target.files || []); ev.target.value = '';
+    fxImport(files);
+  });
+  /* ★ ドラッグ＆ドロップでも（2026-10-08） */
+  (function () {
+    const d = $('fxDrop');
+    ['dragenter', 'dragover'].forEach(function (t) { d.addEventListener(t, function (e) { e.preventDefault(); d.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (t) { d.addEventListener(t, function (e) { e.preventDefault(); d.classList.remove('over'); }); });
+    d.addEventListener('drop', function (e) { fxImport(Array.prototype.slice.call((e.dataTransfer && e.dataTransfer.files) || [])); });
+  })();
+  /* FX にあるものは FX の中身に置き換え、アプリにだけあるものは残す */
+  function fxMergeAcct(fx) {
+    /* 科目＋口座の組で置き換える。FX に無い口座（アプリで足したもの）は残し、科目の名前・印は FX にそろえる */
+    const head = {}, keys = {};
+    fx.forEach(function (x) { if (!head[x.code]) head[x.code] = x; keys[x.code + '|' + (x.sub || '')] = 1; });
+    const keep = (S.acct || []).filter(function (x) { return !keys[x.code + '|' + (x.sub || '')] && !(head[x.code] && !x.sub); })
+      .map(function (x) { const h = head[x.code]; return h ? Object.assign({}, x, { name: h.name, subMgmt: h.subMgmt, partyMgmt: h.partyMgmt }) : x; });
+    const kept = {}; keep.forEach(function (x) { if (x.sub) kept[x.code] = 1; });
+    return fx.filter(function (x) { return x.sub || !kept[x.code]; }).concat(keep)
+      .sort(function (a, b) { return a.code === b.code ? String(a.sub || '').localeCompare(String(b.sub || '')) : a.code.localeCompare(b.code); });
+  }
+  function fxMergeParty(fx) {
+    const k = function (x) { return x.acct + '|' + x.code; }, seen = {};
+    fx.forEach(function (x) { seen[k(x)] = 1; });
+    return fx.concat((S.party || []).filter(function (x) { return !seen[k(x)]; }));
+  }
+  function fxImport(files) {
     if (!files.length || !S.code) return;
+    if (!FX_READY[$('fxSys').value]) { fxMsg('スタンドアロン版のファイルの形は確認中です。', 'err'); return; }
     const code = S.code;
     fxMsg('読んでいます…');
     Promise.all(files.map(function (f) { return readText(f).then(function (t) { return { f: f, k: fxKind(t) }; }); })).then(function (rs) {
@@ -2904,17 +3013,18 @@
       if (!Object.keys(got).length) { fxMsg('FX の一覧（勘定科目・口座・取引先の CSV、仕訳辞書の JSON）ではありませんでした：' + bad.join('、'), 'err'); return; }
       const done = [];
       let p = Promise.resolve();
-      if (got.acct || got.sub) p = p.then(function () {
-        const rows = fxBuildAcct(got.acct, got.sub);
+      /* 混ぜる前に いまの表を読み直す（ほかの人がアプリで足したぶんを消さない） */
+      if (got.acct || got.sub) p = p.then(function () { return gs('acctGet', code).then(function (a) { if (code === S.code) acctSet(a); }); }).then(function () {
+        const rows = got.acct ? fxMergeAcct(fxBuildAcct(got.acct, got.sub)) : fxBuildAcct(got.acct, got.sub);
         return gs('acctSave', code, rows).then(function (a) { if (code !== S.code) return; acctSet(a); drawAcct(); done.push('勘定科目・口座 ' + a.length + '行'); });
       });
-      if (got.party) p = p.then(function () {
+      if (got.party) p = p.then(function () { return gs('partyGet', code).then(function (pp) { if (code === S.code) partySet(pp); }); }).then(function () {
         const H = got.party.h, rows = [];
         got.party.rows.forEach(function (r) {
           const a = half(r[H('勘定科目コード')] || ''), c = half(r[H('取引先コード')] || ''), n = (r[H('取引先名')] || '').trim();
           if (/^\d{4}$/.test(a) && /^\d{6}$/.test(c)) rows.push({ acct: a, code: c, name: /^[-‐ー－―]$/.test(n) ? '' : n });
         });
-        return gs('partySave', code, rows).then(function (pp) { if (code !== S.code) return; partySet(pp); done.push('取引先 ' + pp.length + '件'); });
+        return gs('partySave', code, fxMergeParty(rows)).then(function (pp) { if (code !== S.code) return; partySet(pp); done.push('取引先 ' + pp.length + '件'); });
       });
       if (got.dict) p = p.then(function () {
         const r = fxDictToApp(got.dict.data);
@@ -2922,10 +3032,52 @@
           if (code !== S.code) return;
           S.dict = d; S.dirty = false; drawDict(); drawIndex(); openSlip(null);
           done.push('仕訳辞書 ' + r.add + '件を足し・' + r.upd + '件を置き換え' + (r.skip ? '（見出しなど ' + r.skip + '件は入れず）' : ''));
+          const m = (S.fxConf && S.fxConf.tags) || {};
+          const fresh = fxTagList().filter(function (x) { return !(x.tag in m); });
+          fxTagsDraw();
+          if (fresh.length) done.push('★ 対応を決めていないタグ ' + fresh.length + 'つ（' + fresh.map(function (x) { return x.tag; }).slice(0, 4).join('、') + '）は 名前で箱に当てました。下の「FX のタグ → 回収ボックス」で確かめてください');
         });
       });
       return p.then(function () { fxMsg('取り込みました：' + done.join('／') + (bad.length ? '。読めなかったもの：' + bad.join('、') : ''), 'ok'); });
     }).catch(function (e) { fxMsg(e.message, 'err'); });
+  }
+  /* ---- ★ アプリ → FX（切り出しと同じ形の CSV／JSON。2026-10-08） ---- */
+  function csvCell(v) { v = String(v == null ? '' : v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function fxSave(name, text, type) {
+    const a = el('a'); a.href = URL.createObjectURL(new Blob([text], { type: type }));
+    a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 60000);
+  }
+  function fxCsv(name, head, rows) {
+    fxSave(name, '\ufeff' + [head].concat(rows).map(function (r) { return r.map(csvCell).join(','); }).join('\r\n') + '\r\n', 'text/csv');
+  }
+  function fxTag() { const c = (S.clients || []).find(function (x) { return x.code === S.code; }) || { name: '' }; return (S.code + '_' + c.name).replace(/[\\\/:*?"<>|\s]+/g, '_'); }
+  $('fxOutAcct').addEventListener('click', function () {
+    const seen = {}, rows = [];
+    (S.acct || []).forEach(function (x) { if (seen[x.code]) return; seen[x.code] = 1; rows.push([x.code, x.name, '', x.subMgmt ? 1 : 0, x.partyMgmt ? 1 : 0, '']); });
+    if (!rows.length) { fxMsg('勘定科目がまだありません。', 'err'); return; }
+    fxCsv(fxTag() + '_勘定科目.csv', ['勘定科目コード', '勘定科目名', 'フリガナ', '口座別管理', '取引先別管理', '資金'], rows);
+    fxMsg('勘定科目 ' + rows.length + '件を書き出しました。', 'ok');
+  });
+  $('fxOutSub').addEventListener('click', function () {
+    const rows = (S.acct || []).filter(function (x) { return x.sub; }).map(function (x) { return [x.code, x.name, x.sub, x.subName || '', '']; });
+    if (!rows.length) { fxMsg('口座がまだありません。', 'err'); return; }
+    fxCsv(fxTag() + '_口座.csv', ['勘定科目コード', '勘定科目名', '補助コード', '口座名', 'フリガナ'], rows);
+    fxMsg('口座 ' + rows.length + '件を書き出しました。', 'ok');
+  });
+  $('fxOutParty').addEventListener('click', function () {
+    const rows = (S.party || []).map(function (x) { return [x.acct, (S.acctMap[x.acct] || {}).name || '', x.code, x.name || '']; });
+    if (!rows.length) { fxMsg('取引先がまだありません。', 'err'); return; }
+    fxCsv(fxTag() + '_取引先.csv', ['勘定科目コード', '勘定科目名', '取引先コード', '取引先名'], rows);
+    fxMsg('取引先 ' + rows.length + '件を書き出しました。', 'ok');
+  });
+  $('fxOutDict').addEventListener('click', function () {
+    const list = (S.dict || []).filter(function (d) { return d.drCode || d.crCode; }).sort(function (a, b) { return a.no - b.no; });
+    if (!list.length) { fxMsg('仕訳辞書がまだありません。', 'err'); return; }
+    let maxId = 0; list.forEach(function (d) { maxId = Math.max(maxId, Number(d.fxId) || 0); });
+    const arr = list.map(function (d, i) { return fxEntryOf(d, Number(d.fxId) || ++maxId, i + 1); });
+    fxSave(fxTag() + '_仕訳辞書.json', JSON.stringify(arr, null, 2), 'application/json');
+    fxMsg('仕訳辞書 ' + arr.length + '件を書き出しました。FX の仕訳辞書で読み込んでください。', 'ok');
   });
   /* アプリの辞書 → FX の仕訳辞書の1件 */
   function fxEntryOf(d, id, ord) {
@@ -2991,6 +3143,7 @@
       S.dict = d; drawDict(); drawIndex();
       if (S.dsel != null && !S.dict.some(function (x) { return x.no === S.dsel; })) S.dsel = null;
       openSlip(S.dsel);
+      fxConfLoad();
     }, function (e) { fmsg(e.message, 'err'); });
   }
 
