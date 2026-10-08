@@ -52,6 +52,14 @@
   .client { font-size: 15px; color: var(--sub); margin: 0; }
   h1 { font-size: 26px; line-height: 1.35; margin: 4px 0 6px; font-weight: 700; }
   .lead { color: var(--sub); font-size: 15px; margin: 0 0 18px; }
+  /* ★ 電子帳簿保存法（入れている顧問先だけ）。ふだんは切ったまま＝軽く送る */
+  .scanopt { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; padding: 10px 14px; border-radius: 14px; background: var(--paper); border: 2px dashed #8FBFB2; cursor: pointer; }
+  .scanopt input { width: 24px; height: 24px; margin: 2px 0 0; flex-shrink: 0; accent-color: var(--accent); }
+  .scanopt b { display: block; font-size: 16px; }
+  .scanopt small { display: block; font-size: 12.5px; color: var(--sub); line-height: 1.6; margin-top: 2px; }
+  .scanopt.on { border-style: solid; border-color: var(--accent); background: #E6F0EE; }
+  .hscan { position: absolute; left: 4px; top: 4px; font-size: 10.5px; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: var(--ok); color: #fff; }
+  .hscan.paper { background: var(--warn); }
   .period { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 16px; padding: 12px 14px; border-radius: 14px; background: var(--paper); border: 2px solid var(--accent); }
   .period label { font-weight: 700; font-size: 16px; }
   .period .pers { flex: 1; display: flex; gap: 8px; min-width: 210px; }
@@ -135,7 +143,7 @@
   .err-line { color: var(--err); font-size: 13px; margin: 6px 0 0; }
 
   .done {
-    margin-top: 20px; padding: 14px 16px; border-radius: 12px;
+    margin-top: 20px; padding: 14px 16px; border-radius: 12px; white-space: pre-line;
     background: #E5F2E8; color: var(--ok); font-weight: 700; display: none;
   }
   .done.warn { background: #FFF4DE; color: var(--warn); }
@@ -289,6 +297,7 @@
     <p class="lead" id="leadBox" hidden>撮影するか、写真・PDFを選んで、最後に「送る」を押すと事務所に届きます。送ったものは 箱の中に 年分・月分ごとに並びます。</p>
     <button type="button" class="notice" id="notice" hidden><span class="nt"><b id="noticeT"></b><small>押すと 写真と理由が出ます</small></span><span aria-hidden="true">›</span></button>
     <div class="period"><label for="perY">何年何月分の資料ですか</label><span class="pers"><select id="perY" aria-label="何年"></select><select id="perM" aria-label="何月分"></select></span></div>
+    <label class="scanopt" id="scanOpt" hidden><input type="checkbox" id="scanOn"><span><b>紙を捨てる（電子保存）</b><small id="scanSub">入れると 写真を大きいまま送ります（少し時間がかかります）。届いたら 紙の原本は捨ててかまいません。<br>月分の翌月末までに送ったものだけです。ふだんは 切ったまま（軽く送る）で大丈夫です。</small></span></label>
     <button type="button" class="boxback" id="boxBack" hidden>‹ 箱の一覧へ</button>
     <div class="boxes list" id="boxes"></div>
 
@@ -457,6 +466,17 @@
   }
   let MAX_BYTES = 20 * 1024 * 1024;
   /* ★ 速さ（2026-10-06）：領収書・通帳が読める大きさまで軽くして送る（2400px・0.85 → 1600px・0.72。1枚が 1/4 ほどになる） */
+  /* ★ 電子帳簿保存法（スキャナ保存）。事務所が その顧問先に入れたときだけ「紙を捨てる」を出す。
+       入れたときだけ 写真を大きいまま（約420万画素まで。A4 の 200dpi 相当＝約387万画素を下回らない）送る。ふだんは今までどおり軽く */
+  let SCAN = false;
+  const LS_SCAN = 'collect_scan';
+  const SCAN_PX = 4200000, SCAN_MIN_PX = 3870000, SCAN_Q = 0.85;
+  function scanOn() { return SCAN && lsGet(LS_SCAN) === '1'; }
+  function scanPaint() {
+    $('scanOpt').hidden = !SCAN;
+    $('scanOn').checked = scanOn();
+    $('scanOpt').classList.toggle('on', scanOn());
+  }
   const MAX_EDGE = 1600;
   const JPEG_Q = 0.72;
 
@@ -552,7 +572,7 @@
       if (!sendable(f)) { bad.push(f.name || 'ファイル'); return; }   /* 送れないものはトレイに入れない */
       let url = '';
       if (!isPdf(f)) { try { url = URL.createObjectURL(f); } catch (e) {} }
-      tray.push({ id: ++seq, file: f, box: box, url: url, per: r ? r.per : '', redo: r ? r.k : '' });
+      tray.push({ id: ++seq, file: f, box: box, url: url, per: r ? r.per : '', redo: r ? r.k : '', scan: scanOn() && !isPdf(f) });
     });
     if (bad.length) showDone(bad.join('、') + ' は送れません。写真（JPEG・PNGなど）かPDFだけ送れます。', true);
     else if (files.length) showDone('');
@@ -658,22 +678,23 @@
     showDone('');
     for (const it of items) {
       const o = { id: opId(), token: TOKEN, box: it.box, name: it.file.name || '写真', mime: '', bytes: null, url: it.url, thumb: '', memo: memo,
-                  per: it.per || '', redo: it.redo || '', st: 'prep', tries: 0, next: 0, err: '' };
+                  per: it.per || '', redo: it.redo || '', scan: !!it.scan, w: 0, h: 0, st: 'prep', tries: 0, next: 0, err: '' };
       outbox.push(o); drawOut(); drawAll();
       try {
-        const p = await prepare(it.file);
+        const p = await prepare(it.file, o.scan);
         if (p.size > MAX_BYTES) throw Object.assign(new Error('ファイルが大きすぎます（' + Math.floor(MAX_BYTES / 1048576) + 'MBまで）'), { hard: true });
-        o.name = p.name; o.mime = p.mime; o.bytes = p.buf; o.thumb = p.thumb || ''; o.st = 'wait';
-        if (!(await OUTDB.put({ id: o.id, token: o.token, box: o.box, name: o.name, mime: o.mime, bytes: o.bytes, thumb: o.thumb, memo: o.memo, per: o.per, redo: o.redo, at: Date.now() }))) saved = false;
+        o.name = p.name; o.mime = p.mime; o.bytes = p.buf; o.thumb = p.thumb || ''; o.w = p.w || 0; o.h = p.h || 0; o.st = 'wait';
+        if (!(await OUTDB.put({ id: o.id, token: o.token, box: o.box, name: o.name, mime: o.mime, bytes: o.bytes, thumb: o.thumb, memo: o.memo, per: o.per, redo: o.redo, scan: o.scan, w: o.w, h: o.h, at: Date.now() }))) saved = false;
       } catch (e) { o.st = 'ng'; o.err = e.message || String(e); }
       drawOut(); drawAll(); pump();
     }
   }
   $('sendBtn').addEventListener('click', sendAll);
+  $('scanOn').addEventListener('change', function () { if (this.checked) lsSet(LS_SCAN, '1'); else lsDel(LS_SCAN); scanPaint(); });
 
   /* 送り出し：2本ずつ。届かなければ 2秒→5秒→10秒→20秒→30秒→60秒（以後60秒おき）で送り直す */
   const WAIT = [2, 5, 10, 20, 30, 60];
-  let running = 0, okCount = 0;
+  let running = 0, okCount = 0, paperN = 0;
   function permanent(msg) { return /使用できません|写真（JPEG|大きすぎ|のみ送信/.test(String(msg || '')); }
   function pump() {
     const now = Date.now();
@@ -683,20 +704,24 @@
       running++; it.st = 'send'; drawAll();
       (function (it) {
         const per = perOf(it);
-        call('uploadFile', [TOKEN, it.name, it.mime, bytesB64(it.bytes), it.memo, it.box, per, it.id, it.thumb || '', it.redo || ''], 120000).then(function (r) {
+        call('uploadFile', [TOKEN, it.name, it.mime, bytesB64(it.bytes), it.memo, it.box, per, it.id, it.thumb || '', it.redo || '', it.scan ? { scan: 1, w: it.w, h: it.h } : null], 180000).then(function (r) {
           running--;
           outbox = outbox.filter(function (x) { return x !== it; });
           OUTDB.del(it.id);
           okCount++;
+          if (r && r.scan && r.scan !== 'スキャナ保存') paperN++;
           /* 届いたものは その箱の その月分の いちばん上に「送信済み」で出す */
           const k = (r && r.k) || ('local_' + it.id);
           if (!HIST.some(function (h) { return h.k === k; })) {
             HIST.unshift({ k: k, at: (r && r.at) || '', box: (r && r.box) || it.box, period: (r && r.period) || per, name: it.name, pdf: it.mime === 'application/pdf',
-                           status: 'received', note: '', redo: false, fresh: true });
+                           status: 'received', note: '', redo: false, fresh: true, scan: (r && r.scan) || '' });
           }
           if (it.thumb) TH[k] = it.thumb; else if (it.url && !it.mime.match(/pdf/)) TH[k] = it.url;
           if (it.redo) HIST.forEach(function (h) { if (h.k === it.redo) h.redo = true; });
-          if (!outbox.length) { showDone(okCount + '件を事務所に送りました。ありがとうございます。'); okCount = 0; }
+          if (!outbox.length) {
+            showDone(okCount + '件を事務所に送りました。ありがとうございます。' + (paperN ? '\n※ うち ' + paperN + '件は 期限を過ぎたか 写真が小さいため、電子保存になりません。紙の原本を取っておいてください（「紙を保管」の印）。' : ''), !!paperN);
+            okCount = 0; paperN = 0;
+          }
           drawOut(); drawAll(); pump();
         }, function (e) {
           running--;
@@ -719,7 +744,7 @@
         if (outbox.some(function (x) { return x.id === r.id; })) return;
         let url = r.thumb || ''; if (!url && /^image\//.test(r.mime)) { try { url = URL.createObjectURL(new Blob([r.bytes], { type: r.mime })); } catch (e) {} }
         outbox.push({ id: r.id, token: r.token, box: r.box, name: r.name, mime: r.mime, bytes: r.bytes, url: url, thumb: r.thumb || '', memo: r.memo || '',
-                      per: r.per || '', redo: r.redo || '', st: 'wait', tries: 0, next: 0, err: '' });
+                      per: r.per || '', redo: r.redo || '', scan: !!r.scan, w: r.w || 0, h: r.h || 0, st: 'wait', tries: 0, next: 0, err: '' });
       });
       if (outbox.length) { drawOut(); drawAll(); pump(); }
     });
@@ -890,6 +915,7 @@
     if (TH[h.k] === null && !h.pdf) { d.classList.remove('wait'); d.appendChild(mk('div', 'kind', h.name)); }
     const s = stOf(h);
     d.appendChild(mk('div', 'hst ' + s[0], s[1]));
+    if (h.scan) { const sb = mk('span', 'hscan' + (h.scan === 'スキャナ保存' ? '' : ' paper'), h.scan === 'スキャナ保存' ? '電子保存' : '紙を保管'); sb.title = h.scan === 'スキャナ保存' ? '紙の原本は捨ててかまいません' : h.scan + 'のため 紙の原本を取っておいてください'; d.appendChild(sb); }
     if (h.status === 'back' && !h.redo) d.classList.add('isback');
     /* ★ 押すと すぐ大きく（手元の小さい絵をまず出し、届いた中身に差し替える）。もう一度押すと戻る */
     d.addEventListener('click', function (e) {
@@ -1312,7 +1338,8 @@
     REDO = { k: h.k, box: el.dataset.box, per: h.period, t: Date.now() };
     closeBack();
     openBox(el.dataset.box.split('/')[0]);   /* その箱を開いておく（送ったあと そこに並ぶ） */
-    if (how === 'cam') openCamera(el.dataset.box, el.querySelector('input.cam1'));
+    if (how === 'cam' && scanOn()) el.querySelector('input.cam1').click();   /* 電子保存：端末のカメラで 大きいまま */
+    else if (how === 'cam') openCamera(el.dataset.box, el.querySelector('input.cam1'));
     else el.querySelector('input.pick').click();
   }
 
@@ -1349,7 +1376,7 @@
       el.querySelector('.box-name').textContent = segs[segs.length - 1];
       if (depth) el.querySelector('.box-name').title = boxLabel(name);
       el.querySelector('button.cam').setAttribute('aria-label', boxLabel(name) + '：撮る');
-      el.querySelector('button.cam').addEventListener('click', function () { REDO = null; openCamera(name, el.querySelector('input.cam1')); });
+      el.querySelector('button.cam').addEventListener('click', function () { REDO = null; if (scanOn()) { el.querySelector('input.cam1').click(); return; } openCamera(name, el.querySelector('input.cam1')); });
       el.querySelector('label.pick').addEventListener('click', function (e) { if (e.isTrusted) REDO = null; });
       el.querySelectorAll(':scope > input[type=file], :scope > .box-btns input[type=file]').forEach(function (inp) {
         if (inp.className === 'pick') inp.setAttribute('aria-label', boxLabel(name) + '：選ぶ');
@@ -1471,15 +1498,15 @@
   });
 
   // 画像は縮小してJPEG化、PDFはそのまま
-  async function prepare(file) {
+  async function prepare(file, scan) {
     const type = file.type || '';
     if (type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
       return { name: file.name, mime: 'application/pdf', buf: await toBuf(file), size: file.size };
     }
     try {
-      const sh = await shrink(file);
+      const sh = await shrink(file, scan);
       const base = (file.name || 'photo').replace(/\.[^.]+$/, '');
-      return { name: base + '.jpg', mime: 'image/jpeg', buf: await toBuf(sh.blob), size: sh.blob.size, thumb: sh.thumb };
+      return { name: base + '.jpg', mime: 'image/jpeg', buf: await toBuf(sh.blob), size: sh.blob.size, thumb: sh.thumb, w: sh.w, h: sh.h };
     } catch (_) {
       // 縮小できない形式（端末によってはHEIC）は元のまま送る
       const mime = type || 'image/jpeg';
@@ -1487,13 +1514,14 @@
     }
   }
 
-  function shrink(file) {
+  function shrink(file, scan) {
     return new Promise(function (resolve, reject) {
       const url = URL.createObjectURL(file);
       const img = new Image();
       img.onload = function () {
         let w = img.naturalWidth, h = img.naturalHeight;
-        const r = Math.min(1, MAX_EDGE / Math.max(w, h));
+        /* 電子保存：画素の数で決める（細長いレシートでも 足りるように）。ふだん：長い辺 1600px */
+        const r = scan ? Math.min(1, Math.sqrt(SCAN_PX / (w * h))) : Math.min(1, MAX_EDGE / Math.max(w, h));
         w = Math.round(w * r); h = Math.round(h * r);
         const c = document.createElement('canvas');
         c.width = w; c.height = h;
@@ -1512,7 +1540,7 @@
           if (thumb.length > 44000) thumb = t.toDataURL('image/jpeg', 0.3);
           if (thumb.length > 44000) thumb = '';
         } catch (e) { thumb = ''; }
-        c.toBlob(function (b) { b ? resolve({ blob: b, thumb: thumb }) : reject(new Error('変換失敗')); }, 'image/jpeg', JPEG_Q);
+        c.toBlob(function (b) { b ? resolve({ blob: b, thumb: thumb, w: w, h: h }) : reject(new Error('変換失敗')); }, 'image/jpeg', scan ? SCAN_Q : JPEG_Q);
       };
       img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('読込失敗')); };
       img.src = url;
@@ -1569,7 +1597,8 @@
 
   /* ---- 起動 ---- */
   let appOn = false;
-  function showApp(name, maxMb, boxes) {
+  function showApp(name, maxMb, boxes, scan) {
+    SCAN = !!scan; scanPaint();
     if (appOn) return;
     appOn = true;
     MAX_BYTES = Number(maxMb || 20) * 1024 * 1024;
@@ -1596,7 +1625,7 @@
   function infoGet() { try { const o = JSON.parse(lsGet(LS_INFO) || 'null'); return o && o.t === TOKEN ? o : null; } catch (e) { return null; } }
   (function boot() {
     if (LIVE) {
-      if (BOOT) showApp(BOOT.clientName, BOOT.maxMb, BOOT.boxes); else showNg(NG_URL);
+      if (BOOT) showApp(BOOT.clientName, BOOT.maxMb, BOOT.boxes, BOOT.scan); else showNg(NG_URL);
       return;
     }
     if (!TOKEN) {
@@ -1607,14 +1636,15 @@
     }
     if (!WEB2) { showNg('送り先（サーバの口）が分かりません。担当の事務所スタッフにお問い合わせください。'); return; }
     const kept = infoGet();
-    if (kept) showApp(kept.name, kept.maxMb, kept.boxes); else showNg('読み込み中…');
+    if (kept) showApp(kept.name, kept.maxMb, kept.boxes, kept.scan); else showNg('読み込み中…');
     const BOOT_WAIT = [3, 6, 10, 20, 30];
     let n = 0;
     (function ask() {
       call('clientInfo', [TOKEN], 30000).then(function (r) {
         lsSet(LS_TOK, TOKEN);
-        lsSet(LS_INFO, JSON.stringify({ t: TOKEN, name: r.clientName, maxMb: r.maxMb, boxes: r.boxes }));
-        if (!kept) { showApp(r.clientName, r.maxMb, r.boxes); return; }
+        lsSet(LS_INFO, JSON.stringify({ t: TOKEN, name: r.clientName, maxMb: r.maxMb, boxes: r.boxes, scan: !!r.scan }));
+        if (!kept) { showApp(r.clientName, r.maxMb, r.boxes, r.scan); return; }
+        SCAN = !!r.scan; scanPaint();
         /* 箱が変わっていたら 組み直す（送る前の写真がトレイにあるときは そのまま） */
         if (JSON.stringify(kept.boxes) !== JSON.stringify(r.boxes) && !tray.length) { buildBoxes(r.boxes); drawAll(); }
         $('client').textContent = r.clientName + ' 様';

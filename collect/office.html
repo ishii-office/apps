@@ -440,6 +440,20 @@
   .dimg { position: relative; display: block; width: 100%; aspect-ratio: 3 / 4; padding: 0; border: 0; background: #F4F2EC; overflow: hidden; border-radius: 6px; }
   .dimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .dimg .pdf { position: absolute; left: 4px; bottom: 4px; background: #B3261E; color: #fff; font-size: 11px; font-weight: 800; padding: 0 5px; border-radius: 3px; }
+  /* ★ 電子帳簿保存法の印 */
+  .dimg .dscan { position: absolute; left: 4px; top: 4px; font-size: 10.5px; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: var(--ok); color: #fff; }
+  .dimg .dscan.paper { background: #B26A00; }
+  .dpz .stt.scan { background: #E5F2E8; color: var(--ok); } .dpz .stt.scan.paper { background: #FFF1DC; color: #8A5300; }
+  .dsearch { margin: 4px 0 10px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; }
+  .dsearch summary { cursor: pointer; padding: 8px 12px; font-weight: 700; font-size: 14px; }
+  .dsr-f { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 0 12px 10px; font-size: 13.5px; }
+  .dsr-f input { font: inherit; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; }
+  .dsr-f input.n { width: 7em; text-align: right; } .dsr-f input.p { width: 12em; }
+  .dsr-out { padding: 0 12px 12px; overflow-x: auto; }
+  .dsr-out table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  .dsr-out th, .dsr-out td { border-bottom: 1px solid var(--line); padding: 5px 6px; text-align: left; white-space: nowrap; }
+  .dsr-out td.amt { text-align: right; font-variant-numeric: tabular-nums; }
+  .dsr-note { font-size: 12px; color: var(--sub); padding: 0 12px 10px; }
   .dimg .stt { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 0; text-align: center; padding: 2px 3px; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dimg .pdf { bottom: 24px; }
   .dname { font-size: 12.5px; font-weight: 700; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -577,6 +591,16 @@
     </span>
     <div class="dmsg" id="dcMsg" role="status"></div>
   </div>
+  <details class="dsearch" id="dSrch"><summary>電子帳簿保存法の検索（取引年月日・金額・取引先）</summary>
+    <div class="dsr-f">
+      <label>取引年月日 <input type="date" id="qD1" aria-label="取引年月日から"> 〜 <input type="date" id="qD2" aria-label="取引年月日まで"></label>
+      <label>金額 <input class="n" id="qA1" inputmode="numeric" aria-label="金額から"> 〜 <input class="n" id="qA2" inputmode="numeric" aria-label="金額まで"></label>
+      <label>取引先 <input class="p" id="qP" aria-label="取引先"></label>
+      <button type="button" class="btn sm" id="qGo">探す</button>
+    </div>
+    <div class="dsr-note">仕訳化して確定したもの（取引年月日・金額・取引先が付いたもの）から探します。範囲と組み合わせで絞れます。</div>
+    <div class="dsr-out" id="qOut"></div>
+  </details>
   <div id="dBody"><div class="cbox muted">読み込み中…</div></div>
 </div>
 
@@ -737,6 +761,7 @@
         <div class="preview" id="aPreview" aria-label="顧問先の画面に出る箱"></div>
       </div>
       <div class="f" id="aActiveRow"><label class="chk"><input id="aActive" type="checkbox"> 有効（外すと、この顧問先のURLは使えなくなります。履歴と資料は残ります）</label></div>
+      <div class="f"><label class="chk"><input id="aScan" type="checkbox"> 電子帳簿保存法（スキャナ保存）… 顧問先の画面に「紙を捨てる（電子保存）」を出します。ふだんは今までどおり軽く送れます</label></div>
       <div class="f" id="aUrlRow">
         <label for="aUrl">提出URL（顧問先に送るもの）</label>
         <div class="url"><input id="aUrl" readonly><button type="button" id="aCopyUrl">コピー</button></div>
@@ -1364,6 +1389,38 @@
   function boxLabel(b) { return String(b || '').split('/').join(' › '); }
   /* ★ 顧問先の画面と同じ見え方（2026-10-06）：箱（中の箱）→ 月分の小箱 → 写真が並ぶ。押すと すぐ大きく。
        事務所だけのもの … PDF切り出し・破棄・選ぶ・別の月分／箱へ移す（整理する）・仕訳化へ */
+  /* ★ 電子帳簿保存法の検索（2026-10-08）：取引年月日・金額・取引先。範囲と組み合わせで絞る（確定した仕訳から） */
+  function qSearch() {
+    const d1 = $('qD1').value.replace(/-/g, '/'), d2 = $('qD2').value.replace(/-/g, '/');
+    const n = function (v) { const x = Number(half(v).replace(/[,円\s]/g, '')); return v && isFinite(x) ? x : null; };
+    const a1 = n($('qA1').value), a2 = n($('qA2').value), pq = half($('qP').value).trim().toLowerCase();
+    const out = $('qOut'); out.textContent = '';
+    const hits = [];
+    (S.docs || []).forEach(function (it) {
+      (it.entries || []).forEach(function (e) {
+        if (d1 && e.date < d1) return; if (d2 && e.date > d2) return;
+        if (a1 != null && e.amount < a1) return; if (a2 != null && e.amount > a2) return;
+        if (pq && (String(e.partyName || '') + ' ' + String(e.party || '') + ' ' + String(e.memo || '')).toLowerCase().indexOf(pq) < 0) return;
+        hits.push({ it: it, e: e });
+      });
+    });
+    hits.sort(function (x, y) { return x.e.date < y.e.date ? -1 : x.e.date > y.e.date ? 1 : 0; });
+    if (!hits.length) { out.appendChild(el('div', 'muted', '当てはまるものはありません。')); return; }
+    const tb = el('table'); tb.innerHTML = '<thead><tr><th>取引年月日</th><th>金額</th><th>取引先</th><th>摘要</th><th>保存</th><th></th></tr></thead>';
+    const body = el('tbody');
+    hits.forEach(function (h) {
+      const tr = el('tr');
+      tr.appendChild(el('td', null, h.e.date)); tr.appendChild(el('td', 'amt', yen(h.e.amount) + '円'));
+      tr.appendChild(el('td', null, h.e.partyName || h.e.party || '')); tr.appendChild(el('td', null, h.e.memo || ''));
+      tr.appendChild(el('td', null, h.it.scan || '紙'));
+      const td = el('td'); const b = el('button', 'btn ghost sm', '見る'); b.type = 'button'; b.addEventListener('click', function () { docsOpen(h.it); }); td.appendChild(b); tr.appendChild(td);
+      body.appendChild(tr);
+    });
+    tb.appendChild(body); out.appendChild(el('div', 'muted', hits.length + '件')); out.appendChild(tb);
+  }
+  $('qGo').addEventListener('click', qSearch);
+  ['qD1', 'qD2', 'qA1', 'qA2', 'qP'].forEach(function (id) { $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); qSearch(); } }); });
+
   /* ★ 並べ方（2026-10-07）：小（いままで）／横に 2・3・4 枚。端末が覚える */
   function dCols() { const v = lsGet(LS_DCOLS); return /^[234]$/.test(v) ? Number(v) : 0; }
   function dColsPaint() {
@@ -1509,6 +1566,7 @@
     const tg = stTag(it);
     const at = (String(it.at).match(/\d+\/\d+ \d\d:\d\d$/) || [''])[0];
     b.appendChild(el('span', 'stt ' + tg[0], tg[0] === 'todo' ? at + ' 届' : tg[0] === 'done' ? '✓ 確定' : tg[1]));
+    if (it.scan) { const sc = el('span', 'dscan' + (it.scan === 'スキャナ保存' ? '' : ' paper'), it.scan === 'スキャナ保存' ? '電子保存' : it.scan); sc.title = it.scan === 'スキャナ保存' ? '電子帳簿保存法（スキャナ保存）。紙の原本は捨ててかまいません' : '電子保存になりません。紙の原本を保管'; b.appendChild(sc); }
     if (tg[0] === 'gone') tile.classList.add('gone');
     if (it.status === 'back' && !it.redo) tile.classList.add('isback');
     tile.appendChild(b);
@@ -1817,7 +1875,7 @@
     S.trash = (S.trash || []).filter(function (x) { return ids.indexOf(x.id) < 0; });
     S.trashN = Math.max(0, (S.trashN || 0) - ids.length);
     docsDraw();
-    gs('workPurge', code, ids).then(function (r) { if (code === S.code) dcMsg(r.n + '件を 完全に消しました。'); },
+    gs('workPurge', code, ids).then(function (r) { if (code === S.code) dcMsg(r.n + '件を 完全に消しました。' + (r.kept ? '（電子保存の ' + r.kept + '件は 保存期間のあいだ消せないので 残しました）' : ''), !!r.kept); },
       function (e) { dcMsg('消せませんでした。' + e.message, true); trashLoad(); });
   }
   /* ---- 破棄したもの（退避）：戻す・完全に消す ---- */
@@ -1998,6 +2056,7 @@
     h.appendChild(el('span', 'bx', '［' + it.box + '］'));
     const tg = stTag(it);
     h.appendChild(el('span', 'stt ' + tg[0], tg[1]));
+    if (it.scan) h.appendChild(el('span', 'stt scan' + (it.scan === 'スキャナ保存' ? '' : ' paper'), it.scan === 'スキャナ保存' ? '電子保存' : it.scan + '（紙を保管）'));
     h.appendChild(el('span', null, it.at + ' 届'));
     h.appendChild(el('span', 'fn', it.name.replace(/^\d{8}_\d{6}_/, '')));
     const pb = el('button', 'jpop', '📎 写真'); pb.type = 'button'; pb.dataset.a = 'pop'; pb.title = '別の窓に この写真を出す'; h.appendChild(pb);
@@ -3342,7 +3401,7 @@
     $('aCode').value = c.code; $('aCode').readOnly = true;
     $('aName').value = c.name; $('aStaff').value = c.staff;
     $('aBoxes').value = c.boxesRaw ? c.boxes.join('\n') : '';
-    $('aActive').checked = c.active; $('aActiveRow').hidden = false;
+    $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     $('aUrlRow').hidden = !c.url; $('aUrl').value = c.url;
     $('aSave').textContent = '保存';
     amsg(''); aPreview(); aDraw();
@@ -3352,7 +3411,7 @@
     $('aTitle').textContent = '新しい顧問先';
     $('aForm').hidden = false;
     ['aCode', 'aName', 'aStaff', 'aBoxes'].forEach(function (k) { $(k).value = ''; });
-    $('aCode').readOnly = false; $('aActive').checked = true;
+    $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false;
     $('aActiveRow').hidden = true; $('aUrlRow').hidden = true;
     $('aSave').textContent = '登録して URL を作る';
     amsg(''); aPreview(); aDraw(); $('aCode').focus();
@@ -3434,7 +3493,7 @@
     e.preventDefault();
     if (A.busy) return;
     const o = { code: $('aCode').value.trim(), name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
-      boxes: boxesOf($('aBoxes').value), active: $('aActive').checked, isNew: A.isNew };
+      boxes: boxesOf($('aBoxes').value), active: $('aActive').checked, scan: $('aScan').checked, isNew: A.isNew };
     A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
     gs('adminSave', o).then(function (l) {
       A.list = l; A.busy = false; $('aSave').disabled = false;
