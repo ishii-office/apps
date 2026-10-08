@@ -249,7 +249,7 @@
   .blist .empty { padding: 20px 0; color: var(--sub); }
   body.noscroll { overflow: hidden; }
 
-  .ng { padding: 2em 0; line-height: 1.8; }
+  .ng { padding: 2em 0; line-height: 1.8; white-space: pre-line; }
   .note { margin-top: 32px; font-size: 13px; color: var(--sub); }
 
   /* ---- 連続撮影 ---- */
@@ -330,7 +330,7 @@
 
 <div class="selbar" id="selbar" hidden>
   <b id="selN">0件を選んでいます</b>
-  <div class="selb"><button type="button" class="btn pick" id="selMove">移す</button><button type="button" class="btn danger" id="selDel">消す</button><button type="button" class="btn pick" id="selPdf">PDF</button>
+  <div class="selb"><button type="button" class="btn pick" id="selMove">移す</button><button type="button" class="btn danger" id="selDel">消す</button><button type="button" class="btn pick" id="selPdf">PDFで保存</button>
     <button type="button" class="linkbtn" id="selNone">全部外す</button><button type="button" class="linkbtn" id="selEnd">やめる</button></div>
 </div>
 
@@ -340,6 +340,15 @@
   <div class="zload" id="zoomLoad" hidden>くっきりした写真を読み込み中…</div>
   <button type="button" class="zmove" id="zoomMove" hidden>別の月分へ移す</button>
   <div class="zhint">もう一度押すと 戻ります</div>
+</div>
+
+<div class="sheetv" id="pdfv" hidden role="dialog" aria-modal="true" aria-labelledby="pdfT">
+  <div class="sheet">
+    <div class="sheet-h"><h2 id="pdfT">PDFができました</h2></div>
+    <p class="sub" id="pdfN"></p>
+    <div class="bl-b"><button type="button" class="btn cam" id="pdfShare">保存・印刷する</button><button type="button" class="btn pick" id="pdfOpen">開いて見る</button></div>
+    <div class="bl-b"><button type="button" class="btn pick" id="pdfClose">閉じる</button></div>
+  </div>
 </div>
 
 <div class="sheetv" id="movev" hidden role="dialog" aria-modal="true" aria-labelledby="mvT">
@@ -427,6 +436,24 @@
     TOKEN = BOOT ? String(BOOT.token || '') : '';
   } else {
     TOKEN = qp('t') || lsGet(LS_TOK);
+    /* ★★ ホーム画面から開けなかった（2026-10-08）。
+       iPhone のホーム画面のアイコンは manifest の start_url（「.」＝合図なし）で開き、しかも Safari とは別の入れもの（覚えたものが無い）になる。
+       だから「使用できません」になっていた。
+       ① アドレス欄に いつも ?t= を出しておく（manifest を読まない端末は いま開いている URL を覚える）
+       ② manifest を この顧問先の合図つきの start_url に差し替える（アイコンから開くと 合図つきで開く） */
+    if (TOKEN && !qp('t')) { try { const q = new URLSearchParams(location.search); q.set('t', TOKEN); history.replaceState(null, '', location.pathname + '?' + q.toString()); } catch (e) {} }
+    if (TOKEN) {
+      try {
+        const lk = document.querySelector('link[rel="manifest"]');
+        if (lk) {
+          const base = location.origin + location.pathname.replace(/[^/]*$/, '');
+          const mf = { name: '資料提出（石井事務所）', short_name: '資料提出', lang: 'ja', display: 'standalone', orientation: 'portrait',
+            background_color: '#F3F6F5', theme_color: '#0F6E5C', scope: base, start_url: base + '?t=' + encodeURIComponent(TOKEN),
+            icons: [{ src: base + 'icon-192.png', sizes: '192x192', type: 'image/png' }, { src: base + 'icon-512.png', sizes: '512x512', type: 'image/png' }] };
+          lk.setAttribute('href', 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(mf)));
+        }
+      } catch (e) {}
+    }
   }
   let MAX_BYTES = 20 * 1024 * 1024;
   /* ★ 速さ（2026-10-06）：領収書・通帳が読める大きさまで軽くして送る（2400px・0.85 → 1600px・0.72。1枚が 1/4 ほどになる） */
@@ -822,7 +849,7 @@
       /* ★ 送ったものを 1冊の PDF にしてダウンロード（2026-10-08） */
       const sent = h.filter(function (x) { return !/^local_/.test(x.k); });
       if (open && !PICK && sent.length) {
-        const pb = mk('button', 'mon-pdf', 'PDF'); pb.type = 'button';
+        const pb = mk('button', 'mon-pdf', 'PDFで保存'); pb.type = 'button';
         pb.setAttribute('aria-label', boxLabel(box) + ' ' + ymLabel(p) + 'を PDF でダウンロード');
         pb.addEventListener('click', function () { savePdf(sent, boxLabel(box) + '_' + ymLabel(p)); });
         hrow.appendChild(pb);
@@ -1107,7 +1134,21 @@
   /* ---- ★ PDF でダウンロード（2026-10-08）。送ったもの（写真・PDF）を 1冊に綴じて この端末に保存する。
      写真は A4 に1枚ずつ（横長は横向き）、PDF はそのままのページ。HEIC など綴じられないものは数だけ知らせる ---- */
   const PDFLIB_URL = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
-  let pdflibP = null, PDF_BUSY = false;
+  let pdflibP = null, PDF_BUSY = false, PDF_FILE = null;
+  function pdfClose() { $('pdfv').hidden = true; PDF_FILE = null; if ($('movev').hidden && $('backv').hidden) document.body.classList.remove('noscroll'); }
+  $('pdfClose').addEventListener('click', pdfClose);
+  $('pdfShare').addEventListener('click', function () {
+    if (!PDF_FILE) return;
+    navigator.share({ files: [PDF_FILE], title: PDF_FILE.name }).then(pdfClose, function (e) { if (e && e.name !== 'AbortError') showDone('開けませんでした。［開いて見る］から 共有ボタンで保存・印刷してください。', true); });
+  });
+  /* 開いて見る：別のタブで開く（そこの共有ボタンからも 保存・印刷できる。アプリの画面は残る） */
+  $('pdfOpen').addEventListener('click', function () {
+    if (!PDF_FILE) return;
+    const url = URL.createObjectURL(PDF_FILE);
+    const w = window.open(url, '_blank');
+    if (!w) location.href = url;
+    setTimeout(function () { URL.revokeObjectURL(url); }, 120000);
+  });
   function pdflib() {
     if (pdflibP) return pdflibP;
     pdflibP = new Promise(function (ok, ng) {
@@ -1170,10 +1211,24 @@
       if (!doc.getPageCount()) { showDone('PDFに入れられるものがありませんでした。', true); return; }
       const bytes = await doc.save();
       const fname = [($('client').textContent || '').replace(/\s*様$/, ''), tag].filter(Boolean).join('_').replace(/[\\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') + '.pdf';
-      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-      const a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-      showDone('PDFを保存しました：' + fname + '（' + doc.getPageCount() + 'ページ）' + (skip ? '　入れられなかったもの ' + skip + '件' : ''));
+      const pages = doc.getPageCount();
+      const note = '（' + pages + 'ページ）' + (skip ? '　入れられなかったもの ' + skip + '件' : '');
+      const file = new File([bytes], fname, { type: 'application/pdf' });
+      let share = false;
+      try { share = !!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] }) && /iPhone|iPad|iPod|Android|Macintosh.*Mobile/.test(navigator.userAgent + (navigator.maxTouchPoints > 1 ? ' Mobile' : ''))); } catch (e) {}
+      if (share) {
+        /* ★ スマホ（2026-10-08）：作り終えてから「保存・印刷する」を押してもらう（押した瞬間でないと 共有の画面は開けない）。
+           共有の画面に「ファイルに保存」「プリント」が並ぶ。アプリの画面からは離れない */
+        PDF_FILE = file;
+        $('pdfN').textContent = fname + note;
+        $('pdfv').hidden = false; document.body.classList.add('noscroll');
+        showDone('PDFができました' + note);
+      } else {
+        const url = URL.createObjectURL(file);
+        const a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+        showDone('PDFを保存しました：' + fname + note);
+      }
     } catch (e) {
       showDone('PDFを作れませんでした。' + e.message, true);
     } finally { PDF_BUSY = false; }
@@ -1544,7 +1599,12 @@
       if (BOOT) showApp(BOOT.clientName, BOOT.maxMb, BOOT.boxes); else showNg(NG_URL);
       return;
     }
-    if (!TOKEN) { showNg(NG_URL); return; }
+    if (!TOKEN) {
+      /* 前の作りでホーム画面に追加したアイコン（合図なし）。作り直してもらうしかない */
+      const home = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+      showNg(home ? 'ホーム画面のアイコンを作り直してください。\n\n① このアイコンを長押しして「ブックマークを削除」（またはアプリを削除）\n② 事務所から届いたURLを Safari で開く\n③ 共有ボタン →「ホーム画面に追加」\n\nこれで次からは アイコンから開けます。' : NG_URL);
+      return;
+    }
     if (!WEB2) { showNg('送り先（サーバの口）が分かりません。担当の事務所スタッフにお問い合わせください。'); return; }
     const kept = infoGet();
     if (kept) showApp(kept.name, kept.maxMb, kept.boxes); else showNg('読み込み中…');
