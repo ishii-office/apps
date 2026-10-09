@@ -143,6 +143,26 @@
   .jlay-w .jplist li button .c, .jlay-w .jplist li button .x { grid-column: 2; font-size: 12px; }
   .jpop { font: inherit; font-size: 12.5px; font-weight: 700; border: 1.5px solid var(--ai); color: var(--ai); background: #fff; border-radius: 7px; padding: 2px 9px; cursor: pointer; }
   .jlay-v .jpop, .jlay-h .jpop { display: none; }
+  /* ★ 通帳・明細モード（2026-10-09）：写真1枚に 辞書を何件も → 下に出納帳（増加・減少・残高）と 通帳の残高との照合 */
+  .jmode { display: inline-flex; margin-left: auto; }
+  .jmode button { font-size: 13px; }
+  .jledg { border: 2px solid #9CC7BB; border-radius: 10px; padding: 8px 10px; margin: 10px 0 4px; background: #fff; }
+  .jledg .lgh { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-bottom: 6px; }
+  .jledg .lgh label { display: inline-flex; gap: 4px; align-items: center; font-size: 13px; }
+  .jledg .lgh input { width: 9em; text-align: right; font-variant-numeric: tabular-nums; }
+  .jledg table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .jledg th { font-size: 12px; color: #4A5A55; text-align: left; border-bottom: 1px solid #CFE0DA; padding: 3px 6px; }
+  .jledg td { border-bottom: 1px solid #E3EEEA; padding: 3px 6px; vertical-align: middle; }
+  .jledg .r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .jledg tr.sum td { font-weight: 700; border-top: 2px solid #9CC7BB; }
+  .jledg tr.out td { color: #8A9A95; }
+  .jledg .lgv { font-weight: 700; }
+  .jledg .lgv.ok { color: #0F6E56; } .jledg .lgv.ng { color: #B3261E; }
+  .jledg td .btn { padding: 2px 8px; }
+  .jlay-h .jdrow > .jledg { grid-column: 1 / -1; }
+  /* ★ いま どの欄にカーソルがあるか（パソコンは物理のテンキーで打つので、ここを目で追う） */
+  #paneIn input:focus, #paneIn select:focus, #paneIn textarea:focus { outline: 3px solid #E8A400 !important; outline-offset: 0; background: #FFF4C8 !important; box-shadow: 0 0 0 5px rgba(232,164,0,.25); }
+  #paneIn .jplist li button:focus { outline: 3px solid #E8A400; outline-offset: -3px; background: #FFF4C8; }
   .jlhead .seg button { font: inherit; font-size: 13px; font-weight: 700; padding: 5px 10px; background: #fff; cursor: pointer; }
   .jlhead .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
   .jlhead { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 0; background: var(--bg); border-bottom: 1px solid var(--line); }
@@ -615,8 +635,8 @@
   <div class="jmain" id="jmain">
     <div class="jlhead">
       <span class="jlsum" id="jlsum"></span>
-      <span class="seg" id="jLay" role="group" aria-label="並べ方"><button type="button" data-l="v" aria-pressed="true">縦</button><button type="button" data-l="h" aria-pressed="false">横2列</button><button type="button" data-l="w" aria-pressed="false">写真を別窓</button></span>
-      <button type="button" class="jpop" id="jPopGo" hidden>📎 写真の窓をひらく</button>
+      <span class="seg" id="jLay" role="group" aria-label="並べ方"><button type="button" data-l="v" aria-pressed="true">縦1列</button><button type="button" data-l="h" aria-pressed="false">横2列</button><button type="button" data-l="w" aria-pressed="false">別ウィンドウ表示</button></span>
+      <button type="button" class="jpop" id="jPopGo" hidden>📎 別ウィンドウ表示</button>
       <span class="jlsave" id="saving" role="status"></span>
     </div>
     <div class="jlist" id="jlist"><div class="cbox muted">読み込み中…</div></div>
@@ -1260,7 +1280,7 @@
   function popOpen() {
     if (POP && !POP.closed) { try { POP.focus(); } catch (e) {} return POP; }
     POP = window.open('', 'collect_shot', 'width=760,height=960');
-    if (!POP) { fmsg('写真の窓を開けませんでした（このサイトのポップアップを許可してください）。', 'err'); jlayPaint(); return null; }
+    if (!POP) { fmsg('別ウィンドウを開けませんでした（このサイトのポップアップを許可してください）。', 'err'); jlayPaint(); return null; }
     const d = POP.document;
     d.open();
     d.write('<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>写真</title>' +
@@ -1316,7 +1336,7 @@
     jlayPaint(); render(); popSync(true);
   });
   $('jPopGo').addEventListener('click', function () { popOpen(); popSync(true); });
-  /* 別窓を閉じたら［写真の窓をひらく］を出す（閉じたことは 窓の側からは知らせてくれないことがある） */
+  /* 別窓を閉じたら［別ウィンドウ表示］を出す（閉じたことは 窓の側からは知らせてくれないことがある） */
   setInterval(function () { if (POP && POP.closed) { POP = null; jlayPaint(); } }, 1000);
   window.addEventListener('beforeunload', function () { if (POP && !POP.closed) try { POP.close(); } catch (e) {} });
 
@@ -2051,6 +2071,112 @@
   function itemOf(id) { return S.view.find(function (it) { return it.id === id; }); }
 
   /* 1件を描く（写真の箱は 中身が出ていれば そのまま使い回す＝描き直しで写真を取り直さない） */
+  /* ================= ★ 通帳・明細モード（2026-10-09） =================
+     写真1枚（通帳の1ページ・カード明細）に 辞書を何件も入れる。入れた順に 出納帳（増加・減少・残高）を下に出し、
+     通帳の残高と合っているかを見る。1件ずつ（領収書）が はじめ。切り替えは 回収ボックスごとに端末が覚える */
+  var LS_JMULTI = 'collect_office_jmulti', LS_JBAL = 'collect_office_jbal';
+  function lsJ(k) { try { return JSON.parse(lsGet(k) || '{}') || {}; } catch (e) { return {}; } }
+  function lsSetJ(k, m, max) { const ks = Object.keys(m); if (max && ks.length > max) ks.slice(0, ks.length - max).forEach(function (x) { delete m[x]; }); lsSet(k, JSON.stringify(m)); }
+  function isMulti(it) { return !!lsJ(LS_JMULTI)[S.code + '|' + it.box]; }
+  function setMulti(it, on) { const m = lsJ(LS_JMULTI), k = S.code + '|' + it.box; if (on) m[k] = 1; else delete m[k]; lsSetJ(LS_JMULTI, m); }
+  function parseAmtS(v) { const t = half(String(v)).replace(/[,，\s円¥￥]/g, ''); if (!/^-?\d+$/.test(t)) return null; return Number(t); }
+  /* 出納帳の口座：その写真の仕訳と 箱の辞書に出てくる 貸借対照表の科目（科目＋口座） */
+  function lgCands(it) {
+    const cnt = {};
+    const add = function (c, sb, w) { if (!bsAcct(c)) return; const k = c + (sb ? '-' + sb : ''); cnt[k] = (cnt[k] || 0) + w; };
+    it.entries.forEach(function (e) { add(e.drCode, e.drSub, 3); add(e.crCode, e.crSub, 3); });
+    boxDict(it.box).forEach(function (d) { const w = d.box ? 2 : 1; dictLinesOf(d).forEach(function (l) { add(l.drCode, l.drSub, w); add(l.crCode, l.crSub, w); }); });
+    return Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a] || (a < b ? -1 : 1); });
+  }
+  function lgHit(key, code, sb) { const p = key.split('-'); return p[0] === String(code || '') && (!p[1] || p[1] === String(sb || '')); }
+  /* 1行の 増加・減少（資産は借方が増加、負債・純資産は貸方が増加） */
+  function lgMove(key, e) {
+    const plusDr = /^1/.test(key);
+    const dr = lgHit(key, e.drCode, e.drSub), cr = lgHit(key, e.crCode, e.crSub);
+    if (dr === cr) return null;
+    return (dr === plusDr) ? { inc: e.amount, dec: 0 } : { inc: 0, dec: e.amount };
+  }
+  function lgState(it) {
+    const m = lsJ(LS_JBAL), o = Object.assign({}, m[it.id] || {});
+    const cands = lgCands(it);
+    if (!o.a || cands.indexOf(o.a) < 0) {
+      /* 前の写真（同じ箱）と同じ口座を はじめに */
+      const prev = lgPrev(it, m);
+      o.a = prev && prev.o.a && cands.indexOf(prev.o.a) >= 0 ? prev.o.a : (cands[0] || '');
+    }
+    if (o.s === undefined || o.s === '') {
+      const prev = lgPrev(it, m);
+      if (prev && prev.o.a === o.a) { const pe = prev.o.e !== undefined && prev.o.e !== '' ? prev.o.e : lgEnd(prev.it, prev.o); if (pe !== null) { o.s = pe; o.auto = 1; } }
+    }
+    return o;
+  }
+  function lgPrev(it, m) {
+    const list = (S.items || []).filter(function (x) { return x.box === it.box; });
+    for (let i = list.indexOf(it) - 1; i >= 0; i--) if (m[list[i].id]) return { it: list[i], o: m[list[i].id] };
+    return null;
+  }
+  function lgEnd(it, o) {
+    if (o.s === undefined || o.s === '' || !o.a) return null;
+    let b = Number(o.s) || 0;
+    it.entries.forEach(function (e) { const mv = lgMove(o.a, e); if (mv) b += mv.inc - mv.dec; });
+    return b;
+  }
+  function ledgerEl(it) {
+    const L = el('div', 'jledg'); L.dataset.id = it.id;
+    const o = lgState(it), cands = lgCands(it);
+    /* 口座は決めたら覚える（入れるたびに 口座が入れ替わらないように） */
+    if (o.a) { const m = lsJ(LS_JBAL); if (!m[it.id] || !m[it.id].a) { m[it.id] = Object.assign({}, m[it.id] || {}, { a: o.a }); lsSetJ(LS_JBAL, m, 400); } }
+    const hd = el('div', 'lgh');
+    hd.appendChild(el('b', null, '出納帳'));
+    if (cands.length) {
+      const sel = el('select'); sel.dataset.a = 'lgacct'; sel.setAttribute('aria-label', '出納帳の口座');
+      cands.forEach(function (k) { const p = k.split('-'); const a = (S.acctMap || {})[p[0]] || {}; const sn = p[1] ? ((S.subMap || {})[p[0] + '|' + p[1]] || '') : '';
+        const op = el('option', null, k + ' ' + (a.name || '') + (sn ? '・' + sn : '')); op.value = k; sel.appendChild(op); });
+      sel.value = o.a; hd.appendChild(sel);
+    } else hd.appendChild(el('span', 'note', '口座は 辞書を選ぶと出ます'));
+    const lb = function (txt, a, v, ttl) { const l = el('label', null, txt); const i = el('input'); i.dataset.a = a; i.value = v === undefined || v === '' ? '' : yen(v); i.autocomplete = 'off';
+      i.setAttribute('inputmode', 'numeric'); i.title = ttl; l.appendChild(i); return l; };
+    hd.appendChild(lb('前の残高', 'lgs', o.s, 'このページの はじめの残高（前のページの最後の残高）'));
+    hd.appendChild(lb('通帳の残高', 'lge', o.e, 'このページの 最後の行の残高（通帳に書いてある数字）'));
+    hd.appendChild(el('span', 'lgv'));
+    L.appendChild(hd);
+    const tb = el('table'); tb.innerHTML = '<thead><tr><th>日付</th><th>取引の種類</th><th>摘要</th><th class="r">増加</th><th class="r">減少</th><th class="r">残高</th><th></th></tr></thead><tbody></tbody>';
+    L.appendChild(tb);
+    ledgerFill(L, it);
+    return L;
+  }
+  function ledgerFill(L, it) {
+    if (!L) return;
+    const o = lgState(it);
+    const tbody = L.querySelector('tbody'); tbody.textContent = '';
+    const has = o.s !== undefined && o.s !== '';
+    let bal = has ? Number(o.s) : 0, inS = 0, decS = 0;
+    if (has) { const r0 = el('tr'); ['', '前の残高', '', '', '', yen(bal), ''].forEach(function (v, i) { r0.appendChild(el('td', i >= 3 && i <= 5 ? 'r' : null, v)); }); tbody.appendChild(r0); }
+    it.entries.forEach(function (e) {
+      const mv = o.a ? lgMove(o.a, e) : null;
+      const tr = el('tr', mv ? null : 'out');
+      if (mv) { bal += mv.inc - mv.dec; inS += mv.inc; decS += mv.dec; }
+      const k = dictOf(String(e.no));
+      [e.date ? e.date.slice(5) : '', (k && k.title) || ('No ' + e.no), e.memo && e.memo !== (k && k.title) ? e.memo : '', mv && mv.inc ? yen(mv.inc) : '', mv && mv.dec ? yen(mv.dec) : '', mv ? (has ? yen(bal) : '') : '（口座外）']
+        .forEach(function (v, i) { tr.appendChild(el('td', i >= 3 ? 'r' : null, v)); });
+      const td = el('td', 'r');
+      const fx = el('button', 'btn ghost sm', '訂正'); fx.type = 'button'; fx.dataset.a = 'fix'; fx.dataset.e = e.id; fx.disabled = !!(e.out || e.pending);
+      const cb = el('button', 'btn ghost sm danger', '取消'); cb.type = 'button'; cb.dataset.a = 'cancel'; cb.dataset.e = e.id; cb.disabled = !!(e.out || e.pending);
+      if (e.pending) td.appendChild(el('span', 'note', '保存中…'));
+      td.appendChild(fx); td.appendChild(cb); tr.appendChild(td);
+      tbody.appendChild(tr);
+    });
+    if (!it.entries.length) { const r = el('tr'); const c = el('td', 'note', 'まだ入れていません。辞書を選んで、通帳の上の行から順に入れてください。'); c.colSpan = 7; r.appendChild(c); tbody.appendChild(r); }
+    const sm = el('tr', 'sum'); ['計', it.entries.length + '件', '', yen(inS), yen(decS), has ? yen(bal) : '', ''].forEach(function (v, i) { sm.appendChild(el('td', i >= 3 && i <= 5 ? 'r' : null, v)); });
+    tbody.appendChild(sm);
+    const vd = L.querySelector('.lgv');
+    const e0 = o.e;
+    if (!has) { vd.className = 'lgv'; vd.textContent = '前の残高を入れると 残高が出ます'; }
+    else if (e0 === undefined || e0 === '') { vd.className = 'lgv'; vd.textContent = '残高 ' + yen(bal) + '円' + (o.auto ? '（前の残高は 前の写真から）' : ''); }
+    else if (Number(e0) === bal) { vd.className = 'lgv ok'; vd.textContent = '✓ 通帳の残高と合っています'; }
+    else { vd.className = 'lgv ng'; vd.textContent = '差額 ' + yen(bal - Number(e0)) + '円（アプリ ' + yen(bal) + '円）'; }
+    const si = L.querySelector('[data-a="lgs"]'); if (si && o.auto && document.activeElement !== si && si.value === '') si.placeholder = yen(o.s);
+  }
   function drawCard(it) {
     const row = rowOf(it.id); if (!row) return;
     const i = Number(row.dataset.i);
@@ -2083,7 +2209,12 @@
     if (it.scan) h.appendChild(el('span', 'stt scan' + (it.scan === 'スキャナ保存' ? '' : ' paper'), it.scan === 'スキャナ保存' ? '電子保存' : it.scan + '（紙を保管）'));
     h.appendChild(el('span', null, it.at + ' 届'));
     h.appendChild(el('span', 'fn', it.name.replace(/^\d{8}_\d{6}_/, '')));
-    const pb = el('button', 'jpop', '📎 写真'); pb.type = 'button'; pb.dataset.a = 'pop'; pb.title = '別の窓に この写真を出す'; h.appendChild(pb);
+    const multi = isMulti(it);
+    const md = el('span', 'seg jmode'); md.setAttribute('role', 'group'); md.setAttribute('aria-label', '辞書の選び方');
+    [['1', '1件ずつ'], ['n', '通帳・明細（複数）']].forEach(function (x) { const b = el('button', null, x[1]); b.type = 'button'; b.dataset.a = 'mode'; b.dataset.m = x[0];
+      b.setAttribute('aria-pressed', String((x[0] === 'n') === multi)); b.title = x[0] === 'n' ? '写真1枚に 辞書を何件も選んで、下の出納帳で残高を合わせる（通帳・カード明細）' : '写真1枚に 辞書を1つ（領収書）'; md.appendChild(b); });
+    h.appendChild(md);
+    const pb = el('button', 'jpop', '📎 別ウィンドウ'); pb.type = 'button'; pb.dataset.a = 'pop'; pb.title = '別のウィンドウに この写真を出す'; h.appendChild(pb);
     row.appendChild(h);
 
     const shot = oldShot || el('div', 'jshot');
@@ -2106,7 +2237,7 @@
       const b = el('button', 'btn ghost sm', '差戻しをやめる'); b.type = 'button'; b.dataset.a = 'unback';
       n.appendChild(b); row.appendChild(n);
     }
-    if (it.entries.length) {
+    if (it.entries.length && !multi) {
       const es = el('div', 'jents');
       it.entries.forEach(function (e) {
         const d = el('div', 'jent');
@@ -2160,8 +2291,10 @@
       ok.appendChild(el('span', 'm', '✓')); ok.appendChild(el('span', null, '確定する'));
       ck.appendChild(ok);
       const ml = el('button', 'btn ghost sm', '複数仕訳へ'); ml.type = 'button'; ml.dataset.a = 'addline'; ml.title = 'この伝票に仕訳の行を足す（借方・貸方の計を合わせる）'; ck.appendChild(ml);
-      const more = el('button', 'btn ghost sm', 'この写真にもう1件'); more.type = 'button'; more.dataset.a = 'more'; more.title = '確定して、同じ写真のまま次の取引へ（通帳など。Shift+Enter）'; ck.appendChild(more);
+      if (multi) ok.lastChild.textContent = '入れて 次の行へ';
+      else { const more = el('button', 'btn ghost sm', 'この写真にもう1件'); more.type = 'button'; more.dataset.a = 'more'; more.title = '確定して、同じ写真のまま次の取引へ（通帳など。Shift+Enter）'; ck.appendChild(more); }
     }
+    if (multi && it.entries.length) { const pd = el('button', 'btn ghost sm', 'この写真を終える'); pd.type = 'button'; pd.dataset.a = 'pgdone'; pd.title = 'たたんで 次の写真へ'; ck.appendChild(pd); }
     if (!it.entries.length) {
       const bk = el('div', 'jback');
       const sel = el('select'); sel.setAttribute('aria-label', '差戻しの理由を選ぶ'); sel.appendChild(el('option', null, '差戻しの理由…')).value = '';
@@ -2173,15 +2306,17 @@
     }
     ck.appendChild(el('span', 'jda'));
     row.appendChild(ck);
+    if (multi) row.appendChild(ledgerEl(it));
     readyMark(it);
     if (jlay() === 'h') {
       /* 横2列：左に写真（と道具）、右にそれ以外 */
       const L = el('div', 'jcolL'), R = el('div', 'jcolR');
       Array.prototype.slice.call(row.children).forEach(function (x) {
-        if (x.classList.contains('jdhead')) return;
+        if (x.classList.contains('jdhead') || x.classList.contains('jledg')) return;
         (x.classList.contains('jshot') || x.classList.contains('jtools') ? L : R).appendChild(x);
       });
       row.appendChild(L); row.appendChild(R);
+      const lg = row.querySelector(':scope > .jledg'); if (lg) row.appendChild(lg);
     }
     if (keep) { const f = row.querySelector(keep); if (f) { f.focus({ preventScroll: true }); if (selR) try { f.setSelectionRange(selR[0], selR[1]); } catch (e) {} } }
   }
@@ -2342,16 +2477,26 @@
       if (!parseAmt((c.L[ln] || {}).amount)) { fmsg('金額を入れてください', 'err'); return; }
       fmsg('');
       if (ln < c.L.length - 1 && !e.shiftKey) { go1(row, 'amount', ln + 1); return; }
-      confirmEntry(it, e.shiftKey); return;
+      confirmEntry(it, e.shiftKey || isMulti(it)); return;
     }
-    if (e.ctrlKey || e.metaKey) { confirmEntry(it, e.shiftKey); return; }
+    if (e.ctrlKey || e.metaKey) { confirmEntry(it, e.shiftKey || isMulti(it)); return; }
     const ins = Array.prototype.slice.call(row.querySelectorAll('.jslip [data-k]'));
     const n = ins[ins.indexOf(t) + 1];
     if (n) { n.focus(); if (n.select) n.select(); } else row.querySelector('.jdok').focus();
   });
   function go1(row, k, ln) { const f = row.querySelector((ln != null ? '.jslip[data-ln="' + ln + '"] ' : '') + '[data-k="' + k + '"]'); if (f) { f.focus(); if (f.select) f.select(); } }
   jl.addEventListener('change', function (e) {
-    const t = e.target; if (t.dataset.a !== 'backpick' || !t.value) return;
+    const t = e.target;
+    if (/^lg/.test(t.dataset.a || '')) {
+      const row = t.closest('.jdrow'), it = row && itemOf(row.dataset.id); if (!it) return;
+      const m = lsJ(LS_JBAL), o = m[it.id] || {};
+      if (t.dataset.a === 'lgacct') o.a = t.value;
+      else { const v = String(t.value).trim(); const n = v === '' ? '' : parseAmtS(v); if (n === null) { fmsg('金額は数字で入れてください', 'err'); return; } o[t.dataset.a === 'lgs' ? 's' : 'e'] = n; t.value = n === '' ? '' : yen(n); }
+      m[it.id] = o; lsSetJ(LS_JBAL, m, 400);
+      ledgerFill(row.querySelector('.jledg'), it);
+      return;
+    }
+    if (t.dataset.a !== 'backpick' || !t.value) return;
     const bt = t.parentNode.querySelector('[data-a="backtext"]'); bt.value = t.value; bt.focus();
   });
   jl.addEventListener('click', function (e) {
@@ -2364,7 +2509,9 @@
     if (a === 'pick') { pickNo(it, Number(t.dataset.no)); return; }
     if (a === 'pop') { S.act = it.id; markAct(); prioritize(); popOpen(); popSync(true); return; }
     if (a === 'repick') { repick(it); return; }
-    if (a === 'ok') { confirmEntry(it, false); return; }
+    if (a === 'ok') { confirmEntry(it, isMulti(it)); return; }
+    if (a === 'mode') { setMulti(it, t.dataset.m === 'n'); (S.view || []).forEach(function (x) { if (x.box === it.box && rowOf(x.id) && !rowOf(x.id).classList.contains('fold')) drawCard(x); }); markAct(); return; }
+    if (a === 'pgdone') { delete S.open[it.id]; C[it.id] = { date: '', no: '', q: '', L: [blankLine()] }; drawCard(it); const nx = nextTodo(it.id); if (nx) focusCard(nx.id); else markAct(); return; }
     if (a === 'more') { confirmEntry(it, true); return; }
     if (a === 'addline') { const c = card(it.id); c.L.push(blankLine()); drawCard(it); go1(row, 'drCode', c.L.length - 1); return; }
     if (a === 'dropline') { const c = card(it.id); c.L.splice(Number(t.dataset.ln), 1); drawCard(it); return; }
@@ -2559,7 +2706,8 @@
      日付・金額・辞書の No は、押したらすぐ数字。ひらがなから始まらない。
      ・指で触る端末では 端末のキーボードを出さず（inputmode=none）、電卓と同じ並びのテンキーを下に出す
      ・パソコンでは なにもしない（数字はそのまま打てる。全角で入っても half() で読む） */
-  const COARSE = window.matchMedia ? window.matchMedia('(pointer: coarse)') : { matches: false };
+  /* ★ パソコン（マウス・トラックパッドがある端末）では出さない。物理のテンキーで打つ（2026-10-09） */
+  const COARSE = window.matchMedia ? window.matchMedia('(hover: none) and (pointer: coarse)') : { matches: false };
   function tkPrep(inp) { inp.dataset.tk = '1'; inp.setAttribute('inputmode', COARSE.matches ? 'none' : 'numeric'); inp.setAttribute('enterkeyhint', 'next'); }
   function tkPrepAll(row) { row.querySelectorAll('[data-k="date"], [data-k="amount"], [data-k="q"]').forEach(tkPrep); }
   let tkT = null;
@@ -2622,7 +2770,7 @@
     }
     const saved = JSON.parse(JSON.stringify(c));
     const lines = c.L.map(function (l, ln) { const v = slipVals(it.id, ln); return { amount: parseAmt(l.amount), ov: Object.keys(l.ov).length ? Object.assign({}, l.ov) : null, memo: l.memo != null ? l.memo : '', v: v }; });
-    const tmps = lines.map(function (x) { return { id: 'tmp' + (++tmpSeq), pending: true, date: d.s, amount: x.amount, no: k.no, dr: x.v.dr, drCode: x.v.drCode, cr: x.v.cr, crCode: x.v.crCode, memo: x.memo || x.v.memo }; });
+    const tmps = lines.map(function (x) { return { id: 'tmp' + (++tmpSeq), pending: true, date: d.s, amount: x.amount, no: k.no, dr: x.v.dr, drCode: x.v.drCode, drSub: x.v.drSub, cr: x.v.cr, crCode: x.v.crCode, crSub: x.v.crSub, memo: x.memo || x.v.memo }; });
     const before = it.status;
     tmps.forEach(function (x) { it.entries.push(x); });
     if (before !== 'done') { S.counts[before]--; S.counts.done = (S.counts.done || 0) + 1; }
