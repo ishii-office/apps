@@ -1079,7 +1079,10 @@
      mode 'in' … 年月日と金額を打つ（入力）／ 'dict' … 年月日と金額は空のまま（辞書） */
   const NARROW = window.matchMedia ? window.matchMedia('(max-width: 900px)') : { matches: false };
   /* ★ 指だけで触る端末（スマホ・タブレット）。別ウィンドウ表示は出さない（スマホでは 縦1列と同じになるだけ。2026-10-09） */
-  const TOUCH = window.matchMedia ? window.matchMedia('(hover: none) and (pointer: coarse)') : { matches: false };
+  /* ★★ 画面の当たり方（pointer: coarse）では見分けない（2026-10-11）。タッチ画面のパソコン（Windows）が
+       「指の端末」と名乗るので、テンキーが出て 別ウィンドウ表示が消えていた。見るのは 端末の名乗り（スマホ・タブレット）だけ */
+  const MOBILE_DEV = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '') || (/Macintosh/.test(navigator.userAgent || '') && (navigator.maxTouchPoints || 0) > 1);
+  const TOUCH = { matches: MOBILE_DEV };
   document.documentElement.classList.toggle('jtouch', !!TOUCH.matches);
   function voucherHtml(v, mode, base, opts) {
     opts = opts || {};
@@ -2836,7 +2839,14 @@
      ・指で触る端末では 端末のキーボードを出さず（inputmode=none）、電卓と同じ並びのテンキーを下に出す
      ・パソコンでは なにもしない（数字はそのまま打てる。全角で入っても half() で読む） */
   /* ★ パソコン（マウス・トラックパッドがある端末）では出さない。物理のテンキーで打つ（2026-10-09） */
-  const COARSE = window.matchMedia ? window.matchMedia('(hover: none) and (pointer: coarse)') : { matches: false };
+  /* スマホ・タブレットでも 物理のキーボードで数字を打ったら、その端末では テンキーを出さない（端末が覚える） */
+  var LS_KBD = 'collect_office_kbd';
+  const COARSE = { get matches() { return MOBILE_DEV && lsGet(LS_KBD) !== '1'; } };
+  document.addEventListener('keydown', function (e) {
+    if (!MOBILE_DEV || !e.isTrusted || !/^[0-9]$/.test(e.key || '')) return;
+    const t = e.target; if (!(t && t.dataset && t.dataset.tk)) return;
+    if (lsGet(LS_KBD) !== '1') { lsSet(LS_KBD, '1'); tkHide(); t.setAttribute('inputmode', 'numeric'); }
+  }, true);
   function tkPrep(inp) { inp.dataset.tk = '1'; inp.setAttribute('inputmode', COARSE.matches ? 'none' : 'numeric'); inp.setAttribute('enterkeyhint', 'next'); }
   function tkPrepAll(row) { row.querySelectorAll('[data-k="date"], [data-k="amount"], [data-k="q"]').forEach(tkPrep); }
   let tkT = null;
