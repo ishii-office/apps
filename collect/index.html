@@ -191,6 +191,15 @@
   .ht { cursor: zoom-in; }
   .ht.movable { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .ht.lifted { opacity: .35; }
+  /* ★ 何枚かで1つの書類（2026-10-11）：クリップでくくる。写真を別の写真の上へ落とすと まとまる */
+  .hgrp { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; gap: inherit; position: relative; border: 2px dashed #3A6EA8; border-radius: 10px; padding: 28px 5px 5px; background: #EEF4FB; }
+  @supports not (grid-template-columns: subgrid) { .hgrp { grid-template-columns: inherit; } }
+  .hclip { position: absolute; left: 6px; top: 3px; font: inherit; font-size: 12.5px; font-weight: 700; color: #1F4E8C; background: #fff; border: 1px solid #9DB7D8; border-radius: 6px; padding: 1px 9px; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .ht.joinhit { outline: 4px solid #3A6EA8; outline-offset: -2px; }
+  .hmenu { position: fixed; z-index: 25; min-width: 220px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,.25); padding: 6px; display: flex; flex-direction: column; }
+  .hmenu button { font: inherit; font-size: 16px; text-align: left; padding: 12px 14px; border: 0; background: none; border-radius: 8px; cursor: pointer; }
+  .hmenu button:hover, .hmenu button:active { background: #EEF4F2; }
+  .hmenu button:disabled { color: #aaa; }
   body.dragging .mon { outline: 2px dashed #8FBFB2; outline-offset: -2px; }
   .mon.target { outline: 3px solid var(--accent) !important; background: #DCEFE8; }
   .ghost { position: fixed; z-index: 20; width: 80px; height: 106px; border-radius: 8px; overflow: hidden; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.35); background: #fff; border: 2px solid var(--accent); font-size: 11px; }
@@ -347,7 +356,7 @@
 
 <div class="selbar" id="selbar" hidden>
   <b id="selN">0件を選んでいます</b>
-  <div class="selb"><button type="button" class="btn pick" id="selMove">移す</button><button type="button" class="btn danger" id="selDel">消す</button><button type="button" class="btn pick" id="selPdf">PDFで保存</button>
+  <div class="selb"><button type="button" class="btn pick" id="selJoin">📎 まとめる</button><button type="button" class="btn pick" id="selMove">移す</button><button type="button" class="btn danger" id="selDel">消す</button><button type="button" class="btn pick" id="selPdf">PDFで保存</button>
     <button type="button" class="linkbtn" id="selNone">全部外す</button><button type="button" class="linkbtn" id="selEnd">やめる</button></div>
 </div>
 
@@ -928,7 +937,24 @@
       if (open) {
         const g = mk('div', 'hgrid');
         o.slice().reverse().forEach(function (it) { g.appendChild(outTile(it)); });
-        h.forEach(function (x) { g.appendChild(histTile(x)); });
+        const seen = {};
+        h.forEach(function (x) {
+          if (seen[x.k]) return;
+          const sid = hsid(x);
+          const mem = sid ? h.filter(function (y) { return hsid(y) === sid; }).sort(function (a, b) { return hsn(a) - hsn(b); }) : [];
+          if (mem.length < 2) { g.appendChild(histTile(x)); return; }
+          const w = mk('div', 'hgrp'); w.dataset.set = sid;
+          const cl = mk('button', 'hclip', '📎 ' + mem.length + '枚で1つの書類'); cl.type = 'button';
+          cl.title = 'ダブルクリック（スマホは長押し）で バラす';
+          cl.addEventListener('dblclick', function (e) { e.preventDefault(); splitItems(mem[0]); });
+          cl.addEventListener('contextmenu', function (e) { e.preventDefault(); hMenu(e.clientX, e.clientY, mem[0]); });
+          let lt = null;
+          cl.addEventListener('touchstart', function (e) { const t = e.touches[0]; lt = setTimeout(function () { lt = null; hMenu(t.clientX, t.clientY, mem[0]); }, 450); }, { passive: true });
+          ['touchend', 'touchmove', 'touchcancel'].forEach(function (k) { cl.addEventListener(k, function () { if (lt) { clearTimeout(lt); lt = null; } }, { passive: true }); });
+          w.appendChild(cl);
+          mem.forEach(function (y) { seen[y.k] = 1; w.appendChild(histTile(y)); });
+          g.appendChild(w);
+        });
         mon.appendChild(g);
       }
       yk[String(p || '').slice(0, 4) || '----'].appendChild(mon);
@@ -1054,7 +1080,7 @@
   const DD = (function () {
     let cur = null, endAt = 0, endEl = null;
     function clean() { document.querySelectorAll('.ghost').forEach(function (g) { g.remove(); }); document.querySelectorAll('.lifted').forEach(function (x) { x.classList.remove('lifted'); });
-      document.querySelectorAll('.target').forEach(function (x) { x.classList.remove('target'); }); document.body.classList.remove('dragging'); }
+      document.querySelectorAll('.target, .joinhit').forEach(function (x) { x.classList.remove('target', 'joinhit'); }); document.body.classList.remove('dragging'); }
     function items(h) { return PICK && SEL[h.k] ? HIST.filter(function (x) { return SEL[x.k]; }) : [h]; }
     function start(c) {
       clean();
@@ -1070,6 +1096,12 @@
     function targetAt(c, x, y) {
       const e = document.elementFromPoint(x, y);
       if (!e || !e.closest) return null;
+      /* ★ 写真の上 ＝ その写真と 1つの書類にまとめる */
+      const tile = e.closest('.ht[data-k]');
+      if (tile && !c.list.some(function (h) { return h.k === tile.dataset.k; })) {
+        const th = HIST.find(function (h) { return h.k === tile.dataset.k; });
+        if (th && th.status !== 'done' && !/^local_/.test(th.k)) return { el: tile, join: true, h: th };
+      }
       const mon = e.closest('.mon');
       if (mon) return { el: mon, box: mon.dataset.box, per: mon.dataset.per };
       const head = e.closest('.box-head');
@@ -1080,10 +1112,10 @@
       c.x = x; c.y = y;
       if (c.ghost) { c.ghost.style.left = (x - 40) + 'px'; c.ghost.style.top = (y - 60) + 'px'; }
       const t = targetAt(c, x, y);
-      const same = t && c.list.every(function (h) { return h.box === t.box && (!t.per || h.period === t.per); });
-      if (c.tgt && (!t || c.tgt.el !== t.el)) c.tgt.el.classList.remove('target');
+      const same = t && !t.join && c.list.every(function (h) { return h.box === t.box && (!t.per || h.period === t.per); });
+      if (c.tgt && (!t || c.tgt.el !== t.el)) c.tgt.el.classList.remove('target', 'joinhit');
       c.tgt = t && !same ? t : null;
-      if (c.tgt) c.tgt.el.classList.add('target');
+      if (c.tgt) c.tgt.el.classList.add(c.tgt.join ? 'joinhit' : 'target');
       if (y < 90) window.scrollBy(0, -14); else if (y > window.innerHeight - 90) window.scrollBy(0, 14);
     }
     function end(cancel) {
@@ -1095,7 +1127,10 @@
       if (!was) return;
       endAt = Date.now(); endEl = c.d;
       if (cancel) return;
-      if (c.tgt) moveItems(c.list, c.tgt.box, c.tgt.per); else openMove(c.list);
+      /* ★ スマホ：長押しして そのまま離したら 選びもの（選ぶ・バラす・移す） */
+      if (c.touch && !c.tgt && Math.abs(c.x - c.x0) + Math.abs(c.y - c.y0) < 24) { hMenu(c.x, c.y, c.h); return; }
+      if (c.tgt && c.tgt.join) joinItems([c.tgt.h].concat(c.list));
+      else if (c.tgt) moveItems(c.list, c.tgt.box, c.tgt.per); else openMove(c.list);
     }
     function bind(d, h) {
       /* スマホ：長押しで つかむ */
@@ -1103,7 +1138,7 @@
         if (e.touches.length !== 1) return;
         const t = e.touches[0];
         if (cur) end(true);
-        cur = { h: h, d: d, x: t.clientX, y: t.clientY, on: false, touch: true };
+        cur = { h: h, d: d, x: t.clientX, y: t.clientY, x0: t.clientX, y0: t.clientY, on: false, touch: true };
         const c = cur;
         c.timer = setTimeout(function () { if (cur === c) start(c); }, 450);
       }, { passive: true });
@@ -1113,7 +1148,7 @@
         if (cur) end(true);
         cur = { h: h, d: d, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, on: false, mouse: true };
       });
-      d.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+      d.addEventListener('contextmenu', function (e) { e.preventDefault(); if (!e.sourceCapabilities || !e.sourceCapabilities.firesTouchEvents) { if (!cur || !cur.on) hMenu(e.clientX, e.clientY, h); } });
       d.addEventListener('dragstart', function (e) { e.preventDefault(); });   /* ブラウザ任せのドラッグは使わない */
     }
     document.addEventListener('touchmove', function (e) {
@@ -1154,6 +1189,72 @@
       showDone((list.length > 1 ? list.length + '件を ' : '') + ymLabel(h0.period) + '［' + boxLabel(h0.box) + '］へ移しました。');
     }, function (e) { list.forEach(function (h, i) { h.box = was[i].box; h.period = was[i].period; }); drawAll(); showDone('移せませんでした。' + e.message, true); });
   }
+  /* ================= ★ 何枚かで1つの書類（2026-10-11） =================
+     ・まとめる … 写真を 別の写真の上へ つかんで落とす（スマホは長押しして滑らせる）／ 選んで［📎 まとめる］
+     ・バラす … クリップを ダブルクリック（スマホは長押し）／ 写真を長押しして［バラす］
+     ・先に画面を変えて、保存は裏で。しくじったら元に戻す。確定済みは まとめない・バラさない */
+  function hsid(h) { return String(h.set || '').split('#')[0]; }
+  function hsn(h) { const m = String(h.set || '').match(/#(\d+)\//); return m ? Number(m[1]) : 0; }
+  function hmem(sid) { return HIST.filter(function (x) { return hsid(x) === sid; }).sort(function (a, b) { return hsn(a) - hsn(b); }); }
+  function joinItems(list) {
+    list = list.filter(function (h, i) { return h && list.indexOf(h) === i && !/^local_/.test(h.k); });
+    if (list.length < 2) { showDone('2枚以上を選んでください。', true); return; }
+    if (list.some(function (h) { return h.status === 'done'; })) { showDone('事務所で確定済みのものは まとめられません。', true); return; }
+    const snap = HIST.map(function (h) { return [h, h.set, h.period, h.box]; });
+    const lead = list[0], sid0 = hsid(lead);
+    const order = sid0 ? hmem(sid0) : [lead];
+    list.forEach(function (h) { if (order.indexOf(h) < 0) order.push(h); });
+    const sid = sid0 || 'tmp' + Date.now();
+    const left = {};
+    order.forEach(function (h) { const o = hsid(h); if (o && o !== sid) left[o] = 1; });
+    order.forEach(function (h, i) { h.set = sid + '#' + (i + 1) + '/' + order.length; h.period = lead.period; h.box = lead.box; });
+    Object.keys(left).forEach(function (o) { const rest = hmem(o); rest.forEach(function (h, i) { h.set = rest.length >= 2 ? o + '#' + (i + 1) + '/' + rest.length : ''; }); });
+    OPEN[lead.box + '|' + lead.period] = true;
+    PICK = false; SEL = {}; drawAll();
+    showDone(order.length + '枚を 1つの書類にまとめました。');
+    call('clientSetJoin', [TOKEN, list.map(function (h) { return h.k; })], 120000).then(function (r) {
+      const by = {}; HIST.forEach(function (h) { by[h.k] = h; });
+      ((r && r.items) || []).concat((r && r.changed) || []).forEach(function (x) { const h = by[x.k]; if (!h) return; h.set = x.set; if (x.period) { h.period = x.period; h.box = x.box; } });
+      drawAll();
+    }, function (e) { snap.forEach(function (a) { a[0].set = a[1]; a[0].period = a[2]; a[0].box = a[3]; }); drawAll(); showDone('まとめられませんでした（元に戻しました）。' + e.message, true); });
+  }
+  function splitItems(h) {
+    const sid = hsid(h); if (!sid) return;
+    const mem = hmem(sid);
+    if (mem.some(function (x) { return x.status === 'done'; })) { showDone('事務所で確定済みのものは バラせません。', true); return; }
+    const was = mem.map(function (x) { return x.set; });
+    mem.forEach(function (x) { x.set = ''; });
+    drawAll(); showDone(mem.length + '枚に バラしました。');
+    call('clientSetSplit', [TOKEN, h.k], 120000).catch(function (e) { mem.forEach(function (x, i) { x.set = was[i]; }); drawAll(); showDone('バラせませんでした（元に戻しました）。' + e.message, true); });
+  }
+  /* 長押し（パソコンは右クリック）の選びもの */
+  function hMenuClose() { document.querySelectorAll('.hmenu').forEach(function (x) { x.remove(); }); }
+  function hMenu(x, y, h) {
+    hMenuClose();
+    const m = mk('div', 'hmenu'); m.setAttribute('role', 'menu');
+    const add = function (t, ok, fn) { const b = mk('button', null, t); b.type = 'button'; b.disabled = !ok; b.addEventListener('click', function () { hMenuClose(); fn(); }); m.appendChild(b); };
+    const can = h.status !== 'done' && !/^local_/.test(h.k);
+    const sel = selList();
+    if (PICK && sel.length >= 2) add('📎 選んだ ' + sel.length + '件を まとめる', true, function () { joinItems(selOrder()); });
+    add(SEL[h.k] ? '選ぶのをやめる' : '選ぶ（まとめる・移す・消す）', can, function () { PICK = true; if (SEL[h.k]) delete SEL[h.k]; else SEL[h.k] = 1; drawAll(); });
+    if (hsid(h)) add('✂ バラす（' + hmem(hsid(h)).length + '枚を 1枚ずつに）', can, function () { splitItems(h); });
+    add('別の月分・箱へ移す', can, function () { openMove(PICK && SEL[h.k] ? selList() : [h]); });
+    add('大きく見る', true, function () { zoomOpen(TH[h.k], h.k, ymLabel(h.period) + '［' + h.box + '］', h); });
+    document.body.appendChild(m);
+    const w = m.offsetWidth, ht = m.offsetHeight;
+    m.style.left = Math.max(6, Math.min(x - w / 2, window.innerWidth - w - 6)) + 'px';
+    m.style.top = Math.max(6, Math.min(y + 8, window.innerHeight - ht - 6)) + 'px';
+  }
+  document.addEventListener('pointerdown', function (e) { if (!e.target.closest || !e.target.closest('.hmenu')) hMenuClose(); }, true);
+  window.addEventListener('scroll', hMenuClose, true);
+  /* 選んだものを 見えている順（上から・左から）に */
+  function selOrder() {
+    const out = [];
+    document.querySelectorAll('.ht[data-k]').forEach(function (t) { const h = SEL[t.dataset.k] && HIST.find(function (x) { return x.k === t.dataset.k; }); if (h && out.indexOf(h) < 0) out.push(h); });
+    selList().forEach(function (h) { if (out.indexOf(h) < 0) out.push(h); });
+    return out;
+  }
+
   /* 月分・箱を選んで移す（どこにも落とさなかったとき・選んだものを移すとき） */
   let MOVEL = null;
   function openMove(list) {
@@ -1188,10 +1289,12 @@
     const n = selList().length;
     $('selN').textContent = n + '件を選んでいます';
     $('selMove').disabled = $('selDel').disabled = !n;
+    $('selJoin').disabled = n < 2;
     $('selPdf').disabled = !selList().some(function (x) { return !/^local_/.test(x.k); });
     document.body.classList.toggle('picking', PICK);
   }
   $('selMove').addEventListener('click', function () { openMove(selList()); });
+  $('selJoin').addEventListener('click', function () { joinItems(selOrder()); });
   $('selDel').addEventListener('click', function () {
     const l = selList(); if (!l.length) return;
     if (!confirm('選んだ ' + l.length + '件を消しますか？\n（事務所には「消した」と伝わります）')) return;
@@ -1615,7 +1718,7 @@
 
 
   /* サーバを呼ぶ道は、ここ1か所だけ */
-  const LIVE_FN = ['uploadFile', 'clientHistory', 'clientThumbs', 'clientDelete', 'clientDeleteMany', 'clientImage', 'clientImages', 'clientFiles', 'clientMove', 'clientMoveMany'];
+  const LIVE_FN = ['uploadFile', 'clientHistory', 'clientThumbs', 'clientDelete', 'clientDeleteMany', 'clientImage', 'clientImages', 'clientFiles', 'clientMove', 'clientMoveMany', 'clientSetJoin', 'clientSetSplit'];
   function call(fn, args, ms) {
     return new Promise(function (resolve, reject) {
       if (LIVE) {
