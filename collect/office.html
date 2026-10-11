@@ -73,7 +73,7 @@
     /* 左上から時計回り：回収資料 → 仕訳化 → 取込ファイル → 担当者 → 顧問先 → 仕訳辞書 */
     #tabs button[data-tab="Docs"] { grid-area: 1 / 1; } #tabs button[data-tab="In"] { grid-area: 1 / 2; }
     #tabs button[data-tab="Out"] { grid-area: 1 / 3; border-right: 0; } #tabs button[data-tab="Staff"] { grid-area: 2 / 3; border-right: 0; }
-    #tabs button[data-tab="Clients"] { grid-area: 2 / 2; } #tabs button[data-tab="Dict"] { grid-area: 2 / 1; }
+    #tabs button[data-tab="Clients"] { grid-area: 2 / 2; } #tabs button[data-tab="Dict"] { grid-area: 2 / 1; border-right: 1px solid var(--line); }
   }
   .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
   .ctl label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -566,6 +566,10 @@
     .jmain { overflow: visible; padding: 0 8px 80px; }
     .jlhead { top: 0; }
     .dpz .jplist { max-height: 60vh; }
+    /* ★ スマホで横2列のときは 取引の名前だけ（コード・税は出さない。狭くて読めないので） */
+    .dpz .jlay-h .jplist li button { grid-template-columns: 28px minmax(0, 1fr); gap: 6px; padding: 10px 6px; }
+    .dpz .jlay-h .jplist .c, .dpz .jlay-h .jplist .x { display: none; }
+    .dpz .jlay-h .jplist .t { white-space: normal; overflow-wrap: anywhere; line-height: 1.3; }
     .dpz .jplist li button { padding: 11px 10px; }
     .dpz .jdrow { padding: 9px 8px; }
     .dpz .jdchk .jdok { flex: 1 1 auto; justify-content: center; }
@@ -994,12 +998,6 @@
     }, function (err) { $('gGo').disabled = false; $('gPin').value = ''; $('gMsg').textContent = err.message; $('gPin').focus(); });
   });
 
-  (function boot() {
-    if (LIVE) { start(''); return; }
-    if (!WEB2) { fatal('送り先（サーバの口）が分かりません。事務所の代表にお問い合わせください。'); return; }
-    if (!TOK) { showGate(''); return; }
-    start(lsGet(LS_NAME));
-  })();
 
   /* ★★ 速さ（2026-10-11）：開くときは サーバに【1回】だけ聞く（officeBoot）。
        前は 担当者 → 顧問先の並び → 勘定科目 → 辞書 → タグ → よけた辞書 → 一覧 → 小さい絵 と 順に 6〜8回 待っていた。
@@ -1023,7 +1021,8 @@
     const old = bootLoad(name);
     let done;
     BOOT_WAIT = old ? new Promise(function (r) { done = r; }) : null;
-    if (old) applyBoot(old, name);
+    /* 覚えた画面は このスクリプトを読み終えてから描く（下のほうの const がまだ出来ていないため） */
+    if (old) Promise.resolve().then(function () { if (S.started && !S.booted) { try { applyBoot(old, name); } catch (e) { lsDel(LS_BOOT); } } });
     const free = function () { if (done) { BOOT_WAIT = null; done(); done = null; } };
     gs('officeBoot', S.code || '').then(function (b) {
       if (!S.started) return;
@@ -1073,6 +1072,8 @@
     S.tab = k;
     document.querySelectorAll('#tabs button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.tab === k)); });
     hidePanes(); $('pane' + k).hidden = false;
+    /* 隠れた欄にフォーカスが残って テンキーが出たままにならないように */
+    const ae = document.activeElement; if (ae && ae.dataset && ae.dataset.tk && !$('pane' + k).contains(ae)) { ae.blur(); tkHide(); }
     $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Dict' || k === 'Out');
     /* 帯の欄は タブに要るものだけ（処理する月・未処理/確定 は仕訳化だけ、月分・箱は 回収資料と仕訳化） */
     $('ctl').dataset.tab = k;
@@ -1096,12 +1097,23 @@
      ・確定しなくても、下へスクロールすれば次が見える（確定は事務所の仕事。順番は縛らない）
      ・確定したものは うすい緑で1行にたたむ。「ひらく」で戻せる
      ・Enter：日付 → 金額 → No → 確定して次の未確定へ ／ Shift+Enter：確定して同じ写真にもう1行 */
+  /* ★ 日付は 処理する年月（2026/09/）を先に入れておき、日だけ打てばよい（2026-10-11）。
+       ほかの年月にしたいときは バックスペースで消して打つ */
+  const DATE_PRE_RE = /^\d{4}\/\d{1,2}\/$/;
+  function datePre(per) {
+    const b = baseYM(); const pm = String(per || '').match(/^(\d{4})-(\d{2})$/);
+    const y = b ? b[0] : pm ? Number(pm[1]) : 0, m = b ? b[1] : pm ? Number(pm[2]) : 0;
+    return y ? y + '/' + String(m).padStart(2, '0') + '/' : '';
+  }
   function baseYM() { const v = $('month').value || ''; const m = v.match(/^(\d{4})-(\d{2})$/); return m ? [Number(m[1]), Number(m[2])] : null; }
   /* 日付：23 → 処理する月の23日 / 9/23・0923 → 処理する月の年の9月23日 / 2025/9/23・20250923 → そのまま */
   /* ★ その資料の月分（8月分）があれば「23」は 8月23日。無ければ 処理する月 */
   function parseDate(s, per) {
     s = half(s);
-    if (!s) return null;
+    if (!s || DATE_PRE_RE.test(s)) return null;
+    /* 先に入っている「2026/09/」のうしろに 9/23・0923 と打ったときは うしろだけで読む */
+    const pre = s.match(/^\d{4}\/\d{1,2}\/(.+)$/);
+    if (pre && !/^\d{1,2}$/.test(pre[1])) s = pre[1];
     const pm = String(per || '').match(/^(\d{4})-(\d{2})$/);
     const b = pm ? [Number(pm[1]), Number(pm[2])] : baseYM(); if (!b) return null;
     let y = b[0], mo = b[1], d, m;
@@ -1170,7 +1182,7 @@
     };
     const dayIn = isIn ? (opts.noDate ? '<span class="fillsp">1行目と同じ日</span>' : inp('date', v.date, 'dpday c', '日付')) : '<span class="fillsp">—</span>';
     const amtIn = isIn ? inp('amount', v.amount, 'amt', '金額') : '<span class="fillsp">—</span>';
-    const dayTxt = isIn && !opts.noDate ? '<span class="dprt c-day">' + esc(ds ? ds + '（' + parseDate(v.date, v.per).w + '）' : (v.date ? '日付がちがいます' : '')) + '</span>' : '';
+    const dayTxt = isIn && !opts.noDate ? '<span class="dprt c-day">' + esc(ds ? ds + '（' + parseDate(v.date, v.per).w + '）' : (v.date && !DATE_PRE_RE.test(half(v.date)) ? '日付がちがいます' : '')) + '</span>' : '';
     const rt = '<span class="dprt c-rt">' + rtText(v, taxable, rate) + '</span>';
     const taxTxt = '<span class="c-tax">' + (taxable && amt ? yen(tax) : '') + '</span>';
     const netTxt = '<span class="c-net">' + (amt ? yen(amt - tax) : '') + '</span>';
@@ -1251,7 +1263,7 @@
     set('c-tax', taxable && amt ? yen(tax) : ''); set('c-net', amt ? yen(amt - tax) : '');
     set('c-rt', rtText(v, taxable, rate));
     set('c-buy', buyKind(v.tax) && ds ? ds : '');
-    if (isIn) { const p = parseDate(v.date, v.per); set('c-day', p ? p.s + '（' + p.w + '）' : (v.date ? '日付がちがいます' : '')); }
+    if (isIn) { const p = parseDate(v.date, v.per); set('c-day', p ? p.s + '（' + p.w + '）' : (v.date && !DATE_PRE_RE.test(half(v.date)) ? '日付がちがいます' : '')); }
     box.querySelectorAll('.side-mk').forEach(function (e) { e.hidden = taxFree(v.tax) || e.dataset.side !== v.side; });
   }
   function rtText(v, taxable, rate) { return taxable ? '判定(' + (v.red ? '軽' : '標') + ')' + rate + '%' : (String(v.tax || '') === '8' ? '非課税' : '対象外'); }
@@ -2671,13 +2683,13 @@
       const ph = el('div', 'jpickh');
       ph.appendChild(el('b', null, '辞書から選ぶ'));
       const q = el('input', 'dpin q'); q.dataset.k = 'q'; q.value = c.q || ''; q.autocomplete = 'off';
-      q.placeholder = 'No・取引の種類で絞る'; q.setAttribute('aria-label', '辞書を絞る'); tkPrep(q);
+      q.placeholder = '番号・取引の種類で絞る'; q.setAttribute('aria-label', '辞書を絞る'); tkPrep(q);
       ph.appendChild(q); pk.appendChild(ph);
       const ul = el('ul', 'jplist'); pickList(ul, c.q, it.box); pk.appendChild(ul);
       row.appendChild(pk);
     } else {
       const nb = el('div', 'jno');
-      nb.appendChild(el('span', 'jnono', 'No ' + k.no));
+      nb.appendChild(el('span', 'jnono', String(seqOf(it.box, k.no) || '')));
       nb.appendChild(el('span', 'jkind', k.title || dictLine(k)));
       const rb = el('button', 'btn ghost sm', '辞書を選び直す'); rb.type = 'button'; rb.dataset.a = 'repick'; nb.appendChild(rb);
       row.appendChild(nb);
@@ -2749,7 +2761,8 @@
     if (ln === 0 && k && b.memo == null) v.memo = k.memo;
     Object.keys(l.ov).forEach(function (x) { v[x] = l.ov[x]; });
     if (l.memo != null) v.memo = l.memo;
-    v.date = c.date; v.amount = l.amount; v.per = (itemOf(id) || {}).period || '';
+    v.per = (itemOf(id) || {}).period || '';
+    v.date = c.date || datePre(v.per); v.amount = l.amount;
     return v;
   }
   /* 借方の計・貸方の計（複数仕訳のとき） */
@@ -2769,10 +2782,20 @@
   /* ★ 辞書の箱：FX のタグの対応を決めてあれば そちらを使う（辞書の書き直しが間に合っていなくても 箱に出る。2026-10-11） */
   function dictBox(d) { const m = (S.fxConf && S.fxConf.tags) || {}; const b = d.fxTag && m[d.fxTag]; return b && (S.boxes || []).indexOf(b) >= 0 ? b : (d.box || ''); }
   function boxDict(box) { return S.dict.filter(function (d) { const b = dictBox(d); return !b || b === box; }); }
+  /* ★ 選ぶときの番号（2026-10-11）：その箱の辞書を 群 → 並び順 に 上から 1, 2, 3 …。
+       選ぶための番号なので 画面にはこれを出す。保存・FX へは 今までどおり辞書の No（d.no）で送る */
+  function boxSeq(box) {
+    const list = boxDict(box), out = [];
+    GROUPS.forEach(function (g) { list.forEach(function (d) { if ((d.grp || 'いつも') === g[0]) out.push(d); }); });
+    return out;
+  }
+  function seqOf(box, no) { return boxSeq(box).findIndex(function (d) { return d.no === Number(no); }) + 1; }
   function dictHit(q, box) {
     const list = boxDict(box);
     q = half(q || '').toLowerCase();
     if (!q) return list;
+    /* 数字だけなら 選ぶ番号（1, 2, 3 …）で絞る。当たらなければ コードなどの文字で探す */
+    if (/^\d+$/.test(q)) { const sq = boxSeq(box).filter(function (d, i) { return String(i + 1).indexOf(q) === 0; }); if (sq.length) return sq; }
     return list.filter(function (d) { return [d.no, d.title, d.dr, d.cr, d.drCode, d.crCode, d.tax, d.memo, d.note, d.partyName].join(' ').toLowerCase().indexOf(q) >= 0; });
   }
   /* 1行に：No・取引の種類・借方/貸方のコード・課税区分・税率 */
@@ -2781,15 +2804,17 @@
     if (!boxDict(box).length) { ul.appendChild(el('li', 'empty', '「' + box + '」の辞書はまだありません。上の「仕訳辞書」で作ってください。')); return; }
     const hit = dictHit(q, box);
     if (!hit.length) { ul.appendChild(el('li', 'empty', '当てはまる辞書がありません')); return; }
+    const seq = {}; boxSeq(box).forEach(function (d, i) { seq[d.no] = i + 1; });
     GROUPS.forEach(function (g) {
       const rows = hit.filter(function (d) { return (d.grp || 'いつも') === g[0]; });
       if (!rows.length) return;
       ul.appendChild(el('li', 'grp', g[1]));
       rows.forEach(function (d) {
         const li = el('li'); const b = el('button'); b.type = 'button'; b.dataset.a = 'pick'; b.dataset.no = String(d.no);
-        b.appendChild(el('span', 'no', String(d.no)));
+        b.appendChild(el('span', 'no', String(seq[d.no])));
         b.appendChild(el('span', 't', d.title || d.memo || d.dr));
         b.appendChild(el('span', 'c', (d.drCode || d.dr) + ' / ' + (d.crCode || d.cr)));
+        b.title = '辞書 No ' + d.no;
         b.appendChild(el('span', 'x', [d.tax ? '課' + d.tax : '', rateLabel(d)].filter(Boolean).join(' ')));
         li.appendChild(b); ul.appendChild(li);
       });
@@ -2889,11 +2914,12 @@
     if (!k) return;
     e.preventDefault();
     const box = t.closest('.jslip'); const ln = box ? Number(box.dataset.ln) : 0;
-    if (k === 'date') { if (!parseDate(c.date, it.period)) { fmsg('日付を入れてください（例：23）', 'err'); return; } fmsg(''); go1(row, 'amount', 0); return; }
+    if (k === 'date') { const pd = parseDate(c.date, it.period); if (!pd) { fmsg('日付を入れてください（例：23）', 'err'); return; } c.date = pd.s; t.value = pd.s; fmsg(''); go1(row, 'amount', 0); return; }
     if (k === 'q') {
       const qq = half(c.q || ''); const hit = dictHit(qq, it.box);
-      const d = (/^\d{1,3}$/.test(qq) && hit.find(function (x) { return x.no === Number(qq); })) || (hit.length === 1 ? hit[0] : null);
-      if (d) pickNo(it, d.no); else fmsg(qq ? '辞書の No を1つに決めてください（' + hit.length + '件あります）' : '辞書の No を打つか、下の一覧から選んでください', 'err');
+      /* 上からの番号 → 無ければ 辞書の No そのもの（前からの打ち方も効く）→ 1件に絞れていれば それ */
+      const d = (/^\d{1,3}$/.test(qq) && (boxSeq(it.box)[Number(qq) - 1] || hit.find(function (x) { return x.no === Number(qq); }))) || (hit.length === 1 ? hit[0] : null);
+      if (d) pickNo(it, d.no); else fmsg(qq ? '番号を1つに決めてください（' + hit.length + '件あります）' : '番号を打つか、下の一覧から選んでください', 'err');
       return;
     }
     if (k === 'amount') {
@@ -3136,6 +3162,16 @@
   function tkShow(t) { tkT = t; $('tenkey').hidden = false; document.body.classList.add('tk-on'); $('tenkey').querySelector('[data-t="/"]').disabled = t.dataset.k !== 'date';
     try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }
   function tkHide() { tkT = null; $('tenkey').hidden = true; document.body.classList.remove('tk-on'); }
+  /* 日付の欄に入ったら：「2026/09/」だけなら うしろにカーソル、日まで入っていれば 日だけを選ぶ（打てば日が替わる） */
+  document.addEventListener('focusin', function (e) {
+    const t = e.target;
+    if (!t || !t.dataset || t.dataset.k !== 'date' || !t.closest('#paneIn')) return;
+    setTimeout(function () {
+      if (document.activeElement !== t) return;
+      const v = t.value, m = v.match(/^(\d{4}\/\d{1,2}\/)(\d{1,2})$/);
+      try { if (DATE_PRE_RE.test(v)) t.setSelectionRange(v.length, v.length); else if (m) t.setSelectionRange(m[1].length, v.length); } catch (x) {}
+    }, 0);
+  });
   document.addEventListener('focusin', function (e) {
     const t = e.target;
     if (t && t.dataset && t.dataset.tk && COARSE.matches) tkShow(t);
@@ -3225,10 +3261,10 @@
     /* 確定したら たたむ。「この写真にもう1件」は 同じ写真のまま辞書一覧へ（通帳を1行ずつ） */
     if (more && S.rep[it.id]) {
       /* ★ 連続：同じ辞書・同じ直しのまま 金額だけ空けて 日付の欄へ */
-      C[it.id] = { date: c.date, no: c.no, q: '', L: c.L.map(function (l) { return { amount: '', ov: Object.assign({}, l.ov), memo: l.memo }; }) };
+      C[it.id] = { date: (parseDate(c.date, it.period) || {}).s || c.date, no: c.no, q: '', L: c.L.map(function (l) { return { amount: '', ov: Object.assign({}, l.ov), memo: l.memo }; }) };
       openOnly(it.id); drawCard(it); markAct(); focusCard(it.id, 'date'); return;
     }
-    C[it.id] = { date: more ? c.date : '', no: '', q: '', L: [blankLine()] };
+    C[it.id] = { date: more ? ((parseDate(c.date, it.period) || {}).s || c.date) : '', no: '', q: '', L: [blankLine()] };
     if (more) { openOnly(it.id); drawCard(it); markAct(); focusCard(it.id); return; }
     delete S.open[it.id];
     drawCard(it);
@@ -4368,6 +4404,13 @@
     if (!n || !p) { smsg('名前と暗証番号を入れてください。', 'err'); return; }
     gs('staffSet', n, p, $('sMaster').checked).then(function (l) { sDraw(l); $('sPin').value = ''; $('sMaster').checked = false; smsg(n + ' さんの暗証番号を決めました。本人に伝えてください。', 'ok'); }, function (e) { smsg(e.message, 'err'); });
   });
+  /* ★ 起動はスクリプトのいちばん最後（2026-10-11）。上のほうで呼ぶと 下で作る const がまだ無く、覚えた画面が使えなかった */
+  (function boot() {
+    if (LIVE) { start(''); return; }
+    if (!WEB2) { fatal('送り先（サーバの口）が分かりません。事務所の代表にお問い合わせください。'); return; }
+    if (!TOK) { showGate(''); return; }
+    start(lsGet(LS_NAME));
+  })();
 </script>
 </body>
 </html>
