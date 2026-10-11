@@ -403,6 +403,15 @@
   .dctx button { display: block; width: 100%; text-align: left; font: inherit; font-size: 14px; padding: 8px 12px; border: 0; background: none; border-radius: 6px; cursor: pointer; }
   .dctx button:hover:not(:disabled) { background: #E6F0EE; }
   .dctx button:disabled { opacity: .4; cursor: default; }
+  /* ★ よけた辞書（2026-10-11） */
+  #dHeld { margin: 8px 0; border: 2px solid #E2B4B0; border-radius: 10px; background: #FFF6F5; padding: 8px 10px; }
+  #dHeld h4 { margin: 0 0 6px; font-size: 14px; color: #B3261E; }
+  #dHeld .note { font-size: 12px; color: #6B4E4A; margin: 0 0 6px; }
+  #dHeld li { list-style: none; border-top: 1px solid #F0D2CF; padding: 6px 0; }
+  #dHeld ul { margin: 0; padding: 0; max-height: 40vh; overflow: auto; }
+  #dHeld .hw { display: block; font-size: 12px; color: #B3261E; margin: 2px 0 4px; }
+  #dHeld .hb { display: flex; gap: 6px; }
+  #dHeld li.on { background: #FFE9E6; }
   .dtile.ins-l { box-shadow: -5px 0 0 0 var(--accent); }
   .dtile.ins-r { box-shadow: 5px 0 0 0 var(--accent); }
   .dtools button:disabled { opacity: .45; cursor: default; }
@@ -681,6 +690,7 @@
     <div id="dvSide">
       <div class="dk-top"><label class="dbox">回収ボックス <select id="dBox" aria-label="どの回収ボックスの辞書か"></select></label></div>
       <div class="dk-top"><input id="dSearch" type="search" placeholder="No・取引の種類・科目・コード" aria-label="辞書を探す"><button type="button" class="primary" id="dNew">＋ 辞書を登録</button></div>
+      <div id="dHeld" hidden></div>
       <ul id="dIndex"></ul>
     </div>
   </div>
@@ -3419,8 +3429,9 @@
       let n = 0;
       const list = S.dict.map(function (d) { if (!d.fxTag) return d; const b = fxTagBox(d.fxTag); if (b !== d.box) { n++; return Object.assign({}, d, { box: b }); } return d; });
       if (!n) { fxMsg('タグの対応を保存しました（箱が変わる辞書はありません）。', 'ok'); return; }
-      return gs('dictSave', code, list).then(function (d) { if (code !== S.code) return; S.dict = d; drawDict(); drawIndex(); openSlip(null);
-        fxMsg('タグの対応を保存し、' + n + '件の辞書の箱を付け直しました。左の「回収ボックス」で その箱を選ぶと出ます（仕訳化でも その箱の写真に出ます）。', 'ok'); });
+      return gs('dictSave', code, list, { loose: true }).then(function (res) { if (code !== S.code) return; S.dict = res.list; S.held = res.held || []; drawDict(); drawIndex(); openSlip(null);
+        fxMsg('タグの対応を保存し、' + n + '件の辞書の箱を付け直しました。左の「回収ボックス」で その箱を選ぶと出ます（仕訳化でも その箱の写真に出ます）。' +
+          (res.moved ? '★ ' + res.moved + '件は 勘定科目の表に無いコードなどで よけました。左の「よけた辞書」で 直してください。' : ''), res.moved ? 'err' : 'ok'); });
     }).then(finish, function (e) { fxMsg('保存できませんでした：' + e.message, 'err'); finish(); });
   }
   function fxLine(d, c) {
@@ -3518,10 +3529,11 @@
       });
       if (got.dict) p = p.then(function () {
         const r = fxDictToApp(got.dict.data);
-        return gs('dictSave', code, r.list).then(function (d) {
+        return gs('dictSave', code, r.list, { loose: true }).then(function (res) {
           if (code !== S.code) return;
-          S.dict = d; S.dirty = false; drawDict(); drawIndex(); openSlip(null);
+          S.dict = res.list; S.held = res.held || []; S.dirty = false; drawDict(); drawIndex(); openSlip(null);
           done.push('仕訳辞書 ' + r.add + '件を足し・' + r.upd + '件を置き換え' + (r.skip ? '（見出しなど ' + r.skip + '件は入れず）' : ''));
+          if (res.moved) done.push('★ ' + res.moved + '件は 勘定科目の表に無いコードなどで よけました（左の「よけた辞書」で直してください）');
           const m = (S.fxConf && S.fxConf.tags) || {};
           const fresh = fxTagList().filter(function (x) { return !(x.tag in m); });
           fxTagsDraw();
@@ -3634,6 +3646,7 @@
       if (S.dsel != null && !S.dict.some(function (x) { return x.no === S.dsel; })) S.dsel = null;
       openSlip(S.dsel);
       fxConfLoad();
+      heldLoad();
     }, function (e) { fmsg(e.message, 'err'); });
   }
 
@@ -3663,7 +3676,51 @@
   $('dSearch').addEventListener('input', drawIndex);
 
   function slipDirtyOk() { return !S.dirty || confirm('この伝票の書き替えが保存されていません。捨てますか？'); }
+  /* ================= ★ よけた辞書（2026-10-11） =================
+     まとめて入れるとき（FX から取り込む・タグの箱を付け直す）に 直せない辞書だけ よけて、残りを入れる。
+     よけたものは ここに溜まる。［編集］で伝票に出して 直して保存すると 辞書に入り、ここから消える */
+  S.held = []; S.heldEdit = '';
+  function heldLoad() { const code = S.code; if (!code) return; gs('dictHeldGet', code).then(function (h) { if (code !== S.code) return; S.held = h || []; heldDraw(); }, function () {}); }
+  function heldDraw() {
+    if (!S.held) S.held = [];
+    const box = $('dHeld'); box.textContent = '';
+    box.hidden = !S.held.length;
+    if (!S.held.length) return;
+    box.appendChild(el('h4', null, 'よけた辞書（直して入れる）' + S.held.length + '件'));
+    box.appendChild(el('p', 'note', '勘定科目の表に無いコードなどで 入れられなかったものです。［編集］で直して保存すると 辞書に入ります。'));
+    const ul = el('ul');
+    S.held.forEach(function (h) {
+      const li = el('li' + '', S.heldEdit === h.id ? 'on' : null);
+      li.appendChild(el('b', null, 'No ' + (h.no || '?') + '　' + (h.title || '（見出しなし）')));
+      li.appendChild(el('span', 'hw', h.why.replace(/^No [^：]*：/, '')));
+      const bb = el('div', 'hb');
+      const e1 = el('button', 'btn sm', '編集'); e1.type = 'button'; e1.dataset.held = h.id; e1.dataset.a = 'edit';
+      const e2 = el('button', 'btn ghost sm danger', '消す'); e2.type = 'button'; e2.dataset.held = h.id; e2.dataset.a = 'drop';
+      bb.appendChild(e1); bb.appendChild(e2); li.appendChild(bb); ul.appendChild(li);
+    });
+    box.appendChild(ul);
+  }
+  $('dHeld').addEventListener('click', function (e) {
+    const b = e.target.closest('button[data-held]'); if (!b) return;
+    const h = S.held.find(function (x) { return x.id === b.dataset.held; }); if (!h) return;
+    if (b.dataset.a === 'drop') {
+      if (!confirm('No ' + h.no + '「' + h.title + '」を よけた辞書から消します（辞書には入りません）。よろしいですか？')) return;
+      const code = S.code;
+      gs('dictHeldDrop', code, h.id).then(function (l) { if (code !== S.code) return; S.held = l || []; if (S.heldEdit === h.id) S.heldEdit = ''; heldDraw(); dmsg('よけた辞書から消しました。', 'ok'); }, function (er) { dmsg(er.message, 'err'); });
+      return;
+    }
+    if (!slipDirtyOk()) return;
+    const x = Object.assign({}, h.x);
+    if (!x.no || S.dict.some(function (d) { return d.no === Number(x.no); })) x.no = nextNo();
+    const bx = dictBox(x) || x.box;
+    if (bx && (S.boxes || []).indexOf(bx) >= 0 && S.dbox !== bx) { S.dbox = bx; $('dBox').value = bx; }
+    openSlip(null, x);
+    S.heldEdit = h.id; heldDraw();
+    dmsg('よけた辞書を直しています：' + h.why + '　直して［保存］を押すと 辞書に入ります。', 'err');
+    const f = $('dslip').querySelector('.dpin.bad') || $('sTitle'); if (f) f.focus();
+  });
   function openSlip(no, preset) {
+    S.heldEdit = ''; heldDraw();
     const d = preset || (no == null ? null : S.dict.find(function (x) { return x.no === no; }));
     S.dsel = preset ? null : (d ? d.no : null);
     $('slip').hidden = !d;
@@ -3780,8 +3837,10 @@
   function saveDict(list, okMsg, selNo) {
     dmsg('保存しています…');
     const code = S.code;
+    const hid = S.heldEdit;
     return gs('dictSave', code, list).then(function (d) {
       if (code !== S.code) return;
+      if (hid) gs('dictHeldDrop', code, hid).then(function (l) { if (code !== S.code) return; S.held = l || []; heldDraw(); }, function () {});
       S.dict = d; S.dirty = false; drawDict();
       openSlip(selNo != null && d.some(function (x) { return x.no === selNo; }) ? selNo : null);
       dmsg(okMsg, 'ok');
