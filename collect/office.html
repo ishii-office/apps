@@ -2382,7 +2382,7 @@
     const cnt = {};
     const add = function (c, sb, w) { if (!bsAcct(c)) return; const k = c + (sb ? '-' + sb : ''); cnt[k] = (cnt[k] || 0) + w; };
     it.entries.forEach(function (e) { add(e.drCode, e.drSub, 3); add(e.crCode, e.crSub, 3); });
-    boxDict(it.box).forEach(function (d) { const w = d.box ? 2 : 1; dictLinesOf(d).forEach(function (l) { add(l.drCode, l.drSub, w); add(l.crCode, l.crSub, w); }); });
+    boxDict(it.box).forEach(function (d) { const w = dictBox(d) ? 2 : 1; dictLinesOf(d).forEach(function (l) { add(l.drCode, l.drSub, w); add(l.crCode, l.crSub, w); }); });
     return Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a] || (a < b ? -1 : 1); });
   }
   function lgHit(key, code, sb) { const p = key.split('-'); return p[0] === String(code || '') && (!p[1] || p[1] === String(sb || '')); }
@@ -2673,7 +2673,9 @@
   /* 辞書一覧（その1件の写真の下）。q で絞る */
   /* ★ 辞書は【回収ボックスごと】。その箱の辞書と、箱が空の辞書（共通）だけを出す */
   const GROUPS = [['いつも', 'いつもの取引'], ['たまに', 'たまにある取引'], ['わからない', 'わからない場合']];
-  function boxDict(box) { return S.dict.filter(function (d) { return !d.box || d.box === box; }); }
+  /* ★ 辞書の箱：FX のタグの対応を決めてあれば そちらを使う（辞書の書き直しが間に合っていなくても 箱に出る。2026-10-11） */
+  function dictBox(d) { const m = (S.fxConf && S.fxConf.tags) || {}; const b = d.fxTag && m[d.fxTag]; return b && (S.boxes || []).indexOf(b) >= 0 ? b : (d.box || ''); }
+  function boxDict(box) { return S.dict.filter(function (d) { const b = dictBox(d); return !b || b === box; }); }
   function dictHit(q, box) {
     const list = boxDict(box);
     q = half(q || '').toLowerCase();
@@ -3363,7 +3365,7 @@
   }
   function fxConfLoad() {
     const code = S.code; if (!code) return;
-    gs('fxConfGet', code).then(function (c) { if (code !== S.code) return; S.fxConf = c; $('fxSys').value = c.sys; fxSysPaint(); fxTagsDraw(); }, function () {});
+    gs('fxConfGet', code).then(function (c) { if (code !== S.code) return; S.fxConf = c; $('fxSys').value = c.sys; fxSysPaint(); fxTagsDraw(); drawIndex(); (S.view || []).forEach(function (it) { const r = rowOf(it.id); const ul = r && r.querySelector('.jplist'); if (ul) pickList(ul, card(it.id).q, it.box); }); }, function () {});
   }
   const FX_READY = { fxmc: 1, fx2c: 1 };
   function fxSysPaint() {
@@ -3398,8 +3400,15 @@
       row.appendChild(sel); box.appendChild(row);
     });
   }
-  $('fxTagSave').addEventListener('click', function () {
+  /* ★ 箱を選んだら その場で保存して 辞書の箱も付け直す（保存ボタンの押し忘れで 箱が空のままだった。2026-10-11） */
+  $('fxTags').addEventListener('change', function (e) { if (e.target.tagName === 'SELECT') fxTagApply(); });
+  $('fxTagSave').addEventListener('click', function () { fxTagApply(); });
+  let fxTagBusy = null;
+  function fxTagApply() {
     if (!S.code) return;
+    if (fxTagBusy) { fxTagBusy.again = true; return; }
+    const job = fxTagBusy = { again: false };
+    const finish = function () { fxTagBusy = null; if (job.again) fxTagApply(); };
     const code = S.code, tags = {};
     $('fxTags').querySelectorAll('.fxtag').forEach(function (r) { const v = r.querySelector('select').value; tags[r.dataset.tag] = v; });
     const c = { sys: $('fxSys').value, tags: tags };
@@ -3409,10 +3418,11 @@
       S.fxConf = r;
       let n = 0;
       const list = S.dict.map(function (d) { if (!d.fxTag) return d; const b = fxTagBox(d.fxTag); if (b !== d.box) { n++; return Object.assign({}, d, { box: b }); } return d; });
-      if (!n) { fxTagsDraw(); fxMsg('タグの対応を保存しました（箱が変わる辞書はありません）。', 'ok'); return; }
-      return gs('dictSave', code, list).then(function (d) { if (code !== S.code) return; S.dict = d; drawDict(); drawIndex(); openSlip(null); fxTagsDraw(); fxMsg('タグの対応を保存し、' + n + '件の辞書の箱を付け直しました。', 'ok'); });
-    }).catch(function (e) { fxMsg(e.message, 'err'); });
-  });
+      if (!n) { fxMsg('タグの対応を保存しました（箱が変わる辞書はありません）。', 'ok'); return; }
+      return gs('dictSave', code, list).then(function (d) { if (code !== S.code) return; S.dict = d; drawDict(); drawIndex(); openSlip(null);
+        fxMsg('タグの対応を保存し、' + n + '件の辞書の箱を付け直しました。左の「回収ボックス」で その箱を選ぶと出ます（仕訳化でも その箱の写真に出ます）。', 'ok'); });
+    }).then(finish, function (e) { fxMsg('保存できませんでした：' + e.message, 'err'); finish(); });
+  }
   function fxLine(d, c) {
     const one = function (x) { return x ? { code: x.cd_act || '', sub: x.cd_auxact ? (/^\d$/.test(x.cd_auxact) ? '0' + x.cd_auxact : x.cd_auxact) : '' } : { code: '', sub: '' }; };
     const a = one(d), b = one(c);
@@ -3631,7 +3641,7 @@
   function drawIndex() {
     const q = $('dSearch').value.trim().toLowerCase();
     const ul = $('dIndex'); ul.textContent = '';
-    const mine = S.dict.filter(function (d) { return (d.box || '') === (S.dbox || ''); });
+    const mine = S.dict.filter(function (d) { return dictBox(d) === (S.dbox || ''); });
     if (!mine.length) ul.appendChild(el('li', 'empty', 'この回収ボックスの辞書はまだありません。「＋ 辞書を登録」で作ってください。'));
     const hit = mine.filter(function (d) { return !q || [d.no, d.title, d.dr, d.cr, d.drCode, d.crCode, d.memo, d.partyName].join(' ').toLowerCase().indexOf(q) >= 0; });
     GROUPS.forEach(function (g) {
