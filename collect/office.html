@@ -392,6 +392,17 @@
   #dBody.dbig .dimg img { height: auto; object-fit: contain; }
   #dBody.dbig .dimg img:not([src]) { height: 160px; }
   #dBody.dbig .dimg .stt { font-size: 13px; }
+  /* ★ 何枚かで1つの書類（2026-10-11）：クリップでくくる。クリップをダブルクリックで バラす */
+  .dset { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; position: relative; border: 2px dashed #3A6EA8; border-radius: 12px; padding: 30px 6px 6px; background: #EEF4FB; }
+  @supports not (grid-template-columns: subgrid) { .dset { grid-template-columns: inherit; gap: inherit; } }
+  .dclip { position: absolute; left: 8px; top: 4px; font: inherit; font-size: 12.5px; font-weight: 700; color: #1F4E8C; background: #fff; border: 1px solid #9DB7D8; border-radius: 6px; padding: 1px 9px; cursor: pointer; }
+  .dsetn { position: absolute; right: 6px; bottom: 6px; font-size: 11px; font-weight: 800; padding: 1px 6px; border-radius: 4px; background: #1F4E8C; color: #fff; }
+  .dtile.joinhit { outline: 4px solid #3A6EA8; outline-offset: -2px; background: #E3EEFA; }
+  .dmarq { position: fixed; z-index: 60; border: 2px dashed var(--accent); background: rgba(15,110,86,.08); pointer-events: none; }
+  .dctx { position: fixed; z-index: 70; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,.2); padding: 4px; min-width: 220px; }
+  .dctx button { display: block; width: 100%; text-align: left; font: inherit; font-size: 14px; padding: 8px 12px; border: 0; background: none; border-radius: 6px; cursor: pointer; }
+  .dctx button:hover:not(:disabled) { background: #E6F0EE; }
+  .dctx button:disabled { opacity: .4; cursor: default; }
   .dtile.ins-l { box-shadow: -5px 0 0 0 var(--accent); }
   .dtile.ins-r { box-shadow: 5px 0 0 0 var(--accent); }
   .dtools button:disabled { opacity: .45; cursor: default; }
@@ -865,7 +876,7 @@
 
 <div class="dcbar" id="dcbar" hidden>
   <b id="dcN">0件を選んでいます</b>
-  <span class="dcb"><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn ghost sm" id="dcMove">移す</button>
+  <span class="dcb"><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn ghost sm" id="dcMove">移す</button>
     <button type="button" class="btn ghost sm danger" id="dcDel">破棄</button><button type="button" class="btn ghost sm" id="dcNone">全部外す</button><button type="button" class="btn ghost sm" id="dcEnd">やめる</button></span>
 </div>
 
@@ -1733,7 +1744,16 @@
         mon.appendChild(row);
         if (open && !yk.hidden) {
           const grid = el('div', 'dgrid');
-          items.forEach(function (it) { grid.appendChild(dTile(it)); });
+          dGroups(items).forEach(function (g) {
+            if (g.length < 2) { grid.appendChild(dTile(g[0])); return; }
+            const w = el('div', 'dset'); w.dataset.set = g[0].set;
+            const cl = el('button', 'dclip', '📎 ' + g.length + '枚で1つの書類'); cl.type = 'button'; cl.title = 'ダブルクリックで バラす（右クリックでも）';
+            cl.addEventListener('dblclick', function (e) { e.preventDefault(); dSplit(g[0]); });
+            cl.addEventListener('contextmenu', function (e) { e.preventDefault(); dCtx(e, g[0]); });
+            w.appendChild(cl);
+            g.forEach(function (x) { w.appendChild(dTile(x)); });
+            grid.appendChild(w);
+          });
           mon.appendChild(grid);
         }
         yk.appendChild(mon);
@@ -1758,6 +1778,7 @@
     const tg = stTag(it);
     const at = (String(it.at).match(/\d+\/\d+ \d\d:\d\d$/) || [''])[0];
     b.appendChild(el('span', 'stt ' + tg[0], tg[0] === 'todo' ? at + ' 届' : tg[0] === 'done' ? '✓ 確定' : tg[1]));
+    if (it.set && it.setOf > 1) b.appendChild(el('span', 'dsetn', '📎' + it.setN + '/' + it.setOf));
     if (it.scan) { const sc = el('span', 'dscan' + (it.scan === 'スキャナ保存' ? '' : ' paper'), it.scan === 'スキャナ保存' ? '電子保存' : it.scan); sc.title = it.scan === 'スキャナ保存' ? '電子帳簿保存法（スキャナ保存）。紙の原本は捨ててかまいません' : '電子保存になりません。紙の原本を保管'; b.appendChild(sc); }
     if (tg[0] === 'gone') tile.classList.add('gone');
     if (it.status === 'back' && !it.redo) tile.classList.add('isback');
@@ -1820,7 +1841,7 @@
     let cur = null, endAt = 0, endEl = null;
     function clean() { document.querySelectorAll('.dghost').forEach(function (g) { g.remove(); }); document.querySelectorAll('.dtile.lifted').forEach(function (x) { x.classList.remove('lifted'); });
       document.querySelectorAll('.dmon.target, .dbox.target').forEach(function (x) { x.classList.remove('target'); });
-      document.querySelectorAll('.dtile.ins-l, .dtile.ins-r').forEach(function (x) { x.classList.remove('ins-l', 'ins-r'); }); document.body.classList.remove('ddragging'); }
+      document.querySelectorAll('.dtile.ins-l, .dtile.ins-r, .dtile.joinhit').forEach(function (x) { x.classList.remove('ins-l', 'ins-r', 'joinhit'); }); document.body.classList.remove('ddragging'); }
     function items(it) { return S.dcpick && S.dcsel[it.id] ? (S.docs || []).filter(function (x) { return S.dcsel[x.id]; }) : [it]; }
     function start(c) {
       clean();
@@ -1839,6 +1860,11 @@
       /* ★ 同じ月分の中の写真の上 ＝ 並べ替え（その前・後ろへ）。2026-10-07 */
       const tile = e.closest('.dtile');
       const tmon = tile && tile.closest('.dmon');
+      /* ★ 写真の真ん中へ落とす ＝ 1つの書類にまとめる（月分・箱は問わない）。端へ落とす ＝ 並べ替え */
+      if (tile && c && !c.list.some(function (it) { return it.id === tile.dataset.id; })) {
+        const r0 = tile.getBoundingClientRect();
+        if (x > r0.left + r0.width * 0.25 && x < r0.right - r0.width * 0.25) return { el: tile, join: true, id: tile.dataset.id };
+      }
       if (tile && tmon && c && c.list.every(function (it) { return it.box === tmon.dataset.box && it.period === tmon.dataset.per; })
           && !c.list.some(function (it) { return it.id === tile.dataset.id; })) {
         const r = tile.getBoundingClientRect();
@@ -1855,9 +1881,9 @@
       if (c.ghost) { c.ghost.style.left = (x - 40) + 'px'; c.ghost.style.top = (y - 60) + 'px'; }
       const t = targetAt(x, y, c);
       const same = t && !t.ord && c.list.every(function (it) { return it.box === t.box && (!t.per || it.period === t.per); });
-      if (c.tgt) c.tgt.el.classList.remove('target', 'ins-l', 'ins-r');
+      if (c.tgt) c.tgt.el.classList.remove('target', 'ins-l', 'ins-r', 'joinhit');
       c.tgt = t && !same ? t : null;
-      if (c.tgt) c.tgt.el.classList.add(c.tgt.ord ? (c.tgt.before ? 'ins-l' : 'ins-r') : 'target');
+      if (c.tgt) c.tgt.el.classList.add(c.tgt.join ? 'joinhit' : c.tgt.ord ? (c.tgt.before ? 'ins-l' : 'ins-r') : 'target');
       c.same = !!(same && t.per);   /* 自分の月分の中で離した（並べ替えの途中で外した）ときは 何もしない */
       if (y < 90) window.scrollBy(0, -14); else if (y > window.innerHeight - 90) window.scrollBy(0, 14);
     }
@@ -1870,7 +1896,8 @@
       if (!was) return;
       endAt = Date.now(); endEl = c.tile;
       if (cancel) return;
-      if (c.tgt && c.tgt.ord) dReorder(c.list, c.tgt.id, c.tgt.before);
+      if (c.tgt && c.tgt.join) dJoin([c.tgt.id].concat(c.list.map(function (x) { return x.id; })));
+      else if (c.tgt && c.tgt.ord) dReorder(c.list, c.tgt.id, c.tgt.before);
       else if (c.tgt) dMove(c.list, c.tgt.box, c.tgt.per);
       else if (!c.same) dMoveOpen(c.list);
     }
@@ -1888,7 +1915,7 @@
         if (cur) end(true);
         cur = { it: it, tile: tile, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, on: false, mouse: true };
       });
-      tile.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+      tile.addEventListener('contextmenu', function (e) { e.preventDefault(); if (!cur || !cur.on) dCtx(e, it); });
       tile.addEventListener('dragstart', function (e) { e.preventDefault(); });
     }
     document.addEventListener('touchmove', function (e) {
@@ -1911,6 +1938,124 @@
     document.addEventListener('visibilitychange', function () { if (document.hidden) { end(true); clean(); } });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && cur) end(true); });
     return { bind: bind, justEnded: function (t) { return t === endEl && Date.now() - endAt < 700; } };
+  })();
+
+  /* ================= ★ 何枚かで1つの書類（2026-10-11） =================
+     ・まとめる … 写真を 別の写真の真ん中へドラッグ＆ドロップ（月分・箱は問わない。落とした先の月分・箱へ移る）
+                  ／ 押したまま 何もないところから 囲んで選ぶ → 右クリック［まとめる］（左から順に）／ 下のバーの［📎 まとめる］
+     ・バラす … クリップを ダブルクリック ／ 右クリック［バラす］。その場で 順に1つずつに戻る
+     ・確定済みは まとめない・バラさない（仕訳を取り消してから） */
+  /* 月の並び（dSort）の中で、まとめた書類は 1枚目の場所に 順に並べる */
+  function dGroups(items) {
+    const out = [], seen = {};
+    items.forEach(function (it) {
+      if (seen[it.id]) return;
+      if (!it.set) { out.push([it]); return; }
+      const g = items.filter(function (x) { return x.set === it.set; }).sort(function (a, b) { return (a.setN || 0) - (b.setN || 0); });
+      g.forEach(function (x) { seen[x.id] = 1; }); out.push(g);
+    });
+    return out;
+  }
+  function docOf(id) { return (S.docs || []).find(function (x) { return x.id === id; }); }
+  function dSetLocal(x) {
+    [S.docs, S.items].forEach(function (L) { (L || []).forEach(function (y) { if (y.id !== x.id) return;
+      if (x.period) { y.period = x.period; y.box = x.box; } y.set = x.set || ''; y.setN = x.setN || 0; y.setOf = x.setOf || 0; }); });
+  }
+  function dJoin(ids) {
+    const code = S.code;
+    ids = ids.filter(function (id, i) { return ids.indexOf(id) === i; });
+    if (ids.length < 2) { dcMsg('2枚以上を選んでください。', true); return; }
+    if (ids.some(function (id) { return (docOf(id) || {}).status === 'done'; })) { dcMsg('確定済みの資料は まとめられません（仕訳を取り消してから）。', true); return; }
+    dcMsg('まとめています…');
+    gs('workSetJoin', code, ids).then(function (r) {
+      if (code !== S.code) return;
+      r.items.concat(r.changed || []).forEach(dSetLocal);
+      const it0 = docOf(r.items[0].id) || r.items[0];
+      DOPEN[it0.box + '|' + it0.period] = true; DOPEN[it0.box + '|y' + String(it0.period).slice(0, 4)] = true;
+      S.dcpick = false; S.dcsel = {}; perFill(S.docs); docsDraw();
+      dcMsg(r.items.length + '枚を 1つの書類にまとめました（' + perLabel(it0.period) + '［' + boxLabel(it0.box) + '］）。クリップをダブルクリックすると バラせます。');
+    }, function (e) { dcMsg('まとめられませんでした。' + e.message, true); });
+  }
+  function dSplit(it) {
+    const code = S.code;
+    const mem = (S.docs || []).filter(function (x) { return it.set && x.set === it.set; });
+    if (mem.some(function (x) { return x.status === 'done'; })) { dcMsg('確定済みの書類は バラせません（仕訳を取り消してから）。', true); return; }
+    /* その場で 順に1つずつ：いまの月の見え方の順を そのまま並びにする */
+    const mon = (S.docs || []).filter(function (x) { return x.box === it.box && x.period === it.period; }).sort(dSort);
+    const order = [].concat.apply([], dGroups(mon));
+    gs('workSetSplit', code, it.id).then(function (r) {
+      if (code !== S.code) return;
+      (r.ids || []).forEach(function (id) { dSetLocal({ id: id, set: '', setN: 0, setOf: 0 }); });
+      order.forEach(function (x, i) { x.ord = i + 1; });
+      docsDraw();
+      dcMsg((r.ids || []).length + '枚に バラしました。');
+      gs('workOrder', code, order.map(function (x) { return x.id; })).catch(function () {});
+    }, function (e) { dcMsg('バラせませんでした。' + e.message, true); });
+  }
+  /* 選んだものを 見えている順（左から・上から）に */
+  function dSelOrder(extra) {
+    const ids = [];
+    $('dBody').querySelectorAll('.dtile[data-id]').forEach(function (t) { const id = t.dataset.id; if ((S.dcsel[id] || id === extra) && ids.indexOf(id) < 0) ids.push(id); });
+    Object.keys(S.dcsel).forEach(function (id) { if (ids.indexOf(id) < 0) ids.push(id); });
+    return ids;
+  }
+  /* 右クリックの選びもの */
+  function dCtxClose() { document.querySelectorAll('.dctx').forEach(function (x) { x.remove(); }); }
+  function dCtx(e, it) {
+    dCtxClose();
+    const m = el('div', 'dctx'); m.setAttribute('role', 'menu');
+    const add = function (txt, ok, fn) { const b = el('button', null, txt); b.type = 'button'; b.disabled = !ok; b.addEventListener('click', function () { dCtxClose(); fn(); }); m.appendChild(b); };
+    const sel = dSelOrder(it ? it.id : '');
+    const n = sel.length;
+    add('📎 まとめる（' + (n >= 2 ? n + '件を 左から順に' : '2件以上を選んでください') + '）', n >= 2, function () { dJoin(sel); });
+    if (it) {
+      add('✂ バラす（この書類を 1枚ずつに）', !!it.set, function () { dSplit(it); });
+      add(S.dcsel[it.id] ? 'この写真を 選ぶのをやめる' : 'この写真を 選ぶ', true, function () { if (S.dcsel[it.id]) delete S.dcsel[it.id]; else { S.dcsel[it.id] = 1; S.dcpick = true; } docsDraw(); });
+      add('大きく見る', true, function () { docsOpen(it); });
+    }
+    if (Object.keys(S.dcsel).length) add('選ぶのをやめる', true, function () { S.dcsel = {}; S.dcpick = false; docsDraw(); });
+    document.body.appendChild(m);
+    const w = m.offsetWidth, h = m.offsetHeight;
+    m.style.left = Math.min(e.clientX, window.innerWidth - w - 6) + 'px'; m.style.top = Math.min(e.clientY, window.innerHeight - h - 6) + 'px';
+  }
+  document.addEventListener('pointerdown', function (e) { if (!e.target.closest || !e.target.closest('.dctx')) dCtxClose(); }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') dCtxClose(); });
+  window.addEventListener('scroll', dCtxClose, true);
+  $('dBody').addEventListener('contextmenu', function (e) {
+    if (e.target.closest('.dtile, .dclip')) return;
+    if (Object.keys(S.dcsel).length) { e.preventDefault(); dCtx(e, null); }
+  });
+  $('dcJoin').addEventListener('click', function () { dJoin(dSelOrder('')); });
+  /* ★ 押したまま 何もないところから 囲んで選ぶ（パソコン） */
+  (function () {
+    let mq = null;
+    $('dBody').addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'touch' || e.button !== 0 || S.trashView) return;
+      if (e.target.closest('.dtile, button, a, input, select, label, .dclip')) return;
+      mq = { x: e.clientX, y: e.clientY, on: false, base: (e.ctrlKey || e.shiftKey || e.metaKey) ? Object.assign({}, S.dcsel) : {} };
+    });
+    window.addEventListener('pointermove', function (e) {
+      if (!mq) return;
+      if (!(e.buttons & 1)) { end(); return; }
+      if (!mq.on) { if (Math.abs(e.clientX - mq.x) + Math.abs(e.clientY - mq.y) < 8) return; mq.on = true; mq.box = el('div', 'dmarq'); document.body.appendChild(mq.box); }
+      e.preventDefault();
+      const l = Math.min(mq.x, e.clientX), t = Math.min(mq.y, e.clientY), r = Math.max(mq.x, e.clientX), b = Math.max(mq.y, e.clientY);
+      Object.assign(mq.box.style, { left: l + 'px', top: t + 'px', width: (r - l) + 'px', height: (b - t) + 'px' });
+      const sel = Object.assign({}, mq.base);
+      $('dBody').querySelectorAll('.dtile[data-id]').forEach(function (tl) {
+        const q = tl.getBoundingClientRect(); const hit = q.left < r && q.right > l && q.top < b && q.bottom > t;
+        if (hit) sel[tl.dataset.id] = 1;
+        tl.classList.toggle('sel', !!sel[tl.dataset.id]);
+      });
+      mq.sel = sel;
+    });
+    function end() {
+      const m = mq; mq = null; if (!m || !m.on) return;
+      if (m.box) m.box.remove();
+      S.dcsel = m.sel || {}; S.dcpick = Object.keys(S.dcsel).length > 0; docsDraw();
+      if (S.dcpick) dcMsg(Object.keys(S.dcsel).length + '件を選びました。右クリック［まとめる］か 下の［📎 まとめる］で 左から順に1つの書類になります。');
+    }
+    window.addEventListener('pointerup', end);
   })();
 
   /* ★ 同じ月分の中で並べ替える（2026-10-07）。つかんだもの（選んでいれば選んだもの全部）を 落とした写真の前／後ろへ */
@@ -1991,6 +2136,7 @@
     const n = selItems().length;
     $('dcN').textContent = n + '件を選んでいます';
     ['dcPdf', 'dcMove', 'dcDel'].forEach(function (k) { $(k).disabled = !n; });
+    $('dcJoin').disabled = n < 2;
   }
 
   /* ---- PDF切り出し・破棄（2026-10-06）----
