@@ -932,8 +932,14 @@
   const WEB2 = !LIVE && !!API_URL;
   let TOK = LIVE ? '' : lsGet(LS_TOK);
 
+  /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
+       そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
+  const READ_FN = { officeBoot: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, viewerImage: 1,
+    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1 };
+  let BOOT_WAIT = null;
   function gs(fn) {
     const args = Array.prototype.slice.call(arguments, 1);
+    if (BOOT_WAIT && !READ_FN[fn]) return BOOT_WAIT.then(function () { return gs.apply(null, [fn].concat(args)); });
     return new Promise(function (ok, ng) {
       if (LIVE) {
         const r = google.script.run.withSuccessHandler(ok).withFailureHandler(function (e) { ng(new Error(e && e.message ? e.message : String(e))); });
@@ -972,7 +978,7 @@
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
   }
-  function signOut(msg) { TOK = ''; lsDel(LS_TOK); S.started = false; showGate(msg || ''); }
+  function signOut(msg) { TOK = ''; lsDel(LS_TOK); lsDel(LS_BOOT); S.started = false; S.booted = false; showGate(msg || ''); }
   $('signOut').addEventListener('click', function () { signOut('ログアウトしました。'); });
   $('gate').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -995,42 +1001,71 @@
     start(lsGet(LS_NAME));
   })();
 
+  /* ★★ 速さ（2026-10-11）：開くときは サーバに【1回】だけ聞く（officeBoot）。
+       前は 担当者 → 顧問先の並び → 勘定科目 → 辞書 → タグ → よけた辞書 → 一覧 → 小さい絵 と 順に 6〜8回 待っていた。
+       さらに 前に読んだもの（端末が覚えている）で【まず描き】、届いたら 変わったところだけ差し替える */
+  const LS_BOOT = 'collect_office_boot';
+  const BOOT_MAX = 1500000;
+  function bootLoad(name) {
+    if (!LIVE && !TOK) return null;
+    try { const b = JSON.parse(lsGet(LS_BOOT) || 'null'); return b && b.v === 1 && b.who === (name || '') && b.boot && b.boot.me && !b.boot.me.must ? b.boot : null; } catch (e) { return null; }
+  }
+  function bootKeep(name, b) {
+    if (!b || !b.me || b.me.must) { lsDel(LS_BOOT); return; }
+    let t = JSON.stringify({ v: 1, who: name || '', boot: b });
+    if (t.length > BOOT_MAX && b.bundle) t = JSON.stringify({ v: 1, who: name || '', boot: Object.assign({}, b, { bundle: Object.assign({}, b.bundle, { thumbs: {} }) }) });
+    if (t.length > BOOT_MAX) { lsDel(LS_BOOT); return; }
+    lsSet(LS_BOOT, t);
+  }
   function start(name) {
     S.started = true;
     $('gate').hidden = true; $('chg').hidden = true;
-    gs('staffMe').then(function (me) {
-      S.me = me;
-      if (me.must) { showChange(true); return; }
-      $('top').hidden = false;
-      $('whoName').textContent = (me.name || name) ? (me.name || name) + ' さん' + (me.master && !LIVE ? '（マスター）' : '') : '';
-      $('signOut').hidden = LIVE;
-      /* 担当者のタブ：シートの窓とアプリのマスターは手入れ、アプリのふつうの担当者は自分の番号だけ */
-      $('tabStaff').hidden = false;
-      $('sAdmin').hidden = !me.master;
-      $('sMine').hidden = LIVE;
-      main();
-    }, function (e) { if (S.started) fatal(e.message); });
+    const old = bootLoad(name);
+    let done;
+    BOOT_WAIT = old ? new Promise(function (r) { done = r; }) : null;
+    if (old) applyBoot(old, name);
+    const free = function () { if (done) { BOOT_WAIT = null; done(); done = null; } };
+    gs('officeBoot', S.code || '').then(function (b) {
+      if (!S.started) return;
+      bootKeep(name, b);
+      free();
+      applyBoot(b, name);
+    }, function (e) { free(); if (S.started && !old) fatal(e.message); });
   }
-  function main() {
-    gs('workInit').then(function (r) {
-      S.clients = r.clients;
-      const now = r.today.slice(0, 7).replace('/', '-');
-      if (!$('month').value) $('month').value = now;
-      if (!$('outMonth').value) $('outMonth').value = now;
-      fillClients(r.sel);
-      const first = { in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In';
-      selectTab(first);
-    }, function (e) { if (S.started) fatal(e.message); });
+  function applyBoot(b, name) {
+    const me = b.me;
+    S.me = me;
+    if (me.must) { showChange(true); return; }
+    $('top').hidden = false;
+    $('whoName').textContent = (me.name || name) ? (me.name || name) + ' さん' + (me.master && !LIVE ? '（マスター）' : '') : '';
+    $('signOut').hidden = LIVE;
+    /* 担当者のタブ：シートの窓とアプリのマスターは手入れ、アプリのふつうの担当者は自分の番号だけ */
+    $('tabStaff').hidden = false;
+    $('sAdmin').hidden = !me.master;
+    $('sMine').hidden = LIVE;
+    const r = b.init;
+    const first = !S.booted;
+    S.clients = r.clients;
+    const now = r.today.slice(0, 7).replace('/', '-');
+    if (!$('month').value) $('month').value = now;
+    if (!$('outMonth').value) $('outMonth').value = now;
+    /* 届いた束を その顧問先に使う。顧問先を替える読み込みは 束があれば しない */
+    S.pendBundle = b.bundle || null;
+    fillClients(b.bundle ? b.bundle.code : r.sel);
+    if (S.pendBundle) { const pb = S.pendBundle; S.pendBundle = null; applyBundle(pb); }
+    if (first) { S.booted = true; selectTab({ in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In'); }
   }
 
   function fillClients(sel) {
-    const c0 = $('client'); c0.textContent = '';
-    S.clients.forEach(function (c) { const o = el('option', null, c.code + '　' + c.name); o.value = c.code; c0.appendChild(o); });
+    const c0 = $('client');
+    const sig = S.clients.map(function (c) { return c.code + '\t' + c.name + '\t' + (c.boxes || []).join('/'); }).join('\n');
+    const same = sig === S.clientsSig; S.clientsSig = sig;
+    if (!same) { c0.textContent = ''; S.clients.forEach(function (c) { const o = el('option', null, c.code + '　' + c.name); o.value = c.code; c0.appendChild(o); }); }
     if (!S.clients.length) { S.code = ''; listMsg('顧問先がありません。「顧問先」で足してください。'); return; }
     const keep = S.clients.some(function (c) { return c.code === S.code; }) ? S.code : '';
     S.code = keep || (S.clients.some(function (c) { return c.code === sel; }) ? sel : S.clients[0].code);
     c0.value = S.code;
-    if (!keep) switchClient();
+    if (!keep || !same) switchClient(!same && keep);
   }
 
   /* ================= タブ ================= */
@@ -1238,15 +1273,19 @@
     if (S.dirty && !confirm('辞書の書き替えが保存されていません。捨てて顧問先を替えますか？')) { this.value = S.code; return; }
     S.code = this.value; switchClient();
   });
-  function switchClient() {
-    S.dirty = false; S.rot = {}; S.dsel = null; S.open = {}; S.rep = {}; S.act = '';
+  function switchClient(soft) {
+    /* soft … 同じ顧問先のまま 顧問先の並びだけ変わったとき（箱の選び肢だけ作り直す） */
+    if (!soft) { S.dirty = false; S.rot = {}; S.dsel = null; S.open = {}; S.rep = {}; S.act = ''; }
+    if (!soft) {
     Object.keys(C).forEach(function (k) { delete C[k]; });
     Object.keys(IMG).forEach(function (k) { delete IMG[k]; }); QUEUE = [];
     S.dcsel = {}; S.dcpick = false; S.trashView = false; S.trash = null; S.trashN = 0;
+    }
     const c = S.clients.find(function (x) { return x.code === S.code; });
     const bx = $('box'); bx.textContent = ''; const all = el('option', null, 'すべて'); all.value = ''; bx.appendChild(all);
     (c ? c.boxes : []).forEach(function (b) { const o = el('option', null, b); o.value = b; bx.appendChild(o); });
-    S.box = '';
+    if (!soft || (c ? c.boxes : []).indexOf(S.box) < 0) S.box = '';
+    bx.value = S.box;
     $('dictTitle').textContent = '仕訳辞書の登録・編集：' + (c ? c.code + '　' + c.name : '');
     /* 回収ボックスの選び肢：その顧問先の箱 ＋ その他 ＋ 共通（どの箱にも出す） */
     S.boxes = (c ? c.boxes : []).filter(function (b) { return b !== 'その他'; }).concat(['その他']);
@@ -1255,14 +1294,46 @@
       S.boxes.forEach(function (b) { const o = el('option', null, b); o.value = b; sel.appendChild(o); });
       const o = el('option', null, '共通（どの箱にも出す）'); o.value = ''; sel.appendChild(o);
     });
-    S.dbox = S.boxes[0] || '';
+    if (!soft || S.boxes.concat(['']).indexOf(S.dbox) < 0) S.dbox = S.boxes[0] || '';
     $('dBox').value = S.dbox;
     const f = $('dFrom'); f.textContent = '';
     S.clients.filter(function (x) { return x.code !== S.code; }).forEach(function (x) { const o = el('option', null, x.code + '　' + x.name); o.value = x.code; f.appendChild(o); });
-    S.docs = null; S.per = ''; $('perY').value = ''; $('perM').value = '';
     $('aTitle2').textContent = '勘定科目と口座：' + (c ? c.code + '　' + c.name : '');
-    /* 勘定科目を先に（辞書のコードを確かめるのに使う） */
-    loadAcct().then(loadDict).then(function () { load(); if (S.tab === 'Out') oLoad(); if (S.tab === 'Docs') docsLoad(); });
+    if (soft) return;
+    S.docs = null; S.docsAt = 0; S.per = ''; $('perY').value = ''; $('perM').value = ''; S.bsig = '';
+    if (S.pendBundle) return;          /* 開いたときの束が すぐあとに当たる */
+    const code = S.code;
+    /* ★ 前に開いた顧問先は 手元の束で すぐ出す（この画面を開いているあいだだけ） */
+    if (BUNDLES[code]) applyBundle(BUNDLES[code]);
+    else { listMsg('読み込み中…'); if (S.tab === 'Docs') docsLoad(); }
+    gs('clientBundle', code).then(applyBundle, function (e) { if (code === S.code) listMsg(e.message); });
+  }
+  /* ★ 束（clientBundle）を画面に当てる。同じ中身なら 描き直さない（小さい絵だけ足す） */
+  const BUNDLES = {};
+  function applyBundle(b) {
+    if (!b || b.code !== S.code) return;
+    BUNDLES[b.code] = b;
+    Object.keys(BUNDLES).slice(0, -6).forEach(function (k) { if (k !== b.code) delete BUNDLES[k]; });
+    Object.keys(b.thumbs || {}).forEach(function (id) { if (!THUMB[id]) THUMB[id] = b.thumbs[id]; });
+    const sig = JSON.stringify([b.acct, b.party, b.dict, b.fxConf, b.held, b.list]);
+    if (sig === S.bsig) return;
+    S.bsig = sig;
+    acctSet(b.acct || []); drawAcct();
+    partySet(b.party || []);
+    if (!S.dirty) {
+      S.dict = b.dict || []; drawDict(); drawIndex();
+      if (S.dsel != null && !S.dict.some(function (x) { return x.no === S.dsel; })) S.dsel = null;
+      openSlip(S.dsel);
+    }
+    fxConfSet(b.fxConf);
+    S.held = b.held || []; heldDraw();
+    const items = (b.list && b.list.items) || [];
+    S.counts = (b.list && b.list.counts) || {};
+    S.items = S.st === 'all' ? items.slice() : items.filter(function (it) { return stTag(it)[0] === S.st; });
+    S.itemsCode = b.code; S.itemsSt = S.st; S.all = { code: b.code, items: items }; counts(); render();
+    S.docs = items; S.docsAt = Date.now(); S.trashN = S.counts.trash || 0; perFill(items);
+    if (S.tab === 'Docs') { docsDraw(); docsThumbs(items); }
+    if (S.tab === 'Out') oLoad();
   }
   $('box').addEventListener('change', function () { S.box = this.value; if (S.tab === 'Docs') docsDraw(); else render(); });
   document.querySelectorAll('#filter button').forEach(function (b) {
@@ -1274,12 +1345,15 @@
     const code = S.code, st = S.st;
     /* ★ 速さ：同じ顧問先の一覧が手元にあれば 消さずに出したまま、裏で新しいものに差し替える。
          未処理／確定 などの切り替えは 手元の中から先に絞って見せる */
-    if (S.itemsCode === code && S.items && S.items.length) {
+    if (S.all && S.all.code === code && S.itemsSt !== st) {
+      S.items = S.all.items.filter(function (it) { return st === 'all' || stTag(it)[0] === st; }); S.itemsSt = st; S.itemsCode = code; render();
+    } else if (S.itemsCode === code && S.items && S.items.length) {
       if (S.itemsSt !== st && S.itemsSt === 'all') { S.items = S.items.filter(function (it) { return st === 'all' || stTag(it)[0] === st; }); S.itemsSt = st; render(); }
     } else listMsg('読み込み中…');
     return gs('workList', code, st).then(function (r) {
       if (code !== S.code || st !== S.st) return;
       S.items = r.items; S.counts = r.counts; S.itemsCode = code; S.itemsSt = st; counts();
+      if (st === 'all') S.all = { code: code, items: r.items.slice() };
       render();
     }, function (e) { listMsg(e.message); });
   }
@@ -1582,19 +1656,28 @@
      送ってもらった資料を ただ並べる（月分 ／ 箱 ごと）。仕訳化するかどうかに関係なく 全部。
      押すと その場で大きく。［仕訳化する］でその1件の仕訳化へ */
   S.docs = null;
-  function docsLoad() {
+  function docsLoad(force) {
     if (!S.code) return;
     const code = S.code;
+    /* ★ 束で読んだばかり（1分以内）なら 聞き直さない */
+    if (!force && S.docs && Date.now() - (S.docsAt || 0) < 60000) { docsDraw(); docsThumbs(S.docs); return; }
     /* ★ 速さ：前に読んだものを すぐ出して、裏で新しいものに差し替える（タブを移るたびに待たせない） */
     if (S.docs) docsDraw();
     else { $('dBody').textContent = ''; $('dBody').appendChild(el('div', 'cbox muted', '読み込み中…')); }
     gs('workList', code, 'all').then(function (r) {
       if (code !== S.code) return;
-      S.docs = r.items; S.trashN = (r.counts && r.counts.trash) || 0; perFill(r.items); docsDraw();
-      const need = r.items.map(function (it) { return it.id; }).filter(function (id) { return !(id in THUMB); });
-      (function next() { const b = need.splice(0, 40); if (!b.length) return;
-        gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); $('dBody').querySelectorAll('img.dthumb[data-id]').forEach(function (im) { if (!im.src && THUMB[im.dataset.id]) im.src = THUMB[im.dataset.id]; }); next(); }, next); })();
+      S.docs = r.items; S.docsAt = Date.now(); S.trashN = (r.counts && r.counts.trash) || 0; perFill(r.items); docsDraw();
+      docsThumbs(r.items);
     }, function (e) { $('dBody').textContent = ''; $('dBody').appendChild(el('div', 'cbox', e.message)); });
+  }
+  let DTH_RUN = false;
+  function docsThumbs(items) {
+    if (DTH_RUN) return;
+    const need = (items || []).map(function (it) { return it.id; }).filter(function (id) { return !(id in THUMB); });
+    if (!need.length) return;
+    DTH_RUN = true;
+    (function next() { const b = need.splice(0, 40); if (!b.length) { DTH_RUN = false; return; }
+      gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); $('dBody').querySelectorAll('img.dthumb[data-id]').forEach(function (im) { if (!im.src && THUMB[im.dataset.id]) im.src = THUMB[im.dataset.id]; }); next(); }, next); })();
   }
   /* ★ 顧問先の画面と同じ見え方（2026-10-06）：箱 → 月分の小箱 → 写真が並ぶ。押すと すぐ大きく。
        事務所だけのもの … PDF切り出し・破棄・選ぶ・別の月分へ移す（月分を整理する）・仕訳化へ */
@@ -2213,7 +2296,7 @@
       S.trashN = Math.max(0, (S.trashN || 0) - r.n);
       S.trash = (S.trash || []).filter(function (x) { return ids.indexOf(x.id) < 0; });
       dcMsg(r.n + '件を 元の箱に戻しました。');
-      docsLoad(); load();
+      docsLoad(true); load();
     }, function (e) { dcMsg('戻せませんでした。' + e.message, true); });
   }
   function purge(ids) {
@@ -3375,7 +3458,12 @@
   }
   function fxConfLoad() {
     const code = S.code; if (!code) return;
-    gs('fxConfGet', code).then(function (c) { if (code !== S.code) return; S.fxConf = c; $('fxSys').value = c.sys; fxSysPaint(); fxTagsDraw(); drawIndex(); (S.view || []).forEach(function (it) { const r = rowOf(it.id); const ul = r && r.querySelector('.jplist'); if (ul) pickList(ul, card(it.id).q, it.box); }); }, function () {});
+    gs('fxConfGet', code).then(function (c) { if (code === S.code) fxConfSet(c); }, function () {});
+  }
+  function fxConfSet(c) {
+    if (!c) return;
+    S.fxConf = c; $('fxSys').value = c.sys; fxSysPaint(); fxTagsDraw(); drawIndex();
+    (S.view || []).forEach(function (it) { const r = rowOf(it.id); const ul = r && r.querySelector('.jplist'); if (ul) pickList(ul, card(it.id).q, it.box); });
   }
   const FX_READY = { fxmc: 1, fx2c: 1 };
   function fxSysPaint() {
