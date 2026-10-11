@@ -127,6 +127,14 @@
   .ti { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: #EEF2F1; border: 1px solid var(--line); }
   .ti img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .ti .kind { white-space: pre-line; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--sub); font-size: 14px; padding: 6px; text-align: center; word-break: break-all; }
+  /* ★ 何枚かで1つの書類（2026-10-11） */
+  .ti .join { position: absolute; left: 4px; bottom: 4px; font: inherit; font-size: 11.5px; font-weight: 800; border: 0; border-radius: 6px; padding: 4px 6px; background: rgba(255,255,255,.92); color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,.3); cursor: pointer; }
+  .ti .join[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .ti.joined { outline: 3px solid var(--accent); outline-offset: 1px; }
+  .ti .setn { position: absolute; left: 4px; top: 4px; font-size: 11px; font-weight: 800; padding: 1px 6px; border-radius: 4px; background: var(--accent); color: #fff; }
+  .hset { position: absolute; right: 4px; bottom: 4px; font-size: 10.5px; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: rgba(0,0,0,.6); color: #fff; }
+  .cam-set { font: inherit; font-size: 14px; font-weight: 700; color: #fff; background: rgba(255,255,255,.18); border: 2px solid transparent; border-radius: 10px; padding: 6px 10px; cursor: pointer; }
+  .cam-set[aria-pressed="true"] { border-color: #FFD34D; background: rgba(255,211,77,.25); }
   .ti .del { position: absolute; top: 4px; right: 4px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; font-size: 18px; line-height: 1; cursor: pointer; }
   .memo { margin-top: 14px; }
   .memo label { display: block; font-size: 15px; color: var(--sub); margin-bottom: 6px; }
@@ -327,7 +335,7 @@
 </main>
 
 <div class="camv" id="camv" hidden role="dialog" aria-modal="true" aria-label="連続撮影">
-  <div class="cam-top"><b id="camBox"></b><span id="camCount">0枚</span></div>
+  <div class="cam-top"><b id="camBox"></b><button type="button" class="cam-set" id="camSet" aria-pressed="false" title="3枚つづりの請求書など、何枚かで1つの書類のときに入れる">📑 まとめ撮り</button><button type="button" class="cam-set" id="camNext" hidden>次の書類へ</button><span id="camCount">0枚</span></div>
   <video id="video" playsinline muted autoplay></video>
   <div class="cam-bar">
     <button type="button" class="cam-done" id="camDone">完了</button>
@@ -588,6 +596,17 @@
     drawTray();
   }
 
+  /* まとめ（1つの書類）：同じ箱・月分の並びで「前とひとつ」がつながったもの。1枚だけなら まとめない */
+  function traySets(g0) {
+    const out = []; let start = 0, no = 0;
+    for (let i = 0; i <= g0.length; i++) {
+      if (i < g0.length && i > 0 && g0[i].join) continue;
+      const n = i - start;
+      if (n >= 2) { no++; for (let k = start; k < i; k++) out[k] = { no: no, n: k - start + 1, of: n, first: g0[start] }; }
+      start = i;
+    }
+    return out;
+  }
   /* トレイ：箱 × 月分 でまとめて サムネイルを並べる */
   function drawTray() {
     const wrap = $('tray');
@@ -604,14 +623,22 @@
         const g0 = tray.filter(function (it) { return it.box === b && perOf(it) === p; });
         body.appendChild(mk('h3', null, ymLabel(p) + '　' + b + '（' + g0.length + '件）' + (g0.some(function (it) { return it.redo; }) ? '　撮り直し' : '')));
         const g = mk('div', 'thumbs');
-        g0.forEach(function (it) {
-          const d = mk('div', 'ti'); d.dataset.id = String(it.id);
+        const sets = traySets(g0);
+        g0.forEach(function (it, gi) {
+          const d = mk('div', 'ti' + (sets[gi] ? ' joined' : '')); d.dataset.id = String(it.id);
           if (it.url) { const img = mk('img'); img.alt = it.file.name || '写真'; img.src = it.url; d.appendChild(img); }
           else d.appendChild(mk('div', 'kind', (isPdf(it.file) ? 'PDF\n' : '') + (it.file.name || '')));
           const x = mk('button', 'del', '×'); x.type = 'button';
           x.setAttribute('aria-label', (it.file.name || '写真') + 'を消す');
           x.addEventListener('click', function () { removeItem(it.id); });
           d.appendChild(x);
+          if (sets[gi]) d.appendChild(mk('span', 'setn', '書類' + sets[gi].no + '　' + sets[gi].n + '/' + sets[gi].of));
+          if (gi > 0) {
+            const j = mk('button', 'join', it.join ? '⛓ 前とひとつ' : '前とひとつに'); j.type = 'button'; j.setAttribute('aria-pressed', String(!!it.join));
+            j.title = '前の写真と 1つの書類として送る（3枚つづりの請求書など）';
+            j.addEventListener('click', function () { it.join = !it.join; drawTray(); });
+            d.appendChild(j);
+          }
           g.appendChild(d);
         });
         body.appendChild(g);
@@ -674,17 +701,29 @@
   async function sendAll() {
     if (!tray.length) return;
     const items = tray.slice(); tray = []; drawTray();
+    /* まとめ（1つの書類）に 合図を付ける */
+    const setInfo = {};
+    BOXES.concat(['']).forEach(function (b) {
+      const pers = [];
+      items.forEach(function (it) { if ((it.box === b) && pers.indexOf(perOf(it)) < 0) pers.push(perOf(it)); });
+      pers.forEach(function (p) {
+        const g0 = items.filter(function (it) { return it.box === b && perOf(it) === p; });
+        const ids = {};
+        traySets(g0).forEach(function (x, i) { if (!x) return; if (!ids[x.no]) ids[x.no] = 'S' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+          setInfo[g0[i].id] = { set: ids[x.no], setN: x.n, setOf: x.of }; });
+      });
+    });
     const memo = $('memo').value; $('memo').value = '';
     showDone('');
     for (const it of items) {
       const o = { id: opId(), token: TOKEN, box: it.box, name: it.file.name || '写真', mime: '', bytes: null, url: it.url, thumb: '', memo: memo,
-                  per: it.per || '', redo: it.redo || '', scan: !!it.scan, w: 0, h: 0, st: 'prep', tries: 0, next: 0, err: '' };
+                  per: it.per || '', redo: it.redo || '', scan: !!it.scan, w: 0, h: 0, st: 'prep', tries: 0, next: 0, err: '', setv: setInfo[it.id] || null };
       outbox.push(o); drawOut(); drawAll();
       try {
         const p = await prepare(it.file, o.scan);
         if (p.size > MAX_BYTES) throw Object.assign(new Error('ファイルが大きすぎます（' + Math.floor(MAX_BYTES / 1048576) + 'MBまで）'), { hard: true });
         o.name = p.name; o.mime = p.mime; o.bytes = p.buf; o.thumb = p.thumb || ''; o.w = p.w || 0; o.h = p.h || 0; o.st = 'wait';
-        if (!(await OUTDB.put({ id: o.id, token: o.token, box: o.box, name: o.name, mime: o.mime, bytes: o.bytes, thumb: o.thumb, memo: o.memo, per: o.per, redo: o.redo, scan: o.scan, w: o.w, h: o.h, at: Date.now() }))) saved = false;
+        if (!(await OUTDB.put({ id: o.id, token: o.token, box: o.box, name: o.name, mime: o.mime, bytes: o.bytes, thumb: o.thumb, memo: o.memo, per: o.per, redo: o.redo, scan: o.scan, w: o.w, h: o.h, setv: o.setv, at: Date.now() }))) saved = false;
       } catch (e) { o.st = 'ng'; o.err = e.message || String(e); }
       drawOut(); drawAll(); pump();
     }
@@ -696,6 +735,12 @@
   const WAIT = [2, 5, 10, 20, 30, 60];
   let running = 0, okCount = 0, paperN = 0;
   function permanent(msg) { return /使用できません|写真（JPEG|大きすぎ|のみ送信/.test(String(msg || '')); }
+  function upMeta(it) {
+    const m = {};
+    if (it.scan) { m.scan = 1; m.w = it.w; m.h = it.h; }
+    if (it.setv) { m.set = it.setv.set; m.setN = it.setv.setN; m.setOf = it.setv.setOf; }
+    return Object.keys(m).length ? m : null;
+  }
   function pump() {
     const now = Date.now();
     while (running < 2) {
@@ -704,7 +749,7 @@
       running++; it.st = 'send'; drawAll();
       (function (it) {
         const per = perOf(it);
-        call('uploadFile', [TOKEN, it.name, it.mime, bytesB64(it.bytes), it.memo, it.box, per, it.id, it.thumb || '', it.redo || '', it.scan ? { scan: 1, w: it.w, h: it.h } : null], 180000).then(function (r) {
+        call('uploadFile', [TOKEN, it.name, it.mime, bytesB64(it.bytes), it.memo, it.box, per, it.id, it.thumb || '', it.redo || '', upMeta(it)], 180000).then(function (r) {
           running--;
           outbox = outbox.filter(function (x) { return x !== it; });
           OUTDB.del(it.id);
@@ -714,7 +759,7 @@
           const k = (r && r.k) || ('local_' + it.id);
           if (!HIST.some(function (h) { return h.k === k; })) {
             HIST.unshift({ k: k, at: (r && r.at) || '', box: (r && r.box) || it.box, period: (r && r.period) || per, name: it.name, pdf: it.mime === 'application/pdf',
-                           status: 'received', note: '', redo: false, fresh: true, scan: (r && r.scan) || '' });
+                           status: 'received', note: '', redo: false, fresh: true, scan: (r && r.scan) || '', set: it.setv ? it.setv.set + '#' + it.setv.setN + '/' + it.setv.setOf : '' });
           }
           if (it.thumb) TH[k] = it.thumb; else if (it.url && !it.mime.match(/pdf/)) TH[k] = it.url;
           if (it.redo) HIST.forEach(function (h) { if (h.k === it.redo) h.redo = true; });
@@ -744,7 +789,7 @@
         if (outbox.some(function (x) { return x.id === r.id; })) return;
         let url = r.thumb || ''; if (!url && /^image\//.test(r.mime)) { try { url = URL.createObjectURL(new Blob([r.bytes], { type: r.mime })); } catch (e) {} }
         outbox.push({ id: r.id, token: r.token, box: r.box, name: r.name, mime: r.mime, bytes: r.bytes, url: url, thumb: r.thumb || '', memo: r.memo || '',
-                      per: r.per || '', redo: r.redo || '', scan: !!r.scan, w: r.w || 0, h: r.h || 0, st: 'wait', tries: 0, next: 0, err: '' });
+                      per: r.per || '', redo: r.redo || '', scan: !!r.scan, w: r.w || 0, h: r.h || 0, setv: r.setv || null, st: 'wait', tries: 0, next: 0, err: '' });
       });
       if (outbox.length) { drawOut(); drawAll(); pump(); }
     });
@@ -915,6 +960,7 @@
     if (TH[h.k] === null && !h.pdf) { d.classList.remove('wait'); d.appendChild(mk('div', 'kind', h.name)); }
     const s = stOf(h);
     d.appendChild(mk('div', 'hst ' + s[0], s[1]));
+    if (h.set) { const sm = String(h.set).match(/#(\d+)\/(\d+)$/); if (sm) { const sb = mk('span', 'hset', '📑' + sm[1] + '/' + sm[2]); sb.title = sm[2] + '枚で1つの書類'; d.appendChild(sb); } }
     if (h.scan) { const sb = mk('span', 'hscan' + (h.scan === 'スキャナ保存' ? '' : ' paper'), h.scan === 'スキャナ保存' ? '電子保存' : '紙を保管'); sb.title = h.scan === 'スキャナ保存' ? '紙の原本は捨ててかまいません' : h.scan + 'のため 紙の原本を取っておいてください'; d.appendChild(sb); }
     if (h.status === 'back' && !h.redo) d.classList.add('isback');
     /* ★ 押すと すぐ大きく（手元の小さい絵をまず出し、届いた中身に差し替える）。もう一度押すと戻る */
@@ -1437,8 +1483,17 @@
      カメラを開いたまま、シャッターを押すたびにトレイへ足していく（1枚ごとに開き直さない）。
      カメラが使えない（許可されない・GASの入れ物の中など）ときは、端末のカメラで1枚ずつ撮る */
   let stream = null, camBox = '', camN = 0;
+  /* ★ まとめ撮り（2026-10-11）：入れているあいだに撮った写真は 1つの書類（2枚目からは「前とひとつ」）。［次の書類へ］で区切る */
+  let camSetOn = false, camSetN = 0;
+  function camSetPaint() {
+    $('camSet').setAttribute('aria-pressed', String(camSetOn));
+    $('camSet').textContent = camSetOn ? '📑 まとめ撮り中（' + camSetN + '枚）' : '📑 まとめ撮り';
+    $('camNext').hidden = !camSetOn || !camSetN;
+  }
+  $('camSet').addEventListener('click', function () { camSetOn = !camSetOn; camSetN = 0; camSetPaint(); });
+  $('camNext').addEventListener('click', function () { camSetN = 0; camSetPaint(); });
   async function openCamera(box, fallbackInput) {
-    camBox = box; camN = 0;
+    camBox = box; camN = 0; camSetN = 0; camSetPaint();
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('no camera api');
       stream = await navigator.mediaDevices.getUserMedia({
@@ -1483,6 +1538,7 @@
       const name = '撮影_' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + '_' + camN + '.jpg';
       const file = new File([b], name, { type: 'image/jpeg' });
       addFiles([file], box);
+      if (camSetOn) { const lt = tray[tray.length - 1]; if (lt && camSetN > 0) { lt.join = true; drawTray(); } camSetN++; camSetPaint(); }
       $('camCount').textContent = camN + '枚';
       const last = tray[tray.length - 1];
       const cl = $('camLast'); cl.textContent = '';

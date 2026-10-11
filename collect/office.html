@@ -128,6 +128,12 @@
   .dpz { --ai: #1f7a6a; --green: #2E7D53; --pink: #B4566B; --gold: #C8A24A; --dline: #DCD6C8; }
   #paneIn { overflow: auto; }
   .jmain { padding: 0 16px 40px; min-width: 0; max-width: 1280px; }
+  /* ★ パソコンの横2列・別ウィンドウ表示は 画面の幅いっぱいに（写真と辞書を大きく。2026-10-11） */
+  .jmain.jlay-h, .jmain.jlay-w { max-width: none; }
+  .jsubshot { margin-top: 4px; }
+  .jsetlbl { margin-top: 10px; font-size: 13px; font-weight: 700; color: #1F4E8C; }
+  .jlay-w .jdrow .jsetlbl { display: none; }
+  .stt.set { background: #E8F1FB; color: #1F4E8C; }
   /* ★ 仕訳化の並べ方（2026-10-08）：縦（写真の下に辞書・伝票）／横2列（左に写真・右に辞書と伝票）／写真を別窓（FX の証憑と同じ。本体は辞書が2列） */
   .jlay-h .jdrow:not(.fold) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 14px; align-items: start; }
   .jlay-h .jdrow > .jdhead { grid-column: 1 / -1; }
@@ -1305,7 +1311,7 @@
       '#h{position:sticky;top:0;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:8px 12px;background:#0F6E5C;font-size:14px}' +
       '#h b{font-size:16px}#h .sp{flex:1}#h button,#h a{font:inherit;font-size:13px;color:#0F6E5C;background:#fff;border:0;border-radius:7px;padding:4px 10px;cursor:pointer;text-decoration:none}' +
       '#b{padding:8px;text-align:center}#b img{max-width:100%;background:#fff;transition:transform .15s;cursor:zoom-in}#b.zoom img{max-width:none;width:200%;cursor:zoom-out}' +
-      '#b iframe{width:100%;height:calc(100vh - 70px);border:0;background:#fff}#b .msg{padding:40px 10px;color:#ddd}</style></head>' +
+      '#b iframe{width:100%;height:calc(100vh - 70px);border:0;background:#fff}#b .msg{padding:40px 10px;color:#ddd}#b .msg.pg{padding:12px 0 4px;font-weight:700;color:#fff}</style></head>' +
       '<body><div id="h"></div><div id="b"></div></body></html>');
     d.close();
     POPID = ''; POPK = '';
@@ -1349,12 +1355,15 @@
     return { gp: { x: r.x, y: r.y, w: w3, h: r.h }, gm: { x: r.x + w3, y: r.y, w: w3, h: r.h }, gl: { x: r.x + w3 * 2, y: r.y, w: r.w - w3 * 2, h: r.h }, n: 0 };
   }
   async function arrange3() {
+    /* ★ ウィンドウは 押したその場で開く（待ってから開くと ブラウザに止められる。2026-10-11） */
+    if (jlay() !== 'w') { lsSet(LS_JLAY, 'w'); render(); }
+    const p1 = popOpen(); const p2 = ledOpen();
+    if (!p1 || !p2) { fmsg((p1 ? '出納帳' : '写真') + 'のウィンドウが開けませんでした。もう一度［3つに並べる］を押してください（ポップアップを このサイトだけ許可すると 1回で開きます）。', 'err'); return; }
     let screens = null, cur = null;
     try { if (window.getScreenDetails) { const d = await window.getScreenDetails(); screens = d.screens; cur = d.currentScreen; } } catch (e) {}
     const A = arrangeRects(screens, cur || window.screen), gp = A.gp, gl = A.gl, gm = A.gm, others = { length: A.n };
     const m = geoAll(); m.photo = gp; m.ledger = gl; lsSet(LS_GEO, JSON.stringify(m));
-    if (jlay() !== 'w') { lsSet(LS_JLAY, 'w'); render(); }
-    popOpen(); popSync(true); ledOpen(); ledSync(true);
+    popSync(true); ledSync(true);
     geoPut(POP, gp); geoPut(LPOP, gl);
     if (gm) geoPut(window, gm);   /* この画面は 動かせない端末もある（そのときは 真ん中へ手で置く） */
     jlayPaint();
@@ -1416,7 +1425,7 @@
   function popSync(force) {
     if (jlay() !== 'w' || !POP || POP.closed) { if (POP && POP.closed) { POP = null; jlayPaint(); } return; }
     const id = S.act, it = itemOf(id); if (!it) return;
-    const k = kindOf(id);
+    const k = [id].concat(subsOf(id).map(function (x) { return x.id; })).map(kindOf).join(',');
     if (!force && id === POPID && k === POPK) return;
     POPID = id; POPK = k;
     const d = POP.document, h = d.getElementById('h'), b = d.getElementById('b');
@@ -1428,7 +1437,18 @@
     h.appendChild(mk('span', it.name.replace(/^\d{8}_\d{6}_/, ''))); h.appendChild(mk('span')).className = 'sp';
     d.title = (i + 1) + '件目 ' + it.box;
     if (POPURL) { try { URL.revokeObjectURL(POPURL); } catch (e) {} POPURL = ''; }
+    const subs = subsOf(id);
+    if (subs.length) h.appendChild(mk('span', '📑 ' + (subs.length + 1) + '枚で1つの書類'));
     const v = IMG[id];
+    const more = function () {
+      subs.forEach(function (x, si) {
+        b.appendChild(mk('div', (si + 2) + '枚目')).className = 'msg pg';
+        const sv = IMG[x.id];
+        if (sv && sv.t === 'img') { const im2 = mk('img'); im2.src = sv.src; im2.alt = x.name; im2.addEventListener('click', function () { b.classList.toggle('zoom'); }); b.appendChild(im2); }
+        else if (sv && sv.t === 'pdf') { const u2 = URL.createObjectURL(new Blob([b64bytes(sv.b64)], { type: 'application/pdf' })); const fr2 = mk('iframe'); fr2.src = u2; b.appendChild(fr2); }
+        else if (THUMB[x.id]) { const im2 = mk('img'); im2.src = THUMB[x.id]; im2.alt = x.name; b.appendChild(im2); }
+      });
+    };
     if (v && v.t === 'img') {
       const im = mk('img'); im.src = v.src; im.alt = it.name;
       let rot = S.rot[id] || 0; const setR = function () { im.style.transform = rot ? 'rotate(' + rot + 'deg)' : ''; };
@@ -1444,6 +1464,7 @@
       b.appendChild(mk('div', v ? 'ここでは出せない形です。Drive で開いてください。' : '読み込み中…')).className = 'msg';
       if (!v) prioritize();
     }
+    more();
     const a = mk('a', 'Drive'); a.href = it.url; a.target = '_blank'; a.rel = 'noopener'; h.appendChild(a);
   }
   $('jLay').addEventListener('click', function (e) {
@@ -1464,6 +1485,15 @@
     /* 月分 → 箱 → 届いた順 に並べ、「2026年8月分 ／ 現金の領収書」で区切る */
     S.view = S.items.filter(function (it) { return (!S.box || it.box === S.box) && perHit(it); })
       .sort(function (a, b) { return a.period !== b.period ? (a.period < b.period ? -1 : 1) : a.box !== b.box ? boxIdx(a.box) - boxIdx(b.box) : a.t - b.t; });
+    /* ★ 何枚かで1つの書類（2026-10-11）：1枚目を1件として並べ、2枚目からは その下に写真だけ出す */
+    S.sub = {}; S.subOf = {};
+    const lead = {};
+    S.view.forEach(function (it) { if (!it.set) return; const L = lead[it.set]; if (!L || (it.setN || 99) < (L.setN || 99)) lead[it.set] = it; });
+    S.view = S.view.filter(function (it) {
+      if (!it.set || lead[it.set] === it) return true;
+      const L = lead[it.set]; (S.sub[L.id] = S.sub[L.id] || []).push(it); S.subOf[it.id] = L; return false;
+    });
+    Object.keys(S.sub).forEach(function (k) { S.sub[k].sort(function (a, b) { return (a.setN || 0) - (b.setN || 0); }); });
     perFill();
     const l = $('jlist'); l.textContent = '';
     if (shotObs) shotObs.disconnect();
@@ -2187,6 +2217,9 @@
 
   function rowOf(id) { return $('jlist').querySelector('.jdrow[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'); }
   function itemOf(id) { return S.view.find(function (it) { return it.id === id; }); }
+  function subsOf(id) { return (S.sub && S.sub[id]) || []; }
+  /* 写真の並び（まとめた書類は 1枚目のすぐ後ろに 2枚目から） */
+  function viewIds() { const o = []; (S.view || []).forEach(function (it) { o.push(it.id); subsOf(it.id).forEach(function (x) { o.push(x.id); }); }); return o; }
 
   /* 1件を描く（写真の箱は 中身が出ていれば そのまま使い回す＝描き直しで写真を取り直さない） */
   /* ================= ★ 通帳・明細モード（2026-10-09） =================
@@ -2312,7 +2345,8 @@
     const i = Number(row.dataset.i);
     const c = card(it.id);
     const fold = it.status === 'done' && !S.open[it.id];
-    const oldShot = row.querySelector('.jshot');
+    const oldShot = row.querySelector('.jshot:not(.jsubshot)');
+    const oldSubs = {}; row.querySelectorAll('.jshot.jsubshot').forEach(function (x) { oldSubs[x.dataset.shot] = x; });
     /* 描き直しても 打っている欄からは追い出さない（保存の返事は 打っている最中に来る） */
     const ae = document.activeElement;
     const aln = ae && ae.closest && ae.closest('.jslip') ? ae.closest('.jslip').dataset.ln : '';
@@ -2328,6 +2362,7 @@
       f.appendChild(el('span', 'jkind', it.entries.map(function (e) { return e.date.slice(5) + ' ' + ((dictOf(String(e.no)) || {}).title || 'No ' + e.no) + ' ' + yen(e.amount) + '円'; }).join('　') || it.box));
       row.appendChild(f);
       if (oldShot) dropShot(oldShot);
+      Object.keys(oldSubs).forEach(function (k) { dropShot(oldSubs[k]); });
       return;
     }
     const h = el('div', 'jdhead');
@@ -2336,6 +2371,7 @@
     h.appendChild(el('span', 'bx', '［' + it.box + '］'));
     const tg = stTag(it);
     h.appendChild(el('span', 'stt ' + tg[0], tg[1]));
+    if (subsOf(it.id).length) h.appendChild(el('span', 'stt set', '📑 ' + (subsOf(it.id).length + 1) + '枚で1つの書類'));
     if (it.scan) h.appendChild(el('span', 'stt scan' + (it.scan === 'スキャナ保存' ? '' : ' paper'), it.scan === 'スキャナ保存' ? '電子保存' : it.scan + '（紙を保管）'));
     h.appendChild(el('span', null, it.at + ' 届'));
     h.appendChild(el('span', 'fn', it.name.replace(/^\d{8}_\d{6}_/, '')));
@@ -2350,6 +2386,12 @@
     const shot = oldShot || el('div', 'jshot');
     shot.dataset.shot = it.id;
     row.appendChild(shot);
+    const newSubs = [];
+    subsOf(it.id).forEach(function (x, si) {
+      row.appendChild(el('div', 'jsetlbl', (si + 2) + '枚目'));
+      const ss = oldSubs[x.id] || el('div', 'jshot jsubshot'); ss.dataset.shot = x.id;
+      row.appendChild(ss); if (!oldSubs[x.id]) newSubs.push(x.id); else if (shotObs) shotObs.observe(ss);
+    });
     const t = el('div', 'jtools');
     const tl = [['rot', '回す'], ['zoom', shot.classList.contains('zoom') ? '全体' : '拡大']];
     if (it.pdf) tl.unshift(['gview', S.gview[it.id] ? 'アプリの表示' : 'Googleの表示']);
@@ -2358,6 +2400,7 @@
     row.appendChild(t);
     if (!oldShot) { paint(it.id); if (shotObs) shotObs.observe(shot); }
     else if (shotObs) shotObs.observe(shot);
+    newSubs.forEach(function (sid) { paint(sid); const ss = row.querySelector('.jshot[data-shot="' + sid + '"]'); if (shotObs && ss) shotObs.observe(ss); });
 
     if (it.memo) row.appendChild(el('div', 'cmemo', '顧問先から：' + it.memo));
     if (it.gone && it.status !== 'done') row.appendChild(el('div', 'cmemo gone', '顧問先が ' + it.gone + ' に消しました（Drive には残っています）'));
@@ -2450,7 +2493,7 @@
       const L = el('div', 'jcolL'), R = el('div', 'jcolR');
       Array.prototype.slice.call(row.children).forEach(function (x) {
         if (x.classList.contains('jdhead') || x.classList.contains('jledg')) return;
-        (x.classList.contains('jshot') || x.classList.contains('jtools') ? L : R).appendChild(x);
+        (x.classList.contains('jshot') || x.classList.contains('jsetlbl') || x.classList.contains('jtools') ? L : R).appendChild(x);
       });
       row.appendChild(L); row.appendChild(R);
       const lg = row.querySelector(':scope > .jledg'); if (lg) row.appendChild(lg);
@@ -2688,7 +2731,7 @@
   }, { rootMargin: '1500px 0px' }) : null;
   function actIdx() { const i = (S.view || []).findIndex(function (it) { return it.id === S.act; }); return i < 0 ? 0 : i; }
   function startPrefetch() {
-    const ids = S.view.map(function (it) { return it.id; });
+    const ids = viewIds();
     const need = ids.filter(function (id) { return !(id in THUMB); });
     (function next() {
       const b = need.splice(0, 40); if (!b.length) return;
@@ -2701,13 +2744,13 @@
   }
   /* いま打っている写真・次・その次・前 → 画面の近く → あとは並び順 */
   function prioritize() {
-    const ids = (S.view || []).map(function (it) { return it.id; });
+    const ids = viewIds();
     if (!ids.length) return;
-    const c = actIdx();
+    const c = Math.max(0, ids.indexOf(S.act));
     const order = [c, c + 1, c + 2, c - 1, c + 3, c + 4].filter(function (i) { return i >= 0 && i < ids.length; }).map(function (i) { return ids[i]; });
     ids.forEach(function (id) { if (NEAR[id] && order.indexOf(id) < 0) order.push(id); });
     ids.slice(c + 5).concat(ids.slice(0, Math.max(0, c - 1))).forEach(function (id) { if (order.indexOf(id) < 0) order.push(id); });
-    QUEUE = order.filter(function (id) { return !IMG[id] && !INFLIGHT[id] && !(itemOf(id) && itemOf(id).status === 'done' && !S.open[id] && !NEAR[id]); }).slice(0, KEEP);
+    QUEUE = order.filter(function (id) { const it = itemOf(id) || (S.subOf && S.subOf[id]); return !IMG[id] && !INFLIGHT[id] && !(it && it.status === 'done' && !S.open[it.id] && !NEAR[id]); }).slice(0, KEEP);
     pump();
   }
   function pump() {
@@ -2726,7 +2769,7 @@
         trim();
         running--;
         batch.forEach(paint);
-        if (batch.indexOf(S.act) >= 0) popSync(true);
+        if (batch.some(function (id) { return id === S.act || (S.subOf && S.subOf[id] && S.subOf[id].id === S.act); })) popSync(true);
         pump();
       }, function () { batch.forEach(function (id) { delete INFLIGHT[id]; }); running--; pump(); });
     }
@@ -2734,8 +2777,8 @@
   /* 手元に置くのは 40件まで。いま打っている写真から遠いものから捨てる */
   function trim() {
     const keys = Object.keys(IMG); if (keys.length <= KEEP) return;
-    const pos = {}; S.view.forEach(function (it, i) { pos[it.id] = i; });
-    const c = actIdx();
+    const pos = {}; viewIds().forEach(function (id, i) { pos[id] = i; });
+    const c = pos[S.act] || 0;
     keys.sort(function (a, b) { return Math.abs((pos[b] ?? 1e9) - c) - Math.abs((pos[a] ?? 1e9) - c); });
     keys.slice(0, keys.length - KEEP).forEach(function (k) { if (!NEAR[k]) delete IMG[k]; });
   }
@@ -2804,13 +2847,12 @@
   function dropShot(st) { if (st.dataset.kind === 'pdf' || st.dataset.kind === 'img' || st.dataset.kind === 'gview') { st.textContent = ''; st.dataset.kind = ''; st.dataset.seq = ''; } }
   /* 写真の箱に中身を出す */
   function paint(id) {
-    const row = rowOf(id); if (!row) return;
-    const st = row.querySelector('.jshot'); if (!st) return;
+    const st = $('jlist').querySelector('.jshot[data-shot="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'); if (!st) return;
     if (shotObs && !NEAR[id]) { if (!st.dataset.kind && THUMB[id]) { st.dataset.kind = 'thumb'; const im = el('img', 'thumb'); im.alt = ''; im.src = THUMB[id]; st.appendChild(im); } return; }
     const k = kindOf(id);
     if (st.dataset.kind === k) return;   /* もう同じものが出ている */
     st.textContent = ''; st.classList.remove('loading'); st.dataset.kind = k; st.dataset.seq = '';
-    const it = itemOf(id) || { name: '' };
+    const it = itemOf(id) || (S.subOf && S.subOf[id] && subsOf(S.subOf[id].id).find(function (x) { return x.id === id; })) || { name: '' };
     /* Google の表示：Drive が描いたものを、アプリの中にそのまま出す（Drive へは移らない） */
     if (k === 'gview') {
       const fr = el('iframe', 'gview'); fr.src = 'https://drive.google.com/file/d/' + encodeURIComponent(id) + '/preview';
