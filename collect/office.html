@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791805527;</script>
+<script>window.__PAGE_VER=1791806693;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -406,7 +406,9 @@
   /* ★ 何枚かで1つの書類（2026-10-11）：クリップでくくる。クリップをダブルクリックで バラす */
   .dset { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; position: relative; border: 2px dashed #3A6EA8; border-radius: 12px; padding: 30px 6px 6px; background: #EEF4FB; }
   @supports not (grid-template-columns: subgrid) { .dset { grid-template-columns: inherit; gap: inherit; } }
-  .dclip { position: absolute; left: 8px; top: 4px; font: inherit; font-size: 12.5px; font-weight: 700; color: #1F4E8C; background: #fff; border: 1px solid #9DB7D8; border-radius: 6px; padding: 1px 9px; cursor: pointer; }
+  .dseth { position: absolute; left: 8px; top: 4px; display: flex; gap: 6px; align-items: center; }
+  .dsplit { font: inherit; font-size: 12.5px; font-weight: 700; color: #8A2B23; background: #fff; border: 1px solid #E2B4B0; border-radius: 6px; padding: 1px 9px; cursor: pointer; }
+  .dclip { position: static; left: 8px; top: 4px; font: inherit; font-size: 12.5px; font-weight: 700; color: #1F4E8C; background: #fff; border: 1px solid #9DB7D8; border-radius: 6px; padding: 1px 9px; cursor: pointer; }
   .dsetn { position: absolute; right: 6px; bottom: 6px; font-size: 11px; font-weight: 800; padding: 1px 6px; border-radius: 4px; background: #1F4E8C; color: #fff; }
   .dtile.joinhit { outline: 4px solid #3A6EA8; outline-offset: -2px; background: #E3EEFA; }
   .dmarq { position: fixed; z-index: 60; border: 2px dashed var(--accent); background: rgba(15,110,86,.08); pointer-events: none; }
@@ -1963,7 +1965,11 @@
             let lt = null;
             cl.addEventListener('touchstart', function (e) { const t = e.touches[0]; lt = setTimeout(function () { lt = null; dCtx({ clientX: t.clientX, clientY: t.clientY }, g[0]); }, 450); }, { passive: true });
             ['touchend', 'touchmove', 'touchcancel'].forEach(function (k) { cl.addEventListener(k, function () { if (lt) { clearTimeout(lt); lt = null; } }, { passive: true }); });
-            w.appendChild(cl);
+            /* ★ ワンクリックで バラす（2026-10-12） */
+            const sp = el('button', 'dsplit', '✂ バラす'); sp.type = 'button'; sp.title = 'この書類を 1枚ずつに戻す';
+            sp.addEventListener('click', function (e) { e.preventDefault(); dSplit(g[0]); });
+            const hd = el('div', 'dseth'); hd.appendChild(cl); if (g.every(function (x) { return x.status !== 'done'; })) hd.appendChild(sp);
+            w.appendChild(hd);
             g.forEach(function (x) { w.appendChild(dTile(x)); });
             grid.appendChild(w);
           });
@@ -2073,6 +2079,11 @@
       /* ★ 同じ月分の中の写真の上 ＝ 並べ替え（その前・後ろへ）。2026-10-07 */
       const tile = e.closest('.dtile');
       const tmon = tile && tile.closest('.dmon');
+      /* ★ 同じ書類の中の写真の上 ＝ ページの順番を入れ替える（左半分＝その前・右半分＝その後ろ。2026-10-12） */
+      if (tile && c && c.list.length === 1 && c.list[0].set && c.list[0].id !== tile.dataset.id) {
+        const to = docOf(tile.dataset.id);
+        if (to && to.set === c.list[0].set) { const r1 = tile.getBoundingClientRect(); return { el: tile, ord: true, setord: true, id: tile.dataset.id, before: x < r1.left + r1.width / 2 }; }
+      }
       /* ★ 写真の真ん中へ落とす ＝ 1つの書類にまとめる（月分・箱は問わない）。端へ落とす ＝ 並べ替え */
       if (tile && c && !c.list.some(function (it) { return it.id === tile.dataset.id; })) {
         const r0 = tile.getBoundingClientRect();
@@ -2111,7 +2122,8 @@
       if (cancel) return;
       /* ★ スマホ：長押しして そのまま離したら 選びもの（まとめる・バラす・選ぶ・移す）を出す */
       if (c.touch && !c.tgt && Math.abs(c.x - c.x0) + Math.abs(c.y - c.y0) < 24) { dCtx({ clientX: Math.max(8, c.x - 60), clientY: c.y }, c.it); return; }
-      if (c.tgt && c.tgt.join) dJoin([c.tgt.id].concat(c.list.map(function (x) { return x.id; })));
+      if (c.tgt && c.tgt.setord) dSetReorder(c.list[0], c.tgt.id, c.tgt.before);
+      else if (c.tgt && c.tgt.join) dJoin([c.tgt.id].concat(c.list.map(function (x) { return x.id; })));
       else if (c.tgt && c.tgt.ord) dReorder(c.list, c.tgt.id, c.tgt.before);
       else if (c.tgt) dMove(c.list, c.tgt.box, c.tgt.per);
       else if (!c.same) dMoveOpen(c.list);
@@ -2204,13 +2216,29 @@
     const snap = dSnap();
     const L = dJoinLocal(ids);
     DOPEN[L.box + '|' + L.per] = true; DOPEN[L.box + '|y' + String(L.per).slice(0, 4)] = true;
-    S.dcpick = false; S.dcsel = {}; perFill(S.docs); docsDraw();
+    S.dcpick = false; S.dcsel = {}; perFill(S.docs); docsDraw(); render();
     dcMsg(L.n + '枚を 1つの書類にまとめました（' + perLabel(L.per) + '［' + boxLabel(L.box) + '］）。クリップをダブルクリック（スマホは長押し）で バラせます。');
     gs('workSetJoin', code, ids).then(function (r) {
       if (code !== S.code) return;
       r.items.concat(r.changed || []).forEach(dSetLocal);
-      docsDraw();
-    }, function (e) { if (code !== S.code) return; dUnsnap(snap); perFill(S.docs); docsDraw(); dcMsg('まとめられませんでした（元に戻しました）。' + e.message, true); });
+      docsDraw(); render();
+    }, function (e) { if (code !== S.code) return; dUnsnap(snap); perFill(S.docs); docsDraw(); render(); dcMsg('まとめられませんでした（元に戻しました）。' + e.message, true); });
+  }
+  /* ★ 書類の中の ページの順番を入れ替える（2026-10-12）。サーバへは 新しい順の全ページを送る（workSetJoin が その順に並べ直す） */
+  function dSetReorder(it, toId, before) {
+    const code = S.code, ids = dMembers(it.set).filter(function (id) { return id !== it.id; });
+    let at = ids.indexOf(toId); if (at < 0) return;
+    if (!before) at++;
+    ids.splice(at, 0, it.id);
+    if (ids.some(function (id) { return (docOf(id) || {}).status === 'done'; })) { dcMsg('確定済みの書類は 並べ替えられません（仕訳を取り消してから）。', true); return; }
+    const snap = dSnap();
+    ids.forEach(function (id, k) { const d = docOf(id); dSetLocal({ id: id, set: d.set, setN: k + 1, setOf: ids.length }); });
+    docsDraw(); render();
+    dcMsg('ページの順番を入れ替えました。');
+    gs('workSetJoin', code, ids).then(function (r) {
+      if (code !== S.code) return;
+      r.items.concat(r.changed || []).forEach(dSetLocal); docsDraw(); render();
+    }, function (e) { if (code !== S.code) return; dUnsnap(snap); docsDraw(); render(); dcMsg('並べ替えられませんでした（元に戻しました）。' + e.message, true); });
   }
   function dSplit(it) {
     const code = S.code;
@@ -2223,12 +2251,12 @@
     const snap = dSnap();
     mem.forEach(function (x) { dSetLocal({ id: x.id }); });
     order.forEach(function (x, i) { x.ord = i + 1; });
-    docsDraw();
+    docsDraw(); render();
     dcMsg(mem.length + '枚に バラしました。');
     gs('workSetSplit', code, it.id).then(function () {
       if (code !== S.code) return;
       gs('workOrder', code, order.map(function (x) { return x.id; })).catch(function () {});
-    }, function (e) { if (code !== S.code) return; dUnsnap(snap); docsDraw(); dcMsg('バラせませんでした（元に戻しました）。' + e.message, true); });
+    }, function (e) { if (code !== S.code) return; dUnsnap(snap); docsDraw(); render(); dcMsg('バラせませんでした（元に戻しました）。' + e.message, true); });
   }
   /* 選んだものを 見えている順（左から・上から）に */
   function dSelOrder(extra) {
