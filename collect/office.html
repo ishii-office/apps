@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791807144;</script>
+<script>window.__PAGE_VER=1791808258;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -532,10 +532,10 @@
   .dname { font-size: 12.5px; font-weight: 700; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dat { font-size: 11.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dview { position: fixed; inset: 0; z-index: 50; background: rgba(20,30,28,.92); display: flex; flex-direction: column; }
-  .dview .dvbar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #fff; flex-wrap: wrap; }
+  .dview .dvbar { display: flex; align-items: center; gap: 8px; padding: 8px 128px 8px 10px; background: #fff; flex-wrap: wrap; }   /* 右は［↻ 開き直す］の場所をあける */
   .dview .dvbar .sp { flex: 1; }
-  .dview .jshot { flex: 1; max-height: none; border-radius: 0; border: 0; overflow: auto; }
-  .dview .jshot img { max-height: none; }
+  .dview .jshot { flex: 1; min-height: 0; max-height: none; border-radius: 0; border: 0; overflow: auto; display: flex; align-items: center; justify-content: center; }
+  .dview .jshot img { max-height: none; flex: none; transition: transform .15s; }
   body.dv-on { overflow: hidden; }
   .ctl[data-tab="Docs"] label:has(#month), .ctl[data-tab="Docs"] #filter,
   .ctl[data-tab="Dict"] label:has(#month), .ctl[data-tab="Dict"] #filter, .ctl[data-tab="Dict"] label:has(#perY), .ctl[data-tab="Dict"] label:has(#perM), .ctl[data-tab="Dict"] label:has(#box),
@@ -688,8 +688,8 @@
   <div class="jmain" id="jmain">
     <div class="jlhead">
       <span class="jlsum" id="jlsum"></span>
-      <span class="seg" id="jLay" role="group" aria-label="並べ方"><button type="button" data-l="v" aria-pressed="true">縦1列</button><button type="button" data-l="h" aria-pressed="false">横2列</button><button type="button" data-l="w" aria-pressed="false">別ウィンドウ表示</button></span>
-      <button type="button" class="jpop" id="jPopGo" hidden>📎 別ウィンドウ表示</button><button type="button" class="jwin" id="jLedGo" title="複数仕訳辞書の写真の 出納帳を 別ウィンドウに">📒 出納帳を別ウィンドウ</button><button type="button" class="jwin" id="jArrange" title="写真・辞書の一覧（この画面）・出納帳の3つを 重ならないように並べる。モニターが何枚あっても使える">🪟 3つに並べる</button>
+      <span class="seg" id="jLay" role="group" aria-label="並べ方"><button type="button" data-l="v" aria-pressed="true">縦1列</button><button type="button" data-l="h" aria-pressed="false">横2列</button><button type="button" data-l="w" aria-pressed="false">画像を別ウィンドウ表示</button></span>
+      <button type="button" class="jpop" id="jPopGo" hidden>📎 画像を別ウィンドウ表示</button><button type="button" class="jwin" id="jLedGo" title="複数仕訳辞書の写真の 出納帳を 別ウィンドウに">📒 出納帳を別ウィンドウ</button><button type="button" class="jwin" id="jArrange" title="写真・辞書の一覧（この画面）・出納帳の3つを 重ならないように並べる。モニターが何枚あっても使える">🪟 3つに並べる</button>
       <span class="jlsave" id="saving" role="status"></span>
     </div>
     <div class="jlist" id="jlist"><div class="cbox muted">読み込み中…</div></div>
@@ -899,6 +899,7 @@
 <div class="dview dpz" id="dview" hidden role="dialog" aria-modal="true" aria-label="資料を大きく見る">
   <div class="dvbar"><b id="dvName"></b><span class="sp"></span>
     <button type="button" class="btn sm" id="dvGo">仕訳化する</button>
+    <button type="button" class="btn ghost sm" id="dvRot" title="90度ずつ回す">↻ 回す</button>
     <button type="button" class="btn ghost sm" id="dvMove">別の月分へ移す</button>
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
     <button type="button" class="btn ghost sm" id="dvClose">閉じる</button></div>
@@ -1490,10 +1491,27 @@
     m.classList.toggle('ledpop', !!lp);
     $('jLedGo').hidden = l !== 'w' || !!lp;
   }
+  /* ★ 写真を 窓の中に まるごと収める（下へ転がさずに済むように）。回したときは 縦横を入れ替えて収める（2026-10-12） */
+  function fitImg(im, rot, W, H) {
+    if (!im || !(W > 0) || !(H > 0)) return;
+    const nw = im.naturalWidth || 0, nh = im.naturalHeight || 0;
+    const side = (rot || 0) % 180 !== 0;
+    im.style.transform = rot ? 'rotate(' + rot + 'deg)' : '';
+    if (!nw || !nh) { im.style.maxWidth = (side ? H : W) + 'px'; im.style.maxHeight = (side ? W : H) + 'px'; im.style.margin = ''; return; }
+    const k = Math.min(1, side ? Math.min(W / nh, H / nw) : Math.min(W / nw, H / nh));
+    const w = Math.floor(nw * k), h = Math.floor(nh * k);
+    im.style.maxWidth = 'none'; im.style.maxHeight = 'none'; im.style.width = w + 'px'; im.style.height = h + 'px';
+    /* 回すと 見た目の箱は h×w になる。置き場所の箱も それに合わせる */
+    im.style.margin = side ? ((w - h) / 2) + 'px ' + ((h - w) / 2) + 'px' : '0';
+  }
+  function fitClear(im) { ['width', 'height', 'maxWidth', 'maxHeight', 'margin'].forEach(function (k) { im.style[k] = ''; }); }
   let POP = null, POPID = '', POPK = '', POPURL = '';
+  /* ★ 窓の名前のうしろに付ける印。［3つに並べる］のたびに変える：閉じている最中の 同じ名前の窓を つかんでしまい、
+       写真の窓が 真っ黒のまま（中身が入らない）になっていた（2026-10-12） */
+  let WSUF = '';
   function popOpen() {
     if (POP && !POP.closed) { try { POP.focus(); } catch (e) {} return POP; }
-    POP = window.open('', 'collect_shot', geoFeat('photo'));
+    POP = window.open('', 'collect_shot' + WSUF, geoFeat('photo'));
     if (!POP) { fmsg('別ウィンドウを開けませんでした（このサイトのポップアップを許可してください）。', 'err'); jlayPaint(); return null; }
     const d = POP.document;
     d.open();
@@ -1501,12 +1519,13 @@
       '<style>html,body{margin:0;height:100%;background:#2b2f2e;color:#fff;font-family:system-ui,"Hiragino Sans","Noto Sans JP",sans-serif}' +
       '#h{position:sticky;top:0;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:8px 12px;background:#0F6E5C;font-size:14px}' +
       '#h b{font-size:16px}#h .sp{flex:1}#h button,#h a{font:inherit;font-size:13px;color:#0F6E5C;background:#fff;border:0;border-radius:7px;padding:4px 10px;cursor:pointer;text-decoration:none}' +
-      '#b{padding:8px;text-align:center}#b img{max-width:100%;background:#fff;transition:transform .15s;cursor:zoom-in}#b.zoom img{max-width:none;width:200%;cursor:zoom-out}' +
+      '#b{padding:8px;text-align:center}#b img{display:block;margin:0 auto;max-width:100%;background:#fff;transition:transform .15s;cursor:zoom-in}#b.zoom img{max-width:none!important;max-height:none!important;width:auto!important;height:auto!important;cursor:zoom-out}' +
       '#b iframe{width:100%;height:calc(100vh - 70px);border:0;background:#fff}#b .msg{padding:40px 10px;color:#ddd}#b .msg.pg{padding:12px 0 4px;font-weight:700;color:#fff}</style></head>' +
       '<body><div id="h"></div><div id="b"></div></body></html>');
     d.close();
     POPID = ''; POPK = '';
     POP.addEventListener('beforeunload', function () { setTimeout(jlayPaint, 300); });
+    POP.addEventListener('resize', function () { popFit(); });
     jlayPaint();
     return POP;
   }
@@ -1560,6 +1579,7 @@
     const m = geoAll(); m.photo = A.gp; m.ledger = A.gl; lsSet(LS_GEO, JSON.stringify(m));
     [POP, LPOP].forEach(function (w) { try { if (w && !w.closed) w.close(); } catch (e) {} });
     POP = null; LPOP = null; POPID = ''; POPK = ''; LEDID = '';
+    WSUF = '_' + Date.now().toString(36);
     const p1 = popOpen(); const p2 = ledOpen();
     if (!p1 || !p2) { fmsg((p1 ? '出納帳' : '写真') + 'のウィンドウが開けませんでした。もう一度［3つに並べる］を押してください（ポップアップを このサイトだけ許可すると 1回で開きます）。', 'err'); return; }
     const put = function (B) {
@@ -1570,11 +1590,14 @@
     geoPut(POP, A.gp); geoPut(LPOP, A.gl);
     geoPut(window, A.gm);
     jlayPaint();
-    /* この画面が 真ん中へ動いたか。動けない端末なら この画面は そのままにして 空いているところへ */
+    /* ★ 開いた直後の窓は 動かす・中身を入れるのを 取りこぼすことがある。少し待って もう一度（2026-10-12） */
+    [200, 900].forEach(function (ms) { setTimeout(function () { popFill(); geoPut(POP, geoAll().photo); geoPut(LPOP, geoAll().ledger); }, ms); });
+    /* この画面が 真ん中へ動いたか。動けない端末なら この画面は そのままにして 空いているところへ。
+       ★ 動いても 少しずれることがあるので、写真と出納帳は この画面の左右に すき間なく ぴったり付ける（3等分） */
     setTimeout(function () {
       const moved = Math.abs(window.screenX - A.gm.x) < 40 && Math.abs(window.outerWidth - A.gm.w) < 80;
-      if (moved) { fmsg('左から 写真｜この画面（辞書）｜出納帳 に並べました。', 'ok'); return; }
       const B = arrangeRects(cur, { x: window.screenX, y: window.screenY, w: window.outerWidth, h: window.outerHeight });
+      if (moved) { if (B.fit && !B.side) put(B); fmsg('左から 写真｜この画面（辞書）｜出納帳 に 3等分で並べました。', 'ok'); return; }
       put(B);
       fmsg(!B.fit ? '写真を左・出納帳を右に並べました。この画面は 真ん中へ動かしてください（この画面は ブラウザが動かせません）。'
         : B.side ? '空いているところに 写真・出納帳を並べました。この画面を左右どちらかの端へ寄せてから もう一度押すと 写真｜この画面｜出納帳 になります。'
@@ -1583,7 +1606,7 @@
   }
   function ledOpen() {
     if (LPOP && !LPOP.closed) { try { LPOP.focus(); } catch (e) {} return LPOP; }
-    LPOP = window.open('', 'collect_ledger', geoFeat('ledger'));
+    LPOP = window.open('', 'collect_ledger' + WSUF, geoFeat('ledger'));
     if (!LPOP) { fmsg('別ウィンドウを開けませんでした（このサイトのポップアップを許可してください）。', 'err'); jlayPaint(); return null; }
     const d = LPOP.document;
     d.open();
@@ -1632,8 +1655,14 @@
   }
   $('jLedGo').addEventListener('click', function () { ledOpen(); ledSync(true); });
   $('jArrange').addEventListener('click', function () { arrange3(); });
-  setInterval(function () { if (LPOP && LPOP.closed) { LPOP = null; jlayPaint(); } }, 1000);
+  setInterval(function () { if (LPOP && LPOP.closed) { LPOP = null; jlayPaint(); } if (jlay() === 'w') popFill(); }, 1000);
   window.addEventListener('beforeunload', function () { geoSave(); if (LPOP && !LPOP.closed) try { LPOP.close(); } catch (e) {} });
+  /* 写真の窓に まだ何も入っていなければ 入れ直す */
+  function popFill() {
+    if (!POP || POP.closed) return;
+    let h = null; try { h = POP.document.getElementById('h'); } catch (e) { return; }
+    if (!h || !h.firstChild) popSync(true); else popFit();
+  }
   function popSync(force) {
     if (jlay() !== 'w' || !POP || POP.closed) { if (POP && POP.closed) { POP = null; jlayPaint(); } return; }
     /* ★ まだどれも選んでいなければ いちばん上の未確定を出す（3つに並べた直後に 写真の窓が空のままにならないように） */
@@ -1659,16 +1688,16 @@
       subs.forEach(function (x, si) {
         b.appendChild(mk('div', (si + 2) + '枚目')).className = 'msg pg';
         const sv = IMG[x.id];
-        if (sv && sv.t === 'img') { const im2 = mk('img'); im2.src = sv.src; im2.alt = x.name; im2.addEventListener('click', function () { b.classList.toggle('zoom'); }); b.appendChild(im2); }
+        if (sv && sv.t === 'img') { const im2 = mk('img'); im2.src = sv.src; im2.alt = x.name; im2.className = 'fit'; im2.dataset.rid = x.id; im2.addEventListener('load', popFit); im2.addEventListener('click', function () { b.classList.toggle('zoom'); if (!b.classList.contains('zoom')) popFit(); else b.querySelectorAll('img.fit').forEach(fitClear); }); b.appendChild(im2); }
         else if (sv && sv.t === 'pdf') { const u2 = URL.createObjectURL(new Blob([b64bytes(sv.b64)], { type: 'application/pdf' })); const fr2 = mk('iframe'); fr2.src = u2; b.appendChild(fr2); }
         else if (THUMB[x.id]) { const im2 = mk('img'); im2.src = THUMB[x.id]; im2.alt = x.name; b.appendChild(im2); }
       });
     };
     if (v && v.t === 'img') {
-      const im = mk('img'); im.src = v.src; im.alt = it.name;
-      let rot = S.rot[id] || 0; const setR = function () { im.style.transform = rot ? 'rotate(' + rot + 'deg)' : ''; };
-      setR();
-      im.addEventListener('click', function () { b.classList.toggle('zoom'); });
+      const im = mk('img'); im.src = v.src; im.alt = it.name; im.className = 'fit';
+      let rot = S.rot[id] || 0; const setR = function () { popFit(); };
+      im.addEventListener('load', function () { popFit(); });
+      im.addEventListener('click', function () { b.classList.toggle('zoom'); if (b.classList.contains('zoom')) { fitClear(im); im.style.transform = rot ? 'rotate(' + rot + 'deg)' : ''; } else popFit(); });
       const rb = mk('button', '回す'); rb.type = 'button'; rb.addEventListener('click', function () { rot = (rot + 90) % 360; S.rot[id] = rot; setR(); });
       h.appendChild(rb); b.appendChild(im);
     } else if (v && v.t === 'pdf') {
@@ -1681,6 +1710,14 @@
     }
     more();
     const a = mk('a', 'Drive'); a.href = it.url; a.target = '_blank'; a.rel = 'noopener'; h.appendChild(a);
+    popFit();
+  }
+  /* 写真の窓：どの写真も 窓の高さ・幅に収める（1枚目は 回した向きで） */
+  function popFit() {
+    if (!POP || POP.closed) return;
+    const d = POP.document, b = d.getElementById('b'), h = d.getElementById('h'); if (!b || !h || b.classList.contains('zoom')) return;
+    const W = Math.max(100, (POP.innerWidth || 0) - 16), H = Math.max(100, (POP.innerHeight || 0) - h.offsetHeight - 16);
+    b.querySelectorAll('img.fit').forEach(function (im) { fitImg(im, S.rot[im.dataset.rid || POPID] || 0, W, H); });
   }
   $('jLay').addEventListener('click', function (e) {
     const b = e.target.closest('button[data-l]'); if (!b) return;
@@ -2617,6 +2654,7 @@
       selectTab('In'); const go = function () { if (rowOf(it.id)) focusCard(it.id); }; if (S.items.some(function (x) { return x.id === it.id; })) { render(); go(); } else { S.st = 'all'; document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.st === 'all')); }); load().then(go); } };
     /* ★ すぐ出す：くっきりした中身が手元にあれば それを、無ければ 小さい絵を先に出して 届いたら差し替える */
     const box = $('dvBody');
+    S.dvId = it.id;
     if (IMG[it.id]) { oBig(it, box); return; }
     box.textContent = '';
     if (THUMB[it.id]) { const im = el('img'); im.src = THUMB[it.id]; im.alt = it.name; box.appendChild(im); }
@@ -2626,6 +2664,15 @@
   }
   /* 写真を押すと戻る（顧問先の画面と同じ） */
   $('dvBody').addEventListener('click', function (e) { if (e.target.tagName === 'IMG') docsClose(); });
+  /* ★ 大きく見る：画面の高さに まるごと収める・［↻ 回す］（2026-10-12） */
+  function dvFit() {
+    if ($('dview').hidden) return;
+    const box = $('dvBody'), im = box.querySelector('img'); if (!im) return;
+    fitImg(im, S.rot[S.dvId] || 0, box.clientWidth - 16, box.clientHeight - 16);
+  }
+  $('dvBody').addEventListener('load', dvFit, true);
+  window.addEventListener('resize', dvFit);
+  $('dvRot').addEventListener('click', function () { if (!S.dvId) return; S.rot[S.dvId] = ((S.rot[S.dvId] || 0) + 90) % 360; dvFit(); });
   function docsClose() { S.dvId = ''; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
   $('dvClose').addEventListener('click', docsClose);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dview').hidden) docsClose(); });
@@ -4369,7 +4416,7 @@
     const show = function () {
       box.classList.remove('loading'); box.textContent = '';
       const v = IMG[it.id];
-      if (v && v.t === 'img') { const im = el('img'); im.src = v.src; im.alt = it.name; box.appendChild(im); return; }
+      if (v && v.t === 'img') { const im = el('img'); im.src = v.src; im.alt = it.name; box.appendChild(im); if (box.id === 'dvBody') dvFit(); return; }
       if (v && v.t === 'pdf') { renderPdf(it.id, v, box); return; }
       box.appendChild(el('div', 'msg', 'ここでは出せない形です。'));
     };
