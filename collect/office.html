@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791771394;</script>
+<script>window.__PAGE_VER=1791774408;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1528,30 +1528,47 @@
   }
   setInterval(geoSave, 2000);
   function geoPut(w, g) { if (!w || w.closed || !g) return; try { w.moveTo(Math.round(g.x), Math.round(g.y)); w.resizeTo(Math.round(g.w), Math.round(g.h)); } catch (e) {} }
-  /* モニターの並びから 写真・出納帳・この画面の置き場所を決める（互いに重ならない） */
-  function arrangeRects(screens, cur) {
-    const rect = function (sc) { return { x: sc.availLeft || 0, y: sc.availTop || 0, w: sc.availWidth, h: sc.availHeight }; };
-    const others = screens ? screens.filter(function (x) { return x !== cur; }) : [];
-    if (others.length >= 2) return { gp: rect(others[0]), gl: rect(others[1]), gm: null, n: 2 };
-    if (others.length === 1) { const r = rect(others[0]), hw = Math.floor(r.w / 2); return { gp: { x: r.x, y: r.y, w: hw, h: r.h }, gl: { x: r.x + hw, y: r.y, w: r.w - hw, h: r.h }, gm: null, n: 1 }; }
-    const r = rect(cur), w3 = Math.floor(r.w / 3);
-    return { gp: { x: r.x, y: r.y, w: w3, h: r.h }, gm: { x: r.x + w3, y: r.y, w: w3, h: r.h }, gl: { x: r.x + w3 * 2, y: r.y, w: r.w - w3 * 2, h: r.h }, n: 0 };
+  /* ★ 3つに並べる（2026-10-12）：いま この画面がある【1枚のモニター】に 左から 写真｜この画面（辞書）｜出納帳。
+       ほかのモニターへは出さない。
+       この画面を動かせない端末（ブラウザのタブなど）では、この画面は いまの場所のまま、空いているところに 写真と出納帳を置く */
+  function arrangeRects(cur, main) {
+    const r = { x: cur.availLeft || 0, y: cur.availTop || 0, w: cur.availWidth, h: cur.availHeight };
+    const w3 = Math.floor(r.w / 3);
+    const box = function (x, w) { return { x: x, y: r.y, w: w, h: r.h }; };
+    if (!main) return { gp: box(r.x, w3), gm: box(r.x + w3, w3), gl: box(r.x + w3 * 2, r.w - w3 * 2), fit: true };
+    const MIN = 320, mL = Math.max(r.x, main.x), mR = Math.min(r.x + r.w, main.x + main.w);
+    const L = mL - r.x, R = r.x + r.w - mR;
+    if (L >= MIN && R >= MIN) return { gp: box(r.x, L), gm: null, gl: box(mR, R), fit: true };
+    if (R >= MIN * 2) { const h = Math.floor(R / 2); return { gp: box(mR, h), gm: null, gl: box(mR + h, R - h), fit: true, side: 'r' }; }
+    if (L >= MIN * 2) { const h = Math.floor(L / 2); return { gp: box(r.x, h), gm: null, gl: box(r.x + h, L - h), fit: true, side: 'l' }; }
+    return { gp: box(r.x, w3), gm: null, gl: box(r.x + w3 * 2, r.w - w3 * 2), fit: false };
   }
   async function arrange3() {
     /* ★ ウィンドウは 押したその場で開く（待ってから開くと ブラウザに止められる。2026-10-11） */
     if (jlay() !== 'w') { lsSet(LS_JLAY, 'w'); render(); }
     const p1 = popOpen(); const p2 = ledOpen();
     if (!p1 || !p2) { fmsg((p1 ? '出納帳' : '写真') + 'のウィンドウが開けませんでした。もう一度［3つに並べる］を押してください（ポップアップを このサイトだけ許可すると 1回で開きます）。', 'err'); return; }
-    let screens = null, cur = null;
-    try { if (window.getScreenDetails) { const d = await window.getScreenDetails(); screens = d.screens; cur = d.currentScreen; } } catch (e) {}
-    const A = arrangeRects(screens, cur || window.screen), gp = A.gp, gl = A.gl, gm = A.gm, others = { length: A.n };
-    const m = geoAll(); m.photo = gp; m.ledger = gl; lsSet(LS_GEO, JSON.stringify(m));
-    popSync(true); ledSync(true);
-    geoPut(POP, gp); geoPut(LPOP, gl);
-    if (gm) geoPut(window, gm);   /* この画面は 動かせない端末もある（そのときは 真ん中へ手で置く） */
+    let cur = null;
+    try { if (window.getScreenDetails) { const d = await window.getScreenDetails(); cur = d.currentScreen; } } catch (e) {}
+    cur = cur || window.screen;
+    const put = function (A) {
+      const m = geoAll(); m.photo = A.gp; m.ledger = A.gl; lsSet(LS_GEO, JSON.stringify(m));
+      popSync(true); ledSync(true);
+      geoPut(POP, A.gp); geoPut(LPOP, A.gl);
+    };
+    const A = arrangeRects(cur);
+    put(A);
+    geoPut(window, A.gm);
     jlayPaint();
-    fmsg(others.length >= 2 ? '写真と出納帳を 別々のモニターに並べました。' : others.length === 1 ? '写真と出納帳を もう1枚のモニターに並べました。' :
-      '写真を左・出納帳を右に並べました。この画面は 真ん中に置いてください。', 'ok');
+    /* この画面が 真ん中へ動いたか。動けない端末なら この画面は そのままにして 空いているところへ */
+    await new Promise(function (ok) { setTimeout(ok, 450); });
+    const moved = Math.abs(window.screenX - A.gm.x) < 40 && Math.abs(window.outerWidth - A.gm.w) < 80;
+    if (moved) { fmsg('左から 写真｜この画面（辞書）｜出納帳 に並べました。', 'ok'); return; }
+    const B = arrangeRects(cur, { x: window.screenX, y: window.screenY, w: window.outerWidth, h: window.outerHeight });
+    put(B);
+    fmsg(!B.fit ? '写真を左・出納帳を右に並べました。この画面は 真ん中へ動かしてください（この画面は ブラウザが動かせません）。'
+      : B.side ? '空いているところに 写真・出納帳を並べました。この画面を左右どちらかの端へ寄せてから もう一度押すと 写真｜この画面｜出納帳 になります。'
+      : '左から 写真｜この画面（辞書）｜出納帳 に並べました。', B.fit ? 'ok' : '');
   }
   function ledOpen() {
     if (LPOP && !LPOP.closed) { try { LPOP.focus(); } catch (e) {} return LPOP; }
