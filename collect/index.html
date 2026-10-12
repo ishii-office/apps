@@ -27,7 +27,7 @@
 <meta name="apple-mobile-web-app-title" content="資料提出">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-
+<script>window.__PAGE_VER=1791771394;</script>
 <style>
   :root {
     --bg: #F3F6F5;
@@ -191,6 +191,12 @@
   .ht { cursor: zoom-in; }
   .ht.movable { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .ht.lifted { opacity: .35; }
+  /* ★ いつでも開き直す（右上）・新しくなったときの小さなお知らせ（2026-10-12） */
+  .reopen { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 6px); right: 8px; z-index: 40; font: inherit; font-size: 13px; font-weight: 700; color: var(--accent); background: rgba(255,255,255,.94); border: 1.5px solid var(--accent); border-radius: 999px; padding: 4px 11px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+  .reopen:disabled { opacity: .6; }
+  .vtoast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 44px); right: 8px; z-index: 41; max-width: calc(100vw - 16px); display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 8px 8px 8px 12px; box-shadow: 0 6px 20px rgba(0,0,0,.18); font-size: 14px; }
+  .vtoast button { font: inherit; font-size: 14px; font-weight: 700; border-radius: 8px; padding: 5px 10px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+  .vtoast button.x { background: none; color: var(--sub); border: 0; padding: 4px 6px; }
   /* ★ 何枚かで1つの書類（2026-10-11）：クリップでくくる。写真を別の写真の上へ落とすと まとまる */
   .hgrp { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; gap: inherit; position: relative; border: 2px dashed #3A6EA8; border-radius: 10px; padding: 28px 5px 5px; background: #EEF4FB; }
   @supports not (grid-template-columns: subgrid) { .hgrp { grid-template-columns: inherit; } }
@@ -303,6 +309,8 @@
 </style>
 </head>
 <body>
+<button type="button" class="reopen" id="reopen" hidden title="いま入れているもの・撮ったものは そのまま残して 開き直します">↻ 開き直す</button>
+<div class="vtoast" id="vtoast" role="status" hidden><span>アプリが新しくなりました</span><button type="button" id="vtGo">開き直す</button><button type="button" class="x" id="vtX" aria-label="閉じる（このまま続ける）">×</button></div>
 <main>
   <div class="ng" id="ng" hidden></div>
   <div id="app" hidden>
@@ -806,6 +814,7 @@
 
   /* 送る前（トレイ）に閉じようとしたら引き止める。送り出し箱は控えがあるので引き止めない（控えを置けない端末だけ引き止める） */
   window.addEventListener('beforeunload', function (e) {
+    if (REOPENING) return;
     if (tray.length || (!saved && outbox.length)) { e.preventDefault(); e.returnValue = ''; return ''; }
   });
 
@@ -1769,6 +1778,9 @@
     $('app').hidden = false;
     resumeOutbox();
     loadHist();
+    $('reopen').hidden = !WEB2;
+    resumeState();
+    verWatch();
   }
   function showNg(msg) {
     $('app').hidden = true;
@@ -1776,6 +1788,94 @@
     ng.textContent = msg;
     ng.hidden = false;
   }
+  /* ================= ★★ いつでも開き直す（2026-10-12） =================
+     ・右上の［↻ 開き直す］。押した瞬間の様子を 端末に置いてから 開き直し、開いたら そのまま戻す
+       … 送る前の写真（トレイ）・メモ・開いていた箱と月分・選んでいたもの・画面の位置
+     ・送っている途中のものは もともと端末の控え（collect_outbox）にあるので 開き直しても続きを送る。
+       軽くしている最中（準備中）のものだけ 終わるのを待ってから開き直す
+     ・置いたものは 開いたら すぐ消す（端末に資料を残さない）。10分より古いものは使わない */
+  const LS_RESUME = 'collect_resume';
+  let REOPENING = false;
+  const RDB = (function () {
+    let dbp = null;
+    function db() {
+      if (dbp) return dbp;
+      dbp = new Promise(function (ok, ng) {
+        try { const r = indexedDB.open('collect_reopen', 1); r.onupgradeneeded = function () { r.result.createObjectStore('tray', { keyPath: 'id' }); };
+          r.onsuccess = function () { ok(r.result); }; r.onerror = function () { ng(r.error); }; } catch (e) { ng(e); }
+      });
+      return dbp;
+    }
+    function tx(mode, fn) {
+      return db().then(function (d) { return new Promise(function (ok, ng) {
+        const t = d.transaction('tray', mode); const req = fn(t.objectStore('tray'));
+        t.oncomplete = function () { ok(req && req.result); }; t.onerror = function () { ng(t.error); }; t.onabort = function () { ng(t.error); };
+      }); });
+    }
+    return {
+      putAll: function (list) { return tx('readwrite', function (st) { st.clear(); list.forEach(function (o) { st.put(o); }); return null; }); },
+      all: function () { return tx('readonly', function (st) { return st.getAll(); }); },
+      clear: function () { return tx('readwrite', function (st) { return st.clear(); }).catch(function () {}); }
+    };
+  })();
+  function reopenUrl() { const u = new URL(location.href); u.searchParams.set('v', Date.now().toString(36)); return u.toString(); }
+  async function reopenNow() {
+    if (REOPENING) return;
+    const b = $('reopen'); b.disabled = true; b.textContent = '保存しています…';
+    /* 送る準備中（軽くしている最中）のものは 控えに入るまで待つ（長くて20秒） */
+    for (let i = 0; i < 40 && outbox.some(function (x) { return x.st === 'prep'; }); i++) await new Promise(function (r) { setTimeout(r, 500); });
+    let trayOk = true;
+    if (tray.length) {
+      try { await RDB.putAll(tray.map(function (it, i) { return { id: i + 1, t: TOKEN, file: it.file, name: it.file.name || '写真', type: it.file.type || '', box: it.box, per: it.per || '', redo: it.redo || '', scan: !!it.scan, join: !!it.join }; })); }
+      catch (e) { trayOk = false; }
+    }
+    if (!trayOk && !confirm('この端末では 送る前の写真を置いておけませんでした。開き直すと 送る前の写真（' + tray.length + '件）は消えます。開き直しますか？')) { b.disabled = false; b.textContent = '↻ 開き直す'; return; }
+    lsSet(LS_RESUME, JSON.stringify({ t: TOKEN, at: Date.now(), cur: CUR, open: OPEN, memo: $('memo').value, pick: PICK, sel: SEL, y: window.scrollY, tray: trayOk ? tray.length : 0 }));
+    REOPENING = true;
+    location.replace(reopenUrl());
+  }
+  $('reopen').addEventListener('click', reopenNow);
+  function resumeState() {
+    let r = null;
+    try { r = JSON.parse(lsGet(LS_RESUME) || 'null'); } catch (e) {}
+    lsDel(LS_RESUME);
+    if (!r || r.t !== TOKEN || Date.now() - r.at > 600000) { RDB.clear(); return; }
+    Object.assign(OPEN, r.open || {});
+    if (r.memo) $('memo').value = r.memo;
+    PICK = !!r.pick; SEL = r.sel || {};
+    openBox(r.cur || '');
+    drawAll();
+    if (r.tray) {
+      RDB.all().then(function (list) {
+        (list || []).filter(function (o) { return o.t === TOKEN; }).sort(function (a, b) { return a.id - b.id; }).forEach(function (o) {
+          let f = o.file;
+          try { if (!(f instanceof File)) f = new File([f], o.name, { type: o.type }); } catch (e) {}
+          let url = ''; if (!isPdf(f)) { try { url = URL.createObjectURL(f); } catch (e) {} }
+          tray.push({ id: ++seq, file: f, box: o.box, url: url, per: o.per, redo: o.redo, scan: o.scan, join: o.join });
+        });
+        drawTray(); RDB.clear();
+      }, function () { RDB.clear(); });
+    } else RDB.clear();
+    [200, 900].forEach(function (ms) { setTimeout(function () { window.scrollTo(0, r.y || 0); }, ms); });
+  }
+  /* ★ 新しくなったら 小さく知らせる（止めない。開き直しても 直さなくても そのまま続けられる） */
+  function verWatch() {
+    const mine = Number(window.__PAGE_VER || 0);
+    if (!mine || !WEB2) return;
+    let shown = 0;
+    const check = function () {
+      fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+        const v = Number(String(t).trim());
+        if (v > mine && v !== shown && lsGet('collect_vskip') !== String(v)) { shown = v; $('vtoast').hidden = false; }
+      }, function () {});
+    };
+    setInterval(check, 60000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+    check();
+  }
+  $('vtGo').addEventListener('click', function () { $('vtoast').hidden = true; reopenNow(); });
+  $('vtX').addEventListener('click', function () { $('vtoast').hidden = true; });
+
   const NG_URL = 'このURLは使用できません。お手数ですが、担当の事務所スタッフにお問い合わせください。';
   /* ★★ 開くときに待たせない・止まらない（2026-10-06。4台で同時に送っていたら「つながりませんでした」で開けなかった）
        ・前に開いたときの顧問先名・箱を覚えておき（collect_info。資料ではない）、すぐ画面を出す。新しいものは裏で取って差し替える

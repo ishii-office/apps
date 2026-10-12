@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-
+<script>window.__PAGE_VER=1791771394;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -61,6 +61,13 @@
   /* ---- 上の帯 ---- */
   .top { display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
   .top .brand { font-weight: 700; }
+  /* ★ いつでも開き直す（右上）・新しくなったときの小さなお知らせ（2026-10-12） */
+  .reopen { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 5px); right: 8px; z-index: 60; font: inherit; font-size: 13px; font-weight: 700; color: var(--accent); background: rgba(255,255,255,.94); border: 1.5px solid var(--accent); border-radius: 999px; padding: 3px 11px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+  .reopen:disabled { opacity: .6; }
+  @media (min-width: 701px) { .top { padding-right: 124px; } }
+  .vtoast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 42px); right: 8px; z-index: 61; max-width: calc(100vw - 16px); display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 7px 8px 7px 12px; box-shadow: 0 6px 20px rgba(0,0,0,.18); font-size: 14px; }
+  .vtoast button { font: inherit; font-size: 14px; font-weight: 700; border-radius: 8px; padding: 4px 10px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+  .vtoast button.x { background: none; color: var(--sub); border: 0; padding: 4px 6px; }
   .top .who { margin-left: auto; color: var(--sub); display: flex; align-items: center; gap: 8px; }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
   .seg button { border: 0; border-radius: 0; border-right: 1px solid var(--line); }
@@ -617,6 +624,8 @@
 <div class="gate" id="fatal" hidden><h1>資料回収（事務所）</h1><p id="fatalMsg"></p></div>
 
 <!-- ===== 本体 ===== -->
+<button type="button" class="reopen" id="reopen" hidden title="打ちかけの仕訳・開いている画面は そのまま残して 開き直します">↻ 開き直す</button>
+<div class="vtoast" id="vtoast" role="status" hidden><span>アプリが新しくなりました</span><button type="button" id="vtGo">開き直す</button><button type="button" class="x" id="vtX" aria-label="閉じる（このまま続ける）">×</button></div>
 <div class="top" id="top" hidden>
   <span class="brand">資料回収（事務所）</span>
   <span class="seg" role="tablist" id="tabs">
@@ -1017,6 +1026,7 @@
   }
   function start(name) {
     S.started = true;
+    resumeLoad();
     $('gate').hidden = true; $('chg').hidden = true;
     const old = bootLoad(name);
     let done;
@@ -1042,6 +1052,7 @@
     $('tabStaff').hidden = false;
     $('sAdmin').hidden = !me.master;
     $('sMine').hidden = LIVE;
+    $('reopen').hidden = !WEB2;
     const r = b.init;
     const first = !S.booted;
     S.clients = r.clients;
@@ -1052,7 +1063,7 @@
     S.pendBundle = b.bundle || null;
     fillClients(b.bundle ? b.bundle.code : r.sel);
     if (S.pendBundle) { const pb = S.pendBundle; S.pendBundle = null; applyBundle(pb); }
-    if (first) { S.booted = true; selectTab({ in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In'); }
+    if (first) { S.booted = true; selectTab(S.resumeTab || { in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In'); S.resumeTab = ''; verWatch(); }
   }
 
   function fillClients(sel) {
@@ -1090,7 +1101,7 @@
       selectTab(b.dataset.tab);
     });
   });
-  window.addEventListener('beforeunload', function (e) { if (S.dirty || S.saving) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', function (e) { if (REOPENING) return; if (S.dirty || S.saving) { e.preventDefault(); e.returnValue = ''; } });
 
   /* ================= 仕訳化（伝票チェックの形。ビーメイツ 708 の伝票化と同じ） =================
      ・届いた写真を【上から下へ】1件ずつ並べる。写真 → 辞書の No → 伝票 → ✓ 確定
@@ -1346,7 +1357,72 @@
     S.docs = items; S.docsAt = Date.now(); S.trashN = S.counts.trash || 0; perFill(items);
     if (S.tab === 'Docs') { docsDraw(); docsThumbs(items); }
     if (S.tab === 'Out') oLoad();
+    if (RESUME && RESUME.code === b.code) resumeApply();
   }
+  /* ================= ★★ いつでも開き直す（2026-10-12） =================
+     右上の［↻ 開き直す］。押した瞬間の様子を 端末に置いてから 開き直し、開いたら そのまま戻す
+     … 顧問先・タブ・未処理/確定・箱・月分・処理する月・打ちかけの仕訳（日付・No・金額）・開いていた件・
+       辞書の書きかけ・画面の位置。保存中の仕訳は 送り終わるのを待ってから。10分より古いものは使わない */
+  const LS_RESUME = 'collect_office_resume';
+  let RESUME = null, REOPENING = false;
+  function resumeLoad() {
+    let r = null; try { r = JSON.parse(lsGet(LS_RESUME) || 'null'); } catch (e) {}
+    lsDel(LS_RESUME);
+    if (!r || Date.now() - r.at > 600000) return;
+    RESUME = r;
+    S.code = r.code || ''; S.st = r.st || S.st; S.box = r.box || ''; S.per = r.per || '';
+  }
+  function resumeApply() {
+    const r = RESUME; RESUME = null;
+    Object.keys(r.C || {}).forEach(function (k) { C[k] = r.C[k]; });
+    S.open = r.open || {}; S.rep = r.rep || {}; S.act = r.act || '';
+    if (r.month) $('month').value = r.month;
+    if (r.outMonth) $('outMonth').value = r.outMonth;
+    document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.st === S.st)); });
+    $('box').value = S.box; if ($('box').value !== S.box) S.box = '';
+    perPick(S.per);
+    if (r.dbox != null && S.boxes.concat(['']).indexOf(r.dbox) >= 0) { S.dbox = r.dbox; $('dBox').value = r.dbox; }
+    if (r.slip) { openSlip(null, r.slip); S.dsel = r.dsel; $('sDel').hidden = !S.dsel; $('sDup').hidden = !S.dsel; drawIndex(); }
+    else if (r.dsel != null) openSlip(r.dsel);
+    render();
+    if (S.booted) selectTab(r.tab || 'In'); else S.resumeTab = r.tab || 'In';
+    [250, 1000].forEach(function (ms) { setTimeout(function () {
+      window.scrollTo(0, r.y || 0);
+      Object.keys(r.sc || {}).forEach(function (id) { const e = document.getElementById(id); if (e) e.scrollTop = r.sc[id]; });
+    }, ms); });
+  }
+  async function reopenNow() {
+    if (REOPENING) return;
+    const b = $('reopen'); b.disabled = true; b.textContent = '保存しています…';
+    for (let i = 0; i < 40 && (S.saving || BOOT_WAIT); i++) await new Promise(function (ok) { setTimeout(ok, 500); });
+    const sc = {};
+    document.querySelectorAll('[id]').forEach(function (e) { if (e.scrollTop > 0 && e !== document.documentElement) sc[e.id] = e.scrollTop; });
+    lsSet(LS_RESUME, JSON.stringify({ at: Date.now(), code: S.code, tab: S.tab, st: S.st, box: S.box, per: S.per, month: $('month').value, outMonth: $('outMonth').value,
+      C: C, open: S.open || {}, rep: S.rep || {}, act: S.act || '', dbox: S.dbox, dsel: S.dsel, slip: S.dirty ? readSlip() : null, y: window.scrollY, sc: sc }));
+    REOPENING = true;
+    [POP, LPOP].forEach(function (w) { try { if (w && !w.closed) w.close(); } catch (e) {} });
+    if (LIVE) { location.reload(); return; }
+    const u = new URL(location.href); u.searchParams.set('v', Date.now().toString(36));
+    location.replace(u.toString());
+  }
+  $('reopen').addEventListener('click', reopenNow);
+  /* ★ 新しくなったら 小さく知らせる（止めない。開き直しても 直さなくても そのまま続けられる） */
+  function verWatch() {
+    const mine = Number(window.__PAGE_VER || 0);
+    if (!mine || !WEB2) return;
+    let shown = 0;
+    const check = function () {
+      fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+        const v = Number(String(t).trim());
+        if (v > mine && v !== shown) { shown = v; $('vtoast').hidden = false; }
+      }, function () {});
+    };
+    setInterval(check, 60000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+    check();
+  }
+  $('vtGo').addEventListener('click', function () { $('vtoast').hidden = true; reopenNow(); });
+  $('vtX').addEventListener('click', function () { $('vtoast').hidden = true; });
   $('box').addEventListener('change', function () { S.box = this.value; if (S.tab === 'Docs') docsDraw(); else render(); });
   document.querySelectorAll('#filter button').forEach(function (b) {
     b.addEventListener('click', function () { S.st = b.dataset.st; document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); load(); });
