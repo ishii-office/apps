@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791774408;</script>
+<script>window.__PAGE_VER=1791803948;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1543,32 +1543,35 @@
     if (L >= MIN * 2) { const h = Math.floor(L / 2); return { gp: box(r.x, h), gm: null, gl: box(r.x + h, L - h), fit: true, side: 'l' }; }
     return { gp: box(r.x, w3), gm: null, gl: box(r.x + w3 * 2, r.w - w3 * 2), fit: false };
   }
-  async function arrange3() {
-    /* ★ ウィンドウは 押したその場で開く（待ってから開くと ブラウザに止められる。2026-10-11） */
+  function arrange3() {
     if (jlay() !== 'w') { lsSet(LS_JLAY, 'w'); render(); }
+    /* ★ 2026-10-12：前に別のモニターに開いた窓は ブラウザの決まりで こちらのモニターへ動かせない（その場に残る）。
+         だから 押したその場で いったん閉じて、いまのモニターの 決めた場所に 開き直す（待たずに開くので 止められない） */
+    const cur = window.screen;
+    const A = arrangeRects(cur);
+    const m = geoAll(); m.photo = A.gp; m.ledger = A.gl; lsSet(LS_GEO, JSON.stringify(m));
+    [POP, LPOP].forEach(function (w) { try { if (w && !w.closed) w.close(); } catch (e) {} });
+    POP = null; LPOP = null;
     const p1 = popOpen(); const p2 = ledOpen();
     if (!p1 || !p2) { fmsg((p1 ? '出納帳' : '写真') + 'のウィンドウが開けませんでした。もう一度［3つに並べる］を押してください（ポップアップを このサイトだけ許可すると 1回で開きます）。', 'err'); return; }
-    let cur = null;
-    try { if (window.getScreenDetails) { const d = await window.getScreenDetails(); cur = d.currentScreen; } } catch (e) {}
-    cur = cur || window.screen;
-    const put = function (A) {
-      const m = geoAll(); m.photo = A.gp; m.ledger = A.gl; lsSet(LS_GEO, JSON.stringify(m));
-      popSync(true); ledSync(true);
-      geoPut(POP, A.gp); geoPut(LPOP, A.gl);
+    const put = function (B) {
+      const g = geoAll(); g.photo = B.gp; g.ledger = B.gl; lsSet(LS_GEO, JSON.stringify(g));
+      geoPut(POP, B.gp); geoPut(LPOP, B.gl);
     };
-    const A = arrangeRects(cur);
-    put(A);
+    popSync(true); ledSync(true);
+    geoPut(POP, A.gp); geoPut(LPOP, A.gl);
     geoPut(window, A.gm);
     jlayPaint();
     /* この画面が 真ん中へ動いたか。動けない端末なら この画面は そのままにして 空いているところへ */
-    await new Promise(function (ok) { setTimeout(ok, 450); });
-    const moved = Math.abs(window.screenX - A.gm.x) < 40 && Math.abs(window.outerWidth - A.gm.w) < 80;
-    if (moved) { fmsg('左から 写真｜この画面（辞書）｜出納帳 に並べました。', 'ok'); return; }
-    const B = arrangeRects(cur, { x: window.screenX, y: window.screenY, w: window.outerWidth, h: window.outerHeight });
-    put(B);
-    fmsg(!B.fit ? '写真を左・出納帳を右に並べました。この画面は 真ん中へ動かしてください（この画面は ブラウザが動かせません）。'
-      : B.side ? '空いているところに 写真・出納帳を並べました。この画面を左右どちらかの端へ寄せてから もう一度押すと 写真｜この画面｜出納帳 になります。'
-      : '左から 写真｜この画面（辞書）｜出納帳 に並べました。', B.fit ? 'ok' : '');
+    setTimeout(function () {
+      const moved = Math.abs(window.screenX - A.gm.x) < 40 && Math.abs(window.outerWidth - A.gm.w) < 80;
+      if (moved) { fmsg('左から 写真｜この画面（辞書）｜出納帳 に並べました。', 'ok'); return; }
+      const B = arrangeRects(cur, { x: window.screenX, y: window.screenY, w: window.outerWidth, h: window.outerHeight });
+      put(B);
+      fmsg(!B.fit ? '写真を左・出納帳を右に並べました。この画面は 真ん中へ動かしてください（この画面は ブラウザが動かせません）。'
+        : B.side ? '空いているところに 写真・出納帳を並べました。この画面を左右どちらかの端へ寄せてから もう一度押すと 写真｜この画面｜出納帳 になります。'
+        : '左から 写真｜この画面（辞書）｜出納帳 に並べました。', B.fit ? 'ok' : '');
+    }, 450);
   }
   function ledOpen() {
     if (LPOP && !LPOP.closed) { try { LPOP.focus(); } catch (e) {} return LPOP; }
@@ -1596,7 +1599,8 @@
       if (t.dataset.a === 'cancel') { S.act = it.id; cancel(it, en); }
       if (t.dataset.a === 'fix') { S.act = it.id; fixEntry(it, en); try { window.focus(); } catch (x) {} }
     });
-    LPOP.addEventListener('beforeunload', function () { setTimeout(function () { LPOP = null; jlayPaint(); }, 300); });
+    const me = LPOP;
+    LPOP.addEventListener('beforeunload', function () { setTimeout(function () { if (LPOP === me) LPOP = null; jlayPaint(); }, 300); });
     jlayPaint(); ledSync(true);
     return LPOP;
   }
