@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791806693;</script>
+<script>window.__PAGE_VER=1791807144;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -313,6 +313,7 @@
   .dpz .jpick { border: 1.5px solid var(--ai); border-radius: 8px; background: #fff; overflow: hidden; margin-bottom: 4px; }
   .dpz .jpickh { display: flex; gap: 10px; align-items: center; padding: 6px 10px; background: var(--ai); color: #fff; }
   .dpz .jpickh b { white-space: nowrap; }
+  .dpz .jpickh .jnew { font: inherit; font-size: 12.5px; font-weight: 700; white-space: nowrap; background: #fff; color: var(--ai); border: 0; border-radius: 6px; padding: 3px 10px; cursor: pointer; }
   .dpz .jpickh .dpin.q { flex: 1; min-width: 0; font-size: 14px; padding: 4px 8px; border-style: solid; }
   .dpz .jplist { list-style: none; margin: 0; padding: 0; max-height: 46vh; overflow: auto; }
   .dpz .jplist li button { width: 100%; text-align: left; border: 0; border-radius: 0; border-bottom: 1px solid #E3EEEA; padding: 8px 10px; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto auto; gap: 10px; align-items: baseline; background: #fff; }
@@ -760,6 +761,7 @@
           <button type="button" class="btn" id="sSaveSlip">この辞書を保存（Ctrl+Enter）</button>
           <button type="button" class="btn ghost" id="sDup">写して新しく登録</button>
           <button type="button" class="btn ghost danger" id="sDel">この辞書を消す</button>
+          <button type="button" class="btn ghost" id="sBack" hidden>← 仕訳化に戻る</button>
           <span class="pagemsg" id="dMsg" role="status"></span>
         </div>
       </div>
@@ -2852,7 +2854,10 @@
       ph.appendChild(el('b', null, '辞書から選ぶ'));
       const q = el('input', 'dpin q'); q.dataset.k = 'q'; q.value = c.q || ''; q.autocomplete = 'off';
       q.placeholder = '番号・取引の種類で絞る'; q.setAttribute('aria-label', '辞書を絞る'); tkPrep(q);
-      ph.appendChild(q); pk.appendChild(ph);
+      ph.appendChild(q);
+      /* ★ 仕訳化から すぐ辞書を登録（2026-10-12）。この写真の回収ボックスで新しく作り、保存したら ここへ戻れる */
+      const nd = el('button', 'jnew', '＋ 辞書を登録'); nd.type = 'button'; nd.dataset.a = 'newdict'; nd.title = 'この回収ボックスに 辞書を新しく登録する';
+      ph.appendChild(nd); pk.appendChild(ph);
       const ul = el('ul', 'jplist'); pickList(ul, c.q, it.box); pk.appendChild(ul);
       row.appendChild(pk);
     } else {
@@ -3116,6 +3121,7 @@
     if (a === 'pick') { pickNo(it, Number(t.dataset.no)); return; }
     if (a === 'pop') { S.act = it.id; markAct(); prioritize(); popOpen(); popSync(true); return; }
     if (a === 'repick') { repick(it); return; }
+    if (a === 'newdict') { dictNewFrom(it); return; }
     if (a === 'ok') { confirmEntry(it, isMulti(it)); return; }
     if (a === 'rep') {
       if (S.rep[it.id]) { delete S.rep[it.id]; drawCard(it); markAct(); fmsg('高速記帳をやめました。', 'ok'); return; }
@@ -4070,6 +4076,22 @@
     $('sDel').hidden = !S.dsel; $('sDup').hidden = !S.dsel; drawIndex();
   }
   function nextNo() { return S.dict.reduce(function (m, d) { return Math.max(m, d.no); }, 0) + 1; }
+  /* ★ 仕訳化の写真から 辞書の登録へ（2026-10-12）。保存したら［← 仕訳化に戻る］で その写真へ戻る */
+  function dictNewFrom(it) {
+    S.dictBack = it.id;
+    selectTab('Dict');
+    if (!slipDirtyOk()) { $('sBack').hidden = false; return; }
+    if (it.box && (S.boxes || []).indexOf(it.box) >= 0) { S.dbox = it.box; $('dBox').value = it.box; drawDict(); }
+    openSlip(null, { no: nextNo(), side: 'dr', box: S.dbox, grp: 'いつも', rate: 10 });
+    $('sBack').hidden = false;
+    $('sTitle').focus();
+  }
+  $('sBack').addEventListener('click', function () {
+    const id = S.dictBack; S.dictBack = null; this.hidden = true;
+    selectTab('In');
+    const it = id && itemOf(id);
+    if (it && rowOf(id)) { openOnly(id); S.act = id; drawCard(it); markAct(); focusCard(id); }
+  });
   $('dNew').addEventListener('click', function () {
     if (!slipDirtyOk()) return;
     openSlip(null, { no: nextNo(), side: 'dr', box: S.dbox, grp: 'いつも', rate: 10 });
@@ -4133,11 +4155,12 @@
     const n = ins[i + 1]; if (n) { n.focus(); if (n.select) n.select(); }
   });
   function dmsg(t, kind) { $('dMsg').textContent = t || ''; $('dMsg').className = 'pagemsg' + (kind ? ' ' + kind : ''); }
-  function saveDict(list, okMsg, selNo) {
+  function saveDict(list, okMsg, selNo, only) {
     dmsg('保存しています…');
     const code = S.code;
     const hid = S.heldEdit;
-    return gs('dictSave', code, list).then(function (d) {
+    /* ★ 確かめるのは いま直している1件だけ（ほかの辞書の 表に無いコードで止めない。2026-10-12） */
+    return gs('dictSave', code, list, only == null ? undefined : { only: only }).then(function (d) {
       if (code !== S.code) return;
       if (hid) gs('dictHeldDrop', code, hid).then(function (l) { if (code !== S.code) return; S.held = l || []; heldDraw(); }, function () {});
       S.dict = d; S.dirty = false; drawDict();
@@ -4152,12 +4175,12 @@
     if (o.no !== S.dsel && S.dict.some(function (x) { return x.no === o.no; })) { dmsg('No ' + o.no + ' はもう使っています。', 'err'); $('sNo').focus(); return; }
     const list = S.dict.filter(function (x) { return x.no !== S.dsel; }).concat([o]);
     S.dbox = o.box; $('dBox').value = o.box;
-    saveDict(list, 'No ' + o.no + ' を保存しました。', o.no);
+    saveDict(list, 'No ' + o.no + ' を保存しました。', o.no, o.no);
   }
   $('sSaveSlip').addEventListener('click', saveSlip);
   $('sDel').addEventListener('click', function () {
     if (S.dsel == null || !confirm('No ' + S.dsel + ' の伝票を消します。よろしいですか？（確定した仕訳は変わりません）')) return;
-    saveDict(S.dict.filter(function (x) { return x.no !== S.dsel; }), '消しました。', null);
+    saveDict(S.dict.filter(function (x) { return x.no !== S.dsel; }), '消しました。', null, -1);
   });
   /* Excel から貼り付け：No・見出し・借方コード・借方補助・借方科目・借方口座名・貸方コード・貸方補助・貸方科目・貸方口座名・
        課税区分・事業区分・税率・消費税の側（借／貸）・取引先コード・取引先名・元帳摘要・メモ（18列） */
