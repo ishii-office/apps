@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791803948;</script>
+<script>window.__PAGE_VER=1791805527;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -149,13 +149,17 @@
   .jlay-h .jshot { max-height: calc(100vh - 140px); }
   .jlay-h .jshot img { max-height: calc(100vh - 150px); }
   .jlay-w .jdrow .jshot, .jlay-w .jdrow .jtools { display: none; }
-  .jlay-w .jplist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 70vh; column-gap: 1px; background: #E3EEEA; }
-  .jlay-w .jplist li { background: #fff; min-width: 0; }
-  .jlay-w .jplist .grp, .jlay-w .jplist .empty { grid-column: 1 / -1; }
-  .jlay-w .jplist li button { grid-template-columns: 30px minmax(0, 1fr); }
-  .jlay-w .jplist li button .c, .jlay-w .jplist li button .x { grid-column: 2; font-size: 12px; }
+  /* ★ 別ウィンドウ表示の辞書（2026-10-12）：左の列を 上から 1, 2, 3 … → 右の列へ続く。1件1行（空白を詰める） */
+  .jlay-w .jplist { display: block; column-count: 2; column-gap: 0; column-rule: 1px solid #E3EEEA; max-height: none; overflow: visible; }
+  .jlay-w .jplist li { break-inside: avoid; min-width: 0; }
+  .jlay-w .jplist .grp, .jlay-w .jplist .empty { column-span: all; }
+  .jlay-w .jplist li button { grid-template-columns: 26px minmax(0, 1fr) auto auto; gap: 8px; padding: 4px 8px; align-items: center; }
+  .jlay-w .jplist li button .t { font-size: 14px; }
+  .jlay-w .jplist li button .c, .jlay-w .jplist li button .x { font-size: 12px; }
   .jpop { font: inherit; font-size: 12.5px; font-weight: 700; border: 1.5px solid var(--ai); color: var(--ai); background: #fff; border-radius: 7px; padding: 2px 9px; cursor: pointer; }
   .jlay-v .jpop, .jlay-h .jpop { display: none; }
+  .jfast { font: inherit; font-size: 12.5px; font-weight: 700; border: 1.5px solid #C98A00; color: #8A5A00; background: #FFF8E1; border-radius: 7px; padding: 2px 9px; cursor: pointer; }
+  .jfast.on { background: #E8A400; color: #fff; border-color: #E8A400; }
   .jtouch .jpop, .jtouch #jLay button[data-l="w"], .jtouch .jwin { display: none !important; }
   .jwin { font: inherit; font-size: 12.5px; font-weight: 700; border: 1.5px solid var(--ai); color: var(--ai); background: #fff; border-radius: 7px; padding: 2px 9px; cursor: pointer; }
   .jlay-v .jwin, .jlay-h .jwin { display: none; }
@@ -1551,7 +1555,7 @@
     const A = arrangeRects(cur);
     const m = geoAll(); m.photo = A.gp; m.ledger = A.gl; lsSet(LS_GEO, JSON.stringify(m));
     [POP, LPOP].forEach(function (w) { try { if (w && !w.closed) w.close(); } catch (e) {} });
-    POP = null; LPOP = null;
+    POP = null; LPOP = null; POPID = ''; POPK = ''; LEDID = '';
     const p1 = popOpen(); const p2 = ledOpen();
     if (!p1 || !p2) { fmsg((p1 ? '出納帳' : '写真') + 'のウィンドウが開けませんでした。もう一度［3つに並べる］を押してください（ポップアップを このサイトだけ許可すると 1回で開きます）。', 'err'); return; }
     const put = function (B) {
@@ -1628,7 +1632,10 @@
   window.addEventListener('beforeunload', function () { geoSave(); if (LPOP && !LPOP.closed) try { LPOP.close(); } catch (e) {} });
   function popSync(force) {
     if (jlay() !== 'w' || !POP || POP.closed) { if (POP && POP.closed) { POP = null; jlayPaint(); } return; }
-    const id = S.act, it = itemOf(id); if (!it) return;
+    /* ★ まだどれも選んでいなければ いちばん上の未確定を出す（3つに並べた直後に 写真の窓が空のままにならないように） */
+    if (!itemOf(S.act) && (S.view || []).length) { S.act = ((S.view || []).find(function (x) { return x.status !== 'done'; }) || S.view[0]).id; markAct(); }
+    const id = S.act, it = itemOf(id);
+    if (!it) { const d0 = POP.document, b0 = d0.getElementById('b'); if (b0 && !b0.firstChild) { const m0 = d0.createElement('div'); m0.className = 'msg'; m0.textContent = '写真がありません。'; b0.appendChild(m0); } return; }
     const k = [id].concat(subsOf(id).map(function (x) { return x.id; })).map(kindOf).join(',');
     if (!force && id === POPID && k === POPK) return;
     POPID = id; POPK = k;
@@ -2758,6 +2765,12 @@
     [['1', '1仕訳辞書'], ['n', '複数仕訳辞書']].forEach(function (x) { const b = el('button', null, x[1]); b.type = 'button'; b.dataset.a = 'mode'; b.dataset.m = x[0];
       b.setAttribute('aria-pressed', String((x[0] === 'n') === multi)); b.title = x[0] === 'n' ? '写真1枚に 辞書を何件も選んで、出納帳で残高を合わせる（通帳・カード明細など）' : '写真1枚に 辞書を1つ（領収書など。辞書が複数仕訳でもよい）'; md.appendChild(b); });
     h.appendChild(md);
+    /* ★ 高速記帳（2026-10-12）：ETC など 同じ辞書のまま 日付と金額だけ 次々に打つ。押すと 複数仕訳辞書になる */
+    if (it.status !== 'done' || multi) {
+      const fb = el('button', 'jfast' + (S.rep[it.id] ? ' on' : ''), S.rep[it.id] ? '⚡ 高速記帳中（やめる）' : '⚡ 高速記帳'); fb.type = 'button'; fb.dataset.a = 'rep';
+      fb.setAttribute('aria-pressed', String(!!S.rep[it.id])); fb.title = '同じ辞書のまま 日付と金額だけ 次々に打つ（ETC・通帳の同じ引き落としなど）。Esc でやめる';
+      h.appendChild(fb);
+    }
     const pb = el('button', 'jpop', '📎 別ウィンドウ'); pb.type = 'button'; pb.dataset.a = 'pop'; pb.title = '別のウィンドウに この写真を出す'; h.appendChild(pb);
     row.appendChild(h);
 
@@ -2821,7 +2834,7 @@
       const rb = el('button', 'btn ghost sm', '辞書を選び直す'); rb.type = 'button'; rb.dataset.a = 'repick'; nb.appendChild(rb);
       row.appendChild(nb);
       const bases = dictLinesOf(k);
-      if (multi && S.rep[it.id]) row.appendChild(el('span', 'jrepnote', '⚡ 連続：No ' + k.no + ' ' + (k.title || '') + ' のまま、日付 → 金額 → Enter で 次々に入ります（Esc でやめる）'));
+      if (multi && S.rep[it.id]) row.appendChild(el('span', 'jrepnote', '⚡ 高速記帳：' + seqOf(it.box, k.no) + ' ' + (k.title || '') + ' のまま、日付 → 金額 → Enter で 次々に入ります（Esc でやめる）'));
       c.L.forEach(function (l, ln) {
         const wrap = el('div', 'jline');
         if (c.L.length > 1) {
@@ -2845,9 +2858,7 @@
       const ml = el('button', 'btn ghost sm', '複数仕訳へ'); ml.type = 'button'; ml.dataset.a = 'addline'; ml.title = 'この伝票に仕訳の行を足す（借方・貸方の計を合わせる）'; ck.appendChild(ml);
       if (multi) {
         ok.lastChild.textContent = '入れて 次の行へ';
-        const rp = el('button', 'btn ghost sm jrep', S.rep[it.id] ? '⚡ 連続中（やめる）' : '⚡ 同じ辞書で連続'); rp.type = 'button'; rp.dataset.a = 'rep';
-        rp.setAttribute('aria-pressed', String(!!S.rep[it.id])); rp.title = '同じ辞書のまま 日付と金額だけ打っていく（ETC など同じ取引が続くとき）。Esc でやめる';
-        ck.appendChild(rp);
+
       }
       else { const more = el('button', 'btn ghost sm', 'この写真にもう1件'); more.type = 'button'; more.dataset.a = 'more'; more.title = '確定して、同じ写真のまま次の取引へ（通帳など。Shift+Enter）'; ck.appendChild(more); }
     }
@@ -3078,7 +3089,16 @@
     if (a === 'pop') { S.act = it.id; markAct(); prioritize(); popOpen(); popSync(true); return; }
     if (a === 'repick') { repick(it); return; }
     if (a === 'ok') { confirmEntry(it, isMulti(it)); return; }
-    if (a === 'rep') { if (S.rep[it.id]) delete S.rep[it.id]; else S.rep[it.id] = 1; drawCard(it); markAct(); go1(row, 'date'); return; }
+    if (a === 'rep') {
+      if (S.rep[it.id]) { delete S.rep[it.id]; drawCard(it); markAct(); fmsg('高速記帳をやめました。', 'ok'); return; }
+      S.rep[it.id] = 1; S.act = it.id;
+      if (!isMulti(it)) { setMulti(it, true); (S.view || []).forEach(function (x) { if (x.box === it.box && x.id !== it.id && rowOf(x.id) && !rowOf(x.id).classList.contains('fold')) drawCard(x); }); }
+      drawCard(it); markAct();
+      const r2 = rowOf(it.id);
+      if (dictOf(card(it.id).no)) { go1(r2, 'date'); fmsg('高速記帳：日付 → 金額 → Enter で 次々に入ります（Esc でやめる）。', 'ok'); }
+      else { const q = r2 && r2.querySelector('[data-k="q"]'); if (q) q.focus(); fmsg('高速記帳：辞書を選ぶと、そのまま 日付と金額だけで 次々に入ります（Esc でやめる）。', 'ok'); }
+      return;
+    }
     if (a === 'mode') { setMulti(it, t.dataset.m === 'n'); (S.view || []).forEach(function (x) { if (x.box === it.box && rowOf(x.id) && !rowOf(x.id).classList.contains('fold')) drawCard(x); }); markAct(); return; }
     if (a === 'pgdone') { delete S.open[it.id]; C[it.id] = { date: '', no: '', q: '', L: [blankLine()] }; drawCard(it); const nx = nextTodo(it.id); if (nx) focusCard(nx.id); else markAct(); return; }
     if (a === 'more') { confirmEntry(it, true); return; }
