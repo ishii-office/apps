@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791905780;</script>
+<script>window.__PAGE_VER=1791908466;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -630,6 +630,19 @@
   .kbtbl td { vertical-align: top; font-size: 13px; } .kbtbl td.w { max-width: 280px; }
   .kbtbl tr.off td { opacity: .45; }
   .kbform { margin: 8px 0; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 10px; display: grid; gap: 6px; }
+  .thbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .thdoc textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 13.5px; }
+  .thvers { font-size: 12.5px; color: var(--muted, #666); display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; }
+  .thprop { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin: 8px 0; background: #fff; }
+  .thprop h4 { margin: 0 0 4px; font-size: 14px; }
+  .thsum { white-space: pre-wrap; font-size: 13px; margin: 4px 0 6px; color: #6B4A00; }
+  .thgrp { margin: 6px 0; } .thgrp > b { font-size: 13px; }
+  .thit { display: grid; grid-template-columns: 1fr auto; gap: 6px; padding: 5px 0; border-bottom: 1px dashed var(--line); font-size: 13px; align-items: start; }
+  .thit.done { opacity: .5; } .thit .why { color: #777; font-size: 12px; }
+  .thit textarea, .thit input { font: inherit; font-size: 13px; box-sizing: border-box; }
+  .thit textarea { width: 100%; } .thit .ins { display: flex; flex-wrap: wrap; gap: 4px; }
+  .thit .ins input { width: 7em; } .thit .ins input.wide { width: 14em; }
+  .thit .acts { display: flex; gap: 4px; white-space: nowrap; }
   .kbform .kbrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .kbform textarea, .kbform input { font: inherit; }
   .kbbulk textarea { width: 100%; font: inherit; }
@@ -1086,6 +1099,26 @@
       <div class="bar"><select id="kbBulkScope" aria-label="範囲"><option value="">この顧問先だけ</option><option value="*">事務所共通（マスター）</option></select><button type="button" class="btn sm" id="kbBulkGo">まとめて入れる</button></div>
     </details>
   </details>
+  <details open class="rbox" id="thBox"><summary>2c. お手本の月（ひと月の資料と仕訳を AI に解析させて この顧問先の処理のしかたを決める）</summary>
+    <p class="note">① 処理がきちんと済んだ月を選んで［この月をお手本にして解析する］。その月の <b>確定した仕訳と 写真</b>をひと組にして AI が読み、
+      <b>ルール・この顧問先だけの科目の使い方・迷ったときの扱い・処理手順書</b>の案を出します。② 案を見て［採用］したものだけが入ります（先月の入力ミスを覚えさせないため）。
+      ③ 翌月からは 手順書と「迷ったら」が AI 下書きに効き、予測合致率にも「お手本の月の同じ取引」が加わります。④ 翌月以降は［この月の新しい取引・迷いを足す］で、まだ無いものだけを案にします。手順書は版で積み、上書きしません。</p>
+    <div class="thbar">
+      <select id="thYm" aria-label="お手本にする月"></select>
+      <button type="button" class="btn sm" id="thGo">この月をお手本にして解析する</button>
+      <button type="button" class="btn ghost sm" id="thDiff">この月の新しい取引・迷いを足す</button>
+      <span class="pagemsg" id="thMsg" role="status"></span>
+    </div>
+    <div id="thProps"></div>
+    <div class="thdoc">
+      <b id="thHead">処理手順書（まだありません）</b>
+      <textarea id="thText" rows="10" placeholder="お手本の月を解析して［採用］すると ここに入ります。手で書いても かまいません。" aria-label="処理手順書"></textarea>
+      <b>迷ったら（1行に1つ「どういうとき｜どうする」）</b>
+      <textarea id="thDbt" rows="5" placeholder="例：同じ日に ガソリンが2回あれば｜2台目の車両の分として 車両費の補助02" aria-label="迷ったら"></textarea>
+      <div class="bar"><button type="button" class="btn sm" id="thSave">手順書を保存（新しい版）</button></div>
+      <div class="thvers" id="thVers"></div>
+    </div>
+  </details>
   <details open class="rbox"><summary>3. ルール（使うほど増える）</summary>
     <div class="bar rflt">
       <input type="search" id="rQ" placeholder="言葉・科目で探す" aria-label="ルールを探す">
@@ -1224,8 +1257,10 @@
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
   const READ_FN = { officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, viewerImage: 1,
-    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1 };
+    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1 };
   let BOOT_WAIT = null;
+  /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
+  const LONG_FN = { tehonAnalyze: 370000 };
   function gs(fn) {
     const args = Array.prototype.slice.call(arguments, 1);
     if (BOOT_WAIT && !READ_FN[fn]) return BOOT_WAIT.then(function () { return gs.apply(null, [fn].concat(args)); });
@@ -1236,7 +1271,7 @@
       }
       if (!WEB2) { ng(new Error('送り先（サーバの口）が分かりません。')); return; }
       let ac = null; try { ac = new AbortController(); } catch (e) {}
-      const tid = setTimeout(function () { try { if (ac) ac.abort(); } catch (e) {} ng(new Error('サーバの返事がありませんでした。もう一度どうぞ。')); }, 60000);
+      const tid = setTimeout(function () { try { if (ac) ac.abort(); } catch (e) {} ng(new Error('サーバの返事がありませんでした。もう一度どうぞ。')); }, LONG_FN[fn] || 60000);
       fetch(API_URL, { method: 'POST', redirect: 'follow', signal: ac ? ac.signal : undefined,
         headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args, tok: TOK }) })
         .then(function (r) { if (!r.ok) throw new Error('サーバにつながりませんでした（' + r.status + '）'); return r.json(); })
@@ -4850,7 +4885,122 @@
     const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' };
     $('rClient').textContent = '— ' + code + ' ' + c.name;
     gs('ruleList', code).then(function (r) { if (code !== S.code) return; R.data = r; rDraw(); }, function (e) { rMsg(e.message, 'err'); });
+    thLoad();
   }
+  /* ---- お手本の月 ---- */
+  const TH = { data: null, busy: false };
+  function thMsg(t, kind) { $('thMsg').textContent = t || ''; $('thMsg').className = 'pagemsg' + (kind ? ' ' + kind : ''); }
+  function thLoad() {
+    const code = S.code; if (!code) return;
+    gs('tehonList', code).then(function (r) { if (code !== S.code) return; TH.data = r; thDraw(); }, function (e) { thMsg(e.message, 'err'); });
+  }
+  function thDraw() {
+    const r = TH.data; if (!r) return;
+    const sel = $('thYm'), was = sel.value; sel.textContent = '';
+    (r.months || []).forEach(function (m) { const o = el('option', null, m.ym.replace('-', '年') + '月（確定 ' + m.n + '件）'); o.value = m.ym; sel.appendChild(o); });
+    if (!r.months.length) { const o = el('option', null, '確定した仕訳のある月がありません'); o.value = ''; sel.appendChild(o); }
+    if (was && r.months.some(function (m) { return m.ym === was; })) sel.value = was;
+    $('thGo').disabled = TH.busy || !r.months.length || !r.aiOn; $('thDiff').disabled = TH.busy || !r.tejun || !r.months.length || !r.aiOn;
+    if (!r.aiOn && !TH.busy) thMsg('AI のキーが入っていません（仕訳辞書タブ ＞ AI 読み取り）。');
+    const t = r.tejun;
+    $('thHead').textContent = t ? '処理手順書（版 ' + t.ver + '・' + t.at + ' ' + t.by + (t.months.length ? '・お手本にした月 ' + t.months.join('、') : '') + '）' : '処理手順書（まだありません）';
+    if (document.activeElement !== $('thText')) $('thText').value = t ? t.text : '';
+    if (document.activeElement !== $('thDbt')) $('thDbt').value = t ? t.doubts.map(function (d) { return d.case + '｜' + d.how; }).join('\n') : '';
+    const vv = $('thVers'); vv.textContent = '';
+    (r.vers || []).slice(1).forEach(function (v) {
+      const b = el('button', 'btn ghost sm', '版 ' + v.ver + '（' + v.at + '・迷ったら ' + v.n + '）に戻す'); b.type = 'button'; b.dataset.ver = v.ver; vv.appendChild(b);
+    });
+    thProps();
+  }
+  function thInp(v, cls, ph) { const i = el('input', cls || null); i.value = v == null ? '' : String(v); if (ph) i.placeholder = ph; return i; }
+  function thProps() {
+    const box = $('thProps'); box.textContent = '';
+    (TH.data.props || []).forEach(function (x) {
+      const p = x.p || {}, st = p.stats || {};
+      const card = el('div', 'thprop'); card.dataset.pid = x.id;
+      card.appendChild(el('h4', null, (x.mode === 'diff' ? '新しい取引・迷い ' : 'お手本 ') + x.ym + '　' + x.at + ' ' + x.by + '　（資料 ' + (st.docs || 0) + '件・仕訳 ' + (st.ents || 0) + '件・写真 ' + (st.imgs || 0) + '枚' + (st.fromHist ? '・会計システムの仕訳から' : '') + '）' + (x.st === '済' ? '　済' : '')));
+      if (p.summary) card.appendChild(el('div', 'thsum', p.summary));
+      const grp = function (title, kind, list, draw) {
+        if (!list || !list.length) return;
+        const g = el('div', 'thgrp'); g.appendChild(el('b', null, title + '（' + list.length + '）'));
+        list.forEach(function (it, i) {
+          const row = el('div', 'thit' + (it.st !== '案' ? ' done' : '')); row.dataset.kind = kind; row.dataset.i = i;
+          const body = el('div'); draw(body, it); row.appendChild(body);
+          const acts = el('div', 'acts');
+          if (it.st === '案') [['採用', 'btn sm'], ['捨てる', 'btn ghost sm']].forEach(function (a) { const b = el('button', a[1], a[0]); b.type = 'button'; b.dataset.act = a[0]; acts.appendChild(b); });
+          else acts.appendChild(el('span', null, it.st === '採用' ? '✓ 採用' : '捨てた'));
+          row.appendChild(acts); g.appendChild(row);
+        });
+        card.appendChild(g);
+      };
+      grp('処理手順書の案' + (x.mode === 'diff' ? '（書き足す文）' : ''), 'procedure', p.procedure && p.procedure.text ? [p.procedure] : [], function (b, it) {
+        if (it.st === '案') { const ta = el('textarea'); ta.rows = 8; ta.value = it.text; ta.dataset.f = 'text'; b.appendChild(ta); } else b.appendChild(el('div', 'thsum', it.text.slice(0, 400) + (it.text.length > 400 ? '…' : '')));
+      });
+      grp('ルールの案', 'rules', p.rules, function (b, it) {
+        const k = it.no ? dictOf(String(it.no)) : null;
+        if (it.st === '案') {
+          const ins = el('div', 'ins');
+          ins.appendChild(el('span', null, it.kind + '「'));
+          const ky = thInp(it.key, 'wide'); ky.dataset.f = 'key'; ins.appendChild(ky);
+          ins.appendChild(el('span', null, '」→ 辞書No'));
+          const no = thInp(it.no || '', null, 'No'); no.dataset.f = 'no'; no.inputMode = 'numeric'; ins.appendChild(no);
+          ins.appendChild(el('span', null, 'または 借方'));
+          const dr = thInp(it.drCode, null, '借方コード'); dr.dataset.f = 'drCode'; ins.appendChild(dr);
+          ins.appendChild(el('span', null, '貸方'));
+          const cr = thInp(it.crCode, null, '貸方コード'); cr.dataset.f = 'crCode'; ins.appendChild(cr);
+          b.appendChild(ins);
+        } else b.appendChild(el('div', null, it.kind + '「' + it.key + '」→ ' + (it.no ? '辞書 ' + it.no : (it.drCode || '—') + '／' + (it.crCode || '—'))));
+        b.appendChild(el('div', 'why', (k ? '辞書 ' + it.no + ' ' + (k.title || '') + '　' : '') + (it.n ? 'この月 ' + it.n + '回　' : '') + (it.why || '')));
+      });
+      grp('この顧問先だけの科目の使い方（仕訳の憲法）の案', 'kb', p.kb, function (b, it) {
+        b.appendChild(el('div', null, it.acct + (it.sub || it.subName ? '　' + [it.sub, it.subName].filter(Boolean).join(' ') : '') + '：' + it.what));
+        b.appendChild(el('div', 'why', '言葉：' + (it.words || []).join('、') + ((it.not || []).length ? '／入れない：' + it.not.join('、') : '') + '　' + (it.why || '')));
+      });
+      grp('迷ったらの案', 'doubts', p.doubts, function (b, it) {
+        if (it.st === '案') { const ins = el('div', 'ins'); const c = thInp(it.case, 'wide'); c.dataset.f = 'case'; c.style.width = '45%'; const h = thInp(it.how, 'wide'); h.dataset.f = 'how'; h.style.width = '45%'; ins.appendChild(c); ins.appendChild(el('span', null, '→')); ins.appendChild(h); b.appendChild(ins); }
+        else b.appendChild(el('div', null, it.case + ' → ' + it.how));
+        b.appendChild(el('div', 'why', it.why || ''));
+      });
+      box.appendChild(card);
+    });
+  }
+  function thRun(mode) {
+    const code = S.code, ym = $('thYm').value; if (!code || !ym || TH.busy) return;
+    TH.busy = true; thDraw();
+    thMsg((mode === 'diff' ? ym + ' の新しい取引・迷いを' : ym + ' をお手本として') + ' AI が読んでいます…（ひと月ぶんなので 1〜5分ほど。このまま待ってください）');
+    gs('tehonAnalyze', code, ym, mode).then(function (r) {
+      TH.busy = false; if (code !== S.code) return; TH.data = r; thDraw();
+      const p = (r.props[0] || {}).p || {};
+      thMsg('案ができました：ルール ' + (p.rules || []).length + '・科目の使い方 ' + (p.kb || []).length + '・迷ったら ' + (p.doubts || []).length + (p.procedure && p.procedure.text ? '・手順書' : '') + '。見て［採用］してください。', 'ok');
+    }, function (e) { TH.busy = false; thDraw(); thMsg(e.message, 'err'); });
+  }
+  $('thGo').addEventListener('click', function () { thRun('base'); });
+  $('thDiff').addEventListener('click', function () { thRun('diff'); });
+  $('thProps').addEventListener('click', function (e) {
+    const b = e.target.closest('button[data-act]'); if (!b || !S.code) return;
+    const row = b.closest('.thit'), pid = b.closest('.thprop').dataset.pid, kind = row.dataset.kind, i = Number(row.dataset.i), code = S.code;
+    let edit = null;
+    if (b.dataset.act === '採用') {
+      edit = {};
+      row.querySelectorAll('[data-f]').forEach(function (f) { edit[f.dataset.f] = f.dataset.f === 'no' ? Number(half(f.value)) || 0 : f.dataset.f === 'drCode' || f.dataset.f === 'crCode' ? half(f.value) : f.value; });
+    }
+    b.disabled = true;
+    gs('tehonDecide', code, pid, kind, i, b.dataset.act, edit).then(function (r) {
+      if (code !== S.code) return; TH.data = r; thDraw();
+      thMsg(b.dataset.act === '採用' ? (kind === 'rules' ? 'ルールに入れました（人が決めたルール）。' : kind === 'kb' ? 'この顧問先の 科目の使い方に入れました。' : '処理手順書に入れました（版 ' + (r.tejun ? r.tejun.ver : '') + '）。') : '捨てました。', 'ok');
+      if (kind === 'rules' || kind === 'kb') gs('ruleList', code).then(function (x) { if (code !== S.code) return; R.data = x; rDraw(); });
+    }, function (e2) { b.disabled = false; thMsg(e2.message, 'err'); });
+  });
+  $('thSave').addEventListener('click', function () {
+    const code = S.code; if (!code) return;
+    gs('tejunSave', code, $('thText').value, $('thDbt').value).then(function (r) { if (code !== S.code) return; TH.data = r; thDraw(); thMsg('手順書を保存しました（版 ' + (r.tejun ? r.tejun.ver : '') + '）。次の AI 下書きから効きます。', 'ok'); }, function (e) { thMsg(e.message, 'err'); });
+  });
+  $('thVers').addEventListener('click', function (e) {
+    const b = e.target.closest('button[data-ver]'); if (!b || !S.code) return;
+    const code = S.code;
+    if (!confirm('版 ' + b.dataset.ver + ' の中身で 新しい版を作ります（いまの版も残ります）。')) return;
+    gs('tejunRevert', code, b.dataset.ver).then(function (r) { if (code !== S.code) return; TH.data = r; thDraw(); thMsg('版 ' + b.dataset.ver + ' に戻しました（版 ' + r.tejun.ver + ' として）。', 'ok'); }, function (e2) { thMsg(e2.message, 'err'); });
+  });
   function rDraw() {
     const r = R.data; if (!r) return;
     const ms = !!(S.me && S.me.master);
