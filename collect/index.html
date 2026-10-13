@@ -27,7 +27,7 @@
 <meta name="apple-mobile-web-app-title" content="資料提出">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791863731;</script>
+<script>window.__PAGE_VER=1791865248;</script>
 <style>
   :root {
     --bg: #F3F6F5;
@@ -1661,6 +1661,28 @@
     if (camN) $('tray').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   $('camDone').addEventListener('click', closeCamera);
+  /* ★ 1枚撮るたびに「ピロン」（2026-10-13）。カメラの画面からは シャッター音が出ないので、連続で撮れているか分からなかった。
+       音はその場で作る（ファイルを持たない）。押した瞬間に鳴らすので ブラウザに止められない。音を出せない端末は 震えるだけ */
+  let PING = null;
+  function camPing() {
+    try { if (navigator.vibrate) navigator.vibrate(30); } catch (x) {}
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      if (!PING) PING = new AC();
+      if (PING.state === 'suspended') PING.resume();
+      const t0 = PING.currentTime;
+      [[1320, 0, 0.09], [1760, 0.08, 0.16]].forEach(function (n) {   /* ピ → ロン（2つの高い音） */
+        const o = PING.createOscillator(), g = PING.createGain();
+        o.type = 'sine'; o.frequency.value = n[0];
+        g.gain.setValueAtTime(0.0001, t0 + n[1]);
+        g.gain.exponentialRampToValueAtTime(0.35, t0 + n[1] + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + n[1] + n[2]);
+        o.connect(g); g.connect(PING.destination);
+        o.start(t0 + n[1]); o.stop(t0 + n[1] + n[2] + 0.02);
+      });
+      window.__pingN = (window.__pingN || 0) + 1;
+    } catch (x) {}
+  }
   $('shutter').addEventListener('click', function () {
     const v = $('video');
     let w = v.videoWidth, h = v.videoHeight;
@@ -1670,6 +1692,7 @@
     const c = document.createElement('canvas'); c.width = w; c.height = h;
     c.getContext('2d').drawImage(v, 0, 0, w, h);
     const f = $('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+    camPing();
     const box = camBox;
     c.toBlob(function (b) {
       if (!b) return;
