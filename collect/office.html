@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791908466;</script>
+<script>window.__PAGE_VER=1791928891;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -630,6 +630,8 @@
   .kbtbl td { vertical-align: top; font-size: 13px; } .kbtbl td.w { max-width: 280px; }
   .kbtbl tr.off td { opacity: .45; }
   .kbform { margin: 8px 0; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 10px; display: grid; gap: 6px; }
+  .jai .aiyen { margin-left: 8px; font-size: 12px; color: #6B6B6B; white-space: nowrap; }
+  .exset { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; } .exset input { width: 4.5em; }
   .thbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .thdoc textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 13.5px; }
   .thvers { font-size: 12.5px; color: var(--muted, #666); display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; }
@@ -1118,6 +1120,23 @@
       <div class="bar"><button type="button" class="btn sm" id="thSave">手順書を保存（新しい版）</button></div>
       <div class="thvers" id="thVers"></div>
     </div>
+  </details>
+  <details open class="rbox" id="exBox"><summary>2d. 似た前例を見せる（条件を書かなくても 前例から判断させる）</summary>
+    <p class="note">写真を読んだあと、その店・品目・金額に似た <b>過去の確定仕訳</b>を選んで AI に見せ、辞書を選び直させます。
+      <b>文字だけ</b>は安く（1件 +1〜2円ほど）、<b>写真つき</b>は 前例の写真も見くらべるので 当たりやすい代わりに高め（+2〜4円ほど）。前例が見つからない写真には 何もしません（費用も増えません）。
+      おすすめは「文字で効かせて、合致率が低いときだけ 写真つきを かぶせる」。通帳などの明細には使いません。</p>
+    <div class="exset">
+      <select id="exMode" aria-label="似た前例の使い方">
+        <option value="auto">文字で効かせて、合致率が低ければ 写真つきを かぶせる</option>
+        <option value="text">文字だけ</option>
+        <option value="photo">はじめから 写真つき</option>
+        <option value="off">使わない</option>
+      </select>
+      <label>写真つきにする しきい値 <input id="exBelow" inputmode="numeric" aria-label="しきい値">% 未満</label>
+      <label>前例の数 <input id="exN" inputmode="numeric" aria-label="前例の数">件</label>
+      <button type="button" class="btn sm" id="exSave">保存</button>
+    </div>
+    <div class="note" id="exCost"></div>
   </details>
   <details open class="rbox"><summary>3. ルール（使うほど増える）</summary>
     <div class="bar rflt">
@@ -4641,6 +4660,7 @@
     if (!f.length) return '予測合致率 ' + aiPctOf(d) + '%（AI の自己申告）';
     return '予測合致率 ' + aiPctOf(d) + '% の内訳\n' + f.map(function (x, i) { return (i === 0 ? '　土台 ' + x.v + '%' : '　' + (x.v > 0 ? '＋' : x.v < 0 ? '－' : '±') + Math.abs(x.v) + '%') + '　' + x.k; }).join('\n');
   }
+  function yenS(v) { v = Number(v) || 0; return v >= 10 ? String(Math.round(v)) : v.toFixed(1); }
   function aiBar(it) {
     const d = S.ai[it.id], b = el('div', 'jai');
     if (S.aiPend && S.aiPend[it.id]) { b.classList.add('pend'); b.appendChild(el('b', null, '🤖 まとめて処理中…')); b.appendChild(el('span', null, 'できあがりは 24時間以内（たいてい1時間ほど）。仕訳化を開くと入ります')); return b; }
@@ -4651,6 +4671,7 @@
     t.title = aiFeatText(d) + '\n\n' + [d.party, d.date, d.amount ? yen(d.amount) + '円' : '', (d.items || []).length ? '品目：' + d.items.slice(0, 6).join('・') : '', d.reason ? '理由：' + d.reason : '', d.rule ? 'ルール：' + d.rule.text : '', d.kb ? '仕訳の憲法：' + d.kb.text : '', d.basis === '仮置き' ? '★ 読めない・決まらないので ' + (d.kari || '仮払金') + 'で仮置き。直してください' : '', d.note ? '⚠ ' + d.note : '', d.how === 'まとめて' ? '（まとめて処理）' : ''].filter(Boolean).join('\n');
     t.dataset.a = 'aifeat';
     b.appendChild(t);
+    if (d.cost && d.cost.yen != null) { const c = el('span', 'aiyen', '約' + yenS(d.cost.yen) + '円'); c.title = 'この下書きにかかった およその費用\n' + (d.cost.steps || []).map(function (x) { return '　' + x.k + '　約' + yenS(x.yen) + '円'; }).join('\n') + (d.ex ? '\n（似た前例 ' + d.ex.n + '件を ' + (d.ex.how === 'photo' ? '写真つき' : '文字') + 'で見せました' + (d.ex.low != null ? '。文字だけでは ' + d.ex.low + '% だったので 写真つきを かぶせました' : '') + '）' : ''); b.appendChild(c); }
     /* 押すと 何が効いたか（特徴ごとの ±%）を その場に出す（スマホは 指を置いても出ないので） */
     if (S.aiFeat && S.aiFeat[it.id]) b.appendChild(el('span', 'feat', aiFeatText(d)));
     if (d.multi && !isMulti(it)) b.appendChild(el('span', 'nt', '明細として読みました。上の［複数仕訳辞書］にすると 出納帳になります'));
@@ -4824,7 +4845,8 @@
         S.aiPend = {}; (r.pending || []).forEach(function (id) { S.aiPend[id] = 1; });
         const n = aiTakeDrafts(code, r);
         before.forEach(function (id) { if (!S.aiPend[id] && !(r.drafts || {})[id]) { const x = itemOf(id); if (x && rowOf(x.id)) drawCard(x); } });
-        if (n || r.bad) fmsg('まとめて処理の下書きが ' + n + '件 届きました' + (r.bad ? '（読めなかったもの ' + r.bad + '件）' : '') + '。', r.bad ? 'err' : 'ok');
+        const ys = Object.keys(r.drafts || {}).reduce(function (t, id) { return t + (Number((r.drafts[id].cost || {}).yen) || 0); }, 0);
+        if (n || r.bad) fmsg('まとめて処理の下書きが ' + n + '件 届きました（およそ ' + yenS(ys) + '円）' + (r.bad ? '（読めなかったもの ' + r.bad + '件）' : '') + '。', r.bad ? 'err' : 'ok');
         if (!Object.keys(S.aiPend).length && AI_POLL) { clearInterval(AI_POLL); AI_POLL = null; }
       }, function () {});
     };
@@ -4863,17 +4885,18 @@
       });
       return;
     }
-    let n = 0, bad = 0, stop = '', i = 0;
+    let n = 0, bad = 0, stop = '', i = 0, yenSum = 0;
     const one = function () {
       if (stop || code !== S.code || i >= todo.length) return Promise.resolve();
       const it = todo[i++];
       btn.textContent = '🤖 読んでいます… ' + (n + bad) + '／' + todo.length;
       return gs('aiRead', code, [req(it)]).then(function (r) {
+        Object.keys(r.drafts || {}).forEach(function (id) { const c = r.drafts[id].cost; if (c) yenSum += Number(c.yen) || 0; });
         n += aiTakeDrafts(code, r); bad += Object.keys(r.errors || {}).length;
       }, function (e) { stop = e.message; }).then(one);
     };
     Promise.all([one(), one()]).then(function () {
-      end((stop ? '止まりました：' + stop + '　' : '') + n + '件に下書きを付けました' + (bad ? '（読めなかったもの ' + bad + '件）' : '') + '。写真と見くらべて よければ Enter で確定（違えば 0 で辞書を選ぶ）。', stop || bad ? 'err' : 'ok');
+      end((stop ? '止まりました：' + stop + '　' : '') + n + '件に下書きを付けました（およそ ' + yenS(yenSum) + '円）' + (bad ? '（読めなかったもの ' + bad + '件）' : '') + '。写真と見くらべて よければ Enter で確定（違えば 0 で辞書を選ぶ）。', stop || bad ? 'err' : 'ok');
     });
   });
   /* ================= ★★★ AI の考え方タブ（過去仕訳・考え方・ルール。2026-10-13） ================= */
@@ -4918,7 +4941,7 @@
     (TH.data.props || []).forEach(function (x) {
       const p = x.p || {}, st = p.stats || {};
       const card = el('div', 'thprop'); card.dataset.pid = x.id;
-      card.appendChild(el('h4', null, (x.mode === 'diff' ? '新しい取引・迷い ' : 'お手本 ') + x.ym + '　' + x.at + ' ' + x.by + '　（資料 ' + (st.docs || 0) + '件・仕訳 ' + (st.ents || 0) + '件・写真 ' + (st.imgs || 0) + '枚' + (st.fromHist ? '・会計システムの仕訳から' : '') + '）' + (x.st === '済' ? '　済' : '')));
+      card.appendChild(el('h4', null, (x.mode === 'diff' ? '新しい取引・迷い ' : 'お手本 ') + x.ym + '　' + x.at + ' ' + x.by + '　（資料 ' + (st.docs || 0) + '件・仕訳 ' + (st.ents || 0) + '件・写真 ' + (st.imgs || 0) + '枚' + (st.fromHist ? '・会計システムの仕訳から' : '') + (st.yen != null ? '・約' + yenS(st.yen) + '円' : '') + '）' + (x.st === '済' ? '　済' : '')));
       if (p.summary) card.appendChild(el('div', 'thsum', p.summary));
       const grp = function (title, kind, list, draw) {
         if (!list || !list.length) return;
@@ -4971,7 +4994,7 @@
     gs('tehonAnalyze', code, ym, mode).then(function (r) {
       TH.busy = false; if (code !== S.code) return; TH.data = r; thDraw();
       const p = (r.props[0] || {}).p || {};
-      thMsg('案ができました：ルール ' + (p.rules || []).length + '・科目の使い方 ' + (p.kb || []).length + '・迷ったら ' + (p.doubts || []).length + (p.procedure && p.procedure.text ? '・手順書' : '') + '。見て［採用］してください。', 'ok');
+      thMsg('案ができました：ルール ' + (p.rules || []).length + '・科目の使い方 ' + (p.kb || []).length + '・迷ったら ' + (p.doubts || []).length + (p.procedure && p.procedure.text ? '・手順書' : '') + '（およそ ' + yenS((p.stats || {}).yen) + '円）。見て［採用］してください。', 'ok');
     }, function (e) { TH.busy = false; thDraw(); thMsg(e.message, 'err'); });
   }
   $('thGo').addEventListener('click', function () { thRun('base'); });
@@ -5018,8 +5041,16 @@
     $('raScope').querySelector('option[value="*"]').disabled = !ms;
     $('kbfScope').querySelector('option[value="*"]').disabled = !ms; $('kbBulkScope').querySelector('option[value="*"]').disabled = !ms;
     if (r.cal && r.cal.b && r.cal.b.length) { const n = r.cal.b.reduce(function (t, x) { return t + x[0]; }, 0), ok = r.cal.b.reduce(function (t, x) { return t + x[1]; }, 0); box(n, '件から 自分で学んだ（そのまま確定 ' + ok + '件）'); }
+    if (r.ex) { if (document.activeElement !== $('exMode')) $('exMode').value = r.ex.mode; if (document.activeElement !== $('exBelow')) $('exBelow').value = r.ex.below; if (document.activeElement !== $('exN')) $('exN').value = r.ex.n; $('exBelow').disabled = r.ex.mode !== 'auto'; }
+    const cm = Object.keys(r.cost || {}).sort().reverse();
+    $('exCost').textContent = cm.length ? 'AI にかかった およその費用（この顧問先・1ドル＝' + (r.yen || 150) + '円で計算）：' + cm.slice(0, 6).map(function (k) { return k.replace('-', '年') + '月 約' + yenS(r.cost[k][0]) + '円（' + r.cost[k][1] + '回）'; }).join('　') : 'まだ AI を使っていません。';
     rRows(); kbRows();
   }
+  $('exMode').addEventListener('change', function () { $('exBelow').disabled = $('exMode').value !== 'auto'; });
+  $('exSave').addEventListener('click', function () {
+    const code = S.code; if (!code) return;
+    gs('aiExSave', code, { mode: $('exMode').value, below: half($('exBelow').value), n: half($('exN').value) }).then(function (r) { if (code !== S.code) return; R.data = r; rDraw(); rMsg('似た前例の使い方を保存しました。次の AI 下書きから効きます。', 'ok'); }, function (e) { rMsg(e.message, 'err'); });
+  });
   /* ---- 仕訳の憲法 ---- */
   function kbRows() {
     const r = R.data; if (!r) return;
