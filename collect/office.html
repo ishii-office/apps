@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791855577;</script>
+<script>window.__PAGE_VER=1791857758;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -115,6 +115,14 @@
   #dIndex li button[aria-current="true"] { background: var(--sel); box-shadow: inset 4px 0 0 var(--accent); }
   #dIndex .no { font-weight: 700; text-align: right; }
   #dIndex .t { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ★ 仕訳化と同じ 1, 2, 3 … を大きく、辞書の No は右に小さく。つかんで 並びを動かせる（2026-10-13） */
+  #dIndex li button { grid-template-columns: 30px 1fr auto; }
+  #dIndex .fxno { color: var(--sub); font-size: 11.5px; font-weight: 500; white-space: nowrap; }
+  #dIndex li[draggable="true"] button { cursor: grab; }
+  #dIndex li.dragging { opacity: .4; }
+  #dIndex li.drop-b button { box-shadow: inset 0 3px 0 #E8A400; }
+  #dIndex li.drop-a button { box-shadow: inset 0 -3px 0 #E8A400; }
+  #dIndex li.grp.drop-in { background: #FFF4C8; }
   #dIndex .s { grid-column: 2; color: var(--sub); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dk-main { overflow: auto; padding: 14px 18px; min-width: 0; }
   .dk-main h2 { font-size: 17px; margin: 0 0 10px; }
@@ -162,7 +170,7 @@
   .jfast.on { background: #E8A400; color: #fff; border-color: #E8A400; }
   .jtouch .jpop, .jtouch #jLay button[data-l="w"], .jtouch .jwin { display: none !important; }
   .jwin { font: inherit; font-size: 12.5px; font-weight: 700; border: 1.5px solid var(--ai); color: var(--ai); background: #fff; border-radius: 7px; padding: 2px 9px; cursor: pointer; }
-  .jlay-v .jwin, .jlay-h .jwin { display: none; }
+  /* ★ 出納帳の別ウィンドウは 縦1列・横2列でも使える（2026-10-13）。［3つに並べる］も いつも出す */
   .ledpop .jdrow .jledg { display: none; }
   .jrep { border-color: #E8A400 !important; }
   .jrep[aria-pressed="true"] { background: #E8A400; color: #fff; }
@@ -1499,9 +1507,9 @@
     ['v', 'h', 'w'].forEach(function (k) { m.classList.toggle('jlay-' + k, l === k); });
     $('jLay').querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.l === l)); });
     $('jPopGo').hidden = l !== 'w' || !!(POP && !POP.closed);
-    const lp = l === 'w' && LPOP && !LPOP.closed;
+    const lp = LPOP && !LPOP.closed;
     m.classList.toggle('ledpop', !!lp);
-    $('jLedGo').hidden = l !== 'w' || !!lp;
+    $('jLedGo').hidden = !!lp;
   }
   /* ★ 写真を 窓の中に まるごと収める（下へ転がさずに済むように）。回したときは 縦横を入れ替えて収める（2026-10-12） */
   function fitImg(im, rot, W, H) {
@@ -1592,7 +1600,22 @@
   function onScreen(w, cur) {
     try { const cx = w.screenX + w.outerWidth / 2, L = cur.availLeft || 0; return cx >= L && cx < L + cur.availWidth; } catch (e) { return true; }
   }
+  let ARR_NEXT = null;
+  function arrangeNext() {
+    if (ARR_NEXT) return;
+    ARR_NEXT = function (e) {
+      if (e && e.target && e.target.closest && e.target.closest('#jArrange, #jLedGo')) { arrangeOff(); return; }   /* ボタンそのものなら そちらに任せる */
+      arrangeOff(); arrange3();
+    };
+    ['pointerdown', 'keydown'].forEach(function (k) { window.addEventListener(k, ARR_NEXT, true); try { if (POP && !POP.closed) POP.addEventListener(k, ARR_NEXT, true); } catch (x) {} });
+  }
+  function arrangeOff() {
+    if (!ARR_NEXT) return;
+    const f = ARR_NEXT; ARR_NEXT = null;
+    ['pointerdown', 'keydown'].forEach(function (k) { window.removeEventListener(k, f, true); try { if (POP && !POP.closed) POP.removeEventListener(k, f, true); } catch (x) {} });
+  }
   function arrange3() {
+    arrangeOff();
     if (jlay() !== 'w') { lsSet(LS_JLAY, 'w'); render(); }
     const cur = window.screen;
     const A = arrangeRects(cur);
@@ -1616,7 +1639,9 @@
     /* 開いた直後の窓は 動かす・中身を入れるのを 取りこぼすことがある。少し待って もう一度 */
     [200, 900].forEach(function (ms) { setTimeout(function () { popFill(); const g = geoAll(); geoPut(POP, g.photo); geoPut(LPOP, g.ledger); }, ms); });
     if (!okP || !okL) {
-      fmsg((okP ? '出納帳' : '写真') + 'のウィンドウは ブラウザが1回に1つしか開かせないので、もう一度［3つに並べる］を押してください（押すと 3等分に並びます）。', 'err');
+      /* ★ ブラウザは 1回押すごとに 新しい窓を1つしか開かせない。次に どこかを押した（キーを打った）その瞬間に 残りを開いて 3等分にする */
+      arrangeNext();
+      fmsg('写真と出納帳の両方を開くには ブラウザの決まりで もう1回 操作が要ります。この画面の どこかを1回押すと ' + (okP ? '出納帳' : '写真') + 'も開いて 3等分に並びます。（このサイトのポップアップを「常に許可」にすると 1回で開きます）', 'err');
       return;
     }
     /* この画面が 真ん中へ動いたか。動けない端末なら この画面は そのままにして 左右に すき間なく付ける */
@@ -1680,7 +1705,13 @@
     ledgerFill(b.querySelector('.jledg'), it);
   }
   /* ★ 出納帳を別ウィンドウにしたら 窓は3つになるので、その場で 3等分に並べる（2026-10-13） */
-  $('jLedGo').addEventListener('click', function () { arrange3(); });
+  /* 画像も別ウィンドウなら 3等分に並べる。縦1列・横2列なら 出納帳だけ別ウィンドウ（右の1/3）に */
+  $('jLedGo').addEventListener('click', function () {
+    if (jlay() === 'w') { arrange3(); return; }
+    if (!ledOpen()) return;
+    const A = arrangeRects(window.screen); const g = geoAll(); g.ledger = A.gl; lsSet(LS_GEO, JSON.stringify(g)); geoPut(LPOP, A.gl);
+    ledSync(true); jlayPaint();
+  });
   $('jArrange').addEventListener('click', function () { arrange3(); });
   setInterval(function () { if (LPOP && LPOP.closed) { LPOP = null; jlayPaint(); } if (jlay() === 'w') popFill(); }, 1000);
   window.addEventListener('beforeunload', function () { geoSave(); if (LPOP && !LPOP.closed) try { LPOP.close(); } catch (e) {} });
@@ -1750,8 +1781,9 @@
     const b = e.target.closest('button[data-l]'); if (!b) return;
     lsSet(LS_JLAY, b.dataset.l);
     if (b.dataset.l === 'w') popOpen();
-    if (b.dataset.l !== 'w' && LPOP && !LPOP.closed) try { LPOP.close(); } catch (e) {}
-    jlayPaint(); render(); popSync(true);
+    /* 写真を この画面に戻すときは 写真の別ウィンドウだけ閉じる。出納帳の別ウィンドウは そのまま（縦1列＋出納帳別 などができる） */
+    if (b.dataset.l !== 'w' && POP && !POP.closed) try { POP.close(); POP = null; } catch (e) {}
+    jlayPaint(); render(); popSync(true); ledSync(true);
   });
   $('jPopGo').addEventListener('click', function () { popOpen(); popSync(true); });
   /* 別窓を閉じたら［別ウィンドウ表示］を出す（閉じたことは 窓の側からは知らせてくれないことがある） */
@@ -4074,11 +4106,15 @@
     GROUPS.forEach(function (g) {
       const rows = hit.filter(function (d) { return (d.grp || 'いつも') === g[0]; });
       if (!rows.length) return;
-      ul.appendChild(el('li', 'grp', g[1]));
+      const gl = el('li', 'grp', g[1]); gl.dataset.grp = g[0]; ul.appendChild(gl);
       rows.forEach(function (d) {
         const li = el('li'); const b = el('button'); b.type = 'button';
-        b.appendChild(el('span', 'no', String(d.no)));
+        li.dataset.no = String(d.no); li.dataset.grp = d.grp || 'いつも';
+        if (!q) li.draggable = true;
+        b.appendChild(el('span', 'no', String(seqOf(S.dbox || '', d.no) || '')));
         b.appendChild(el('span', 't', d.title || d.memo || d.dr));
+        b.appendChild(el('span', 'fxno', 'No ' + d.no));
+        b.title = '仕訳化では ' + (seqOf(S.dbox || '', d.no) || '') + ' 番で出ます（辞書の No ' + d.no + '）。つかんで 上下に動かすと 並びが変わります';
         b.setAttribute('aria-current', String(S.dsel === d.no));
         b.addEventListener('click', function () { if (slipDirtyOk()) openSlip(d.no); });
         li.appendChild(b); ul.appendChild(li);
@@ -4088,6 +4124,42 @@
   }
   $('dBox').addEventListener('change', function () { if (!slipDirtyOk()) { this.value = S.dbox; return; } S.dbox = this.value; openSlip(null); });
   $('dSearch').addEventListener('input', drawIndex);
+  /* ★ 辞書の並びを つかんで動かす（2026-10-13）。この箱の辞書を 見えている順に 1, 2, 3 … と振り直して保存する。
+       ほかの群の見出しへ落とすと その群へ移る */
+  (function () {
+    const ul = $('dIndex'); let drag = null;
+    const clear = function () { ul.querySelectorAll('.drop-b, .drop-a, .drop-in').forEach(function (x) { x.classList.remove('drop-b', 'drop-a', 'drop-in'); }); };
+    ul.addEventListener('dragstart', function (e) { const li = e.target.closest && e.target.closest('li[data-no]'); if (!li) return; drag = Number(li.dataset.no); li.classList.add('dragging'); try { e.dataTransfer.setData('text/plain', li.dataset.no); e.dataTransfer.effectAllowed = 'move'; } catch (x) {} });
+    ul.addEventListener('dragend', function () { drag = null; clear(); ul.querySelectorAll('.dragging').forEach(function (x) { x.classList.remove('dragging'); }); });
+    const spot = function (e) {
+      const li = e.target.closest && e.target.closest('li[data-no], li.grp'); if (!li || drag == null) return null;
+      if (li.classList.contains('grp')) return { grp: li.dataset.grp, el: li };
+      if (Number(li.dataset.no) === drag) return null;
+      const r = li.getBoundingClientRect(); return { no: Number(li.dataset.no), grp: li.dataset.grp, before: e.clientY < r.top + r.height / 2, el: li };
+    };
+    ul.addEventListener('dragover', function (e) { const sp = spot(e); clear(); if (!sp) return; e.preventDefault(); sp.el.classList.add(sp.no == null ? 'drop-in' : sp.before ? 'drop-b' : 'drop-a'); });
+    ul.addEventListener('drop', function (e) { const sp = spot(e); clear(); if (!sp) return; e.preventDefault(); dictReorder(drag, sp); });
+  })();
+  function dictReorder(no, sp) {
+    if (!slipDirtyOk()) return;
+    const mine = S.dict.filter(function (d) { return dictBox(d) === (S.dbox || ''); });
+    const seq = []; GROUPS.forEach(function (g) { mine.forEach(function (d) { if ((d.grp || 'いつも') === g[0]) seq.push(d); }); });
+    const me = seq.find(function (d) { return d.no === no; }); if (!me) return;
+    const rest = seq.filter(function (d) { return d !== me; });
+    const moved = Object.assign({}, me, { grp: sp.grp || me.grp || 'いつも' });
+    let at;
+    if (sp.no != null) { at = rest.findIndex(function (d) { return d.no === sp.no; }); if (!sp.before) at++; }
+    else { at = rest.findIndex(function (d) { return (d.grp || 'いつも') === sp.grp; }); if (at < 0) at = rest.length; }
+    rest.splice(at, 0, moved);
+    const ordered = []; GROUPS.forEach(function (g) { rest.forEach(function (d) { if ((d.grp || 'いつも') === g[0]) ordered.push(d); }); });
+    const ord = {}; ordered.forEach(function (d, i) { ord[d.no] = i + 1; });
+    const list = S.dict.map(function (d) { const x = d.no === no ? moved : d; return ord[d.no] ? Object.assign({}, x, { ord: ord[d.no] }) : x; });
+    /* 先に画面を変える（保存は うしろで） */
+    S.dict = list.slice().sort(function (a, b) { return (a.ord || 1e9) - (b.ord || 1e9) || a.no - b.no; });
+    drawIndex(); drawDict();
+    if (S.dsel === no) $('sGrp').value = moved.grp;
+    saveDict(S.dict, '並びを変えました（仕訳化でも この順に 1, 2, 3 … と出ます）。', S.dsel, -1);
+  }
 
   function slipDirtyOk() { return !S.dirty || confirm('この伝票の書き替えが保存されていません。捨てますか？'); }
   /* ================= ★ よけた辞書（2026-10-11） =================
@@ -4282,6 +4354,8 @@
     const o = readSlip();
     if (!(o.no >= 1 && o.no <= 999)) { dmsg('No は 1〜999 の数で入れてください。', 'err'); $('sNo').focus(); return; }
     if (o.no !== S.dsel && S.dict.some(function (x) { return x.no === o.no; })) { dmsg('No ' + o.no + ' はもう使っています。', 'err'); $('sNo').focus(); return; }
+    /* 並び（ord）は 直しても そのまま残す */
+    const prev = S.dict.find(function (x) { return x.no === S.dsel; }); if (prev && prev.ord) o.ord = prev.ord;
     const list = S.dict.filter(function (x) { return x.no !== S.dsel; }).concat([o]);
     S.dbox = o.box; $('dBox').value = o.box;
     saveDict(list, 'No ' + o.no + ' を保存しました。', o.no, o.no);
