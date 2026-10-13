@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791899738;</script>
+<script>window.__PAGE_VER=1791905780;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -174,7 +174,8 @@
   .jlay-v .jpop, .jlay-h .jpop { display: none; }
   .jfast { font: inherit; font-size: 12.5px; font-weight: 700; border: 1.5px solid #C98A00; color: #8A5A00; background: #FFF8E1; border-radius: 7px; padding: 2px 9px; cursor: pointer; }
   .jfast.on { background: #E8A400; color: #fff; border-color: #E8A400; }
-  .jtouch .jpop, .jtouch #jLay button[data-l="w"], .jtouch .jwin { display: none !important; }
+  .jtouch .jpop, .jtouch #jLay button[data-l="w"], .jtouch .jwin:not(#jAi):not(#jAiMode) { display: none !important; }
+  /* ★ AI で下書きは スマホでも使う（別ウィンドウの道具だけ隠す。2026-10-13） */
   .jwin { font: inherit; font-size: 12.5px; font-weight: 700; border: 1.5px solid var(--ai); color: var(--ai); background: #fff; border-radius: 7px; padding: 2px 9px; cursor: pointer; }
   /* ★ 出納帳の別ウィンドウは 縦1列・横2列でも使える（2026-10-13）。［3つに並べる］も いつも出す */
   .ledpop .jdrow .jledg { display: none; }
@@ -626,6 +627,12 @@
   .rstat b { font-size: 18px; color: var(--accent); margin-right: 3px; }
   .rbox { border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; margin: 10px 0; background: var(--paper); }
   .rbox summary { font-weight: 700; cursor: pointer; font-size: 15px; }
+  .kbtbl td { vertical-align: top; font-size: 13px; } .kbtbl td.w { max-width: 280px; }
+  .kbtbl tr.off td { opacity: .45; }
+  .kbform { margin: 8px 0; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 10px; display: grid; gap: 6px; }
+  .kbform .kbrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .kbform textarea, .kbform input { font: inherit; }
+  .kbbulk textarea { width: 100%; font: inherit; }
   .rpol { display: block; margin: 6px 0; font-weight: 700; } .rpol textarea { display: block; width: 100%; margin-top: 3px; font: inherit; font-weight: 400; }
   .rtblw { overflow-x: auto; }
   .rtbl { border-collapse: collapse; width: 100%; font-size: 13.5px; }
@@ -1051,11 +1058,39 @@
     <label class="rpol" id="pOfficeL">事務所共通（マスター）<textarea id="pOffice" rows="4" maxlength="4000" placeholder="例：レシートに お酒が入っていれば 接待交際費を優先。切手・はがきは 通信費。収入印紙は 租税公課。"></textarea></label>
     <div class="bar"><button type="button" class="btn sm" id="pSave">考え方を保存</button></div>
   </details>
+  <details open class="rbox" id="kbBox"><summary>2b. 仕訳の憲法（科目の使い方・判断の基準）</summary>
+    <p class="note">所長の判断（税務署からの見られ方・科目と口座の使い分け）を 科目ごとに書いておきます。AI は <b>辞書・過去の仕訳より先に これに従い</b>、
+      写真の品目・相手・摘要に「言葉」が出てきたら その科目（口座）にします（ルールが無いとき）。予測合致率にも効きます。
+      科目は<b>名前で</b>書きます（顧問先ごとのコードに 自動で読み替え）。<b>この顧問先だけ</b>のもの（その事業では経費になる など）は 事務所共通より優先します。</p>
+    <div class="bar rflt">
+      <select id="kbScope" aria-label="範囲"><option value="">範囲：ぜんぶ</option><option value="mine">この顧問先だけ</option><option value="*">事務所共通</option></select>
+      <input type="search" id="kbQ" placeholder="科目・言葉で探す" aria-label="仕訳の憲法を探す">
+    </div>
+    <div class="rtblw"><table class="rtbl kbtbl"><thead><tr><th>範囲</th><th>科目（補助）</th><th>入れるもの</th><th>言葉（手がかり）</th><th>入れないもの</th><th></th></tr></thead><tbody id="kbBody"></tbody></table></div>
+    <div class="kbform" id="kbForm">
+      <b id="kbFormT">書き足す</b>
+      <div class="kbrow">
+        <select id="kbfScope" aria-label="範囲"><option value="">この顧問先だけ</option><option value="*">事務所共通（マスター）</option></select>
+        <input id="kbfAcct" placeholder="科目名（例：旅費交通費）" aria-label="科目名">
+        <input id="kbfSub" placeholder="補助コード" size="6" aria-label="補助コード"><input id="kbfSubName" placeholder="補助名（例：燃料代）" aria-label="補助名">
+        <label class="chk"><input type="checkbox" id="kbfOnly"> この科目がある顧問先だけ</label>
+        <input id="kbfPri" placeholder="優先" size="4" inputmode="numeric" aria-label="優先（大きいほど強い）">
+      </div>
+      <textarea id="kbfWhat" rows="2" placeholder="入れるもの（例：営業車両などの燃料。ガソリン・軽油・EV の充電を含む）" aria-label="入れるもの"></textarea>
+      <textarea id="kbfWords" rows="2" placeholder="言葉（、で区切る。例：ガソリン、レギュラー、軽油、給油、ENEOS）" aria-label="言葉"></textarea>
+      <input id="kbfNot" placeholder="入れないもの（、で区切る。例：灯油）" aria-label="入れないもの">
+      <div class="bar"><button type="button" class="btn sm" id="kbfSave">保存</button><button type="button" class="btn ghost sm" id="kbfClear">クリア</button></div>
+    </div>
+    <details class="kbbulk"><summary>まとめて入れる（1行に1つ）</summary>
+      <textarea id="kbBulk" rows="5" placeholder="科目名｜補助コード｜補助名｜入れるもの｜言葉（、区切り）｜入れないもの&#10;旅費交通費｜01｜有料交通費｜駐車場代・高速代・通行料・タクシー代・運転代行代｜駐車場、高速、ETC、タクシー、運転代行｜"></textarea>
+      <div class="bar"><select id="kbBulkScope" aria-label="範囲"><option value="">この顧問先だけ</option><option value="*">事務所共通（マスター）</option></select><button type="button" class="btn sm" id="kbBulkGo">まとめて入れる</button></div>
+    </details>
+  </details>
   <details open class="rbox"><summary>3. ルール（使うほど増える）</summary>
     <div class="bar rflt">
       <input type="search" id="rQ" placeholder="言葉・科目で探す" aria-label="ルールを探す">
       <select id="rScope" aria-label="範囲"><option value="">範囲：ぜんぶ</option><option value="mine">この顧問先</option><option value="*">事務所共通</option></select>
-      <select id="rSrc" aria-label="由来"><option value="">由来：ぜんぶ</option><option>過去仕訳</option><option>確定</option><option>手入力</option></select>
+      <select id="rSrc" aria-label="由来"><option value="">由来：ぜんぶ</option><option>過去仕訳</option><option>確定</option><option>直し</option><option>手入力</option></select>
       <select id="rSt" aria-label="状態"><option value="">状態：ぜんぶ</option><option>有効</option><option>止め</option></select>
     </div>
     <div class="bar radd">
@@ -4578,7 +4613,7 @@
     if (d.err) { b.classList.add('err'); b.appendChild(el('span', null, '🤖 AI が読めませんでした：' + d.err)); return b; }
     const pct = aiPctOf(d);
     const t = el('b', 'pct' + (pct < 60 ? ' lo' : pct >= 85 ? ' hi' : ''), '🤖 予測合致率 ' + pct + '%');
-    t.title = aiFeatText(d) + '\n\n' + [d.party, d.date, d.amount ? yen(d.amount) + '円' : '', (d.items || []).length ? '品目：' + d.items.slice(0, 6).join('・') : '', d.reason ? '理由：' + d.reason : '', d.rule ? 'ルール：' + d.rule.text : '', d.note ? '⚠ ' + d.note : '', d.how === 'まとめて' ? '（まとめて処理）' : ''].filter(Boolean).join('\n');
+    t.title = aiFeatText(d) + '\n\n' + [d.party, d.date, d.amount ? yen(d.amount) + '円' : '', (d.items || []).length ? '品目：' + d.items.slice(0, 6).join('・') : '', d.reason ? '理由：' + d.reason : '', d.rule ? 'ルール：' + d.rule.text : '', d.kb ? '仕訳の憲法：' + d.kb.text : '', d.basis === '仮置き' ? '★ 読めない・決まらないので ' + (d.kari || '仮払金') + 'で仮置き。直してください' : '', d.note ? '⚠ ' + d.note : '', d.how === 'まとめて' ? '（まとめて処理）' : ''].filter(Boolean).join('\n');
     t.dataset.a = 'aifeat';
     b.appendChild(t);
     /* 押すと 何が効いたか（特徴ごとの ±%）を その場に出す（スマホは 指を置いても出ないので） */
@@ -4831,8 +4866,60 @@
     if (document.activeElement !== $('pOffice')) $('pOffice').value = r.policy.office || '';
     $('pOffice').readOnly = !ms; $('rOffice').hidden = !ms;
     $('raScope').querySelector('option[value="*"]').disabled = !ms;
-    rRows();
+    $('kbfScope').querySelector('option[value="*"]').disabled = !ms; $('kbBulkScope').querySelector('option[value="*"]').disabled = !ms;
+    if (r.cal && r.cal.b && r.cal.b.length) { const n = r.cal.b.reduce(function (t, x) { return t + x[0]; }, 0), ok = r.cal.b.reduce(function (t, x) { return t + x[1]; }, 0); box(n, '件から 自分で学んだ（そのまま確定 ' + ok + '件）'); }
+    rRows(); kbRows();
   }
+  /* ---- 仕訳の憲法 ---- */
+  function kbRows() {
+    const r = R.data; if (!r) return;
+    const ms = !!(S.me && S.me.master), sc = $('kbScope').value, q = half($('kbQ').value || '').toLowerCase();
+    const tb = $('kbBody'); tb.textContent = '';
+    (r.kb || []).filter(function (k) {
+      if (sc === 'mine' && k.scope === '*') return false;
+      if (sc === '*' && k.scope !== '*') return false;
+      return !q || [k.acct, k.subName, k.what, k.words.join(' '), k.not.join(' ')].join(' ').toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { return (a.scope === '*') - (b.scope === '*') || a.acct.localeCompare(b.acct, 'ja') || String(a.sub).localeCompare(String(b.sub)); }).forEach(function (k) {
+      const tr = el('tr', k.st === '止め' ? 'off' : null); tr.dataset.id = k.id;
+      tr.appendChild(el('td', k.scope === '*' ? 'of' : null, k.scope === '*' ? '事務所共通' : 'この顧問先'));
+      tr.appendChild(el('td', null, k.acct + (k.sub || k.subName ? '　' + [k.sub, k.subName].filter(Boolean).join(' ') : '') + (k.only ? '（ある顧問先だけ）' : '') + (k.pri ? '　優先' + k.pri : '')));
+      tr.appendChild(el('td', 'w', k.what));
+      tr.appendChild(el('td', 'w', k.words.join('、')));
+      tr.appendChild(el('td', 'w', k.not.join('、')));
+      const td = el('td');
+      if (k.scope !== '*' || ms) {
+        [['edit', '直す'], [k.st === '止め' ? 'on' : 'off', k.st === '止め' ? '使う' : '止める'], ['del', '消す']].forEach(function (x) { const b = el('button', 'btn ghost sm' + (x[0] === 'del' ? ' danger' : ''), x[1]); b.type = 'button'; b.dataset.k = x[0]; td.appendChild(b); });
+      }
+      tr.appendChild(td); tb.appendChild(tr);
+    });
+  }
+  function kbFill(k) {
+    $('kbForm').dataset.id = k ? k.id : '';
+    $('kbFormT').textContent = k ? '直す：' + k.acct + (k.subName ? ' ' + k.subName : '') : '書き足す';
+    $('kbfScope').value = k && k.scope === '*' ? '*' : ''; $('kbfAcct').value = k ? k.acct : ''; $('kbfSub').value = k ? k.sub : ''; $('kbfSubName').value = k ? k.subName : '';
+    $('kbfOnly').checked = !!(k && k.only); $('kbfPri').value = k && k.pri ? k.pri : ''; $('kbfWhat').value = k ? k.what : ''; $('kbfWords').value = k ? k.words.join('、') : ''; $('kbfNot').value = k ? k.not.join('、') : '';
+  }
+  $('kbScope').addEventListener('change', kbRows); $('kbQ').addEventListener('input', kbRows);
+  $('kbBody').addEventListener('click', function (e) {
+    const b = e.target.closest('button[data-k]'); if (!b || !S.code) return;
+    const id = b.closest('tr').dataset.id, k = (R.data.kb || []).find(function (x) { return x.id === id; }), code = S.code;
+    if (b.dataset.k === 'edit') { kbFill(k); $('kbfAcct').focus(); return; }
+    if (b.dataset.k === 'del' && !confirm(k.acct + (k.subName ? ' ' + k.subName : '') + ' の使い方を消しますか？')) return;
+    gs('kamokuDel', code, id, b.dataset.k === 'del' ? '' : b.dataset.k === 'off' ? '止め' : '有効').then(function (r) { if (code !== S.code) return; R.data = r; rDraw(); rMsg('仕訳の憲法を直しました。', 'ok'); }, function (e2) { rMsg(e2.message, 'err'); });
+  });
+  $('kbfClear').addEventListener('click', function () { kbFill(null); });
+  $('kbfSave').addEventListener('click', function () {
+    if (!S.code) return;
+    const code = S.code;
+    const o = { id: $('kbForm').dataset.id || '', scope: $('kbfScope').value, acct: $('kbfAcct').value, sub: $('kbfSub').value, subName: $('kbfSubName').value,
+      only: $('kbfOnly').checked, pri: $('kbfPri').value, what: $('kbfWhat').value, words: $('kbfWords').value, not: $('kbfNot').value };
+    gs('kamokuSave', code, o).then(function (r) { if (code !== S.code) return; R.data = r; kbFill(null); rDraw(); rMsg('仕訳の憲法を保存しました。次の AI 下書きから効きます。', 'ok'); }, function (e) { rMsg(e.message, 'err'); });
+  });
+  $('kbBulkGo').addEventListener('click', function () {
+    if (!S.code) return;
+    const code = S.code;
+    gs('kamokuBulk', code, $('kbBulk').value, $('kbBulkScope').value).then(function (r) { if (code !== S.code) return; R.data = r; $('kbBulk').value = ''; rDraw(); rMsg('まとめて入れました。', 'ok'); }, function (e) { rMsg(e.message, 'err'); });
+  });
   function rRows() {
     const r = R.data; if (!r) return;
     const ms = !!(S.me && S.me.master);
