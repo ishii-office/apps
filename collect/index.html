@@ -27,7 +27,7 @@
 <meta name="apple-mobile-web-app-title" content="資料提出">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791868025;</script>
+<script>window.__PAGE_VER=1791871181;</script>
 <style>
   :root {
     --bg: #F3F6F5;
@@ -37,12 +37,27 @@
     --accent: #0F6E5C;
     --accent-press: #0B5547;
     --line: #D6DFDC;
+    /* ★ 顧問先ごとの画面の色（2026-10-13）。ここは緑のときの値。applyTheme が 選んだ色から作り直す */
+    --a-faint: #F5FAF8;
+    --a-tint: #E6F0EE;
+    --a-soft: #B5D3CA;
+    --a-mid: #8FBFB2;
     --ok: #1F7A3A;
     --err: #B3261E;
     --warn: #8A5A00;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  /* ★ 背景も その色に合わせる。上のほうを うすく色づけ、下へ ぼかす */
+  body { background: linear-gradient(180deg, var(--a-tint) 0, var(--bg) 340px) no-repeat, var(--bg); min-height: 100vh; }
+  /* ★ 季節のマーク（2026-10-13）。いまの月（資料の月分ではない）で変わる。右下に うすく大きく、上に 小さく */
+  body::after { content: var(--wm, ''); position: fixed; right: -18px; bottom: -24px; font-size: 190px; line-height: 1; opacity: .09; pointer-events: none; z-index: 0; transform: rotate(-12deg); }
+  main { position: relative; z-index: 1; }
+  .season { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 4px; padding: 3px 12px 3px 6px; border-radius: 999px; background: var(--paper); border: 1px solid var(--a-soft); color: var(--accent); font-size: 13.5px; font-weight: 700; cursor: pointer; user-select: none; -webkit-user-select: none; }
+  .season .sm { font-size: 22px; line-height: 1; display: inline-block; }
+  .season .sm.pop { animation: smpop .6s ease; }
+  @keyframes smpop { 0% { transform: scale(1) rotate(0); } 35% { transform: scale(1.45) rotate(-14deg); } 70% { transform: scale(.92) rotate(8deg); } 100% { transform: scale(1) rotate(0); } }
+  @media (prefers-reduced-motion: reduce) { .season .sm.pop { animation: none; } }
   body {
     font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
     font-size: 17px; line-height: 1.7;
@@ -53,11 +68,11 @@
   h1 { font-size: 26px; line-height: 1.35; margin: 4px 0 6px; font-weight: 700; }
   .lead { color: var(--sub); font-size: 15px; margin: 0 0 18px; }
   /* ★ 電子帳簿保存法（入れている顧問先だけ）。ふだんは切ったまま＝軽く送る */
-  .scanopt { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; padding: 10px 14px; border-radius: 14px; background: var(--paper); border: 2px dashed #8FBFB2; cursor: pointer; }
+  .scanopt { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; padding: 10px 14px; border-radius: 14px; background: var(--paper); border: 2px dashed var(--a-mid); cursor: pointer; }
   .scanopt input { width: 24px; height: 24px; margin: 2px 0 0; flex-shrink: 0; accent-color: var(--accent); }
   .scanopt b { display: block; font-size: 16px; }
   .scanopt small { display: block; font-size: 12.5px; color: var(--sub); line-height: 1.6; margin-top: 2px; }
-  .scanopt.on { border-style: solid; border-color: var(--accent); background: #E6F0EE; }
+  .scanopt.on { border-style: solid; border-color: var(--accent); background: var(--a-tint); }
   .hscan { position: absolute; left: 4px; top: 4px; font-size: 10.5px; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: var(--ok); color: #fff; }
   .hscan.paper { background: var(--warn); }
   .period { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 16px; padding: 12px 14px; border-radius: 14px; background: var(--paper); border: 2px solid var(--accent); }
@@ -97,8 +112,8 @@
   .tray.picking .ti.tsel { outline: 3px solid var(--accent); outline-offset: -2px; }
   .boxback { font: inherit; font-size: 16px; font-weight: 700; color: var(--accent); background: var(--paper); border: 2px solid var(--accent); border-radius: 12px; padding: 10px 16px; margin: 0 0 12px; cursor: pointer; }
   /* 年分の小箱（その中に月分の小箱） */
-  .yr { border: 1.5px dashed #B5D3CA; border-radius: 12px; background: #FAFDFC; overflow: hidden; }
-  .yr.open { border-style: solid; border-color: #8FBFB2; }
+  .yr { border: 1.5px dashed var(--a-soft); border-radius: 12px; background: var(--a-faint); overflow: hidden; }
+  .yr.open { border-style: solid; border-color: var(--a-mid); }
   .yr-h { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; border: 0; background: transparent; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
   .yr-h .yl { font-weight: 700; font-size: 17px; }
   .yr-h .yc { flex: 1; font-size: 13px; color: var(--sub); text-align: right; }
@@ -113,18 +128,18 @@
   /* ★ 箱らしく（2026-10-06）：点線の囲い・うすい緑・箱の絵。ここへ入れるのだと ひと目で分かるように */
   .box {
     position: relative; padding: 14px 16px 14px; border-radius: 18px;
-    background: linear-gradient(180deg, #FFFFFF 0%, #F1F8F5 100%); border: 2.5px dashed #8FBFB2;
+    background: linear-gradient(180deg, #FFFFFF 0%, var(--a-faint) 100%); border: 2.5px dashed var(--a-mid);
     transition: border-color .12s, background-color .12s, transform .12s;
   }
   .box-ico { width: 30px; height: 30px; color: var(--accent); flex-shrink: 0; }
   .box-head .ttl { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .box.over { border-color: var(--accent); border-style: solid; background: #DCEFE8; transform: scale(1.01); }
-  .drop { display: none; margin-top: 12px; padding: 14px 10px; border: 2px dashed #8FBFB2; border-radius: 12px; background: #fff;
+  .box.over { border-color: var(--accent); border-style: solid; background: var(--a-tint); transform: scale(1.01); }
+  .drop { display: none; margin-top: 12px; padding: 14px 10px; border: 2px dashed var(--a-mid); border-radius: 12px; background: #fff;
           color: var(--accent); font-weight: 700; font-size: 15px; text-align: center; }
   .drop svg { width: 28px; height: 28px; vertical-align: middle; margin-right: 6px; }
-  .box.over .drop { background: #DCEFE8; border-color: var(--accent); }
+  .box.over .drop { background: var(--a-tint); border-color: var(--accent); }
   @media (hover: hover) and (pointer: fine) { .drop { display: block; } }
-  .outbox { border-color: #8FBFB2; }
+  .outbox { border-color: var(--a-mid); }
   .box-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
   .box-name { font-size: 19px; font-weight: 700; margin: 0; }
   .box-count { flex-shrink: 0; font-size: 14px; font-weight: 700; color: var(--accent); }
@@ -138,9 +153,9 @@
   .btn.cam { background: var(--accent); color: #fff; border: 0; }
   .btn.cam:active { background: var(--accent-press); }
   .btn.pick { border: 2px solid var(--accent); background: var(--paper); color: var(--accent); }
-  .btn.pick:active { background: #E6F0EE; }
+  .btn.pick:active { background: var(--a-tint); }
   input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-  label:focus-within, textarea:focus-visible, button:focus-visible { outline: 3px solid #7FB8AC; outline-offset: 3px; }
+  label:focus-within, textarea:focus-visible, button:focus-visible { outline: 3px solid var(--a-mid); outline-offset: 3px; }
 
   /* ---- 送る前の確認 ---- */
   .tray { margin-top: 26px; padding: 16px; border-radius: 18px; background: var(--paper); border: 2px solid var(--accent); }
@@ -148,7 +163,7 @@
   .tray .sub { font-size: 14px; color: var(--sub); margin: 0 0 12px; }
   .tray h3 { font-size: 15px; margin: 14px 0 8px; color: var(--sub); }
   .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
-  .ti { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: #EEF2F1; border: 1px solid var(--line); }
+  .ti { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: var(--a-faint); border: 1px solid var(--line); }
   .ti img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .ti .kind { white-space: pre-line; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--sub); font-size: 14px; padding: 6px; text-align: center; word-break: break-all; }
   /* ★ 何枚かで1つの書類（2026-10-11） */
@@ -184,8 +199,8 @@
 
   /* ---- 送ったもの：箱の中の 月分ごとの小箱 ---- */
   .hbox { margin-top: 14px; display: grid; gap: 8px; }
-  .mon { border: 1.5px dashed #B5D3CA; border-radius: 12px; background: #fff; overflow: hidden; }
-  .mon.open { border-style: solid; border-color: #8FBFB2; }
+  .mon { border: 1.5px dashed var(--a-soft); border-radius: 12px; background: #fff; overflow: hidden; }
+  .mon.open { border-style: solid; border-color: var(--a-mid); }
   .mon-hd { display: flex; align-items: center; gap: 6px; padding-right: 8px; }
   .mon-del { flex-shrink: 0; font: inherit; font-size: 13px; font-weight: 700; color: var(--err); background: #fff; border: 1.5px solid #E7B4AF; border-radius: 8px; padding: 5px 9px; cursor: pointer; }
   .mon-del:active { background: #FDECEA; }
@@ -196,7 +211,7 @@
   .mon-h .chev { color: var(--accent); transition: transform .15s; }
   .mon:not(.open) .chev { transform: rotate(-90deg); }
   .hgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0 8px 10px; }
-  .ht { position: relative; aspect-ratio: 3 / 4; border-radius: 8px; overflow: hidden; background: #EEF2F1; border: 1px solid var(--line); }
+  .ht { position: relative; aspect-ratio: 3 / 4; border-radius: 8px; overflow: hidden; background: var(--a-faint); border: 1px solid var(--line); }
   .ht img { width: 100%; height: 100%; object-fit: cover; display: block; }
   /* ★ エクセル・ワードなどは アプリのアイコンで見せる（2026-10-13） */
   .ficon { position: absolute; inset: 0 0 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px; background: #fff; text-align: center; }
@@ -206,7 +221,7 @@
   .ficon .fl { font-size: 11px; font-weight: 800; color: #444; }
   .ficon .fn { font-size: 11px; color: var(--sub); word-break: break-all; line-height: 1.25; max-height: 2.6em; overflow: hidden; }
   .ht .kind { white-space: pre-line; position: absolute; inset: 0 0 22px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--sub); font-size: 12px; padding: 4px; text-align: center; word-break: break-all; overflow: hidden; }
-  .ht.wait { background: linear-gradient(110deg, #EEF2F1 30%, #F7FAF9 50%, #EEF2F1 70%); background-size: 200% 100%; animation: shim 1.2s linear infinite; }
+  .ht.wait { background: linear-gradient(110deg, var(--a-faint) 30%, var(--a-faint) 50%, var(--a-faint) 70%); background-size: 200% 100%; animation: shim 1.2s linear infinite; }
   @keyframes shim { to { background-position: -200% 0; } }
   .ht.sending img { opacity: .55; }
   .ht.isback { border: 2px solid var(--err); cursor: pointer; }
@@ -235,10 +250,10 @@
   .ht.joinhit { outline: 4px solid #3A6EA8; outline-offset: -2px; }
   .hmenu { position: fixed; z-index: 25; min-width: 220px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,.25); padding: 6px; display: flex; flex-direction: column; }
   .hmenu button { font: inherit; font-size: 16px; text-align: left; padding: 12px 14px; border: 0; background: none; border-radius: 8px; cursor: pointer; }
-  .hmenu button:hover, .hmenu button:active { background: #EEF4F2; }
+  .hmenu button:hover, .hmenu button:active { background: var(--a-faint); }
   .hmenu button:disabled { color: #aaa; }
-  body.dragging .mon { outline: 2px dashed #8FBFB2; outline-offset: -2px; }
-  .mon.target { outline: 3px solid var(--accent) !important; background: #DCEFE8; }
+  body.dragging .mon { outline: 2px dashed var(--a-mid); outline-offset: -2px; }
+  .mon.target { outline: 3px solid var(--accent) !important; background: var(--a-tint); }
   .ghost { position: fixed; z-index: 20; width: 80px; height: 106px; border-radius: 8px; overflow: hidden; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.35); background: #fff; border: 2px solid var(--accent); font-size: 11px; }
   .ghost img { width: 100%; height: 100%; object-fit: cover; }
   .zoomv { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.92); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: zoom-out; padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0); }
@@ -263,12 +278,12 @@
   .box.sub .hgrid { padding: 0 6px 8px; gap: 5px; }
   .kids:empty { display: none; }
   .kids { display: grid; gap: 10px; margin-top: 12px; }
-  .box.sub { padding: 10px 12px; border-width: 2px; background: linear-gradient(180deg, #FFFFFF 0%, #F5FAF8 100%); border-color: #A9CFC4; }
+  .box.sub { padding: 10px 12px; border-width: 2px; background: linear-gradient(180deg, #FFFFFF 0%, var(--a-faint) 100%); border-color: var(--a-mid); }
   .box.sub .box-name { font-size: 17px; }
   .box.sub .box-ico { width: 24px; height: 24px; }
   .box.sub .btn { min-height: 48px; font-size: 16px; }
-  .box.sub.d2, .box.sub.d3 { border-color: #C3DDD5; background: #FAFDFC; }
-  .box.target { border-color: var(--accent); border-style: solid; background: #DCEFE8; }
+  .box.sub.d2, .box.sub.d3 { border-color: var(--a-soft); background: var(--a-faint); }
+  .box.target { border-color: var(--accent); border-style: solid; background: var(--a-tint); }
   .ghost .gn { position: absolute; right: -8px; top: -8px; min-width: 26px; height: 26px; border-radius: 13px; background: var(--err); color: #fff; font-size: 14px; line-height: 26px; text-align: center; padding: 0 6px; }
   .ghost { overflow: visible; }
   .ghost img { border-radius: 6px; }
@@ -279,7 +294,7 @@
   .ht.sel { outline: 3px solid var(--accent); outline-offset: -1px; }
   .ht.sel .ck { background: var(--accent); }
   .ht.sel .ck::after { content: '✓'; position: absolute; inset: 0; color: #fff; font-weight: 900; font-size: 17px; line-height: 22px; text-align: center; }
-  .mon-sel, .mon-pdf { flex-shrink: 0; font: inherit; font-size: 13px; font-weight: 700; color: var(--accent); background: #fff; border: 1.5px solid #8FBFB2; border-radius: 8px; padding: 5px 9px; cursor: pointer; }
+  .mon-sel, .mon-pdf { flex-shrink: 0; font: inherit; font-size: 13px; font-weight: 700; color: var(--accent); background: #fff; border: 1.5px solid var(--a-mid); border-radius: 8px; padding: 5px 9px; cursor: pointer; }
   .selbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9; background: #fff; border-top: 2px solid var(--accent); box-shadow: 0 -4px 16px rgba(0,0,0,.12);
             padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0)); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-content: center; }
   .selbar b { font-size: 16px; }
@@ -345,6 +360,7 @@
 <main>
   <div class="ng" id="ng" hidden></div>
   <div id="app" hidden>
+  <div class="season" id="season" role="button" tabindex="0" title="押すと 季節のマークが変わります"><span class="sm" id="seasonMark"></span><span id="seasonWord"></span></div>
   <p class="client" id="client"></p>
   <h1>資料をお送りください</h1>
   <!-- ★ いちばん上に 2つのタブ（2026-10-13）。撮って送るところと 送ったものを見るところを 分ける（何年何月分が2つ出て まぎらわしかった） -->
@@ -2061,10 +2077,82 @@
   /* ★★ 開くときに待たせない・止まらない（2026-10-06。4台で同時に送っていたら「つながりませんでした」で開けなかった）
        ・前に開いたときの顧問先名・箱を覚えておき（collect_info。資料ではない）、すぐ画面を出す。新しいものは裏で取って差し替える
        ・初めての端末でも、つながらなければ あきらめずに 自動で聞き直す（3秒→6秒→10秒→20秒…）。止めるのは「使用できません」のときだけ */
+
+  /* ================= ★ 顧問先ごとの画面の色・季節のマーク（2026-10-13） =================
+     ・色は 事務所の［顧問先の登録・変更］で選ぶ（マスタの「画面の色」）。名前だけが届き、色はここで作る
+     ・office.html の THEMES と同じ並び・同じ色（見張りが突き合わせる。片方だけ直さない）
+     ・選んだ色から 背景・枠・うすい色を作る（--bg / --a-tint / --a-soft …）。緑のときは 今までの色と同じに近い */
+  const THEMES = [
+    ['green', '深緑', '#0F6E5C'], ['mint', 'ミント', '#2A9D8F'], ['teal', '青緑', '#0E7C86'], ['forest', '森', '#2E7D32'],
+    ['moss', '苔', '#4F6F52'], ['matcha', '抹茶', '#5B7F2E'], ['olive', 'オリーブ', '#6B7A1E'], ['yamabuki', '山吹', '#A87A00'],
+    ['gold', '金', '#9A7B12'], ['kaki', '柿', '#B5651D'], ['orange', '橙', '#C2611A'], ['coral', '珊瑚', '#C4553B'],
+    ['shu', '朱', '#C8502E'], ['red', '赤', '#B3261E'], ['rose', 'ローズ', '#B8325A'], ['sakura', '桜', '#C0486F'],
+    ['wine', 'ワイン', '#8E2C48'], ['fuji', '藤', '#7B5EA7'], ['purple', '紫', '#6A3FA0'], ['indigo', '桔梗', '#3949AB'],
+    ['ai', '藍', '#1E4E79'], ['navy', '紺', '#1F3A68'], ['kon', '濃紺', '#2C3E50'], ['blue', '青', '#1F5FAF'],
+    ['sky', '空', '#2B7BB9'], ['brown', '茶', '#7A4E2D'], ['choco', 'チョコ', '#5D4037'], ['sumi', '墨', '#37474F'],
+    ['gray', '鼠', '#546E7A'], ['slate', '青鈍', '#455A64']
+  ];
+  function hexRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+  function rgbHex(c) { return '#' + c.map(function (x) { return Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, '0'); }).join('').toUpperCase(); }
+  function mixHex(a, b, t) { const x = hexRgb(a), y = hexRgb(b); return rgbHex(x.map(function (v, i) { return v + (y[i] - v) * t; })); }
+  let THEME_NOW = { id: 'green', a: '#0F6E5C', bg: '#F3F6F5' };
+  function themeVars(hex) {
+    return { accent: hex, 'accent-press': mixHex(hex, '#000000', 0.22), bg: mixHex(hex, '#F6F7F7', 0.93), line: mixHex(hex, '#DDE1E0', 0.78),
+      'a-faint': mixHex(hex, '#FFFFFF', 0.95), 'a-tint': mixHex(hex, '#FFFFFF', 0.88), 'a-soft': mixHex(hex, '#FFFFFF', 0.68), 'a-mid': mixHex(hex, '#FFFFFF', 0.5) };
+  }
+  function applyTheme(id) {
+    const t = THEMES.find(function (x) { return x[0] === id; }) || THEMES[0];
+    const v = themeVars(t[2]);
+    Object.keys(v).forEach(function (k) { document.documentElement.style.setProperty('--' + k, v[k]); });
+    document.documentElement.dataset.theme = t[0];
+    THEME_NOW = { id: t[0], a: t[2], bg: v.bg };
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.setAttribute('content', t[2]); });
+  }
+  /* 季節のマーク：いまの月（資料の月分ではない）で決まる。日ごとに入れ替わり、押すと次のマークへ。行事の日は その日のマーク */
+  const SEASONS = {
+    1: { w: ['睦月・新春', '寒さの中にも 春の兆し'], m: ['🎍', '🌅', '🎌', '⛄', '🍊', '🎴'] },
+    2: { w: ['如月・梅のころ', '春はもうすぐ'], m: ['👹', '🫘', '🌸', '🍫', '⛄', '🦉'] },
+    3: { w: ['弥生・春の足音', '花の便り'], m: ['🎎', '🌸', '🌷', '🐞', '🍡', '🌱'] },
+    4: { w: ['卯月・春うらら', '桜のころ'], m: ['🌸', '🌷', '🐝', '🎒', '🍓', '🦋'] },
+    5: { w: ['皐月・風かおる', '新緑のころ'], m: ['🎏', '🌿', '🍃', '🌱', '🐛', '🌼'] },
+    6: { w: ['水無月・梅雨', 'あじさいのころ'], m: ['☔', '🐌', '🐸', '🌂', '🍒', '🌧️'] },
+    7: { w: ['文月・夏の始まり', '星に願いを'], m: ['🎋', '🌻', '🍉', '🎐', '🍧', '⭐'] },
+    8: { w: ['葉月・盛夏', '暑さに ご自愛を'], m: ['🎆', '🍉', '🌊', '🐚', '🍧', '🌻'] },
+    9: { w: ['長月・秋の気配', '月がきれいなころ'], m: ['🎑', '🌕', '🐇', '🍇', '🌾', '🍡'] },
+    10: { w: ['神無月・実りの秋', '秋晴れ'], m: ['🍁', '🌰', '🍠', '🍄', '🎃', '🍂'] },
+    11: { w: ['霜月・紅葉', '深まる秋'], m: ['🍂', '🍁', '🦊', '🍠', '🌰', '🍵'] },
+    12: { w: ['師走・年の瀬', '今年もあと少し'], m: ['🎄', '⛄', '❄️', '🎁', '🔔', '🍊'] }
+  };
+  const SEASON_DAYS = { '1-1': ['🎍', '謹賀新年'], '1-2': ['🎍', '新春'], '1-3': ['🎍', '新春'], '2-3': ['👹', '節分'], '2-14': ['🍫', 'バレンタイン'],
+    '3-3': ['🎎', 'ひなまつり'], '5-5': ['🎏', 'こどもの日'], '7-7': ['🎋', '七夕'], '10-31': ['🎃', 'ハロウィン'],
+    '12-24': ['🎄', 'クリスマス'], '12-25': ['🎄', 'クリスマス'], '12-31': ['🔔', '大晦日'] };
+  let SEASON_I = 0;
+  function seasonNow(d) {
+    d = d || new Date();
+    const mo = d.getMonth() + 1, day = d.getDate(), S = SEASONS[mo];
+    const sp = SEASON_DAYS[mo + '-' + day];
+    return { mo: mo, marks: sp ? [sp[0]].concat(S.m.filter(function (x) { return x !== sp[0]; })) : S.m, word: sp ? sp[1] : S.w[day % S.w.length], start: sp ? 0 : day % S.m.length };
+  }
+  function drawSeason(step) {
+    const n = seasonNow();
+    if (!step) SEASON_I = n.start; else SEASON_I = (SEASON_I + 1) % n.marks.length;
+    const mk1 = n.marks[SEASON_I];
+    $('seasonMark').textContent = mk1; $('seasonWord').textContent = n.mo + '月　' + n.word;
+    document.documentElement.style.setProperty('--wm', '"' + n.marks[n.start] + '"');
+    if (step) { const e = $('seasonMark'); e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); }
+  }
+  $('season').addEventListener('click', function () { drawSeason(true); });
+  $('season').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); drawSeason(true); } });
+  drawSeason(false);
+  /* 日付が変わったら（開きっぱなしでも）マークを替える */
+  let SEASON_DAY = new Date().getDate();
+  setInterval(function () { const d = new Date().getDate(); if (d !== SEASON_DAY) { SEASON_DAY = d; drawSeason(false); } }, 60000);
+
   const LS_INFO = 'collect_info';
   function infoGet() { try { const o = JSON.parse(lsGet(LS_INFO) || 'null'); return o && o.t === TOKEN ? o : null; } catch (e) { return null; } }
   (function boot() {
     if (LIVE) {
+      if (BOOT) applyTheme(BOOT.theme);
       if (BOOT) showApp(BOOT.clientName, BOOT.maxMb, BOOT.boxes, BOOT.scan); else showNg(NG_URL);
       return;
     }
@@ -2076,13 +2164,14 @@
     }
     if (!WEB2) { showNg('送り先（サーバの口）が分かりません。担当の事務所スタッフにお問い合わせください。'); return; }
     const kept = infoGet();
-    if (kept) showApp(kept.name, kept.maxMb, kept.boxes, kept.scan); else showNg('読み込み中…');
+    if (kept) { applyTheme(kept.theme); showApp(kept.name, kept.maxMb, kept.boxes, kept.scan); } else showNg('読み込み中…');
     const BOOT_WAIT = [3, 6, 10, 20, 30];
     let n = 0;
     (function ask() {
       call('clientInfo', [TOKEN], 30000).then(function (r) {
         lsSet(LS_TOK, TOKEN);
-        lsSet(LS_INFO, JSON.stringify({ t: TOKEN, name: r.clientName, maxMb: r.maxMb, boxes: r.boxes, scan: !!r.scan }));
+        lsSet(LS_INFO, JSON.stringify({ t: TOKEN, name: r.clientName, maxMb: r.maxMb, boxes: r.boxes, scan: !!r.scan, theme: r.theme || '' }));
+        applyTheme(r.theme);
         if (!kept) { showApp(r.clientName, r.maxMb, r.boxes, r.scan); return; }
         SCAN = !!r.scan; scanPaint();
         /* 箱が変わっていたら 組み直す（送る前の写真がトレイにあるときは そのまま） */

@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791868025;</script>
+<script>window.__PAGE_VER=1791871181;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -366,6 +366,12 @@
   .f textarea { min-height: 140px; line-height: 1.6; resize: vertical; }
   .hint { color: var(--sub); font-size: 12.5px; margin-top: 4px; line-height: 1.6; }
   .chk { display: flex; gap: 6px; align-items: center; font-weight: 400 !important; }
+  /* ★ 顧問先の画面の色（2026-10-13）。30色から選ぶ */
+  .themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; margin-top: 4px; }
+  .themes button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px 5px; border-radius: 10px; border: 2px solid transparent; background: #fff; cursor: pointer; font-size: 12px; color: #333; }
+  .themes button i { width: 34px; height: 22px; border-radius: 6px; display: block; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+  .themes button[aria-pressed="true"] { border-color: #222; font-weight: 800; }
+  .themes button[aria-pressed="true"]::after { content: '✓ 選択中'; font-size: 10.5px; }
   .url { display: flex; gap: 8px; }
   .url input { color: var(--sub); }
   .preview { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -910,6 +916,8 @@
       </div>
       <div class="f" id="aActiveRow"><label class="chk"><input id="aActive" type="checkbox"> 有効（外すと、この顧問先のURLは使えなくなります。履歴と資料は残ります）</label></div>
       <div class="f"><label class="chk"><input id="aScan" type="checkbox"> 電子帳簿保存法（スキャナ保存）… 顧問先の画面に「紙を捨てる（電子保存）」を出します。ふだんは今までどおり軽く送れます</label></div>
+      <div class="f"><label>顧問先の画面の色（背景もこの色に合わせます）</label><input type="hidden" id="aTheme" value="">
+        <div class="themes" id="aThemes" role="group" aria-label="画面の色"></div></div>
       <div class="f" id="aUrlRow">
         <label for="aUrl">提出URL（顧問先に送るもの）</label>
         <div class="url"><input id="aUrl" readonly><button type="button" id="aCopyUrl">コピー</button></div>
@@ -4740,6 +4748,33 @@
     });
   }
   $('aq').addEventListener('input', aDraw);
+  /* ★ 顧問先の画面の色（2026-10-13）。index.html の THEMES と同じ並び・同じ色（見張りが突き合わせる。片方だけ直さない） */
+  const THEMES = [
+    ['green', '深緑', '#0F6E5C'], ['mint', 'ミント', '#2A9D8F'], ['teal', '青緑', '#0E7C86'], ['forest', '森', '#2E7D32'],
+    ['moss', '苔', '#4F6F52'], ['matcha', '抹茶', '#5B7F2E'], ['olive', 'オリーブ', '#6B7A1E'], ['yamabuki', '山吹', '#A87A00'],
+    ['gold', '金', '#9A7B12'], ['kaki', '柿', '#B5651D'], ['orange', '橙', '#C2611A'], ['coral', '珊瑚', '#C4553B'],
+    ['shu', '朱', '#C8502E'], ['red', '赤', '#B3261E'], ['rose', 'ローズ', '#B8325A'], ['sakura', '桜', '#C0486F'],
+    ['wine', 'ワイン', '#8E2C48'], ['fuji', '藤', '#7B5EA7'], ['purple', '紫', '#6A3FA0'], ['indigo', '桔梗', '#3949AB'],
+    ['ai', '藍', '#1E4E79'], ['navy', '紺', '#1F3A68'], ['kon', '濃紺', '#2C3E50'], ['blue', '青', '#1F5FAF'],
+    ['sky', '空', '#2B7BB9'], ['brown', '茶', '#7A4E2D'], ['choco', 'チョコ', '#5D4037'], ['sumi', '墨', '#37474F'],
+    ['gray', '鼠', '#546E7A'], ['slate', '青鈍', '#455A64']
+  ];
+  (function () {
+    const g = $('aThemes');
+    THEMES.forEach(function (t) {
+      const b = document.createElement('button'); b.type = 'button'; b.dataset.theme = t[0]; b.title = t[1] + '（' + t[2] + '）';
+      const i = document.createElement('i'); i.style.background = 'linear-gradient(135deg,' + t[2] + ' 0 55%, ' + t[2] + '22 55%)';
+      b.appendChild(i); b.appendChild(document.createTextNode(t[1]));
+      b.setAttribute('aria-pressed', 'false');
+      g.appendChild(b);
+    });
+    g.addEventListener('click', function (e) { const b = e.target.closest('button[data-theme]'); if (b) aThemeSet(b.dataset.theme); });
+  })();
+  function aThemeSet(id) {
+    if (!THEMES.some(function (t) { return t[0] === id; })) id = 'green';
+    $('aTheme').value = id;
+    document.querySelectorAll('#aThemes button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.theme === id)); });
+  }
   function aOpen(code) {
     const c = A.list.find(function (x) { return x.code === code; }); if (!c) return;
     A.cur = code; A.isNew = false;
@@ -4749,6 +4784,7 @@
     $('aName').value = c.name; $('aStaff').value = c.staff;
     $('aBoxes').value = c.boxesRaw ? c.boxes.map(function (b) { return ((c.hidden || []).indexOf(b) >= 0 ? '~' : '') + b; }).join('\n') : '';
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
+    aThemeSet(c.theme || 'green');
     $('aUrlRow').hidden = !c.url; $('aUrl').value = c.url;
     $('aSave').textContent = '保存';
     amsg(''); aPreview(); aDraw();
@@ -4758,7 +4794,7 @@
     $('aTitle').textContent = '新しい顧問先';
     $('aForm').hidden = false;
     ['aCode', 'aName', 'aStaff', 'aBoxes'].forEach(function (k) { $(k).value = ''; });
-    $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false;
+    $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false; aThemeSet('green');
     $('aActiveRow').hidden = true; $('aUrlRow').hidden = true;
     $('aSave').textContent = '登録して URL を作る';
     amsg(''); aPreview(); aDraw(); $('aCode').focus();
@@ -4859,7 +4895,7 @@
     e.preventDefault();
     if (A.busy) return;
     const o = { code: $('aCode').value.trim(), name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
-      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, isNew: A.isNew };
+      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew };
     A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
     gs('adminSave', o).then(function (l) {
       A.list = l; A.busy = false; $('aSave').disabled = false;
