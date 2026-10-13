@@ -27,7 +27,7 @@
 <meta name="apple-mobile-web-app-title" content="資料提出">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791857758;</script>
+<script>window.__PAGE_VER=1791859985;</script>
 <style>
   :root {
     --bg: #F3F6F5;
@@ -174,6 +174,13 @@
   .hgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0 8px 10px; }
   .ht { position: relative; aspect-ratio: 3 / 4; border-radius: 8px; overflow: hidden; background: #EEF2F1; border: 1px solid var(--line); }
   .ht img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* ★ エクセル・ワードなどは アプリのアイコンで見せる（2026-10-13） */
+  .ficon { position: absolute; inset: 0 0 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px; background: #fff; text-align: center; }
+  .ti .ficon { inset: 0; }
+  .ficon .fi { width: 46px; height: 54px; border-radius: 6px; color: #fff; font: 900 26px/54px system-ui, sans-serif; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,.18); }
+  .ficon .fi::after { content: ''; position: absolute; right: 0; top: 0; border-width: 0 12px 12px 0; border-style: solid; border-color: #fff rgba(0,0,0,.18) rgba(0,0,0,.18) #fff; border-radius: 0 6px 0 0; }
+  .ficon .fl { font-size: 11px; font-weight: 800; color: #444; }
+  .ficon .fn { font-size: 11px; color: var(--sub); word-break: break-all; line-height: 1.25; max-height: 2.6em; overflow: hidden; }
   .ht .kind { white-space: pre-line; position: absolute; inset: 0 0 22px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--sub); font-size: 12px; padding: 4px; text-align: center; word-break: break-all; overflow: hidden; }
   .ht.wait { background: linear-gradient(110deg, #EEF2F1 30%, #F7FAF9 50%, #EEF2F1 70%); background-size: 200% 100%; animation: shim 1.2s linear infinite; }
   @keyframes shim { to { background-position: -200% 0; } }
@@ -319,7 +326,7 @@
 
   <section id="paneSend">
     <p class="lead" id="leadList">資料の箱を選んでください。パソコンなら 箱へドラッグするだけでも入ります。</p>
-    <p class="lead" id="leadBox" hidden>撮影するか、写真・PDFを選んで、最後に「送る」を押すと事務所に届きます。送ったものは 箱の中に 年分・月分ごとに並びます。</p>
+    <p class="lead" id="leadBox" hidden>撮影するか、写真・PDF・エクセル・ワードなどのファイルを選んで、最後に「送る」を押すと事務所に届きます。送ったものは 箱の中に 年分・月分ごとに並びます。</p>
     <button type="button" class="notice" id="notice" hidden><span class="nt"><b id="noticeT"></b><small>押すと 写真と理由が出ます</small></span><span aria-hidden="true">›</span></button>
     <div class="period"><label for="perY">何年何月分の資料ですか</label><span class="pers"><select id="perY" aria-label="何年"></select><select id="perM" aria-label="何月分"></select></span></div>
     <label class="scanopt" id="scanOpt" hidden><input type="checkbox" id="scanOn"><span><b>紙を捨てる（電子保存）</b><small id="scanSub">入れると 写真を大きいまま送ります（少し時間がかかります）。届いたら 紙の原本は捨ててかまいません。<br>月分の翌月末までに送ったものだけです。ふだんは 切ったまま（軽く送る）で大丈夫です。</small></span></label>
@@ -579,10 +586,29 @@
     doneEl.style.display = text ? 'block' : 'none';
   }
 
-  /* ドラッグでは何でも落とせるので、写真とPDF以外はここで止める（サーバでも断る） */
+  /* ドラッグでは何でも落とせるので、送れるもの以外はここで止める（サーバでも断る）。
+     ★ 2026-10-13：エクセル・ワード・パワーポイント・CSV・テキストも送れる（出納帳をエクセルで作っている顧問先など） */
+  const FILE_KINDS = {
+    xlsx: ['Excel', 'X', '#1D6F42', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+    xls: ['Excel', 'X', '#1D6F42', 'application/vnd.ms-excel'],
+    xlsm: ['Excel', 'X', '#1D6F42', 'application/vnd.ms-excel.sheet.macroEnabled.12'],
+    csv: ['CSV', 'X', '#2E7D4F', 'text/csv'],
+    docx: ['Word', 'W', '#2B579A', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    doc: ['Word', 'W', '#2B579A', 'application/msword'],
+    pptx: ['PowerPoint', 'P', '#C43E1C', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+    ppt: ['PowerPoint', 'P', '#C43E1C', 'application/vnd.ms-powerpoint'],
+    txt: ['テキスト', 'T', '#5F6B68', 'text/plain']
+  };
+  function fileKind(name) { const e = (String(name || '').match(/\.([A-Za-z0-9]+)$/) || [])[1]; return e && FILE_KINDS[e.toLowerCase()] ? FILE_KINDS[e.toLowerCase()] : null; }
+  function fileIcon(name) {
+    const k = fileKind(name); if (!k) return null;
+    const d = mk('div', 'ficon'); const i = mk('div', 'fi', k[1]); i.style.background = k[2];
+    d.appendChild(i); d.appendChild(mk('div', 'fl', k[0])); d.appendChild(mk('div', 'fn', String(name || '').replace(/^\d{8}_\d{6}_/, '')));
+    return d;
+  }
   function sendable(f) {
     const type = f.type || '';
-    return /^image\//.test(type) || type === 'application/pdf' || /\.(pdf|jpe?g|png|webp|heic|heif)$/i.test(f.name || '');
+    return /^image\//.test(type) || type === 'application/pdf' || /\.(pdf|jpe?g|png|webp|heic|heif)$/i.test(f.name || '') || !!fileKind(f.name);
   }
   function isPdf(f) { return f.type === 'application/pdf' || /\.pdf$/i.test(f.name || ''); }
 
@@ -596,10 +622,11 @@
     files.forEach(function (f) {
       if (!sendable(f)) { bad.push(f.name || 'ファイル'); return; }   /* 送れないものはトレイに入れない */
       let url = '';
-      if (!isPdf(f)) { try { url = URL.createObjectURL(f); } catch (e) {} }
-      tray.push({ id: ++seq, file: f, box: box, url: url, per: r ? r.per : '', redo: r ? r.k : '', scan: scanOn() && !isPdf(f) });
+      const fk = !!fileKind(f.name);
+      if (!isPdf(f) && !fk) { try { url = URL.createObjectURL(f); } catch (e) {} }
+      tray.push({ id: ++seq, file: f, box: box, url: url, per: r ? r.per : '', redo: r ? r.k : '', scan: scanOn() && !isPdf(f) && !fk });
     });
-    if (bad.length) showDone(bad.join('、') + ' は送れません。写真（JPEG・PNGなど）かPDFだけ送れます。', true);
+    if (bad.length) showDone(bad.join('、') + ' は送れません。写真（JPEG・PNGなど）・PDF・エクセル・ワード・パワーポイント・CSV・テキストを送れます。', true);
     else if (files.length) showDone('');
     drawTray();
   }
@@ -644,7 +671,7 @@
         g0.forEach(function (it, gi) {
           const d = mk('div', 'ti' + (sets[gi] ? ' joined' : '')); d.dataset.id = String(it.id);
           if (it.url) { const img = mk('img'); img.alt = it.file.name || '写真'; img.src = it.url; d.appendChild(img); }
-          else d.appendChild(mk('div', 'kind', (isPdf(it.file) ? 'PDF\n' : '') + (it.file.name || '')));
+          else d.appendChild(fileIcon(it.file.name) || mk('div', 'kind', (isPdf(it.file) ? 'PDF\n' : '') + (it.file.name || '')));
           const x = mk('button', 'del', '×'); x.type = 'button';
           x.setAttribute('aria-label', (it.file.name || '写真') + 'を消す');
           x.addEventListener('click', function () { removeItem(it.id); });
@@ -971,6 +998,8 @@
   }
   function tileBase(src, name, pdf) {
     const d = mk('div', 'ht');
+    const fi = fileIcon(name);
+    if (fi) { d.appendChild(fi); d.classList.add('file'); return d; }
     if (src) { const img = mk('img'); img.alt = name || '写真'; img.src = src; img.loading = 'lazy'; d.appendChild(img); }
     else if (pdf) d.appendChild(mk('div', 'kind', 'PDF\n' + (name || '')));
     else d.classList.add('wait');
@@ -992,7 +1021,7 @@
   function histTile(h) {
     const d = tileBase(TH[h.k], h.name, h.pdf);
     d.dataset.k = h.k;
-    if (TH[h.k] === null && !h.pdf) { d.classList.remove('wait'); d.appendChild(mk('div', 'kind', h.name)); }
+    if (TH[h.k] === null && !h.pdf && !fileKind(h.name)) { d.classList.remove('wait'); d.appendChild(mk('div', 'kind', h.name)); }
     const s = stOf(h);
     d.appendChild(mk('div', 'hst ' + s[0], s[1]));
     if (h.set) { const sm = String(h.set).match(/#(\d+)\/(\d+)$/); if (sm) { const sb = mk('span', 'hset', '📑' + sm[1] + '/' + sm[2]); sb.title = sm[2] + '枚で1つの書類'; d.appendChild(sb); } }
@@ -1525,7 +1554,7 @@
         '<div class="box-head"><span class="ttl">' + ICON_BOX + '<h2 class="box-name"></h2></span><span class="box-count"></span><span class="go" aria-hidden="true">›</span></div>' +
         '<div class="box-btns">' +
           '<button type="button" class="btn cam">' + ICON_CAM + '撮る</button>' +
-          '<label class="btn pick">選ぶ<input class="pick" type="file" accept="image/*,application/pdf" multiple></label>' +
+          '<label class="btn pick">選ぶ<input class="pick" type="file" accept="image/*,application/pdf,.xlsx,.xls,.xlsm,.csv,.docx,.doc,.pptx,.ppt,.txt" multiple></label>' +
         '</div>' +
         '<input class="cam1" type="file" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">' +
         '<div class="drop">' + ICON_DROP + 'ここへドラッグ＆ドロップ</div>' +
@@ -1668,6 +1697,9 @@
   // 画像は縮小してJPEG化、PDFはそのまま
   async function prepare(file, scan) {
     const type = file.type || '';
+    /* エクセル・ワードなどは そのまま（種類は 名前の拡張子で決める。Windows は CSV を エクセルの種類で渡してくることがある） */
+    const fk = fileKind(file.name);
+    if (fk) return { name: file.name, mime: fk[3], buf: await toBuf(file), size: file.size };
     if (type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
       return { name: file.name, mime: 'application/pdf', buf: await toBuf(file), size: file.size };
     }

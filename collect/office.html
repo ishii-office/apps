@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791857758;</script>
+<script>window.__PAGE_VER=1791859985;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -414,6 +414,22 @@
   #dBody.dc3 .dgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   #dBody.dc4 .dgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
   #dBody.dbig .dimg { aspect-ratio: auto; min-height: 160px; background: #fff; }
+  /* ★ エクセル・ワードなどは アプリのアイコンで見せる（2026-10-13） */
+  .ficon { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px 26px; background: #fff; text-align: center; width: 100%; height: 100%; min-height: 120px; }
+  .ficon .fi { width: 52px; height: 62px; border-radius: 7px; color: #fff; font: 900 30px/62px system-ui, sans-serif; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,.2); flex: none; }
+  .ficon .fi::after { content: ''; position: absolute; right: 0; top: 0; border-width: 0 14px 14px 0; border-style: solid; border-color: #fff rgba(0,0,0,.18) rgba(0,0,0,.18) #fff; border-radius: 0 7px 0 0; }
+  .ficon .fl { font-size: 12px; font-weight: 800; color: #444; }
+  .ficon .fn { font-size: 11.5px; color: var(--sub); word-break: break-all; line-height: 1.25; max-height: 2.6em; overflow: hidden; }
+  .fcard { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 28px 16px; background: #fff; border-radius: 12px; margin: 12px auto; max-width: 520px; color: #1F2A27; }
+  .fcard .ficon { min-height: 0; padding: 0; background: none; }
+  .fcard .ficon .fi { width: 84px; height: 100px; font-size: 48px; line-height: 100px; }
+  .fcard .ficon .fn { font-size: 15px; max-height: none; color: #1F2A27; font-weight: 700; }
+  .fcard .fbtns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .fcard .fbtns button, .fcard .fbtns a { font: inherit; font-size: 14px; font-weight: 700; padding: 8px 14px; border-radius: 9px; border: 1.5px solid #0F6E56; background: #fff; color: #0F6E56; cursor: pointer; text-decoration: none; }
+  .fcard .fbtns button.main { background: #0F6E56; color: #fff; }
+  .fcard .fnote { font-size: 12.5px; color: #6B7A75; text-align: center; line-height: 1.6; }
+  .fcard .fmsg { font-size: 13px; min-height: 1.2em; }
+  .fcard .fmsg.err { color: #B3261E; }
   #dBody.dbig .dimg img { height: auto; object-fit: contain; }
   #dBody.dbig .dimg img:not([src]) { height: 160px; }
   #dBody.dbig .dimg .stt { font-size: 13px; }
@@ -1540,6 +1556,7 @@
       '#h{position:sticky;top:0;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:8px 12px;background:#0F6E5C;font-size:14px}' +
       '#h b{font-size:16px}#h .sp{flex:1}#h button,#h a{font:inherit;font-size:13px;color:#0F6E5C;background:#fff;border:0;border-radius:7px;padding:4px 10px;cursor:pointer;text-decoration:none}' +
       '#b{padding:8px;text-align:center}#b img{display:block;margin:0 auto;max-width:100%;background:#fff;transition:transform .15s;cursor:zoom-in}#b.zoom img{max-width:none!important;max-height:none!important;width:auto!important;height:auto!important;cursor:zoom-out}' +
+      '.ficon{display:flex;flex-direction:column;align-items:center;gap:4px}.ficon .fi{width:84px;height:100px;border-radius:7px;color:#fff;font:900 48px/100px system-ui,sans-serif;box-shadow:0 2px 5px rgba(0,0,0,.2)}.ficon .fl{font-size:12px;font-weight:800;color:#444}.ficon .fn{font-size:15px;font-weight:700;color:#1F2A27;word-break:break-all}.fcard{display:flex;flex-direction:column;align-items:center;gap:12px;padding:28px 16px;background:#fff;border-radius:12px;margin:12px auto;max-width:520px;color:#1F2A27}.fbtns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}#h .fbtns button,.fbtns button,.fbtns a{font:inherit;font-size:14px;font-weight:700;padding:8px 14px;border-radius:9px;border:1.5px solid #0F6E56;background:#fff;color:#0F6E56;cursor:pointer;text-decoration:none}.fbtns button.main{background:#0F6E56;color:#fff}.fnote{font-size:12.5px;color:#6B7A75}.fmsg{font-size:13px}.fmsg.err{color:#B3261E}' +
       '#b iframe{width:100%;height:calc(100vh - 70px);border:0;background:#fff}#b .msg{padding:40px 10px;color:#ddd}#b .msg.pg{padding:12px 0 4px;font-weight:700;color:#fff}</style></head>' +
       '<body><div id="h"></div><div id="b"></div></body></html>');
     d.close();
@@ -1761,6 +1778,8 @@
     } else if (v && v.t === 'pdf') {
       POPURL = URL.createObjectURL(new Blob([b64bytes(v.b64)], { type: 'application/pdf' }));
       const fr = mk('iframe'); fr.src = POPURL; fr.title = it.name; b.appendChild(fr);
+    } else if (fileKind(it.name)) {
+      b.appendChild(fileCard(it, d));
     } else {
       if (THUMB[id]) { const im = mk('img'); im.src = THUMB[id]; im.alt = it.name; b.appendChild(im); }
       b.appendChild(mk('div', v ? 'ここでは出せない形です。Drive で開いてください。' : '読み込み中…')).className = 'msg';
@@ -2102,7 +2121,9 @@
     if (dCols() && IMG[it.id] && IMG[it.id].t === 'img') im.src = IMG[it.id].src;
     im.onerror = function () { im.removeAttribute('src'); };
     im.draggable = false;
-    b.appendChild(im); if (it.pdf) b.appendChild(el('span', 'pdf', 'PDF'));
+    const fic = fileIcon(it);
+    if (fic) b.appendChild(fic); else b.appendChild(im);
+    if (it.pdf) b.appendChild(el('span', 'pdf', 'PDF'));
     const tg = stTag(it);
     const at = (String(it.at).match(/\d+\/\d+ \d\d:\d\d$/) || [''])[0];
     b.appendChild(el('span', 'stt ' + tg[0], tg[0] === 'todo' ? at + ' 届' : tg[0] === 'done' ? '✓ 確定' : tg[1]));
@@ -2120,7 +2141,7 @@
     /* まとめた書類の写真には 1枚ずつのチェックを出さない（書類の頭に 1つだけ） */
     if (S.dcpick) { if (!(it.set && it.setOf > 1)) b.appendChild(el('span', 'dck')); if (S.dcsel[it.id]) tile.classList.add('sel'); }
     DDX.bind(tile, it);
-    if (dObs && !it.pdf) dObs.observe(tile);
+    if (dObs && !it.pdf && !fic) dObs.observe(tile);
     return tile;
   }
 
@@ -2749,6 +2770,7 @@
     /* ★ すぐ出す：くっきりした中身が手元にあれば それを、無ければ 小さい絵を先に出して 届いたら差し替える */
     const box = $('dvBody');
     S.dvId = it.id;
+    if (fileKind(it.name)) { box.textContent = ''; box.classList.remove('loading'); box.appendChild(fileCard(it)); return; }
     if (IMG[it.id]) { oBig(it, box); return; }
     box.textContent = '';
     if (THUMB[it.id]) { const im = el('img'); im.src = THUMB[it.id]; im.alt = it.name; box.appendChild(im); }
@@ -3399,6 +3421,68 @@
     });
     return pdfjsP;
   }
+  /* ================= ★ エクセル・ワードなど（2026-10-13） =================
+       顧問先は 写真・PDF のほかに エクセル・ワード・パワーポイント・CSV・テキストも送れる。
+       事務所は 縮小画像ではなく アプリのアイコンで見て、3通りで取り出す：
+         ［ダウンロード］ … ブラウザの下（右上）のダウンロードに出る。押せばエクセルが開く・つかんで好きなフォルダへ落とせる
+         ［保存先を選んで保存］ … フォルダとファイル名を選ぶ（選べないブラウザでは ダウンロードと同じ）
+         ［Drive で開く］ … Google ドライブで見る */
+  const FILE_KINDS = {
+    xlsx: ['Excel', 'X', '#1D6F42'], xls: ['Excel', 'X', '#1D6F42'], xlsm: ['Excel', 'X', '#1D6F42'], csv: ['CSV', 'X', '#2E7D4F'],
+    docx: ['Word', 'W', '#2B579A'], doc: ['Word', 'W', '#2B579A'],
+    pptx: ['PowerPoint', 'P', '#C43E1C'], ppt: ['PowerPoint', 'P', '#C43E1C'], txt: ['テキスト', 'T', '#5F6B68']
+  };
+  function fileKind(name) { const e = (String(name || '').match(/\.([A-Za-z0-9]+)$/) || [])[1]; return e && FILE_KINDS[e.toLowerCase()] ? FILE_KINDS[e.toLowerCase()] : null; }
+  function fileName(it) { return String(it.name || '').replace(/^\d{8}_\d{6}_/, ''); }
+  function fileIcon(it, d) {
+    d = d || document;
+    const k = fileKind(it.name); if (!k) return null;
+    const mk = function (t, c, x) { const e = d.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+    const w = mk('div', 'ficon'), i = mk('div', 'fi', k[1]); i.style.background = k[2];
+    w.appendChild(i); w.appendChild(mk('div', 'fl', k[0])); w.appendChild(mk('div', 'fn', fileName(it)));
+    return w;
+  }
+  const FILEGOT = {};
+  function fileGet(it) {
+    if (!FILEGOT[it.id]) FILEGOT[it.id] = gs('viewerFile', it.id).then(function (r) {
+      if (!r || r.drive) throw new Error('大きいので ここでは取り出せません。［Drive で開く］から ダウンロードしてください。');
+      return { name: r.name || fileName(it), blob: new Blob([b64bytes(r.b64)], { type: r.mime || 'application/octet-stream' }) };
+    }).catch(function (e) { delete FILEGOT[it.id]; throw e; });
+    return FILEGOT[it.id];
+  }
+  function fileDownload(it) {
+    return fileGet(it).then(function (f) {
+      const u = URL.createObjectURL(f.blob), a = document.createElement('a');
+      a.href = u; a.download = f.name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(u); }, 60000);
+      return 'ダウンロードしました。ブラウザのダウンロード（右上・下）の ' + f.name + ' を押すと開きます。つかんで好きなフォルダへ落とせます。';
+    });
+  }
+  function fileSaveAs(it) {
+    if (!window.showSaveFilePicker) return fileDownload(it).then(function (m) { return 'このブラウザは 保存先を選べないので ダウンロードしました。' + m.replace(/^ダウンロードしました。/, ''); });
+    /* 選ぶ窓は 押したその場で出す（あとで出すと ブラウザが止める） */
+    const ext = (String(it.name).match(/\.[A-Za-z0-9]+$/) || [''])[0];
+    const pick = window.showSaveFilePicker({ suggestedName: fileName(it), types: ext ? [{ description: (fileKind(it.name) || ['ファイル'])[0], accept: { 'application/octet-stream': [ext] } }] : undefined });
+    return Promise.all([pick, fileGet(it)]).then(function (r) {
+      return r[0].createWritable().then(function (w) { return w.write(r[1].blob).then(function () { return w.close(); }); });
+    }).then(function () { return '保存しました。'; }, function (e) { if (e && e.name === 'AbortError') return ''; throw e; });
+  }
+  /* 大きく見るところ・仕訳化の写真の場所・写真の別ウィンドウ に出す。d … その窓の document */
+  function fileCard(it, d) {
+    d = d || document;
+    const mk = function (t, c, x) { const e = d.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+    const c = mk('div', 'fcard'); c.dataset.file = it.id;
+    c.appendChild(fileIcon(it, d));
+    const bs = mk('div', 'fbtns'), msg = mk('div', 'fmsg');
+    const run = function (p) { msg.className = 'fmsg'; msg.textContent = '取り出しています…'; p.then(function (m) { msg.textContent = m || ''; }, function (e) { msg.className = 'fmsg err'; msg.textContent = e.message; }); };
+    const b1 = mk('button', 'main', '⬇ ダウンロード'); b1.type = 'button'; b1.dataset.fa = 'dl'; b1.addEventListener('click', function (e) { e.stopPropagation(); run(fileDownload(it)); });
+    const b2 = mk('button', null, '保存先を選んで保存'); b2.type = 'button'; b2.dataset.fa = 'save'; b2.addEventListener('click', function (e) { e.stopPropagation(); run(fileSaveAs(it)); });
+    const b3 = mk('a', null, 'Drive で開く'); b3.href = it.url || ('https://drive.google.com/file/d/' + encodeURIComponent(it.id) + '/view'); b3.target = '_blank'; b3.rel = 'noopener';
+    bs.appendChild(b1); bs.appendChild(b2); bs.appendChild(b3);
+    c.appendChild(bs); c.appendChild(msg);
+    c.appendChild(mk('div', 'fnote', 'ダウンロードすると ブラウザのダウンロードに出ます。押せば ' + (fileKind(it.name) || ['ファイル'])[0] + ' が開き、つかんで 好きなフォルダへ落とせます。'));
+    return c;
+  }
   function b64bytes(b64) { const s = atob(b64); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
   let renderSeq = 0;
   function renderPdf(id, v, st) {
@@ -3461,6 +3545,7 @@
       img.addEventListener('click', function () { st.classList.toggle('zoom'); });
       st.appendChild(img); return;
     }
+    if (fileKind(it.name)) { st.appendChild(fileCard(it)); return; }
     if (THUMB[id]) { const im = el('img', 'thumb'); im.alt = it.name; im.src = THUMB[id]; st.appendChild(im); }
     st.appendChild(el('div', 'msg', 'この資料は大きいか、ここでは出せない形です。下の「Drive」で見てください。'));
   }
