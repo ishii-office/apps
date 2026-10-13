@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791898893;</script>
+<script>window.__PAGE_VER=1791899738;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -614,6 +614,8 @@
   .jailt .ds { max-width: 260px; word-break: break-all; }
   .jailt .in { color: #1d6b3a; font-weight: 700; } .jailt .out { color: #8a2b1d; font-weight: 700; }
   .jailt .pc { color: var(--sub); white-space: nowrap; }
+  .jai .feat { flex-basis: 100%; white-space: pre-line; font-size: 12.5px; color: var(--sub); line-height: 1.55; }
+  .jai .pct { cursor: pointer; }
   .jzero { align-items: center; } .jzero .jdok { margin-left: auto; }
   .jailt tr.done { opacity: .5; } .jailt tr.none td { background: #FFF6E0; } .jailt tr.lo .pc { color: #B3261E; font-weight: 700; }
   #jAiMode { padding: 2px 6px; }
@@ -3569,6 +3571,7 @@
     if (a === 'pick') { pickNo(it, Number(t.dataset.no)); return; }
     if (a === 'aiall') { aiLinesAll(it); return; }
     if (a === 'aipick') { aiOpenList(it); return; }
+    if (a === 'aifeat') { S.aiFeat = S.aiFeat || {}; if (S.aiFeat[it.id]) delete S.aiFeat[it.id]; else S.aiFeat[it.id] = 1; drawCard(it); return; }
     if (a === 'ailine') { const m = aiLinePut(it, Number(t.dataset.ln)); C[it.id] = { date: '', no: '', q: '', L: [blankLine()], aiDone: true }; openOnly(it.id); drawCard(it); markAct(); ledSync(); fmsg(m || (Number(t.dataset.ln) + 1) + '行目を 出納帳に入れました。', m ? 'err' : 'ok'); return; }
     if (a === 'pop') { S.act = it.id; markAct(); prioritize(); popOpen(); popSync(true); return; }
     if (a === 'repick') { repick(it); return; }
@@ -4562,6 +4565,12 @@
   function acctName(c) { return ((S.acctMap || {})[c] || {}).name || ''; }
   /* ★ 下書きは【確からしさ（%）だけ】を出す。くわしいこと（品目・理由・ルール）は 指を置くと出る（2026-10-13） */
   function aiPctOf(d) { const v = d && d.confidence; if (v === '高') return 90; if (v === '中') return 65; if (v === '低') return 35; const n = Math.round(Number(v)); return isFinite(n) ? n : 0; }
+  /* 予測合致率の内訳（サーバの aiHybrid_ が 特徴ごとに ±何% 効いたかを返す） */
+  function aiFeatText(d) {
+    const f = d.feat || [];
+    if (!f.length) return '予測合致率 ' + aiPctOf(d) + '%（AI の自己申告）';
+    return '予測合致率 ' + aiPctOf(d) + '% の内訳\n' + f.map(function (x, i) { return (i === 0 ? '　土台 ' + x.v + '%' : '　' + (x.v > 0 ? '＋' : x.v < 0 ? '－' : '±') + Math.abs(x.v) + '%') + '　' + x.k; }).join('\n');
+  }
   function aiBar(it) {
     const d = S.ai[it.id], b = el('div', 'jai');
     if (S.aiPend && S.aiPend[it.id]) { b.classList.add('pend'); b.appendChild(el('b', null, '🤖 まとめて処理中…')); b.appendChild(el('span', null, 'できあがりは 24時間以内（たいてい1時間ほど）。仕訳化を開くと入ります')); return b; }
@@ -4569,8 +4578,11 @@
     if (d.err) { b.classList.add('err'); b.appendChild(el('span', null, '🤖 AI が読めませんでした：' + d.err)); return b; }
     const pct = aiPctOf(d);
     const t = el('b', 'pct' + (pct < 60 ? ' lo' : pct >= 85 ? ' hi' : ''), '🤖 予測合致率 ' + pct + '%');
-    t.title = [d.party, d.date, d.amount ? yen(d.amount) + '円' : '', (d.items || []).length ? '品目：' + d.items.slice(0, 6).join('・') : '', d.reason ? '理由：' + d.reason : '', d.rule ? 'ルール：' + d.rule.text : '', d.note ? '⚠ ' + d.note : '', d.how === 'まとめて' ? '（まとめて処理）' : ''].filter(Boolean).join('\n');
+    t.title = aiFeatText(d) + '\n\n' + [d.party, d.date, d.amount ? yen(d.amount) + '円' : '', (d.items || []).length ? '品目：' + d.items.slice(0, 6).join('・') : '', d.reason ? '理由：' + d.reason : '', d.rule ? 'ルール：' + d.rule.text : '', d.note ? '⚠ ' + d.note : '', d.how === 'まとめて' ? '（まとめて処理）' : ''].filter(Boolean).join('\n');
+    t.dataset.a = 'aifeat';
     b.appendChild(t);
+    /* 押すと 何が効いたか（特徴ごとの ±%）を その場に出す（スマホは 指を置いても出ないので） */
+    if (S.aiFeat && S.aiFeat[it.id]) b.appendChild(el('span', 'feat', aiFeatText(d)));
     if (d.multi && !isMulti(it)) b.appendChild(el('span', 'nt', '明細として読みました。上の［複数仕訳辞書］にすると 出納帳になります'));
     if (!d.multi && isMulti(it)) b.appendChild(el('span', 'nt', '1件の領収書として読みました。明細として読むときは［1仕訳辞書］のまま もう一度 AI で下書き'));
     return b;
@@ -4648,7 +4660,7 @@
     const w = el('div', 'jail');
     const h = el('div', 'jailh');
     const pct = aiPctOf(d);
-    const t = el('b', 'pct' + (pct < 60 ? ' lo' : pct >= 85 ? ' hi' : ''), '🤖 ' + pct + '%'); if (d.note) t.title = '⚠ ' + d.note; h.appendChild(t);
+    const t = el('b', 'pct' + (pct < 60 ? ' lo' : pct >= 85 ? ' hi' : ''), '🤖 予測合致率 ' + pct + '%（行の平均）'); t.title = d.note ? '⚠ ' + d.note : ''; h.appendChild(t);
     const left = done.filter(function (x) { return !x; }).length;
     h.appendChild(el('span', null, '明細 ' + L.length + '行' + (left ? '（まだ入れていない ' + left + '行）' : '（全部入っています）')));
     if (left) { const all = el('button', 'jdok go'); all.type = 'button'; all.dataset.a = 'aiall'; all.appendChild(el('span', 'm', '✓')); all.appendChild(el('span', null, '辞書の決まった行を 全部入れる')); all.title = 'Enter で 出納帳に入れる（辞書が決まっていない行は 残る）'; h.appendChild(all); }
@@ -4669,7 +4681,7 @@
       list.forEach(function (k) { const o = el('option', null, (seqOf(it.box, k.no) || k.no) + ' ' + (k.title || dictLine(k))); o.value = String(k.no); sel.appendChild(o); });
       sel.value = String(Number(l.no) || 0);
       tr.appendChild(el('td')).appendChild(sel);
-      tr.appendChild(el('td', 'pc', done[i] ? '✓' : aiPctOf(l) + '%'));
+      const pc = el('td', 'pc', done[i] ? '✓' : aiPctOf(l) + '%'); if (!done[i]) pc.title = aiFeatText(l); tr.appendChild(pc);
       const td = el('td');
       if (!done[i]) { const bt = el('button', 'btn ghost sm', '入れる'); bt.type = 'button'; bt.dataset.a = 'ailine'; bt.dataset.ln = String(i); td.appendChild(bt); }
       tr.appendChild(td); tb.appendChild(tr);
