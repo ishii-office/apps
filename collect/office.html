@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791887070;</script>
+<script>window.__PAGE_VER=1791888583;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -361,6 +361,15 @@
   #alist li button[aria-current="true"] { background: var(--sel); }
   #alist .code { color: var(--sub); min-width: 4em; }
   #alist .off { margin-left: auto; font-size: 12px; color: var(--err); }
+  .cl-mode { display: flex; gap: 6px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--line); font-size: 13px; flex-wrap: wrap; }
+  .cl-mode .seg button { padding: 3px 10px; font-size: 13px; }
+  #alist li.grp { padding: 5px 12px; background: var(--a-faint); color: var(--accent); font-weight: 700; font-size: 13px; border-bottom: 1px solid var(--line); }
+  #alist li[draggable="true"] button { cursor: grab; }
+  #alist li .grip { color: var(--sub); opacity: .5; margin-right: -2px; }
+  #alist li.dragging { opacity: .4; }
+  #alist li.dropbefore { box-shadow: inset 0 3px 0 var(--accent); }
+  #alist li.dropafter { box-shadow: inset 0 -3px 0 var(--accent); }
+  #alist .fy { margin-left: auto; font-size: 12px; color: var(--sub); }
   .cl-main { padding: 16px 20px; overflow: auto; }
   .cl-main h2 { font-size: 18px; margin: 0 0 14px; }
   .f { margin-bottom: 14px; max-width: 620px; }
@@ -936,6 +945,10 @@
       <input id="aq" type="search" placeholder="コード・名前で探す" aria-label="顧問先を探す">
       <button type="button" class="primary" id="aNew">＋ 新しい顧問先</button>
     </div>
+    <div class="cl-mode">
+      <span class="seg" id="aMode" role="group" aria-label="並べ方"><button type="button" data-m="ord" aria-pressed="true">並び順</button><button type="button" data-m="fy" aria-pressed="false">決算月ごと</button></span>
+      <button type="button" class="btn ghost sm" id="aOrdReset" title="つかんで動かした並びを消して コードの順に戻す">番号順に戻す</button>
+    </div>
     <ul id="alist"><li class="empty">読み込み中…</li></ul>
   </div>
   <div class="cl-main">
@@ -947,6 +960,7 @@
         <div class="hint">半角の英数字。登録したあとは変えられません（Drive のフォルダ・履歴がコードでつながっているため）。</div>
       </div>
       <div class="f"><label for="aName">顧問先名</label><input id="aName" maxlength="60" required></div>
+      <div class="f"><label for="aFy">決算月</label><select id="aFy"><option value="">（決めていない）</option><option value="1">1月決算</option><option value="2">2月決算</option><option value="3">3月決算</option><option value="4">4月決算</option><option value="5">5月決算</option><option value="6">6月決算</option><option value="7">7月決算</option><option value="8">8月決算</option><option value="9">9月決算</option><option value="10">10月決算</option><option value="11">11月決算</option><option value="12">12月決算</option></select></div>
       <div class="f"><label for="aStaff">担当者メール</label><input id="aStaff" type="email" maxlength="120" placeholder="（空なら、毎朝の通知は事務所の代表へ）"></div>
       <div class="f">
         <label>箱（資料の種類・口座・カード）　<small class="muted">箱の中に箱も作れます（フォルダと同じ）</small></label>
@@ -1253,11 +1267,18 @@
     if (first) { S.booted = true; selectTab(S.resumeTab || { in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In'); S.resumeTab = ''; verWatch(); }
   }
 
-  function fillClients(sel) {
+  function fillClients(sel, force) {
     const c0 = $('client');
-    const sig = S.clients.map(function (c) { return c.code + '\t' + c.name + '\t' + (c.boxes || []).join('/'); }).join('\n');
-    const same = sig === S.clientsSig; S.clientsSig = sig;
-    if (!same) { c0.textContent = ''; S.clients.forEach(function (c) { const o = el('option', null, c.code + '　' + c.name); o.value = c.code; c0.appendChild(o); }); }
+    const sig = aMode() + '|' + S.clients.map(function (c) { return c.code + '\t' + c.name + '\t' + (c.fy || '') + '\t' + (c.boxes || []).join('/'); }).join('\n');
+    const same = !force && sig === S.clientsSig; S.clientsSig = sig;
+    if (!same) {
+      const was = c0.value; c0.textContent = '';
+      const opt = function (p, c) { const o = el('option', null, c.code + '　' + c.name); o.value = c.code; p.appendChild(o); };
+      /* 決算月ごとに見ているときは 決算月の群に分けて出す */
+      if (aMode() === 'fy') fyGroups(S.clients).forEach(function (g) { const og = el('optgroup'); og.label = g[0]; g[1].forEach(function (c) { opt(og, c); }); c0.appendChild(og); });
+      else S.clients.forEach(function (c) { opt(c0, c); });
+      if (was) c0.value = was;
+    }
     if (!S.clients.length) { S.code = ''; listMsg('顧問先がありません。「顧問先」で足してください。'); return; }
     const keep = S.clients.some(function (c) { return c.code === S.code; }) ? S.code : '';
     S.code = keep || (S.clients.some(function (c) { return c.code === sel; }) ? sel : S.clients[0].code);
@@ -5300,18 +5321,66 @@
       const ul = $('alist'); ul.textContent = ''; ul.appendChild(el('li', 'empty', e.message));
     });
   }
+  /* ★ 顧問先の並び（2026-10-13）：ふだんは番号順。つかんで動かすと その順（全部の担当者で同じ）。決算月ごとに分けて見ることもできる */
+  /* 開いた直後（前に読んだもので描くとき）にも呼ばれるので 定数を使わない */
+  function aMode() { return lsGet('collect_office_amode') === 'fy' ? 'fy' : 'ord'; }
+  function ccode(v) { const t = String(v == null ? '' : v).replace(/[０-９－]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).trim(); let m;
+    if (/^\d{1,3}$/.test(t)) return ('000' + t).slice(-3); if ((m = t.match(/^(\d{1,3})-(\d{1,2})$/))) return ('000' + m[1]).slice(-3) + '-' + ('00' + m[2]).slice(-2); return t; }
+  function fyGroups(list) {
+    const g = [];
+    for (let m = 1; m <= 12; m++) { const xs = list.filter(function (c) { return Number(c.fy) === m; }); if (xs.length) g.push([m + '月決算', xs]); }
+    const no = list.filter(function (c) { return !(Number(c.fy) >= 1); }); if (no.length) g.push(['決算月 未設定', no]);
+    return g;
+  }
   function aDraw() {
-    const q = $('aq').value.trim().toLowerCase();
+    const q = $('aq').value.trim().toLowerCase(), mode = aMode();
+    document.querySelectorAll('#aMode button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.m === mode)); });
     const ul = $('alist'); ul.textContent = '';
-    A.list.filter(function (c) { return !q || (c.code + ' ' + c.name).toLowerCase().indexOf(q) >= 0; }).forEach(function (c) {
-      const li = el('li'); const b = el('button'); b.type = 'button';
+    const list = A.list.filter(function (c) { return !q || (c.code + ' ' + c.name).toLowerCase().indexOf(q) >= 0; });
+    const row = function (c) {
+      const li = el('li'); li.dataset.code = c.code; if (!q) li.draggable = true;
+      const b = el('button'); b.type = 'button';
+      if (!q) b.appendChild(el('span', 'grip', '⠿'));
       b.appendChild(el('span', 'code', c.code)); b.appendChild(el('span', null, c.name));
       if (!c.active) b.appendChild(el('span', 'off', c.issued ? '止めています' : 'URL未発行'));
+      else if (mode === 'ord' && c.fy) b.appendChild(el('span', 'fy', c.fy + '月決算'));
       b.setAttribute('aria-current', String(!A.isNew && A.cur === c.code));
       b.addEventListener('click', function () { aOpen(c.code); });
       li.appendChild(b); ul.appendChild(li);
-    });
+    };
+    if (mode === 'fy') fyGroups(list).forEach(function (g) { ul.appendChild(el('li', 'grp', g[0] + '（' + g[1].length + '）')); g[1].forEach(row); });
+    else list.forEach(row);
+    if (!list.length) ul.appendChild(el('li', 'empty', q ? '当てはまる顧問先はありません' : '顧問先がありません'));
   }
+  document.querySelectorAll('#aMode button').forEach(function (b) { b.addEventListener('click', function () { lsSet('collect_office_amode', b.dataset.m); aDraw(); fillClients(S.code, true); }); });
+  /* つかんで動かす（探しているあいだは動かさない） */
+  (function () {
+    const ul = $('alist'); let drag = null;
+    const clear = function () { ul.querySelectorAll('.dropbefore,.dropafter').forEach(function (x) { x.classList.remove('dropbefore', 'dropafter'); }); };
+    ul.addEventListener('dragstart', function (e) { const li = e.target.closest('li[data-code]'); if (!li) return; drag = li.dataset.code; li.classList.add('dragging'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', drag); } catch (x) {} });
+    ul.addEventListener('dragend', function () { drag = null; clear(); ul.querySelectorAll('.dragging').forEach(function (x) { x.classList.remove('dragging'); }); });
+    ul.addEventListener('dragover', function (e) {
+      const li = e.target.closest('li[data-code]'); if (!drag || !li) return;
+      e.preventDefault(); clear();
+      const r = li.getBoundingClientRect(); li.classList.add(e.clientY < r.top + r.height / 2 ? 'dropbefore' : 'dropafter');
+    });
+    ul.addEventListener('drop', function (e) {
+      const li = e.target.closest('li[data-code]'); if (!drag || !li) return;
+      e.preventDefault();
+      const after = li.classList.contains('dropafter'), to = li.dataset.code; clear();
+      if (to === drag) return;
+      const list = A.list.slice(), from = list.findIndex(function (c) { return c.code === drag; });
+      const it = list.splice(from, 1)[0];
+      let at = list.findIndex(function (c) { return c.code === to; }); if (after) at++;
+      list.splice(at, 0, it);
+      A.list = list.map(function (c, i) { return Object.assign({}, c, { ord: i + 1 }); }); aDraw();
+      aOrderSave(A.list.map(function (c) { return c.code; }), '並びを保存しました。');
+    });
+  })();
+  function aOrderSave(codes, msg) {
+    gs('adminOrder', codes).then(function (l) { A.list = l; aDraw(); amsg(msg, 'ok'); gs('workInit').then(function (r) { S.clients = r.clients; fillClients(S.code); }); }, function (e) { amsg(e.message, 'err'); });
+  }
+  $('aOrdReset').addEventListener('click', function () { if (confirm('つかんで動かした並びを消して、顧問先コードの順に戻します。')) aOrderSave([], '番号順に戻しました。'); });
   $('aq').addEventListener('input', aDraw);
   (function () {
     const g = $('aThemes');
@@ -5335,7 +5404,7 @@
     $('aTitle').textContent = c.code + '　' + c.name;
     $('aForm').hidden = false;
     $('aCode').value = c.code; $('aCode').readOnly = true;
-    $('aName').value = c.name; $('aStaff').value = c.staff;
+    $('aName').value = c.name; $('aStaff').value = c.staff; $('aFy').value = c.fy ? String(c.fy) : '';
     $('aBoxes').value = c.boxesRaw ? c.boxes.map(function (b) { return ((c.hidden || []).indexOf(b) >= 0 ? '~' : '') + b; }).join('\n') : '';
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     aThemeSet(c.theme || 'green');
@@ -5347,7 +5416,7 @@
     A.cur = null; A.isNew = true;
     $('aTitle').textContent = '新しい顧問先';
     $('aForm').hidden = false;
-    ['aCode', 'aName', 'aStaff', 'aBoxes'].forEach(function (k) { $(k).value = ''; });
+    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy'].forEach(function (k) { $(k).value = ''; });
     $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false; aThemeSet('green');
     $('aActiveRow').hidden = true; $('aUrlRow').hidden = true;
     $('aSave').textContent = '登録して URL を作る';
@@ -5448,7 +5517,7 @@
   $('aForm').addEventListener('submit', function (e) {
     e.preventDefault();
     if (A.busy) return;
-    const o = { code: $('aCode').value.trim(), name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
+    const o = { code: ccode($('aCode').value), fy: $('aFy').value, name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
       boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew };
     A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
     gs('adminSave', o).then(function (l) {

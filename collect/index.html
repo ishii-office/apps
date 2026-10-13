@@ -27,7 +27,7 @@
 <meta name="apple-mobile-web-app-title" content="資料提出">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791887070;</script>
+<script>window.__PAGE_VER=1791888583;</script>
 <style>
   :root {
     --bg: #F3F6F5;
@@ -520,7 +520,11 @@
   if (LIVE) {
     TOKEN = BOOT ? String(BOOT.token || '') : '';
   } else {
-    TOKEN = qp('t') || lsGet(LS_TOK);
+    /* ★★★ ほかの顧問先の画面を 絶対に出さない（2026-10-13）
+       前は ?t= が無いとき「この端末が前に開いた顧問先」の合図を使っていた。1台で何社かのURLを開いた端末（事務所のパソコンなど）で
+       合図なしで開くと 前の顧問先の画面が出てしまう。だから 合図は URL の ?t= だけ。端末に覚えた合図は使わず、消しておく */
+    TOKEN = qp('t');
+    lsDel(LS_TOK);
     /* ★★ ホーム画面から開けなかった（2026-10-08）。
        iPhone のホーム画面のアイコンは manifest の start_url（「.」＝合図なし）で開き、しかも Safari とは別の入れもの（覚えたものが無い）になる。
        だから「使用できません」になっていた。
@@ -879,6 +883,8 @@
       running++; it.st = 'send'; drawAll();
       (function (it) {
         const per = perOf(it);
+        /* 控えは送った顧問先の合図のまま送る（ほかの顧問先へ入れない） */
+        if (it.token && it.token !== TOKEN) { running--; return; }
         call('uploadFile', [TOKEN, it.name, it.mime, bytesB64(it.bytes), it.memo, it.box, per, it.id, it.thumb || '', it.redo || '', upMeta(it)], 180000).then(function (r) {
           running--;
           outbox = outbox.filter(function (x) { return x !== it; });
@@ -2169,7 +2175,6 @@
     let n = 0;
     (function ask() {
       call('clientInfo', [TOKEN], 30000).then(function (r) {
-        lsSet(LS_TOK, TOKEN);
         lsSet(LS_INFO, JSON.stringify({ t: TOKEN, name: r.clientName, maxMb: r.maxMb, boxes: r.boxes, scan: !!r.scan, theme: r.theme || '' }));
         applyTheme(r.theme);
         if (!kept) { showApp(r.clientName, r.maxMb, r.boxes, r.scan); return; }
