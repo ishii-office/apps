@@ -27,7 +27,7 @@
 <meta name="apple-mobile-web-app-title" content="資料提出">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791865869;</script>
+<script>window.__PAGE_VER=1791866082;</script>
 <style>
   :root {
     --bg: #F3F6F5;
@@ -1634,6 +1634,7 @@
   $('camSet').addEventListener('click', function () { camSetOn = !camSetOn; camSetN = 0; camSetPaint(); });
   $('camNext').addEventListener('click', function () { camSetN = 0; camSetPaint(); });
   async function openCamera(box, fallbackInput) {
+    pingReady();   /* ［撮る］を押した その瞬間に 音を鳴らせるようにしておく */
     camBox = box; camN = 0; camSetN = 0; camSetPaint();
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('no camera api');
@@ -1662,24 +1663,40 @@
   }
   $('camDone').addEventListener('click', closeCamera);
   /* ★ 1枚撮るたびに「ピロン」（2026-10-13）。カメラの画面からは シャッター音が出ないので、連続で撮れているか分からなかった。
-       音はその場で作る（ファイルを持たない）。押した瞬間に鳴らすので ブラウザに止められない。音を出せない端末は 震えるだけ */
-  let PING = null;
+       ★ マナーモード（消音スイッチ）でも鳴らす：iPhone は Web Audio だと消音スイッチで消えるが、<audio> で鳴らす音は「再生」あつかいで鳴る。
+         だから 音は その場で WAV に組み立てて <audio> で鳴らす（音のファイルは持たない）。新しい Safari には 再生あつかいにする口（audioSession）もあるので それも使う。
+         最初の［撮る］を押したときに 音なしで1回鳴らしておく（押した瞬間でないと 鳴らす許可が出ない端末がある） */
+  let PING = null, PINGURL = '';
+  function pingWav() {
+    const sr = 22050, len = Math.round(sr * 0.26), pcm = new Int16Array(len);
+    [[1320, 0, 0.09], [1760, 0.08, 0.17]].forEach(function (n) {
+      const a = Math.round(n[1] * sr), b = Math.min(len, a + Math.round(n[2] * sr));
+      for (let k = a; k < b; k++) {
+        const t = (k - a) / sr, d = n[2], env = Math.min(1, t / 0.008) * Math.exp(-5 * t / d);
+        pcm[k] = Math.max(-32767, Math.min(32767, pcm[k] + Math.round(Math.sin(2 * Math.PI * n[0] * t) * env * 0.6 * 32767)));
+      }
+    });
+    const buf = new ArrayBuffer(44 + len * 2), v = new DataView(buf);
+    const w = function (o, str) { for (let k = 0; k < str.length; k++) v.setUint8(o + k, str.charCodeAt(k)); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + len * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, len * 2, true);
+    for (let k = 0; k < len; k++) v.setInt16(44 + k * 2, pcm[k], true);
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
+  function pingReady() {
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (x) {}
+    try {
+      if (!PINGURL) PINGURL = pingWav();
+      if (!PING) { PING = new Audio(PINGURL); PING.preload = 'auto'; PING.setAttribute('playsinline', ''); PING.muted = true; const p = PING.play(); if (p && p.then) p.then(function () { PING.pause(); PING.currentTime = 0; PING.muted = false; }, function () { PING.muted = false; }); else PING.muted = false; }
+    } catch (x) {}
+  }
   function camPing() {
     try { if (navigator.vibrate) navigator.vibrate(30); } catch (x) {}
     try {
-      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-      if (!PING) PING = new AC();
-      if (PING.state === 'suspended') PING.resume();
-      const t0 = PING.currentTime;
-      [[1320, 0, 0.09], [1760, 0.08, 0.16]].forEach(function (n) {   /* ピ → ロン（2つの高い音） */
-        const o = PING.createOscillator(), g = PING.createGain();
-        o.type = 'sine'; o.frequency.value = n[0];
-        g.gain.setValueAtTime(0.0001, t0 + n[1]);
-        g.gain.exponentialRampToValueAtTime(0.35, t0 + n[1] + 0.012);
-        g.gain.exponentialRampToValueAtTime(0.0001, t0 + n[1] + n[2]);
-        o.connect(g); g.connect(PING.destination);
-        o.start(t0 + n[1]); o.stop(t0 + n[1] + n[2] + 0.02);
-      });
+      pingReady();
+      const a = PING; a.muted = false; a.volume = 1;
+      try { a.currentTime = 0; } catch (x) {}
+      const p = a.play(); if (p && p.catch) p.catch(function () {});
       window.__pingN = (window.__pingN || 0) + 1;
     } catch (x) {}
   }
