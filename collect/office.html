@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791871951;</script>
+<script>window.__PAGE_VER=1791881535;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -567,6 +567,15 @@
   .fxtag { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
   .fxtag .n { color: var(--sub); font-size: 12px; }
   #fxBox.off .fxdrop, #fxBox.off .fxo, #fxBox.off #fxTagSave { opacity: .45; pointer-events: none; }
+  #fxBox.kk .fxo, #fxBox.kk #fxTagSave { opacity: .45; pointer-events: none; }
+  .aiuse { font-weight: 700; }
+  #aiKeyBar input { min-width: 260px; }
+  .jai { margin: 6px 0; padding: 8px 10px; border: 1.5px dashed var(--accent); border-radius: 10px; background: var(--a-faint); display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: 14px; }
+  .jai b { color: var(--accent); }
+  .jai .lo { color: #B3261E; font-weight: 700; }
+  .jai .nt { flex-basis: 100%; color: #6b5a00; font-size: 13px; }
+  .jai.err { border-color: #B3261E; }
+  .jwin.busy { opacity: .6; pointer-events: none; }
   .dsearch { margin: 4px 0 10px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; }
   .dsearch summary { cursor: pointer; padding: 8px 12px; font-weight: 700; font-size: 14px; }
   .dsr-f { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 0 12px 10px; font-size: 13.5px; }
@@ -745,7 +754,7 @@
     <div class="jlhead">
       <span class="jlsum" id="jlsum"></span>
       <span class="seg" id="jLay" role="group" aria-label="並べ方"><button type="button" data-l="v" aria-pressed="true">縦1列</button><button type="button" data-l="h" aria-pressed="false">横2列</button><button type="button" data-l="w" aria-pressed="false">画像を別ウィンドウ表示</button></span>
-      <button type="button" class="jpop" id="jPopGo" hidden>📎 画像を別ウィンドウ表示</button><button type="button" class="jwin" id="jLedGo" title="複数仕訳辞書の写真の 出納帳を 別ウィンドウに">📒 出納帳を別ウィンドウ</button><button type="button" class="jwin" id="jArrange" title="写真・辞書の一覧（この画面）・出納帳の3つを 重ならないように並べる。モニターが何枚あっても使える">🪟 3つに並べる</button>
+      <button type="button" class="jpop" id="jPopGo" hidden>📎 画像を別ウィンドウ表示</button><button type="button" class="jwin" id="jLedGo" title="複数仕訳辞書の写真の 出納帳を 別ウィンドウに">📒 出納帳を別ウィンドウ</button><button type="button" class="jwin" id="jAi" hidden title="この画面の未処理の写真を AI に読ませて、日付・金額・辞書の下書きを付ける">🤖 AI で下書き</button><button type="button" class="jwin" id="jArrange" title="写真・辞書の一覧（この画面）・出納帳の3つを 重ならないように並べる。モニターが何枚あっても使える">🪟 3つに並べる</button>
       <span class="jlsave" id="saving" role="status"></span>
     </div>
     <div class="jlist" id="jlist"><div class="cbox muted">読み込み中…</div></div>
@@ -776,12 +785,13 @@
       <div class="bar">
         <label>やりとりする会計ソフト <select id="fxSys" aria-label="やりとりする会計ソフト">
           <option value="fxmc">FXマイスタークラウド</option><option value="fx2c">FX2クラウド</option>
-          <option value="e21">e21マイスター（スタンドアロン）</option><option value="fx2">FX2（スタンドアロン）</option></select></label>
+          <option value="e21">e21マイスター（スタンドアロン）</option><option value="fx2">FX2（スタンドアロン）</option>
+          <option value="kaikeio">会計王（ソリマチ）</option></select></label>
         <span class="note" id="fxSysNote"></span>
       </div>
       <h4 class="fxh">FX → アプリ</h4>
-      <div class="fxdrop" id="fxDrop">FX から切り出した 勘定科目・口座・取引先（CSV）と 仕訳辞書（JSON）を ここへドラッグ＆ドロップ（まとめて何枚でも）
-        <label class="btn sm">ファイルを選ぶ<input type="file" id="fxIn" multiple accept=".csv,.json,.txt" hidden></label></div>
+      <div class="fxdrop" id="fxDrop"><span id="fxDropTxt">FX から切り出した 勘定科目・口座・取引先（CSV）と 仕訳辞書（JSON）を ここへドラッグ＆ドロップ（まとめて何枚でも）</span>
+        <label class="btn sm">ファイルを選ぶ<input type="file" id="fxIn" multiple accept=".csv,.json,.txt,.xls,.xlsx" hidden></label></div>
       <p class="note">FX で直したら、切り出し直して もう一度入れると 上書きして新しくなります（FX にあるものは FX の中身に置き換え、アプリにだけあるものは残します）。</p>
       <h4 class="fxh">アプリ → FX</h4>
       <div class="bar">
@@ -797,6 +807,19 @@
       <p class="note">FX の仕訳辞書のタグ（現金・預金など）を、どの回収ボックスの辞書にするかを決めます。決めておくと、取り込むたびにその箱に入ります。</p>
       <div id="fxTags"></div>
       <div class="bar"><button type="button" class="btn sm" id="fxTagSave">この対応で保存して 辞書の箱を付け直す</button></div>
+      <h4 class="fxh">★ AI 読み取り（写真 → 仕訳の下書き。Claude API）</h4>
+      <div class="bar"><label class="aiuse"><input type="checkbox" id="aiUse"> この顧問先の写真を AI に読ませる（下書きだけ。確定は人）</label>
+        <span class="note" id="aiState"></span></div>
+      <div class="bar" id="aiKeyBar" hidden>
+        <input type="password" id="aiKey" placeholder="API キー（sk-ant-…）" autocomplete="off" aria-label="Claude API のキー">
+        <select id="aiModel" aria-label="AI のモデル"></select>
+        <button type="button" class="btn sm" id="aiKeySave">保存</button>
+        <button type="button" class="btn ghost sm danger" id="aiKeyDel">キーを消す</button>
+      </div>
+      <p class="note">入れると 仕訳化の上に［🤖 AI で下書き］が出ます。日付・金額・相手・登録番号を読み、<b>この顧問先の辞書の中から</b> No を選びます（科目は作りません）。
+        写真ごとに［この下書きを入れる］を押して、見てから Enter で確定します。<br>
+        キーはマスターだけが入れます（スクリプトのプロパティに置き、画面には出しません）。<b>押さなければ料金はかかりません。</b>
+        顧問先の資料を外のサービス（Anthropic）に送るので、使う顧問先は 事前に了解をもらってから入れてください。</p>
       <span class="pagemsg" id="fxMsg" role="status"></span>
     </details>
     <div id="dvMain">
@@ -1043,7 +1066,7 @@
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
   const READ_FN = { officeBoot: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, viewerImage: 1,
-    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1 };
+    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1 };
   let BOOT_WAIT = null;
   function gs(fn) {
     const args = Array.prototype.slice.call(arguments, 1);
@@ -1435,7 +1458,8 @@
     BUNDLES[b.code] = b;
     Object.keys(BUNDLES).slice(0, -6).forEach(function (k) { if (k !== b.code) delete BUNDLES[k]; });
     Object.keys(b.thumbs || {}).forEach(function (id) { if (!THUMB[id]) THUMB[id] = b.thumbs[id]; });
-    const sig = JSON.stringify([b.acct, b.party, b.dict, b.fxConf, b.held, b.list]);
+    S.ai = b.ai || {}; S.aiOn = !!b.aiOn;
+    const sig = JSON.stringify([b.acct, b.party, b.dict, b.fxConf, b.held, b.list, b.ai, b.aiOn]);
     if (sig === S.bsig) return;
     S.bsig = sig;
     acctSet(b.acct || []); drawAcct();
@@ -3088,6 +3112,7 @@
       const b = el('button', 'btn ghost sm', '差戻しをやめる'); b.type = 'button'; b.dataset.a = 'unback';
       n.appendChild(b); row.appendChild(n);
     }
+    if (it.status !== 'done' && (S.ai || {})[it.id]) row.appendChild(aiBar(it));
     if (it.entries.length && !multi) {
       const es = el('div', 'jents');
       it.entries.forEach(function (e) {
@@ -3376,6 +3401,7 @@
     if (a === 'open') { openOnly(it.id); S.act = it.id; drawCard(it); markAct(); focusCard(it.id); return; }
     if (a === 'fold') { if (e.target.closest('button, a, input, select')) return; delete S.open[it.id]; drawCard(it); return; }
     if (a === 'pick') { pickNo(it, Number(t.dataset.no)); return; }
+    if (a === 'aiuse') { aiUse(it); return; }
     if (a === 'pop') { S.act = it.id; markAct(); prioritize(); popOpen(); popSync(true); return; }
     if (a === 'repick') { repick(it); return; }
     if (a === 'newdict') { dictNewFrom(it); return; }
@@ -3999,14 +4025,18 @@
   }
   function fxConfSet(c) {
     if (!c) return;
-    S.fxConf = c; $('fxSys').value = c.sys; fxSysPaint(); fxTagsDraw(); drawIndex();
+    S.fxConf = c; $('fxSys').value = c.sys; fxSysPaint(); fxTagsDraw(); drawIndex(); aiPaint();
     (S.view || []).forEach(function (it) { const r = rowOf(it.id); const ul = r && r.querySelector('.jplist'); if (ul) pickList(ul, card(it.id).q, it.box); });
   }
-  const FX_READY = { fxmc: 1, fx2c: 1 };
+  const FX_READY = { fxmc: 1, fx2c: 1, kaikeio: 1 };
   function fxSysPaint() {
-    const v = $('fxSys').value, ok = !!FX_READY[v];
+    const v = $('fxSys').value, ok = !!FX_READY[v], kk = v === 'kaikeio';
     $('fxBox').classList.toggle('off', !ok);
-    $('fxSysNote').textContent = ok ? 'クラウド版：一括読込 Excel・切り出しの CSV／JSON でやりとりします。' : 'スタンドアロン版のファイルの形は確認中です。届いたら対応します（いまは取り込み・書き出しはできません）。';
+    $('fxBox').classList.toggle('kk', kk);
+    $('fxSysNote').textContent = kk ? '会計王：仕訳データ（SIWAKE 3.02 の xls／CSV）を取り込むと 科目と辞書になり、取込ファイルは 会計王の仕訳データ（CSV）で出ます。'
+      : ok ? 'クラウド版：一括読込 Excel・切り出しの CSV／JSON でやりとりします。' : 'スタンドアロン版のファイルの形は確認中です。届いたら対応します（いまは取り込み・書き出しはできません）。';
+    $('fxDropTxt').textContent = kk ? '会計王から書き出した 仕訳データ（xls／CSV。1行目が //SFD … SIWAKE）を ここへドラッグ＆ドロップ。使っている科目と、仕訳の組み合わせが 辞書になります'
+      : 'FX から切り出した 勘定科目・口座・取引先（CSV）と 仕訳辞書（JSON）を ここへドラッグ＆ドロップ（まとめて何枚でも）';
   }
   $('fxSys').addEventListener('change', function () {
     fxSysPaint();
@@ -4131,6 +4161,7 @@
   function fxImport(files) {
     if (!files.length || !S.code) return;
     if (!FX_READY[$('fxSys').value]) { fxMsg('スタンドアロン版のファイルの形は確認中です。', 'err'); return; }
+    if ($('fxSys').value === 'kaikeio') { kkImport(files); return; }
     const code = S.code;
     fxMsg('読んでいます…');
     Promise.all(files.map(function (f) { return readText(f).then(function (t) { return { f: f, k: fxKind(t) }; }); })).then(function (rs) {
@@ -4168,6 +4199,217 @@
       return p.then(function () { fxMsg('取り込みました：' + done.join('／') + (bad.length ? '。読めなかったもの：' + bad.join('、') : ''), 'ok'); });
     }).catch(function (e) { fxMsg(e.message, 'err'); });
   }
+
+  /* ================= ★ 会計王（ソリマチ）の仕訳データを受け入れる（2026-10-13） =================
+     1行目が //SFD FMTNAME="SIWAKE"（3.02）。列は Code.js の kaikeioRow_ と同じ（片方だけ直さない）
+       0 伝票番号／1 行番号／2 日付（R.06/12/31）／借方 3〜14・貸方 15〜26（科目コード・科目名・補助コード・補助名・部門・部門名・税区分・事業区分・税処理・税率・金額・消費税額）／27 摘要
+     ・使っている科目（と補助）を 勘定科目の表に足し、仕訳の組み合わせ（科目・補助・税区分・摘要）を 1つずつ 辞書にする
+     ・金額と日付は使わない（辞書は「金額と日付が空の伝票」）。同じ組み合わせは 何度取り込んでも 1件（fxId＝K＋印）
+     ・xls は SheetJS を jsdelivr から読む（そのときだけ）。CSV は UTF-8 で読めなければ Shift_JIS */
+  const XLSX_URL = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  let xlsxP = null;
+  function xlsxLib() {
+    if (xlsxP) return xlsxP;
+    xlsxP = new Promise(function (ok, ng) {
+      if (window.XLSX) { ok(window.XLSX); return; }
+      const sc = document.createElement('script'); sc.src = XLSX_URL;
+      sc.onload = function () { window.XLSX ? ok(window.XLSX) : ng(new Error('エクセルを読む道具が読み込めませんでした')); };
+      sc.onerror = function () { xlsxP = null; ng(new Error('エクセルを読む道具が読み込めませんでした')); };
+      document.head.appendChild(sc);
+    });
+    return xlsxP;
+  }
+  function readBuf(f) { return new Promise(function (ok, ng) { const r = new FileReader(); r.onload = function () { ok(r.result); }; r.onerror = function () { ng(new Error(f.name + ' が読めませんでした。')); }; r.readAsArrayBuffer(f); }); }
+  function kkDecode(buf) {
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) {}
+    try { return new TextDecoder('shift_jis').decode(buf); } catch (e) { return new TextDecoder('utf-8').decode(buf); }
+  }
+  function kkRows(f) {
+    return readBuf(f).then(function (buf) {
+      if (/\.xlsx?$/i.test(f.name)) return xlsxLib().then(function (X) {
+        const wb = X.read(new Uint8Array(buf), { type: 'array' });
+        return X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: '' });
+      });
+      return csvRows(kkDecode(buf).replace(/^﻿/, ''));
+    });
+  }
+  function kkIs(rows) { const h = String((rows[0] || [])[0] || ''); return h.indexOf('//SFD') === 0 && /SIWAKE/.test(h); }
+  /* 会計王の税区分 → アプリ（FX）の課税区分（見本：売上 11／仕入・経費 21／保険料 24＝非課税仕入／対象外 0） */
+  const KK_TAX_IN = { '0': '0', '11': '1', '21': '5', '24': '8' };
+  function kkTaxIn(v) { v = String(v); if (v in KK_TAX_IN) return KK_TAX_IN[v]; if (/^1\d$/.test(v)) return '1'; if (/^2[0-3]$/.test(v)) return '5'; return ''; }
+  function kkCell(v) { v = String(v == null ? '' : v).trim(); return /^-?\d+\.0+$/.test(v) ? v.replace(/\.0+$/, '') : v; }
+  function kkName(v) { return String(v == null ? '' : v).replace(/[\s　]+/g, '').trim(); }
+  function kkSide(r, o) {
+    const code = half(kkCell(r[o])), sub = half(kkCell(r[o + 2]));
+    return { code: code === '0' ? '' : code, name: kkName(r[o + 1]), sub: !sub || sub === '0' ? '' : (/^\d$/.test(sub) ? '0' + sub : sub), subName: kkName(r[o + 3]),
+      tax: kkCell(r[o + 6]) || '0', rate: String(r[o + 9] || '') };
+  }
+  function kkHash(t) { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); }
+  function kkLine(r) {
+    const d = kkSide(r, 3), c = kkSide(r, 15);
+    let side = d.tax !== '0' ? 'dr' : c.tax !== '0' ? 'cr' : 'dr';
+    const src = side === 'dr' ? d : c;
+    /* 損益の科目（4〜9 で始まる）でない側の税区分は 消費税ではない（見本の 減価償却／建物附属設備 など） */
+    let tax = src.tax === '0' ? '0' : /^[4-9]/.test(src.code) ? kkTaxIn(src.tax) : '0';
+    const unknown = tax === '' ? src.tax : '';
+    if (tax === '') tax = '0';
+    const free = tax === '0' || tax === '8';
+    const m = String(src.rate).match(/(軽)?\s*(\d+)/), red = !free && !!(m && m[1]);
+    return { line: { drCode: d.code, dr: d.name, drSub: d.sub, drSubName: d.sub ? d.subName : '', crCode: c.code, cr: c.name, crSub: c.sub, crSubName: c.sub ? c.subName : '',
+      tax: tax, biz: '', rate: free ? 0 : (red ? 8 : (m ? Number(m[2]) : 10)), red: red, side: side, party: '', partyName: '', memo: String(r[27] || '').trim().slice(0, 200) },
+      acct: [d, c], unknown: unknown };
+  }
+  function kkToApp(all) {
+    const slips = {}, order = [], acct = {}, unknown = {};
+    all.forEach(function (rows) {
+      rows.slice(1).forEach(function (r) {
+        if (!r || !kkCell(r[0]) || kkCell(r[0]).indexOf('//') === 0) return;
+        const k = kkCell(r[0]) + '|' + kkCell(r[2]);
+        if (!slips[k]) { slips[k] = []; order.push(k); }
+        slips[k].push(r);
+      });
+    });
+    const entries = [], seen = {};
+    order.forEach(function (k) {
+      const rs = slips[k].slice().sort(function (a, b) { return Number(kkCell(a[1])) - Number(kkCell(b[1])); });
+      const lines = rs.map(function (r) {
+        const x = kkLine(r);
+        x.acct.forEach(function (s) { if (!s.code || !s.name) return; const key = s.code + '|' + s.sub; if (!acct[key]) acct[key] = { code: s.code, name: s.name, sub: s.sub, subName: s.sub ? (s.subName || s.sub) : '', tax: '', subMgmt: s.sub ? 1 : 0, partyMgmt: 0 }; });
+        if (x.unknown) unknown[x.unknown] = 1;
+        return x.line;
+      }).filter(function (l) { return l.drCode || l.crCode; });
+      if (!lines.length) return;
+      const sig = JSON.stringify(lines);
+      if (seen[sig]) return; seen[sig] = 1;
+      entries.push({ fxId: 'K' + kkHash(sig), lines: lines.slice(0, 30), title: (lines[0].memo || (lines[0].dr || lines[0].cr) + '／' + (lines[0].cr || '')).slice(0, 40) });
+    });
+    /* 科目に口座があるなら 口座なしの行は要らない */
+    const subOf = {}; Object.keys(acct).forEach(function (k) { if (acct[k].sub) subOf[acct[k].code] = 1; });
+    Object.keys(acct).forEach(function (k) { if (!acct[k].sub && subOf[acct[k].code]) delete acct[k]; });
+    return { entries: entries, acct: Object.keys(acct).map(function (k) { return acct[k]; }), unknown: Object.keys(unknown) };
+  }
+  function kkDictMerge(entries) {
+    const list = S.dict.slice(), used = {}; list.forEach(function (x) { used[x.no] = 1; });
+    let next = 1; const nextNo = function () { while (used[next]) next++; used[next] = 1; return next; };
+    let add = 0, upd = 0, skip = 0;
+    entries.forEach(function (e) {
+      const at = list.findIndex(function (x) { return String(x.fxId || '') === e.fxId; });
+      const o = Object.assign({}, e.lines[0], { title: e.title, memo: e.lines[0].memo || e.title, note: '', grp: 'いつも', box: '', fxId: e.fxId, fxTag: '', lines: e.lines });
+      if (at >= 0) { o.no = list[at].no; o.grp = list[at].grp || 'いつも'; o.note = list[at].note || ''; o.box = list[at].box || ''; o.title = list[at].title || o.title; list[at] = o; upd++; }
+      else { if (Object.keys(used).length >= 999) { skip++; return; } o.no = nextNo(); list.push(o); add++; }
+    });
+    return { list: list, add: add, upd: upd, skip: skip };
+  }
+  function kkImport(files) {
+    const code = S.code;
+    fxMsg('読んでいます…');
+    Promise.all(files.map(function (f) { return kkRows(f).then(function (rows) { return { f: f, rows: rows }; }, function (e) { return { f: f, err: e.message }; }); })).then(function (rs) {
+      const ok = rs.filter(function (r) { return r.rows && kkIs(r.rows); }), bad = rs.filter(function (r) { return !(r.rows && kkIs(r.rows)); }).map(function (r) { return r.f.name; });
+      if (!ok.length) { fxMsg('会計王の仕訳データ（1行目が //SFD … SIWAKE）ではありませんでした：' + bad.join('、'), 'err'); return; }
+      const g = kkToApp(ok.map(function (r) { return r.rows; }));
+      if (!g.entries.length) { fxMsg('仕訳が1行もありませんでした。', 'err'); return; }
+      const done = [];
+      return gs('acctGet', code).then(function (a) { if (code === S.code) acctSet(a); }).then(function () {
+        return gs('acctSave', code, fxMergeAcct(g.acct)).then(function (a) { if (code !== S.code) return; acctSet(a); drawAcct(); done.push('勘定科目・口座 ' + a.length + '行'); });
+      }).then(function () {
+        const m = kkDictMerge(g.entries);
+        return gs('dictSave', code, m.list, { loose: true }).then(function (res) {
+          if (code !== S.code) return;
+          S.dict = res.list; S.held = res.held || []; S.dirty = false; drawDict(); drawIndex(); openSlip(null); heldDraw();
+          done.push('仕訳辞書 ' + m.add + '件を足し・' + m.upd + '件を置き換え（箱は共通。左で箱を決めると その箱に出ます）');
+          if (res.moved) done.push('★ ' + res.moved + '件は 直せないところがあって よけました（左の「よけた辞書」で直してください）');
+          if (g.unknown.length) done.push('★ 当てられなかった税区分（' + g.unknown.join('・') + '）は 対象外にしました');
+        });
+      }).then(function () { fxMsg('会計王から取り込みました：' + done.join('／') + (bad.length ? '。読めなかったもの：' + bad.join('、') : ''), g.unknown.length ? 'err' : 'ok'); });
+    }).catch(function (e) { fxMsg(e.message, 'err'); });
+  }
+
+  /* ================= ★ AI 読み取り（Claude API。2026-10-13） =================
+     キーはマスターが入れる（サーバのスクリプトプロパティ。画面には戻ってこない）。顧問先ごとに 入／切（はじめは切）
+     下書きは 写真ごとに1つ（S.ai）。［この下書きを入れる］で 辞書・日付・金額が入るだけ。確定は人が Enter */
+  function aiPaint() {
+    const c = S.fxConf || {}, ms = !!(S.me && S.me.master);
+    $('aiUse').checked = !!c.ai;
+    $('aiState').textContent = S.aiOn ? (c.ai ? '使います。仕訳化の上の［🤖 AI で下書き］から。' : 'キーは入っています。') : 'まだキーが入っていません' + (ms ? '（下で入れてください）。' : '（マスターが入れます）。');
+    $('aiKeyBar').hidden = !ms;
+    $('jAi').hidden = !(S.aiOn && c.ai);
+  }
+  $('aiUse').addEventListener('change', function () {
+    if (!S.code) return;
+    const on = this.checked, code = S.code;
+    if (on && !confirm('この顧問先の写真を AI（Anthropic の Claude API）に送って読ませます。\n顧問先の了解は もらっていますか？')) { this.checked = false; return; }
+    gs('fxConfSave', code, Object.assign({}, S.fxConf || { tags: {} }, { ai: on })).then(function (r) { if (code !== S.code) return; S.fxConf = r; aiPaint(); fxMsg(on ? 'この顧問先は AI 読み取りを使います。' : 'この顧問先は AI 読み取りを使いません。', 'ok'); },
+      function (e) { fxMsg(e.message, 'err'); aiPaint(); });
+  });
+  $('fxBox').addEventListener('toggle', function () {
+    if (!this.open || !(S.me && S.me.master)) return;
+    gs('aiStatus').then(function (r) {
+      S.aiOn = !!r.on; const sel = $('aiModel'); sel.textContent = '';
+      (r.models || []).forEach(function (m) { const o = el('option', null, m.replace('claude-', '').replace(/-(\d)-(\d)$/, ' $1.$2')); o.value = m; sel.appendChild(o); });
+      sel.value = r.model; $('aiKey').placeholder = r.on ? 'キーは入っています（入れ替えるときだけ）' : 'API キー（sk-ant-…）'; aiPaint();
+    }, function () {});
+  });
+  $('aiKeySave').addEventListener('click', function () {
+    const k = $('aiKey').value.trim();
+    gs('aiConfSave', k || null, $('aiModel').value || null).then(function (r) { S.aiOn = !!r.on; $('aiKey').value = ''; aiPaint(); fxMsg('AI 読み取りの設定を保存しました（モデル：' + r.model + '）。', 'ok'); }, function (e) { fxMsg(e.message, 'err'); });
+  });
+  $('aiKeyDel').addEventListener('click', function () {
+    if (!confirm('AI のキーを消します（どの顧問先でも AI 読み取りが使えなくなります）。')) return;
+    gs('aiConfSave', '', null).then(function (r) { S.aiOn = !!r.on; aiPaint(); fxMsg('AI のキーを消しました。', 'ok'); }, function (e) { fxMsg(e.message, 'err'); });
+  });
+  function aiBar(it) {
+    const d = S.ai[it.id], b = el('div', 'jai' + (d.err ? ' err' : ''));
+    if (d.err) { b.appendChild(el('span', null, '🤖 AI が読めませんでした：' + d.err)); return b; }
+    b.appendChild(el('b', null, '🤖 AI の下書き'));
+    const k = d.no ? dictOf(String(d.no)) : null;
+    if (d.date) b.appendChild(el('span', null, d.date.replace(/-/g, '/')));
+    if (d.amount) b.appendChild(el('span', null, yen(d.amount) + '円'));
+    b.appendChild(el('span', null, k ? '辞書 ' + (seqOf(it.box, k.no) || k.no) + ' ' + (k.title || '') : '辞書：合うものなし'));
+    if (d.party) b.appendChild(el('span', null, d.party));
+    if (d.invoiceNo) b.appendChild(el('span', null, d.invoiceNo));
+    if (d.reduced) b.appendChild(el('span', null, '軽減あり'));
+    b.appendChild(el('span', d.confidence === '低' ? 'lo' : null, '確からしさ ' + (d.confidence || '—')));
+    const u = el('button', 'btn sm', 'この下書きを入れる'); u.type = 'button'; u.dataset.a = 'aiuse'; b.appendChild(u);
+    if (d.note) b.appendChild(el('span', 'nt', '⚠ ' + d.note));
+    return b;
+  }
+  function aiUse(it) {
+    const d = S.ai[it.id]; if (!d || d.err) return;
+    const c = card(it.id);
+    if (d.no && dictOf(String(d.no)) && String(c.no) !== String(d.no)) { c.no = String(d.no); c.q = ''; c.L = dictLinesOf(dictOf(c.no)).map(function () { return blankLine(); }); }
+    if (d.date) c.date = d.date.replace(/-/g, '/');
+    if (d.amount && c.L[0]) c.L[0].amount = String(d.amount);
+    if (d.memo && c.L.length === 1) c.L[0].memo = d.memo;
+    S.act = it.id; drawCard(it); markAct();
+    const row = rowOf(it.id);
+    if (dictOf(c.no)) { go1(row, 'amount', 0); fmsg('下書きを入れました。写真と見くらべて、よければ Enter で確定してください。', 'ok'); }
+    else { go1(row, 'q'); fmsg('辞書は合うものがありませんでした。一覧から選んでください（日付は入れてあります）。'); }
+  }
+  let AI_BUSY = false;
+  $('jAi').addEventListener('click', function () {
+    if (AI_BUSY || !S.code) return;
+    const code = S.code, btn = this, ai = S.ai || (S.ai = {});
+    const todo = (S.view || []).filter(function (it) { return it.status !== 'done' && it.status !== 'back' && !(ai[it.id] && !ai[it.id].err); });
+    if (!todo.length) { fmsg('下書きのまだ無い 未処理の写真はありません。', 'ok'); return; }
+    if (!confirm(todo.length + '件を AI に読ませます（1件 数円ほど。読むのに 1件 10〜30秒）。よろしいですか？')) return;
+    AI_BUSY = true; btn.classList.add('busy');
+    let n = 0, bad = 0, stop = '', i = 0;
+    const one = function () {
+      if (stop || code !== S.code || i >= todo.length) return Promise.resolve();
+      const it = todo[i++];
+      btn.textContent = '🤖 読んでいます… ' + (n + bad) + '／' + todo.length;
+      return gs('aiRead', code, [{ id: it.id, ids: subsOf(it.id).map(function (x) { return x.id; }), box: it.box, period: it.period }]).then(function (r) {
+        if (code !== S.code) return;
+        Object.keys(r.drafts || {}).forEach(function (id) { ai[id] = r.drafts[id]; n++; });
+        Object.keys(r.errors || {}).forEach(function (id) { ai[id] = { err: r.errors[id] }; bad++; });
+        const x = itemOf(it.id); if (x && rowOf(x.id)) drawCard(x);
+      }, function (e) { stop = e.message; }).then(one);
+    };
+    Promise.all([one(), one()]).then(function () {
+      AI_BUSY = false; btn.classList.remove('busy'); btn.textContent = '🤖 AI で下書き';
+      fmsg((stop ? '止まりました：' + stop + '　' : '') + n + '件に下書きを付けました' + (bad ? '（読めなかったもの ' + bad + '件）' : '') + '。写真ごとに［この下書きを入れる］を押して、見てから確定してください。', stop || bad ? 'err' : 'ok');
+    });
+  });
   /* ---- ★ アプリ → FX（切り出しと同じ形の CSV／JSON。2026-10-08） ---- */
   function csvCell(v) { v = String(v == null ? '' : v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function fxSave(name, text, type) {
@@ -4744,12 +4986,16 @@
     if (S.saving) { o.textContent = 'まだ保存中の確定があります。少し待ってからもう一度どうぞ。'; o.className = 'pagemsg err'; return; }
     o.textContent = '変換しています…'; o.className = 'pagemsg';
     gs('workExport', S.code, ym).then(function (r) {
-      o.textContent = r.count + '件を取込ファイルにしました。' + (r.cut ? '（摘要が FX の上限 全角40文字を超えた ' + r.cut + '件は、そこで切りました）' : ''); o.className = 'pagemsg ok';
+      o.textContent = r.sys === 'kaikeio'
+        ? r.count + '件（伝票 ' + r.slips + '枚）を 会計王の仕訳データ（CSV）にしました。会計王の［汎用データ受入］で読み込んでください。' +
+          (r.miss ? '★ 税区分を当てられなかった ' + r.miss + '件は 0 にしました（会計王で直してください）。' : '')
+        : r.count + '件を取込ファイルにしました。' + (r.cut ? '（摘要が FX の上限 全角40文字を超えた ' + r.cut + '件は、そこで切りました）' : '');
+      o.className = 'pagemsg ' + (r.miss ? 'err' : 'ok');
       /* ★ そのまま端末に落とす（保存先を選ばせない。Drive も開かない）。控えは Drive に作った日時つきで残る */
       (r.dl || []).forEach(function (f, i) {
         const bin = atob(f.b64); const u8 = new Uint8Array(bin.length);
         for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
-        const href = URL.createObjectURL(new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+        const href = URL.createObjectURL(new Blob([u8], { type: f.mime || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
         const a = el('a', null, f.name); a.href = href; a.download = f.name;
         const d = el('div'); d.appendChild(a); l.appendChild(d);
         setTimeout(function () { a.click(); }, i * 400);
