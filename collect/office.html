@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791859985;</script>
+<script>window.__PAGE_VER=1791863731;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -413,6 +413,13 @@
   #dBody.dc2 .dgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   #dBody.dc3 .dgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   #dBody.dc4 .dgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  /* ★ 横に 5〜10（2026-10-13）：全画面で たくさん並べて 順番を整理する。並べ方を選んだら 箱の幅の上限を外して 画面いっぱいに */
+  #dBody.dmany .dgrid { grid-template-columns: repeat(var(--dc, 6), minmax(0, 1fr)); gap: 8px; }
+  #dBody.dbig .dbox { max-width: none; }
+  #dBody.dmany .dimg { min-height: 110px; }
+  #dBody.dmany .dimg .stt { font-size: 11.5px; }
+  /* スマホ・せまい画面では 5〜10 は出さない（出しても 小さすぎて見えない）。選んでいても 3枚にする */
+  @media (max-width: 900px) { .dcols button[data-c="5"], .dcols button[data-c="6"], .dcols button[data-c="7"], .dcols button[data-c="8"], .dcols button[data-c="9"], .dcols button[data-c="10"] { display: none; } #dBody.dmany .dgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   #dBody.dbig .dimg { aspect-ratio: auto; min-height: 160px; background: #fff; }
   /* ★ エクセル・ワードなどは アプリのアイコンで見せる（2026-10-13） */
   .ficon { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px 26px; background: #fff; text-align: center; width: 100%; height: 100%; min-height: 120px; }
@@ -698,7 +705,7 @@
 <div class="pane page dpz" id="paneDocs" hidden>
   <div class="dhead"><span class="jlsum" id="dsum"></span>
     <span class="dtools">
-      <span class="dcols" id="dCols" role="group" aria-label="横に何枚ならべるか"><span>横に</span><button type="button" data-c="0" aria-pressed="false">小</button><button type="button" data-c="2" aria-pressed="false">2</button><button type="button" data-c="3" aria-pressed="false">3</button><button type="button" data-c="4" aria-pressed="false">4</button></span>
+      <span class="dcols" id="dCols" role="group" aria-label="横に何枚ならべるか"><span>横に</span><button type="button" data-c="0" aria-pressed="false">小</button><button type="button" data-c="2" aria-pressed="false">2</button><button type="button" data-c="3" aria-pressed="false">3</button><button type="button" data-c="4" aria-pressed="false">4</button><button type="button" data-c="5" aria-pressed="false">5</button><button type="button" data-c="6" aria-pressed="false">6</button><button type="button" data-c="7" aria-pressed="false">7</button><button type="button" data-c="8" aria-pressed="false">8</button><button type="button" data-c="9" aria-pressed="false">9</button><button type="button" data-c="10" aria-pressed="false">10</button></span>
       <button type="button" id="dPick" aria-pressed="false">選ぶ</button>
       <button type="button" id="dPdfAll">一括PDF切り出し</button>
       <button type="button" id="dTrash" hidden>破棄したもの</button>
@@ -1953,16 +1960,18 @@
   ['qD1', 'qD2', 'qA1', 'qA2', 'qP'].forEach(function (id) { $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); qSearch(); } }); });
 
   /* ★ 並べ方（2026-10-07）：小（いままで）／横に 2・3・4 枚。端末が覚える */
-  function dCols() { const v = lsGet(LS_DCOLS); return /^[234]$/.test(v) ? Number(v) : 0; }
+  function dCols() { const v = lsGet(LS_DCOLS); return /^([2-9]|10)$/.test(v) ? Number(v) : 0; }
   function dColsPaint() {
     const c = dCols(), b = $('dBody');
-    ['dc2', 'dc3', 'dc4', 'dbig'].forEach(function (k) { b.classList.remove(k); });
-    if (c) { b.classList.add('dc' + c); b.classList.add('dbig'); }
+    ['dc2', 'dc3', 'dc4', 'dbig', 'dmany'].forEach(function (k) { b.classList.remove(k); });
+    if (c) { b.classList.add(c <= 4 ? 'dc' + c : 'dmany'); b.classList.add('dbig'); b.style.setProperty('--dc', String(c)); }
     $('dCols').querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(Number(x.dataset.c) === c)); });
   }
   /* 大きく並べているときは くっきりした中身に差し替える（写真だけ。PDF は小さい絵のまま） */
+  /* 横に6枚より多いときは 小さい絵のまま（くっきりした中身を何十枚も取ると重い） */
+  function dCrispOn() { const c = dCols(); return c > 0 && c <= 5; }
   function dCrisp(id) {
-    if (!dCols()) return;
+    if (!dCrispOn()) return;
     const v = IMG[id]; if (!v || v.t !== 'img') return;
     $('dBody').querySelectorAll('img.dthumb[data-id="' + id + '"]').forEach(function (im) { if (im.src !== v.src) im.src = v.src; });
   }
@@ -2118,7 +2127,7 @@
     const tile = el('div', 'dtile'); tile.dataset.id = it.id;
     const b = el('button', 'dimg'); b.type = 'button'; b.title = '押すと大きく';
     const im = el('img', 'dthumb'); im.alt = it.name; im.dataset.id = it.id; if (THUMB[it.id]) im.src = THUMB[it.id];
-    if (dCols() && IMG[it.id] && IMG[it.id].t === 'img') im.src = IMG[it.id].src;
+    if (dCrispOn() && IMG[it.id] && IMG[it.id].t === 'img') im.src = IMG[it.id].src;
     im.onerror = function () { im.removeAttribute('src'); };
     im.draggable = false;
     const fic = fileIcon(it);
@@ -2576,7 +2585,7 @@
   $('dCols').addEventListener('click', function (e) {
     const b = e.target.closest('button[data-c]'); if (!b) return;
     lsSet(LS_DCOLS, b.dataset.c); docsDraw();
-    if (dCols()) $('dBody').querySelectorAll('img.dthumb[data-id]').forEach(function (im) { const id = im.dataset.id; if (IMG[id]) dCrisp(id); });
+    if (dCrispOn()) $('dBody').querySelectorAll('img.dthumb[data-id]').forEach(function (im) { const id = im.dataset.id; if (IMG[id]) dCrisp(id); });
   });
   $('dPick').addEventListener('click', function () { S.dcpick = !S.dcpick; if (!S.dcpick) S.dcsel = {}; docsDraw(); });
   function selItems() { return (S.dcview || []).filter(function (x) { return S.dcsel[x.id]; }); }
