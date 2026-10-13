@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791808258;</script>
+<script>window.__PAGE_VER=1791854920;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -373,6 +373,11 @@
   .arow.d1 .nm::before, .arow.d2 .nm::before, .arow.d3 .nm::before { content: '└ ▢ '; }
   .arow button.sm2 { font: inherit; font-size: 12.5px; padding: 4px 8px; border-radius: 7px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
   .arow button.sm2.del { color: #B3261E; border-color: #E7B4AF; }
+  .arow button.sm2.vis { min-width: 5.2em; color: var(--accent); border-color: #9CC7BB; background: #F1F8F5; font-weight: 700; }
+  .arow button.sm2.vis.off { color: #6B7A75; border-color: var(--line); background: #F3F3F1; }
+  .arow.off .nm { color: #9AA6A2; text-decoration: line-through; }
+  .arow.offp .nm { color: #9AA6A2; }
+  #aPreview span.off { opacity: .45; text-decoration: line-through; }
   .atree-add { display: flex; gap: 6px; margin-top: 6px; }
   .atree-add input { flex: 1; min-width: 0; }
   .abulk { margin-top: 8px; } .abulk summary { cursor: pointer; font-size: 13px; color: var(--sub); }
@@ -851,6 +856,7 @@
         <div class="atree" id="aTree" aria-label="箱の並び"></div>
         <div class="atree-add"><input id="aNewBox" maxlength="30" placeholder="新しい箱の名前（例：通帳）"><button type="button" id="aAddBox">＋ 箱を足す</button></div>
         <div class="hint">［＋中に］でその箱の中に箱を作れます（例：通帳 › 滋賀銀行 › 普通）。↑↓で並べ替え。名前を押すと変えられます。<br>
+          ［表示中］を押すと［非表示］になり、<b>顧問先の画面にだけ</b>出なくなります（箱もフォルダも残ります。慣れるまで 現金・売上だけ集める などに）。中の箱もいっしょに隠れます。<br>
           空なら「現金の領収書・通帳」。「その他」は自動で最後に付きます。30字まで。中の箱は4段まで。<br>
           名前を変えても、もう届いている資料は前の名前の箱のまま残ります（事務所の回収資料で つかんで移せます）。</div>
         <details class="abulk"><summary>まとめて書く</summary>
@@ -1570,38 +1576,52 @@
     if (L >= MIN * 2) { const h = Math.floor(L / 2); return { gp: box(r.x, h), gm: null, gl: box(r.x + h, L - h), fit: true, side: 'l' }; }
     return { gp: box(r.x, w3), gm: null, gl: box(r.x + w3 * 2, r.w - w3 * 2), fit: false };
   }
+  /* ★ 3つに並べる（2026-10-13 作り直し）
+       ・前は 押すたびに 2つの窓を閉じて 開き直していた。ブラウザは【1回押すごとに 新しい窓は1つ】しか開かせないので、
+         2つめ（出納帳）が止められて 出納帳が出ず、そこで止まって 並べもしなかった
+       ・いまは 開いている窓は そのまま動かすだけ。足りない窓だけ開く（足りないのが2つなら 1つ開いて もう一度押してもらう）
+       ・別のモニターにある窓だけは 動かせないので 閉じて こちらに開き直す
+       ・並べ方は いまのモニターを3等分（左から 写真｜この画面（辞書）｜出納帳）。この画面が動かせない端末では
+         この画面の左右に すき間なく付ける */
+  function onScreen(w, cur) {
+    try { const cx = w.screenX + w.outerWidth / 2, L = cur.availLeft || 0; return cx >= L && cx < L + cur.availWidth; } catch (e) { return true; }
+  }
   function arrange3() {
     if (jlay() !== 'w') { lsSet(LS_JLAY, 'w'); render(); }
-    /* ★ 2026-10-12：前に別のモニターに開いた窓は ブラウザの決まりで こちらのモニターへ動かせない（その場に残る）。
-         だから 押したその場で いったん閉じて、いまのモニターの 決めた場所に 開き直す（待たずに開くので 止められない） */
     const cur = window.screen;
     const A = arrangeRects(cur);
     const m = geoAll(); m.photo = A.gp; m.ledger = A.gl; lsSet(LS_GEO, JSON.stringify(m));
-    [POP, LPOP].forEach(function (w) { try { if (w && !w.closed) w.close(); } catch (e) {} });
-    POP = null; LPOP = null; POPID = ''; POPK = ''; LEDID = '';
-    WSUF = '_' + Date.now().toString(36);
-    const p1 = popOpen(); const p2 = ledOpen();
-    if (!p1 || !p2) { fmsg((p1 ? '出納帳' : '写真') + 'のウィンドウが開けませんでした。もう一度［3つに並べる］を押してください（ポップアップを このサイトだけ許可すると 1回で開きます）。', 'err'); return; }
-    const put = function (B) {
+    /* 別のモニターにある窓は こちらへ動かせない → 閉じて 開き直す */
+    let moved = false;
+    if (POP && !POP.closed && !onScreen(POP, cur)) { try { POP.close(); } catch (e) {} POP = null; POPID = ''; POPK = ''; moved = true; }
+    if (LPOP && !LPOP.closed && !onScreen(LPOP, cur)) { try { LPOP.close(); } catch (e) {} LPOP = null; LEDID = ''; moved = true; }
+    if (moved) WSUF = '_' + Date.now().toString(36);
+    const needP = !POP || POP.closed, needL = !LPOP || LPOP.closed;
+    if (needP) popOpen();
+    if (needL) ledOpen();
+    const okP = POP && !POP.closed, okL = LPOP && !LPOP.closed;
+    popSync(true); ledSync(true);
+    const place = function (B) {
       const g = geoAll(); g.photo = B.gp; g.ledger = B.gl; lsSet(LS_GEO, JSON.stringify(g));
       geoPut(POP, B.gp); geoPut(LPOP, B.gl);
     };
-    popSync(true); ledSync(true);
-    geoPut(POP, A.gp); geoPut(LPOP, A.gl);
-    geoPut(window, A.gm);
+    geoPut(window, A.gm); place(A);
     jlayPaint();
-    /* ★ 開いた直後の窓は 動かす・中身を入れるのを 取りこぼすことがある。少し待って もう一度（2026-10-12） */
-    [200, 900].forEach(function (ms) { setTimeout(function () { popFill(); geoPut(POP, geoAll().photo); geoPut(LPOP, geoAll().ledger); }, ms); });
-    /* この画面が 真ん中へ動いたか。動けない端末なら この画面は そのままにして 空いているところへ。
-       ★ 動いても 少しずれることがあるので、写真と出納帳は この画面の左右に すき間なく ぴったり付ける（3等分） */
+    /* 開いた直後の窓は 動かす・中身を入れるのを 取りこぼすことがある。少し待って もう一度 */
+    [200, 900].forEach(function (ms) { setTimeout(function () { popFill(); const g = geoAll(); geoPut(POP, g.photo); geoPut(LPOP, g.ledger); }, ms); });
+    if (!okP || !okL) {
+      fmsg((okP ? '出納帳' : '写真') + 'のウィンドウは ブラウザが1回に1つしか開かせないので、もう一度［3つに並べる］を押してください（押すと 3等分に並びます）。', 'err');
+      return;
+    }
+    /* この画面が 真ん中へ動いたか。動けない端末なら この画面は そのままにして 左右に すき間なく付ける */
     setTimeout(function () {
-      const moved = Math.abs(window.screenX - A.gm.x) < 40 && Math.abs(window.outerWidth - A.gm.w) < 80;
+      const mv = Math.abs(window.screenX - A.gm.x) < 40 && Math.abs(window.outerWidth - A.gm.w) < 80;
       const B = arrangeRects(cur, { x: window.screenX, y: window.screenY, w: window.outerWidth, h: window.outerHeight });
-      if (moved) { if (B.fit && !B.side) put(B); fmsg('左から 写真｜この画面（辞書）｜出納帳 に 3等分で並べました。', 'ok'); return; }
-      put(B);
-      fmsg(!B.fit ? '写真を左・出納帳を右に並べました。この画面は 真ん中へ動かしてください（この画面は ブラウザが動かせません）。'
-        : B.side ? '空いているところに 写真・出納帳を並べました。この画面を左右どちらかの端へ寄せてから もう一度押すと 写真｜この画面｜出納帳 になります。'
-        : '左から 写真｜この画面（辞書）｜出納帳 に並べました。', B.fit ? 'ok' : '');
+      if (mv) { if (B.fit && !B.side) place(B); fmsg('左から 写真｜この画面（辞書）｜出納帳 に 3等分で並べました。', 'ok'); return; }
+      place(B);
+      fmsg(!B.fit ? '写真を左・出納帳を右に並べました。この画面は ブラウザが動かせないので、真ん中へ動かしてから もう一度［3つに並べる］を押すと 3等分になります。'
+        : B.side ? '空いているところに 写真・出納帳を並べました。この画面を真ん中へ寄せてから もう一度押すと 3等分になります。'
+        : '左から 写真｜この画面（辞書）｜出納帳 に並べました（この画面は ブラウザが動かせないので、その左右に すき間なく付けました）。', B.fit ? 'ok' : '');
     }, 450);
   }
   function ledOpen() {
@@ -1653,7 +1673,8 @@
     b.appendChild(d.importNode(ledgerEl(it), true));
     ledgerFill(b.querySelector('.jledg'), it);
   }
-  $('jLedGo').addEventListener('click', function () { ledOpen(); ledSync(true); });
+  /* ★ 出納帳を別ウィンドウにしたら 窓は3つになるので、その場で 3等分に並べる（2026-10-13） */
+  $('jLedGo').addEventListener('click', function () { arrange3(); });
   $('jArrange').addEventListener('click', function () { arrange3(); });
   setInterval(function () { if (LPOP && LPOP.closed) { LPOP = null; jlayPaint(); } if (jlay() === 'w') popFill(); }, 1000);
   window.addEventListener('beforeunload', function () { geoSave(); if (LPOP && !LPOP.closed) try { LPOP.close(); } catch (e) {} });
@@ -4471,7 +4492,7 @@
     $('aForm').hidden = false;
     $('aCode').value = c.code; $('aCode').readOnly = true;
     $('aName').value = c.name; $('aStaff').value = c.staff;
-    $('aBoxes').value = c.boxesRaw ? c.boxes.join('\n') : '';
+    $('aBoxes').value = c.boxesRaw ? c.boxes.map(function (b) { return ((c.hidden || []).indexOf(b) >= 0 ? '~' : '') + b; }).join('\n') : '';
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     $('aUrlRow').hidden = !c.url; $('aUrl').value = c.url;
     $('aSave').textContent = '保存';
@@ -4492,35 +4513,51 @@
     const seen = {}; const out = [];
     const add = function (n) { if (n && !seen[n] && n !== 'その他' && out.length < 59) { seen[n] = 1; out.push(n); } };
     text.split(/[,、，\n]/).forEach(function (s) {
+      s = s.replace(/^\s*[~～]+/, '');
       const segs = s.split(/[\/／]/).map(function (x) { return x.replace(/[\\:*?"<>|\r\t]/g, '').trim().slice(0, 30); }).filter(Boolean).slice(0, 4);
       for (let i = 1; i <= segs.length; i++) add(segs.slice(0, i).join('/'));
     });
     return out;
   }
+  /* ★ 非表示の箱（行の頭に ~。サーバの hiddenBoxes_ と同じ決まり。2026-10-13） */
+  function hiddenOf(text) {
+    const out = {};
+    text.split(/[,、，\n]/).forEach(function (s) {
+      if (!/^\s*[~～]/.test(s)) return;
+      const segs = s.replace(/^\s*[~～]+/, '').split(/[\/／]/).map(function (x) { return x.replace(/[\\:*?"<>|\r\t]/g, '').trim().slice(0, 30); }).filter(Boolean).slice(0, 4);
+      if (segs.length) out[segs.join('/')] = 1;
+    });
+    return out;
+  }
+  function hidUnder(hid, p) { return Object.keys(hid).some(function (h) { return p !== h && p.indexOf(h + '/') === 0; }); }
   function aPreview() {
     const p = $('aPreview'); p.textContent = '';
     let list = boxesOf($('aBoxes').value);
     const auto = !list.length;
     if (auto) list = ['現金の領収書', '通帳'];
-    list.concat(['その他']).forEach(function (b, i) { p.appendChild(el('span', auto || i === list.length ? 'auto' : null, b.split('/').join(' › '))); });
+    const hid = hiddenOf($('aBoxes').value);
+    list.concat(['その他']).forEach(function (b, i) { p.appendChild(el('span', (auto || i === list.length ? 'auto' : '') + (!auto && (hid[b] || hidUnder(hid, b)) ? ' off' : '') || null, b.split('/').join(' › '))); });
     aTreeDraw();
   }
   /* ---- 箱の木（箱の中に箱）。中身は aBoxes（1行1つの道すじ）と同じものを持つ ---- */
   function aTreeGet() { return boxesOf($('aBoxes').value); }
-  function aTreeSet(list) { $('aBoxes').value = list.join('\n'); aPreview(); }
+  function aTreeSet(list, hid) { hid = hid || hiddenOf($('aBoxes').value); $('aBoxes').value = list.map(function (x) { return (hid[x] ? '~' : '') + x; }).join('\n'); aPreview(); }
   function subOf(list, path) { return list.filter(function (x) { return x === path || x.indexOf(path + '/') === 0; }); }
   function aTreeDraw() {
     const t = $('aTree'); t.textContent = '';
     const list = aTreeGet();
     list.forEach(function (path) {
       const segs = path.split('/'), d = segs.length - 1;
-      const row = el('div', 'arow' + (d ? ' d' + Math.min(d, 3) : '')); row.dataset.box = path;
+      const hid = hiddenOf($('aBoxes').value), off = !!hid[path], offp = hidUnder(hid, path);
+      const row = el('div', 'arow' + (d ? ' d' + Math.min(d, 3) : '') + (off ? ' off' : offp ? ' offp' : '')); row.dataset.box = path;
       const nm = el('button', 'nm', segs[d]); nm.type = 'button'; nm.title = '押すと名前を変えられます';
       nm.addEventListener('click', function () {
         const v = prompt('箱の名前', segs[d]); if (v == null) return;
         const nv = v.replace(/[\\\/／:*?"<>|]/g, '').trim().slice(0, 30); if (!nv || nv === segs[d]) return;
         const np = segs.slice(0, d).concat([nv]).join('/');
-        aTreeSet(aTreeGet().map(function (x) { return x === path ? np : x.indexOf(path + '/') === 0 ? np + x.slice(path.length) : x; }));
+        const mv = function (x) { return x === path ? np : x.indexOf(path + '/') === 0 ? np + x.slice(path.length) : x; };
+        const h0 = hiddenOf($('aBoxes').value), h1 = {}; Object.keys(h0).forEach(function (k) { h1[mv(k)] = 1; });
+        aTreeSet(aTreeGet().map(mv), h1);
       });
       row.appendChild(nm);
       const b = function (txt, cls, fn, title) { const x = el('button', 'sm2' + (cls ? ' ' + cls : ''), txt); x.type = 'button'; if (title) x.title = title; x.addEventListener('click', fn); row.appendChild(x); };
@@ -4530,6 +4567,9 @@
         const l = aTreeGet(); const blk = subOf(l, path); const at = l.indexOf(blk[blk.length - 1]) + 1;
         l.splice(at, 0, path + '/' + nv); aTreeSet(l);
       }, 'この箱の中に箱を作る');
+      b(off ? '非表示' : '表示中', 'vis' + (off ? ' off' : ''), function () {
+        const h = hiddenOf($('aBoxes').value); if (h[path]) delete h[path]; else h[path] = 1; aTreeSet(aTreeGet(), h);
+      }, off ? '押すと 顧問先の画面に また出します' : '押すと 顧問先の画面に出さなくなります（箱は残ります）');
       b('↑', '', function () { aTreeShift(path, -1); }, '上へ');
       b('↓', '', function () { aTreeShift(path, 1); }, '下へ');
       b('×', 'del', function () {
@@ -4564,7 +4604,7 @@
     e.preventDefault();
     if (A.busy) return;
     const o = { code: $('aCode').value.trim(), name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
-      boxes: boxesOf($('aBoxes').value), active: $('aActive').checked, scan: $('aScan').checked, isNew: A.isNew };
+      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, isNew: A.isNew };
     A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
     gs('adminSave', o).then(function (l) {
       A.list = l; A.busy = false; $('aSave').disabled = false;
