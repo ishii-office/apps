@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791865248;</script>
+<script>window.__PAGE_VER=1791865869;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -578,6 +578,12 @@
   .dview .dvbar .sp { flex: 1; }
   .dview .jshot { flex: 1; min-height: 0; max-height: none; border-radius: 0; border: 0; overflow: auto; display: flex; align-items: center; justify-content: center; }
   .dview .jshot img { max-height: none; flex: none; transition: transform .15s; }
+  .dview .jshot { cursor: zoom-out; }
+  /* ★ のぞき見（2026-10-13）：写真の上で Ctrl＋Shift を押しているあいだ 大きく。右クリックで次のページ・左クリックで前のページ（DocuWorks と同じ） */
+  .dpeek { position: fixed; inset: 4vh 4vw; z-index: 70; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; pointer-events: none; }
+  .dpeek .pk { background: #fff; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.45); padding: 6px; max-width: 100%; max-height: calc(100% - 34px); display: flex; }
+  .dpeek .pk img { max-width: 100%; max-height: calc(92vh - 50px); object-fit: contain; display: block; }
+  .dpeek .pkl { background: rgba(15,40,34,.88); color: #fff; font-weight: 700; font-size: 13.5px; border-radius: 999px; padding: 4px 14px; }
   body.dv-on { overflow: hidden; }
   .ctl[data-tab="Docs"] label:has(#month), .ctl[data-tab="Docs"] #filter,
   .ctl[data-tab="Dict"] label:has(#month), .ctl[data-tab="Dict"] #filter, .ctl[data-tab="Dict"] label:has(#perY), .ctl[data-tab="Dict"] label:has(#perM), .ctl[data-tab="Dict"] label:has(#box),
@@ -2788,7 +2794,9 @@
     dWant(it.id, true, function () { if (S.dvId === it.id && !$('dview').hidden) oBig(it, box); });
   }
   /* 写真を押すと戻る（顧問先の画面と同じ） */
-  $('dvBody').addEventListener('click', function (e) { if (e.target.tagName === 'IMG') docsClose(); });
+  /* ★ 写真のまわりの 余白を押しても閉じる（2026-10-13） */
+  $('dvBody').addEventListener('click', function (e) { if (e.target.tagName === 'IMG' || e.target === this) docsClose(); });
+  $('dview').addEventListener('click', function (e) { if (e.target === this) docsClose(); });
   /* ★ 大きく見る：画面の高さに まるごと収める・［↻ 回す］（2026-10-12） */
   function dvFit() {
     if ($('dview').hidden) return;
@@ -2797,6 +2805,44 @@
   }
   $('dvBody').addEventListener('load', dvFit, true);
   window.addEventListener('resize', dvFit);
+  /* ---- ★ のぞき見（2026-10-13）---- */
+  let PEEK_ON = null, PEEK_HOVER = null, PEEK_I = 0;
+  $('dBody').addEventListener('mouseover', function (e) { const t = e.target.closest && e.target.closest('.dtile[data-id]'); if (t) PEEK_HOVER = t.dataset.id; });
+  $('dBody').addEventListener('mouseleave', function () { PEEK_HOVER = null; });
+  function peekPages(id) { const it = docOf(id); return it && it.set && it.setOf > 1 ? dMembers(it.set) : [id]; }
+  function peekDraw() {
+    if (!PEEK_ON) return;
+    const ids = PEEK_ON.ids, id = ids[PEEK_I], it = docOf(id);
+    let w = $('dpeek'); if (!w) { w = el('div', 'dpeek'); w.id = 'dpeek'; document.body.appendChild(w); }
+    w.textContent = '';
+    const pk = el('div', 'pk');
+    if (it && fileKind(it.name)) pk.appendChild(fileIcon(it));
+    else { const im = el('img'); im.alt = it ? it.name : ''; const v = IMG[id]; im.src = v && v.t === 'img' ? v.src : (THUMB[id] || ''); pk.appendChild(im);
+      if (!(v && v.t === 'img')) dWant(id, true, function () { if (PEEK_ON && PEEK_ON.ids[PEEK_I] === id) peekDraw(); }); }
+    w.appendChild(pk);
+    w.appendChild(el('div', 'pkl', (ids.length > 1 ? (PEEK_I + 1) + ' / ' + ids.length + '枚　右クリック ▶ 次・左クリック ◀ 前　' : '') + 'Ctrl＋Shift を離すと 閉じます'));
+  }
+  function peekOpen(id) { PEEK_ON = { ids: peekPages(id) }; PEEK_I = Math.max(0, PEEK_ON.ids.indexOf(id)); peekDraw(); }
+  function peekClose() { PEEK_ON = null; const w = $('dpeek'); if (w) w.remove(); }
+  document.addEventListener('keydown', function (e) {
+    if (PEEK_ON || !e.ctrlKey || !e.shiftKey || $('paneDocs').hidden || !PEEK_HOVER) return;
+    if (e.key !== 'Control' && e.key !== 'Shift') return;
+    e.preventDefault(); peekOpen(PEEK_HOVER);
+  });
+  document.addEventListener('keyup', function (e) { if (PEEK_ON && (e.key === 'Control' || e.key === 'Shift')) peekClose(); });
+  window.addEventListener('blur', peekClose);
+  /* のぞき見のあいだの クリックは ページめくりだけにする（写真が開いたり つかんだりしない） */
+  ['mousedown', 'pointerdown', 'click', 'auxclick', 'contextmenu', 'mouseup', 'pointerup'].forEach(function (k) {
+    document.addEventListener(k, function (e) {
+      if (!PEEK_ON) return;
+      e.preventDefault(); e.stopPropagation();
+      if (k !== 'pointerdown') return;   /* pointerdown を止めると mousedown は来ないので こちらでめくる */
+      const n = PEEK_ON.ids.length; if (n < 2) return;
+      if (e.button === 2) PEEK_I = Math.min(n - 1, PEEK_I + 1);
+      else if (e.button === 0) PEEK_I = Math.max(0, PEEK_I - 1);
+      peekDraw();
+    }, true);
+  });
   $('dvRot').addEventListener('click', function () { if (!S.dvId) return; S.rot[S.dvId] = ((S.rot[S.dvId] || 0) + 90) % 360; dvFit(); });
   function docsClose() { S.dvId = ''; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
   $('dvClose').addEventListener('click', docsClose);
