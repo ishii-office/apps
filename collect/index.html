@@ -27,7 +27,7 @@
 <meta name="apple-mobile-web-app-title" content="資料提出">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791866082;</script>
+<script>window.__PAGE_VER=1791868025;</script>
 <style>
   :root {
     --bg: #F3F6F5;
@@ -71,6 +71,30 @@
   .boxes.list > .box > .box-head { margin-bottom: 0; }
   .box-head .go { display: none; color: var(--accent); font-size: 22px; font-weight: 700; margin-left: 6px; }
   .boxes.list > .box > .box-head .go { display: inline; }
+  /* ★ いちばん上の2つのタブ（2026-10-13） */
+  .ctabs { display: grid; grid-template-columns: 1fr 1fr; margin: 4px 0 16px; border: 2px solid var(--accent); border-radius: 14px; overflow: hidden; background: #fff; }
+  .ctabs button { font: inherit; font-size: 16px; font-weight: 800; padding: 12px 6px; border: 0; background: #fff; color: var(--accent); cursor: pointer; }
+  .ctabs button + button { border-left: 2px solid var(--accent); }
+  .ctabs button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  /* 送信履歴のタブでは 撮る・選ぶ・何年何月分・送る前の確認 を出さない */
+  #app.t-hist .period, #app.t-hist #scanOpt, #app.t-hist #tray, #app.t-hist #outbox, #app.t-hist #leadList, #app.t-hist #leadBox,
+  #app.t-hist .box > .box-btns, #app.t-hist .box > .drop { display: none !important; }
+  /* 資料撮影・収集のタブでは 送ったもの（年分・月分）と件数を出さない */
+  #app.t-send .box > .hbox, #app.t-send .box-count, #app.t-send #leadHist { display: none !important; }
+  /* ★ 箱の中の箱は 押して入っていく（預金 › A銀行）。いま開いている箱の 外側の箱は 枠を消して 中の箱だけ見せる */
+  .box.anc { border: 0 !important; padding: 0 !important; background: none !important; box-shadow: none !important; }
+  .box.anc > :not(.kids) { display: none !important; }
+  .box.kidrow { cursor: pointer; padding-bottom: 14px; margin-left: 0; }
+  .box.kidrow > :not(.box-head) { display: none !important; }
+  .box.kidrow > .box-head { margin-bottom: 0; }
+  .box.kidrow > .box-head .go { display: inline; }
+  #app.t-send .box.cur.haskids > .box-btns, #app.t-send .box.cur.haskids > .drop { display: none !important; }
+  .kidhint { font-size: 14px; color: var(--sub); margin: 2px 0 8px; }
+  .traypdf { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 10px; }
+  .tray.picking .ti { cursor: pointer; }
+  .tray.picking .ti::after { content: ''; position: absolute; left: 5px; top: 5px; width: 22px; height: 22px; border-radius: 6px; border: 2px solid #fff; background: rgba(0,0,0,.35); }
+  .tray.picking .ti.tsel::after { content: '✓'; background: var(--accent); color: #fff; font-weight: 900; text-align: center; line-height: 20px; }
+  .tray.picking .ti.tsel { outline: 3px solid var(--accent); outline-offset: -2px; }
   .boxback { font: inherit; font-size: 16px; font-weight: 700; color: var(--accent); background: var(--paper); border: 2px solid var(--accent); border-radius: 12px; padding: 10px 16px; margin: 0 0 12px; cursor: pointer; }
   /* 年分の小箱（その中に月分の小箱） */
   .yr { border: 1.5px dashed #B5D3CA; border-radius: 12px; background: #FAFDFC; overflow: hidden; }
@@ -323,10 +347,13 @@
   <div id="app" hidden>
   <p class="client" id="client"></p>
   <h1>資料をお送りください</h1>
+  <!-- ★ いちばん上に 2つのタブ（2026-10-13）。撮って送るところと 送ったものを見るところを 分ける（何年何月分が2つ出て まぎらわしかった） -->
+  <div class="ctabs" id="ctabs" role="tablist" aria-label="切り替え"><button type="button" role="tab" data-t="send" aria-pressed="true">📷 資料撮影・収集</button><button type="button" role="tab" data-t="hist" aria-pressed="false">🗂 送信履歴</button></div>
 
   <section id="paneSend">
     <p class="lead" id="leadList">資料の箱を選んでください。パソコンなら 箱へドラッグするだけでも入ります。</p>
-    <p class="lead" id="leadBox" hidden>撮影するか、写真・PDF・エクセル・ワードなどのファイルを選んで、最後に「送る」を押すと事務所に届きます。送ったものは 箱の中に 年分・月分ごとに並びます。</p>
+    <p class="lead" id="leadBox" hidden>撮影するか、写真・PDF・エクセル・ワードなどのファイルを選んで、最後に「送る」を押すと事務所に届きます。送ったものは［送信履歴］で見られます。</p>
+    <p class="lead" id="leadHist" hidden>送ったものを 箱ごと・年分・月分ごとに見られます。PDFで保存（まとめて・選んで）もできます。</p>
     <button type="button" class="notice" id="notice" hidden><span class="nt"><b id="noticeT"></b><small>押すと 写真と理由が出ます</small></span><span aria-hidden="true">›</span></button>
     <div class="period"><label for="perY">何年何月分の資料ですか</label><span class="pers"><select id="perY" aria-label="何年"></select><select id="perM" aria-label="何月分"></select></span></div>
     <label class="scanopt" id="scanOpt" hidden><input type="checkbox" id="scanOn"><span><b>紙を捨てる（電子保存）</b><small id="scanSub">入れると 写真を大きいまま送ります（少し時間がかかります）。届いたら 紙の原本は捨ててかまいません。<br>月分の翌月末までに送ったものだけです。ふだんは 切ったまま（軽く送る）で大丈夫です。</small></span></label>
@@ -341,6 +368,7 @@
         <label for="memo">ひとこと（任意）　例：レシートが1枚足りません</label>
         <textarea id="memo" maxlength="500"></textarea>
       </div>
+      <div class="traypdf"><button type="button" class="linkbtn" id="trayPdfAll">送る前のものを 全部 PDFで保存</button><button type="button" class="linkbtn" id="trayPick">選んで PDFで保存</button><button type="button" class="linkbtn" id="trayPickEnd" hidden>選ぶのをやめる</button></div>
       <button type="button" class="send" id="sendBtn">送る</button>
     </div>
 
@@ -525,6 +553,7 @@
      ・何月分かは【送る瞬間】の選択で決める。月を変えれば、送っている途中のものも その月になる
        （撮り直しだけは 差し戻された写真の月分のまま）
      ・届いたものは 端末の控えから消す（端末に資料を残さない） */
+  let TPICK = false, TSEL = {};   /* 送る前のものを選んで PDF にするとき */
   let tray = [];          /* { id, file, box, url, per?, redo? } … 送る前 */
   let outbox = [];        /* { id, box, name, mime, bytes, url, thumb, memo, per, redo, st:'wait'|'send'|'ng', tries, next, err } … 送り出し箱 */
   /* ★ 何月分か（8月分の現金・8月分の通帳）。箱ごとに月で分かれて事務所に届く */
@@ -628,6 +657,7 @@
     });
     if (bad.length) showDone(bad.join('、') + ' は送れません。写真（JPEG・PNGなど）・PDF・エクセル・ワード・パワーポイント・CSV・テキストを送れます。', true);
     else if (files.length) showDone('');
+    if (files.length > bad.length && TAB === 'hist') setTab('send');   /* 送信履歴の画面で 落とした・選んだ ときは 撮影・収集へ */
     drawTray();
   }
 
@@ -660,6 +690,12 @@
     $('trayTitle').textContent = '送る前の確認（' + tray.length + '件）';
     $('sendBtn').textContent = tray.length + '件を事務所に送る';
     $('sendBtn').disabled = !tray.length;
+    Object.keys(TSEL).forEach(function (k) { if (!tray.some(function (it) { return String(it.id) === k; })) delete TSEL[k]; });
+    if (!tray.length) TPICK = false;
+    wrap.classList.toggle('picking', TPICK);
+    const ns = Object.keys(TSEL).length;
+    $('trayPick').textContent = TPICK ? (ns ? '選んだ ' + ns + '件を PDFで保存' : '保存するものを 押して選んでください') : '選んで PDFで保存';
+    $('trayPickEnd').hidden = !TPICK;
     BOXES.forEach(function (b) {
       const pers = [];
       tray.forEach(function (it) { if (it.box === b && pers.indexOf(perOf(it)) < 0) pers.push(perOf(it)); });
@@ -669,7 +705,7 @@
         const g = mk('div', 'thumbs');
         const sets = traySets(g0);
         g0.forEach(function (it, gi) {
-          const d = mk('div', 'ti' + (sets[gi] ? ' joined' : '')); d.dataset.id = String(it.id);
+          const d = mk('div', 'ti' + (sets[gi] ? ' joined' : '') + (TSEL[it.id] ? ' tsel' : '')); d.dataset.id = String(it.id);
           if (it.url) { const img = mk('img'); img.alt = it.file.name || '写真'; img.src = it.url; d.appendChild(img); }
           else d.appendChild(fileIcon(it.file.name) || mk('div', 'kind', (isPdf(it.file) ? 'PDF\n' : '') + (it.file.name || '')));
           const x = mk('button', 'del', '×'); x.type = 'button';
@@ -689,6 +725,40 @@
       });
     });
   }
+
+  /* ★ 送る前のものを PDF にする（2026-10-13）。全部／選んだものだけ。端末の中のものだけで作る（送らない） */
+  function trayPdf(items) {
+    if (!items.length) return;
+    const list = items.map(function (it) { return { k: 'tray' + it.id, it: it }; });
+    savePdf(list, ymLabel(perOf(items[0])).replace(/\s/g, '') + '_送る前', async function () {
+      const out = {};
+      for (const x of list) {
+        const f = x.it.file;
+        try {
+          if (isPdf(f)) out[x.k] = { t: 'pdf', b64: bytesB64(await f.arrayBuffer()) };
+          else if (/^image\//.test(f.type || '') || x.it.url) out[x.k] = { t: 'img', src: await new Promise(function (ok, ng) { const r = new FileReader(); r.onload = function () { ok(r.result); }; r.onerror = ng; r.readAsDataURL(f); }) };
+          else out[x.k] = null;
+        } catch (e) { out[x.k] = null; }
+      }
+      return out;
+    });
+  }
+  $('trayPdfAll').addEventListener('click', function () { trayPdf(tray.slice()); });
+  $('trayPick').addEventListener('click', function () {
+    if (!TPICK) { TPICK = true; TSEL = {}; drawTray(); return; }
+    const pick = tray.filter(function (it) { return TSEL[it.id]; });
+    if (!pick.length) return;
+    trayPdf(pick);
+  });
+  $('trayPickEnd').addEventListener('click', function () { TPICK = false; TSEL = {}; drawTray(); });
+  $('trayBody').addEventListener('click', function (e) {
+    if (!TPICK || e.target.closest('button')) return;
+    const d = e.target.closest('.ti'); if (!d) return;
+    e.preventDefault(); e.stopPropagation();
+    const id = d.dataset.id;
+    if (TSEL[id]) delete TSEL[id]; else TSEL[id] = 1;
+    drawTray();
+  }, true);
 
   /* 送り出し箱（送っている途中・電波待ち）。写真そのものは 各箱の下に「送信中…」で並ぶ。ここは ひとことだけ */
   function drawOut() {
@@ -1394,14 +1464,14 @@
     }
     return out;
   }
-  async function savePdf(list, tag) {
+  async function savePdf(list, tag, pre) {
     if (PDF_BUSY || !list.length) return;
     PDF_BUSY = true;
     const n = list.length;
     try {
       showDone('PDFを作っています… 0 / ' + n);
       const L = await pdflib();
-      const files = await pdfFiles(list, function (d) { showDone('PDFを作っています… ' + d + ' / ' + n); });
+      const files = pre ? await pre() : await pdfFiles(list, function (d) { showDone('PDFを作っています… ' + d + ' / ' + n); });
       const doc = await L.PDFDocument.create();
       let skip = 0;
       for (const h of list) {
@@ -1524,7 +1594,7 @@
     if (!el) return;
     REDO = { k: h.k, box: el.dataset.box, per: h.period, t: Date.now() };
     closeBack();
-    openBox(el.dataset.box.split('/')[0]);   /* その箱を開いておく（送ったあと そこに並ぶ） */
+    setTab('send'); openBox(el.dataset.box);   /* その箱を開いておく */
     if (how === 'cam' && scanOn()) el.querySelector('input.cam1').click();   /* 電子保存：端末のカメラで 大きいまま */
     else if (how === 'cam') openCamera(el.dataset.box, el.querySelector('input.cam1'));
     else el.querySelector('input.pick').click();
@@ -1581,12 +1651,18 @@
         REDO = null;
         addFiles(Array.from((e.dataTransfer && e.dataTransfer.files) || []), name);
       });
-      /* 箱の一覧で押したら その箱を開く */
-      if (!depth) el.addEventListener('click', function (e) { if (!$('boxes').classList.contains('list') || e.target.closest('.ht,.yr,.mon')) return; openBox(name); });
+      /* 箱の一覧で押したら その箱を開く。中の箱が並んでいるときは 押した中の箱へ入る */
+      el.addEventListener('click', function (e) {
+        if (e.target.closest('.box') !== el || e.target.closest('.ht,.yr,.mon')) return;
+        const topList = !depth && $('boxes').classList.contains('list');
+        if (!topList && !el.classList.contains('kidrow')) return;
+        e.stopPropagation(); openBox(name);
+      });
       /* 中の箱は 親の箱の中に入れる */
       const parent = byPath[segs.slice(0, -1).join('/')];
       (parent ? parent.querySelector(':scope > .kids') : wrap).appendChild(el);
       byPath[name] = el;
+      if (parent) parent.classList.add('haskids');
     });
     /* 開いていた箱はそのまま。箱が1つしか無ければ 一覧を飛ばして開く */
     const tops = BOXES.filter(function (b) { return b.indexOf('/') < 0; });
@@ -1594,15 +1670,47 @@
   }
   /* ★ はじめは箱の一覧（2026-10-07）。押した箱だけを開く。［‹ 箱の一覧へ］で戻る */
   let CUR = '';
+  let TAB = 'send';   /* send＝資料撮影・収集／hist＝送信履歴 */
   function openBox(name) {
     CUR = name || '';
-    $('boxes').classList.toggle('list', !CUR);
-    document.querySelectorAll('#boxes > .box').forEach(function (b) { b.hidden = !!CUR && b.dataset.box !== CUR; });
+    if (CUR && BOXES.indexOf(CUR) < 0) CUR = '';
+    const list = !CUR;
+    $('boxes').classList.toggle('list', list);
+    /* ★ 箱の中の箱（2026-10-13）：いま開いている箱（cur）・その外側（anc）・すぐ中の箱（kidrow。押すと入る）だけを出す */
+    document.querySelectorAll('#boxes .box').forEach(function (b) {
+      const n = b.dataset.box, top = n.indexOf('/') < 0;
+      const isCur = n === CUR, anc = !!CUR && CUR.indexOf(n + '/') === 0;
+      const inner = !!CUR && n.indexOf(CUR + '/') === 0;
+      const kid = inner && n.slice(CUR.length + 1).indexOf('/') < 0;
+      /* 送信履歴のタブでは 中の箱を全部 並べる（中の箱ごとに 年分・月分。箱から箱へ移すときも 見えている） */
+      const hist = TAB === 'hist';
+      b.classList.toggle('cur', isCur); b.classList.toggle('anc', anc); b.classList.toggle('kidrow', kid && !hist);
+      b.hidden = list ? !top : !(isCur || anc || (hist ? inner : kid));
+    });
+    const up = CUR.split('/').slice(0, -1);
+    $('boxBack').textContent = CUR ? (up.length ? '‹ ' + up[up.length - 1] + ' へ戻る' : '‹ 箱の一覧へ') : '‹ 箱の一覧へ';
+    let kh = $('kidHint');
+    const curEl = CUR && Array.from(document.querySelectorAll('#boxes .box')).find(function (b) { return b.dataset.box === CUR; });
+    if (kh) kh.remove();
+    if (curEl && curEl.classList.contains('haskids') && TAB !== 'hist') {
+      kh = mk('p', 'kidhint', '入れる箱を選んでください。');
+      kh.id = 'kidHint'; curEl.querySelector(':scope > .kids').prepend(kh);
+    }
     $('boxBack').hidden = !CUR; $('leadList').hidden = !!CUR; $('leadBox').hidden = !CUR;
     if (CUR) window.scrollTo(0, 0);
     loadThumbs();
   }
-  $('boxBack').addEventListener('click', function () { openBox(''); });
+  $('boxBack').addEventListener('click', function () { openBox(CUR.split('/').slice(0, -1).join('/')); });
+  /* ★ 2つのタブ（2026-10-13）。開いたときは いつも［資料撮影・収集］ */
+  function setTab(t) {
+    TAB = t === 'hist' ? 'hist' : 'send';
+    $('app').classList.toggle('t-hist', TAB === 'hist'); $('app').classList.toggle('t-send', TAB === 'send');
+    document.querySelectorAll('#ctabs button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.t === TAB)); });
+    $('leadHist').hidden = TAB !== 'hist';
+    openBox(CUR);
+    window.scrollTo(0, 0);
+  }
+  $('ctabs').addEventListener('click', function (e) { const b = e.target.closest('button[data-t]'); if (b) setTab(b.dataset.t); });
   /* 箱の外に落としても、ブラウザがファイルを開いて画面が消えないようにする。いちばん内側の箱だけ光らせる */
   let overEl = null;
   window.addEventListener('dragover', function (e) {
@@ -1843,6 +1951,7 @@
     appOn = true;
     MAX_BYTES = Number(maxMb || 20) * 1024 * 1024;
     buildBoxes(boxes);
+    setTab('send');
     $('client').textContent = name + ' 様';
     $('maxMb').textContent = String(Number(maxMb || 20));
     document.title = '資料提出｜' + name;
@@ -1902,7 +2011,7 @@
       catch (e) { trayOk = false; }
     }
     if (!trayOk && !confirm('この端末では 送る前の写真を置いておけませんでした。開き直すと 送る前の写真（' + tray.length + '件）は消えます。開き直しますか？')) { b.disabled = false; b.textContent = '↻ 開き直す'; return; }
-    lsSet(LS_RESUME, JSON.stringify({ t: TOKEN, at: Date.now(), cur: CUR, open: OPEN, memo: $('memo').value, pick: PICK, sel: SEL, y: window.scrollY, tray: trayOk ? tray.length : 0 }));
+    lsSet(LS_RESUME, JSON.stringify({ t: TOKEN, at: Date.now(), tab: TAB, cur: CUR, open: OPEN, memo: $('memo').value, pick: PICK, sel: SEL, y: window.scrollY, tray: trayOk ? tray.length : 0 }));
     REOPENING = true;
     location.replace(reopenUrl());
   }
@@ -1915,7 +2024,7 @@
     Object.assign(OPEN, r.open || {});
     if (r.memo) $('memo').value = r.memo;
     PICK = !!r.pick; SEL = r.sel || {};
-    openBox(r.cur || '');
+    CUR = r.cur || ''; setTab(r.tab || 'send');
     drawAll();
     if (r.tray) {
       RDB.all().then(function (list) {
