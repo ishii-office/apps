@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791951498;</script>
+<script>window.__PAGE_VER=1791952375;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -174,7 +174,7 @@
   .jlay-v .jpop, .jlay-h .jpop { display: none; }
   .jfast { font: inherit; font-size: 12.5px; font-weight: 700; border: 1.5px solid #C98A00; color: #8A5A00; background: #FFF8E1; border-radius: 7px; padding: 2px 9px; cursor: pointer; }
   .jfast.on { background: #E8A400; color: #fff; border-color: #E8A400; }
-  .jtouch .jpop, .jtouch #jLay button[data-l="w"], .jtouch .jwin:not(#jAi):not(#jAiMode) { display: none !important; }
+  .jtouch .jpop, .jtouch #jLay button[data-l="w"], .jtouch .jwin:not(#jAi) { display: none !important; }
   /* ★ AI で下書きは スマホでも使う（別ウィンドウの道具だけ隠す。2026-10-13） */
   .jwin { font: inherit; font-size: 12.5px; font-weight: 700; border: 1.5px solid var(--ai); color: var(--ai); background: #fff; border-radius: 7px; padding: 2px 9px; cursor: pointer; }
   /* ★ 出納帳の別ウィンドウは 縦1列・横2列でも使える（2026-10-13）。［3つに並べる］も いつも出す */
@@ -619,7 +619,16 @@
   .jai .pct { cursor: pointer; }
   .jzero { align-items: center; } .jzero .jdok { margin-left: auto; }
   .jailt tr.done { opacity: .5; } .jailt tr.none td { background: #FFF6E0; } .jailt tr.lo .pc { color: #B3261E; font-weight: 700; }
-  #jAiMode { padding: 2px 6px; }
+  .aiask { position: fixed; inset: 0; z-index: 3000; background: rgba(20,30,25,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .aiask[hidden] { display: none; }
+  .aiask .box { background: #fff; border-radius: 16px; padding: 18px 18px 14px; max-width: 520px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+  .aiask h3 { margin: 0 0 6px; font-size: 18px; } .aiask p { margin: 4px 0 12px; font-size: 14px; color: var(--sub); }
+  .aiask .ch { display: grid; gap: 10px; }
+  .aiask .ch button { text-align: left; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font: inherit; cursor: pointer; }
+  .aiask .ch button b { display: block; font-size: 17px; } .aiask .ch button span { font-size: 13px; color: var(--sub); }
+  .aiask .ch button[data-m="batch"] { border-color: #0F6E56; background: #EEF7F2; }
+  .aiask .ch button:focus { outline: 3px solid #0F6E56; outline-offset: 1px; }
+  .aiask .no { margin-top: 10px; width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: #fff; font: inherit; cursor: pointer; }
   .rwrap { max-width: 1250px; }
   .rh { margin: 4px 0 6px; } .rh span { font-size: 15px; color: var(--sub); font-weight: 400; }
   .rstat { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
@@ -842,7 +851,7 @@
     <div class="jlhead">
       <span class="jlsum" id="jlsum"></span>
       <span class="seg" id="jLay" role="group" aria-label="並べ方"><button type="button" data-l="v" aria-pressed="true">縦1列</button><button type="button" data-l="h" aria-pressed="false">横2列</button><button type="button" data-l="w" aria-pressed="false">画像を別ウィンドウ表示</button></span>
-      <button type="button" class="jpop" id="jPopGo" hidden>📎 画像を別ウィンドウ表示</button><button type="button" class="jwin" id="jLedGo" title="複数仕訳辞書の写真の 出納帳を 別ウィンドウに">📒 出納帳を別ウィンドウ</button><button type="button" class="jwin" id="jAi" hidden title="この画面の未処理の写真を AI に読ませて、日付・金額・辞書の下書きを付ける（もう一度押すと 読み直して上書き）">🤖 AI で下書き</button><select class="jwin" id="jAiMode" hidden aria-label="AI の読ませ方" title="今すぐ：その場で読む／まとめて：料金が半分。できあがりは24時間以内"><option value="now">今すぐ</option><option value="batch">まとめて（半額・24時間以内）</option></select><button type="button" class="jwin" id="jArrange" title="写真・辞書の一覧（この画面）・出納帳の3つを 重ならないように並べる。モニターが何枚あっても使える">🪟 3つに並べる</button>
+      <button type="button" class="jpop" id="jPopGo" hidden>📎 画像を別ウィンドウ表示</button><button type="button" class="jwin" id="jLedGo" title="複数仕訳辞書の写真の 出納帳を 別ウィンドウに">📒 出納帳を別ウィンドウ</button><button type="button" class="jwin" id="jAi" hidden title="この画面の未処理の写真を AI に読ませて、日付・金額・辞書の下書きを付ける（もう一度押すと 読み直して上書き）">🤖 AI で下書き</button><button type="button" class="jwin" id="jArrange" title="写真・辞書の一覧（この画面）・出納帳の3つを 重ならないように並べる。モニターが何枚あっても使える">🪟 3つに並べる</button>
       <span class="jlsave" id="saving" role="status"></span>
     </div>
     <div class="jlist" id="jlist"><div class="cbox muted">読み込み中…</div></div>
@@ -4629,7 +4638,7 @@
     $('aiUse').checked = !!c.ai;
     $('aiState').textContent = S.aiOn ? (c.ai ? '使います。仕訳化の上の［🤖 AI で下書き］から。' : 'キーは入っています。') : 'まだキーが入っていません' + (ms ? '（下で入れてください）。' : '（マスターが入れます）。');
     $('aiKeyBar').hidden = !ms;
-    $('jAi').hidden = $('jAiMode').hidden = !(S.aiOn && c.ai);
+    $('jAi').hidden = !(S.aiOn && c.ai);
   }
   $('aiUse').addEventListener('change', function () {
     if (!S.code) return;
@@ -4822,9 +4831,32 @@
 
   /* ================= ［🤖 AI で下書き］：今すぐ ／ まとめて（半額・24時間以内） =================
      ★ もう一度押すと 読み直して【上書き】（前の下書きは使わない）。確定したもの・差戻し中のものは 読まない */
-  const LS_AIMODE = 'collect_office_aimode';
   S.aiPend = {};
-  (function () { const m = $('jAiMode'); if (!m) return; m.value = lsGet(LS_AIMODE) === 'batch' ? 'batch' : 'now'; m.addEventListener('change', function () { lsSet(LS_AIMODE, m.value); }); })();
+  /* ★ 押すたびに「今すぐ／まとめて（半額）」を選ばせる（2026-10-14）。前の選び方を覚えておく設定は 置かない（うっかり 今すぐ で流さないため） */
+  const aiAskEl = (function () {
+    const w = el('div', 'aiask'); w.id = 'aiAsk'; w.hidden = true; w.setAttribute('role', 'dialog'); w.setAttribute('aria-modal', 'true');
+    w.innerHTML = '<div class="box"><h3 id="aiAskT"></h3><p id="aiAskP"></p><div class="ch">' +
+      '<button type="button" data-m="batch"><b>まとめて（半額）</b><span id="aiAskB"></span></button>' +
+      '<button type="button" data-m="now"><b>今すぐ</b><span id="aiAskN"></span></button></div>' +
+      '<button type="button" class="no" data-m="">やめる</button></div>';
+    document.body.appendChild(w);
+    return w;
+  })();
+  function aiAsk(n, again) {
+    return new Promise(function (ok) {
+      $('aiAskT').textContent = '🤖 ' + n + '件を AI に読ませます';
+      $('aiAskP').textContent = (again ? again + '件は 下書きを読み直して上書きします。' : '') + 'どちらで読ませますか？';
+      $('aiAskB').textContent = 'できあがりは 24時間以内（たいてい1時間ほど）。仕訳化を開くと入ります。およそ ' + Math.max(1, Math.round(n * 1.5)) + '〜' + Math.max(2, n * 3) + '円';
+      $('aiAskN').textContent = 'その場で読む。1件 10〜30秒。およそ ' + n * 3 + '〜' + n * 6 + '円（まとめての倍）';
+      const prev = document.activeElement;
+      const done = function (v) { aiAskEl.hidden = true; aiAskEl.removeEventListener('click', onC); document.removeEventListener('keydown', onK, true); try { if (prev) prev.focus(); } catch (e) {} ok(v); };
+      const onC = function (e) { const b = e.target.closest('button[data-m]'); if (b) done(b.dataset.m); else if (e.target === aiAskEl) done(''); };
+      const onK = function (e) { if (e.key === 'Escape') { e.preventDefault(); done(''); } };
+      aiAskEl.addEventListener('click', onC); document.addEventListener('keydown', onK, true);
+      aiAskEl.hidden = false;
+      aiAskEl.querySelector('button[data-m="batch"]').focus();
+    });
+  }
   function aiTakeDrafts(code, r) {
     if (code !== S.code) return 0;
     let n = 0;
@@ -4859,12 +4891,18 @@
   $('jAi').addEventListener('click', function () {
     if (AI_BUSY || !S.code) return;
     const code = S.code, btn = this, ai = S.ai || (S.ai = {});
-    const batch = $('jAiMode') && $('jAiMode').value === 'batch';
     const todo = (S.view || []).filter(function (it) { return it.status !== 'done' && it.status !== 'back' && !S.aiPend[it.id]; });
     if (!todo.length) { fmsg('読ませる 未処理の写真はありません（確定したもの・差戻し中・まとめて処理中のものは 読みません）。', 'ok'); return; }
     const again = todo.filter(function (it) { return ai[it.id] && !ai[it.id].err; }).length;
-    if (!confirm(todo.length + '件を AI に読ませます' + (again ? '（' + again + '件は 下書きを読み直して上書きします）' : '') + '。\n' +
-      (batch ? '★ まとめて処理：料金は半分。できあがりは 24時間以内（たいてい1時間ほど）。仕訳化を開いたときに入ります。' : '★ 今すぐ：1件 数円ほど。読むのに 1件 10〜30秒。') + '\nよろしいですか？')) return;
+    AI_BUSY = true;
+    aiAsk(todo.length, again).then(function (m) {
+      AI_BUSY = false;
+      if (!m || code !== S.code) return;
+      aiGo(code, btn, todo, m === 'batch');
+    });
+  });
+  function aiGo(code, btn, todo, batch) {
+    const ai = S.ai || (S.ai = {});
     const req = function (it) { return { id: it.id, ids: subsOf(it.id).map(function (x) { return x.id; }), box: it.box, period: it.period, multi: isMulti(it) }; };
     AI_BUSY = true; btn.classList.add('busy');
     const end = function (m, kind) { AI_BUSY = false; btn.classList.remove('busy'); btn.textContent = '🤖 AI で下書き'; fmsg(m, kind); };
@@ -4901,7 +4939,7 @@
     Promise.all([one(), one()]).then(function () {
       end((stop ? '止まりました：' + stop + '　' : '') + n + '件に下書きを付けました（およそ ' + yenS(yenSum) + '円）' + (bad ? '（読めなかったもの ' + bad + '件）' : '') + '。写真と見くらべて よければ Enter で確定（違えば 0 で辞書を選ぶ）。', stop || bad ? 'err' : 'ok');
     });
-  });
+  }
   /* ================= ★★★ AI の考え方タブ（過去仕訳・考え方・ルール。2026-10-13） ================= */
   const R = { data: null, busy: false };
   function rMsg(t, kind) { $('rMsg').textContent = t || ''; $('rMsg').className = 'pagemsg' + (kind ? ' ' + kind : ''); }
