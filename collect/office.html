@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791928891;</script>
+<script>window.__PAGE_VER=1791951498;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -984,13 +984,16 @@
 <div class="pane page dpz" id="paneOut" hidden>
   <div class="bar">
     <label>月（仕訳の日付）<input type="month" id="outMonth"></label>
+    <label>まとめ方 <select id="outBox" aria-label="まとめ方"><option value="">その月ぜんぶ（一括）</option></select></label>
+    <span class="note" id="outSys"></span>
     <span class="sp"></span>
     <button type="button" class="primary" id="outGo">取込ファイルへ変換</button>
     <span class="pagemsg" id="oMsg" role="status"></span>
   </div>
   <p id="oLink"></p>
-  <p class="note">確定した伝票を 回収ボックスごとに並べます。見て よければ［取込ファイルへ変換］。TKC FX クラウド「仕訳帳(Excel)の読込」の形（44列）で
-    そのまま この端末に保存します（1ファイル60行まで・日付をまたがない）。控えは顧問先フォルダ「一括読み込みエクセル」に作った日時つきで残ります。変換した仕訳は取り消せなくなります。</p>
+  <p class="note">確定した伝票を 回収ボックスごとに並べます。見て よければ［取込ファイルへ変換］。<b>まとめ方</b>で その月ぜんぶ（一括）か、回収ボックスごと（下の箱だけでも）かを選べます。
+    ファイル名は「顧問先コード_顧問先名_年月（_回収ボックス）_作った日時」。変換先の会計ソフトは 仕訳辞書タブの「やりとりする会計ソフト」で決まります
+    （TKC FX クラウドシリーズ＝「仕訳帳(Excel)の読込」の形（44列）・1ファイル60行まで・日付をまたがない／会計王＝仕訳データ CSV）。そのまま この端末に保存します。控えは顧問先フォルダ「一括読み込みエクセル」に作った日時つきで残ります。変換した仕訳は取り消せなくなります。</p>
   <div id="oBody"><div class="cbox muted">読み込み中…</div></div>
 </div>
 
@@ -5748,12 +5751,25 @@
     const ym = O.ym;
     /* 箱ごとに その月の仕訳を集める */
     const byBox = {}; let n = 0;
+    const sel = $('outBox'), cur = sel.value, cnt = {};
     O.items.forEach(function (it) {
       it.entries.forEach(function (e) {
         if (String(e.date).slice(0, 7) !== ym) return;
+        const segs = String(it.box || '').split('/').filter(Boolean);
+        for (let k = 1; k <= segs.length; k++) { const b = segs.slice(0, k).join('/'); cnt[b] = (cnt[b] || 0) + 1; }
+        if (cur && it.box !== cur && String(it.box).indexOf(cur + '/') !== 0) return;
         (byBox[it.box] = byBox[it.box] || []).push({ it: it, e: e }); n++;
       });
     });
+    /* まとめ方：その月ぜんぶ ＋ その月に仕訳がある回収ボックス（上の箱は 下の箱もまとめる） */
+    sel.textContent = '';
+    const all = el('option', null, 'その月ぜんぶ（一括）'); all.value = ''; sel.appendChild(all);
+    Object.keys(cnt).sort().forEach(function (b) { const d = b.split('/').length - 1; const o = el('option', null, '　'.repeat(d) + b.split('/').pop() + '（' + cnt[b] + '件' + (Object.keys(cnt).some(function (x) { return x.indexOf(b + '/') === 0; }) ? '・下の箱も' : '') + '）'); o.value = b; sel.appendChild(o); });
+    sel.value = cnt[cur] ? cur : '';
+    if (cur && !cnt[cur]) { oDraw(); return; }
+    const sysName = { fxmc: 'FXマイスタークラウド', fx2c: 'FX2クラウド', e21: 'e21マイスター', fx2: 'FX2', kaikeio: '会計王' }[(S.fxConf && S.fxConf.sys) || 'fxmc'] || 'FX';
+    $('outSys').textContent = '変換先：' + sysName + '（仕訳辞書タブで変えられます）';
+    $('outGo').textContent = cur ? '［' + cur + '］を取込ファイルへ変換' : '取込ファイルへ変換（' + ym.replace('/', '年') + '月ぜんぶ）';
     if (!n) { body.appendChild(el('div', 'cbox muted', ym + ' に確定した伝票はありません。')); return; }
     Object.keys(byBox).forEach(function (bx) {
       const rows = byBox[bx].sort(function (a, b) { return a.e.date < b.e.date ? -1 : a.e.date > b.e.date ? 1 : 0; });
@@ -5825,15 +5841,17 @@
     gs('viewerImages', [it.id]).then(function (r) { IMG[it.id] = r[it.id] || { t: 'drive' }; show(); }, function (e) { box.classList.remove('loading'); box.appendChild(el('div', 'msg', e.message)); });
   }
   $('outMonth').addEventListener('change', oLoad);
+  $('outBox').addEventListener('change', oDraw);
   $('outGo').addEventListener('click', function () {
     const ym = $('outMonth').value; const o = $('oMsg'); const l = $('oLink'); l.textContent = '';
     if (S.saving) { o.textContent = 'まだ保存中の確定があります。少し待ってからもう一度どうぞ。'; o.className = 'pagemsg err'; return; }
     o.textContent = '変換しています…'; o.className = 'pagemsg';
-    gs('workExport', S.code, ym).then(function (r) {
-      o.textContent = r.sys === 'kaikeio'
+    const bx = $('outBox').value;
+    gs('workExport', S.code, ym, bx).then(function (r) {
+      o.textContent = (bx ? '［' + bx + '］' : '') + (r.sys === 'kaikeio'
         ? r.count + '件（伝票 ' + r.slips + '枚）を 会計王の仕訳データ（CSV）にしました。会計王の［汎用データ受入］で読み込んでください。' +
           (r.miss ? '★ 税区分を当てられなかった ' + r.miss + '件は 0 にしました（会計王で直してください）。' : '')
-        : r.count + '件を取込ファイルにしました。' + (r.cut ? '（摘要が FX の上限 全角40文字を超えた ' + r.cut + '件は、そこで切りました）' : '');
+        : r.count + '件を取込ファイルにしました。' + (r.cut ? '（摘要が FX の上限 全角40文字を超えた ' + r.cut + '件は、そこで切りました）' : ''));
       o.className = 'pagemsg ' + (r.miss ? 'err' : 'ok');
       /* ★ そのまま端末に落とす（保存先を選ばせない。Drive も開かない）。控えは Drive に作った日時つきで残る */
       (r.dl || []).forEach(function (f, i) {
