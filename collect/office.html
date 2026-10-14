@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791965300;</script>
+<script>window.__PAGE_VER=1791972855;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -613,6 +613,7 @@
   .jailt input { width: 96px; font-size: 13.5px; } .jailt input.num { text-align: right; }
   .jailt select { max-width: 240px; font-size: 13px; }
   .jailt .ds { max-width: 260px; word-break: break-all; }
+  .jailt .jpat { font-size: 11.5px; color: #0F6E56; font-weight: 600; }
   .jailt .in { color: #1d6b3a; font-weight: 700; } .jailt .out { color: #8a2b1d; font-weight: 700; }
   .jailt .pc { color: var(--sub); white-space: nowrap; }
   .jai .feat { flex-basis: 100%; white-space: pre-line; font-size: 12.5px; color: var(--sub); line-height: 1.55; }
@@ -3215,6 +3216,7 @@
     const add = function (c, sb, w) { if (!bsAcct(c)) return; const k = c + (sb ? '-' + sb : ''); cnt[k] = (cnt[k] || 0) + w; };
     it.entries.forEach(function (e) { add(e.drCode, e.drSub, 3); add(e.crCode, e.crSub, 3); });
     boxDict(it.box).forEach(function (d) { const w = dictBox(d) ? 2 : 1; dictLinesOf(d).forEach(function (l) { add(l.drCode, l.drSub, w); add(l.crCode, l.crSub, w); }); });
+    const ab = S.ai && S.ai[it.id] && S.ai[it.id].bank; if (ab) cnt[ab] = (cnt[ab] || 0) + 1000;   /* ★ AI 下書きが 型から決めた口座を いちばん上に */
     return Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a] || (a < b ? -1 : 1); });
   }
   function lgHit(key, code, sb) { const p = key.split('-'); return p[0] === String(code || '') && (!p[1] || p[1] === String(sb || '')); }
@@ -3729,6 +3731,7 @@
     if (a === 'aiall') { aiLinesAll(it); return; }
     if (a === 'aipick') { aiOpenList(it); return; }
     if (a === 'aifeat') { S.aiFeat = S.aiFeat || {}; if (S.aiFeat[it.id]) delete S.aiFeat[it.id]; else S.aiFeat[it.id] = 1; drawCard(it); return; }
+    if (a === 'ailine' && !t.dataset.ok) { aiPatDicts(it, [Number(t.dataset.ln)]).then(function () { t.dataset.ok = '1'; t.click(); delete t.dataset.ok; }, function (err) { fmsg('型を辞書に足せませんでした：' + err.message, 'err'); }); return; }
     if (a === 'ailine') { const m = aiLinePut(it, Number(t.dataset.ln)); C[it.id] = { date: '', no: '', q: '', L: [blankLine()], aiDone: true }; openOnly(it.id); drawCard(it); markAct(); ledSync(); fmsg(m || (Number(t.dataset.ln) + 1) + '行目を 出納帳に入れました。', m ? 'err' : 'ok'); return; }
     if (a === 'pop') { S.act = it.id; markAct(); prioritize(); popOpen(); popSync(true); return; }
     if (a === 'repick') { repick(it); return; }
@@ -4913,11 +4916,36 @@
     const d = S.ai[it.id], left = it.entries.slice(), out = [];
     (d.lines || []).forEach(function (l0, i) {
       const l = aiLineOf(it, i), dt = String(l.date || '').replace(/-/g, '/');
+      /* ★ 通帳の型で 元金＋利息 に分けて入れた行は 分けた額が そろっていれば 入っている */
+      const pa = patAmts(l);
+      if (pa && pa.length > 1) {
+        const take = [], tmp = left.slice();
+        const ok = pa.every(function (a) { const q = tmp.findIndex(function (e) { return Number(e.amount) === a && (!dt || e.date === dt); }); if (q < 0) return false; take.push(tmp[q]); tmp.splice(q, 1); return true; });
+        out[i] = ok; if (ok) take.forEach(function (e) { left.splice(left.indexOf(e), 1); }); return;
+      }
       let j = left.findIndex(function (e) { return Number(e.amount) === Number(l.amount) && e.date === dt; });
       if (j < 0) j = left.findIndex(function (e) { return Number(e.amount) === Number(l.amount); });
       out[i] = j >= 0; if (j >= 0) left.splice(j, 1);
     });
     return out;
+  }
+  /* ★ 通帳の型（2026-10-14）：その行の 分けた額（元金＋利息など）。金額を直したら 残りを付け直す */
+  function patAmts(l) {
+    const P = l.pat; if (!P || !P.amts) return null;
+    const a = P.amts.slice(), amt = Number(l.amount) || 0;
+    if (P.kind === 'split' && P.rem >= 0) { const fix = a.reduce(function (t, x, j) { return t + (j === P.rem ? 0 : x); }, 0); if (amt - fix <= 0) return null; a[P.rem] = amt - fix; }
+    else if (P.kind === 'var') a[0] = amt;
+    else if (a.reduce(function (t, x) { return t + x; }, 0) !== amt) return null;
+    return a;
+  }
+  function patKey(x) { return [x.drCode, x.drSub || '', x.crCode, x.crSub || ''].join('/'); }
+  /* 辞書の行の順に 型の額を並べ直す（形が合わなければ null） */
+  function patFor(k, l) {
+    const a = patAmts(l); if (!a) return null;
+    const used = {}, ks = dictLinesOf(k);
+    if (ks.length !== a.length) return null;
+    const out = ks.map(function (x) { const j = l.pat.lines.findIndex(function (y, q) { return !used[q] && patKey(y) === patKey(x); }); if (j < 0) return null; used[j] = 1; return a[j]; });
+    return out.indexOf(null) >= 0 ? null : out;
   }
   function aiLinesEl(it) {
     const d = S.ai[it.id], L = d.lines || [], done = aiLinesDone(it);
@@ -4929,21 +4957,24 @@
     h.appendChild(el('span', null, '明細 ' + L.length + '行' + (left ? '（まだ入れていない ' + left + '行）' : '（全部入っています）')));
     if (left) { const all = el('button', 'jdok go'); all.type = 'button'; all.dataset.a = 'aiall'; all.appendChild(el('span', 'm', '✓')); all.appendChild(el('span', null, '辞書の決まった行を 全部入れる')); all.title = 'Enter で 出納帳に入れる（辞書が決まっていない行は 残る）'; h.appendChild(all); }
     w.appendChild(h);
-    const list = boxDict(it.box).filter(function (x) { return !(x.lines && x.lines.length > 1); });
+    const list = boxDict(it.box);
     const tb = el('table', 'jailt');
     L.forEach(function (l0, i) {
       const l = aiLineOf(it, i);
-      const tr = el('tr', done[i] ? 'done' : !Number(l.no) ? 'none' : aiPctOf(l) < 60 ? 'lo' : null); tr.dataset.ln = String(i);
+      const usePat = !!l.pat && !Number(l.no) && l.usePat !== false;
+      const tr = el('tr', done[i] ? 'done' : !Number(l.no) && !usePat ? 'none' : aiPctOf(l) < 60 ? 'lo' : null); tr.dataset.ln = String(i);
       const dt = el('input', 'dpin'); dt.dataset.ai = 'date'; dt.value = String(l.date || '').replace(/-/g, '/'); dt.disabled = done[i]; dt.setAttribute('aria-label', (i + 1) + '行目の日付');
       tr.appendChild(el('td')).appendChild(dt);
-      tr.appendChild(el('td', 'ds', l.desc || ''));
+      const dsc = tr.appendChild(el('td', 'ds', l.desc || ''));
+      if (l.pat) { const pa = patAmts(l); dsc.appendChild(el('div', 'jpat', '型：' + l.pat.title + (pa && pa.length > 1 ? '（' + pa.map(yen).join('＋') + '）' : ''))).title = (l.pat.why || []).join('・') + '（過去 ' + (l.pat.n || 0) + '回）'; }
       tr.appendChild(el('td', l.dir === '入' ? 'in' : 'out', l.dir === '入' ? '入' : '出'));
       const am = el('input', 'dpin num'); am.dataset.ai = 'amount'; am.value = l.amount ? yen(l.amount) : ''; am.disabled = done[i]; am.inputMode = 'numeric'; am.setAttribute('aria-label', (i + 1) + '行目の金額');
       tr.appendChild(el('td')).appendChild(am);
       const sel = el('select'); sel.dataset.ai = 'no'; sel.disabled = done[i]; sel.setAttribute('aria-label', (i + 1) + '行目の辞書');
       sel.appendChild(el('option', null, '— 辞書を選ぶ')).value = '0';
-      list.forEach(function (k) { const o = el('option', null, (seqOf(it.box, k.no) || k.no) + ' ' + (k.title || dictLine(k))); o.value = String(k.no); sel.appendChild(o); });
-      sel.value = String(Number(l.no) || 0);
+      if (l.pat && !Number((S.ai[it.id].lines[i] || {}).no)) sel.appendChild(el('option', null, '型：' + l.pat.title + '（辞書に足して入れる）')).value = 'pat';
+      list.forEach(function (k) { const o = el('option', null, (seqOf(it.box, k.no) || k.no) + ' ' + (k.title || dictLine(k)) + (dictLinesOf(k).length > 1 ? '（' + dictLinesOf(k).length + '行）' : '')); o.value = String(k.no); sel.appendChild(o); });
+      sel.value = usePat ? 'pat' : String(Number(l.no) || 0);
       tr.appendChild(el('td')).appendChild(sel);
       const pc = el('td', 'pc', done[i] ? '✓' : aiPctOf(l) + '%'); if (!done[i]) pc.title = aiFeatText(l); tr.appendChild(pc);
       const td = el('td');
@@ -4957,7 +4988,7 @@
     const tr = t.closest('tr[data-ln]'), row = t.closest('.jdrow'); if (!tr || !row) return;
     const it = itemOf(row.dataset.id); if (!it) return;
     const e = S.aiEd[it.id] || (S.aiEd[it.id] = {}), o = e[tr.dataset.ln] || (e[tr.dataset.ln] = {});
-    if (t.dataset.ai === 'no') { o.no = Number(t.value) || 0; tr.classList.toggle('none', !o.no); }
+    if (t.dataset.ai === 'no') { o.no = Number(t.value) || 0; o.usePat = t.value === 'pat'; tr.classList.toggle('none', !o.no && !o.usePat); }
     else if (t.dataset.ai === 'amount') o.amount = parseAmt(t.value) || 0;
     else o.date = t.value.trim();
   }
@@ -4965,27 +4996,47 @@
   function aiLinePut(it, i) {
     const l = aiLineOf(it, i), k = Number(l.no) ? dictOf(String(l.no)) : null;
     if (!k) return '辞書が決まっていません';
-    if (dictLinesOf(k).length > 1) return '複数仕訳の辞書は 伝票で入れてください';
+    const amts = l.pat ? patFor(k, l) : null;
+    if (dictLinesOf(k).length > 1 && !amts) return '複数仕訳の辞書は 伝票で入れてください';
     const dd = parseDate(String(l.date || '').replace(/-/g, '/'), it.period);
     if (!dd) return '日付が読めません';
     if (!(Number(l.amount) > 0)) return '金額が読めません';
     const memo = l.desc ? ((k.memo ? k.memo + '　' : '') + l.desc).slice(0, 60) : null;
     const n0 = it.entries.length;
-    C[it.id] = { date: dd.s, no: String(k.no), q: '', L: [{ amount: String(l.amount), ov: {}, memo: memo }], aiLn: i, aiDone: true };
+    C[it.id] = { date: dd.s, no: String(k.no), q: '', L: amts ? amts.map(function (a) { return { amount: String(a), ov: {}, memo: null }; }) : [{ amount: String(l.amount), ov: {}, memo: memo }], aiLn: i, aiDone: true };
     S.aiQuiet = true;
     try { confirmEntry(it, true); } finally { S.aiQuiet = false; }
     return it.entries.length > n0 ? '' : '入れられませんでした（伝票で直してください）';
   }
+  /* ★ 型で入れる行は 先に辞書を用意する（同じ形の辞書があれば それ・無ければ 足す） */
+  function aiPatDicts(it, idxs) {
+    const need = {}, code = S.code;
+    idxs.forEach(function (i) { const l = aiLineOf(it, i); if (l.pat && !Number(l.no) && l.usePat !== false) (need[l.pat.sig] = need[l.pat.sig] || { pat: l.pat, ix: [] }).ix.push(i); });
+    let q = Promise.resolve();
+    Object.keys(need).forEach(function (sg) {
+      q = q.then(function () {
+        if (code !== S.code) return;
+        return gs('bankDict', code, it.box, { title: need[sg].pat.title, lines: need[sg].pat.lines }).then(function (r) {
+          (r.dict || []).forEach(function (x) { if (!S.dict.some(function (y) { return y.no === x.no; })) S.dict.push(x); });
+          if (r.added) { drawIndex(); fmsg('型「' + need[sg].pat.title + '」を 辞書 No ' + r.no + ' に足しました。', 'ok'); }
+          const e = S.aiEd[it.id] || (S.aiEd[it.id] = {});
+          need[sg].ix.forEach(function (i) { e[i] = Object.assign(e[i] || {}, { no: r.no, usePat: false }); });
+        }, function (err) { S.patErr = '型「' + need[sg].pat.title + '」を辞書にできませんでした（' + err.message + '）'; });
+      });
+    });
+    return q;
+  }
   function aiLinesAll(it) {
+    if (!it._patOk) { const ix = (S.ai[it.id].lines || []).map(function (x, i) { return i; }); aiPatDicts(it, ix).then(function () { it._patOk = 1; try { aiLinesAll(it); } finally { delete it._patOk; } }, function (err) { fmsg('型を辞書に足せませんでした：' + err.message, 'err'); }); return; }
     const done = aiLinesDone(it); let n = 0, skip = 0, why = '';
     (S.ai[it.id].lines || []).forEach(function (l, i) {
       if (done[i]) return;
-      if (!Number(aiLineOf(it, i).no)) { skip++; return; }
+      if (!Number(aiLineOf(it, i).no)) { skip++; return; }   /* 型の行は aiPatDicts で 辞書が決まっている */
       const m = aiLinePut(it, i); if (m) { skip++; why = why || (i + 1) + '行目：' + m; } else n++;
     });
     C[it.id] = { date: '', no: '', q: '', L: [blankLine()], aiDone: true };
     openOnly(it.id); drawCard(it); markAct(); ledSync();
-    fmsg(n + '行を 出納帳に入れました' + (skip ? '。残り ' + skip + '行は 辞書を選んで［入れる］（' + (why || '辞書が決まっていない行') + '）' : '。出納帳の残高を 通帳と見くらべてください。'), skip ? 'err' : 'ok');
+    fmsg(n + '行を 出納帳に入れました' + (skip ? '。残り ' + skip + '行は 辞書を選んで［入れる］（' + (S.patErr || why || '辞書が決まっていない行') + '）' : '。出納帳の残高を 通帳と見くらべてください。'), skip ? 'err' : 'ok'); S.patErr = '';
     const r = rowOf(it.id), f = r && r.querySelector('.jailt tr:not(.done) select');
     if (f) f.focus();
   }
