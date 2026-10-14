@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1791952375;</script>
+<script>window.__PAGE_VER=1791965300;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -619,6 +619,9 @@
   .jai .pct { cursor: pointer; }
   .jzero { align-items: center; } .jzero .jdok { margin-left: auto; }
   .jailt tr.done { opacity: .5; } .jailt tr.none td { background: #FFF6E0; } .jailt tr.lo .pc { color: #B3261E; font-weight: 700; }
+  .jpgok { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 2px solid #0F6E56; background: #0F6E56; color: #fff; font: inherit; font-weight: 700; cursor: pointer; margin-left: 8px; }
+  .jpgok .m { font-size: 18px; }
+  .btn.arm { background: #B3261E !important; color: #fff !important; border-color: #B3261E !important; }
   .aiask { position: fixed; inset: 0; z-index: 3000; background: rgba(20,30,25,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
   .aiask[hidden] { display: none; }
   .aiask .box { background: #fff; border-radius: 16px; padding: 18px 18px 14px; max-width: 520px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
@@ -639,6 +642,7 @@
   .kbtbl td { vertical-align: top; font-size: 13px; } .kbtbl td.w { max-width: 280px; }
   .kbtbl tr.off td { opacity: .45; }
   .kbform { margin: 8px 0; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 10px; display: grid; gap: 6px; }
+  .jai .aiinv { margin-left: 8px; font-size: 12px; color: #2A4A7F; }
   .jai .aiyen { margin-left: 8px; font-size: 12px; color: #6B6B6B; white-space: nowrap; }
   .exset { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; } .exset input { width: 4.5em; }
   .thbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -877,48 +881,6 @@
     </div>
   </div>
   <div class="dk-main">
-    <details id="fxBox">
-      <summary>会計システム（FX）とやりとりする</summary>
-      <div class="bar">
-        <label>やりとりする会計ソフト <select id="fxSys" aria-label="やりとりする会計ソフト">
-          <option value="fxmc">FXマイスタークラウド</option><option value="fx2c">FX2クラウド</option>
-          <option value="e21">e21マイスター（スタンドアロン）</option><option value="fx2">FX2（スタンドアロン）</option>
-          <option value="kaikeio">会計王（ソリマチ）</option></select></label>
-        <span class="note" id="fxSysNote"></span>
-      </div>
-      <h4 class="fxh">FX → アプリ</h4>
-      <div class="fxdrop" id="fxDrop"><span id="fxDropTxt">FX から切り出した 勘定科目・口座・取引先（CSV）と 仕訳辞書（JSON）を ここへドラッグ＆ドロップ（まとめて何枚でも）</span>
-        <label class="btn sm">ファイルを選ぶ<input type="file" id="fxIn" multiple accept=".csv,.json,.txt,.xls,.xlsx" hidden></label></div>
-      <p class="note">FX で直したら、切り出し直して もう一度入れると 上書きして新しくなります（FX にあるものは FX の中身に置き換え、アプリにだけあるものは残します）。</p>
-      <h4 class="fxh">アプリ → FX</h4>
-      <div class="bar">
-        <button type="button" class="btn ghost sm fxo" id="fxOutAcct">勘定科目</button>
-        <button type="button" class="btn ghost sm fxo" id="fxOutSub">口座</button>
-        <button type="button" class="btn ghost sm fxo" id="fxOutParty">取引先</button>
-        <button type="button" class="btn ghost sm fxo" id="fxOutDict">仕訳辞書（アプリの辞書をぜんぶ）</button>
-        <label class="btn ghost sm fxo">FX の仕訳辞書に足して返す<input type="file" id="fxOut" accept=".json" hidden></label>
-      </div>
-      <p class="note">FX の取り込みに使う形（切り出しと同じ形）で落ちます。アプリで足した取引先・辞書を FX に入れるときに使います。<br>
-        足して返す … FX から切り出したばかりの仕訳辞書（JSON）を選ぶと、FX にまだ無い アプリの辞書だけを後ろに足したファイルが落ちます。</p>
-      <h4 class="fxh">FX のタグ → 回収ボックス</h4>
-      <p class="note">FX の仕訳辞書のタグ（現金・預金など）を、どの回収ボックスの辞書にするかを決めます。決めておくと、取り込むたびにその箱に入ります。</p>
-      <div id="fxTags"></div>
-      <div class="bar"><button type="button" class="btn sm" id="fxTagSave">この対応で保存して 辞書の箱を付け直す</button></div>
-      <h4 class="fxh">★ AI 読み取り（写真 → 仕訳の下書き。Claude API）</h4>
-      <div class="bar"><label class="aiuse"><input type="checkbox" id="aiUse"> この顧問先の写真を AI に読ませる（下書きだけ。確定は人）</label>
-        <span class="note" id="aiState"></span></div>
-      <div class="bar" id="aiKeyBar" hidden>
-        <input type="password" id="aiKey" placeholder="API キー（sk-ant-…）" autocomplete="off" aria-label="Claude API のキー">
-        <select id="aiModel" aria-label="AI のモデル"></select>
-        <button type="button" class="btn sm" id="aiKeySave">保存</button>
-        <button type="button" class="btn ghost sm danger" id="aiKeyDel">キーを消す</button>
-      </div>
-      <p class="note">入れると 仕訳化の上に［🤖 AI で下書き］が出ます。日付・金額・相手・登録番号を読み、<b>この顧問先の辞書の中から</b> No を選びます（科目は作りません）。
-        写真ごとに［この下書きを入れる］を押して、見てから Enter で確定します。<br>
-        キーはマスターだけが入れます（スクリプトのプロパティに置き、画面には出しません）。<b>押さなければ料金はかかりません。</b>
-        顧問先の資料を外のサービス（Anthropic）に送るので、使う顧問先は 事前に了解をもらってから入れてください。</p>
-      <span class="pagemsg" id="fxMsg" role="status"></span>
-    </details>
     <div id="dvMain">
       <h2 id="dictTitle">仕訳辞書の登録・編集</h2>
       <div class="kbcard" id="slip" hidden>
@@ -1000,8 +962,37 @@
     <span class="pagemsg" id="oMsg" role="status"></span>
   </div>
   <p id="oLink"></p>
+  <details id="fxBox" class="rbox">
+      <summary>やりとりする会計ソフト（会計システムとの 科目・辞書のやりとり）</summary>
+      <div class="bar">
+        <label>やりとりする会計ソフト <select id="fxSys" aria-label="やりとりする会計ソフト">
+          <option value="fxmc">FXマイスタークラウド</option><option value="fx2c">FX2クラウド</option>
+          <option value="e21">e21マイスター（スタンドアロン）</option><option value="fx2">FX2（スタンドアロン）</option>
+          <option value="kaikeio">会計王（ソリマチ）</option></select></label>
+        <span class="note" id="fxSysNote"></span>
+      </div>
+      <h4 class="fxh">FX → アプリ</h4>
+      <div class="fxdrop" id="fxDrop"><span id="fxDropTxt">FX から切り出した 勘定科目・口座・取引先（CSV）と 仕訳辞書（JSON）を ここへドラッグ＆ドロップ（まとめて何枚でも）</span>
+        <label class="btn sm">ファイルを選ぶ<input type="file" id="fxIn" multiple accept=".csv,.json,.txt,.xls,.xlsx" hidden></label></div>
+      <p class="note">FX で直したら、切り出し直して もう一度入れると 上書きして新しくなります（FX にあるものは FX の中身に置き換え、アプリにだけあるものは残します）。</p>
+      <h4 class="fxh">アプリ → FX</h4>
+      <div class="bar">
+        <button type="button" class="btn ghost sm fxo" id="fxOutAcct">勘定科目</button>
+        <button type="button" class="btn ghost sm fxo" id="fxOutSub">口座</button>
+        <button type="button" class="btn ghost sm fxo" id="fxOutParty">取引先</button>
+        <button type="button" class="btn ghost sm fxo" id="fxOutDict">仕訳辞書（アプリの辞書をぜんぶ）</button>
+        <label class="btn ghost sm fxo">FX の仕訳辞書に足して返す<input type="file" id="fxOut" accept=".json" hidden></label>
+      </div>
+      <p class="note">FX の取り込みに使う形（切り出しと同じ形）で落ちます。アプリで足した取引先・辞書を FX に入れるときに使います。<br>
+        足して返す … FX から切り出したばかりの仕訳辞書（JSON）を選ぶと、FX にまだ無い アプリの辞書だけを後ろに足したファイルが落ちます。</p>
+      <h4 class="fxh">FX のタグ → 回収ボックス</h4>
+      <p class="note">FX の仕訳辞書のタグ（現金・預金など）を、どの回収ボックスの辞書にするかを決めます。決めておくと、取り込むたびにその箱に入ります。</p>
+      <div id="fxTags"></div>
+      <div class="bar"><button type="button" class="btn sm" id="fxTagSave">この対応で保存して 辞書の箱を付け直す</button></div>
+      <span class="pagemsg" id="fxMsg" role="status"></span>
+    </details>
   <p class="note">確定した伝票を 回収ボックスごとに並べます。見て よければ［取込ファイルへ変換］。<b>まとめ方</b>で その月ぜんぶ（一括）か、回収ボックスごと（下の箱だけでも）かを選べます。
-    ファイル名は「顧問先コード_顧問先名_年月（_回収ボックス）_作った日時」。変換先の会計ソフトは 仕訳辞書タブの「やりとりする会計ソフト」で決まります
+    ファイル名は「顧問先コード_顧問先名_年月（_回収ボックス）_作った日時」。変換先の会計ソフトは 下の「やりとりする会計ソフト」で決まります
     （TKC FX クラウドシリーズ＝「仕訳帳(Excel)の読込」の形（44列）・1ファイル60行まで・日付をまたがない／会計王＝仕訳データ CSV）。そのまま この端末に保存します。控えは顧問先フォルダ「一括読み込みエクセル」に作った日時つきで残ります。変換した仕訳は取り消せなくなります。</p>
   <div id="oBody"><div class="cbox muted">読み込み中…</div></div>
 </div>
@@ -1070,6 +1061,21 @@
   <div class="rstat" id="rStat"></div>
   <p class="note rhow">AI は 写真を読むとき、<b>①確かなルール（登録番号・取引先）</b> → <b>②この顧問先のルール・考え方</b> → <b>③事務所共通のルール</b> → <b>④品目からの推定</b> の順に頼ります。
     ①があれば AI の答えより ルールが勝ちます。人が［OKで確定］するたびに ルールの件数が増え、外れたルールは 確定したほうへ置き換わります（使うほど賢くなる）。</p>
+  <details open class="rbox" id="aiBox"><summary>0. AI 下書きを使う（写真 → 仕訳の下書き。Claude API）</summary>
+      <div class="bar"><label class="aiuse"><input type="checkbox" id="aiUse"> この顧問先で AI 下書きを使う（下書きだけ。確定は人）</label>
+        <span class="note" id="aiState"></span></div>
+      <div class="bar" id="aiKeyBar" hidden>
+        <input type="password" id="aiKey" placeholder="API キー（sk-ant-…）" autocomplete="off" aria-label="Claude API のキー">
+        <select id="aiModel" aria-label="AI のモデル"></select>
+        <button type="button" class="btn sm" id="aiKeySave">保存</button>
+        <button type="button" class="btn ghost sm danger" id="aiKeyDel">キーを消す</button>
+      </div>
+      <p class="note">入れると 仕訳化の上に［🤖 AI で下書き］が出ます。日付・金額・相手・登録番号を読み、<b>この顧問先の辞書の中から</b> No を選びます（科目は作りません）。
+        写真ごとに［この下書きを入れる］を押して、見てから Enter で確定します。<br>
+        キーはマスターだけが入れます（スクリプトのプロパティに置き、画面には出しません）。<b>押さなければ料金はかかりません。</b>
+        顧問先の資料を外のサービス（Anthropic）に送るので、使う顧問先は 事前に了解をもらってから入れてください。</p>
+    <span class="pagemsg" id="aiMsg" role="status"></span>
+  </details>
   <details open class="rbox"><summary>1. 過去仕訳を入れる（AI が覚える材料）</summary>
     <div class="fxdrop" id="hDrop">会計システムから書き出した 仕訳（CSV・Excel）を ここへドラッグ＆ドロップ。FX の仕訳データ（借方・貸方の科目コードと 金額・摘要の列があるもの）・FX の一括読込 Excel・会計王の仕訳データ（SIWAKE）が読めます
       <label class="btn sm">ファイルを選ぶ<input type="file" id="hIn" multiple accept=".csv,.txt,.xls,.xlsx" hidden></label></div>
@@ -1288,7 +1294,7 @@
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
   const READ_FN = { officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, viewerImage: 1,
-    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1 };
+    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
   const LONG_FN = { tehonAnalyze: 370000 };
@@ -1439,6 +1445,7 @@
     /* 帯の欄は タブに要るものだけ（処理する月・未処理/確定 は仕訳化だけ、月分・箱は 回収資料と仕訳化） */
     $('ctl').dataset.tab = k;
     if (k === 'Docs') docsLoad();
+    if (k === 'In' || k === 'Docs') setTimeout(pulse, 0);
     dcBar();
     if (k === 'In' && S.act && !NARROW.matches) { const r = rowOf(S.act); const f = firstField(r); if (f) f.focus({ preventScroll: true }); }
     if (k === 'Out') oLoad();
@@ -1801,6 +1808,42 @@
       render();
     }, function (e) { listMsg(e.message); });
   }
+  /* ★★ 届いたら すぐ出す（2026-10-14）：顧問先が送ると クラウド（Drive・履歴）にはもう入っている。
+       15秒おき（画面を見ているとき・回収資料／仕訳化タブ）と 画面に戻ったときに 件数と時刻だけ軽く聞き、増えていたら 新しい分を足す */
+  const PULSE = { code: '', n: -1, busy: false, wait: 0 };
+  function pulse() {
+    if (!S.code || document.hidden || PULSE.busy || !(S.tab === 'In' || S.tab === 'Docs') || !S.all || S.all.code !== S.code) return;
+    const code = S.code; PULSE.busy = true;
+    gs('workPulse', code).then(function (p) {
+      PULSE.busy = false;
+      if (code !== S.code || !S.all) return;
+      const known = S.all.items.reduce(function (m, it) { return Math.max(m, it.t || 0); }, 0);
+      const was = PULSE.code === code ? PULSE.n : -1;
+      PULSE.code = code; PULSE.n = p.n;
+      if (p.t > known || (was >= 0 && p.n > was)) pulseFetch(code);
+    }, function () { PULSE.busy = false; });
+  }
+  function pulseFetch(code) {
+    gs('workList', code, 'all').then(function (r) {
+      if (code !== S.code || !S.all) return;
+      const have = {}; S.all.items.forEach(function (it) { have[it.id] = 1; });
+      const add = r.items.filter(function (it) { return !have[it.id]; });
+      S.counts = r.counts; S.docs = r.items; S.docsAt = Date.now(); S.trashN = (r.counts && r.counts.trash) || 0;
+      if (!add.length) { counts(); return; }
+      S.all.items = S.all.items.concat(add);
+      if (S.itemsCode === code) add.forEach(function (it) { if (S.itemsSt === 'all' || stTag(it)[0] === S.itemsSt) S.items.push(it); });
+      perFill(r.items);
+      if (S.tab === 'Docs') { docsDraw(); docsThumbs(r.items); }
+      const ae = document.activeElement;
+      if (S.tab === 'In' && ae && $('jlist').contains(ae) && /INPUT|SELECT|TEXTAREA/.test(ae.tagName)) { PULSE.wait += add.length; counts(); fmsg('新しい写真が ' + PULSE.wait + '件 届きました（打ち終わって 欄を離れると 並びます）。', 'ok'); return; }
+      PULSE.wait = 0; render();
+      if (S.tab === 'In') fmsg('新しい写真が ' + add.length + '件 届きました。', 'ok');
+    }, function () {});
+  }
+  setInterval(pulse, 15000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) pulse(); });
+  window.addEventListener('focus', pulse);
+  $('jlist').addEventListener('focusout', function () { setTimeout(function () { const ae = document.activeElement; if (PULSE.wait && !(ae && $('jlist').contains(ae) && /INPUT|SELECT|TEXTAREA/.test(ae.tagName))) { PULSE.wait = 0; render(); } }, 300); });
   function counts() {
     $('cTodo').textContent = S.counts.todo || 0; $('cBack').textContent = S.counts.back || 0; $('cDone').textContent = S.counts.done || 0;
     const v = S.view || [];
@@ -2006,7 +2049,7 @@
       const t = e.target.closest('[data-a]'); if (!t) return;
       const L = t.closest('.jledg'), it = L && itemOf(L.dataset.id); if (!it) return;
       const en = it.entries.find(function (x) { return x.id === t.dataset.e; }); if (!en) return;
-      if (t.dataset.a === 'cancel') { S.act = it.id; cancel(it, en); }
+      if (t.dataset.a === 'cancel') { S.act = it.id; cancel(it, en, null, t); }
       if (t.dataset.a === 'fix') { S.act = it.id; fixEntry(it, en); try { window.focus(); } catch (x) {} }
     });
     const me = LPOP;
@@ -3160,8 +3203,11 @@
   var LS_JMULTI = 'collect_office_jmulti', LS_JBAL = 'collect_office_jbal';
   function lsJ(k) { try { return JSON.parse(lsGet(k) || '{}') || {}; } catch (e) { return {}; } }
   function lsSetJ(k, m, max) { const ks = Object.keys(m); if (max && ks.length > max) ks.slice(0, ks.length - max).forEach(function (x) { delete m[x]; }); lsSet(k, JSON.stringify(m)); }
-  function isMulti(it) { return !!lsJ(LS_JMULTI)[S.code + '|' + it.box]; }
+  /* ★ 写真ごとの印（2026-10-14）：複数仕訳辞書で 行を入れた写真は 複数仕訳辞書のまま（1仕訳辞書には戻せない）。印が無ければ 箱の決め方 */
+  function isMulti(it) { const m = lsJ(LS_JMULTI); return !!(m[S.code + '|#' + it.id] && it.entries.length) || !!m[S.code + '|' + it.box]; }
+  function multiLocked(it) { return !!lsJ(LS_JMULTI)[S.code + '|#' + it.id] && it.entries.length > 0; }
   function setMulti(it, on) { const m = lsJ(LS_JMULTI), k = S.code + '|' + it.box; if (on) m[k] = 1; else delete m[k]; lsSetJ(LS_JMULTI, m); }
+  function lockMulti(it, on) { const m = lsJ(LS_JMULTI), k = S.code + '|#' + it.id; if (on) m[k] = 1; else delete m[k]; lsSetJ(LS_JMULTI, m); }
   function parseAmtS(v) { const t = half(String(v)).replace(/[,，\s円¥￥]/g, ''); if (!/^-?\d+$/.test(t)) return null; return Number(t); }
   /* 出納帳の口座：その写真の仕訳と 箱の辞書に出てくる 貸借対照表の科目（科目＋口座） */
   function lgCands(it) {
@@ -3289,7 +3335,7 @@
     row.textContent = '';
     if (fold) {
       /* 確定したものは うすい緑の帯1本。帯を押すと ひらいて直せる */
-      const f = el('button', 'jdone'); f.type = 'button'; f.dataset.a = 'open'; f.setAttribute('aria-label', (i + 1) + '件目をひらく');
+      const f = el('button', 'jdone'); f.type = 'button'; f.dataset.a = 'open'; f.setAttribute('aria-label', (i + 1) + '件目を 確定前に戻す'); f.title = '押すと 確定前に戻します（もう一度 ✓ で確定）';
       f.appendChild(el('span', 'stt done', '✓'));
       f.appendChild(el('span', 'n', String(i + 1)));
       f.appendChild(el('span', 'jkind', it.entries.map(function (e) { return e.date.slice(5) + ' ' + ((dictOf(String(e.no)) || {}).title || 'No ' + e.no) + ' ' + yen(e.amount) + '円'; }).join('　') || it.box));
@@ -3311,7 +3357,9 @@
     const multi = isMulti(it);
     const md = el('span', 'seg jmode'); md.setAttribute('role', 'group'); md.setAttribute('aria-label', '辞書の選び方');
     [['1', '1仕訳辞書'], ['n', '複数仕訳辞書']].forEach(function (x) { const b = el('button', null, x[1]); b.type = 'button'; b.dataset.a = 'mode'; b.dataset.m = x[0];
-      b.setAttribute('aria-pressed', String((x[0] === 'n') === multi)); b.title = x[0] === 'n' ? '写真1枚に 辞書を何件も選んで、出納帳で残高を合わせる（通帳・カード明細など）' : '写真1枚に 辞書を1つ（領収書など。辞書が複数仕訳でもよい）'; md.appendChild(b); });
+      b.setAttribute('aria-pressed', String((x[0] === 'n') === multi));
+      if (x[0] === '1' && multiLocked(it)) { b.disabled = true; b.title = '複数仕訳辞書で 行を入れた写真です。1仕訳辞書には戻せません（出納帳の行を ぜんぶ取り消すと 戻せます）'; md.appendChild(b); return; }
+      b.title = x[0] === 'n' ? '写真1枚に 辞書を何件も選んで、出納帳で残高を合わせる（通帳・カード明細など）' : '写真1枚に 辞書を1つ（領収書など。辞書が複数仕訳でもよい）'; md.appendChild(b); });
     h.appendChild(md);
     /* ★ 高速記帳（2026-10-12）：ETC など 同じ辞書のまま 日付と金額だけ 次々に打つ。押すと 複数仕訳辞書になる */
     if (it.status !== 'done' || multi) {
@@ -3416,7 +3464,12 @@
       }
       else { const more = el('button', 'btn ghost sm', 'この写真にもう1件'); more.type = 'button'; more.dataset.a = 'more'; more.title = '確定して、同じ写真のまま次の取引へ（通帳など。Shift+Enter）'; ck.appendChild(more); }
     }
-    if (multi && it.entries.length) { const pd = el('button', 'btn ghost sm', 'この写真を終える'); pd.type = 'button'; pd.dataset.a = 'pgdone'; pd.title = 'たたんで 次の写真へ'; ck.appendChild(pd); }
+    /* ★ 複数仕訳辞書：行を入れても 写真は未確定のまま。この ✓ を押して はじめて確定（2026-10-14） */
+    if (multi && it.entries.length && it.status !== 'done') {
+      const pd = el('button', 'jpgok'); pd.type = 'button'; pd.dataset.a = 'pgok'; pd.title = '出納帳の ' + it.entries.length + '行で この写真を確定して 次の写真へ';
+      pd.appendChild(el('span', 'm', '✓')); pd.appendChild(el('span', null, 'この写真を確定する（' + it.entries.length + '行）'));
+      ck.appendChild(pd);
+    }
     ck.appendChild(el('span', 'jda'));
     row.appendChild(ck);
     if (multi) row.appendChild(ledgerEl(it));
@@ -3444,6 +3497,8 @@
     if (ln === 0 && k && b.memo == null) v.memo = k.memo;
     Object.keys(l.ov).forEach(function (x) { v[x] = l.ov[x]; });
     if (l.memo != null) v.memo = l.memo;
+    /* ★ 取引先コードがあれば 取引先の表の名前を出す（AI の下書き・辞書のどちらでも） */
+    if (v.party && !v.partyName) { let pc = String(v.party); if (/^\d{1,5}$/.test(pc)) pc = ('000000' + pc).slice(-6); v.partyName = (S.partyMap || {})[pc] || ''; }
     v.per = (itemOf(id) || {}).period || '';
     v.date = c.date || datePre(v.per); v.amount = l.amount;
     return v;
@@ -3667,7 +3722,8 @@
     const row = t.closest('.jdrow'); if (!row) return;
     const it = itemOf(row.dataset.id); if (!it) return;
     const a = t.dataset.a;
-    if (a === 'open') { openOnly(it.id); S.act = it.id; drawCard(it); markAct(); focusCard(it.id); return; }
+    if (a === 'open') { undoDone(it); return; }
+    if (a === 'pgok') { pageDone(it); return; }
     if (a === 'fold') { if (e.target.closest('button, a, input, select')) return; delete S.open[it.id]; drawCard(it); return; }
     if (a === 'pick') { pickNo(it, Number(t.dataset.no)); return; }
     if (a === 'aiall') { aiLinesAll(it); return; }
@@ -3688,12 +3744,11 @@
       else { const q = r2 && r2.querySelector('[data-k="q"]'); if (q) q.focus(); fmsg('高速記帳：辞書を選ぶと、そのまま 日付と金額だけで 次々に入ります（Esc でやめる）。', 'ok'); }
       return;
     }
-    if (a === 'mode') { setMulti(it, t.dataset.m === 'n'); (S.view || []).forEach(function (x) { if (x.box === it.box && rowOf(x.id) && !rowOf(x.id).classList.contains('fold')) drawCard(x); }); markAct(); return; }
-    if (a === 'pgdone') { delete S.open[it.id]; C[it.id] = { date: '', no: '', q: '', L: [blankLine()], aiDone: true }; drawCard(it); const nx = nextTodo(it.id); if (nx) focusCard(nx.id); else markAct(); return; }
+    if (a === 'mode') { if (t.dataset.m === '1' && multiLocked(it)) return; setMulti(it, t.dataset.m === 'n'); (S.view || []).forEach(function (x) { if (x.box === it.box && rowOf(x.id) && !rowOf(x.id).classList.contains('fold')) drawCard(x); }); markAct(); return; }
     if (a === 'more') { confirmEntry(it, true); return; }
     if (a === 'addline') { const c = card(it.id); c.L.push(blankLine()); drawCard(it); go1(row, 'drCode', c.L.length - 1); return; }
     if (a === 'dropline') { const c = card(it.id); c.L.splice(Number(t.dataset.ln), 1); drawCard(it); return; }
-    if (a === 'cancel') { const en = it.entries.find(function (x) { return x.id === t.dataset.e; }); if (en) cancel(it, en); return; }
+    if (a === 'cancel') { const en = it.entries.find(function (x) { return x.id === t.dataset.e; }); if (en) cancel(it, en, null, t); return; }
     if (a === 'fix') { const en = it.entries.find(function (x) { return x.id === t.dataset.e; }); if (en) fixEntry(it, en); return; }
     if (a === 'rot') {
       S.rot[it.id] = ((S.rot[it.id] || 0) + 90) % 360;
@@ -4028,15 +4083,21 @@
     const lines = c.L.map(function (l, ln) { const v = slipVals(it.id, ln); return { amount: parseAmt(l.amount), ov: Object.keys(l.ov).length ? Object.assign({}, l.ov) : null, memo: l.memo != null ? l.memo : '', v: v }; });
     const tmps = lines.map(function (x) { return { id: 'tmp' + (++tmpSeq), pending: true, date: d.s, amount: x.amount, no: k.no, dr: x.v.dr, drCode: x.v.drCode, drSub: x.v.drSub, cr: x.v.cr, crCode: x.v.crCode, crSub: x.v.crSub, memo: x.memo || x.v.memo }; });
     const before = it.status;
+    /* ★ 複数仕訳辞書は 行を入れるだけ（写真は未確定のまま。［この写真を確定する］で確定） */
+    const keep = isMulti(it);
+    if (keep) lockMulti(it, true);
     tmps.forEach(function (x) { it.entries.push(x); });
-    if (before !== 'done') { S.counts[before]--; S.counts.done = (S.counts.done || 0) + 1; }
-    it.status = 'done'; it.note = '';
+    if (!keep) {
+      if (before !== 'done') { S.counts[before]--; S.counts.done = (S.counts.done || 0) + 1; }
+      it.status = 'done';
+    }
+    it.note = '';
     docSync(it);
     counts();
     S.saving++; savingMark();
     fmsg('確定：' + d.s + '　' + yen(Math.max(sm.dr, sm.cr)) + '円　' + (k.title || dictLine(k)) + (lines.length > 1 ? '（' + lines.length + '行）' : ''), 'ok');
     const code = S.code;
-    const req = { code: code, fileId: it.id, date: d.s, amount: lines[0].amount, no: k.no, memo: lines[0].memo, ov: lines[0].ov };
+    const req = { code: code, fileId: it.id, date: d.s, amount: lines[0].amount, no: k.no, memo: lines[0].memo, ov: lines[0].ov, keep: keep, inv: c.inv || '' };
     if (lines.length > 1) req.lines = lines.map(function (x) { return { amount: x.amount, ov: x.ov, memo: x.memo }; });
     gs('workConfirm', req).then(function (r) {
       S.saving--; savingMark();
@@ -4051,7 +4112,7 @@
     }, function (err) {
       S.saving--;
       it.entries = it.entries.filter(function (x) { return tmps.indexOf(x) < 0; });
-      if (!it.entries.length && it.status === 'done') { S.counts.done--; S.counts[before] = (S.counts[before] || 0) + 1; it.status = before; }
+      if (!it.entries.length && it.status !== before) { S.counts[it.status]--; S.counts[before] = (S.counts[before] || 0) + 1; it.status = before; }
       docSync(it);
       if (code !== S.code) { savingMark('保存できませんでした（' + err.message + '）'); return; }
       counts();
@@ -4077,11 +4138,22 @@
 
   /* 取消：★ 返事を待たずに その場で取り消した形にする（速さのため）。保存は後ろで続ける。
      しくじったら 仕訳を元に戻して 赤で出す。回収資料の一覧にも すぐ映す */
-  function cancel(it, e, then) {
-    if (!then && !confirm(e.date + '　' + yen(e.amount) + '円 の仕訳を取り消しますか？')) return;
+  /* ★ 取消は【2回押し】（2026-10-14）。confirm() の窓は 別ウィンドウ（出納帳）から押すと出ずに 黙って止まっていた */
+  function cancel(it, e, then, btn) {
+    if (!then) {
+      const arm = S.cxArm;
+      if (!(arm && arm.id === e.id && Date.now() - arm.at < 6000)) {
+        S.cxArm = { id: e.id, at: Date.now() };
+        if (btn) { btn.textContent = 'もう一度で取消'; btn.classList.add('arm'); }
+        fmsg(e.date + '　' + yen(e.amount) + '円 の仕訳：もう一度［取消］を押すと 取り消します。', 'err');
+        return;
+      }
+      S.cxArm = null;
+    }
     const before = it.status, keep = it.entries.slice();
     it.entries = it.entries.filter(function (x) { return x.id !== e.id; });
-    const now = it.entries.length ? 'done' : (before === 'done' ? 'todo' : before);
+    const now = it.entries.length ? before : (before === 'done' ? 'todo' : before);
+    if (!it.entries.length) lockMulti(it, false);
     if (now !== before) { S.counts[before]--; S.counts[now] = (S.counts[now] || 0) + 1; it.status = now; }
     docSync(it);
     counts(); openOnly(it.id);
@@ -4105,6 +4177,66 @@
   /* 仕訳化で変わった状態を 回収資料の一覧（S.docs）にも映す（タブを移ったとき すぐ正しく出るように） */
   function docSync(it) {
     (S.docs || []).forEach(function (x) { if (x.id === it.id) { x.status = it.status; x.entries = it.entries.slice(); x.note = it.note; } });
+  }
+  /* ★ 複数仕訳辞書：［この写真を確定する］ */
+  function pageDone(it) {
+    if (it.entries.some(function (e) { return e.pending; })) { fmsg('まだ保存中の行があります。少し待ってから もう一度どうぞ。', 'err'); return; }
+    const before = it.status, code = S.code;
+    if (before !== 'done') { S.counts[before]--; S.counts.done = (S.counts.done || 0) + 1; }
+    it.status = 'done'; it.note = ''; docSync(it); counts();
+    delete S.open[it.id]; C[it.id] = { date: '', no: '', q: '', L: [blankLine()], aiDone: true };
+    drawCard(it);
+    const nx = nextTodo(it.id); if (nx) focusCard(nx.id); else markAct();
+    fmsg('この写真を確定しました（' + it.entries.length + '行）。', 'ok');
+    S.saving++; savingMark();
+    gs('workDone', code, it.id, true).then(function () { S.saving--; savingMark(); }, function (err) {
+      S.saving--; savingMark('確定できませんでした（' + err.message + '）');
+      if (code !== S.code) return;
+      if (it.status === 'done') { S.counts.done--; S.counts[before] = (S.counts[before] || 0) + 1; it.status = before; docSync(it); counts(); }
+      openOnly(it.id); drawCard(it); fmsg('確定できませんでした：' + err.message, 'err');
+    });
+  }
+  /* ★ たたんだ帯を押すと 確定前に戻す（2026-10-14）
+       1仕訳辞書 … 仕訳を取り消して、確定する直前の伝票（同じ中身）に戻す。もう一度 ✓ で確定
+       複数仕訳辞書 … 写真だけ未確定に戻す（出納帳の行は そのまま。行を足す・直す・取り消すができ、［この写真を確定する］で もう一度確定） */
+  function undoDone(it) {
+    const code = S.code, before = it.status;
+    if (it.entries.some(function (e) { return e.pending; })) { fmsg('まだ保存中です。少し待ってから もう一度どうぞ。', 'err'); return; }
+    if (it.entries.some(function (e) { return e.out; })) { openOnly(it.id); S.act = it.id; drawCard(it); markAct(); fmsg('取込ファイルに変換済みの仕訳があるので 確定前には戻せません（会計ソフト側で直してください）。', 'err'); return; }
+    /* 1回の確定でできた行か（辞書の行数と同じ・同じ辞書と日付）。それ以外は 何回かに分けて入れたもの＝複数仕訳辞書あつかい */
+    const k0 = it.entries[0] ? dictOf(String(it.entries[0].no)) : null;
+    const multi = isMulti(it) || it.entries.length > Math.max(1, dictLinesOf(k0).length) || it.entries.length > 1 && it.entries.some(function (e) { return e.no !== it.entries[0].no || e.date !== it.entries[0].date; });
+    const back = function () { if (before === 'done') { S.counts.done--; S.counts.todo = (S.counts.todo || 0) + 1; } it.status = 'todo'; docSync(it); counts(); };
+    if (multi) {
+      if (!isMulti(it)) lockMulti(it, true);
+      back(); openOnly(it.id); S.act = it.id; drawCard(it); markAct(); focusCard(it.id);
+      fmsg('確定前に戻しました。出納帳を直して［この写真を確定する］でもう一度確定してください。', 'ok');
+      S.saving++; savingMark();
+      gs('workDone', code, it.id, false).then(function () { S.saving--; savingMark(); }, function (err) { S.saving--; savingMark('戻せませんでした（' + err.message + '）'); });
+      return;
+    }
+    /* 1仕訳辞書：同じ1回で入れた行を 伝票に戻す */
+    const ents = it.entries.slice(), e0 = ents[0];
+    const k = e0 ? dictOf(String(e0.no)) : null, bases = dictLinesOf(k);
+    const keepEnts = it.entries.slice();
+    C[it.id] = { date: e0 ? e0.date : '', no: k ? String(e0.no) : '', q: '', L: ents.map(function (e, ln) {
+      const b = bases[ln] || {}, ov = {};
+      SLIP_K.forEach(function (x) { if (x === 'memo' || x === 'rate') return; if (String(e[x] == null ? '' : e[x]) !== String(b[x] == null ? '' : b[x])) ov[x] = e[x]; });
+      if (rateCode(e) !== rateCode(b)) { ov.rate = e.rate; ov.red = e.red; }
+      if (e.side !== (b.side || 'dr')) ov.side = e.side;
+      return { amount: String(e.amount), ov: k ? ov : {}, memo: e.memo };
+    }), aiDone: true, inv: e0 ? e0.inv : '' };
+    if (!C[it.id].L.length) C[it.id].L = [blankLine()];
+    it.entries = []; back();
+    openOnly(it.id); S.act = it.id; drawCard(it); markAct(); focusCard(it.id, k ? 'amount' : 'q', 0);
+    fmsg('確定前に戻しました。直して ✓ で もう一度確定してください。', 'ok');
+    S.saving++; savingMark();
+    gs('workUndo', code, it.id).then(function () { S.saving--; savingMark(); }, function (err) {
+      S.saving--; savingMark('戻せませんでした（' + err.message + '）');
+      if (code !== S.code) return;
+      it.entries = keepEnts; S.counts.todo--; S.counts.done = (S.counts.done || 0) + 1; it.status = 'done'; docSync(it); counts(); delete S.open[it.id]; drawCard(it);
+      fmsg('確定前に戻せませんでした：' + err.message, 'err');
+    });
   }
   /* 訂正：その仕訳を取り消して、同じ中身を伝票に戻す（打ち直さなくてよい） */
   function fixEntry(it, e) {
@@ -4630,7 +4762,8 @@
     }).catch(function (e) { fxMsg(e.message, 'err'); });
   }
 
-  /* ================= ★ AI 読み取り（Claude API。2026-10-13） =================
+  function aiMsgSet(t, kind) { const m = $('aiMsg'); if (!m) return; m.textContent = t || ''; m.className = 'pagemsg' + (kind ? ' ' + kind : ''); }
+  /* ================= ★ AI 下書き（Claude API。2026-10-13）。設定は AI の考え方タブ（2026-10-14） =================
      キーはマスターが入れる（サーバのスクリプトプロパティ。画面には戻ってこない）。顧問先ごとに 入／切（はじめは切）
      下書きは 写真ごとに1つ（S.ai）。［この下書きを入れる］で 辞書・日付・金額が入るだけ。確定は人が Enter */
   function aiPaint() {
@@ -4644,24 +4777,25 @@
     if (!S.code) return;
     const on = this.checked, code = S.code;
     if (on && !confirm('この顧問先の写真を AI（Anthropic の Claude API）に送って読ませます。\n顧問先の了解は もらっていますか？')) { this.checked = false; return; }
-    gs('fxConfSave', code, Object.assign({}, S.fxConf || { tags: {} }, { ai: on })).then(function (r) { if (code !== S.code) return; S.fxConf = r; aiPaint(); fxMsg(on ? 'この顧問先は AI 読み取りを使います。' : 'この顧問先は AI 読み取りを使いません。', 'ok'); },
-      function (e) { fxMsg(e.message, 'err'); aiPaint(); });
+    gs('fxConfSave', code, Object.assign({}, S.fxConf || { tags: {} }, { ai: on })).then(function (r) { if (code !== S.code) return; S.fxConf = r; aiPaint(); aiMsgSet(on ? 'この顧問先は AI 下書きを使います。' : 'この顧問先は AI 下書きを使いません。', 'ok'); },
+      function (e) { aiMsgSet(e.message, 'err'); aiPaint(); });
   });
-  $('fxBox').addEventListener('toggle', function () {
-    if (!this.open || !(S.me && S.me.master)) return;
+  /* キーとモデルは AI の考え方タブを開いたときに（マスターだけ） */
+  function aiStatusLoad() {
+    if (!(S.me && S.me.master)) return;
     gs('aiStatus').then(function (r) {
       S.aiOn = !!r.on; const sel = $('aiModel'); sel.textContent = '';
       (r.models || []).forEach(function (m) { const o = el('option', null, m.replace('claude-', '').replace(/-(\d)-(\d)$/, ' $1.$2')); o.value = m; sel.appendChild(o); });
       sel.value = r.model; $('aiKey').placeholder = r.on ? 'キーは入っています（入れ替えるときだけ）' : 'API キー（sk-ant-…）'; aiPaint();
     }, function () {});
-  });
+  }
   $('aiKeySave').addEventListener('click', function () {
     const k = $('aiKey').value.trim();
-    gs('aiConfSave', k || null, $('aiModel').value || null).then(function (r) { S.aiOn = !!r.on; $('aiKey').value = ''; aiPaint(); fxMsg('AI 読み取りの設定を保存しました（モデル：' + r.model + '）。', 'ok'); }, function (e) { fxMsg(e.message, 'err'); });
+    gs('aiConfSave', k || null, $('aiModel').value || null).then(function (r) { S.aiOn = !!r.on; $('aiKey').value = ''; aiPaint(); aiMsgSet('AI 下書きの設定を保存しました（モデル：' + r.model + '）。', 'ok'); }, function (e) { aiMsgSet(e.message, 'err'); });
   });
   $('aiKeyDel').addEventListener('click', function () {
-    if (!confirm('AI のキーを消します（どの顧問先でも AI 読み取りが使えなくなります）。')) return;
-    gs('aiConfSave', '', null).then(function (r) { S.aiOn = !!r.on; aiPaint(); fxMsg('AI のキーを消しました。', 'ok'); }, function (e) { fxMsg(e.message, 'err'); });
+    if (!confirm('AI のキーを消します（どの顧問先でも AI 下書きが使えなくなります）。')) return;
+    gs('aiConfSave', '', null).then(function (r) { S.aiOn = !!r.on; aiPaint(); aiMsgSet('AI のキーを消しました。', 'ok'); }, function (e) { aiMsgSet(e.message, 'err'); });
   });
   function acctName(c) { return ((S.acctMap || {})[c] || {}).name || ''; }
   /* ★ 下書きは【確からしさ（%）だけ】を出す。くわしいこと（品目・理由・ルール）は 指を置くと出る（2026-10-13） */
@@ -4683,6 +4817,8 @@
     t.title = aiFeatText(d) + '\n\n' + [d.party, d.date, d.amount ? yen(d.amount) + '円' : '', (d.items || []).length ? '品目：' + d.items.slice(0, 6).join('・') : '', d.reason ? '理由：' + d.reason : '', d.rule ? 'ルール：' + d.rule.text : '', d.kb ? '仕訳の憲法：' + d.kb.text : '', d.basis === '仮置き' ? '★ 読めない・決まらないので ' + (d.kari || '仮払金') + 'で仮置き。直してください' : '', d.note ? '⚠ ' + d.note : '', d.how === 'まとめて' ? '（まとめて処理）' : ''].filter(Boolean).join('\n');
     t.dataset.a = 'aifeat';
     b.appendChild(t);
+    const tx = (d.taxes || []).filter(function (x) { return x.gross; });
+    if (d.invoiceNo || tx.length) b.appendChild(el('span', 'aiinv', [d.invoiceNo ? '登録番号 ' + d.invoiceNo : '登録番号 なし', tx.map(function (x) { return (x.rate ? x.rate + '%対象 ' : '非課税等 ') + yen(x.gross) + '円' + (x.tax ? '（税 ' + yen(x.tax) + '）' : ''); }).join('・')].filter(Boolean).join('　')));
     if (d.cost && d.cost.yen != null) { const c = el('span', 'aiyen', '約' + yenS(d.cost.yen) + '円'); c.title = 'この下書きにかかった およその費用\n' + (d.cost.steps || []).map(function (x) { return '　' + x.k + '　約' + yenS(x.yen) + '円'; }).join('\n') + (d.ex ? '\n（似た前例 ' + d.ex.n + '件を ' + (d.ex.how === 'photo' ? '写真つき' : '文字') + 'で見せました' + (d.ex.low != null ? '。文字だけでは ' + d.ex.low + '% だったので 写真つきを かぶせました' : '') + '）' : ''); b.appendChild(c); }
     /* 押すと 何が効いたか（特徴ごとの ±%）を その場に出す（スマホは 指を置いても出ないので） */
     if (S.aiFeat && S.aiFeat[it.id]) b.appendChild(el('span', 'feat', aiFeatText(d)));
@@ -4716,10 +4852,35 @@
     if (d.date) c.date = d.date.replace(/-/g, '/');
     if (!base) return false;
     c.no = String(base.no); c.q = ''; c.L = dictLinesOf(base).map(function () { return blankLine(); });
+    c.inv = d.invoiceNo || '';
+    /* ★ 読んだ 税率・取引先 を伝票に（2026-10-14） */
+    if (dictLinesOf(base).length === 1) {
+      ov = ov || {};
+      const rates = aiRates(d);
+      if (rates.length === 1 && !taxFree(ov.tax != null ? ov.tax : base.tax) && Number(base.rate || 0) && rates[0] !== Number(ov.rate != null ? ov.rate : base.rate)) { ov.rate = rates[0]; ov.red = rates[0] === 8; }
+      const pm = aiParty(d.party);
+      if (pm && !base.party) { ov.party = pm.code; ov.partyName = pm.name; }
+      if (!Object.keys(ov).length) ov = null;
+    }
     if (ov && c.L[0]) c.L[0].ov = ov;
     if (d.amount && c.L[0]) c.L[0].amount = String(d.amount);
     if (d.memo && c.L.length === 1) c.L[0].memo = d.memo;
     return true;
+  }
+  /* 読んだ税率（内訳に出てくる 10・8）。軽減の品目だけなら 8 */
+  function aiRates(d) {
+    const r = {}; (d.taxes || []).forEach(function (x) { if (Number(x.rate) === 8 || Number(x.rate) === 10) r[Number(x.rate)] = 1; });
+    let a = Object.keys(r).map(Number);
+    if (!a.length && d.reduced === true && /食料|飲食/.test(d.category || '')) a = [];
+    return a;
+  }
+  /* 読んだ相手の名前 → 取引先の表（同じ名前が1件だけのとき） */
+  function aiParty(nm) {
+    const k = String(nm || '').replace(/[\s　]/g, '').replace(/^(株式会社|有限会社|\(株\)|（株）|㈱|㈲)/, '').replace(/(株式会社|\(株\)|（株）|㈱)$/, '').toLowerCase();
+    if (k.length < 2) return null;
+    const hit = (S.party || []).filter(function (p) { const n = String(p.name || '').replace(/[\s　]/g, '').replace(/^(株式会社|有限会社|\(株\)|（株）|㈱|㈲)/, '').replace(/(株式会社|\(株\)|（株）|㈱)$/, '').toLowerCase(); return n && (n === k || (n.length >= 3 && k.indexOf(n) >= 0)); });
+    const codes = {}; hit.forEach(function (p) { codes[p.code] = p; });
+    const ks = Object.keys(codes); return ks.length === 1 ? { code: ks[0], name: codes[ks[0]].name } : null;
   }
   /* 描くときに1回だけ：まだ触っていない写真には 下書きを伝票で出しておく */
   /* ★ AI が 仕訳を決められなかった（読めていない・辞書が決まらない）→ 予測合致率 0% と出し、辞書の一覧は隠しておく。
@@ -4949,7 +5110,7 @@
     const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' };
     $('rClient').textContent = '— ' + code + ' ' + c.name;
     gs('ruleList', code).then(function (r) { if (code !== S.code) return; R.data = r; rDraw(); }, function (e) { rMsg(e.message, 'err'); });
-    thLoad();
+    thLoad(); aiStatusLoad(); aiPaint();
   }
   /* ---- お手本の月 ---- */
   const TH = { data: null, busy: false };
@@ -4965,7 +5126,7 @@
     if (!r.months.length) { const o = el('option', null, '確定した仕訳のある月がありません'); o.value = ''; sel.appendChild(o); }
     if (was && r.months.some(function (m) { return m.ym === was; })) sel.value = was;
     $('thGo').disabled = TH.busy || !r.months.length || !r.aiOn; $('thDiff').disabled = TH.busy || !r.tejun || !r.months.length || !r.aiOn;
-    if (!r.aiOn && !TH.busy) thMsg('AI のキーが入っていません（仕訳辞書タブ ＞ AI 読み取り）。');
+    if (!r.aiOn && !TH.busy) thMsg('AI のキーが入っていません（このタブの「0. AI 下書きを使う」）。');
     const t = r.tejun;
     $('thHead').textContent = t ? '処理手順書（版 ' + t.ver + '・' + t.at + ' ' + t.by + (t.months.length ? '・お手本にした月 ' + t.months.join('、') : '') + '）' : '処理手順書（まだありません）';
     if (document.activeElement !== $('thText')) $('thText').value = t ? t.text : '';
@@ -5075,7 +5236,7 @@
     box(mine.length, '件のルール（この顧問先）');
     box(off.length, '件のルール（事務所共通）');
     box(r.score.n ? Math.round(100 * r.score.ok / r.score.n) + '%' : '—', ' AI の当たり（下書きの辞書のまま確定 ' + r.score.ok + '／' + r.score.n + '件）');
-    box(r.aiOn ? (r.ai ? '入' : '切') : 'キーなし', ' AI 読み取り（仕訳辞書タブで 入／切）');
+    box(r.aiOn ? (r.ai ? '入' : '切') : 'キーなし', ' AI 下書き（このタブの 0. で 入／切）');
     if (document.activeElement !== $('pClient')) $('pClient').value = r.policy.client || '';
     if (document.activeElement !== $('pOffice')) $('pOffice').value = r.policy.office || '';
     $('pOffice').readOnly = !ms; $('rOffice').hidden = !ms;
@@ -5791,6 +5952,7 @@
     const byBox = {}; let n = 0;
     const sel = $('outBox'), cur = sel.value, cnt = {};
     O.items.forEach(function (it) {
+      if (it.status !== 'done') return;   /* 確定した写真だけ（複数仕訳辞書で 入れている途中のものは 出さない） */
       it.entries.forEach(function (e) {
         if (String(e.date).slice(0, 7) !== ym) return;
         const segs = String(it.box || '').split('/').filter(Boolean);
@@ -5806,7 +5968,7 @@
     sel.value = cnt[cur] ? cur : '';
     if (cur && !cnt[cur]) { oDraw(); return; }
     const sysName = { fxmc: 'FXマイスタークラウド', fx2c: 'FX2クラウド', e21: 'e21マイスター', fx2: 'FX2', kaikeio: '会計王' }[(S.fxConf && S.fxConf.sys) || 'fxmc'] || 'FX';
-    $('outSys').textContent = '変換先：' + sysName + '（仕訳辞書タブで変えられます）';
+    $('outSys').textContent = '変換先：' + sysName + '（このタブの「やりとりする会計ソフト」で変えられます）';
     $('outGo').textContent = cur ? '［' + cur + '］を取込ファイルへ変換' : '取込ファイルへ変換（' + ym.replace('/', '年') + '月ぜんぶ）';
     if (!n) { body.appendChild(el('div', 'cbox muted', ym + ' に確定した伝票はありません。')); return; }
     Object.keys(byBox).forEach(function (bx) {
