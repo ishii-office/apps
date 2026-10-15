@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792038449;</script>
+<script>window.__PAGE_VER=1792043294;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1680,13 +1680,16 @@
     $('dictTitle').textContent = '仕訳辞書の登録・編集：' + (c ? c.code + '　' + c.name : '');
     /* 回収ボックスの選び肢：その顧問先の箱 ＋ その他 ＋ 共通（どの箱にも出す） */
     S.boxes = (c ? c.boxes : []).filter(function (b) { return b !== 'その他'; }).concat(['その他']);
+    /* ★ 顧問先の箱で【非表示】にした箱（とその下の箱）は 仕訳辞書の選び肢にも出さない（2026-10-15）。
+         ただし その箱の辞書を開いたとき・その箱の辞書を直すときは 選び肢に足す（足さないと 保存で「共通」に変わってしまう） */
+    S.hideB = (c && c.hidden) || [];
     [$('dBox'), $('sBox')].forEach(function (sel) {
       sel.textContent = '';
-      S.boxes.forEach(function (b) { const o = el('option', null, b); o.value = b; sel.appendChild(o); });
+      S.boxes.filter(function (b) { return !boxHid(b); }).forEach(function (b) { const o = el('option', null, b); o.value = b; sel.appendChild(o); });
       const o = el('option', null, '共通（どの箱にも出す）'); o.value = ''; sel.appendChild(o);
     });
-    if (!soft || S.boxes.concat(['']).indexOf(S.dbox) < 0) S.dbox = S.boxes[0] || '';
-    $('dBox').value = S.dbox;
+    if (!soft || S.boxes.concat(['']).indexOf(S.dbox) < 0) S.dbox = S.boxes.filter(function (b) { return !boxHid(b); })[0] || '';
+    boxOpt($('dBox'), S.dbox); $('dBox').value = S.dbox;
     const f = $('dFrom'); f.textContent = '';
     S.clients.filter(function (x) { return x.code !== S.code; }).forEach(function (x) { const o = el('option', null, x.code + '　' + x.name); o.value = x.code; f.appendChild(o); });
     $('aTitle2').textContent = '勘定科目と口座：' + (c ? c.code + '　' + c.name : '');
@@ -1699,6 +1702,8 @@
     else { listMsg('読み込み中…'); if (S.tab === 'Docs') docsLoad(); }
     gs('clientBundle', code).then(applyBundle, function (e) { if (code === S.code) listMsg(e.message); });
   }
+  function boxHid(b) { return (S.hideB || []).some(function (h) { return b === h || String(b).indexOf(h + '/') === 0; }); }
+  function boxOpt(sel, v) { if (!v || Array.prototype.some.call(sel.options, function (o) { return o.value === v; })) return; const o = el('option', null, v + '（非表示の箱）'); o.value = v; sel.insertBefore(o, sel.lastChild); }
   /* ★ 束（clientBundle）を画面に当てる。同じ中身なら 描き直さない（小さい絵だけ足す） */
   const BUNDLES = {};
   function applyBundle(b) {
@@ -1753,7 +1758,7 @@
     document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.st === S.st)); });
     $('box').value = S.box; if ($('box').value !== S.box) S.box = '';
     perPick(S.per);
-    if (r.dbox != null && S.boxes.concat(['']).indexOf(r.dbox) >= 0) { S.dbox = r.dbox; $('dBox').value = r.dbox; }
+    if (r.dbox != null && S.boxes.concat(['']).indexOf(r.dbox) >= 0) { S.dbox = r.dbox; boxOpt($('dBox'), r.dbox); $('dBox').value = r.dbox; }
     if (r.slip) { openSlip(null, r.slip); S.dsel = r.dsel; $('sDel').hidden = !S.dsel; $('sDup').hidden = !S.dsel; drawIndex(); }
     else if (r.dsel != null) openSlip(r.dsel);
     render();
@@ -5748,7 +5753,7 @@
     const x = Object.assign({}, h.x);
     if (!x.no || S.dict.some(function (d) { return d.no === Number(x.no); })) x.no = nextNo();
     const bx = dictBox(x) || x.box;
-    if (bx && (S.boxes || []).indexOf(bx) >= 0 && S.dbox !== bx) { S.dbox = bx; $('dBox').value = bx; }
+    if (bx && (S.boxes || []).indexOf(bx) >= 0 && S.dbox !== bx) { S.dbox = bx; boxOpt($('dBox'), bx); $('dBox').value = bx; }
     openSlip(null, x);
     S.heldEdit = h.id; heldDraw();
     dmsg('よけた辞書を直しています：' + h.why + '　直して［保存］を押すと 辞書に入ります。', 'err');
@@ -5761,7 +5766,7 @@
     $('slip').hidden = !d;
     if (d) {
       $('sNo').value = d.no == null ? '' : String(d.no); $('sTitle').value = d.title || ''; $('sNote').value = d.note || '';
-      $('sGrp').value = d.grp || 'いつも'; $('sBox').value = d.box == null ? S.dbox : d.box;
+      $('sGrp').value = d.grp || 'いつも'; boxOpt($('sBox'), d.box == null ? S.dbox : d.box); $('sBox').value = d.box == null ? S.dbox : d.box;
       $('sTitle').dataset.prev = d.title || '';
       dlinesDraw(d.lines && d.lines.length ? d.lines : [d]);
     }
@@ -5811,7 +5816,7 @@
     S.dictBack = it.id;
     selectTab('Dict');
     if (!slipDirtyOk()) { $('sBack').hidden = false; return; }
-    if (it.box && (S.boxes || []).indexOf(it.box) >= 0) { S.dbox = it.box; $('dBox').value = it.box; drawDict(); }
+    if (it.box && (S.boxes || []).indexOf(it.box) >= 0) { S.dbox = it.box; boxOpt($('dBox'), it.box); $('dBox').value = it.box; drawDict(); }
     openSlip(null, { no: nextNo(), side: 'dr', box: S.dbox, grp: 'いつも', rate: 10 });
     $('sBack').hidden = false;
     $('sTitle').focus();
