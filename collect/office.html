@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792029246;</script>
+<script>window.__PAGE_VER=1792033473;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -475,6 +475,14 @@
   .dsplit { font: inherit; font-size: 12.5px; font-weight: 700; color: #8A2B23; background: #fff; border: 1px solid #E2B4B0; border-radius: 6px; padding: 1px 9px; cursor: pointer; }
   .dclip { position: static; left: 8px; top: 4px; font: inherit; font-size: 12.5px; font-weight: 700; color: #1F4E8C; background: #fff; border: 1px solid #9DB7D8; border-radius: 6px; padding: 1px 9px; cursor: pointer; }
   .dsetn { position: absolute; right: 6px; bottom: 6px; font-size: 11px; font-weight: 800; padding: 1px 6px; border-radius: 4px; background: #1F4E8C; color: #fff; }
+  .dstack { position: relative; min-height: 180px; cursor: pointer; border: 0; padding: 6px; background: none; font: inherit; }
+  .dstack .sh { position: absolute; inset: 6px; border-radius: 10px; border: 1px solid #9DB7D8; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); overflow: hidden; }
+  .dstack .sh:nth-child(1) { transform: translate(9px, -9px) rotate(4deg); }
+  .dstack .sh:nth-child(2) { transform: translate(4.5px, -4.5px) rotate(2deg); }
+  .dstack .sh img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dstack .sn { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; font-size: 17px; font-weight: 900; color: #fff; background: rgba(31,78,140,.88); border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
+  .dstack .sl { position: absolute; left: 6px; right: 6px; bottom: 6px; z-index: 2; font-size: 12px; font-weight: 700; color: #1F4E8C; background: rgba(255,255,255,.94); text-align: center; padding: 3px 0; border-radius: 0 0 10px 10px; }
+  .dfold { grid-column: 1 / -1; justify-self: center; font: inherit; font-size: 13px; font-weight: 700; color: #1F4E8C; background: #fff; border: 1px solid #9DB7D8; border-radius: 8px; padding: 4px 12px; cursor: pointer; }
   .dtile.joinhit { outline: 4px solid #3A6EA8; outline-offset: -2px; background: #E3EEFA; }
   .dmarq { position: fixed; z-index: 60; border: 2px dashed var(--accent); background: rgba(15,110,86,.08); pointer-events: none; }
   .dctx { position: fixed; z-index: 70; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,.2); padding: 4px; min-width: 220px; }
@@ -2455,7 +2463,7 @@
             }
             hd.appendChild(cl); if (!S.dcpick && g.every(function (x) { return x.status !== 'done'; })) hd.appendChild(sp);
             w.appendChild(hd);
-            g.forEach(function (x) { w.appendChild(dTile(x)); });
+            dStack(w, g);
             grid.appendChild(w);
           });
           mon.appendChild(grid);
@@ -2471,6 +2479,29 @@
   }
   const D_ICON = '<svg class="dbox-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l2.2-4.4A1 1 0 0 1 6.1 4h11.8a1 1 0 0 1 .9.6L21 9"/><path d="M3 9h5l1.5 3h5L16 9h5v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>';
   const D_ICON_S = D_ICON.replace('dbox-i', 'dmon-i');
+  /* ★ 5枚以上の書類（2026-10-15。顧問先の画面と同じ）：4枚を並べて、5枚目からは 束ねた紙（＋N枚）。押すと ひらく */
+  const DSTACK = {};
+  function dStack(w, g) {
+    const sid = g[0].set;
+    if (g.length < 5 || DSTACK[sid]) {
+      g.forEach(function (x) { w.appendChild(dTile(x)); });
+      if (g.length >= 5) { const f = el('button', 'dfold', '5枚目からを 束ねる'); f.type = 'button'; f.addEventListener('click', function () { delete DSTACK[sid]; docsDraw(); }); w.appendChild(f); }
+      return;
+    }
+    g.slice(0, 4).forEach(function (x) { w.appendChild(dTile(x)); });
+    const rest = g.slice(4);
+    const st = el('button', 'dstack'); st.type = 'button'; st.title = '5枚目から ' + rest.length + '枚を ひらく';
+    [2, 1, 0].forEach(function (i) {
+      if (i > 0 && rest.length <= i) return;
+      const sh = el('span', 'sh'); const y = rest[i];
+      if (y && THUMB[y.id]) { const im = el('img'); im.src = THUMB[y.id]; im.alt = ''; sh.appendChild(im); }
+      st.appendChild(sh);
+    });
+    st.appendChild(el('span', 'sn', '＋' + rest.length + '枚'));
+    st.appendChild(el('span', 'sl', '5〜' + g.length + '枚目'));
+    st.addEventListener('click', function () { DSTACK[sid] = 1; docsDraw(); });
+    w.appendChild(st);
+  }
   function dTile(it) {
     const tile = el('div', 'dtile'); tile.dataset.id = it.id;
     const b = el('button', 'dimg'); b.type = 'button'; b.title = '押すと大きく';
