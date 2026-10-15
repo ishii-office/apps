@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792075814;</script>
+<script>window.__PAGE_VER=1792077079;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -230,6 +230,11 @@
   .dpz .jdrow.act { box-shadow: 0 0 0 3px #F3E3B5; }
   /* 確定ずみは【うすい緑＋たたむ】 */
   .dpz .jdrow.fold { background: #CFE6D8; border-color: var(--green); padding: 7px 10px; }
+  /* ★ すべて巻き戻す（2026-10-15）：確定した写真の仕訳を全部取り消して 未確定へ */
+  .dpz .jdrow.fold { display: flex; align-items: center; gap: 8px; }
+  .dpz .jdrow.fold > .jdone { flex: 1 1 auto; min-width: 0; }
+  .jrew { flex: 0 0 auto; white-space: nowrap; font-size: 12.5px; padding: 3px 10px; border-radius: 999px; border: 1px solid #C9A9A6; background: #fff; color: #8A2A22; cursor: pointer; }
+  .jrew:hover { background: #FDECEA; border-color: #B3261E; }
   .dpz .jdone { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
   .dpz .jdone .jkind { font-size: 15px; flex: 1 1 auto; min-width: 0; }
   .dpz .jopn { border: 1px solid var(--green); background: #fff; color: var(--green); border-radius: 7px; font-size: 12.5px; font-weight: 700; padding: 5px 10px; cursor: pointer; }
@@ -3459,6 +3464,7 @@
       f.appendChild(el('span', 'n', String(i + 1)));
       f.appendChild(el('span', 'jkind', it.entries.map(function (e) { return e.date.slice(5) + ' ' + ((dictOf(String(e.no)) || {}).title || 'No ' + e.no) + ' ' + yen(e.amount) + '円'; }).join('　') || it.box));
       row.appendChild(f);
+      row.appendChild(rewBtn(it));
       if (oldShot) dropShot(oldShot);
       Object.keys(oldSubs).forEach(function (k) { dropShot(oldSubs[k]); });
       return;
@@ -3471,6 +3477,7 @@
     h.appendChild(el('span', 'stt ' + tg[0], tg[1]));
     if (subsOf(it.id).length) h.appendChild(el('span', 'stt set', '📑 ' + (subsOf(it.id).length + 1) + '枚で1つの書類'));
     if (it.scan) h.appendChild(el('span', 'stt scan' + (it.scan === 'スキャナ保存' ? '' : ' paper'), it.scan === 'スキャナ保存' ? '電子保存' : it.scan + '（紙を保管）'));
+    if (it.status === 'done' || it.entries.length) h.appendChild(rewBtn(it));
     h.appendChild(el('span', null, it.at + ' 届'));
     h.appendChild(el('span', 'fn', it.name.replace(/^\d{8}_\d{6}_/, '')));
     const multi = isMulti(it);
@@ -3842,6 +3849,7 @@
     const it = itemOf(row.dataset.id); if (!it) return;
     const a = t.dataset.a;
     if (a === 'open') { undoDone(it); return; }
+    if (a === 'rewind') { rewindAll(it); return; }
     if (a === 'pgok') { pageDone(it); return; }
     if (a === 'fold') { if (e.target.closest('button, a, input, select')) return; delete S.open[it.id]; drawCard(it); return; }
     if (a === 'pick') { pickNo(it, Number(t.dataset.no)); return; }
@@ -4358,6 +4366,36 @@
       if (code !== S.code) return;
       it.entries = keepEnts; S.counts.todo--; S.counts.done = (S.counts.done || 0) + 1; it.status = 'done'; docSync(it); counts(); delete S.open[it.id]; drawCard(it);
       fmsg('確定前に戻せませんでした：' + err.message, 'err');
+    });
+  }
+  /* ★ すべて巻き戻す（2026-10-15）：その写真で入れた仕訳を【全部】取り消して 未確定に戻す。
+       通帳（複数仕訳辞書）でも 出納帳の行を残さない。伝票は空（AI の下書きがあれば 下書きから やり直し） */
+  function rewBtn(it) {
+    const b = el('button', 'jrew', '⟲ すべて巻き戻す'); b.type = 'button'; b.dataset.a = 'rewind';
+    b.title = 'この写真で入れた仕訳を ' + it.entries.length + '行 ぜんぶ取り消して、未確定に戻します（取り消した行は 記録に「取消」として残ります）';
+    return b;
+  }
+  function rewindAll(it) {
+    const code = S.code, before = it.status, n = it.entries.length;
+    if (!n && before !== 'done') return;
+    if (it.entries.some(function (e) { return e.pending; })) { fmsg('まだ保存中です。少し待ってから もう一度どうぞ。', 'err'); return; }
+    if (it.entries.some(function (e) { return e.out; })) { fmsg('取込ファイルに変換済みの仕訳があるので 巻き戻せません（会計ソフト側で直してください）。', 'err'); return; }
+    if (!confirm('この写真で入れた仕訳 ' + n + '行を すべて取り消して、未確定に戻します。\n（出納帳の行も 全部消えます。取り消した行は 記録に「取消」として残ります）')) return;
+    const keep = it.entries.slice();
+    it.entries = [];
+    if (before === 'done') { S.counts.done--; S.counts.todo = (S.counts.todo || 0) + 1; }
+    it.status = 'todo'; docSync(it); counts();
+    if (multiLocked(it) || lsJ(LS_JMULTI)[S.code + '|#' + it.id]) lockMulti(it, false);
+    if (S.aiEd) delete S.aiEd[it.id];
+    C[it.id] = { date: '', no: '', q: '', L: [blankLine()] };
+    openOnly(it.id); S.act = it.id; drawCard(it); markAct(); ledSync();
+    fmsg(n + '行を取り消して 未確定に戻しました。最初から入れ直せます。', 'ok');
+    S.saving++; savingMark();
+    gs('workUndo', code, it.id).then(function () { S.saving--; savingMark(); }, function (err) {
+      S.saving--; savingMark('巻き戻せませんでした（' + err.message + '）');
+      if (code !== S.code) return;
+      it.entries = keep; if (before === 'done') { S.counts.todo--; S.counts.done = (S.counts.done || 0) + 1; } it.status = before; docSync(it); counts(); drawCard(it); ledSync();
+      fmsg('巻き戻せませんでした：' + err.message, 'err');
     });
   }
   /* 訂正：その仕訳を取り消して、同じ中身を伝票に戻す（打ち直さなくてよい） */
