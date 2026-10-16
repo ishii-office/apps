@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792133904;</script>
+<script>window.__PAGE_VER=1792135559;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -400,6 +400,10 @@
   .themes button[aria-pressed="true"] { border-color: #222; font-weight: 800; }
   .themes button[aria-pressed="true"]::after { content: '✓ 選択中'; font-size: 10.5px; }
   .url { display: flex; gap: 8px; }
+  .aqr { display: flex; gap: 14px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .aqr-img { width: 180px; height: 180px; background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 6px; display: grid; place-items: center; font-size: 13px; color: #888; }
+  .aqr-img img { width: 100%; height: 100%; image-rendering: pixelated; }
+  .aqr-b { display: flex; flex-direction: column; gap: 6px; max-width: 360px; }
   .url input { color: var(--sub); }
   .preview { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .preview span { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; background: #fff; font-size: 13px; }
@@ -1129,6 +1133,9 @@
       <div class="f" id="aUrlRow">
         <label for="aUrl">提出URL（顧問先に送るもの）</label>
         <div class="url"><input id="aUrl" readonly><button type="button" id="aCopyUrl">コピー</button></div>
+        <div class="aqr"><div class="aqr-img" id="aQr" aria-label="提出URLのQRコード">QRコード</div>
+          <div class="aqr-b"><div class="hint">顧問先のスマホのカメラで読み込んでもらうと、そのままブラウザで開きます（LINE などから開いたときも ふだんのブラウザで開き直します）。あとは画面の案内どおり「ホーム画面に追加」で終わりです。</div>
+            <div><button type="button" class="btn ghost sm" id="aQrSave">QRコードを画像で保存</button> <button type="button" class="btn ghost sm" id="aQrPrint">印刷する</button></div></div></div>
         <div class="hint"><button type="button" class="danger" id="aReissue">URLを作り直す</button>　URLが人に漏れたときだけ。前のURLは使えなくなります。</div>
       </div>
       <div class="bar"><button type="submit" class="primary" id="aSave">保存</button><span class="pagemsg" id="aMsg" role="status"></span></div>
@@ -6841,7 +6848,7 @@
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     aThemeSet(c.theme || 'green');
     aLogoShow(c);
-    $('aUrlRow').hidden = !c.url; $('aUrl').value = c.url;
+    $('aUrlRow').hidden = !c.url; $('aUrl').value = c.url; aQrShow(c.url, c.name);
     $('aSave').textContent = '保存';
     amsg(''); aPreview(); aDraw();
   }
@@ -6960,6 +6967,39 @@
       /* 入力の画面の顧問先・箱も新しくする */
       gs('workInit').then(function (r) { S.clients = r.clients; fillClients(S.code); });
     }, function (err) { A.busy = false; $('aSave').disabled = false; amsg(err.message, 'err'); });
+  });
+  /* ★ 提出URLの QRコード（2026-10-16）。顧問先のスマホのカメラで読むだけで開ける。作るのは この画面の中（URL を外へ出さない） */
+  const QR_URL = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+  let qrLib = null, qrCur = { url: '', name: '', src: '' };
+  function qrLoad() {
+    if (window.qrcode) return Promise.resolve(window.qrcode);
+    if (qrLib) return qrLib;
+    qrLib = new Promise(function (ok, ng) { const sc = document.createElement('script'); sc.src = QR_URL; sc.onload = function () { window.qrcode ? ok(window.qrcode) : ng(new Error('QR')); }; sc.onerror = function () { qrLib = null; ng(new Error('QR')); }; document.head.appendChild(sc); });
+    return qrLib;
+  }
+  function aQrShow(url, name) {
+    const box = $('aQr'); qrCur = { url: url || '', name: name || '', src: '' };
+    if (!url) { box.textContent = 'QRコード'; return; }
+    box.textContent = '作っています…';
+    qrLoad().then(function (Q) {
+      if (qrCur.url !== url) return;
+      const q = Q(0, 'M'); q.addData(url); q.make();
+      qrCur.src = q.createDataURL(8, 4);
+      box.innerHTML = ''; const im = document.createElement('img'); im.src = qrCur.src; im.alt = 'QRコード'; box.appendChild(im);
+    }, function () { box.textContent = 'QRコードを作れませんでした（通信を確かめて 開き直してください）'; });
+  }
+  $('aQrSave').addEventListener('click', function () {
+    if (!qrCur.src) return;
+    const a = document.createElement('a'); a.href = qrCur.src; a.download = '資料提出QR_' + (qrCur.name || A.cur || '') + '.png'; document.body.appendChild(a); a.click(); a.remove();
+  });
+  $('aQrPrint').addEventListener('click', function () {
+    if (!qrCur.src) return;
+    const w = window.open('', '_blank'); if (!w) return;
+    const esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    w.document.write('<!doctype html><meta charset="utf-8"><title>資料提出QR</title><body style="font-family:sans-serif;text-align:center;padding:40px">'
+      + '<h2>' + esc(qrCur.name) + ' 様　資料提出の画面</h2><img src="' + qrCur.src + '" style="width:260px;height:260px;image-rendering:pixelated"><p style="font-size:18px;line-height:1.8">スマホのカメラで読み込んで開いてください。<br>開いたら「ホーム画面に追加」で 次からはアイコン1つで開けます。</p>'
+      + '<p style="font-size:13px;color:#666">このQRコードは この顧問先さま専用です。ほかの方に渡さないでください。</p><script>onload=function(){print()}<\/script>');
+    w.document.close();
   });
   $('aCopyUrl').addEventListener('click', function () {
     const u = $('aUrl'); u.select();
