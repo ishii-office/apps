@@ -714,10 +714,10 @@ var _authBooted=false;
    Season.html は他の顧問先にも配る共通ファイルなので、あちらに屋号を書かない。
    ALLURE を主役に、季節の絵は脇役に下げる（2026-10-16 店の希望） */
 window.SEASON_MARK = 'ALLURE';
-window.SEASON_MARK_COLOR   = '#7a5c31';              // 柄の色（濃いブラス）
-window.SEASON_MARK_OPACITY = .22;                    // 柄の濃さ
-window.SEASON_SKY_OPACITY  = .40;                    // 季節の絵は脇役
-window.SEASON_SHADE        = 'rgba(150,118,70,.17)'; // 地を沈めて柄を浮かせる
+window.SEASON_MARK_COLOR   = '#5e4620';              // 柄の色（濃いブラウン）
+window.SEASON_MARK_OPACITY = .34;                    // 柄の濃さ（ボールドなので少し下げる）
+window.SEASON_SKY_OPACITY  = .35;                    // 季節の絵は脇役
+window.SEASON_SHADE        = 'rgba(158,128,82,.15)'; // 地をタンに。濃くしすぎると柄との差が縮む
 var LIVE = (function(){
   try{ return !!(window.google && google.script && google.script.run); }catch(e){ return false; }
 })();
@@ -2960,9 +2960,10 @@ window.addEventListener('DOMContentLoaded', function(){
     background:var(--s-shade,transparent);
     contain:strict;user-select:none;-webkit-user-select:none}
 
-  #seasonMark{position:fixed;inset:-35%;z-index:0;pointer-events:none;
+  /* ★ 傾けない（2026-10-16 店の希望）。真っすぐのほうが柄として整う。
+       柄は1マスの中で完結していて継ぎ目が出ないので、傾けて隠す必要もない */
+  #seasonMark{position:fixed;inset:0;z-index:0;pointer-events:none;
     opacity:var(--s-mark-o,.08);
-    transform:rotate(-12deg);
     background-repeat:repeat;background-position:center;
     contain:strict;user-select:none;-webkit-user-select:none}
 
@@ -3093,26 +3094,41 @@ window.addEventListener('DOMContentLoaded', function(){
     /* 1マスぶんの柄をSVGで作って、それを敷きつめる。
        画像ファイルを持たないので、リポジトリにも端末にも何も増えない。
 
-       ★ 柄の組み方（2026-10-16 店の希望：GUCCI風）
-         ワードマークと、その【左右を反転したもの】を上下に重ねて1つの紋にする。
-         左右対称になるので、1文字だけを散らすより紋らしく見える。
-         その紋を、マスの中で斜めにずらして2つ置く＝市松に近い並びになる。
-         ★ 文字がマスの端をまたがないこと。またぐと敷きつめたとき切れ目が出る。 */
-    var W = 420, H = 260;
-    var FS = 38, SP = 6, GAP = 21;            /* 文字の大きさ・字間・上下の離れ */
-    function word_(x, y, flip){
-      /* flip:true で左右反転（scale(-1,1) の中では x の向きが逆になる） */
-      var t = '<text x="'+(flip ? -x : x)+'" y="'+y+'" text-anchor="middle"'
-        + ' font-family="Times New Roman,Georgia,serif" font-size="'+FS+'"'
+       ★ 柄の組み方（2026-10-16 店の希望：GUCCI の GG柄に寄せる）
+         ① ワードマークと【左右を反転したもの】を横に並べて1つの紋にする
+            （GGが向かい合っているのと同じ形。ALLURE｜ƎЯUⅬⅬA）
+         ② 紋をマスの【中央】と【四隅】に置く＝菱形の格子になる
+            四隅のぶんは隣のマスと半分ずつ描き合うので、敷きつめると1つに見える
+         ③ 紋と紋のあいだに【点々の斜め線】を通す。これが無いと、
+            ただ字が散っているだけに見える（本物はここで柄になっている）
+         ★ 中央の紋は端をまたがない。四隅はまたいでよい（上のとおり描き合うため）*/
+    var W = 300, H = 230;
+    var FS = 22, SP = 3, GAP = 10;            /* 文字の大きさ・字間・対の間 */
+    function half(cx, cy, dx, flip){
+      var x = cx + dx;
+      var t = '<text x="'+(flip ? -x : x)+'" y="'+cy+'" text-anchor="middle"'
+        + ' font-family="Times New Roman,Georgia,serif" font-size="'+FS+'" font-weight="bold"'
         + ' letter-spacing="'+SP+'" fill="'+col+'">'+ xmlEsc(word) +'</text>';
       return flip ? '<g transform="scale(-1,1)">'+t+'</g>' : t;
     }
-    function motif(cx, cy){                   /* 正像と鏡像の対＝ひとつの紋 */
-      return word_(cx, cy - GAP, false) + word_(cx, cy + GAP + FS*0.72, true);
+    function motif(cx, cy){                   /* 正像と鏡像を向かい合わせた対 */
+      /* Times の大文字はだいたい 0.66em。字間は字の数だけ後ろに付く。
+         ここを小さく見積もると、正像と鏡像が真ん中で重なる（2026-10-16） */
+      var w = FS * 0.70 * word.length + SP * word.length;   /* ボールドのぶん少し広い */
+      var d = (w + GAP) / 2;
+      return half(cx, cy, -d, false) + half(cx, cy, d, true);
+    }
+    /* 点々の斜め線（マスの辺の真ん中どうしを結ぶ＝菱形） */
+    function beads(){
+      return '<path d="M'+(W/2)+' 0 L'+W+' '+(H/2)+' L'+(W/2)+' '+H+' L0 '+(H/2)+' Z"'
+        + ' fill="none" stroke="'+col+'" stroke-width="3"'
+        + ' stroke-linecap="round" stroke-dasharray="0.1 10" opacity="0.9"/>';
     }
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'">'
-      + motif(W*0.25, H*0.25)
-      + motif(W*0.75, H*0.75)
+      + beads()
+      + motif(W/2, H/2 + FS*0.35)             /* 中央 */
+      + motif(0,   0 + FS*0.35) + motif(W, 0 + FS*0.35)       /* 四隅（上） */
+      + motif(0,   H + FS*0.35) + motif(W, H + FS*0.35)       /* 四隅（下） */
       + '</svg>';
     el.style.backgroundSize = W+'px '+H+'px';
     el.style.backgroundImage = 'url("data:image/svg+xml;utf8,'+ encodeURIComponent(svg) +'")';
