@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792077079;</script>
+<script>window.__PAGE_VER=1792133904;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -692,6 +692,35 @@
   .cktbl tr.ok td:first-child { color: #1E7B34; font-weight: 800; } .cktbl tr.ng td:first-child, .cktbl tr.miss td:first-child, .cktbl tr.extra td:first-child { color: #B3261E; font-weight: 800; }
   .cktbl tr.ng { background: #FFF8F7; }
   .rold > summary { color: var(--sub); }
+  /* ★ AI に教える（2026-10-15） */
+  .tqbox { border: 2px solid #C9A100; }
+  .tqbar { gap: 6px 8px; align-items: center; } .tqbar b { margin-right: 6px; }
+  .tqimp textarea, .tqmerge textarea { width: 100%; box-sizing: border-box; font-size: 13.5px; font-family: inherit; }
+  .tqmerge { border: 1px dashed var(--accent); border-radius: 10px; padding: 8px 10px; margin: 8px 0; background: var(--a-faint); }
+  .tqlist { display: grid; gap: 10px; margin: 8px 0; }
+  .tq { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 8px 12px; border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: #fff; }
+  .tq img { width: 120px; max-height: 160px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); cursor: zoom-in; }
+  .tq .ph { width: 120px; height: 90px; border-radius: 8px; background: var(--a-faint); display: grid; place-items: center; font-size: 12px; color: var(--sub); }
+  .tq .why { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 9px; border-radius: 999px; background: #FFF1C2; color: #6b5a00; margin-right: 6px; }
+  .tq .why.fix { background: #FDECEA; color: #8A2A22; }
+  .tq .meta { font-size: 12px; color: var(--sub); }
+  .tq dl { margin: 6px 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 10px; font-size: 13px; }
+  .tq dt { color: var(--sub); } .tq dd { margin: 0; }
+  .tq dd.ng { color: #8A2A22; }
+  .tq ul.ln { margin: 2px 0 0 16px; padding: 0; font-size: 12.5px; }
+  .tq textarea { width: 100%; box-sizing: border-box; font-size: 14px; font-family: inherit; }
+  .tq .fr { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; }
+  .tq .fr input { flex: 1 1 260px; min-width: 0; }
+  @media (max-width: 640px) { .tq { grid-template-columns: 1fr; } .tq img, .tq .ph { width: 100%; max-height: 220px; } }
+  .tqexp { margin-top: 8px; } .tqexp summary { font-size: 14px; color: var(--accent); }
+  .tqe { border-bottom: 1px solid var(--line); padding: 6px 2px; font-size: 13px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
+  .tqe .sc { font-size: 11.5px; font-weight: 700; padding: 0 7px; border-radius: 999px; background: #E9EEF7; color: #2A4A7F; margin-right: 4px; }
+  .tqe .sc.off { background: var(--accent); color: #fff; } .tqe.st-止め { opacity: .55; } .tqe .sc.prop { background: #FFF1C2; color: #6b5a00; }
+  .tqe .th { white-space: pre-wrap; } .tqe .bt { display: flex; gap: 4px; align-items: start; }
+  /* 仕訳化の帯の中で教える */
+  .jai .teach { flex-basis: 100%; border-top: 1px dashed var(--line); padding-top: 6px; display: grid; gap: 4px; }
+  .jai .teach textarea { width: 100%; box-sizing: border-box; font-size: 13.5px; font-family: inherit; }
+  .jai .teach .fr { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .kbtbl td { vertical-align: top; font-size: 13px; } .kbtbl td.w { max-width: 280px; }
   .kbtbl tr.off td { opacity: .45; }
   .kbform { margin: 8px 0; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 10px; display: grid; gap: 6px; }
@@ -1117,7 +1146,7 @@
     <p>前任者に引き継ぐのと同じです。AI に <b>材料をまるごと</b>（過去の仕訳・引き継ぎメモ・事務所共通メモ・仕訳の憲法・辞書・科目と補助）渡し、
       <b>「前任者なら どう仕訳けるか」</b>を考えさせます。AI は 仕訳そのもの（借方・貸方・補助・金額・税）と <b>決め手</b>、迷えば <b>別の案を2つまで</b> 返します。
       プログラムは 答えを差し替えず、<b>科目と補助が表にあるか・分けた額の合計・通帳の残高のつながり</b>を 確かめるだけ。<br>
-      → だから <b>材料をそろえるほど 当たります</b>。下の <b>★1. 材料をそろえる</b> の ✗・△ を 上から埋めてください。当たり具合は <b>4. 答え合わせ</b> で確かめられます。</p>
+      → だから <b>材料をそろえるほど 当たります</b>。下の <b>★1. 材料をそろえる</b> の ✗・△ を 上から埋めてください。<b>★2. AI に教える</b> で 迷ったもの・直したものに「人ならこう考える」を答えるたびに 賢くなります。当たり具合は <b>5. 答え合わせ</b> で確かめられます。</p>
     <label class="rwaysel" id="rWayL" hidden>やり方（マスター）
       <select id="rWaySel" aria-label="AI 下書きのやり方"><option value="v2">新しいやり方（総合判断）</option><option value="v1">前のやり方（ルール・型で答えを上書き）</option></select></label>
   </div>
@@ -1147,7 +1176,32 @@
     </div>
     <span class="pagemsg" id="mtMsg" role="status"></span>
   </details>
-  <details open class="rbox" id="memoBox"><summary>2. 引き継ぎメモ（この顧問先。前任者の頭の中）</summary>
+  <details open class="rbox tqbox" id="tqBox"><summary>★2. AI に教える（迷ったもの・直したもの → 人ならこう考える）</summary>
+    <p class="note">考え方を大上段に作っても 完全には当たりません。<b>直していくことが すべて</b>です。AI が <b>仕訳を決められなかった・合致率が低い・迷いを書いた・人が直した</b> 証憑が ここに並びます。
+      1件ずつ <b>「人ならこう考えて こう仕訳ける」</b>を答えると <b>経験</b>として積まれ、次からの AI 下書きに毎回渡ります（いちばん具体的な材料）。
+      担当者も、Claude Code からも 答えられます（［Claude Code に渡す］→ 答えの JSON を［答えを取り込む］）。経験がたまったら［経験をメモに書き込む］で 引き継ぎメモ・事務所共通メモの 版を上げます。</p>
+    <div class="bar tqbar">
+      <b id="tqHead">教えてほしいもの —</b>
+      <button type="button" class="btn ghost sm" id="tqExport">📋 Claude Code に渡す（.md）</button>
+      <button type="button" class="btn ghost sm" id="tqImpT">答えを取り込む</button>
+      <button type="button" class="btn ghost sm" id="tqSkill">SKILL.md を保存</button>
+      <button type="button" class="btn ghost sm" id="tqMemo">🤖 経験を 引き継ぎメモに書き込む</button>
+      <button type="button" class="btn ghost sm" id="tqMemoOf" hidden>🤖 経験を 事務所共通メモに書き込む</button>
+    </div>
+    <div class="tqimp" id="tqImp" hidden>
+      <textarea id="tqImpText" rows="6" aria-label="Claude Code の答え（JSON）" placeholder='[{ "file": "…", "scope": "mine", "think": "人ならこう考える", "ok": "正しい仕訳" }]'></textarea>
+      <div class="bar"><button type="button" class="btn sm" id="tqImpGo">取り込む</button></div>
+    </div>
+    <div class="tqmerge" id="tqMerge" hidden>
+      <b id="tqMergeH"></b>
+      <textarea id="tqMergeText" rows="14" aria-label="経験を書き込んだメモの案"></textarea>
+      <div class="bar"><button type="button" class="btn sm" id="tqMergeSave">この案で保存（新しい版）</button><button type="button" class="btn ghost sm" id="tqMergeNo">やめる</button></div>
+    </div>
+    <div class="tqlist" id="tqList"></div>
+    <details class="tqexp"><summary id="tqExpH">積んだ経験</summary><div id="tqExp"></div></details>
+    <span class="pagemsg" id="tqMsg" role="status"></span>
+  </details>
+  <details open class="rbox" id="memoBox"><summary>3. 引き継ぎメモ（この顧問先。前任者の頭の中）</summary>
     <p class="note">AI が 証憑を読むたびに いちばん先に読むメモです。<b>［AI に書かせる］</b>で 過去の仕訳から下書きを作り、人が直して<b>［保存］</b>。保存するたびに 版を積みます（上書きしません）。
       口座ごとの毎月の引落し・借入金の返済の分け方・よく出る相手と科目の使い分け・迷いやすいところ を 具体的に。</p>
     <div class="mhead"><b id="mHead">まだありません</b><span class="note" id="mSeed" hidden>（まだ保存していません。前の「考え方」「処理手順書」から作った下書きです）</span></div>
@@ -1161,11 +1215,11 @@
     <div class="thvers" id="mVers"></div>
     <span class="pagemsg" id="mMsg" role="status"></span>
   </details>
-  <details open class="rbox" id="moBox"><summary>3. 事務所共通メモ（所長の決まり。どの顧問先にも効く）</summary>
+  <details open class="rbox" id="moBox"><summary>4. 事務所共通メモ（所長の決まり。どの顧問先にも効く）</summary>
     <textarea id="pOffice" rows="6" maxlength="8000" aria-label="事務所共通メモ" placeholder="例：レシートに お酒が入っていれば 接待交際費を優先。切手・はがきは 通信費。収入印紙は 租税公課。"></textarea>
     <div class="bar"><button type="button" class="btn sm" id="mOfSave">事務所共通メモを保存</button><span class="note" id="mOfNote"></span></div>
   </details>
-  <details open class="rbox" id="ckBox"><summary>4. 答え合わせ（確定した写真を 読ませ直して 当たり具合を見る）</summary>
+  <details open class="rbox" id="ckBox"><summary>5. 答え合わせ（確定した写真を 読ませ直して 当たり具合を見る）</summary>
     <p class="note">すでに人が確定した写真を AI に読ませ直し、<b>人の確定と1行ずつ くらべます</b>。AI には <b>その月より前の材料だけ</b>を渡します（答えを見せない）。
       下書きは残しません（仕訳化には出ません）。1枚 数円〜十数円かかります。<b>新しいやり方</b>と<b>前のやり方</b>を 同じ写真で くらべられます。</p>
     <div class="bar ckbar">
@@ -1177,7 +1231,7 @@
     <div id="ckOut"></div>
     <span class="pagemsg" id="ckMsg" role="status"></span>
   </details>
-  <details open class="rbox" id="kbBox"><summary>5. 仕訳の憲法（科目の使い方・判断の基準）</summary>
+  <details open class="rbox" id="kbBox"><summary>6. 仕訳の憲法（科目の使い方・判断の基準）</summary>
     <p class="note">所長の判断（税務署からの見られ方・科目と口座の使い分け）を 科目ごとに書いておきます。AI は <b>辞書・過去の仕訳より先に これに従い</b>、
       写真の品目・相手・摘要に「言葉」が出てきたら その科目（口座）にします（ルールが無いとき）。予測合致率にも効きます。
       科目は<b>名前で</b>書きます（顧問先ごとのコードに 自動で読み替え）。<b>この顧問先だけ</b>のもの（その事業では経費になる など）は 事務所共通より優先します。</p>
@@ -3794,6 +3848,9 @@
     readyMark(it);
   });
   /* Enter：（辞書）→ 日付 → 金額 → 確定して次へ。複数仕訳は 金額 → 次の行の金額。伝票のほかのマスは 次のマスへ */
+  /* ★ AI に教える欄：打っている文字を覚えておく（描き直しで消えない）。キーは 仕訳化の決まり（Enter で確定 など）に渡さない */
+  jl.addEventListener('input', function (e) { const w = e.target.closest && e.target.closest('.teach'), r = w && w.closest('.jdrow'); if (!r || !S.teach || !S.teach[r.dataset.id]) return; if (e.target.dataset.teach === 'think') S.teach[r.dataset.id].think = e.target.value; else if (e.target.dataset.teach === 'scope') S.teach[r.dataset.id].scope = e.target.value; }, true);
+  jl.addEventListener('keydown', function (e) { if (e.target.closest && e.target.closest('.teach')) e.stopPropagation(); }, true);
   jl.addEventListener('keydown', function (e) {
     /* ★ ✓（確定する）にいるときの 0 ／ 00 → 辞書から選ぶ（AI の下書きが違うとき） */
     if (/^[1-9]$/.test(e.key) && e.target.dataset && e.target.dataset.a === 'aipick') {
@@ -3855,6 +3912,8 @@
     if (a === 'pick') { pickNo(it, Number(t.dataset.no)); return; }
     if (a === 'aiall') { aiLinesAll(it); return; }
     if (a === 'aialt') { aiAltSwap(it, Number(t.dataset.k)); return; }
+    if (a === 'aiteach') { S.teach = S.teach || {}; if (S.teach[it.id]) delete S.teach[it.id]; else S.teach[it.id] = { think: '', scope: 'mine' }; drawCard(it); const ta = rowOf(it.id) && rowOf(it.id).querySelector('.jai .teach textarea'); if (ta) ta.focus(); return; }
+    if (a === 'aiteachgo') { aiTeach(it, t); return; }
     if (a === 'aipat1') { aiPat1(it, t); return; }
     if (a === 'aipick') { aiOpenList(it); return; }
     if (a === 'aifeat') { S.aiFeat = S.aiFeat || {}; if (S.aiFeat[it.id]) delete S.aiFeat[it.id]; else S.aiFeat[it.id] = 1; drawCard(it); return; }
@@ -4993,6 +5052,19 @@
         b.appendChild(al);
       }
     }
+    /* ★ AI に教える（2026-10-15）：迷った・低い・決められなかった 下書きは その場で「人ならこう考える」を答えられる */
+    if (d.way === 'v2' && (aiPctOf(d) < 70 || d.note || !(d.j || d.no))) {
+      S.teach = S.teach || {};
+      const tb = el('button', 'btn ghost sm', S.teach[it.id] ? '教えるのをやめる' : '💡 AI に教える'); tb.type = 'button'; tb.dataset.a = 'aiteach'; tb.title = '人ならこう考えて こう仕訳ける、を教えると 次から AI が使います（AI の考え方タブ ★2 にも並びます）'; b.appendChild(tb);
+      if (S.teach[it.id]) {
+        const w = el('div', 'teach');
+        const ta = el('textarea'); ta.rows = 3; ta.dataset.teach = 'think'; ta.value = S.teach[it.id].think || ''; ta.placeholder = '人ならこう考える（例：ローソンの切手は郵送用なので 通信費。有料交通費ではない）'; ta.setAttribute('aria-label', '人ならこう考える'); w.appendChild(ta);
+        const fr = el('div', 'fr');
+        const sc = el('select'); sc.dataset.teach = 'scope'; sc.setAttribute('aria-label', '範囲'); sc.appendChild(el('option', null, 'この顧問先だけ')).value = 'mine'; sc.appendChild(el('option', null, (S.me && S.me.master) ? '事務所共通' : '事務所共通（提案）')).value = '*'; sc.value = S.teach[it.id].scope || 'mine'; fr.appendChild(sc);
+        const go = el('button', 'btn sm okgo', '教える'); go.type = 'button'; go.dataset.a = 'aiteachgo'; fr.appendChild(go);
+        w.appendChild(fr); b.appendChild(w);
+      }
+    }
     /* 押すと 何が効いたか（特徴ごとの ±%）を その場に出す（スマホは 指を置いても出ないので） */
     if (S.aiFeat && S.aiFeat[it.id]) b.appendChild(el('span', 'feat', aiFeatText(d)));
     if (d.multi && !isMulti(it)) b.appendChild(el('span', 'nt', '明細として読みました。上の［複数仕訳辞書］にすると 出納帳になります'));
@@ -5083,6 +5155,17 @@
     c.aiDone = true; aiFill(it);
   }
 
+  /* ★ その場で AI に教える（経験として積む） */
+  function aiTeach(it, t) {
+    const o = (S.teach || {})[it.id], code = S.code; if (!o) return;
+    const w = t.closest('.teach'); o.think = w.querySelector('textarea').value.trim(); o.scope = w.querySelector('select').value;
+    if (o.think.length < 4) { fmsg('「人ならこう考える」を書いてから［教える］。', 'err'); w.querySelector('textarea').focus(); return; }
+    t.disabled = true;
+    gs('expSave', code, { file: it.id, think: o.think, scope: o.scope, kind: '仕訳化で' }).then(function (r) {
+      if (code !== S.code) return; delete S.teach[it.id]; drawCard(it);
+      fmsg(r.st === '提案' ? '事務所共通の提案として積みました（この顧問先には すぐ効きます）。' : '教えました。次の AI 下書きから効きます。', 'ok');
+    }, function (e) { t.disabled = false; fmsg('教えられませんでした：' + e.message, 'err'); });
+  }
   /* ★ 新しいやり方：別の案に入れ替える（いまの案は 別の案に回る）→ 伝票を作り直す */
   function aiAltSwap(it, k) {
     const d = S.ai[it.id]; if (!d || !d.alts || !d.alts[k]) return;
@@ -5373,7 +5456,7 @@
     const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' };
     $('rClient').textContent = '— ' + code + ' ' + c.name;
     gs('ruleList', code).then(function (r) { if (code !== S.code) return; R.data = r; rDraw(); }, function (e) { rMsg(e.message, 'err'); });
-    thLoad(); aiStatusLoad(); aiPaint(); mtLoad();
+    thLoad(); aiStatusLoad(); aiPaint(); mtLoad(); tqLoad();
   }
   /* ================= ★★★ 新しいやり方（総合判断。2026-10-15）：材料をそろえる・引き継ぎメモ・答え合わせ ================= */
   const MT = { data: null, memo: null, busy: false };
@@ -5383,7 +5466,7 @@
     gs('aiMaterials', code).then(function (r) { if (code !== S.code) return; MT.data = r; mtDraw(); memoDraw(r.memo); ckFill(r.checks || []); }, function (e) { mtMsg('mtMsg', e.message, 'err'); });
   }
   const MT_IC = { ok: '✓', some: '△', none: '✗' };
-  const MT_GO = { hist: '入れる', bank: '入れる', memo: '書く', office: '書く', acct: '取込ファイルへ', dict: '仕訳辞書へ', kb: '書く', party: '取込ファイルへ', check: '答え合わせへ', key: '設定へ' };
+  const MT_GO = { exp: '教える', hist: '入れる', bank: '入れる', memo: '書く', office: '書く', acct: '取込ファイルへ', dict: '仕訳辞書へ', kb: '書く', party: '取込ファイルへ', check: '答え合わせへ', key: '設定へ' };
   function mtDraw() {
     const r = MT.data, box = $('mtList'); if (!r) return;
     box.textContent = '';
@@ -5401,7 +5484,7 @@
     const b = e.target.closest('button[data-act]'); if (!b) return;
     const a = b.dataset.act;
     if (/^tab:/.test(a)) { const tb = document.querySelector('#tabs button[data-tab="' + a.slice(4) + '"]'); if (tb) tb.click(); return; }
-    const to = { hist: 'mtHist', memo: 'memoBox', office: 'moBox', kb: 'kbBox', check: 'ckBox', key: 'aiBox' }[a];
+    const to = { hist: 'mtHist', memo: 'memoBox', office: 'moBox', kb: 'kbBox', check: 'ckBox', key: 'aiBox', teach: 'tqBox' }[a];
     const t = $(to); mtFlash(t);
     if (a === 'hist') { $('hIn').click(); }
     else if (a === 'memo') $('mText').focus();
@@ -5505,6 +5588,128 @@
       });
     });
     q.then(function () { MT.busy = false; $('ckGo').disabled = false; mtMsg('ckMsg', '答え合わせが済みました（' + x.date.slice(0, 7) + ' より前の材料だけで読ませました）。ちがった行は 引き継ぎメモに書き足すと 次から当たります。', 'ok'); });
+  });
+  /* ================= ★★★ AI に教える（経験を積む。2026-10-15） ================= */
+  const TQ = { data: null, txt: {}, busy: false };
+  function tqLoad() {
+    const code = S.code; if (!code) return;
+    gs('aiAskList', code).then(function (r) { if (code !== S.code) return; tqSet(r); }, function (e) { mtMsg('tqMsg', e.message, 'err'); });
+  }
+  function tqSet(r) { TQ.data = r; tqDraw(); }
+  function dlText(name, text) {
+    const u = URL.createObjectURL(new Blob([text], { type: 'text/markdown;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 4000);
+  }
+  function tqDraw() {
+    const r = TQ.data; if (!r) return;
+    const ms = !!(S.me && S.me.master);
+    $('tqHead').textContent = '教えてほしいもの ' + r.n + '件';
+    $('tqMemoOf').hidden = !ms;
+    const box = $('tqList'); box.textContent = '';
+    if (!r.list.length) box.appendChild(el('p', 'note', 'いまは ありません。AI 下書きで 迷ったもの（合致率 ' + r.below + '% 未満・決められなかった・迷いを書いた）と 人が直したものが ここに並びます。'));
+    const need = [];
+    r.list.forEach(function (x) {
+      const c = el('div', 'tq'); c.dataset.file = x.file;
+      if (THUMB[x.file]) { const im = el('img'); im.src = THUMB[x.file]; im.alt = x.name; c.appendChild(im); }
+      else { c.appendChild(el('div', 'ph', '写真')); if (THUMB[x.file] === undefined) need.push(x.file); }
+      const b = el('div');
+      const h = el('div'); h.appendChild(el('span', 'why' + (x.kind === '直し' ? ' fix' : ''), x.kind === '直し' ? '人が直した' : x.why));
+      h.appendChild(el('span', 'meta', x.box + '・' + x.period + '　' + x.name + (x.at ? '　' + x.at : '') + (x.done ? '　（確定済み）' : ''))); b.appendChild(h);
+      const dl = el('dl');
+      const put = function (k, v, cls) { if (!v) return; dl.appendChild(el('dt', null, k)); dl.appendChild(el('dd', cls || null, v)); };
+      put('証憑', x.sit); put('AI の答え', (x.ai || '（決められず）') + (x.conf ? '（' + x.conf + '%）' : '')); put('決め手', x.reason); put('AI の迷い', x.note, 'ng');
+      put('別の案', (x.alts || []).join('／')); put('人の確定', x.truth);
+      b.appendChild(dl);
+      if ((x.lines || []).length) { const ul = el('ul', 'ln'); x.lines.slice(0, 12).forEach(function (l) { ul.appendChild(el('li', null, l.date + ' ' + l.dir + ' ' + yen(l.amount) + ' ' + l.desc + ' → ' + (l.ai || '決められず') + '（' + l.conf + '%）' + (l.note ? ' ⚠ ' + l.note : ''))); }); b.appendChild(ul); }
+      const ta = el('textarea'); ta.rows = 3; ta.dataset.tq = 'think'; ta.placeholder = '人ならこう考える（判断の筋道。次に似たものが来ても使える言い方で）例：ローソンの切手は 郵送用なので 通信費。駐車場・高速の 有料交通費ではない';
+      ta.value = TQ.txt[x.file] || ''; ta.setAttribute('aria-label', '人ならこう考える'); b.appendChild(ta);
+      const fr = el('div', 'fr');
+      const ok = el('input'); ok.dataset.tq = 'ok'; ok.placeholder = '正しい仕訳（任意。例：借 通信費／貸 現金(小口現金)）'; ok.value = TQ.txt[x.file + '#ok'] != null ? TQ.txt[x.file + '#ok'] : (x.truth || ''); ok.setAttribute('aria-label', '正しい仕訳'); fr.appendChild(ok);
+      const sc = el('select'); sc.dataset.tq = 'scope'; sc.setAttribute('aria-label', '範囲');
+      sc.appendChild(el('option', null, 'この顧問先だけ')).value = 'mine';
+      sc.appendChild(el('option', null, ms ? '事務所共通' : '事務所共通（提案。マスターが採用）')).value = '*';
+      fr.appendChild(sc);
+      const go = el('button', 'btn sm', '教える'); go.type = 'button'; go.dataset.tq = 'save'; fr.appendChild(go);
+      const no = el('button', 'btn ghost sm', '教えなくてよい'); no.type = 'button'; no.dataset.tq = 'skip'; fr.appendChild(no);
+      b.appendChild(fr);
+      c.appendChild(b); box.appendChild(c);
+    });
+    if (need.length) gs('viewerThumbs', need.slice(0, 40)).then(function (t) { need.forEach(function (id) { THUMB[id] = (t || {})[id] || null; }); if (need.some(function (id) { return THUMB[id]; })) tqDraw(); }, function () { need.forEach(function (id) { THUMB[id] = null; }); });
+    /* 積んだ経験 */
+    const ex = $('tqExp'); ex.textContent = '';
+    const mine = r.exp.filter(function (x) { return x.scope !== '*'; }).length, off = r.exp.length - mine;
+    $('tqExpH').textContent = '積んだ経験（この顧問先 ' + mine + '・事務所共通 ' + off + '）';
+    r.exp.forEach(function (x) {
+      const d = el('div', 'tqe st-' + x.st); d.dataset.id = x.id;
+      const t = el('div');
+      t.appendChild(el('span', 'sc' + (x.scope === '*' ? ' off' : '') + (x.st === '提案' ? ' prop' : ''), x.scope === '*' ? (x.st === '提案' ? '事務所共通（提案）' : '事務所共通') : 'この顧問先'));
+      t.appendChild(document.createTextNode((x.sit ? x.sit.slice(0, 80) + '　' : '') + '（' + x.at + '・' + x.by + (x.kind ? '・' + x.kind : '') + (x.st === '止め' ? '・止め' : '') + '）'));
+      t.appendChild(el('div', 'th', '→ ' + x.think + (x.ok ? '\n正しい仕訳：' + x.ok : '')));
+      d.appendChild(t);
+      const bt = el('div', 'bt');
+      const mk = function (txt, st) { const b2 = el('button', 'btn ghost sm', txt); b2.type = 'button'; b2.dataset.st = st; bt.appendChild(b2); };
+      const can = x.scope !== '*' || ms;
+      if (x.st === '提案' && ms) mk('採用', '有効');
+      if (can && x.st === '有効') mk('止める', '止め');
+      if (can && x.st === '止め') mk('使う', '有効');
+      if (can || (x.st === '提案' && x.from === S.code)) mk('消す', '消す');
+      d.appendChild(bt); ex.appendChild(d);
+    });
+  }
+  $('tqList').addEventListener('input', function (e) { const c = e.target.closest('.tq'); if (!c) return; if (e.target.dataset.tq === 'think') TQ.txt[c.dataset.file] = e.target.value; if (e.target.dataset.tq === 'ok') TQ.txt[c.dataset.file + '#ok'] = e.target.value; });
+  $('tqList').addEventListener('click', function (e) {
+    const im = e.target.closest('.tq img'); if (im) { im.style.width = im.style.width ? '' : '100%'; im.style.maxHeight = im.style.maxHeight ? '' : 'none'; return; }
+    const b = e.target.closest('button[data-tq]'); if (!b) return;
+    const c = b.closest('.tq'), code = S.code, file = c.dataset.file;
+    if (b.dataset.tq === 'skip') { gs('expSkip', code, file).then(function (r) { if (code !== S.code) return; tqSet(r); mtMsg('tqMsg', '外しました（教えなくてよいもの）。', 'ok'); }, function (er) { mtMsg('tqMsg', er.message, 'err'); }); return; }
+    const think = c.querySelector('[data-tq="think"]').value.trim();
+    if (think.length < 4) { mtMsg('tqMsg', '「人ならこう考える」を書いてから［教える］。', 'err'); c.querySelector('[data-tq="think"]').focus(); return; }
+    b.disabled = true;
+    gs('expSave', code, { file: file, think: think, ok: c.querySelector('[data-tq="ok"]').value.trim(), scope: c.querySelector('[data-tq="scope"]').value, kind: '人' }).then(function (r) {
+      if (code !== S.code) return; delete TQ.txt[file]; delete TQ.txt[file + '#ok']; tqSet(r);
+      mtMsg('tqMsg', r.st === '提案' ? '事務所共通の提案として積みました（マスターが採用すると 全顧問先に効きます）。この顧問先には すぐ効きます。' : '経験として積みました。次の AI 下書きから効きます。', 'ok'); mtLoad();
+    }, function (er) { b.disabled = false; mtMsg('tqMsg', er.message, 'err'); });
+  });
+  $('tqExp').addEventListener('click', function (e) {
+    const b = e.target.closest('button[data-st]'); if (!b) return;
+    const code = S.code, id = b.closest('.tqe').dataset.id;
+    if (b.dataset.st === '消す' && !confirm('この経験を消します。')) return;
+    gs('expState', code, id, b.dataset.st).then(function (r) { if (code !== S.code) return; tqSet(r); mtLoad(); }, function (er) { mtMsg('tqMsg', er.message, 'err'); });
+  });
+  $('tqExport').addEventListener('click', function () {
+    const code = S.code; if (!code) return;
+    gs('expExport', code).then(function (r) { dlText(r.name, r.md); mtMsg('tqMsg', r.n + '件の質問と いまのスキルを ' + r.name + ' に書き出しました。Claude Code に渡して 答えの JSON をもらい、［答えを取り込む］へ。', 'ok'); }, function (e) { mtMsg('tqMsg', e.message, 'err'); });
+  });
+  $('tqSkill').addEventListener('click', function () {
+    const code = S.code; if (!code) return;
+    gs('skillMd', code).then(function (r) { dlText(r.name, r.md); mtMsg('tqMsg', r.name + ' を保存しました（事務所共通＋この顧問先の メモ・経験・仕訳の憲法）。', 'ok'); }, function (e) { mtMsg('tqMsg', e.message, 'err'); });
+  });
+  $('tqImpT').addEventListener('click', function () { $('tqImp').hidden = !$('tqImp').hidden; if (!$('tqImp').hidden) $('tqImpText').focus(); });
+  $('tqImpGo').addEventListener('click', function () {
+    const code = S.code; if (!code) return;
+    let t = $('tqImpText').value.trim(); const m = t.match(/```(?:json)?\s*([\s\S]*?)```/); if (m) t = m[1];
+    let list; try { list = JSON.parse(t); } catch (e) { mtMsg('tqMsg', 'JSON として読めませんでした（[ { "file": …, "think": … } ] の形）。', 'err'); return; }
+    if (!Array.isArray(list)) list = [list];
+    gs('expImport', code, list).then(function (r) { if (code !== S.code) return; tqSet(r); $('tqImpText').value = ''; $('tqImp').hidden = true; mtMsg('tqMsg', r.imported + '件を 経験として取り込みました。' + (r.bad.length ? '取り込めなかったもの：' + r.bad.join('／') : ''), r.bad.length ? 'err' : 'ok'); mtLoad(); }, function (e) { mtMsg('tqMsg', e.message, 'err'); });
+  });
+  function tqMerge(office) {
+    const code = S.code; if (!code || TQ.busy) return;
+    if (!confirm('AI が 経験を ' + (office ? '事務所共通メモ' : 'この顧問先の引き継ぎメモ') + ' に書き込んだ案を作ります（1回 数十円ほど）。保存は 案を見てから。')) return;
+    TQ.busy = true; mtMsg('tqMsg', 'AI が 経験をメモに書き込んでいます…');
+    gs('expToMemo', code, !!office).then(function (r) {
+      TQ.busy = false; if (code !== S.code) return;
+      TQ.merge = r; $('tqMerge').hidden = false; $('tqMergeText').value = r.memo;
+      $('tqMergeH').textContent = (r.office ? '事務所共通メモ' : '引き継ぎメモ') + 'の案（経験 ' + r.n + '件から・約' + yenS(r.yen) + '円）。直してから保存してください';
+      mtMsg('tqMsg', '案ができました。', 'ok');
+    }, function (e) { TQ.busy = false; mtMsg('tqMsg', e.message, 'err'); });
+  }
+  $('tqMemo').addEventListener('click', function () { tqMerge(false); });
+  $('tqMemoOf').addEventListener('click', function () { tqMerge(true); });
+  $('tqMergeNo').addEventListener('click', function () { $('tqMerge').hidden = true; TQ.merge = null; });
+  $('tqMergeSave').addEventListener('click', function () {
+    const code = S.code, m = TQ.merge; if (!code || !m) return;
+    const txt = $('tqMergeText').value;
+    gs('memoSave', code, m.office ? null : txt, m.office ? txt : null).then(function (r) { if (code !== S.code) return; $('mText').blur(); memoDraw(r); $('tqMerge').hidden = true; TQ.merge = null; mtMsg('tqMsg', (m.office ? '事務所共通メモ' : '引き継ぎメモ（版 ' + r.ver + '）') + 'を 保存しました。', 'ok'); mtLoad(); }, function (e) { mtMsg('tqMsg', e.message, 'err'); });
   });
   /* ---- お手本の月 ---- */
   const TH = { data: null, busy: false };
