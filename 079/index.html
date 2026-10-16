@@ -3107,8 +3107,8 @@ window.addEventListener('DOMContentLoaded', function(){
            ② 縫い目は2本一組。濃い線の左上に白い線を添えると、
               布が持ち上がって見える（キルティングの陰影）
            ③ 菱形のまん中に屋号を小さく置く。主役は柄、屋号は添え物 */
-      W = 190; H = 148;
-      var FS = 13, SP = 2;
+      W = 140; H = 110;                     /* 菱形の大きさ。小さくするほど細かい柄になる */
+      var FS = 11, SP = 1.5;                /* 屋号も菱形に合わせて縮める */
       var dia = 'M'+(W/2)+' 0 L'+W+' '+(H/2)+' L'+(W/2)+' '+H+' L0 '+(H/2)+' Z';
       function seam(dx, dy, c, o, w){
         return '<path d="'+dia+'" fill="none" stroke="'+c+'" stroke-width="'+w+'"'
@@ -3117,7 +3117,7 @@ window.addEventListener('DOMContentLoaded', function(){
       function tag(cx, cy){
         return '<text x="'+cx+'" y="'+cy+'" text-anchor="middle"'
           + ' font-family="Times New Roman,Georgia,serif" font-size="'+FS+'" font-weight="bold"'
-          + ' letter-spacing="'+SP+'" fill="'+col+'" opacity="0.85">'+ xmlEsc(word) +'</text>';
+          + ' letter-spacing="'+SP+'" fill="'+col+'" opacity="0.6">'+ xmlEsc(word) +'</text>';
       }
       svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'">'
         + seam(-1.2, -1.2, '#ffffff', 0.85, 2.2)   /* 持ち上がって見える白 */
