@@ -316,6 +316,27 @@
   .asrow span{color:var(--sub)}
   .asrow b{font-variant-numeric:tabular-nums;white-space:nowrap}
   .asrow b.minus{color:var(--bad)}
+  /* 受領の記録（足あと） */
+  .lg{display:flex;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:12px;align-items:baseline}
+  .lg:last-child{border-bottom:none}
+  .lg .lt{color:var(--sub);flex:0 0 86px;font-variant-numeric:tabular-nums}
+  .lg .ln{font-weight:700;flex:0 0 auto}
+  .lg .lo{flex:1 1 auto;min-width:0}
+  .lg .la{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--sub);flex:0 0 auto}
+  .lg.recv .lo{color:var(--good);font-weight:700}
+  .lg.undo .lo{color:var(--bad)}
+  /* 週払い */
+  .wkrow{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--card)}
+  .wkrow:last-child{margin-bottom:0}
+  .wkrow.paid{background:#eaf3ec;border-color:#bcd9c3}
+  .wkrow .wh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .wkrow .wp{font-weight:700;font-size:14px}
+  .wkrow .wa{font-size:16px;font-weight:800;color:var(--brass-d);font-variant-numeric:tabular-nums}
+  .wkrow .wi{font-size:11px;color:var(--sub);margin-top:3px}
+  .wkrow .wb{margin-top:8px}
+  .wkrow .wb .minibtn{width:100%}
+  .wksum{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-top:1px solid var(--line);margin-top:8px}
+  .wksum b{font-variant-numeric:tabular-nums;color:var(--brass-d)}
   .alw .anote{font-size:11px;color:var(--sub);margin-top:7px;line-height:1.6}
   .alw .btns{display:flex;gap:8px;margin-top:10px}
   .alw .btns .btn{margin-top:0;padding:11px}
@@ -617,6 +638,12 @@
         <h2 id="pMonthLabel">給与明細</h2>
         <div class="muted" style="margin:-4px 0 10px">スタッフを選ぶと、その人の明細が出ます。ドリンク・ボトル・同伴・当日欠勤・遅刻は<b>上の「日ごと」の入力から自動</b>で集まります。ここで入れるのは寸志・メモ・控除項目・コメントです。「発行」で本人用の受領リンクが作られます。</div>
         <div id="paySlips"><div class="center muted" style="padding:14px 0"><span class="spin"></span> 読み込み中…</div></div>
+      </div>
+
+      <div class="card">
+        <h2>受領の記録</h2>
+        <div class="muted" style="margin:-4px 0 10px">明細を発行した・本人が受領ボタンを押した・店主が代わりに記録した、の足あとです。<b>消えません。</b></div>
+        <div id="slipLog"><div class="center muted" style="padding:10px 0">—</div></div>
       </div>
 
       <div class="card">
@@ -2111,6 +2138,7 @@ function applyPayrollBootstrap(res){
   renderDeletedStaff(res['削除済み']||[]);
   renderPhRows(res['勤務']||[]);
   renderPaySlips({ 年月:res['年月'], 明細:res['明細']||[] });
+  if(res['足あと']) renderSlipLog(res['足あと']); else loadSlipLog();
   call('getAppStatus').then(renderSysState).catch(function(){});
 }
 function loadPaySlips(){
@@ -2141,7 +2169,14 @@ function setFieldsHtml(v, idPrefix){
     f('同伴単価','同伴代','円/1回', v.同伴単価)+
     f('当日欠勤控除','当日欠勤','△円/1回（引く額）', v.当日欠勤控除)+
     f('遅刻控除','遅刻','△円/1回（引く額）', v.遅刻控除)+
-  '</div>';
+  '</div>'+
+  '<div class="fld" style="margin-top:8px"><label>支払サイクル</label>'+
+    '<select class="stfCycle" data-k="支払サイクル">'+
+      ['月払い','週払い'].map(function(c){
+        return '<option'+(c===(v.支払サイクル||'月払い')?' selected':'')+'>'+c+'</option>';
+      }).join('')+
+    '</select>'+
+    '<span class="u">週払いにすると、給与タブに「週ごとの支払い」が出ます</span></div>';
 }
 function readSetFields(box, idPrefix){
   var o={};
@@ -2151,13 +2186,16 @@ function readSetFields(box, idPrefix){
   });
   var chk=box.querySelector('.stfActive');
   o['有効']=chk?chk.checked:true;
+  var cy=box.querySelector('.stfCycle');
+  o['支払サイクル']=cy?cy.value:'月払い';
   return o;
 }
 function staffSummary(w){
   return '時給 '+yen(w.時給)+'／ドリンク '+yen(w.ドリンクバック単価)+'/杯'+
     '／ボトル '+pct(w.ボトルバック率)+'%'+
     '／同伴 '+yen(w.同伴単価)+'/回<br>'+
-    '当日欠勤 △'+yen(w.当日欠勤控除).slice(1)+'/回／遅刻 △'+yen(w.遅刻控除).slice(1)+'/回';
+    '当日欠勤 △'+yen(w.当日欠勤控除).slice(1)+'/回／遅刻 △'+yen(w.遅刻控除).slice(1)+'/回'+
+    ((w.支払サイクル==='週払い')?'<br><b style="color:var(--brass-d)">週払い</b>':'');
 }
 // スタッフは1人ずつ見る（縦に長くならないように、プルダウンで選ぶ）
 function renderStaffList(list){
@@ -2166,7 +2204,8 @@ function renderStaffList(list){
   var names=state.staffList.map(function(w){ return w.氏名; });
   if(names.indexOf(state.stfPick)<0) state.stfPick=names[0];
   var opts=state.staffList.map(function(w,i){
-    return '<option value="'+i+'"'+(w.氏名===state.stfPick?' selected':'')+'>'+esc(w.氏名)+(w.有効?'':'（無効）')+'</option>';
+    return '<option value="'+i+'"'+(w.氏名===state.stfPick?' selected':'')+'>'+esc(w.氏名)+
+      ((w.支払サイクル==='週払い')?'（週払い）':'')+(w.有効?'':'（無効）')+'</option>';
   }).join('');
   $('wageRows').innerHTML='<label class="fl">スタッフを選ぶ（'+state.staffList.length+'人）</label>'+
     '<select id="stfPick">'+opts+'</select><div id="stfOne" style="margin-top:8px"></div>';
@@ -2368,8 +2407,10 @@ function slipHtml(i, s){
   html+='<div class="ps-head"><b>'+esc(s.氏名)+'</b>'+payStatusHtml(s)+'</div>';
   html+='<div class="ps-sum">総時間 <b>'+(Number(s.総時間)||0)+'h</b> × 時給 '+yen(s.時給)+' ＝ 基本給 <b id="base-'+i+'">'+yen(s.基本給)+'</b></div>';
   html+='<div class="ps-sum">手当 <b id="alwt-'+i+'">'+yen(s.手当合計)+'</b> ／ 総支給 <b id="gross-'+i+'">'+yen(s.総支給)+'</b></div>';
+  html+=weeklyHtml(i, s);
   html+=allowanceHtml(i, s);
   html+='<div class="ps-sum" style="margin-top:8px">控除 <b id="dedt-'+i+'">−'+yen(s.控除合計).slice(1)+'</b> ／ 差引支給 <b class="net" id="net-'+i+'">'+yen(s.差引支給)+'</b></div>';
+  if(s.週払い) html+='<div class="ps-sum">週で払った <b>'+yen(s.週払い済み)+'</b> ／ <b class="net">月末に払う '+yen(s.週払い残り)+'</b></div>';
   html+='<div class="muted" style="font-size:11px;margin:2px 0 6px" id="autod-'+i+'"></div>';
   html+='<div class="ps-ded" id="ded-'+i+'"></div>';
   html+='<button class="minibtn addDed" data-idx="'+i+'">＋ 控除項目（源泉所得税・賄い代など）</button>';
@@ -2377,8 +2418,124 @@ function slipHtml(i, s){
   html+='<label class="fl">コメント</label><textarea class="ps-cmt" id="cmt-'+i+'" rows="2" placeholder="連絡事項など">'+esc(s.コメント||'')+'</textarea>';
   html+='<button class="btn issueBtn" data-idx="'+i+'">'+(s.発行済?'手当・控除を保存して明細を更新':'明細を発行してリンク作成')+'</button>';
   html+='<div class="ps-link" id="lnk-'+i+'">'+(s.slipUrl?linkHtml(s.slipUrl):'')+'</div>';
+  html+=recvBoxHtml(i, s);
   html+='</div>';
   return html;
+}
+
+/* ---------- 週払い（週ごとに払って、払った週に印をつける） ---------- */
+function wkLabel(w){
+  function md(d){ var p=String(d).slice(0,10).split('-'); return Number(p[1])+'/'+Number(p[2]); }
+  var dow=['日','月','火','水','木','金','土'];
+  function dw(d){ var p=String(d).slice(0,10).split('-'); return dow[new Date(+p[0],+p[1]-1,+p[2]).getDay()]; }
+  return md(w.開始)+'('+dw(w.開始)+')〜'+md(w.終了)+'('+dw(w.終了)+')';
+}
+function weeklyHtml(i, s){
+  if(!s.週払い) return '';
+  var list=s.週別||[];
+  var h='<div class="alw" style="margin-top:10px">';
+  h+='<div class="ah">週ごとの支払い（週払い）</div>';
+  h+='<div class="anote" style="margin:0 0 8px">月曜はじまり〜日曜締め。月をまたぐ週は<b>月末で区切って</b>います（月の合計とぴったり合わせるため）。<br>金額は、その週の<b>勤務時間・ドリンク・ボトル・同伴・当日欠勤・遅刻</b>から出しています。寸志と控除項目は月末の明細で精算します。</div>';
+  var any=false;
+  list.forEach(function(w){
+    if(!w.支給額 && !w.支払済み) return;
+    any=true;
+    h+='<div class="wkrow'+(w.支払済み?' paid':'')+'">'+
+      '<div class="wh"><span class="wp">'+esc(wkLabel(w))+(w.月で区切り?'<span class="muted" style="font-size:11px">（月で区切り）</span>':'')+'</span>'+
+      '<span class="wa">'+yen(w.支払済み?w.支払額:w.支給額)+'</span></div>'+
+      '<div class="wi">'+(Number(w.時間)||0)+'h × '+yen(s.時給)+' ＝ '+yen(w.基本給)+
+        (w.手当合計?('　手当 '+yen(w.手当合計)):'')+
+        (w.控除?('　控除 △'+yen(w.控除).slice(1)):'')+
+        (w.支払済み?('<br><b style="color:var(--good)">支払済 '+esc(String(w.支払日時).slice(5,16))+'</b>'):'')+
+      '</div>';
+    h+='<div class="wb">'+(w.支払済み
+      ? '<button class="minibtn unpayWk danger" data-st="'+w.開始+'" data-en="'+w.終了+'">支払いを取り消す</button>'
+      : '<button class="minibtn payWk" data-st="'+w.開始+'" data-en="'+w.終了+'">'+yen(w.支給額)+' を払った</button>')+'</div>';
+    h+='</div>';
+  });
+  if(!any) h+='<div class="muted center" style="padding:8px 0">この月はまだ勤務の記録がありません</div>';
+  h+='<div class="wksum"><span>週で払ったぶん</span><b>'+yen(s.週払い済み)+'</b></div>';
+  h+='<div class="wksum"><span>月末に払うぶん（残り）</span><b>'+yen(s.週払い残り)+'</b></div>';
+  h+='</div>';
+  return h;
+}
+function payWk(i, st, en){
+  var s=state.paySlipData[i]; if(!s) return;
+  var w=(s.週別||[]).filter(function(x){ return x.開始===st && x.終了===en; })[0];
+  if(!w) return;
+  if(!confirm('【'+s.氏名+'】に '+wkLabel(w)+' ぶんの '+yen(w.支給額)+' を払ったことを記録します。\n\nよろしいですか？')) return;
+  call('payWeek', state.payPin, s.氏名, st, en, '', '')
+    .then(function(ns){ state.paySlipData[i]=ns; toast('支払いを記録しました'); refreshSlip(i); loadSlipLog(); })
+    .catch(function(e){ toast(errMsg(e), true); });
+}
+function unpayWk(i, st, en){
+  var s=state.paySlipData[i]; if(!s) return;
+  if(!confirm('この週の支払いの記録を取り消します。よろしいですか？')) return;
+  call('unpayWeek', state.payPin, s.氏名, st, en)
+    .then(function(ns){ state.paySlipData[i]=ns; toast('取り消しました'); refreshSlip(i); loadSlipLog(); })
+    .catch(function(e){ toast(errMsg(e), true); });
+}
+
+/* ---------- 受領（本人が押せないときは店主が代わりに記録する） ---------- */
+function recvBoxHtml(i, s){
+  if(!s.発行済) return '';
+  var h='<div class="alw" style="margin-top:10px">';
+  h+='<div class="ah">受領</div>';
+  if(s.受領日時){
+    h+='<div class="asrow"><span>明細の受領</span><b style="color:var(--good)">'+esc(String(s.受領日時).slice(0,16))+'</b></div>';
+    var cashLeft=(s.支払方法==='現金' && !s.金銭受領日時);
+    if(s.支払方法==='現金'){
+      h+='<div class="asrow"><span>現金の受取</span><b'+(s.金銭受領日時?' style="color:var(--good)"':' class="minus"')+'>'+
+        (s.金銭受領日時?esc(String(s.金銭受領日時).slice(0,16)):'まだ')+'</b></div>';
+    }
+    h+='<div class="btns">'+
+      (cashLeft?'<button class="minibtn ownRecv" data-idx="'+i+'">現金を渡した（記録）</button>':'')+
+      '<button class="minibtn undoRecv danger" data-idx="'+i+'">受領の記録を取り消す</button></div>';
+  }else{
+    h+='<div class="anote" style="margin:0 0 8px">本人がリンクのボタンを押すと、ここに日時が出ます。<br>'+
+       '<b>押せないとき（紙にサインをもらったとき）は、下のボタンで店主が代わりに記録できます。</b>誰が記録したかは「受領の記録」に残ります。</div>';
+    h+='<div class="btns"><button class="minibtn ownRecv" data-idx="'+i+'">サインで受領（代わりに記録）</button></div>';
+  }
+  h+='</div>';
+  return h;
+}
+function ownRecv(i){
+  var s=state.paySlipData[i]; if(!s) return;
+  var cash=(s.支払方法==='現金');
+  var msg='【'+s.氏名+'】の'+state.pYm.replace('-','年 ')+'月ぶんを、\n'+
+    (cash?'「明細を受け取った・現金'+yen(s.差引支給)+'を渡した」':'「明細を受け取った」')+
+    'として店主が記録します。\n\nよろしいですか？';
+  if(!confirm(msg)) return;
+  call('markReceivedByOwner', state.payPin, state.pYm, s.氏名, cash, 'サインで受領')
+    .then(function(ns){ state.paySlipData[i]=ns; toast('受領を記録しました'); refreshSlip(i); loadSlipLog(); })
+    .catch(function(e){ toast(errMsg(e), true); });
+}
+function undoRecv(i){
+  var s=state.paySlipData[i]; if(!s) return;
+  if(!confirm('【'+s.氏名+'】の受領の記録を取り消します。よろしいですか？\n（取り消したことも記録に残ります）')) return;
+  call('undoReceive', state.payPin, state.pYm, s.氏名)
+    .then(function(ns){ state.paySlipData[i]=ns; toast('取り消しました'); refreshSlip(i); loadSlipLog(); })
+    .catch(function(e){ toast(errMsg(e), true); });
+}
+
+/* ---------- 受領の記録（足あと） ---------- */
+function renderSlipLog(list){
+  var box=$('slipLog'); if(!box) return;
+  list=list||[];
+  if(!list.length){ box.innerHTML='<div class="muted center" style="padding:10px 0">この月の記録はまだありません</div>'; return; }
+  box.innerHTML=list.map(function(l){
+    var cls = (l.操作.indexOf('受領')===0 || l.操作.indexOf('週払い（')===0) ? ' recv'
+            : (l.操作.indexOf('取消')>=0 ? ' undo' : '');
+    return '<div class="lg'+cls+'">'+
+      '<span class="lt">'+esc(String(l.日時).slice(5,16))+'</span>'+
+      '<span class="ln">'+esc(l.氏名)+'</span>'+
+      '<span class="lo">'+esc(l.操作)+(l.担当?('・'+esc(l.担当)):'')+(l.備考?('<br>'+esc(l.備考)):'')+'</span>'+
+      '<span class="la">'+(l.金額?yen(l.金額):'')+'</span>'+
+    '</div>';
+  }).join('');
+}
+function loadSlipLog(){
+  call('getSlipLog', state.payPin, state.pYm).then(renderSlipLog).catch(function(){});
 }
 function bindSlip(el, i){
   if(!el) return;
@@ -2387,6 +2544,10 @@ function bindSlip(el, i){
   b=el.querySelector('.issueBtn'); if(b) b.onclick=function(){ issueSlip(i); };
   b=el.querySelector('.saveAlw');  if(b) b.onclick=function(){ saveAlw(i); };
   b=el.querySelector('.roundBtn'); if(b) b.onclick=function(){ roundUp(i); };
+  b=el.querySelector('.ownRecv');  if(b) b.onclick=function(){ ownRecv(i); };
+  b=el.querySelector('.undoRecv'); if(b) b.onclick=function(){ undoRecv(i); };
+  el.querySelectorAll('.payWk').forEach(function(x){ x.onclick=function(){ payWk(i, x.dataset.st, x.dataset.en); }; });
+  el.querySelectorAll('.unpayWk').forEach(function(x){ x.onclick=function(){ unpayWk(i, x.dataset.st, x.dataset.en); }; });
   el.querySelectorAll('.alw input').forEach(function(x){ x.oninput=function(){ recalc(i); }; });
   el.querySelectorAll('.copyLink').forEach(function(x){ x.onclick=function(){ copyText(x.dataset.url); }; });
   renderDedRows(i, (state.paySlipData[i]||{}).手入力控除||[]);
@@ -2400,8 +2561,11 @@ function renderPaySlips(res){
   var names=list.map(function(s){ return s.氏名; });
   if(names.indexOf(state.psPick)<0) state.psPick=names[0];
   var opts=list.map(function(s,i){
+    var st = !s.発行済 ? '未発行'
+           : (s.支払方法==='現金' && !s.金銭受領日時) ? '未受領'
+           : (s.受領日時 ? '受領済' : '未受領');
     return '<option value="'+i+'"'+(s.氏名===state.psPick?' selected':'')+'>'+
-      esc(s.氏名)+'　'+yen(s.差引支給)+(s.発行済?'（発行済）':'')+'</option>';
+      esc(s.氏名)+'　'+yen(s.差引支給)+'（'+st+'）'+(s.週払い?'・週払い':'')+'</option>';
   }).join('');
   $('paySlips').innerHTML='<label class="fl">スタッフを選ぶ（'+list.length+'人）</label>'+
     '<select id="psPick">'+opts+'</select><div id="psOne" style="margin-top:10px"></div>';
