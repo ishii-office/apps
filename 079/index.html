@@ -710,6 +710,12 @@ var _authBooted=false;
      ここを緩めると、別のサーバを指すリンクを送りつけて
      暗証番号を打たせることができてしまう。
    ================================================================== */
+/* 背景の地紋（Season.html が読む）。屋号はここで決める。
+   Season.html は他の顧問先にも配る共通ファイルなので、あちらに屋号を書かない。
+   ALLURE を主役に、季節の絵は脇役に下げる（2026-10-16 店の希望） */
+window.SEASON_MARK = 'ALLURE';
+window.SEASON_MARK_OPACITY = .17;   // 地紋の濃さ
+window.SEASON_SKY_OPACITY  = .45;   // 季節の絵の濃さ（1が今までどおり）
 var LIVE = (function(){
   try{ return !!(window.google && google.script && google.script.run); }catch(e){ return false; }
 })();
@@ -2920,6 +2926,15 @@ window.addEventListener('DOMContentLoaded', function(){
           （その画面は createTemplateFromFile → evaluate() で出すこと）
      絵は端末の日付の「月」で自動的に切り替わる。サーバー側の設定は不要。
      試しに別の月を見たいとき: 画面のコンソールで SEASON.preview(8)
+
+     ★ 屋号のモノグラム（薄い地紋）を敷きたいとき
+         画面側で  window.SEASON_MARK = 'ALLURE';  と書いておく（この1行だけ）。
+         書かなければ出ない。**このファイルに屋号を直書きしないこと**
+         （他の顧問先へそのままコピーして使うファイルなので）。
+         色     window.SEASON_MARK_COLOR   = '#b08d57';
+         濃さ   window.SEASON_MARK_OPACITY = .16;   （既定 .08）
+         季節の絵を脇役に下げたいとき
+                window.SEASON_SKY_OPACITY  = .5;    （既定 1）
      ============================================================ -->
 <style>
   /* 背景（季節の色） ------------------------------------------- */
@@ -2934,8 +2949,17 @@ window.addEventListener('DOMContentLoaded', function(){
     background-repeat:no-repeat;
   }
 
+  /* 屋号のモノグラム（いちばん下に薄く敷く地紋） ----------------
+     季節の絵より下。数字や文字の読みやすさを落とさないこと。 */
+  #seasonMark{position:fixed;inset:-35%;z-index:0;pointer-events:none;
+    opacity:var(--s-mark-o,.08);
+    transform:rotate(-12deg);
+    background-repeat:repeat;background-position:center;
+    contain:strict;user-select:none;-webkit-user-select:none}
+
   /* 季節の絵（文字の後ろに散らす） ------------------------------ */
   #seasonSky{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+    opacity:var(--s-sky-o,1);           /* 地紋を主役にしたいとき、絵を脇役に下げる */
     contain:strict;user-select:none;-webkit-user-select:none}
   #seasonSky b{position:absolute;display:block;line-height:1;
     transform:rotate(var(--r,0deg));
@@ -3034,17 +3058,70 @@ window.addEventListener('DOMContentLoaded', function(){
     return s.n;
   }
 
+  /* ---- 屋号のモノグラム（地紋） --------------------------------
+     画面側が window.SEASON_MARK に屋号を入れていたときだけ敷く。
+     絵（#seasonSky）より下、中身（.wrap）より下。 */
+  function xmlEsc(t){
+    return String(t).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c];
+    });
+  }
+  function markPaint(){
+    var word = String(window.SEASON_MARK || '').trim();
+    var el = document.getElementById('seasonMark');
+    if(!word){ if(el && el.parentNode) el.parentNode.removeChild(el); return; }
+    if(!el){ el = document.createElement('div'); el.id = 'seasonMark'; }
+    /* ★ いちばん最初の子に置く＝いちばん下に敷く。
+         季節の絵（#seasonSky）もここに割り込んでくるので、毎回 前へ出し直す。
+         ここを外すと地紋が絵の上に乗ってしまう（2026-10-16） */
+    if(document.body.firstChild !== el) document.body.insertBefore(el, document.body.firstChild);
+    var col = window.SEASON_MARK_COLOR || '#b08d57';
+    var key = word + '|' + col;
+    if(el.dataset.key === key) return;        /* 同じなら作り直さない */
+    el.dataset.key = key;
+
+    /* 1マスぶんの柄をSVGで作って、それを敷きつめる。
+       画像ファイルを持たないので、リポジトリにも端末にも何も増えない。
+
+       ★ モノグラム柄：ワードマークと頭文字を市松に置く。
+         1マスの中で完結させる（文字がマスの端をまたがない）ので、
+         敷きつめても切れ目が出ない。 */
+    var W = 400, H = 240;
+    var ini = word.charAt(0);
+    function t(x, y, size, sp, txt){
+      return '<text x="'+x+'" y="'+y+'" text-anchor="middle"'
+        + ' font-family="Times New Roman,Georgia,serif" font-size="'+size+'"'
+        + ' letter-spacing="'+sp+'" fill="'+col+'">'+ xmlEsc(txt) +'</text>';
+    }
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'">'
+      + t(W*0.27, H*0.30, 34, 5, word)   /* 上の段：左にワードマーク */
+      + t(W*0.77, H*0.30, 30, 0, ini)    /*          右に頭文字      */
+      + t(W*0.73, H*0.78, 34, 5, word)   /* 下の段：入れ替える（市松） */
+      + t(W*0.23, H*0.78, 30, 0, ini)
+      + '</svg>';
+    el.style.backgroundSize = W+'px '+H+'px';
+    el.style.backgroundImage = 'url("data:image/svg+xml;utf8,'+ encodeURIComponent(svg) +'")';
+  }
+
+  /* 地紋と絵の濃さ（画面側から変えられる。書かなければ今までどおり） */
+  function markTune(){
+    var r = document.documentElement.style;
+    if(window.SEASON_MARK_OPACITY != null) r.setProperty('--s-mark-o', String(window.SEASON_MARK_OPACITY));
+    if(window.SEASON_SKY_OPACITY  != null) r.setProperty('--s-sky-o',  String(window.SEASON_SKY_OPACITY));
+  }
+
   function now(){ return new Date().getMonth()+1; }
   var shown = null;
-  function refresh(){ var m=now(); if(m!==shown){ shown=m; paint(m); } }
+  function refresh(){ var m=now(); if(m!==shown){ shown=m; paint(m); markPaint(); markTune(); } }
 
   window.SEASON = {
-    preview: function(m){ shown=null; return paint(m); },   // 試し表示
-    refresh: refresh
+    preview: function(m){ shown=null; var r=paint(m); markPaint(); markTune(); return r; },   // 試し表示
+    refresh: refresh,
+    mark: function(w){ if(w!==undefined) window.SEASON_MARK=w; markPaint(); markTune(); }  // 地紋の出し直し
   };
 
   function start(){
-    refresh();
+    refresh();   /* 中で markPaint も呼ぶ（絵→地紋の順に置き直すため） */
     // 月をまたいで開いたままの端末でも、日付が変われば絵が替わる
     setInterval(refresh, 60*60*1000);
     document.addEventListener('visibilitychange', function(){ if(!document.hidden) refresh(); });
