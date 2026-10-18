@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790748414';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1792303801';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -132,6 +132,15 @@ header{
   font-family:inherit;font-weight:900;font-size:14px;letter-spacing:.04em;
   cursor:pointer;box-shadow:var(--sh);transition:transform .16s var(--ease)}
 .gear:active{transform:scale(.94)}
+/* ★ 資料回収アプリへ（2026-10-18）。画面の右上（ヘッダの右端・設定の右）。
+     ヘッダは画面いっぱいの sticky なので、ここがそのまま右上になる。
+     position:fixed にすると右上の［設定］に重なるので、流れの中に置く。
+     スマホで1行に入らないときは、見出しの下の右端へ折り返す（重ならない） */
+.tocollect{flex:none;font-size:13px;font-weight:900;padding:6px 11px;border-radius:999px;
+  background:var(--surface);color:var(--paper);border:1px solid var(--line);
+  text-decoration:none;white-space:nowrap;box-shadow:var(--sh)}
+.tocollect[hidden]{display:none}
+@media (max-width:759px){ .hd-row{flex-wrap:wrap;row-gap:5px} .tocollect{margin-left:auto} }
 .gear[aria-pressed="true"]{background:var(--surface);color:var(--brass)}
 .unitsel{display:flex;gap:6px;margin-top:6px;overflow-x:auto;padding-bottom:3px;
   scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
@@ -1771,6 +1780,7 @@ button.goled:active{background:#F3F1EA}
   <div class="hd-row">
     <div class="mark">小林佳悟 経営アプリ<em>Kobayashi</em></div>
     <button class="gear" id="gearBtn" aria-pressed="false">設定</button>
+    <a class="tocollect" id="toCollect" hidden>📷 資料回収へ</a>
   </div>
   <div class="unitwrap" id="unitwrap">
     <div class="unitsel" id="unitsel"></div>
@@ -4404,7 +4414,16 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261001;
+/* ★ 資料回収アプリへ行き来する（2026-10-18）。提出URL は関所を通ったあとにだけ届く。
+     資料回収の画面以外へは飛ばない（サーバと同じ確かめ） */
+function collectBtn_(b){
+  var a=$('toCollect'); if(!a) return;
+  var cu=String((b&&b.collectUrl)||'');
+  if(/^https:\/\/(ishii-office\.github\.io\/apps\/collect\/|script\.google\.com\/)/.test(cu)){ a.href=cu; a.hidden=false; }
+  else { a.removeAttribute('href'); a.hidden=true; }
+  try{ measureHead_(); }catch(e){}   /* ヘッダの高さが変わることがある（スマホで折り返す） */
+}
+var SERVER_WANT = 20261018;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -4461,6 +4480,7 @@ call('getBootstrap').then(function(b){
   srvCheck_(b.build);
 
   applyRole();
+  collectBtn_(b);
   buildUnitSelector();
 
   ['c_date','k_date'].forEach(function(id){
@@ -6046,6 +6066,7 @@ function reloadBoot(){
     /* 空の返事で上書きしない。上書きすると、このあと全部が null を触って落ちる */
     if(!nb || !nb.units) throw new Error('店舗の一覧を読めませんでした。開き直してください');
     S.boot=nb; bootSave(nb);
+    collectBtn_(nb);
     buildUnitSelector();
     buildUnitList(); buildBankList(); buildStaffList(); buildEventUnits(); drawEventList();
 
