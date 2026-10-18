@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790850200';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1792303803';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -153,6 +153,16 @@ header{
 .crumb span.now.kin-in {background:var(--kin-in);color:var(--uc-in-fg)}
 .crumb span.now.kin-out{background:var(--kin-out);color:var(--uc-out-fg)}
 .hd-row{display:flex;align-items:center;gap:9px}
+/* ★★ 資料回収アプリへ（2026-10-18）。広い画面は右上に浮かせ、電話は見出しの行の右端に置く */
+.tocollect{flex:none;font-size:13px;font-weight:900;padding:6px 10px;border-radius:999px;
+  background:var(--surface);color:var(--paper);border:1px solid var(--line);text-decoration:none;white-space:nowrap}
+.tocollect[hidden]{display:none!important}
+/* 電話は見出しの行の下にもう1段つくり、その右端に置く（紋章・天気・設定に重ねない） */
+@media (max-width:759px){
+  .hd-row:has(.tocollect:not([hidden])){flex-wrap:wrap;row-gap:4px}
+  .tocollect{margin-left:auto} }
+@media (min-width:760px){ .tocollect{position:fixed;top:calc(8px + env(safe-area-inset-top));right:14px;z-index:60;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .hd-row:has(.tocollect:not([hidden])){padding-right:150px} }
 /* 事業計画書の黒帯と同じ形。名前をいちばん大きく置く */
 .mark{font-size:17px;font-weight:900;letter-spacing:.02em;color:var(--on-accent);
   background:var(--accent);padding:5px 12px;flex:none;line-height:1.3}
@@ -2075,6 +2085,9 @@ button.goled:active{background:#F3F1EA}
     <!-- ★★ 大津の天気（2026-09-29・お重さん「アプリあけたら最上段のバーに天気マーク」）。押すと7日ぶん -->
     <button type="button" class="hwx tap" id="hdWx" hidden aria-label="大津の天気"></button>
     <button class="gear" id="gearBtn" aria-pressed="false">設定</button>
+    <!-- ★★ 資料回収アプリへ（2026-10-18。事務所の憲法「専用アプリと資料回収アプリの行き来」）。
+         提出URL は関所を通ったあと getBootstrap で届いたときだけ出す（経営者・管理者） -->
+    <a class="tocollect" id="toCollect" hidden>📷 資料回収へ</a>
   </div>
   <div class="hwxpanel" id="hdWxPanel" hidden></div>
   <div class="unitwrap" id="unitwrap">
@@ -4915,7 +4928,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261016;
+var SERVER_WANT = 20261018;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -4931,7 +4944,25 @@ function srvCheck_(build){
 }
 var BOOT_KEY='bm_boot_v1';
 function bootSave(b){
-  try{ localStorage.setItem(BOOT_KEY, JSON.stringify({at:Date.now(), b:b})); }catch(e){}
+  /* ★ 提出URL（合図入り）は端末に残さない。控えからは外す（2026-10-18） */
+  try{
+    var c=b;
+    if(b && typeof b==='object' && 'collectUrl' in b){ c={}; for(var k in b){ if(k!=='collectUrl') c[k]=b[k]; } }
+    localStorage.setItem(BOOT_KEY, JSON.stringify({at:Date.now(), b:c}));
+  }catch(e){}
+}
+/* ★★ 資料回収アプリへ行き来する（2026-10-18）。届いた起動データに提出URL があり、
+     資料回収の画面（Pages か GAS）を指しているときだけ右上のボタンを出す */
+var COLLECT_OK_RE=/^https:\/\/(ishii-office\.github\.io\/apps\/collect\/|script\.google\.com\/)/;
+function syncCollect_(b){
+  try{
+    var a=$('toCollect'); if(!a) return;
+    var cu=String((b && b.collectUrl) || '');
+    if(COLLECT_OK_RE.test(cu)){ a.href=cu; a.hidden=false; }
+    else { a.removeAttribute('href'); a.hidden=true; }
+    /* 電話では見出しが1段ふえるので、貼りつく帯の位置を測り直す */
+    if(typeof measureHead_==='function') measureHead_();
+  }catch(e){}
 }
 function bootLoad(){
   try{
@@ -4966,6 +4997,7 @@ call('getBootstrap').then(function(b){
   if(!b || !b.units) throw new Error('サーバから空の返事が返りました');
   S.boot=b; S.stale=false; _bootRetry=0;
   bootSave(b);
+  syncCollect_(b);
   srvCheck_(b.build);
 
   applyRole();
@@ -7064,7 +7096,7 @@ function reloadBoot(){
   return call('getBootstrap').then(function(nb){
     /* 空の返事で上書きしない。上書きすると、このあと全部が null を触って落ちる */
     if(!nb || !nb.units) throw new Error('店舗の一覧を読めませんでした。開き直してください');
-    S.boot=nb; bootSave(nb);
+    S.boot=nb; bootSave(nb); syncCollect_(nb);
     buildUnitSelector();
     buildUnitList(); buildBankList(); buildStaffList(); buildEventUnits(); drawEventList();
 
