@@ -52,6 +52,12 @@
   .wrap{max-width:560px;margin:0 auto;padding:14px}
 
   header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 2px 10px}
+  /* ★ 資料回収アプリへ（2026-10-18） */
+  .tocollect{flex:0 0 auto;font-size:13px;font-weight:700;padding:6px 10px;border-radius:999px;background:#fff;color:#222;border:1px solid rgba(0,0,0,.25);text-decoration:none;white-space:nowrap}
+  .tocollect[hidden]{display:none}
+  /* ★ 資料回収へのボタンは 画面の右上（2026-10-18。資料回収の右上には ここへ戻るボタン）。スマホは見出しの右端 */
+  @media (max-width:759px){ header{flex-wrap:wrap} .tocollect{margin-left:auto} }
+  @media (min-width:760px){ .tocollect{position:fixed;top:10px;right:14px;z-index:60;box-shadow:0 2px 8px rgba(0,0,0,.15)} }
   .brand{display:flex;align-items:baseline;gap:8px}
   .brand .mark{font-weight:700;letter-spacing:.04em;color:var(--brass-d);border-bottom:2px solid var(--brass);padding-bottom:1px}
   .brand .sub{font-size:12px;color:var(--sub)}
@@ -368,6 +374,7 @@
   <header>
     <div class="brand"><span class="mark">Bar ALLURE</span><span class="sub">現金管理</span></div>
     <div class="staff">担当 <select id="staff"></select></div>
+    <a class="tocollect" id="toCollect" hidden>📷 資料を送る</a>
   </header>
 
   <div class="nav">
@@ -2888,6 +2895,9 @@ function boot(){
     $('holding').textContent=yen(b['店主預り残高']);
     state.version=b.version;
     state.appUrl=b.appUrl||'';
+    /* ★ 資料回収アプリへ行き来する（提出URL は関所を通ったあとにだけ届く。資料回収の画面以外へは飛ばない） */
+    var cu=String(b.collectUrl||'');
+    if(/^https:\/\/(ishii-office\.github\.io\/apps\/collect\/|script\.google\.com\/)/.test(cu)){ $('toCollect').href=cu; $('toCollect').hidden=false; }
     state.today=b.today;
     var biz=b['営業日']||b.today;
     state.cbYm=ymOf(biz); state.mYm=ymOf(biz); state.pYm=ymOf(biz); $('depDate').value=b.today;
