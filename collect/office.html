@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792292446;</script>
+<script>window.__PAGE_VER=1792295545;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -412,6 +412,43 @@
   .atree:empty::before { content: '（まだ箱がありません。下で足すか、空のままなら いつもの箱）'; display: block; padding: 8px 12px; color: var(--sub); font-size: 13px; }
   .arow { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-bottom: 1px solid #F0F2F1; }
   .arow:last-child { border-bottom: 0; }
+  /* ★ お願いメール（2026-10-18） */
+  .mdlg { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; overflow: auto; padding: 24px 12px; }
+  .mdlg[hidden] { display: none; }
+  .mbox { background: #fff; border-radius: 14px; width: min(980px, 100%); padding: 16px 18px; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+  .mbox h3 { margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+  .mbox h3 .x { margin-left: auto; }
+  .mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .mgrid { grid-template-columns: 1fr; } }
+  .mbox label { display: block; font-size: 13px; font-weight: 700; margin: 8px 0 3px; }
+  .mbox input, .mbox select, .mbox textarea { font: inherit; width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; }
+  .mbox textarea { min-height: 230px; font-size: 13.5px; line-height: 1.6; }
+  .mlist { max-height: 340px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+  .mrow { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-bottom: 1px solid #F0F2F1; font-size: 13.5px; }
+  .mrow input { width: auto; }
+  .mrow .mn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mrow .mc { color: #777; font-size: 12px; white-space: nowrap; }
+  .mrow.noem { color: #aaa; }
+  .mrow .mz { font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: #E8F4EF; color: #0F6E56; }
+  .mrow .mz.zero { background: #FDECEA; color: #B3261E; }
+  .mquick { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+  .mpv { white-space: pre-wrap; background: #F7F8F7; border-radius: 8px; padding: 8px 10px; font-size: 13px; max-height: 220px; overflow: auto; }
+  .ilist { max-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+  .irow { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-bottom: 1px solid #F0F2F1; font-size: 13.5px; cursor: pointer; }
+  .irow.on { background: #EEF6F3; }
+  .irow .st { font-size: 11.5px; padding: 1px 7px; border-radius: 999px; background: #FFF1D6; color: #7A5300; white-space: nowrap; }
+  .irow .st.done { background: #E8F4EF; color: #0F6E56; }
+  .irow .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .itab { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  .itab td, .itab th { padding: 3px; font-size: 13px; }
+  .itab input, .itab select { padding: 4px 6px; }
+  .itab .n { text-align: right; white-space: nowrap; }
+  .itot { text-align: right; font-size: 14px; margin-top: 6px; line-height: 1.7; }
+  .ipv { width: 100%; height: 520px; border: 1px solid var(--line); border-radius: 8px; margin-top: 8px; background: #fff; }
+  .mlog { font-size: 12.5px; color: #555; max-height: 160px; overflow: auto; }
+  .arow .spt { font: inherit; font-size: 12px; padding: 3px 8px; border-radius: 999px; border: 1px solid #BFD3CC; background: #fff; color: #476; cursor: pointer; white-space: nowrap; }
+  .arow .spt.on { background: #FFF1D6; border-color: #E2B65A; color: #7A5300; font-weight: 700; }
+  .arow .sptd { font: inherit; font-size: 12px; padding: 2px 4px; border: 1px solid #E2B65A; border-radius: 6px; width: 132px; }
   .arow .nm { flex: 1; min-width: 0; text-align: left; font: inherit; font-weight: 700; background: none; border: 0; padding: 6px 4px; cursor: pointer; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .arow .nm::before { content: '▢ '; color: var(--accent); }
   .arow.d1 .nm { padding-left: 22px; font-weight: 600; } .arow.d2 .nm { padding-left: 40px; font-weight: 500; } .arow.d3 .nm { padding-left: 58px; font-weight: 500; }
@@ -1083,12 +1120,64 @@
   <div id="oBody"><div class="cbox muted">読み込み中…</div></div>
 </div>
 
+<!-- ===== お願いメール（2026-10-18） ===== -->
+<div class="mdlg" id="mDlg" hidden role="dialog" aria-modal="true" aria-label="お願いメール">
+  <div class="mbox">
+    <h3>📨 顧問先へのお願い・お知らせメール <button type="button" class="btn ghost sm x" id="mClose">閉じる</button></h3>
+    <div class="hint">顧問先の登録の「顧問先メール」へ送ります。文の中の {顧問先名} {月分} {期限} {URL} は 顧問先ごとに入れ替わります（URL は その顧問先の提出URL）。返信は 担当者メールへ届きます。</div>
+    <div class="mgrid">
+      <div>
+        <label for="mTpl">文の雛形</label><select id="mTpl"></select>
+        <div class="mgrid" style="gap:8px"><div><label for="mYm">何月分の資料か</label><input id="mYm" type="month"></div><div><label for="mDue">提出期限（任意）</label><input id="mDue" type="date"></div></div>
+        <label for="mSub">件名</label><input id="mSub" maxlength="200">
+        <label for="mBody">本文</label><textarea id="mBody" maxlength="10000"></textarea>
+      </div>
+      <div>
+        <label>送る先 <span class="muted" id="mCount"></span></label>
+        <div class="mquick"><button type="button" class="btn ghost sm" data-q="all">メールのある先を全部</button><button type="button" class="btn ghost sm" data-q="zero">この月分が まだ0件の先</button><button type="button" class="btn ghost sm" data-q="none">全部外す</button></div>
+        <div class="mlist" id="mList"></div>
+        <label>見本（いちばん上の選んだ先）</label><div class="mpv" id="mPv">先を選ぶと 出ます</div>
+      </div>
+    </div>
+    <div class="bar"><button type="button" class="primary" id="mSend" disabled>送る</button><span class="pagemsg" id="mlMsg" role="status"></span></div>
+    <label>送った記録（新しい順）</label><div class="mlog" id="mLog"></div>
+  </div>
+</div>
+
+<!-- ===== 請求書（2026-10-18。事務所の画面だけ。顧問先の画面には まだ出さない） ===== -->
+<div class="mdlg" id="iDlg" hidden role="dialog" aria-modal="true" aria-label="請求書">
+  <div class="mbox">
+    <h3>🧾 請求書 <small class="muted">（準備中：顧問先の画面には まだ出しません。PDF は 顧問先フォルダ / 請求書 に置きます）</small><button type="button" class="btn ghost sm x" id="iClose">閉じる</button></h3>
+    <div class="mgrid">
+      <div>
+        <label for="iCl">顧問先</label><select id="iCl"></select>
+        <div class="mquick"><button type="button" class="btn ghost sm" id="iNew">＋ 新しい請求書</button><button type="button" class="btn ghost sm" id="iCopy" disabled>選んだものをコピーして新しく</button></div>
+        <div class="ilist" id="iList"></div>
+      </div>
+      <div id="iEd" hidden>
+        <div class="mgrid" style="gap:8px"><div><label for="iDate">発行日</label><input id="iDate" type="date"></div><div><label for="iDue">お支払期限</label><input id="iDue" type="date"></div></div>
+        <label for="iTitle">件名</label><input id="iTitle" maxlength="80" placeholder="例 2026年10月分 顧問料">
+        <label>明細</label>
+        <table class="itab"><thead><tr><th>品目</th><th>数量</th><th>単価</th><th>税率</th><th></th></tr></thead><tbody id="iLines"></tbody></table>
+        <button type="button" class="btn ghost sm" id="iAddL">＋ 行を足す</button>
+        <div class="itot" id="iTot"></div>
+        <label for="iNote">備考</label><input id="iNote" maxlength="300">
+        <div class="bar"><button type="button" class="primary" id="iSave">下書きを保存</button><button type="button" class="btn ghost" id="iPv">見本を見る</button><button type="button" class="btn ghost" id="iIssue">発行する（PDF）</button><button type="button" class="btn ghost sm" id="iDel">下書きを消す</button></div>
+      </div>
+    </div>
+    <span class="pagemsg" id="iMsg" role="status"></span>
+    <iframe class="ipv" id="iPvF" hidden title="請求書の見本"></iframe>
+  </div>
+</div>
+
 <!-- ===== 顧問先 ===== -->
 <div class="pane" id="paneClients" hidden>
   <div class="cl-side">
     <div class="cl-top">
       <input id="aq" type="search" placeholder="コード・名前で探す" aria-label="顧問先を探す">
       <button type="button" class="primary" id="aNew">＋ 新しい顧問先</button>
+ <button type="button" class="btn ghost sm" id="iOpen" title="請求書を作って PDF にする（顧問先の画面には まだ出しません）">🧾 請求書</button>
+      <button type="button" class="btn ghost sm" id="mOpen" title="顧問先メールへ 資料のお願い・年末調整のお知らせなどを送る">📨 お願いメール</button>
     </div>
     <div class="cl-mode">
       <span class="seg" id="aMode" role="group" aria-label="並べ方"><button type="button" data-m="ord" aria-pressed="true">並び順</button><button type="button" data-m="fy" aria-pressed="false">決算月ごと</button></span>
@@ -1106,6 +1195,7 @@
       </div>
       <div class="f"><label for="aName">顧問先名</label><input id="aName" maxlength="60" required></div>
       <div class="f"><label for="aFy">決算月</label><select id="aFy"><option value="">（決めていない）</option><option value="1">1月決算</option><option value="2">2月決算</option><option value="3">3月決算</option><option value="4">4月決算</option><option value="5">5月決算</option><option value="6">6月決算</option><option value="7">7月決算</option><option value="8">8月決算</option><option value="9">9月決算</option><option value="10">10月決算</option><option value="11">11月決算</option><option value="12">12月決算</option></select></div>
+      <div class="f"><label for="aEmail">顧問先メール（資料のお願い・お知らせを送る先）</label><input id="aEmail" maxlength="300" placeholder="例 keiri@example.co.jp（何人かのときは カンマで区切る）"></div>
       <div class="f"><label for="aStaff">担当者メール</label><input id="aStaff" type="email" maxlength="120" placeholder="（空なら、毎朝の通知は事務所の代表へ）"></div>
       <div class="f">
         <label>箱（資料の種類・口座・カード）　<small class="muted">箱の中に箱も作れます（フォルダと同じ）</small></label>
@@ -1449,7 +1539,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, viewerImage: 1,
+  const READ_FN = { invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, viewerImage: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -2604,8 +2694,11 @@
             cl.addEventListener('touchstart', function (e) { const t = e.touches[0]; lt = setTimeout(function () { lt = null; dCtx({ clientX: t.clientX, clientY: t.clientY }, g[0]); }, 450); }, { passive: true });
             ['touchend', 'touchmove', 'touchcancel'].forEach(function (k) { cl.addEventListener(k, function () { if (lt) { clearTimeout(lt); lt = null; } }, { passive: true }); });
             /* ★ ワンクリックで バラす（2026-10-12） */
-            const sp = el('button', 'dsplit', '✂ バラす'); sp.type = 'button'; sp.title = 'この書類を 1枚ずつに戻す';
-            sp.addEventListener('click', function (e) { e.preventDefault(); dSplit(g[0]); });
+            /* ★ 2026-10-18：書類の中の写真を選んでいたら その写真だけ外す（選んでいなければ 全部 1枚ずつ） */
+            const gsel = g.filter(function (x) { return S.dcsel[x.id]; });
+            const part = gsel.length > 0 && gsel.length < g.length;
+            const sp = el('button', 'dsplit', part ? '✂ 選んだ' + gsel.length + '枚を外す' : '✂ バラす'); sp.type = 'button'; sp.title = part ? '選んだ写真だけ この書類から外す' : 'この書類を 1枚ずつに戻す（写真を選ぶと その写真だけ外せます）';
+            sp.addEventListener('click', function (e) { e.preventDefault(); dSplit(g[0], part ? gsel.map(function (x) { return x.id; }) : null); });
             const hd = el('div', 'dseth');
             if (S.dcpick) {
               const ck = el('button', 'dsetck'); ck.type = 'button'; ck.title = 'この書類（' + g.length + '枚）を 選ぶ'; ck.setAttribute('aria-label', ck.title);
@@ -2922,11 +3015,23 @@
       r.items.forEach(dSetLocal); docsDraw(); render();
     }, function (e) { if (code !== S.code) return; enMove(ids[0], lead0); dUnsnap(snap); docsDraw(); render(); dcMsg('並べ替えられませんでした（元に戻しました）。' + e.message, true); });
   }
-  function dSplit(it) {
+  function dSplit(it, only) {
     const code = S.code;
     const mem = (S.docs || []).filter(function (x) { return it.set && x.set === it.set; });
     if (!mem.length) return;
     if (mem.some(function (x) { return x.status === 'done'; })) { dcMsg('確定済みの書類は バラせません（仕訳を取り消してから）。', true); return; }
+    /* ★ 選んだ写真だけ外す（2026-10-18）。残りが2枚以上なら 書類のまま 1,2,3… に振り直す */
+    const keep = only && only.length ? mem.slice().sort(function (a, b) { return (a.setN || 0) - (b.setN || 0); }).filter(function (x) { return only.indexOf(x.id) < 0; }) : [];
+    if (keep.length >= 2) {
+      const snap = dSnap();
+      mem.forEach(function (x) { if (only.indexOf(x.id) >= 0) dSetLocal({ id: x.id }); });
+      keep.forEach(function (x, i) { dSetLocal({ id: x.id, set: it.set, setN: i + 1, setOf: keep.length }); });
+      only.forEach(function (id) { delete S.dcsel[id]; });
+      docsDraw(); render();
+      dcMsg(only.length + '枚を 書類から外しました（' + keep.length + '枚の書類が残ります）。');
+      gs('workSetSplit', code, it.id, only).then(function () {}, function (e) { if (code !== S.code) return; dUnsnap(snap); docsDraw(); render(); dcMsg('外せませんでした（元に戻しました）。' + e.message, true); });
+      return;
+    }
     /* その場で 順に1つずつ：いまの月の見え方の順を そのまま並びにする */
     const mon = (S.docs || []).filter(function (x) { return x.box === it.box && x.period === it.period; }).sort(dSort);
     const order = [].concat.apply([], dGroups(mon));
@@ -2958,6 +3063,9 @@
     add('📎 まとめる（' + (n >= 2 ? n + '件を 左から順に' : '2件以上を選んでください') + '）', n >= 2, function () { dJoin(sel); });
     if (it) {
       add('✂ バラす（この書類を 1枚ずつに）', !!it.set, function () { dSplit(it); });
+      if (it.set) { const insel = (S.docs || []).filter(function (x) { return x.set === it.set && S.dcsel[x.id]; }).map(function (x) { return x.id; });
+        const all = (S.docs || []).filter(function (x) { return x.set === it.set; }).length;
+        add('✂ 選んだ写真だけ 書類から外す' + (insel.length ? '（' + insel.length + '枚）' : '（先に写真を選ぶ）'), insel.length > 0 && insel.length < all, function () { dSplit(it, insel); }); }
       add(S.dcsel[it.id] ? 'この写真を 選ぶのをやめる' : 'この写真を 選ぶ', true, function () { if (S.dcsel[it.id]) delete S.dcsel[it.id]; else { S.dcsel[it.id] = 1; S.dcpick = true; } docsDraw(); });
       add('大きく見る', true, function () { docsOpen(it); });
       add('別の月分・箱へ移す', it.status !== 'done', function () { dMoveOpen(S.dcsel[it.id] ? dSelOrder('').map(docOf).filter(Boolean) : [it]); });
@@ -6843,7 +6951,7 @@
     $('aTitle').textContent = c.code + '　' + c.name;
     $('aForm').hidden = false;
     $('aCode').value = c.code; $('aCode').readOnly = true;
-    $('aName').value = c.name; $('aStaff').value = c.staff; $('aFy').value = c.fy ? String(c.fy) : '';
+    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; A.spot = Object.assign({}, c.spot || {}); $('aFy').value = c.fy ? String(c.fy) : '';
     $('aBoxes').value = c.boxesRaw ? c.boxes.map(function (b) { return ((c.hidden || []).indexOf(b) >= 0 ? '~' : '') + b; }).join('\n') : '';
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     aThemeSet(c.theme || 'green');
@@ -6856,7 +6964,7 @@
     A.cur = null; A.isNew = true;
     $('aTitle').textContent = '新しい顧問先';
     $('aForm').hidden = false;
-    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy'].forEach(function (k) { $(k).value = ''; });
+    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail'].forEach(function (k) { $(k).value = ''; }); A.spot = {};
     $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false; aThemeSet('green'); aLogoShow(null);
     $('aActiveRow').hidden = true; $('aUrlRow').hidden = true;
     $('aSave').textContent = '登録して URL を作る';
@@ -6911,9 +7019,20 @@
         const np = segs.slice(0, d).concat([nv]).join('/');
         const mv = function (x) { return x === path ? np : x.indexOf(path + '/') === 0 ? np + x.slice(path.length) : x; };
         const h0 = hiddenOf($('aBoxes').value), h1 = {}; Object.keys(h0).forEach(function (k) { h1[mv(k)] = 1; });
+        const s1 = {}; Object.keys(A.spot || {}).forEach(function (k) { s1[mv(k)] = A.spot[k]; }); A.spot = s1;
         aTreeSet(aTreeGet().map(mv), h1);
       });
       row.appendChild(nm);
+      /* ★ スポットの箱（2026-10-18）：年末調整など。顧問先は 何年何月分を選ばず、提出期限が出る。中に箱がある箱には付けない */
+      if (!aTreeGet().some(function (x) { return x.indexOf(path + '/') === 0; })) {
+        const isS = path in (A.spot || {});
+        const sb = el('button', 'spt' + (isS ? ' on' : ''), isS ? 'スポット' : '毎月'); sb.type = 'button';
+        sb.title = isS ? '押すと 毎月の箱（何年何月分を選ぶ）に戻します' : '押すと スポットの箱（年末調整など。何年何月分を選ばず 提出期限を出す）にします';
+        sb.addEventListener('click', function () { A.spot = A.spot || {}; if (path in A.spot) delete A.spot[path]; else A.spot[path] = ''; aTreeDraw(); });
+        row.appendChild(sb);
+        if (isS) { const dd = el('input', 'sptd'); dd.type = 'date'; dd.value = A.spot[path] || ''; dd.title = '提出期限（空なら 期限なし）'; dd.setAttribute('aria-label', segs[d] + 'の提出期限');
+          dd.addEventListener('change', function () { A.spot[path] = dd.value || ''; }); row.appendChild(dd); }
+      }
       const b = function (txt, cls, fn, title) { const x = el('button', 'sm2' + (cls ? ' ' + cls : ''), txt); x.type = 'button'; if (title) x.title = title; x.addEventListener('click', fn); row.appendChild(x); };
       if (d < 3) b('＋中に', '', function () {
         const v = prompt('「' + segs[d] + '」の中に作る箱の名前'); if (v == null) return;
@@ -6958,7 +7077,7 @@
     e.preventDefault();
     if (A.busy) return;
     const o = { code: ccode($('aCode').value), fy: $('aFy').value, name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
-      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew };
+      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew, email: $('aEmail').value.trim(), spot: A.spot || {} };
     A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
     gs('adminSave', o).then(function (l) {
       A.list = l; A.busy = false; $('aSave').disabled = false;
@@ -7000,6 +7119,162 @@
       + '<h2>' + esc(qrCur.name) + ' 様　資料提出の画面</h2><img src="' + qrCur.src + '" style="width:260px;height:260px;image-rendering:pixelated"><p style="font-size:18px;line-height:1.8">スマホのカメラで読み込んで開いてください。<br>開いたら「ホーム画面に追加」で 次からはアイコン1つで開けます。</p>'
       + '<p style="font-size:13px;color:#666">このQRコードは この顧問先さま専用です。ほかの方に渡さないでください。</p><script>onload=function(){print()}<\/script>');
     w.document.close();
+  });
+
+
+  /* ================= ★ 請求書（2026-10-18。事務所だけ） ================= */
+  const IV = { list: [], cur: null, issuer: null };
+  function iMsg(t, k) { const m = $('iMsg'); m.textContent = t || ''; m.className = 'pagemsg' + (k ? ' ' + k : ''); }
+  function iYen(n) { return Number(n || 0).toLocaleString('ja-JP'); }
+  function iToday() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function iEom() { const d = new Date(); const e = new Date(d.getFullYear(), d.getMonth() + 2, 0); return e.getFullYear() + '-' + String(e.getMonth() + 1).padStart(2, '0') + '-' + String(e.getDate()).padStart(2, '0'); }
+  function iLoad() {
+    const code = $('iCl').value; if (!code) return Promise.resolve();
+    iMsg('読み込み中…');
+    return gs('invList', code).then(function (r) { IV.list = r.list; IV.issuer = r.issuer; iDrawList(); iMsg(r.issuer && !r.issuer.reg ? '登録番号（T＋13桁）が まだ入っていません（スクリプトのプロパティ INVOICE_REG）。' : ''); }, function (e) { iMsg(e.message, 'err'); });
+  }
+  function iDrawList() {
+    const L = $('iList'); L.textContent = '';
+    if (!IV.list.length) L.appendChild(el('div', 'irow', 'まだ請求書はありません。'));
+    IV.list.forEach(function (x) {
+      const row = el('div', 'irow' + (IV.cur && IV.cur.no === x.no ? ' on' : ''));
+      row.appendChild(el('span', 'st' + (x.status === '発行済み' ? ' done' : ''), x.status));
+      row.appendChild(el('span', 't', x.no + '　' + (x.title || '（件名なし）')));
+      row.appendChild(el('span', null, '¥' + iYen(x.total)));
+      if (x.pdf) { const a = el('a', null, 'PDF'); a.href = x.pdf; a.target = '_blank'; a.rel = 'noopener'; a.addEventListener('click', function (e) { e.stopPropagation(); }); row.appendChild(a); }
+      row.addEventListener('click', function () { iEdit(x); });
+      L.appendChild(row);
+    });
+    $('iCopy').disabled = !IV.cur || !IV.cur.no;
+  }
+  function iLineRow(l) {
+    const tr = el('tr');
+    const td = function (c) { const t = el('td', c); tr.appendChild(t); return t; };
+    const it = el('input'); it.value = l.item || ''; it.placeholder = '例 顧問料'; td().appendChild(it);
+    const q = el('input'); q.type = 'number'; q.step = 'any'; q.value = l.qty != null ? l.qty : 1; q.style.width = '60px'; td().appendChild(q);
+    const pr = el('input'); pr.type = 'number'; pr.value = l.price || ''; pr.style.width = '100px'; td().appendChild(pr);
+    const rt = el('select'); [['10', '10%'], ['8', '8%'], ['0', '非課税']].forEach(function (o) { const op = el('option', null, o[1]); op.value = o[0]; rt.appendChild(op); }); rt.value = String(l.rate != null ? l.rate : 10); td().appendChild(rt);
+    const del = el('button', 'btn ghost sm', '×'); del.type = 'button'; del.addEventListener('click', function () { tr.remove(); iTot(); }); td().appendChild(del);
+    [it, q, pr, rt].forEach(function (x) { x.addEventListener('input', iTot); x.addEventListener('change', iTot); });
+    $('iLines').appendChild(tr);
+  }
+  function iLines() { return Array.from($('iLines').querySelectorAll('tr')).map(function (tr) { const f = tr.querySelectorAll('input,select'); return { item: f[0].value.trim(), qty: Number(f[1].value) || 0, price: Number(f[2].value) || 0, rate: Number(f[3].value) }; }).filter(function (l) { return l.item || l.price; }); }
+  function iTot() {
+    const by = {}; let sub = 0;
+    iLines().forEach(function (l) { const a = Math.round(l.qty * l.price); sub += a; by[l.rate] = (by[l.rate] || 0) + a; });
+    let tax = 0; const parts = Object.keys(by).sort(function (a, b) { return b - a; }).map(function (r) { const t = Math.floor(by[r] * Number(r) / 100); tax += t; return (Number(r) ? r + '%対象 ' + iYen(by[r]) + '（消費税 ' + iYen(t) + '）' : '非課税 ' + iYen(by[r])); });
+    $('iTot').innerHTML = ''; [ '小計 ' + iYen(sub) ].concat(parts, ['消費税 計 ' + iYen(tax), '合計 ¥' + iYen(sub + tax)]).forEach(function (t, i, a) { const d = el('div', null, t); if (i === a.length - 1) d.style.fontWeight = '800'; $('iTot').appendChild(d); });
+  }
+  function iEdit(x) {
+    IV.cur = x; $('iEd').hidden = false; $('iPvF').hidden = true;
+    $('iDate').value = x.date || iToday(); $('iDue').value = x.due || ''; $('iTitle').value = x.title || ''; $('iNote').value = x.note || '';
+    $('iLines').textContent = ''; (x.lines && x.lines.length ? x.lines : [{ item: '', qty: 1, price: '', rate: 10 }]).forEach(iLineRow); iTot();
+    const done = x.status === '発行済み';
+    ['iDate', 'iDue', 'iTitle', 'iNote', 'iSave', 'iAddL', 'iDel'].forEach(function (k) { $(k).disabled = done || (k === 'iDel' && !x.no); });
+    $('iLines').querySelectorAll('input,select,button').forEach(function (e) { e.disabled = done; });
+    $('iIssue').disabled = !x.no || done; $('iPv').disabled = !x.no;
+    $('iIssue').textContent = done ? '発行済み' : '発行する（PDF）';
+    iDrawList();
+  }
+  function iNewFrom(x) {
+    const d = new Date(), ym = d.getFullYear() + '年' + (d.getMonth() + 1) + '月分';
+    iEdit({ no: '', status: '下書き', date: iToday(), due: iEom(), title: x ? (x.title || '').replace(/\d{4}年\d{1,2}月分/, ym) : ym + ' 顧問料', note: x ? x.note : '', lines: x ? x.lines.map(function (l) { return { item: l.item, qty: l.qty, price: l.price, rate: l.rate }; }) : [{ item: '顧問料', qty: 1, price: '', rate: 10 }] });
+  }
+  $('iOpen').addEventListener('click', function () {
+    const sel = $('iCl'); sel.textContent = '';
+    (A.list || []).forEach(function (c) { const o = el('option', null, c.code + ' ' + c.name); o.value = c.code; sel.appendChild(o); });
+    if (A.cur) sel.value = A.cur;
+    IV.cur = null; $('iEd').hidden = true; $('iPvF').hidden = true;
+    $('iDlg').hidden = false; iLoad();
+  });
+  $('iClose').addEventListener('click', function () { $('iDlg').hidden = true; });
+  $('iCl').addEventListener('change', function () { IV.cur = null; $('iEd').hidden = true; $('iPvF').hidden = true; iLoad(); });
+  $('iNew').addEventListener('click', function () { iNewFrom(null); });
+  $('iCopy').addEventListener('click', function () { if (IV.cur) iNewFrom(IV.cur); });
+  $('iAddL').addEventListener('click', function () { iLineRow({ item: '', qty: 1, price: '', rate: 10 }); });
+  $('iSave').addEventListener('click', function () {
+    const o = { no: IV.cur && IV.cur.no, code: $('iCl').value, title: $('iTitle').value, date: $('iDate').value, due: $('iDue').value, note: $('iNote').value, lines: iLines() };
+    iMsg('保存しています…');
+    gs('invSave', o).then(function (r) { IV.list = r.list; const x = IV.list.filter(function (y) { return y.no === o.no; })[0] || IV.list.filter(function (y) { return y.status === '下書き'; }).sort(function (a, b) { return b.no.localeCompare(a.no); })[0]; if (x) iEdit(x); iMsg('下書きを保存しました（' + (x ? x.no : '') + '）。', 'ok'); }, function (e) { iMsg(e.message, 'err'); });
+  });
+  $('iPv').addEventListener('click', function () {
+    if (!IV.cur || !IV.cur.no) return;
+    gs('invPreview', IV.cur.no).then(function (r) { const f = $('iPvF'); f.hidden = false; f.srcdoc = r.html; }, function (e) { iMsg(e.message, 'err'); });
+  });
+  $('iIssue').addEventListener('click', function () {
+    if (!IV.cur || !IV.cur.no) return;
+    if (!confirm(IV.cur.no + ' を発行します（PDF を作り、もう直せなくなります）。顧問先の画面には まだ出ません。よろしいですか？')) return;
+    iMsg('PDF を作っています…');
+    gs('invIssue', IV.cur.no).then(function (r) { IV.list = r.list; const x = IV.list.filter(function (y) { return y.no === IV.cur.no; })[0]; if (x) iEdit(x); iMsg('発行しました。PDF は 顧問先フォルダ / 請求書 にあります。', 'ok'); }, function (e) { iMsg(e.message, 'err'); });
+  });
+  $('iDel').addEventListener('click', function () {
+    if (!IV.cur || !IV.cur.no || !confirm(IV.cur.no + ' の下書きを消しますか？')) return;
+    gs('invDelete', IV.cur.no).then(function (r) { IV.list = r.list; IV.cur = null; $('iEd').hidden = true; iDrawList(); iMsg('消しました。', 'ok'); }, function (e) { iMsg(e.message, 'err'); });
+  });
+  /* ================= ★ お願いメール（2026-10-18） ================= */
+  const M = { data: null, sel: {}, sendOk: false };
+  function mMsg(t, k) { const m = $('mlMsg'); m.textContent = t || ''; m.className = 'pagemsg' + (k ? ' ' + k : ''); }
+  function mDefYm() { const n = new Date(); const d = new Date(n.getFullYear(), n.getMonth() - (n.getDate() <= 20 ? 1 : 0), 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  function mLoad() {
+    mMsg('読み込み中…');
+    return gs('mailTargets', $('mYm').value || mDefYm()).then(function (d) {
+      M.data = d; $('mYm').value = d.ym;
+      if (!$('mTpl').options.length) { Object.keys(d.tpl).forEach(function (k) { const o = el('option', null, d.tpl[k].name); o.value = k; $('mTpl').appendChild(o); }); mTplSet(); }
+      mDraw(); mMsg(d.quota >= 0 ? '今日あと ' + d.quota + '通 送れます。' : '');
+    }, function (e) { mMsg(e.message, 'err'); });
+  }
+  function mTplSet() { const t = M.data && M.data.tpl[$('mTpl').value]; if (!t) return; $('mSub').value = t.subject; $('mBody').value = t.body; mPv(); }
+  function mDraw() {
+    const L = $('mList'); L.textContent = '';
+    (M.data ? M.data.list : []).forEach(function (c) {
+      const row = el('label', 'mrow' + (c.email ? '' : ' noem'));
+      const ck = el('input'); ck.type = 'checkbox'; ck.disabled = !c.email; ck.checked = !!M.sel[c.code] && !!c.email; ck.dataset.code = c.code;
+      ck.addEventListener('change', function () { if (ck.checked) M.sel[c.code] = 1; else delete M.sel[c.code]; mCnt(); mPv(); });
+      row.appendChild(ck); row.appendChild(el('span', 'mn', c.code + ' ' + c.name + (c.email ? '' : '（メール未登録）')));
+      row.appendChild(el('span', 'mz' + (c.n ? '' : ' zero'), c.n + '件'));
+      if (c.last) row.appendChild(el('span', 'mc', '前回 ' + c.last.at));
+      L.appendChild(row);
+    });
+    mCnt();
+  }
+  function mPick() { return (M.data ? M.data.list : []).filter(function (c) { return M.sel[c.code] && c.email; }); }
+  function mCnt() { const n = mPick().length; $('mCount').textContent = n + '件を選んでいます'; $('mSend').disabled = !n; $('mSend').textContent = n ? n + '件に送る' : '送る'; }
+  let mPvT = null;
+  function mPv() {
+    clearTimeout(mPvT);
+    mPvT = setTimeout(function () {
+      const c = mPick()[0]; if (!c) { $('mPv').textContent = '先を選ぶと 出ます'; return; }
+      gs('mailPreview', { code: c.code, subject: $('mSub').value, body: $('mBody').value, ym: $('mYm').value, due: $('mDue').value }).then(function (p) {
+        $('mPv').textContent = '宛先：' + p.to.join(', ') + '\n件名：' + p.subject + '\n\n' + p.body;
+      }, function (e) { $('mPv').textContent = e.message; });
+    }, 300);
+  }
+  function mLogDraw() {
+    gs('mailLog', '').then(function (l) {
+      const g = $('mLog'); g.textContent = '';
+      if (!l.length) { g.textContent = 'まだ送っていません。'; return; }
+      l.forEach(function (x) { g.appendChild(el('div', null, x.at + '　' + x.code + ' ' + x.name + '　' + x.subject + '（' + x.who + '）')); });
+    }, function () {});
+  }
+  $('mOpen').addEventListener('click', function () { $('mDlg').hidden = false; if (!$('mYm').value) $('mYm').value = mDefYm(); mLoad(); mLogDraw(); });
+  $('mClose').addEventListener('click', function () { $('mDlg').hidden = true; });
+  $('mTpl').addEventListener('change', mTplSet);
+  $('mYm').addEventListener('change', function () { mLoad().then(mPv); });
+  ['mSub', 'mBody', 'mDue'].forEach(function (k) { $(k).addEventListener('input', mPv); });
+  document.querySelector('.mquick').addEventListener('click', function (e) {
+    const b = e.target.closest('button[data-q]'); if (!b || !M.data) return;
+    M.sel = {};
+    if (b.dataset.q !== 'none') M.data.list.forEach(function (c) { if (c.email && (b.dataset.q === 'all' || !c.n)) M.sel[c.code] = 1; });
+    mDraw(); mPv();
+  });
+  $('mSend').addEventListener('click', function () {
+    const L = mPick(); if (!L.length) return;
+    if (!confirm(L.length + '件の顧問先に メールを送ります。よろしいですか？\n件名：' + $('mSub').value)) return;
+    $('mSend').disabled = true; mMsg('送っています…');
+    gs('mailSend', { codes: L.map(function (c) { return c.code; }), subject: $('mSub').value, body: $('mBody').value, ym: $('mYm').value, due: $('mDue').value, tpl: $('mTpl').value }).then(function (r) {
+      const txt = r.sent.length + '件 送りました。' + (r.skip.length ? '送れなかった先：' + r.skip.map(function (x) { return x.code + '（' + x.why + '）'; }).join('、') : ''), kind = r.skip.length ? 'err' : 'ok';
+      M.sel = {}; mLoad().then(function () { mMsg(txt, kind); }); mLogDraw();
+    }, function (e) { mMsg(e.message, 'err'); mCnt(); });
   });
   $('aCopyUrl').addEventListener('click', function () {
     const u = $('aUrl'); u.select();
