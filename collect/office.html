@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792298470;</script>
+<script>window.__PAGE_VER=1792300261;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -380,7 +380,16 @@
   #alist li.dragging { opacity: .4; }
   #alist li.dropbefore { box-shadow: inset 0 3px 0 var(--accent); }
   #alist li.dropafter { box-shadow: inset 0 -3px 0 var(--accent); }
-  #alist .fy { margin-left: auto; font-size: 12px; color: var(--sub); }
+  #alist .fy { margin-left: auto; font-size: 12px; color: var(--sub); white-space: nowrap; }
+  /* ★ 決算月で色分け・法人／個人の札（2026-10-18） */
+  #alist .fy.fyc { color: hsl(var(--fyh) 45% 30%); background: hsl(var(--fyh) 60% 92%); border-radius: 999px; padding: 1px 9px; font-weight: 700; }
+  #alist li.fyc > button { box-shadow: inset 4px 0 0 hsl(var(--fyh) 50% 58%); }
+  #alist li.grp.fyc { background: hsl(var(--fyh) 60% 92%); color: hsl(var(--fyh) 45% 28%); box-shadow: inset 4px 0 0 hsl(var(--fyh) 50% 58%); }
+  #alist li.grp.ind { background: #F3EFE6; color: #6B5B45; }
+  #alist .kind { flex: none; font-size: 11px; font-weight: 700; border-radius: 4px; padding: 1px 6px; line-height: 1.5; align-self: center; }
+  #alist .kind.corp { background: #2F4A6B; color: #fff; }
+  #alist .kind.ind { background: #fff; color: #8A6A3D; border: 1px solid #C9A877; }
+  #alist .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cl-main { padding: 16px 20px; overflow: auto; }
   .cl-main h2 { font-size: 18px; margin: 0 0 14px; }
   .f { margin-bottom: 14px; max-width: 620px; }
@@ -1196,6 +1205,7 @@
         <div class="hint">半角の英数字。登録したあとは変えられません（Drive のフォルダ・履歴がコードでつながっているため）。</div>
       </div>
       <div class="f"><label for="aName">顧問先名</label><input id="aName" maxlength="60" required></div>
+      <div class="f"><label for="aKind">法人・個人</label><select id="aKind"><option value="">（名前から当てる）</option><option value="法人">法人</option><option value="個人">個人</option></select><span class="hint" id="aKindHint"></span></div>
       <div class="f"><label for="aFy">決算月</label><select id="aFy"><option value="">（決めていない）</option><option value="1">1月決算</option><option value="2">2月決算</option><option value="3">3月決算</option><option value="4">4月決算</option><option value="5">5月決算</option><option value="6">6月決算</option><option value="7">7月決算</option><option value="8">8月決算</option><option value="9">9月決算</option><option value="10">10月決算</option><option value="11">11月決算</option><option value="12">12月決算</option></select></div>
       <div class="f"><label for="aEmail">顧問先メール（資料のお願い・お知らせを送る先）</label><input id="aEmail" maxlength="300" placeholder="例 keiri@example.co.jp（何人かのときは カンマで区切る）"></div>
       <div class="f"><label for="aAppUrl">専用アプリ（あれば。顧問先の画面に［↗ ○○へ］が出て 行き来できる）</label>
@@ -6829,10 +6839,18 @@
   function aMode() { return lsGet('collect_office_amode') === 'fy' ? 'fy' : 'ord'; }
   function ccode(v) { const t = String(v == null ? '' : v).replace(/[０-９－]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).trim(); let m;
     if (/^\d{1,3}$/.test(t)) return ('000' + t).slice(-3); if ((m = t.match(/^(\d{1,3})-(\d{1,2})$/))) return ('000' + m[1]).slice(-3) + '-' + ('00' + m[2]).slice(-2); return t; }
+  /* ★ 法人・個人（2026-10-18）：設定で決めたもの。決めていなければ 名前から当てる（Code.js の kindGuess_ と同じ） */
+  function kindGuess(name) { return /[㈱㈲㈾㈿]|[(（](株|有|同|合|資|社|医|一社|財|NPO|特非)[)）]|株式会社|有限会社|合同会社|合名会社|合資会社|一般社団|一般財団|医療法人|社会福祉法人|NPO法人|特定非営利/.test(String(name || '')) ? '法人' : '個人'; }
+  function corpKindOf(c) { return c.kind === '法人' || c.kind === '個人' ? c.kind : kindGuess(c.name); }
+  /* 決算月ごとの色（1月〜12月で色相をひと回り）。字の読みやすさは落とさない */
+  function fyStyle(e, m) { m = Number(m); if (!(m >= 1)) return; const h = ((m - 1) * 30 + 200) % 360; e.style.setProperty('--fyh', h); e.classList.add('fyc'); }
+  const byCode = function (a, b) { return String(a.code).localeCompare(String(b.code), 'ja', { numeric: true }); };
+  /* 決算月ごと：法人は 決算月（1→12月）で分けて 番号順。個人は 個人でまとめて 番号順 */
   function fyGroups(list) {
-    const g = [];
-    for (let m = 1; m <= 12; m++) { const xs = list.filter(function (c) { return Number(c.fy) === m; }); if (xs.length) g.push([m + '月決算', xs]); }
-    const no = list.filter(function (c) { return !(Number(c.fy) >= 1); }); if (no.length) g.push(['決算月 未設定', no]);
+    const g = [], corp = list.filter(function (c) { return corpKindOf(c) === '法人'; }), ind = list.filter(function (c) { return corpKindOf(c) === '個人'; });
+    for (let m = 1; m <= 12; m++) { const xs = corp.filter(function (c) { return Number(c.fy) === m; }).sort(byCode); if (xs.length) g.push(['法人・' + m + '月決算', xs, m]); }
+    const no = corp.filter(function (c) { return !(Number(c.fy) >= 1); }).sort(byCode); if (no.length) g.push(['法人・決算月 未設定', no, 0]);
+    if (ind.length) g.push(['個人', ind.slice().sort(byCode), 0, '個人']);
     return g;
   }
   function aDraw() {
@@ -6841,17 +6859,20 @@
     const ul = $('alist'); ul.textContent = '';
     const list = A.list.filter(function (c) { return !q || (c.code + ' ' + c.name).toLowerCase().indexOf(q) >= 0; });
     const row = function (c) {
-      const li = el('li'); li.dataset.code = c.code; if (!q) li.draggable = true;
+      const li = el('li'); li.dataset.code = c.code; if (!q && mode === 'ord') li.draggable = true;
       const b = el('button'); b.type = 'button';
-      if (!q) b.appendChild(el('span', 'grip', '⠿'));
-      b.appendChild(el('span', 'code', c.code)); b.appendChild(el('span', null, c.name));
+      if (!q && mode === 'ord') b.appendChild(el('span', 'grip', '⠿'));
+      b.appendChild(el('span', 'code', c.code));
+      const kd = corpKindOf(c), kb = el('span', 'kind ' + (kd === '法人' ? 'corp' : 'ind'), kd); if (!c.kindSet) kb.title = '名前から当てています（設定で決められます）'; b.appendChild(kb);
+      b.appendChild(el('span', 'nm', c.name));
       if (!c.active) b.appendChild(el('span', 'off', c.issued ? '止めています' : 'URL未発行'));
-      else if (mode === 'ord' && c.fy) b.appendChild(el('span', 'fy', c.fy + '月決算'));
+      else if (c.fy) { const f = el('span', 'fy', c.fy + '月決算'); fyStyle(f, c.fy); b.appendChild(f); }
+      fyStyle(li, c.fy);
       b.setAttribute('aria-current', String(!A.isNew && A.cur === c.code));
       b.addEventListener('click', function () { aOpen(c.code); });
       li.appendChild(b); ul.appendChild(li);
     };
-    if (mode === 'fy') fyGroups(list).forEach(function (g) { ul.appendChild(el('li', 'grp', g[0] + '（' + g[1].length + '）')); g[1].forEach(row); });
+    if (mode === 'fy') fyGroups(list).forEach(function (g) { const h = el('li', 'grp' + (g[3] ? ' ind' : ''), g[0] + '（' + g[1].length + '）'); fyStyle(h, g[2]); ul.appendChild(h); g[1].forEach(row); });
     else list.forEach(row);
     if (!list.length) ul.appendChild(el('li', 'empty', q ? '当てはまる顧問先はありません' : '顧問先がありません'));
   }
@@ -6986,7 +7007,7 @@
     $('aTitle').textContent = c.code + '　' + c.name;
     $('aForm').hidden = false;
     $('aCode').value = c.code; $('aCode').readOnly = true;
-    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); $('aFy').value = c.fy ? String(c.fy) : '';
+    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); $('aFy').value = c.fy ? String(c.fy) : ''; $('aKind').value = c.kindSet ? c.kind : ''; $('aKindHint').textContent = c.kindSet ? '' : '（いまは 名前から「' + corpKindOf(c) + '」と当てています）';
     $('aBoxes').value = c.boxesRaw ? c.boxes.map(function (b) { return ((c.hidden || []).indexOf(b) >= 0 ? '~' : '') + b; }).join('\n') : '';
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     aThemeSet(c.theme || 'green');
@@ -6999,7 +7020,7 @@
     A.cur = null; A.isNew = true;
     $('aTitle').textContent = '新しい顧問先';
     $('aForm').hidden = false;
-    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName'].forEach(function (k) { $(k).value = ''; }); A.spot = {};
+    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName', 'aKind'].forEach(function (k) { $(k).value = ''; }); $('aKindHint').textContent = ''; A.spot = {};
     $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false; aThemeSet('green'); aLogoShow(null);
     $('aActiveRow').hidden = true; $('aUrlRow').hidden = true;
     $('aSave').textContent = '登録して URL を作る';
@@ -7112,7 +7133,7 @@
     e.preventDefault();
     if (A.busy) return;
     const o = { code: ccode($('aCode').value), fy: $('aFy').value, name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
-      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew, email: $('aEmail').value.trim(), spot: A.spot || {}, appUrl: $('aAppUrl').value.trim(), appName: $('aAppName').value.trim() };
+      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew, email: $('aEmail').value.trim(), spot: A.spot || {}, appUrl: $('aAppUrl').value.trim(), appName: $('aAppName').value.trim(), kind: $('aKind').value };
     A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
     gs('adminSave', o).then(function (l) {
       A.list = l; A.busy = false; $('aSave').disabled = false;
