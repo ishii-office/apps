@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792300261;</script>
+<script>window.__PAGE_VER=1792301792;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1192,7 +1192,7 @@
     </div>
     <div class="cl-mode">
       <span class="seg" id="aMode" role="group" aria-label="並べ方"><button type="button" data-m="ord" aria-pressed="true">並び順</button><button type="button" data-m="fy" aria-pressed="false">決算月ごと</button></span>
-      <button type="button" class="btn ghost sm" id="aOrdReset" title="つかんで動かした並びを消して コードの順に戻す">番号順に戻す</button>
+      <button type="button" class="btn ghost sm" id="aOrdReset" title="つかんで動かした並びを消して 決算月の順（その中は法人→個人・番号順）に戻す">決算月順に戻す</button>
     </div>
     <ul id="alist"><li class="empty">読み込み中…</li></ul>
   </div>
@@ -6845,12 +6845,12 @@
   /* 決算月ごとの色（1月〜12月で色相をひと回り）。字の読みやすさは落とさない */
   function fyStyle(e, m) { m = Number(m); if (!(m >= 1)) return; const h = ((m - 1) * 30 + 200) % 360; e.style.setProperty('--fyh', h); e.classList.add('fyc'); }
   const byCode = function (a, b) { return String(a.code).localeCompare(String(b.code), 'ja', { numeric: true }); };
-  /* 決算月ごと：法人は 決算月（1→12月）で分けて 番号順。個人は 個人でまとめて 番号順 */
+  /* 決算月ごと：決算月（1→12月）で分けて、その中は 法人が先（番号順）→ 個人（番号順）。決算月がまだのものは最後 */
+  const kdOrd = function (a, b) { const x = corpKindOf(a) === '法人' ? 0 : 1, y = corpKindOf(b) === '法人' ? 0 : 1; return x - y || byCode(a, b); };
   function fyGroups(list) {
-    const g = [], corp = list.filter(function (c) { return corpKindOf(c) === '法人'; }), ind = list.filter(function (c) { return corpKindOf(c) === '個人'; });
-    for (let m = 1; m <= 12; m++) { const xs = corp.filter(function (c) { return Number(c.fy) === m; }).sort(byCode); if (xs.length) g.push(['法人・' + m + '月決算', xs, m]); }
-    const no = corp.filter(function (c) { return !(Number(c.fy) >= 1); }).sort(byCode); if (no.length) g.push(['法人・決算月 未設定', no, 0]);
-    if (ind.length) g.push(['個人', ind.slice().sort(byCode), 0, '個人']);
+    const g = [];
+    for (let m = 1; m <= 12; m++) { const xs = list.filter(function (c) { return Number(c.fy) === m; }).sort(kdOrd); if (xs.length) g.push([m + '月決算', xs, m]); }
+    const no = list.filter(function (c) { return !(Number(c.fy) >= 1); }).sort(kdOrd); if (no.length) g.push(['決算月 未設定', no, 0]);
     return g;
   }
   function aDraw() {
@@ -6904,7 +6904,7 @@
   function aOrderSave(codes, msg) {
     gs('adminOrder', codes).then(function (l) { A.list = l; aDraw(); amsg(msg, 'ok'); gs('workInit').then(function (r) { S.clients = r.clients; fillClients(S.code); }); }, function (e) { amsg(e.message, 'err'); });
   }
-  $('aOrdReset').addEventListener('click', function () { if (confirm('つかんで動かした並びを消して、顧問先コードの順に戻します。')) aOrderSave([], '番号順に戻しました。'); });
+  $('aOrdReset').addEventListener('click', function () { if (confirm('つかんで動かした並びを消して、決算月の順（その中は 法人→個人・番号順）に戻します。')) aOrderSave([], '決算月順に戻しました。'); });
   $('aq').addEventListener('input', aDraw);
   (function () {
     const g = $('aThemes');
