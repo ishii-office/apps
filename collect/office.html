@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792302500;</script>
+<script>window.__PAGE_VER=1792311732;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -471,6 +471,18 @@
   .arow.off .nm { color: #9AA6A2; text-decoration: line-through; }
   .arow.offp .nm { color: #9AA6A2; }
   #aPreview span.off { opacity: .45; text-decoration: line-through; }
+  /* ★ 利用規約・AI 利用の同意（2026-10-18） */
+  #alist .cns::after { content: attr(data-t); font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 999px; margin-left: 6px; white-space: nowrap; }
+  #alist .cns.need::after { background: #FFF1D6; color: #8A5A00; border: 1px solid #E8C77A; }
+  #alist .cns.wd::after { background: #FDECEC; color: #8A1F1F; border: 1px solid #E8A9A9; }
+  .acns { border: 1px solid var(--line, #ccd); border-radius: 10px; padding: 10px 12px; background: #fff; }
+  .acns .st { font-weight: 800; margin: 0 0 6px; }
+  .acns .st.ok { color: #0F6E5C; } .acns .st.need { color: #8A5A00; } .acns .st.wd { color: #8A1F1F; }
+  .acns .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 0 0 8px; }
+  .acns .row3 label { font-size: 12px; font-weight: 700; } .acns .row3 input { width: 100%; box-sizing: border-box; }
+  .acns .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .acns .log { font-size: 12px; margin-top: 8px; white-space: pre-wrap; max-height: 220px; overflow: auto; background: #F6F8F7; border-radius: 8px; padding: 6px 8px; }
+  @media (max-width: 640px) { .acns .row3 { grid-template-columns: 1fr; } }
   .atree-add { display: flex; gap: 6px; margin-top: 6px; }
   .atree-add input { flex: 1; min-width: 0; }
   .abulk { margin-top: 8px; } .abulk summary { cursor: pointer; font-size: 13px; color: var(--sub); }
@@ -1208,6 +1220,14 @@
       <div class="f"><label for="aKind">法人・個人</label><select id="aKind"><option value="">（名前から当てる）</option><option value="法人">法人</option><option value="個人">個人</option></select><span class="hint" id="aKindHint"></span></div>
       <div class="f"><label for="aFy">決算月</label><select id="aFy"><option value="">（決めていない）</option><option value="1">1月決算</option><option value="2">2月決算</option><option value="3">3月決算</option><option value="4">4月決算</option><option value="5">5月決算</option><option value="6">6月決算</option><option value="7">7月決算</option><option value="8">8月決算</option><option value="9">9月決算</option><option value="10">10月決算</option><option value="11">11月決算</option><option value="12">12月決算</option></select></div>
       <div class="f"><label for="aEmail">顧問先メール（資料のお願い・お知らせを送る先）</label><input id="aEmail" maxlength="300" placeholder="例 keiri@example.co.jp（何人かのときは カンマで区切る）"></div>
+      <div class="f"><label>利用規約・AI 利用の同意（顧問先が はじめに開いたとき 同意の画面が出ます。同意するまで 送れません）</label>
+        <div class="acns">
+          <p class="st" id="aCnsSt">新しい顧問先は 登録したあと 同意の画面が出ます</p>
+          <div class="row3"><label>代表者の役職<input id="aRepTitle" maxlength="40" placeholder="例 代表取締役"></label><label>代表者氏名<input id="aRepName" maxlength="60" placeholder="例 山田 太郎"></label><label>説明担当者（事務所）<input id="aExplainer" maxlength="60" placeholder="例 石井 重洋"></label></div>
+          <div class="hint">会社名（＝顧問先名）・役職・代表者氏名・控えのメール（顧問先メールの1つめ）は 同意の画面に 先に印字されます（顧問先が直せます）。説明担当者は 顧問先には入れさせず、ここで入れたものが 同意ログに残ります。</div>
+          <div class="btns" id="aCnsBtns" hidden><button type="button" class="btn ghost sm" id="aCnsLog">同意の記録を見る</button><button type="button" class="btn ghost sm" id="aCnsWd">撤回を記録する</button><button type="button" class="btn ghost sm" id="aCnsRe" hidden>もう一度 同意をお願いする</button><button type="button" class="btn ghost sm" id="aCnsVerify">同意ログの書き換えを確かめる</button></div>
+          <div class="log" id="aCnsOut" hidden></div>
+        </div></div>
       <div class="f"><label for="aAppUrl">専用アプリ（あれば。顧問先の画面に［↗ ○○へ］が出て 行き来できる）</label>
         <div class="url"><input id="aAppName" maxlength="30" placeholder="名前 例 Bar ALLURE" style="max-width:180px"><input id="aAppUrl" maxlength="300" placeholder="URL 例 https://ishii-office.github.io/apps/079/"></div>
         <div class="hint">事務所のアプリ（https://ishii-office.github.io/apps/…）か GAS のURLだけ。専用アプリの側には、この顧問先の提出URLを入れてもらう（憲法「専用アプリと資料回収アプリの行き来」）。</div></div>
@@ -1554,7 +1574,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, viewerImage: 1,
+  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, viewerImage: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -1931,7 +1951,7 @@
     bx.value = S.box;
     $('dictTitle').textContent = '仕訳辞書の登録・編集：' + (c ? c.code + '　' + c.name : '');
     /* 回収ボックスの選び肢：その顧問先の箱 ＋ その他 ＋ 共通（どの箱にも出す） */
-    S.boxes = (c ? c.boxes : []).filter(function (b) { return b !== 'その他'; }).concat(['その他']);
+    S.boxes = (c ? c.boxes : []).filter(function (b) { return b !== 'その他' && b !== '年末調整書類（マイナンバー記載あり）'; }).concat(['その他']);   /* マイナンバー記載の箱は AI に回さないので 辞書の選び肢にも出さない */
     /* ★ 顧問先の箱で【非表示】にした箱（とその下の箱）は 仕訳辞書の選び肢にも出さない（2026-10-15）。
          ただし その箱の辞書を開いたとき・その箱の辞書を直すときは 選び肢に足す（足さないと 保存で「共通」に変わってしまう） */
     S.hideB = (c && c.hidden) || [];
@@ -6865,6 +6885,7 @@
       b.appendChild(el('span', 'code', c.code));
       const kd = corpKindOf(c), kb = el('span', 'kind ' + (kd === '法人' ? 'corp' : 'ind'), kd); if (!c.kindSet) kb.title = '名前から当てています（設定で決められます）'; b.appendChild(kb);
       b.appendChild(el('span', 'nm', c.name));
+      const cs = c.consent || {}; if (c.issued && (cs.type === '撤回' || cs.need)) { const t = el('span', 'cns ' + (cs.type === '撤回' ? 'wd' : 'need')); t.dataset.t = cs.type === '撤回' ? 'AI撤回' : '同意まだ'; t.title = cs.type === '撤回' ? 'AI 等の利用への同意を撤回しています（AI 下書きは使えません）' : '利用規約・AI 利用への同意がまだです（顧問先は まだ送れません・AI 下書きも使えません）'; b.appendChild(t); }
       if (!c.active) b.appendChild(el('span', 'off', c.issued ? '止めています' : 'URL未発行'));
       else if (c.fy) { const f = el('span', 'fy', c.fy + '月決算'); fyStyle(f, c.fy); b.appendChild(f); }
       fyStyle(li, c.fy);
@@ -7007,7 +7028,7 @@
     $('aTitle').textContent = c.code + '　' + c.name;
     $('aForm').hidden = false;
     $('aCode').value = c.code; $('aCode').readOnly = true;
-    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); $('aFy').value = c.fy ? String(c.fy) : ''; $('aKind').value = c.kindSet ? c.kind : ''; $('aKindHint').textContent = c.kindSet ? '' : '（いまは 名前から「' + corpKindOf(c) + '」と当てています）';
+    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); $('aRepTitle').value = c.repTitle || ''; $('aRepName').value = c.repName || ''; $('aExplainer').value = c.explainer || ''; aCnsShow(c); $('aFy').value = c.fy ? String(c.fy) : ''; $('aKind').value = c.kindSet ? c.kind : ''; $('aKindHint').textContent = c.kindSet ? '' : '（いまは 名前から「' + corpKindOf(c) + '」と当てています）';
     $('aBoxes').value = c.boxesRaw ? c.boxes.map(function (b) { return ((c.hidden || []).indexOf(b) >= 0 ? '~' : '') + b; }).join('\n') : '';
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     aThemeSet(c.theme || 'green');
@@ -7020,7 +7041,7 @@
     A.cur = null; A.isNew = true;
     $('aTitle').textContent = '新しい顧問先';
     $('aForm').hidden = false;
-    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName', 'aKind'].forEach(function (k) { $(k).value = ''; }); $('aKindHint').textContent = ''; A.spot = {};
+    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName', 'aKind', 'aRepTitle', 'aRepName', 'aExplainer'].forEach(function (k) { $(k).value = ''; }); aCnsShow(null); $('aKindHint').textContent = ''; A.spot = {};
     $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false; aThemeSet('green'); aLogoShow(null);
     $('aActiveRow').hidden = true; $('aUrlRow').hidden = true;
     $('aSave').textContent = '登録して URL を作る';
@@ -7029,7 +7050,7 @@
   /* 顧問先の画面に出る箱を、その場で見せる（サーバの parseBoxes_ と同じ決まり）。「通帳/滋賀銀行」は 通帳 の中の箱 */
   function boxesOf(text) {
     const seen = {}; const out = [];
-    const add = function (n) { if (n && !seen[n] && n !== 'その他' && out.length < 59) { seen[n] = 1; out.push(n); } };
+    const add = function (n) { if (n && !seen[n] && n !== 'その他' && n !== MYNUM_BOX && out.length < 58) { seen[n] = 1; out.push(n); } };
     text.split(/[,、，\n]/).forEach(function (s) {
       s = s.replace(/^\s*[~～]+/, '');
       const segs = s.split(/[\/／]/).map(function (x) { return x.replace(/[\\:*?"<>|\r\t]/g, '').trim().slice(0, 30); }).filter(Boolean).slice(0, 4);
@@ -7048,13 +7069,49 @@
     return out;
   }
   function hidUnder(hid, p) { return Object.keys(hid).some(function (h) { return p !== h && p.indexOf(h + '/') === 0; }); }
+  const MYNUM_BOX = '年末調整書類（マイナンバー記載あり）';   /* どの顧問先にも「その他」の前に付く（サーバの parseBoxes_ と同じ） */
+  /* ★ 同意の状態（2026-10-18） */
+  function aCnsShow(c) {
+    const st = $('aCnsSt'), cs = (c && c.consent) || null;
+    $('aCnsOut').hidden = true; $('aCnsBtns').hidden = !c;
+    if (!c) { st.className = 'st'; st.textContent = '新しい顧問先は 登録したあと 同意の画面が出ます'; return; }
+    const at = String((cs && cs.at) || '').replace('T', ' ').replace(/\+09:00$/, '');
+    if (cs && cs.type === '撤回') { st.className = 'st wd'; st.textContent = 'AI 等の利用への同意を 撤回しています（' + at + '）。AI 下書きは使えません。'; }
+    else if (cs && cs.type === '同意' && !cs.need) { st.className = 'st ok'; st.textContent = '✓ 同意済み（第' + cs.ver + '版・' + at + '・' + (cs.rep || '') + '）'; }
+    else if (cs && cs.type === '同意') { st.className = 'st need'; st.textContent = '前の版（第' + cs.ver + '版）に同意済み。新しい版（第' + cs.cur + '版）への同意が まだです（次に開いたとき 同意の画面が出ます）'; }
+    else { st.className = 'st need'; st.textContent = 'まだ同意していません（顧問先が開くと 同意の画面が出ます。同意するまで 送れません・AI 下書きも使えません）'; }
+    $('aCnsWd').hidden = !(cs && cs.type === '同意'); $('aCnsRe').hidden = !(cs && cs.type === '撤回');
+  }
+  $('aCnsLog').addEventListener('click', function () {
+    if (!A.cur) return; const out = $('aCnsOut'); out.hidden = false; out.textContent = '読み込み中…';
+    gs('consentLog', A.cur).then(function (l) {
+      out.textContent = l.length ? l.map(function (x) { return x.at.replace('T', ' ').replace(/\+09:00$/, '') + '　' + x.type + (x.ver ? '　第' + x.ver + '版' : '') + '　' + [x.company, x.title, x.rep].filter(Boolean).join(' ') + (x.mail ? '　控え ' + x.mail : '') + '　説明・記録 ' + (x.expl || '—') + (x.note ? '　（' + x.note + '）' : '') + '　記録ID ' + x.id; }).join('\n') : 'まだ記録はありません。';
+    }, function (e) { out.textContent = e.message; });
+  });
+  $('aCnsWd').addEventListener('click', function () {
+    if (!A.cur) return;
+    const note = window.prompt('撤回を記録します（行は消さず、撤回の行を足します）。このあと AI 下書きは使えません。\n撤回の連絡を受けた日・方法など（任意）', '');
+    if (note === null) return;
+    gs('consentWithdraw', A.cur, note).then(function (l) { A.list = l; aOpen(A.cur); amsg('撤回を記録しました。', 'ok'); }, function (e) { amsg(e.message, 'err'); });
+  });
+  $('aCnsRe').addEventListener('click', function () {
+    if (!A.cur) return;
+    gs('consentReopen', A.cur).then(function (l) { A.list = l; aOpen(A.cur); amsg('次に顧問先が開いたとき 同意の画面が出ます。', 'ok'); }, function (e) { amsg(e.message, 'err'); });
+  });
+  $('aCnsVerify').addEventListener('click', function () {
+    const out = $('aCnsOut'); out.hidden = false; out.textContent = '確かめています…';
+    gs('consentVerify').then(function (r) {
+      out.textContent = r.ok ? '同意ログ ' + r.n + '行：書き換えは見つかりませんでした（ハッシュの鎖が最後までつながっています）。'
+        : '同意ログ ' + r.n + '行のうち ' + r.bad.length + '行が合いません：\n' + r.bad.map(function (b) { return b.row + '行目 ' + b.id + '：' + b.why; }).join('\n');
+    }, function (e) { out.textContent = e.message; });
+  });
   function aPreview() {
     const p = $('aPreview'); p.textContent = '';
     let list = boxesOf($('aBoxes').value);
     const auto = !list.length;
     if (auto) list = ['現金の領収書', '通帳'];
     const hid = hiddenOf($('aBoxes').value);
-    list.concat(['その他']).forEach(function (b, i) { p.appendChild(el('span', (auto || i === list.length ? 'auto' : '') + (!auto && (hid[b] || hidUnder(hid, b)) ? ' off' : '') || null, b.split('/').join(' › '))); });
+    list.concat([MYNUM_BOX, 'その他']).forEach(function (b, i) { p.appendChild(el('span', (auto || i >= list.length ? 'auto' : '') + (!auto && (hid[b] || hidUnder(hid, b)) ? ' off' : '') || null, b.split('/').join(' › '))); });
     aTreeDraw();
   }
   /* ---- 箱の木（箱の中に箱）。中身は aBoxes（1行1つの道すじ）と同じものを持つ ---- */
@@ -7133,7 +7190,8 @@
     e.preventDefault();
     if (A.busy) return;
     const o = { code: ccode($('aCode').value), fy: $('aFy').value, name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
-      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew, email: $('aEmail').value.trim(), spot: A.spot || {}, appUrl: $('aAppUrl').value.trim(), appName: $('aAppName').value.trim(), kind: $('aKind').value };
+      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew, email: $('aEmail').value.trim(), spot: A.spot || {}, appUrl: $('aAppUrl').value.trim(), appName: $('aAppName').value.trim(), kind: $('aKind').value,
+      repTitle: $('aRepTitle').value.trim(), repName: $('aRepName').value.trim(), explainer: $('aExplainer').value.trim() };
     A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
     gs('adminSave', o).then(function (l) {
       A.list = l; A.busy = false; $('aSave').disabled = false;
