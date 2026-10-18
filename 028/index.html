@@ -10,7 +10,7 @@
 <!-- ★ この画面の版。pages.yml が公開のときに【そのコミットの時刻】を刷り込む。
      同じ値の version.txt を隣に置いて、画面が1分おきに見にいく（appPagesWatch）。
      ここが空のままなら、画面は何も見にいかない（手で開いたときなど） -->
-<script>window.__PAGE_VER='1790748438';/*PAGE_VER*/</script>
+<script>window.__PAGE_VER='1792303798';/*PAGE_VER*/</script>
 <!-- ==================================================================
      GitHub Pages から配るときだけ、ここが index.html の <head> に入ります。
      GAS から配るときは入りません（要らないものを読み込ませないため）。
@@ -181,6 +181,15 @@ header{
   font-family:inherit;font-weight:900;font-size:14px;letter-spacing:.04em;
   cursor:pointer;box-shadow:var(--sh);transition:transform .16s var(--ease)}
 .gear:active{transform:scale(.94)}
+/* ★★ 資料回収アプリへ行き来する（2026-10-18。憲法「専用アプリと資料回収アプリの行き来」）
+     見出しの右端（［設定］の左どなり）。見出しは sticky なので、どこまでスクロールしても右上に居る。
+     ［設定］が右上の角を取っているので、position:fixed で重ねない（かぶって押せなくなる） */
+.tocollect{margin-left:auto;flex:none;font-family:inherit;font-size:13px;font-weight:900;
+  padding:6px 11px;border-radius:999px;background:var(--surface);color:var(--paper);
+  border:1.5px solid var(--line);text-decoration:none;white-space:nowrap;line-height:1.2;box-shadow:var(--sh)}
+.tocollect[hidden]{display:none}
+.tocollect:not([hidden]) ~ .gear{margin-left:0}
+@media (max-width:380px){ .hd-row{flex-wrap:wrap;row-gap:6px} }
 .gear[aria-pressed="true"]{background:var(--surface);color:var(--brass)}
 .unitsel{display:flex;gap:6px;margin-top:6px;overflow-x:auto;padding-bottom:3px;
   scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
@@ -1861,6 +1870,7 @@ button.goled:active{background:#F3F1EA}
       </svg>
       <span class="wm"><b>Refrain</b><em>CAFE &amp; BAR</em></span>
     </div>
+    <a class="tocollect" id="toCollect" hidden>📷 資料回収へ</a>
     <button class="gear" id="gearBtn" aria-pressed="false">設定</button>
   </div>
   <div class="unitwrap" id="unitwrap">
@@ -4522,7 +4532,7 @@ function applyRole(){
      画面（Pages）は main に入るとすぐ届くが、サーバ（GAS）はデプロイ係の反映が要る。
      サーバが古いままだと、保存が通らない・新しい欄が空（—）になる。
      **黙って壊れたように見せない。はっきり「サーバがまだ古い」と言う** */
-var SERVER_WANT = 20261001;
+var SERVER_WANT = 20261018;
 function srvCheck_(build){
   if(!LIVE && !WEB2) return;
   var old = !(Number(build)>=SERVER_WANT);
@@ -4538,7 +4548,9 @@ function srvCheck_(build){
 }
 var BOOT_KEY='rf_boot_v1';
 function bootSave(b){
-  try{ localStorage.setItem(BOOT_KEY, JSON.stringify({at:Date.now(), b:b})); }catch(e){}
+  /* 資料回収の提出URL（合図入り）は端末の控えに残さない。関所を通った返事のときだけ出す */
+  try{ var c={}; for(var k in b){ if(k!=='collectUrl') c[k]=b[k]; }
+       localStorage.setItem(BOOT_KEY, JSON.stringify({at:Date.now(), b:c})); }catch(e){}
 }
 function bootLoad(){
   try{
@@ -4567,12 +4579,22 @@ function bootRetrySoon_(){
     try{ bootGo(); }catch(e){}
   }, w);
 }
+/* ★ 資料回収アプリへ（提出URL は関所を通ったあとにだけ届く。資料回収の画面以外へは飛ばない） */
+function showCollect_(b){
+  try{
+    var a=$('toCollect'); if(!a) return;
+    var cu=String((b&&b.collectUrl)||'');
+    if(/^https:\/\/(ishii-office\.github\.io\/apps\/collect\/|script\.google\.com\/)/.test(cu)){ a.href=cu; a.hidden=false; }
+    else { a.removeAttribute('href'); a.hidden=true; }
+  }catch(e){}
+}
 function bootGo(){
 call('getBootstrap').then(function(b){
   if(!b || !b.units) throw new Error('サーバから空の返事が返りました');
   S.boot=b; S.stale=false; _bootRetry=0;
   bootSave(b);
   srvCheck_(b.build);
+  showCollect_(b);
 
   applyRole();
   buildUnitSelector();
@@ -6177,7 +6199,7 @@ function reloadBoot(){
   return call('getBootstrap').then(function(nb){
     /* 空の返事で上書きしない。上書きすると、このあと全部が null を触って落ちる */
     if(!nb || !nb.units) throw new Error('店舗の一覧を読めませんでした。開き直してください');
-    S.boot=nb; bootSave(nb);
+    S.boot=nb; bootSave(nb); showCollect_(nb);
     buildUnitSelector();
     buildUnitList(); buildBankList(); buildStaffList(); buildEventUnits(); drawEventList();
 
