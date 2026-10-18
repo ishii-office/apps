@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792311732;</script>
+<script>window.__PAGE_VER=1792360952;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1222,10 +1222,10 @@
       <div class="f"><label for="aEmail">顧問先メール（資料のお願い・お知らせを送る先）</label><input id="aEmail" maxlength="300" placeholder="例 keiri@example.co.jp（何人かのときは カンマで区切る）"></div>
       <div class="f"><label>利用規約・AI 利用の同意（顧問先が はじめに開いたとき 同意の画面が出ます。同意するまで 送れません）</label>
         <div class="acns">
-          <p class="st" id="aCnsSt">新しい顧問先は 登録したあと 同意の画面が出ます</p>
+          <p class="st" id="aCnsSt">登録したあと、代表者の役職・氏名・説明担当者を入れて［保存］→［同意の画面を出す］</p>
           <div class="row3"><label>代表者の役職<input id="aRepTitle" maxlength="40" placeholder="例 代表取締役"></label><label>代表者氏名<input id="aRepName" maxlength="60" placeholder="例 山田 太郎"></label><label>説明担当者（事務所）<input id="aExplainer" maxlength="60" placeholder="例 石井 重洋"></label></div>
-          <div class="hint">会社名（＝顧問先名）・役職・代表者氏名・控えのメール（顧問先メールの1つめ）は 同意の画面に 先に印字されます（顧問先が直せます）。説明担当者は 顧問先には入れさせず、ここで入れたものが 同意ログに残ります。</div>
-          <div class="btns" id="aCnsBtns" hidden><button type="button" class="btn ghost sm" id="aCnsLog">同意の記録を見る</button><button type="button" class="btn ghost sm" id="aCnsWd">撤回を記録する</button><button type="button" class="btn ghost sm" id="aCnsRe" hidden>もう一度 同意をお願いする</button><button type="button" class="btn ghost sm" id="aCnsVerify">同意ログの書き換えを確かめる</button></div>
+          <div class="hint">［同意の画面を出す］を押すまで、顧問先の画面には 同意の画面は出ません（今までどおり使えます）。導入に行くときに 代表者の役職・氏名・説明担当者を入れて［保存］し、その場で押してください。<br>会社名（＝顧問先名）・役職・代表者氏名・控えのメール（顧問先メールの1つめ）は 同意の画面に 先に印字されます（顧問先が直せます）。説明担当者は 顧問先には入れさせず、ここで入れたものが 同意ログに残ります。</div>
+          <div class="btns" id="aCnsBtns" hidden><button type="button" class="btn ghost sm" id="aCnsLog">同意の記録を見る</button><button type="button" class="btn ghost sm" id="aCnsWd">撤回を記録する</button><button type="button" class="btn sm" id="aCnsRe" hidden>同意の画面を出す</button><button type="button" class="btn ghost sm" id="aCnsVerify">同意ログの書き換えを確かめる</button></div>
           <div class="log" id="aCnsOut" hidden></div>
         </div></div>
       <div class="f"><label for="aAppUrl">専用アプリ（あれば。顧問先の画面に［↗ ○○へ］が出て 行き来できる）</label>
@@ -6885,7 +6885,7 @@
       b.appendChild(el('span', 'code', c.code));
       const kd = corpKindOf(c), kb = el('span', 'kind ' + (kd === '法人' ? 'corp' : 'ind'), kd); if (!c.kindSet) kb.title = '名前から当てています（設定で決められます）'; b.appendChild(kb);
       b.appendChild(el('span', 'nm', c.name));
-      const cs = c.consent || {}; if (c.issued && (cs.type === '撤回' || cs.need)) { const t = el('span', 'cns ' + (cs.type === '撤回' ? 'wd' : 'need')); t.dataset.t = cs.type === '撤回' ? 'AI撤回' : '同意まだ'; t.title = cs.type === '撤回' ? 'AI 等の利用への同意を撤回しています（AI 下書きは使えません）' : '利用規約・AI 利用への同意がまだです（顧問先は まだ送れません・AI 下書きも使えません）'; b.appendChild(t); }
+      const cs = c.consent || {}; if (c.issued && !(cs.type === '同意' && !cs.need)) { const wd = cs.type === '撤回', wait = cs.need; const t = el('span', 'cns ' + (wd ? 'wd' : 'need')); t.dataset.t = wd ? 'AI撤回' : wait ? '同意待ち' : '同意まだ'; t.title = wd ? 'AI 等の利用への同意を撤回しています（AI 下書きは使えません）' : wait ? '同意の画面を出しています。顧問先が同意するまで 送れません・AI 下書きも使えません' : 'まだ 同意の画面を出していません（AI 下書きは使えません）'; b.appendChild(t); }
       if (!c.active) b.appendChild(el('span', 'off', c.issued ? '止めています' : 'URL未発行'));
       else if (c.fy) { const f = el('span', 'fy', c.fy + '月決算'); fyStyle(f, c.fy); b.appendChild(f); }
       fyStyle(li, c.fy);
@@ -7074,13 +7074,15 @@
   function aCnsShow(c) {
     const st = $('aCnsSt'), cs = (c && c.consent) || null;
     $('aCnsOut').hidden = true; $('aCnsBtns').hidden = !c;
-    if (!c) { st.className = 'st'; st.textContent = '新しい顧問先は 登録したあと 同意の画面が出ます'; return; }
+    if (!c) { st.className = 'st'; st.textContent = '登録したあと、代表者の役職・氏名・説明担当者を入れて［保存］→［同意の画面を出す］'; return; }
     const at = String((cs && cs.at) || '').replace('T', ' ').replace(/\+09:00$/, '');
     if (cs && cs.type === '撤回') { st.className = 'st wd'; st.textContent = 'AI 等の利用への同意を 撤回しています（' + at + '）。AI 下書きは使えません。'; }
     else if (cs && cs.type === '同意' && !cs.need) { st.className = 'st ok'; st.textContent = '✓ 同意済み（第' + cs.ver + '版・' + at + '・' + (cs.rep || '') + '）'; }
     else if (cs && cs.type === '同意') { st.className = 'st need'; st.textContent = '前の版（第' + cs.ver + '版）に同意済み。新しい版（第' + cs.cur + '版）への同意が まだです（次に開いたとき 同意の画面が出ます）'; }
-    else { st.className = 'st need'; st.textContent = 'まだ同意していません（顧問先が開くと 同意の画面が出ます。同意するまで 送れません・AI 下書きも使えません）'; }
-    $('aCnsWd').hidden = !(cs && cs.type === '同意'); $('aCnsRe').hidden = !(cs && cs.type === '撤回');
+    else if (cs && cs.type === '同意依頼') { st.className = 'st need'; st.textContent = '同意の画面を出しています（' + at + '）。顧問先が開くと出ます。同意するまで 送れません・AI 下書きも使えません'; }
+    else { st.className = 'st need'; st.textContent = 'まだ 同意の画面を出していません（顧問先は今までどおり使えます。AI 下書きは使えません）'; }
+    $('aCnsWd').hidden = !(cs && cs.type === '同意'); $('aCnsRe').hidden = !(!cs || cs.type === '' || cs.type === '撤回');
+    $('aCnsRe').textContent = cs && cs.type === '撤回' ? 'もう一度 同意の画面を出す' : '同意の画面を出す';
   }
   $('aCnsLog').addEventListener('click', function () {
     if (!A.cur) return; const out = $('aCnsOut'); out.hidden = false; out.textContent = '読み込み中…';
@@ -7096,7 +7098,7 @@
   });
   $('aCnsRe').addEventListener('click', function () {
     if (!A.cur) return;
-    gs('consentReopen', A.cur).then(function (l) { A.list = l; aOpen(A.cur); amsg('次に顧問先が開いたとき 同意の画面が出ます。', 'ok'); }, function (e) { amsg(e.message, 'err'); });
+    gs('consentRequest', A.cur).then(function (l) { A.list = l; aOpen(A.cur); aDraw(); amsg('同意の画面を出しました。顧問先が開く（開き直す）と出ます。', 'ok'); }, function (e) { amsg(e.message, 'err'); });
   });
   $('aCnsVerify').addEventListener('click', function () {
     const out = $('aCnsOut'); out.hidden = false; out.textContent = '確かめています…';
