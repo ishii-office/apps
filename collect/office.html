@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792295545;</script>
+<script>window.__PAGE_VER=1792298470;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -363,8 +363,10 @@
   /* 顧問先 */
   #paneClients { display: grid; grid-template-columns: 340px 1fr; }
   .cl-side { border-right: 1px solid var(--line); background: var(--paper); display: flex; flex-direction: column; min-height: 0; }
-  .cl-top { padding: 10px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; }
-  .cl-top input { flex: 1; min-width: 0; }
+  .cl-top { padding: 10px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; }
+  /* ★ 検索は1行まるごと。ボタンはその下に折り返して並べる（ボタンを足しても見切れない。2026-10-18） */
+  .cl-top input { flex: 1 1 100%; min-width: 0; }
+  .cl-top button { flex: 1 1 auto; white-space: nowrap; }
   #alist { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; }
   #alist li button { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 10px 12px; display: flex; gap: 8px; align-items: baseline; }
   #alist li button[aria-current="true"] { background: var(--sel); }
@@ -1176,7 +1178,7 @@
     <div class="cl-top">
       <input id="aq" type="search" placeholder="コード・名前で探す" aria-label="顧問先を探す">
       <button type="button" class="primary" id="aNew">＋ 新しい顧問先</button>
- <button type="button" class="btn ghost sm" id="iOpen" title="請求書を作って PDF にする（顧問先の画面には まだ出しません）">🧾 請求書</button>
+      <button type="button" class="btn ghost sm" id="iOpen" title="請求書を作って PDF にする（顧問先の画面には まだ出しません）">🧾 請求書</button>
       <button type="button" class="btn ghost sm" id="mOpen" title="顧問先メールへ 資料のお願い・年末調整のお知らせなどを送る">📨 お願いメール</button>
     </div>
     <div class="cl-mode">
@@ -1196,6 +1198,9 @@
       <div class="f"><label for="aName">顧問先名</label><input id="aName" maxlength="60" required></div>
       <div class="f"><label for="aFy">決算月</label><select id="aFy"><option value="">（決めていない）</option><option value="1">1月決算</option><option value="2">2月決算</option><option value="3">3月決算</option><option value="4">4月決算</option><option value="5">5月決算</option><option value="6">6月決算</option><option value="7">7月決算</option><option value="8">8月決算</option><option value="9">9月決算</option><option value="10">10月決算</option><option value="11">11月決算</option><option value="12">12月決算</option></select></div>
       <div class="f"><label for="aEmail">顧問先メール（資料のお願い・お知らせを送る先）</label><input id="aEmail" maxlength="300" placeholder="例 keiri@example.co.jp（何人かのときは カンマで区切る）"></div>
+      <div class="f"><label for="aAppUrl">専用アプリ（あれば。顧問先の画面に［↗ ○○へ］が出て 行き来できる）</label>
+        <div class="url"><input id="aAppName" maxlength="30" placeholder="名前 例 Bar ALLURE" style="max-width:180px"><input id="aAppUrl" maxlength="300" placeholder="URL 例 https://ishii-office.github.io/apps/079/"></div>
+        <div class="hint">事務所のアプリ（https://ishii-office.github.io/apps/…）か GAS のURLだけ。専用アプリの側には、この顧問先の提出URLを入れてもらう（憲法「専用アプリと資料回収アプリの行き来」）。</div></div>
       <div class="f"><label for="aStaff">担当者メール</label><input id="aStaff" type="email" maxlength="120" placeholder="（空なら、毎朝の通知は事務所の代表へ）"></div>
       <div class="f">
         <label>箱（資料の種類・口座・カード）　<small class="muted">箱の中に箱も作れます（フォルダと同じ）</small></label>
@@ -1585,7 +1590,7 @@
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
   }
-  function signOut(msg) { TOK = ''; lsDel(LS_TOK); lsDel(LS_BOOT); S.started = false; S.booted = false; showGate(msg || ''); }
+  function signOut(msg) { TOK = ''; lsDel(LS_TOK); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
   $('signOut').addEventListener('click', function () { signOut('ログアウトしました。'); });
   $('gate').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -6784,10 +6789,40 @@
   /* ================= 顧問先 ================= */
   const A = { list: [], cur: null, isNew: false, busy: false };
   function amsg(t, kind) { $('aMsg').textContent = t || ''; $('aMsg').className = 'pagemsg' + (kind ? ' ' + kind : ''); }
+  /* ★★ 顧問先の一覧（2026-10-18）：前に読んだ並びで【まず描く】。届いたら差し替える。
+       通信が1回こけた（Failed to fetch・GAS の起こし直し）くらいでは あきらめず 1.2秒 → 3秒 で読み直す。
+       それでもだめなら［もう一度読む］を出す。同じ読み込みが重なったら1本にまとめる。
+       ★ URL（顧問先のトークン入り）は端末に残さない（url を外して覚える） */
+  const LS_ALIST = 'collect_office_alist';
+  let A_LOADING = null;
+  function aCacheSave(l) { try { lsSet(LS_ALIST, JSON.stringify((l || []).map(function (c) { const o = Object.assign({}, c); delete o.url; return o; }))); } catch (e) {} }
+  function aCacheLoad() { try { const v = JSON.parse(lsGet(LS_ALIST) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+  function aLoadErr(msg) {
+    const ul = $('alist');
+    const li = el('li', 'empty', (A.list.length ? '新しい一覧が読めませんでした（前に読んだ一覧を出しています）。' : '顧問先の一覧が読めませんでした。') + msg + ' ');
+    const b = el('button', 'btn sm', 'もう一度読む'); b.type = 'button'; b.id = 'aRetry';
+    b.addEventListener('click', function () { b.disabled = true; b.textContent = '読んでいます…'; aLoad(); });
+    li.appendChild(b);
+    if (A.list.length) { aDraw(); ul.insertBefore(li, ul.firstChild); } else { ul.textContent = ''; ul.appendChild(li); }
+  }
   function aLoad() {
-    return gs('adminList').then(function (l) { A.list = l; aDraw(); }, function (e) {
-      const ul = $('alist'); ul.textContent = ''; ul.appendChild(el('li', 'empty', e.message));
-    });
+    if (A_LOADING) return A_LOADING;
+    if (!A.list.length) {
+      const c = aCacheLoad();
+      if (c.length) { A.list = c; aDraw(); }
+      else { const ul = $('alist'); ul.textContent = ''; ul.appendChild(el('li', 'empty', '読んでいます…')); }
+    }
+    const waits = [1200, 3000];
+    const once = function (n) {
+      return gs('adminList').catch(function (e) {
+        if (n >= waits.length || /ログイン|暗証番号|権限/.test(e.message)) throw e;
+        return new Promise(function (r) { setTimeout(r, waits[n]); }).then(function () { return once(n + 1); });
+      });
+    };
+    A_LOADING = once(0).then(function (l) {
+      A_LOADING = null; A.list = l; aCacheSave(l); aDraw();
+    }, function (e) { A_LOADING = null; aLoadErr(e.message); });
+    return A_LOADING;
   }
   /* ★ 顧問先の並び（2026-10-13）：ふだんは番号順。つかんで動かすと その順（全部の担当者で同じ）。決算月ごとに分けて見ることもできる */
   /* 開いた直後（前に読んだもので描くとき）にも呼ばれるので 定数を使わない */
@@ -6951,7 +6986,7 @@
     $('aTitle').textContent = c.code + '　' + c.name;
     $('aForm').hidden = false;
     $('aCode').value = c.code; $('aCode').readOnly = true;
-    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; A.spot = Object.assign({}, c.spot || {}); $('aFy').value = c.fy ? String(c.fy) : '';
+    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); $('aFy').value = c.fy ? String(c.fy) : '';
     $('aBoxes').value = c.boxesRaw ? c.boxes.map(function (b) { return ((c.hidden || []).indexOf(b) >= 0 ? '~' : '') + b; }).join('\n') : '';
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     aThemeSet(c.theme || 'green');
@@ -6964,7 +6999,7 @@
     A.cur = null; A.isNew = true;
     $('aTitle').textContent = '新しい顧問先';
     $('aForm').hidden = false;
-    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail'].forEach(function (k) { $(k).value = ''; }); A.spot = {};
+    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName'].forEach(function (k) { $(k).value = ''; }); A.spot = {};
     $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false; aThemeSet('green'); aLogoShow(null);
     $('aActiveRow').hidden = true; $('aUrlRow').hidden = true;
     $('aSave').textContent = '登録して URL を作る';
@@ -7077,7 +7112,7 @@
     e.preventDefault();
     if (A.busy) return;
     const o = { code: ccode($('aCode').value), fy: $('aFy').value, name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
-      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew, email: $('aEmail').value.trim(), spot: A.spot || {} };
+      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew, email: $('aEmail').value.trim(), spot: A.spot || {}, appUrl: $('aAppUrl').value.trim(), appName: $('aAppName').value.trim() };
     A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
     gs('adminSave', o).then(function (l) {
       A.list = l; A.busy = false; $('aSave').disabled = false;
