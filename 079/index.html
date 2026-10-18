@@ -716,7 +716,7 @@ var _authBooted=false;
 window.SEASON_MARK = 'ALLURE';
 window.SEASON_MARK_STYLE   = 'matelasse';            // CHANEL のマトラッセふう（社長の好み）
 window.SEASON_MARK_COLOR   = '#6b5430';              // 縫い目の色
-window.SEASON_MARK_OPACITY = .30;                    // 柄の濃さ
+window.SEASON_MARK_OPACITY = .44;                    // 柄の濃さ
 window.SEASON_SKY_OPACITY  = .32;                    // 季節の絵は脇役
 window.SEASON_SHADE        = 'rgba(158,128,82,.15)'; // 地をタンに。濃くしすぎると柄との差が縮む
 var LIVE = (function(){
@@ -3117,11 +3117,11 @@ window.addEventListener('DOMContentLoaded', function(){
       function tag(cx, cy){
         return '<text x="'+cx+'" y="'+cy+'" text-anchor="middle"'
           + ' font-family="Times New Roman,Georgia,serif" font-size="'+FS+'" font-weight="bold"'
-          + ' letter-spacing="'+SP+'" fill="'+col+'" opacity="0.6">'+ xmlEsc(word) +'</text>';
+          + ' letter-spacing="'+SP+'" fill="'+col+'" opacity="0.9">'+ xmlEsc(word) +'</text>';
       }
       svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'">'
         + seam(-1.2, -1.2, '#ffffff', 0.85, 2.2)   /* 持ち上がって見える白 */
-        + seam(0, 0, col, 1, 1.5)                  /* 縫い目 */
+        + seam(0, 0, col, 1, 1.9)                  /* 縫い目 */
         + tag(W/2, H/2 + FS*0.36)                  /* 中央の菱形 */
         + tag(0, 0 + FS*0.36) + tag(W, 0 + FS*0.36)        /* 四隅の菱形 */
         + tag(0, H + FS*0.36) + tag(W, H + FS*0.36)
