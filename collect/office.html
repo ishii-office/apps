@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792360952;</script>
+<script>window.__PAGE_VER=1792394260;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -218,6 +218,11 @@
   .dpz .cbox { border: 1.5px solid var(--dline); border-radius: 12px; background: #fff; padding: 14px; margin-top: 12px; }
   .dpz .muted { color: #888; }
 
+  .dpz .spsum { margin: 14px 0 6px; padding: 10px 12px; border: 1.5px solid #c8b06a; border-radius: 10px; background: #fffaf0; display: flex; flex-direction: column; gap: 5px; font-size: 13px; }
+  .dpz .spsum > b { font-size: 14px; }
+  .dpz .spsum .spl { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .dpz .spnote { display: block; margin-top: 6px; padding: 6px 9px; border-radius: 8px; background: #fff3cd; color: #6b4d00; font-size: 13px; font-weight: 700; }
+  .dpz .jsprc { display: inline-block; margin-top: 3px; padding: 1px 8px; border: 1px solid #c8b06a; border-radius: 999px; background: #fffaf0; color: #6b4d00; font-size: 12px; cursor: pointer; }
   .dpz .jdsep { display: flex; align-items: center; gap: 10px; margin: 18px 0 8px; }
   .dpz .jdsep b { font-size: 20px; font-weight: 800; color: var(--ai); font-variant-numeric: tabular-nums; }
   .dpz .jdsep span { font-size: 13px; color: #888; }
@@ -2449,10 +2454,62 @@
   setInterval(function () { if (POP && POP.closed) { POP = null; jlayPaint(); } }, 1000);
   window.addEventListener('beforeunload', function () { if (POP && !POP.closed) try { POP.close(); } catch (e) {} });
 
+  /* ================= ★★ 背骨と領収書の突き合わせ（2026-10-19） =================
+     背骨＝出納帳・カード明細・通帳（明細として読んだ下書き）。その1行が仕訳1件。
+     領収書の下書き（日付・金額）を【同じ月分】の背骨の行に 金額が同じ＆日付が近い で当てる（AI ではなく計算）。
+     当たった領収書は【証憑として見るだけ】。仕訳は背骨の行で入れる（二重計上にしない）。
+     1回目は ±3日、2回目は ±10日（候補が1つに絞れたときだけ）。1つの行に 領収書は1枚 */
+  function dayNo(s) { const m = String(s || '').match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 : null; }
+  function spineMatch(items, ai) {
+    const per = {}, out = { rcpt: {}, line: {}, sum: {} };
+    (items || []).forEach(function (it) {
+      const d = (ai || {})[it.id]; if (!d || d.err || !it.period) return;
+      const P = per[it.period] = per[it.period] || { lines: [], rc: [] };
+      if (d.multi) (d.lines || []).forEach(function (l, i) { const a = Math.abs(Math.round(Number(l.amount) || 0)); if (a && l.dir !== '入') P.lines.push({ sid: it.id, box: it.box, ln: i, day: dayNo(l.date), date: l.date || '', amount: a, desc: l.desc || '' }); });
+      else if (!spineBox(it.box) && !isSheetFile(it)) { const a = Math.abs(Math.round(Number(d.amount) || 0)); if (a) P.rc.push({ id: it.id, box: it.box, day: dayNo(d.date), date: d.date || '', amount: a, party: d.party || '' }); }
+    });
+    Object.keys(per).forEach(function (pk) {
+      const P = per[pk]; if (!P.lines.length) return;
+      const used = {};
+      [3, 10].forEach(function (win, pass) {
+        P.rc.forEach(function (r) {
+          if (out.rcpt[r.id]) return;
+          const c = P.lines.filter(function (l) { return !used[l.sid + '|' + l.ln] && l.amount === r.amount && (r.day == null || l.day == null ? pass === 1 : Math.abs(l.day - r.day) <= win); });
+          if (!c.length || (pass === 1 && c.length > 1)) return;
+          c.sort(function (a, b) { return Math.abs((a.day || 0) - (r.day || 0)) - Math.abs((b.day || 0) - (r.day || 0)); });
+          const l = c[0], k = l.sid + '|' + l.ln; used[k] = 1;
+          out.rcpt[r.id] = l; out.line[k] = r.id;
+        });
+      });
+      out.sum[pk] = { lines: P.lines.length, hit: Object.keys(used).length,
+        left: P.rc.filter(function (r) { return !out.rcpt[r.id]; }),
+        bare: P.lines.filter(function (l) { return !used[l.sid + '|' + l.ln]; }) };
+    });
+    return out;
+  }
+  function spineSumEl(pk) {
+    const s = S.spm && S.spm.sum[pk]; if (!s) return null;
+    const w = el('div', 'spsum');
+    w.appendChild(el('b', null, '🧾 背骨（出納帳・カード明細）と領収書'));
+    w.appendChild(el('span', null, '行 ' + s.lines + '　領収書が当たった ' + s.hit + '　領収書のない行 ' + s.bare.length + '　どの行にも当たらない領収書 ' + s.left.length));
+    if (s.left.length) {
+      const d = el('div', 'spl'); d.appendChild(el('span', 'nt', '当たらない領収書（記帳漏れ・別の払い方・別の月 のどれか）：'));
+      s.left.forEach(function (r) { const b = el('button', 'aialt', (r.date ? r.date.slice(5).replace('-', '/') + ' ' : '') + yen(r.amount) + '円' + (r.party ? ' ' + r.party : '')); b.type = 'button'; b.dataset.a = 'spgo'; b.dataset.id = r.id; d.appendChild(b); });
+      w.appendChild(d);
+    }
+    if (s.bare.length) w.appendChild(el('div', 'nt', '領収書のない行は 取引先と過去の仕訳で決めます。本則課税なら インボイス（帳簿のみの特例・経過措置）を確かめてください。'));
+    return w;
+  }
+  function spineNoteEl(it) {
+    const l = S.spm && S.spm.rcpt[it.id]; if (!l) return null;
+    return el('div', 'spnote', '🧾 この領収書は「' + l.box + '」の ' + (l.date ? l.date.replace(/-/g, '/') + ' ' : '') + yen(l.amount) + '円 の行（' + (l.ln + 1) + '行目' + (l.desc ? '・' + l.desc : '') + '）に当たります。仕訳はその行で入れるので、ここは証憑として見るだけ（二重に入れない）。');
+  }
+
   /* 一覧を組む。届いた日ごとに区切りを入れる */
   function render() {
     jlayPaint();
     /* 月分 → 箱 → 届いた順 に並べ、「2026年8月分 ／ 現金の領収書」で区切る */
+    try { S.spm = spineMatch(S.items, S.ai); } catch (e) { S.spm = null; }
     S.view = S.items.filter(function (it) { return (!S.box || it.box === S.box) && perHit(it); })
       .sort(function (a, b) { return a.period !== b.period ? (a.period < b.period ? -1 : 1) : a.box !== b.box ? boxIdx(a.box) - boxIdx(b.box) : a.t - b.t; });
     /* ★ 何枚かで1つの書類（2026-10-11）：1枚目を1件として並べ、2枚目からは その下に写真だけ出す */
@@ -2469,9 +2526,10 @@
     if (shotObs) shotObs.disconnect();
     counts();
     if (!S.view.length) { l.appendChild(el('div', 'cbox muted', S.st === 'todo' ? '未処理の写真はありません。おつかれさまでした。' : '写真がありません。')); return; }
-    let grp = '';
+    let grp = '', gper = null;
     S.view.forEach(function (it, i) {
       const gk = it.period + '|' + it.box;
+      if (it.period !== gper) { gper = it.period; const sp = spineSumEl(it.period); if (sp) l.appendChild(sp); }
       if (gk !== grp) {
         grp = gk;
         const sep = el('div', 'jdsep'); sep.appendChild(el('b', null, perLabel(it.period)));
@@ -2617,6 +2675,7 @@
     return b.t - a.t;
   }
   function docsDraw() {
+    try { wsRefresh(); } catch (e) {}
     const body = $('dBody'); body.textContent = '';
     if (dObs) dObs.disconnect();
     $('dTrash').hidden = !S.trashN && !S.trashView;
@@ -2656,6 +2715,11 @@
         const pb = el('button', 'dmon-b', 'PDF切り出し'); pb.type = 'button'; pb.title = 'この箱（中の箱も）の全部を1冊のPDFに';
         pb.addEventListener('click', function () { cutPdf(sub, boxLabel(bx)); });
         hd.appendChild(pb);
+        if (wsOk() && inBox.length) {
+          const wb = el('button', 'dmon-b', '🗗 別ウィンドウ'); wb.type = 'button'; wb.title = 'この箱を 大きな作業場（別の窓）で開く。並べ替え・まとめ・名前の書き換え・PDF。ほかの箱も 別の窓で並べて開けます';
+          wb.addEventListener('click', function () { if (!wsOpen('o:' + S.code + ':' + bx, wsOfficeAd(S.code, bx))) dcMsg('別の窓を開けませんでした。ブラウザの「ポップアップをブロック」を このページだけ許可してください。', true); });
+          hd.appendChild(wb);
+        }
       }
       sec.appendChild(hd);
       const pers = [];
@@ -2757,6 +2821,169 @@
     });
     dcBar();
   }
+  /* ================= ★★ 書類整理の作業場（別ウィンドウ。2026-10-19。DocuWorks の机の代わり） =================
+     パソコンで 箱ごとに［🗗 別ウィンドウ］。いくつでも並べて開ける（箱ごとに別の窓）。
+     窓の中は この画面が描く（ログインし直さない・データは この画面と同じものを使う）。窓の中で変えたことは この画面にもすぐ映る。
+       ・書類（まとめたものは その束で1つ）を大きく並べる。つかんで 左右の端へ落とす＝並べ替え／まん中へ落とす＝1つの書類に
+       ・小さいページを つかんで 同じ書類の中へ落とす＝ページの順番
+       ・名前を押して 書き換え → Enter（Drive のファイル名も変わる。中身は変わらない）
+       ・［⬇ PDF］は 押すと保存、つかんで デスクトップへ落とすと PDF
+     ad（どの画面か）が 中身と操作を渡す：items() / key / doc / pageN / per / perLabel / thumb / name / locked / need / reorder / join / pageOrder / rename / pdfBtn / pdfAll */
+  const WS = {};
+  function wsName(key) { let h = 0; for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0; return 'collect_ws_' + (h >>> 0).toString(36); }
+  function wsOk() { return !!(window.matchMedia && window.matchMedia('(min-width: 900px) and (pointer: fine)').matches); }
+  function wsOpen(key, ad) {
+    let o = WS[key];
+    if (o && o.win && !o.win.closed) { o.ad = ad; o.win.focus(); wsDraw(key); return true; }
+    const w = window.open('', wsName(key), 'width=1280,height=880');
+    if (!w) return false;
+    o = WS[key] = { win: w, ad: ad, drag: null, wait: false };
+    const d = w.document;
+    d.open();
+    d.write('<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title></title><style>' +
+      ':root{color-scheme:light}*{box-sizing:border-box}body{margin:0;font-family:"Hiragino Sans","Noto Sans JP",Meiryo,sans-serif;background:#eef1f4;color:#1d2733}' +
+      '.wsh{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 16px;background:#1f3a5f;color:#fff}.wsh h1{margin:0;font-size:18px}.wsh .n{font-size:13px;opacity:.85}.wsh .sp{flex:1}' +
+      '.wsh button{font:inherit;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #fff6;background:#fff;color:#1f3a5f;cursor:pointer}' +
+      '.wsnote{margin:0;padding:6px 16px;background:#fff8e6;color:#6b4d00;font-size:12px}.wsmsg{padding:6px 16px;font-size:13px;color:#0a5}.wsmsg.err{color:#c22}' +
+      '.wsp{padding:6px 16px 22px}.wsp h2{margin:14px 0 8px;font-size:16px;color:#1f3a5f}.wsg{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}' +
+      '.wc{position:relative;background:#fff;border:2px solid #d5dbe2;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;cursor:grab}.wc.lock{cursor:default;opacity:.92}' +
+      '.wc .im{height:230px;display:flex;align-items:center;justify-content:center;background:#f4f6f8;border-radius:8px;overflow:hidden}.wc .im img{max-width:100%;max-height:100%;object-fit:contain}.wc .im .k{font-size:13px;color:#667;white-space:pre-wrap;text-align:center;padding:8px}' +
+      '.wc .bd{position:absolute;top:12px;left:12px;background:#1f3a5f;color:#fff;font-size:12px;border-radius:999px;padding:2px 8px}.wc .st{position:absolute;top:12px;right:12px;background:#fff;border:1px solid #ccd;font-size:11px;border-radius:999px;padding:1px 7px}' +
+      '.wc input{font:inherit;font-size:14px;width:100%;padding:5px 7px;border:1px solid #c8d0d8;border-radius:6px}.wc input:focus{outline:2px solid #2a6fdb;border-color:#2a6fdb}.wc .ft{display:flex;align-items:center;gap:6px;font-size:12px;color:#667}.wc .ft .x{flex:1}' +
+      '.wc .pg{display:flex;gap:4px;overflow-x:auto}.wc .pg .p{flex:0 0 auto;width:44px;height:56px;border:1px solid #ccd;border-radius:4px;background:#f4f6f8 center/cover no-repeat;font-size:10px;display:flex;align-items:flex-end;justify-content:center;cursor:grab}' +
+      '.wc.zl{box-shadow:inset 6px 0 0 #2a6fdb}.wc.zr{box-shadow:inset -6px 0 0 #2a6fdb}.wc.zc{border-color:#e08a00;background:#fff6e5}.wc .p.zl{box-shadow:inset 4px 0 0 #2a6fdb}.wc .p.zr{box-shadow:inset -4px 0 0 #2a6fdb}' +
+      '.wc .hpdf{font:inherit;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid #1f3a5f;background:#fff;color:#1f3a5f;cursor:pointer}.empty{padding:40px;text-align:center;color:#778}' +
+      '</style></head><body><div id="ws"></div></body></html>');
+    d.close();
+    wsDraw(key);
+    return true;
+  }
+  function wsRefresh() { Object.keys(WS).forEach(function (k) { if (!WS[k].win || WS[k].win.closed) { delete WS[k]; return; } if (WS[k].ad.alive && !WS[k].ad.alive()) { try { WS[k].win.close(); } catch (e) {} delete WS[k]; return; } wsDraw(k); }); }
+  window.addEventListener('beforeunload', function () { Object.keys(WS).forEach(function (k) { try { if (WS[k].win && !WS[k].win.closed) WS[k].win.close(); } catch (e) {} }); });
+  function wsMsg(key, t, err) { const o = WS[key]; if (!o || o.win.closed) return; const m = o.win.document.getElementById('wsmsg'); if (m) { m.textContent = t || ''; m.className = 'wsmsg' + (err ? ' err' : ''); } }
+  function wsDraw(key) {
+    const o = WS[key]; if (!o || !o.win || o.win.closed) return;
+    const d = o.win.document, root = d.getElementById('ws'); if (!root) return;
+    if (d.activeElement && d.activeElement.tagName === 'INPUT') { o.wait = true; return; }   /* 名前を打っている最中は 描き直さない */
+    if (o.drag) { o.wait = true; return; }
+    o.wait = false;
+    const ad = o.ad, E = function (t, c, x) { const e = d.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+    const items = ad.items();
+    d.title = ad.title() + '｜書類整理';
+    const sy = o.win.scrollY, keep = (d.getElementById('wsmsg') || {}).textContent || '';
+    root.textContent = '';
+    const h = E('div', 'wsh'); h.appendChild(E('h1', null, ad.title()));
+    /* 書類（まとめたものは その束）に分ける */
+    const pers = [], byPer = {};
+    items.forEach(function (x) { const p = ad.per(x); if (!byPer[p]) { byPer[p] = []; pers.push(p); } byPer[p].push(x); });
+    pers.sort(function (a, b) { return a < b ? 1 : a > b ? -1 : 0; });
+    let nd = 0;
+    const docsOf = function (list) {
+      const out = [], at = {};
+      list.forEach(function (x) { const k = ad.doc(x); if (k && at[k] != null) { out[at[k]].push(x); return; } if (k) at[k] = out.length; out.push([x]); });
+      out.forEach(function (m) { m.sort(function (a, b) { return ad.pageN(a) - ad.pageN(b); }); });
+      return out;
+    };
+    const perDocs = pers.map(function (p) { const ds = docsOf(byPer[p]); nd += ds.length; return ds; });
+    h.appendChild(E('span', 'n', items.length + '枚・' + nd + '書類'));
+    h.appendChild(E('span', 'sp'));
+    if (ad.pdfEach && items.length) { const b = E('button', null, '1書類ごとに PDF'); b.type = 'button'; b.title = 'まとめた書類はその束で1つ、ほかは1枚ずつ PDF にして保存'; b.addEventListener('click', function () { ad.pdfEach(items); }); h.appendChild(b); }
+    if (ad.pdfOne && items.length) { const b = E('button', null, '全部を 1つのPDFに'); b.type = 'button'; b.addEventListener('click', function () { ad.pdfOne(items); }); h.appendChild(b); }
+    const cl = E('button', null, '閉じる'); cl.type = 'button'; cl.addEventListener('click', function () { o.win.close(); }); h.appendChild(cl);
+    root.appendChild(h);
+    root.appendChild(E('p', 'wsnote', 'つかんで 左右の端へ落とす＝並べ替え／まん中へ落とす＝1つの書類に／下の小さいページを つかむ＝ページの順番／名前を押して書き換え → Enter'));
+    root.appendChild(E('div', 'wsmsg', keep)).id = 'wsmsg';
+    const need = [];
+    if (!items.length) root.appendChild(E('div', 'empty', 'この箱には まだ何もありません。'));
+    pers.forEach(function (p, pi) {
+      const sec = E('div', 'wsp'); sec.appendChild(E('h2', null, ad.perLabel(p) + '（' + perDocs[pi].length + '書類）'));
+      const g = E('div', 'wsg');
+      perDocs[pi].forEach(function (mem) {
+        const lead = mem[0], lock = mem.some(ad.locked);
+        const c = E('div', 'wc' + (lock ? ' lock' : '')); c.draggable = !lock; c.dataset.k = ad.key(lead);
+        const im = E('div', 'im'), src = ad.thumb(lead);
+        if (src) { const i = E('img'); i.src = src; i.alt = ''; im.appendChild(i); } else { im.appendChild(E('div', 'k', ad.name(lead))); if (src === undefined) need.push(ad.key(lead)); }
+        c.appendChild(im);
+        if (mem.length > 1) c.appendChild(E('span', 'bd', '📎 ' + mem.length + '枚'));
+        if (ad.stat) { const s = ad.stat(lead); if (s) c.appendChild(E('span', 'st', s)); }
+        const inp = E('input'); const nm = ad.name(lead); const ext = (nm.match(/\.[A-Za-z0-9]{1,5}$/) || [''])[0];
+        inp.value = nm.slice(0, nm.length - ext.length); inp.disabled = !ad.rename || lock; inp.setAttribute('aria-label', '名前'); inp.title = '書き換えて Enter';
+        const commit = function () { const v = inp.value.trim(); if (!v || v === nm.slice(0, nm.length - ext.length)) { inp.value = nm.slice(0, nm.length - ext.length); return; } ad.rename(lead, v, function (t, err) { wsMsg(key, t, err); }); };
+        inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } if (e.key === 'Escape') { inp.value = nm.slice(0, nm.length - ext.length); inp.blur(); } });
+        inp.addEventListener('blur', function () { commit(); setTimeout(function () { if (o.wait) wsDraw(key); }, 0); });
+        inp.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+        c.appendChild(inp);
+        if (mem.length > 1) {
+          const pg = E('div', 'pg');
+          mem.forEach(function (x, i) {
+            const pp = E('div', 'p', String(i + 1)); pp.draggable = !lock; pp.dataset.k = ad.key(x);
+            const ps = ad.thumb(x); if (ps) pp.style.backgroundImage = 'url("' + ps + '")'; else if (ps === undefined) need.push(ad.key(x));
+            pp.addEventListener('dragstart', function (e) { e.stopPropagation(); o.drag = { page: x, mem: mem }; try { e.dataTransfer.setData('text/plain', 'p'); e.dataTransfer.effectAllowed = 'move'; } catch (q) {} });
+            pp.addEventListener('dragend', function () { o.drag = null; if (o.wait) wsDraw(key); });
+            pp.addEventListener('dragover', function (e) { const dg = o.drag; if (!dg || !dg.page || dg.mem !== mem || dg.page === x) return; e.preventDefault(); e.stopPropagation(); const r = pp.getBoundingClientRect(), before = e.clientX < r.left + r.width / 2; pp.classList.toggle('zl', before); pp.classList.toggle('zr', !before); });
+            pp.addEventListener('dragleave', function () { pp.classList.remove('zl', 'zr'); });
+            pp.addEventListener('drop', function (e) { const dg = o.drag; pp.classList.remove('zl', 'zr'); if (!dg || !dg.page || dg.mem !== mem || dg.page === x) return; e.preventDefault(); e.stopPropagation(); const r = pp.getBoundingClientRect(); o.drag = null; ad.pageOrder(dg.page, x, e.clientX < r.left + r.width / 2); });
+            pg.appendChild(pp);
+          });
+          c.appendChild(pg);
+        }
+        const ft = E('div', 'ft'); ft.appendChild(E('span', 'x', mem.length > 1 ? mem.length + 'ページ' : '1ページ'));
+        if (ad.pdfBtn) { const pb = ad.pdfBtn(mem); if (pb) ft.appendChild(pb); }
+        c.appendChild(ft);
+        c.addEventListener('dragstart', function (e) { if (o.drag) return; o.drag = { mem: mem }; try { e.dataTransfer.setData('text/plain', 'd'); e.dataTransfer.effectAllowed = 'move'; } catch (q) {} });
+        c.addEventListener('dragend', function () { o.drag = null; if (o.wait) wsDraw(key); });
+        const zone = function (e) { const r = c.getBoundingClientRect(), f = (e.clientX - r.left) / r.width; return f < 0.28 ? 'l' : f > 0.72 ? 'r' : 'c'; };
+        c.addEventListener('dragover', function (e) { const dg = o.drag; if (!dg || dg.page || dg.mem === mem) return; e.preventDefault(); const z = zone(e); c.classList.toggle('zl', z === 'l'); c.classList.toggle('zr', z === 'r'); c.classList.toggle('zc', z === 'c'); });
+        c.addEventListener('dragleave', function (e) { if (!c.contains(e.relatedTarget)) c.classList.remove('zl', 'zr', 'zc'); });
+        c.addEventListener('drop', function (e) {
+          const dg = o.drag; c.classList.remove('zl', 'zr', 'zc'); if (!dg || dg.page || dg.mem === mem) return; e.preventDefault();
+          const z = zone(e); o.drag = null;
+          if (z === 'c') { if (lock || dg.mem.some(ad.locked)) { wsMsg(key, '確定済みのものは まとめられません。', true); wsDraw(key); return; } ad.join([lead].concat(mem.slice(1), dg.mem)); }
+          else if (ad.per(dg.mem[0]) !== ad.per(lead)) { wsMsg(key, '並べ替えは 同じ月分の中だけです（別の月分へは まん中へ落として まとめるか、移すで）。', true); wsDraw(key); }
+          else ad.reorder(dg.mem, lead, z === 'l');
+        });
+        g.appendChild(c);
+      });
+      sec.appendChild(g); root.appendChild(sec);
+    });
+    o.win.scrollTo(0, sy);
+    if (need.length && ad.need) ad.need(need);
+  }
+  /* 事務所の 回収資料の作業場（顧問先 × 箱）。顧問先を切り替えたら その窓は閉じる（よその顧問先の資料を映さない） */
+  function wsOfficeAd(code, box) {
+    const nm = function (it) { return String(it.name || '').replace(/^\d{8}_\d{6}_/, ''); };
+    const cname = ((S.clients || []).find(function (x) { return x.code === code; }) || { name: '' }).name;
+    return {
+      alive: function () { return S.code === code; },
+      title: function () { return cname + '　' + boxLabel(box); },
+      items: function () { return S.code !== code ? [] : (S.docs || []).filter(function (it) { return it.box === box; }).sort(dSort); },
+      key: function (it) { return it.id; }, doc: function (it) { return it.set && it.setOf > 1 ? it.set : ''; }, pageN: function (it) { return it.setN || 0; },
+      per: function (it) { return it.period || ''; }, perLabel: function (p) { return perLabel(p); },
+      thumb: function (it) { return THUMB[it.id]; }, name: nm,
+      stat: function (it) { return stTag(it)[1]; }, locked: function (it) { return it.status === 'done'; },
+      need: function (ids) { wsThumbsO(ids); },
+      reorder: function (list, to, before) { dReorder(list, to.id, before); },
+      join: function (list) { dJoin(list.map(function (x) { return x.id; })); },
+      pageOrder: function (it, to, before) { dSetReorder(it, to.id, before); },
+      rename: function (it, v, say) {
+        const was = it.name, pre = (String(was || '').match(/^\d{8}_\d{6}_/) || [''])[0], ext = (String(was || '').match(/\.[A-Za-z0-9]{1,5}$/) || [''])[0];
+        const put = function (n) { [S.docs, S.items].forEach(function (L) { (L || []).forEach(function (y) { if (y.id === it.id) y.name = n; }); }); };
+        put(pre + v + ext); docsDraw();
+        gs('workRename', code, it.id, v).then(function (r) { put(pre + ((r && r.name) || (v + ext))); docsDraw(); say('名前を「' + ((r && r.name) || v + ext) + '」にしました。'); },
+          function (e) { put(was); docsDraw(); say('名前を変えられませんでした。' + e.message, true); });
+      },
+      pdfEach: function (items) { cutPdfEach(items); },
+      pdfOne: function (items) { cutPdf(items, boxLabel(box)); }
+    };
+  }
+  function wsThumbsO(ids) {
+    const need = ids.filter(function (id) { return !(id in THUMB) && !WSTH[id]; });
+    for (let i = 0; i < need.length; i += 40) {
+      const b = need.slice(i, i + 40); b.forEach(function (id) { WSTH[id] = 1; });
+      gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { delete WSTH[id]; THUMB[id] = (t && t[id]) || null; }); wsRefresh(); }, function () { b.forEach(function (id) { delete WSTH[id]; }); });
+    }
+  }
+  const WSTH = {};
   const D_ICON = '<svg class="dbox-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l2.2-4.4A1 1 0 0 1 6.1 4h11.8a1 1 0 0 1 .9.6L21 9"/><path d="M3 9h5l1.5 3h5L16 9h5v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>';
   const D_ICON_S = D_ICON.replace('dbox-i', 'dmon-i');
   /* ★ 5枚以上の書類（2026-10-15。顧問先の画面と同じ）：4枚を並べて、5枚目からは 束ねた紙（＋N枚）。押すと ひらく */
@@ -3401,6 +3628,13 @@
       im.src = src;
     });
   }
+  /* ★ 1書類ごとに PDF（2026-10-19。作業場から）。まとめた書類はその束で1つ、ほかは1枚ずつ */
+  async function cutPdfEach(items) {
+    const gs0 = dGroups(items);
+    if (gs0.length <= 1) { cutPdf(items, ''); return; }
+    for (let i = 0; i < gs0.length; i++) { await cutPdf(gs0[i], String(i + 1).padStart(2, '0') + '_' + String(gs0[i][0].name || '').replace(/^\d{8}_\d{6}_/, '').replace(/\.[^.]+$/, '')); await new Promise(function (ok) { setTimeout(ok, 350); }); }
+    dcMsg('PDFを ' + gs0.length + '個 切り出しました（1書類ごと）。ブラウザが「複数のファイルのダウンロード」を聞いたら［許可］を押してください。');
+  }
   async function cutPdf(items, tag) {
     if (!items.length) return;
     const btns = ['dPdfAll', 'dcPdf'].map($); btns.forEach(function (b) { b.disabled = true; });
@@ -3531,9 +3765,17 @@
   function lsJ(k) { try { return JSON.parse(lsGet(k) || '{}') || {}; } catch (e) { return {}; } }
   function lsSetJ(k, m, max) { const ks = Object.keys(m); if (max && ks.length > max) ks.slice(0, ks.length - max).forEach(function (x) { delete m[x]; }); lsSet(k, JSON.stringify(m)); }
   /* ★ 写真ごとの印（2026-10-14）：複数仕訳辞書で 行を入れた写真は 複数仕訳辞書のまま（1仕訳辞書には戻せない）。印が無ければ 箱の決め方 */
-  function isMulti(it) { const m = lsJ(LS_JMULTI); return !!(m[S.code + '|#' + it.id] && it.entries.length) || !!m[S.code + '|' + it.box]; }
+  /* ★ エクセル・CSV（現金出納帳など）は いつも明細として読む・出す（2026-10-18。サーバも そう読む） */
+  function isSheetFile(it) { return /\.(xlsx|xlsm|xls|csv)$/i.test(String((it && it.name) || '')); }
+  /* ★ 背骨の箱（2026-10-19）：通帳・カード・出納帳 の箱は 背骨（領収書を当てる側）。
+       カード・出納帳 の箱は はじめから明細（複数仕訳）として読む。［1仕訳辞書］に切り替えたら 0 を覚える。
+       通帳は いままでどおり［複数仕訳辞書］に切り替えてから（口座の決め方・残高合わせが その切り替えで始まるため） */
+  const SPINE_BOX_RE = /^(通帳|カード|クレジット|現金出納帳|出納帳)/, MULTI_DEF_RE = /^(カード|クレジット|現金出納帳|出納帳)/;
+  function spineBox(box) { return SPINE_BOX_RE.test(String(box || '')); }
+  function multiDef(box) { return MULTI_DEF_RE.test(String(box || '')); }
+  function isMulti(it) { if (isSheetFile(it)) return true; const m = lsJ(LS_JMULTI), k = S.code + '|' + it.box; if (m[S.code + '|#' + it.id] && it.entries.length) return true; if (m[k] === 0) return false; return !!m[k] || multiDef(it.box); }
   function multiLocked(it) { return !!lsJ(LS_JMULTI)[S.code + '|#' + it.id] && it.entries.length > 0; }
-  function setMulti(it, on) { const m = lsJ(LS_JMULTI), k = S.code + '|' + it.box; if (on) m[k] = 1; else delete m[k]; lsSetJ(LS_JMULTI, m); }
+  function setMulti(it, on) { const m = lsJ(LS_JMULTI), k = S.code + '|' + it.box; if (on) m[k] = 1; else if (multiDef(it.box)) m[k] = 0; else delete m[k]; lsSetJ(LS_JMULTI, m); }
   function lockMulti(it, on) { const m = lsJ(LS_JMULTI), k = S.code + '|#' + it.id; if (on) m[k] = 1; else delete m[k]; lsSetJ(LS_JMULTI, m); }
   function parseAmtS(v) { const t = half(String(v)).replace(/[,，\s円¥￥]/g, ''); if (!/^-?\d+$/.test(t)) return null; return Number(t); }
   /* 出納帳の口座：その写真の仕訳と 箱の辞書に出てくる 貸借対照表の科目（科目＋口座） */
@@ -4052,6 +4294,7 @@
   });
   jl.addEventListener('click', function (e) {
     const t = e.target.closest('[data-a]'); if (!t) return;
+    if (t.dataset.a === 'spgo') { const id = t.dataset.id; if (rowOf(id)) focusCard(id); else fmsg('その領収書は いまの絞り込み（箱・未処理/確定）の外です。［全部］にすると出ます。', 'err'); return; }
     const row = t.closest('.jdrow'); if (!row) return;
     const it = itemOf(row.dataset.id); if (!it) return;
     const a = t.dataset.a;
@@ -5217,6 +5460,7 @@
     }
     /* 押すと 何が効いたか（特徴ごとの ±%）を その場に出す（スマホは 指を置いても出ないので） */
     if (S.aiFeat && S.aiFeat[it.id]) b.appendChild(el('span', 'feat', aiFeatText(d)));
+    const spn = spineNoteEl(it); if (spn) b.appendChild(spn);
     if (d.multi && !isMulti(it)) b.appendChild(el('span', 'nt', '明細として読みました。上の［複数仕訳辞書］にすると 出納帳になります'));
     if (!d.multi && isMulti(it)) b.appendChild(el('span', 'nt', '1件の領収書として読みました。明細として読むときは［1仕訳辞書］のまま もう一度 AI で下書き'));
     return b;
@@ -5404,6 +5648,7 @@
       if (l.pat && l.pat.kind !== 'ai') { const pa = patAmts(l); dsc.appendChild(el('div', 'jpat', '型：' + l.pat.title + (pa && pa.length > 1 ? '（' + pa.map(yen).join('＋') + '）' : ''))).title = (l.pat.why || []).join('・') + '（過去 ' + (l.pat.n || 0) + '回）'; }
       /* ★ 新しいやり方：AI の仕訳と決め手・残高のつながり */
       if (l.j || l.reason) { const pa = l.pat ? patAmts(l) : null; dsc.appendChild(el('div', 'jpat', 'AI：' + (l.j || '') + (pa && pa.length > 1 ? '（' + pa.map(yen).join('＋') + '）' : ''))); if (l.reason) dsc.appendChild(el('div', 'jwhy', '決め手：' + l.reason)); }
+      const spr = S.spm && S.spm.line[it.id + '|' + i]; if (spr) { const rd = (S.ai[spr] || {}); const sb = dsc.appendChild(el('button', 'jsprc', '🧾 領収書あり' + (rd.party ? '（' + rd.party + '）' : ''))); sb.type = 'button'; sb.dataset.a = 'spgo'; sb.dataset.id = spr; sb.title = '押すと その領収書へ（証憑として見るだけ。仕訳はこの行で）'; }
       if (l.balNG && !done[i]) dsc.appendChild(el('div', 'balng-m', '⚠ 残高がつながりません（金額か残高の読みちがい）')).title = l.note || '';
       tr.appendChild(el('td', l.dir === '入' ? 'in' : 'out', l.dir === '入' ? '入' : '出'));
       const am = el('input', 'dpin num'); am.dataset.ai = 'amount'; am.value = l.amount ? yen(l.amount) : ''; am.disabled = done[i]; am.inputMode = 'numeric'; am.setAttribute('aria-label', (i + 1) + '行目の金額');
