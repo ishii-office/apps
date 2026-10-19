@@ -1362,7 +1362,21 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
 .led-btn{border:1px solid var(--ai);background:#fff;color:var(--ai);border-radius:7px;
   font-size:13px;font-weight:700;padding:5px 12px;white-space:nowrap}
 .led-btn.rm{border-color:var(--pink);color:var(--pink)}
+/* ★ その日の中で1つ上／下へ（2026-10-19）。せまく、静かに */
+.led-btn.ar{border-color:#c9bda6;color:#8a7f66;padding:5px 9px;font-size:12px}
 .led-btn:active{transform:scale(.95);filter:brightness(.96)}
+/* ★ つまんで並べ替える手がかり。パソコンだけ（電話は ▲▼ を使う） */
+.ldrag{display:inline-block;cursor:grab;color:#b9a888;font-size:15px;
+  margin-right:5px;vertical-align:middle;user-select:none}
+.ldrag:active{cursor:grabbing}
+/* ★ 売掛の現金回収を直しているときの帯（2026-10-19） */
+.arcfix{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;
+  padding:8px 12px;border:2px solid #C9A227;background:#FDF8E7;border-radius:10px;
+  font-size:14px;color:#6b5a22}
+.grow.ldragging{opacity:.45}
+.grow.ldrop-a{box-shadow:inset 0 3px 0 0 var(--green)}
+.grow.ldrop-b{box-shadow:inset 0 -3px 0 0 var(--green)}
+@media(max-width:560px){ .ldrag{display:none} }
 .clrbtn{border:2px solid var(--line);color:#8a8578;background:#fff;
   border-radius:12px;font-size:15px;font-weight:700;padding:15px 18px;white-space:nowrap}
 .clrbtn:active{transform:scale(.97);background:#F3F1EA}
@@ -2517,6 +2531,13 @@ function cashGoLed(ds){
  */
 function cashPut(rec, oldId, oldKey){
   var nk=bkeyOf(rec.date);
+  /* ★ 直したときも、出納帳の並び順（ord）は持ち越す（2026-10-19）。
+       日が変わったら、その日の並びではなくなるので落とす。
+       **ここ1か所でやる** ── 直す側（小口現金・売掛の現金回収）は何も書かなくてよい */
+  if(oldId){
+    var src0=(DB.cash[oldKey]||[]).filter(function(y){ return String(y.id)===String(oldId); })[0];
+    if(src0 && String(src0.date)===String(rec.date) && rec.ord==null && src0.ord!=null) rec.ord=src0.ord;
+  }
   if(oldId && oldKey && oldKey!==nk){
     DB.cash[oldKey]=(DB.cash[oldKey]||[]).filter(function(x){ return String(x.id)!==String(oldId); });
     cashSaveAsync(oldKey, JSON.stringify(DB.cash[oldKey]));
@@ -3868,6 +3889,12 @@ function renderMigration(){
 
 function render(){
   if(!DB.kgReady){ renderMigration(); return; }
+  /* ★★★ 「売掛の現金回収を直しています」は、その画面を離れたら解く（2026-10-19）。
+       解かないと、直しかけの入金が【どの画面でも無いもの】として
+       計算され続ける（売掛帳・未回収一覧・請求書ぜんぶ）。**ここ1か所で解く** */
+  if(S.arcEdit && !(S.tab==='cash' && S.cashPane==='in' && String(S.cashKind||'')==='ar')){
+    S.arcEdit=null; S.arcEditBk=null; S.arcEditPk=null; clearCaches();
+  }
   var root=document.getElementById('root');
   root.innerHTML =
     '<header><div class="brand">'+
@@ -5720,15 +5747,79 @@ function ledBlocks(list, start){
   });
   return out;
 }
+/* ---- 同じ日の中で順番を入れ替える（出納帳） ----
+   つまんで動かす（パソコン）か、［▲］［▼］（電話でも効く）。
+   **ちがう日へは動かせない。** 日をまたぐと残高の意味が変わる。 */
+function ledDayOf_(m,id){
+  var rec=null;
+  (DB.cash[bkey(m)]||[]).forEach(function(y){ if(String(y.id)===String(id)) rec=y; });
+  if(!rec) return null;
+  var rows=cashList(m).filter(function(y){ return String(y.date)===String(rec.date); });
+  return rows.length>=2 ? {date:String(rec.date), rows:rows} : null;
+}
+/** その日ぶんへ 1,2,3 … と全部に振り直して残す */
+function ledApplyOrder_(m, date, ids){
+  var bk=bkey(m), pos={};
+  ids.forEach(function(sid,j){ pos[sid]=j+1; });
+  (DB.cash[bk]||[]).forEach(function(y){
+    if(String(y.date)===String(date) && pos[String(y.id)]) y.ord=pos[String(y.id)];
+  });
+  clearCaches();
+  cashSaveAsync(bk, JSON.stringify(DB.cash[bk]));
+}
+/** ［▲］［▼］… その日の中で1つ上／下へ */
+function ledMoveBy(m,id,delta){
+  var day=ledDayOf_(m,id); if(!day) return false;
+  var ids=day.rows.map(function(y){ return String(y.id); });
+  var from=ids.indexOf(String(id)), to=from+delta;
+  if(from<0 || to<0 || to>=ids.length) return false;
+  ids.splice(from,1); ids.splice(to,0,String(id));
+  ledApplyOrder_(m, day.date, ids);
+  return true;
+}
+/** つまんで落とした … 上半分ならその前、下半分ならその次 */
+function ledDropOn(m,id,overId,after){
+  if(String(id)===String(overId)) return false;
+  var day=ledDayOf_(m,id); if(!day) return false;
+  var ids=day.rows.map(function(y){ return String(y.id); });
+  var from=ids.indexOf(String(id)), over=ids.indexOf(String(overId));
+  if(from<0 || over<0) return false;            /* ちがう日へは落とせない */
+  ids.splice(from,1);
+  var k=ids.indexOf(String(overId));
+  ids.splice(k+(after?1:0), 0, String(id));
+  if(ids.join('|')===day.rows.map(function(y){return String(y.id);}).join('|')) return false;
+  ledApplyOrder_(m, day.date, ids);
+  return true;
+}
+
 /** そのまとまりを1件ずつ開いているか */
 function ledIsOpen(b){
   if(S.ledAll) return true;
   return !!(S.ledOpen||{})[b.date+'|'+b.k];
 }
 
+/* ★★★ 出納帳の並びは【日付 → ord → id】（2026-10-19・お重さん）
+
+   お重さん「同一日で何個も取引がある場合、新しくその日に入れた取引は
+   その日の1番下に入るところ、あとから出納帳画面でその取引をドラッグして
+   その日のうちで順番を変えられるようにして。**出納帳の残高を追うのが
+   やりにくい。見にくい。**」
+
+   ・`ord` は【その日の中の順番】。1,2,3 … と、その日ぶんへ全部に振る
+   ・**一部だけに付けない。** 付いているものと付いていないものが混ざると
+     並びが読めなくなる（取引の種類のドラッグと同じ決まり）
+   ・まだ一度も動かしていない日は `ord` が無いので、今までどおり id の順
+   ・**保存は「触ったところだけ」なので、順番は `ord` という中身にして持つ。**
+     並べ替えただけでは記録の中身が変わらず、差分が空で何も送られない */
+function ledOrd_(x){
+  var v = x && x.ord;
+  return (v==null || v==='') ? 1e9 : Number(v);
+}
 function cashList(m){
   return (DB.cash[bkey(m)]||[]).slice().sort(function(a,b){
-    return String(a.date).localeCompare(String(b.date))||(a.id-b.id); });
+    return String(a.date).localeCompare(String(b.date))
+        || (ledOrd_(a)-ledOrd_(b))
+        || (a.id-b.id); });
 }
 function cashBalanceAt(m,ds){
   var bal=DB.carry[ykey(m)]||0;
@@ -6701,8 +6792,10 @@ function jdicResync(){
 
 /* ---- その月の、仕訳を起こす対象 ---- */
 function jRows(m){
+  /* ★ 並びは出納帳と同じ（日付 → ord → id）。片方だけ直さない（2026-10-19） */
   var list=(DB.cash[bkey(m)]||[]).slice().sort(function(a,b){
     return String(a.date).localeCompare(String(b.date)) ||
+           (ledOrd_(a)-ledOrd_(b)) ||
            String(a.id).localeCompare(String(b.id)); });
   return list;
 }
@@ -8812,6 +8905,10 @@ function viewCash(el){
   /* ---------- ③ 出金 ---------- */
   : '<div class="cbox exp">'+ formHtml +'</div>');
 
+  /* ★ その日に2件以上あるときだけ、並べ替えの ⠿ と ▲▼ を出す（2026-10-19） */
+  var ledDayN={};
+  list.forEach(function(x){ ledDayN[String(x.date)]=(ledDayN[String(x.date)]||0)+1; });
+
   /* ★★ 月ぶんを CSV で外へ出す（2026-09-22）。
        **帳面と突き合わせるのに、月の取引をまるごと渡せるようにする。**
        電話でもファイルを落とせるとはかぎらないので、
@@ -8904,12 +9001,16 @@ function viewCash(el){
               : (x.imgPend
                   ? ' <span class="pill tag-hide">写真（送信待ち）</span>'
                   : ' <span class="pill tag-hide">写真なし</span>'));
-        return '<div class="grow'+(isNew?' just':'')+(i?' inrow':' outrow')+'" style="grid-template-columns:'+C+'">'+
+        var many = (ledDayN[String(x.date)]||0) >= 2;
+        return '<div class="grow'+(isNew?' just':'')+(i?' inrow':' outrow')+'"'+
+          (many?' data-lrow="'+x.id+'"':'')+' style="grid-template-columns:'+C+'">'+
           '<span class="num cash-day c-day">'+String(x.date).slice(5).replace('-','/')+'</span>'+
           '<span class="c-dir" style="font-weight:700;font-size:13px;color:'+(i?'var(--ice)':'var(--pink)')+'">'+(i?'入金':'出金')+'</span>'+
           /* ★ 直す・消す は「内容」の欄に置きます。
              スマホでは表が横スクロールで、右端の残高の欄まで届かないためです（2026-08-25）。 */
           '<span class="c-memo" style="overflow:hidden" data-memo="'+x.id+'">'+
+            /* ★ つまむところ。パソコンだけ（電話では ▲▼ を使う） */
+            (many?'<span class="ldrag" draggable="true" data-ldrag="'+x.id+'" title="つまんで、その日の中で順番を変える">⠿</span>':'')+
             (x.memo?'<b class="cash-memo-t">'+esc(x.memo)+'</b>':'<span class="muted">（内容なし・写真で確認）</span>')+
             (isNew?'<span class="justbadge">✓ いま記録</span>':'')+
             (x.sale?'<span class="cs-badge">現金売上 '+esc(fmtCode(x.sale.code))+'</span>':'')+
@@ -8920,6 +9021,9 @@ function viewCash(el){
             '<span class="led-btns">'+
               '<button class="led-btn tap" data-ed="'+x.id+'">✎ 直す</button>'+
               '<button class="led-btn rm tap" data-rm="'+x.id+'">🗑 消す</button>'+
+              /* ★ その日の中で1つ上／下へ。電話でも効く（2026-10-19） */
+              (many?'<button class="led-btn ar tap" data-lup="'+x.id+'" title="その日の中で1つ上へ">▲</button>'+
+                    '<button class="led-btn ar tap" data-ldn="'+x.id+'" title="その日の中で1つ下へ">▼</button>':'')+
             '</span>'+
             '</span>'+
           '<span class="r num cash-big c-in" style="color:var(--ice)">'+(i?yen(x.amount):'')+'</span>'+
@@ -9549,6 +9653,48 @@ function viewCash(el){
       S.saleItems=x.sale?saleUnpack(x.sale):null; S.saleQ='';
       S.saleMode='lump'; S.saleLump='';
       render(); window.scrollTo({top:0,behavior:'smooth'}); } }; });
+  /* ★★★ 同じ日の中で順番を入れ替える（2026-10-19・お重さん）
+       ・［▲］［▼］ … 電話でも効く。これが本筋
+       ・つまんで動かす … パソコンだけ（HTML5 のドラッグは電話で効かない）
+       **ちがう日へは落とせない。** 日をまたぐと残高の意味が変わる */
+  el.querySelectorAll('[data-lup]').forEach(function(b){ b.onclick=function(){
+    if(ledMoveBy(m, b.dataset.lup, -1)) render(); }; });
+  el.querySelectorAll('[data-ldn]').forEach(function(b){ b.onclick=function(){
+    if(ledMoveBy(m, b.dataset.ldn, +1)) render(); }; });
+  el.querySelectorAll('[data-ldrag]').forEach(function(h){
+    h.ondragstart=function(e){
+      S._ldrag=h.dataset.ldrag;
+      try{ e.dataTransfer.setData('text/plain', S._ldrag);
+           e.dataTransfer.effectAllowed='move'; }catch(_){}
+      var r=h.closest('.grow'); if(r) r.classList.add('ldragging');
+    };
+    h.ondragend=function(){
+      S._ldrag=null;
+      el.querySelectorAll('.ldragging,.ldrop-a,.ldrop-b').forEach(function(r){
+        r.classList.remove('ldragging','ldrop-a','ldrop-b'); });
+    };
+  });
+  el.querySelectorAll('[data-lrow]').forEach(function(r){
+    var half=function(e){
+      var q=r.getBoundingClientRect();
+      return (e.clientY - q.top) < q.height/2;      /* 上半分 ＝ その前へ */
+    };
+    r.ondragover=function(e){
+      if(!S._ldrag || String(S._ldrag)===String(r.dataset.lrow)) return;
+      e.preventDefault();
+      try{ e.dataTransfer.dropEffect='move'; }catch(_){}
+      r.classList.toggle('ldrop-a', half(e));
+      r.classList.toggle('ldrop-b', !half(e));
+    };
+    r.ondragleave=function(){ r.classList.remove('ldrop-a','ldrop-b'); };
+    r.ondrop=function(e){
+      e.preventDefault();
+      var id=S._ldrag; S._ldrag=null;
+      r.classList.remove('ldrop-a','ldrop-b');
+      if(!id) return;
+      if(ledDropOn(m, id, r.dataset.lrow, !half(e))) render();
+    };
+  });
   el.querySelectorAll('[data-rm]').forEach(function(b){ b.onclick=function(){
     var x=(DB.cash[bk]||[]).filter(function(y){return String(y.id)===b.dataset.rm;})[0];
     if(!confirm('この記録を消しますか？'+(x&&x.sale?'\n（現金売上の内訳も一緒に消えます）':''))) return;
@@ -11767,7 +11913,13 @@ function grossOfYm(c,ymk){
      まだ発生していない月には当てません。
    ============================================================ */
 function arPayList(id){
-  return (DB.pay['payments:'+id]||[]).slice().sort(function(a,b){
+  /* ★★★ 直している最中の1件は【まだ入っていないもの】として数える（2026-10-19）。
+       こうしないと、売掛残高も「何月分」の残も、その回収を引いたあとの姿で出てしまい、
+       直しようがない。`S.arcEdit` は その画面を離れると render() が必ず解く */
+  var skip = S.arcEdit ? String(S.arcEdit) : '';
+  return (DB.pay['payments:'+id]||[]).filter(function(p){
+    return !(skip && String(p.id)===skip);
+  }).sort(function(a,b){
     return String(a.date).localeCompare(String(b.date))||((a.id||0)-(b.id||0));
   });
 }
@@ -11794,7 +11946,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-10-18a 右上に［📷 資料回収へ］（資料回収アプリと行き来する。提出URLはスクリプトのプロパティ COLLECT_URL）';
+var APP_BUILD='2026-10-19a 売掛の現金回収を出納帳から直せる／同じ日の中で順番を入れ替えられる（⠿ と ▲▼）／何月分を選ぶと金額が入る';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -12480,6 +12632,8 @@ function arToSheet(fy){
    5. 小口現金タブ ―「売掛の現金回収」（何月分の指定つき）
    ============================================================ */
 S.arcClient=null; S.arcQ=''; S.arcAmt=''; S.arcDate=null; S.arcFor='';
+/* ★ 直している1件（出納帳の id）。null なら新しく入れるところ */
+S.arcEdit=null; S.arcEditBk=null; S.arcEditPk=null;
 
 function arcBalOf(id){
   var fy=fyOf(S.date);
@@ -12510,6 +12664,12 @@ function arcBoxHtml(m){
        「売掛の現金回収」を押してここに居るのだから、見れば分かる。
        要るのは【取引先・回収日・金額】の3つだけ */
   return '<div class="arc-box">'+
+    /* ★ 直しているときは、ひと目で分かるようにする（2026-10-19） */
+    (S.arcEdit
+      ? '<div class="arcfix"><b>✎ 直しています</b>'+
+        '<span class="muted">記録すると、この1件が入れ替わります（売掛の消込も一緒に）</span>'+
+        '<button class="btn ghost tap sm" id="arcCancel" style="margin-left:auto">やめる</button></div>'
+      : '')+
     '<div class="row" style="gap:8px;margin-bottom:8px">'+
       (c
         ? '<span class="pill tag-slip" style="font-size:16px;padding:8px 14px"><span class="num">'+fmtCode(c.code)+'</span>　'+esc(c.name)+'</span>'+
@@ -12527,7 +12687,8 @@ function arcBoxHtml(m){
           '<select id="arcfor" class="rv-sel">'+forOptions(c,fy,S.arcFor)+'</select></div>':'')+
       (bal>0?'<button class="btn ghost tap" id="arcfull" style="margin-bottom:2px">残高全額</button>':'')+
       /* ★ 記録ボタンはここ1つだけ。下の枠には出さない（2026-09-21） */
-      '<button class="arc-pick tap" id="arcok" style="margin-bottom:2px;padding:14px 22px;font-size:17px">記録する</button>'+
+      '<button class="arc-pick tap" id="arcok" style="margin-bottom:2px;padding:14px 22px;font-size:17px">'+
+        (S.arcEdit?'この内容で直す':'記録する')+'</button>'+
     '</div>'+
     '<div class="cneed" id="arcneed"></div>'+
     /* ★★★ 記録するボタンの下に、その日の出納帳へ（2026-09-27・お重さん） */
@@ -12563,11 +12724,31 @@ function arcBind(el,m){
     if(S.arcQ) suggest();
   }
   var clr=el.querySelector('#arcClr');
-  if(clr) clr.onclick=function(){ S.arcClient=null; S.arcQ=''; S.arcAmt=''; S.arcFor=''; render(); };
+  /* ★ 「選び直す」はお店を選び直すだけ。直している印（S.arcEdit）は外さない
+       ── 取引先を取りちがえたときに、そのまま付け替えられるように（2026-10-19） */
+  if(clr) clr.onclick=function(){ S.arcClient=null; S.arcQ=''; S.arcFor=''; render(); };
   var dd=el.querySelector('#arcd');
   if(dd) dd.onchange=function(){ S.arcDate=dd.value; goledSync(el,'#arcgoled',dd.value); };
   var ff=el.querySelector('#arcfor');
-  if(ff) ff.onchange=function(){ S.arcFor=ff.value; };
+  if(ff) ff.onchange=function(){
+    S.arcFor=ff.value;
+    /* ★★★ 何月分を選んだら、その月の残額を【金額欄に入れる】（2026-10-19・お重さん）
+         「6月分（残 1,900）を選んだときには、金額欄にその金額がセットされるように」。
+         ふつうは「その月の残りをまるごともらってくる」ので、打ち直す手間が消える。
+         ちがう額のときは、そのまま打ち替えればよい。
+         「自動（古い月分から）」のときは触らない */
+    var cc=S.arcClient?clientById(S.arcClient):null;
+    var box=el.querySelector('#arca');
+    if(!cc || !box || !ff.value) return;
+    var rows=[]; try{ rows=arOpenRows(cc,fyOf(S.date)); }catch(e){}
+    for(var i=0;i<rows.length;i++){
+      if(rows[i].key===ff.value){
+        box.value=String(Math.round(rows[i].left)); S.arcAmt=box.value;
+        arcPaint(el);                       /* 入った枠を緑に（描き直さない） */
+        break;
+      }
+    }
+  };
   var aa=el.querySelector('#arca');
   if(aa){ aa.oninput=function(){ var r=aa.value.replace(/[^0-9]/g,''); if(r!==aa.value) aa.value=r; S.arcAmt=r; }; }
   var full=el.querySelector('#arcfull');
@@ -12575,6 +12756,8 @@ function arcBind(el,m){
     var b=arcBalOf(S.arcClient);
     if(b>0){ aa.value=String(Math.round(b)); S.arcAmt=aa.value; }
   };
+  var cx=el.querySelector('#arcCancel');
+  if(cx) cx.onclick=function(){ arcEditCancel(); };
   var ok=el.querySelector('#arcok');
   if(ok) ok.onclick=function(){ arcSave(el,m); };
   /* ★ この枠はあとから差し込まれるので、飛び先のボタンはここで配線する（2026-09-27） */
@@ -12591,7 +12774,11 @@ function arcSave(el,m){
   var forKey=ff?ff.value:'';
   /* ★★★ 入れ先は【回収日の月】。いま見ている月ではない（2026-09-27） */
   var bk=bkeyOf(d), moved=(bk!==bkey(m));
-  var id=Date.now();
+  /* ★★★ 直しているときは【同じ id のまま入れ替える】（2026-10-19）。
+       id を変えると、伝票チェックの ✓（jmap）も写真の預かりも迷子になる */
+  var ed=S.arcEdit?String(S.arcEdit):'';
+  var edBk=S.arcEditBk||'', edPk=S.arcEditPk||'';
+  var id=ed?Number(ed):Date.now();
   /* ★ 受領書の写真も一緒に残す（2026-09-21）。
        領収書はこちらが渡すもので、もらってくるのは【受領書】。
        写真は元帳に入れない ── Drive のリンクか、この端末の預かり（印だけ） */
@@ -12601,19 +12788,59 @@ function arcSave(el,m){
            arPay:{cid:c.id, code:c.code, name:c.name, 'for':forKey},
            imgUrl:pic.url, imgPend:pic.pend, img:pic.img, imgType:pic.type,
            pics:(pic.pics.length?pic.pics:null)};
-  cashPut(rec, null, bk);
+  cashPut(rec, ed||null, ed?edBk:bk);
   var pk='payments:'+c.id;
+  /* ★ 直しのときは、もとの入金を消してから入れ直す。
+       取引先を選び直していたら、もとのお店の入金帳からも消す */
+  if(ed){
+    if(edPk && edPk!==pk){
+      DB.pay[edPk]=(DB.pay[edPk]||[]).filter(function(q){ return String(q.id)!==ed; });
+      cashSaveAsync(edPk, JSON.stringify(DB.pay[edPk]));
+    }
+    DB.pay[pk]=(DB.pay[pk]||[]).filter(function(q){ return String(q.id)!==ed; });
+  }
   DB.pay[pk]=(DB.pay[pk]||[]).concat([{id:id, date:d, amount:amt, method:'現金',
                                        memo:'小口現金から', 'for':forKey, fromCash:true}]);
-  S.cashJustId=id; S.arcClient=null; S.arcQ=''; S.arcAmt=''; S.arcFor=''; S.arcDate=d;
+  S.cashJustId=id; S.arcEdit=null; S.arcEditBk=null; S.arcEditPk=null;
+  S.arcClient=null; S.arcQ=''; S.arcAmt=''; S.arcFor=''; S.arcDate=d;
   cashImgDrop();
   S.cashJust={ d:String(d).slice(5).replace('-','/'), fd:String(d), t:'売掛の現金回収　'+c.name, a:amt,
                mv:(moved?bkeyLabel(bk):'') };
   S.cashJustShow=true;
   clearCaches();
-  toast('記録しました'+(moved?'　→ '+bkeyLabel(bk)+'の小口現金に入れました':''));
+  toast((ed?'直しました':'記録しました')+(moved?'　→ '+bkeyLabel(bk)+'の小口現金に入れました':''));
   render();
   cashSaveAsync(pk, JSON.stringify(DB.pay[pk]));
+}
+
+/* ★★★ 出納帳の［✎ 直す］から、売掛の現金回収を直す（2026-10-19・お重さん）
+
+   前は「いったん🗑で消してから入れ直してください」と断っていた。
+   **消して入れ直させた時点で負け。** 取引先・回収日・金額・何月分 の4つとも、
+   そのまま直せるようにした。記録すると、出納帳の1件と売掛の消込が
+   【同じ id のまま】入れ替わる。 */
+function arcEditStart(x){
+  if(!x || !x.arPay) return;
+  S.arcEdit=String(x.id);
+  S.arcEditBk=bkeyOf(x.date);
+  S.arcEditPk='payments:'+x.arPay.cid;
+  S.arcClient=x.arPay.cid; S.arcQ='';
+  S.arcDate=String(x.date);
+  S.arcAmt=String(Math.round(Number(x.amount)||0));
+  S.arcFor=x.arPay['for']||'';
+  /* 入力タブの【入金】へ移って、売掛の現金回収の枠を出す */
+  S.cashEdit=null; S.cashKind='ar'; S.cashDir='in'; S.cashSide='in';
+  S.cashPane='in'; S.cashDay=null;
+  S.cashJust=null; S.cashJustShow=false; S.cashJustId=null;
+  cashImgNewGen();                  /* 送信中の写真を切り離してから入れ替える */
+  S.cashPics=cashPicsLoad(x);
+  clearCaches();                    /* 直している1件を外して数え直す */
+  render(); window.scrollTo({top:0,behavior:'smooth'});
+}
+function arcEditCancel(){
+  S.arcEdit=null; S.arcEditBk=null; S.arcEditPk=null;
+  S.arcClient=null; S.arcQ=''; S.arcAmt=''; S.arcFor='';
+  cashImgDrop(); clearCaches(); render();
 }
 function forLabel(c,key){
   if(!key) return '';
@@ -12681,11 +12908,7 @@ viewCash=function(el){
   el.querySelectorAll('[data-ed]').forEach(function(b){
     var x=byId[b.dataset.ed];
     if(!x || !x.arPay) return;
-    b.onclick=function(){
-      alert('「売掛の現金回収」は、直すのではなく '
-        +'いったん🗑で消してから、入れ直してください。\n\n'
-        +'（金額だけを直すと、売掛の消込とずれてしまうためです）');
-    };
+    b.onclick=function(){ arcEditStart(x); };
   });
 
   /* ★★★ 入っているところに色を塗る（2026-09-27）。
