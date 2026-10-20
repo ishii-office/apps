@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792462219;</script>
+<script>window.__PAGE_VER=1792486127;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -228,6 +228,10 @@
   .dpz .spsum > b { font-size: 14px; }
   .dpz .spsum .spl { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
   .dpz .spnote { display: block; margin-top: 6px; padding: 6px 9px; border-radius: 8px; background: #fff3cd; color: #6b4d00; font-size: 13px; font-weight: 700; }
+  .dpz .jsprinfo { font-size: 12px; color: #6b4d00; margin-top: 2px; }
+  .dpz .jinv { font-size: 12px; font-weight: 700; margin-top: 2px; }
+  .dpz .jinv.ok { color: #0a7a3a; } .dpz .jinv.sp { color: #2a5fb0; } .dpz .jinv.ng { color: #b3261e; }
+  .dpz .spinv { font-weight: 700; color: #6b4d00; }
   .dpz .jsprc { display: inline-block; margin-top: 3px; padding: 1px 8px; border: 1px solid #c8b06a; border-radius: 999px; background: #fffaf0; color: #6b4d00; font-size: 12px; cursor: pointer; }
   .dpz .jdsep { display: flex; align-items: center; gap: 10px; margin: 18px 0 8px; }
   .dpz .jdsep b { font-size: 20px; font-weight: 800; color: var(--ai); font-variant-numeric: tabular-nums; }
@@ -372,16 +376,16 @@
   .dpz .kbsub { font-size: 12.5px; color: #888; margin: 0 0 8px; }
   .dpz .slip-acts { margin-top: 10px; }
   /* 顧問先 */
-  #paneClients { display: grid; grid-template-columns: 340px 1fr; }
+  #paneClients { display: grid; grid-template-columns: 400px 1fr; }
   .cl-side { border-right: 1px solid var(--line); background: var(--paper); display: flex; flex-direction: column; min-height: 0; }
   .cl-top { padding: 10px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; }
   /* ★ 検索は1行まるごと。ボタンはその下に折り返して並べる（ボタンを足しても見切れない。2026-10-18） */
   .cl-top input { flex: 1 1 100%; min-width: 0; }
   .cl-top button { flex: 1 1 auto; white-space: nowrap; }
   #alist { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; }
-  #alist li button { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 10px 12px; display: flex; gap: 8px; align-items: baseline; }
+  #alist li button { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 8px 10px; display: flex; gap: 6px; align-items: center; }
   #alist li button[aria-current="true"] { background: var(--sel); }
-  #alist .code { color: var(--sub); min-width: 4em; }
+  #alist .code { color: var(--sub); flex: none; min-width: 2.6em; font-variant-numeric: tabular-nums; }
   #alist .off { margin-left: auto; font-size: 12px; color: var(--err); }
   .cl-mode { display: flex; gap: 6px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--line); font-size: 13px; flex-wrap: wrap; }
   .cl-mode .seg button { padding: 3px 10px; font-size: 13px; }
@@ -400,7 +404,10 @@
   #alist .kind { flex: none; font-size: 11px; font-weight: 700; border-radius: 4px; padding: 1px 6px; line-height: 1.5; align-self: center; }
   #alist .kind.corp { background: #2F4A6B; color: #fff; }
   #alist .kind.ind { background: #fff; color: #8A6A3D; border: 1px solid #C9A877; }
-  #alist .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ★ 名前が見えるように（2026-10-20）：名前は いちばん広く取り 2行まで折り返す。札（同意・決算月）は右にまとめて 縮めない */
+  #alist .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; word-break: break-all; line-height: 1.35; }
+  #alist .tg { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto; }
+  #alist .tg .fy { margin-left: 0; }
   .cl-main { padding: 16px 20px; overflow: auto; }
   .cl-main h2 { font-size: 18px; margin: 0 0 14px; }
   .f { margin-bottom: 14px; max-width: 620px; }
@@ -1301,6 +1308,8 @@
   <details open class="rbox" id="aiBox"><summary>0. AI 下書きを使う（写真 → 仕訳の下書き。Claude API）</summary>
       <div class="bar"><label class="aiuse"><input type="checkbox" id="aiUse"> この顧問先で AI 下書きを使う（下書きだけ。確定は人）</label>
         <span class="note" id="aiState"></span></div>
+      <div class="bar"><label class="aiuse">消費税 <select id="aiTaxm" aria-label="消費税の課税方式"><option value="">（決めていない）</option><option value="本則">本則課税</option><option value="簡易">簡易課税</option><option value="免税">免税</option></select></label>
+        <span class="note">本則課税にすると 仕訳化で 背骨（出納帳・カード明細）の行ごとに インボイスの印（登録番号あり／帳簿のみの特例の候補／確かめる）を出します</span></div>
       <div class="bar" id="aiKeyBar" hidden>
         <input type="password" id="aiKey" placeholder="API キー（sk-ant-…）" autocomplete="off" aria-label="Claude API のキー">
         <select id="aiModel" aria-label="AI のモデル"></select>
@@ -2492,11 +2501,24 @@
           out.rcpt[r.id] = l; out.line[k] = r.id;
         });
       });
-      out.sum[pk] = { lines: P.lines.length, hit: Object.keys(used).length,
+      out.sum[pk] = { lines: P.lines.length, hit: Object.keys(used).length, all: P.lines,
         left: P.rc.filter(function (r) { return !out.rcpt[r.id]; }),
         bare: P.lines.filter(function (l) { return !used[l.sid + '|' + l.ln]; }) };
     });
     return out;
+  }
+  /* ★★ ④ インボイスの印（2026-10-20）。本則課税の顧問先だけ。背骨の【出】の行ごとに
+       ・領収書が当たった … 登録番号があれば ✓ ／ 無ければ ⚠（経過措置）
+       ・領収書が無い … 公共交通機関・自動販売機（3万円未満）なら「帳簿のみ保存の特例の候補」／ほかは ⚠ インボイスを確かめる */
+  const INV_TRANSIT = /JR|ＪＲ|電車|鉄道|地下鉄|メトロ|私鉄|新幹線|バス|ﾊﾞｽ|乗車|切符|運賃|SUICA|ＳＵＩＣＡ|PASMO|ICOCA|TOICA|MANACA|PITAPA|ｽｲｶ|ﾊﾟｽﾓ|ｲｺｶ/i, INV_VEND = /自販機|自動販売機|ｼﾞﾊﾝｷ/;
+  function taxmHon() { return ((S.fxConf || {}).taxm || '') === '本則'; }
+  function invOf(l, rd) {
+    if (!taxmHon() || !l || l.dir === '入') return null;
+    if (rd) return /^T\d{13}$/.test(String(rd.invoiceNo || '').replace(/[^T\d]/g, '')) ? { k: 'ok', t: '✓ 登録番号 ' + rd.invoiceNo } : { k: 'ng', t: '⚠ 領収書に登録番号なし（経過措置か 確かめる）' };
+    const d = String(l.desc || '') + ' ' + String(l.party || ''), a = Math.abs(Number(l.amount) || 0);
+    if (a && a < 30000 && INV_TRANSIT.test(d)) return { k: 'sp', t: '帳簿のみ保存の特例の候補（公共交通機関・3万円未満）' };
+    if (a && a < 30000 && INV_VEND.test(d)) return { k: 'sp', t: '帳簿のみ保存の特例の候補（自動販売機・3万円未満）' };
+    return { k: 'ng', t: '⚠ 領収書なし：インボイスを確かめる（無ければ経過措置）' };
   }
   function spineSumEl(pk) {
     const s = S.spm && S.spm.sum[pk]; if (!s) return null;
@@ -2508,7 +2530,12 @@
       s.left.forEach(function (r) { const b = el('button', 'aialt', (r.date ? r.date.slice(5).replace('-', '/') + ' ' : '') + yen(r.amount) + '円' + (r.party ? ' ' + r.party : '')); b.type = 'button'; b.dataset.a = 'spgo'; b.dataset.id = r.id; d.appendChild(b); });
       w.appendChild(d);
     }
-    if (s.bare.length) w.appendChild(el('div', 'nt', '領収書のない行は 取引先と過去の仕訳で決めます。本則課税なら インボイス（帳簿のみの特例・経過措置）を確かめてください。'));
+    if (s.bare.length) w.appendChild(el('div', 'nt', '領収書のない行は 取引先と過去の仕訳で決めます（AI の下書きがそうしています）。'));
+    if (taxmHon()) {
+      const n = { ok: 0, sp: 0, ng: 0 };
+      (s.all || []).forEach(function (l) { const v = invOf(l, S.spm.line[l.sid + '|' + l.ln] ? (S.ai || {})[S.spm.line[l.sid + '|' + l.ln]] : null); if (v) n[v.k]++; });
+      w.appendChild(el('div', 'spinv', '本則課税のインボイス：✓ 登録番号あり ' + n.ok + '　帳簿のみの特例の候補 ' + n.sp + '　⚠ 確かめる ' + n.ng));
+    }
     return w;
   }
   function spineNoteEl(it) {
@@ -4315,6 +4342,7 @@
     if (a === 'fold') { if (e.target.closest('button, a, input, select')) return; delete S.open[it.id]; drawCard(it); return; }
     if (a === 'pick') { pickNo(it, Number(t.dataset.no)); return; }
     if (a === 'aiall') { aiLinesAll(it); return; }
+    if (a === 'sprno') { const ln = Number(t.dataset.ln); S.aiEd[it.id] = S.aiEd[it.id] || {}; const o = S.aiEd[it.id][ln] = S.aiEd[it.id][ln] || {}; o.no = Number(t.dataset.no); o.alt = null; o.usePat = false; drawCard(it); return; }
     if (a === 'aialt') { aiAltSwap(it, Number(t.dataset.k)); return; }
     if (a === 'aiteach') { S.teach = S.teach || {}; if (S.teach[it.id]) delete S.teach[it.id]; else S.teach[it.id] = { think: '', scope: 'mine' }; drawCard(it); const ta = rowOf(it.id) && rowOf(it.id).querySelector('.jai .teach textarea'); if (ta) ta.focus(); return; }
     if (a === 'aiteachgo') { aiTeach(it, t); return; }
@@ -5391,7 +5419,7 @@
      下書きは 写真ごとに1つ（S.ai）。［この下書きを入れる］で 辞書・日付・金額が入るだけ。確定は人が Enter */
   function aiPaint() {
     const c = S.fxConf || {}, ms = !!(S.me && S.me.master);
-    $('aiUse').checked = !!c.ai;
+    $('aiUse').checked = !!c.ai; $('aiTaxm').value = c.taxm || '';
     $('aiState').textContent = S.aiOn ? (c.ai ? '使います。仕訳化の上の［🤖 AI で下書き］から。' : 'キーは入っています。') : 'まだキーが入っていません' + (ms ? '（下で入れてください）。' : '（マスターが入れます）。');
     $('aiKeyBar').hidden = !ms;
     $('jAi').hidden = !(S.aiOn && c.ai);
@@ -5401,6 +5429,12 @@
     const on = this.checked, code = S.code;
     if (on && !confirm('この顧問先の写真を AI（Anthropic の Claude API）に送って読ませます。\n顧問先の了解は もらっていますか？')) { this.checked = false; return; }
     gs('fxConfSave', code, Object.assign({}, S.fxConf || { tags: {} }, { ai: on })).then(function (r) { if (code !== S.code) return; S.fxConf = r; aiPaint(); aiMsgSet(on ? 'この顧問先は AI 下書きを使います。' : 'この顧問先は AI 下書きを使いません。', 'ok'); },
+      function (e) { aiMsgSet(e.message, 'err'); aiPaint(); });
+  });
+  $('aiTaxm').addEventListener('change', function () {
+    if (!S.code) return;
+    const v = this.value, code = S.code;
+    gs('fxConfSave', code, Object.assign({}, S.fxConf || { tags: {} }, { taxm: v })).then(function (r) { if (code !== S.code) return; S.fxConf = r; aiPaint(); aiMsgSet('消費税は ' + ({ 本則: '本則課税', 簡易: '簡易課税', 免税: '免税' }[v] || '決めていない') + ' にしました。', 'ok'); if (S.items) render(); },
       function (e) { aiMsgSet(e.message, 'err'); aiPaint(); });
   });
   /* キーとモデルは AI の考え方タブを開いたときに（マスターだけ） */
@@ -5659,7 +5693,16 @@
       if (l.pat && l.pat.kind !== 'ai') { const pa = patAmts(l); dsc.appendChild(el('div', 'jpat', '型：' + l.pat.title + (pa && pa.length > 1 ? '（' + pa.map(yen).join('＋') + '）' : ''))).title = (l.pat.why || []).join('・') + '（過去 ' + (l.pat.n || 0) + '回）'; }
       /* ★ 新しいやり方：AI の仕訳と決め手・残高のつながり */
       if (l.j || l.reason) { const pa = l.pat ? patAmts(l) : null; dsc.appendChild(el('div', 'jpat', 'AI：' + (l.j || '') + (pa && pa.length > 1 ? '（' + pa.map(yen).join('＋') + '）' : ''))); if (l.reason) dsc.appendChild(el('div', 'jwhy', '決め手：' + l.reason)); }
-      const spr = S.spm && S.spm.line[it.id + '|' + i]; if (spr) { const rd = (S.ai[spr] || {}); const sb = dsc.appendChild(el('button', 'jsprc', '🧾 領収書あり' + (rd.party ? '（' + rd.party + '）' : ''))); sb.type = 'button'; sb.dataset.a = 'spgo'; sb.dataset.id = spr; sb.title = '押すと その領収書へ（証憑として見るだけ。仕訳はこの行で）'; }
+      const spr = S.spm && S.spm.line[it.id + '|' + i], rd = spr ? (S.ai[spr] || {}) : null;
+      if (spr) {
+        const sb = dsc.appendChild(el('button', 'jsprc', '🧾 領収書あり' + (rd.party ? '（' + rd.party + '）' : ''))); sb.type = 'button'; sb.dataset.a = 'spgo'; sb.dataset.id = spr; sb.title = '押すと その領収書へ（証憑として見るだけ。仕訳はこの行で）';
+        /* ★ ③ 領収書の読み（税率の内訳・品目）を この行に添える。辞書が決まっていなければ 領収書の下書きの辞書を入れられる */
+        const tx = (rd.taxes || []).filter(function (x) { return x.gross; });
+        const info = [tx.map(function (x) { return (x.rate ? x.rate + '%対象 ' : '非課税等 ') + yen(x.gross); }).join('・'), (rd.items || []).slice(0, 4).join('・')].filter(Boolean).join('　');
+        if (info) dsc.appendChild(el('div', 'jsprinfo', '領収書：' + info));
+        if (!done[i] && Number(rd.no) && Number(rd.no) !== Number(l.no)) { const ub = dsc.appendChild(el('button', 'jsprc', '領収書の読みの辞書（No.' + rd.no + '）を入れる')); ub.type = 'button'; ub.dataset.a = 'sprno'; ub.dataset.ln = String(i); ub.dataset.no = String(rd.no); ub.title = '領収書の写真から読んだ品目・税率で選んだ辞書を この行に入れます'; }
+      }
+      const iv = invOf(l, rd); if (iv) dsc.appendChild(el('div', 'jinv ' + iv.k, iv.t));
       if (l.balNG && !done[i]) dsc.appendChild(el('div', 'balng-m', '⚠ 残高がつながりません（金額か残高の読みちがい）')).title = l.note || '';
       tr.appendChild(el('td', l.dir === '入' ? 'in' : 'out', l.dir === '入' ? '入' : '出'));
       const am = el('input', 'dpin num'); am.dataset.ai = 'amount'; am.value = l.amount ? yen(l.amount) : ''; am.disabled = done[i]; am.inputMode = 'numeric'; am.setAttribute('aria-label', (i + 1) + '行目の金額');
@@ -7140,10 +7183,12 @@
       if (!q && mode === 'ord') b.appendChild(el('span', 'grip', '⠿'));
       b.appendChild(el('span', 'code', c.code));
       const kd = corpKindOf(c), kb = el('span', 'kind ' + (kd === '法人' ? 'corp' : 'ind'), kd); if (!c.kindSet) kb.title = '名前から当てています（設定で決められます）'; b.appendChild(kb);
-      b.appendChild(el('span', 'nm', c.name));
-      const cs = c.consent || {}; if (c.issued && !(cs.type === '同意' && !cs.need)) { const wd = cs.type === '撤回', wait = cs.need; const t = el('span', 'cns ' + (wd ? 'wd' : 'need')); t.dataset.t = wd ? 'AI撤回' : wait ? '同意待ち' : '同意まだ'; t.title = wd ? 'AI 等の利用への同意を撤回しています（AI 下書きは使えません）' : wait ? '同意の画面を出しています。顧問先が同意するまで 送れません・AI 下書きも使えません' : 'まだ 同意の画面を出していません（AI 下書きは使えません）'; b.appendChild(t); }
-      if (!c.active) b.appendChild(el('span', 'off', c.issued ? '止めています' : 'URL未発行'));
-      else if (c.fy) { const f = el('span', 'fy', c.fy + '月決算'); fyStyle(f, c.fy); b.appendChild(f); }
+      b.appendChild(el('span', 'nm', c.name)).title = c.name;
+      const tg = el('span', 'tg');
+      const cs = c.consent || {}; if (c.issued && !(cs.type === '同意' && !cs.need)) { const wd = cs.type === '撤回', wait = cs.need; const t = el('span', 'cns ' + (wd ? 'wd' : 'need')); t.dataset.t = wd ? 'AI撤回' : wait ? '同意待ち' : '同意まだ'; t.title = wd ? 'AI 等の利用への同意を撤回しています（AI 下書きは使えません）' : wait ? '同意の画面を出しています。顧問先が同意するまで 送れません・AI 下書きも使えません' : 'まだ 同意の画面を出していません（AI 下書きは使えません）'; tg.appendChild(t); }
+      if (!c.active) tg.appendChild(el('span', 'off', c.issued ? '止めています' : 'URL未発行'));
+      else if (c.fy) { const f = el('span', 'fy', c.fy + '月決算'); fyStyle(f, c.fy); tg.appendChild(f); }
+      if (tg.childNodes.length) b.appendChild(tg);
       fyStyle(li, c.fy);
       b.setAttribute('aria-current', String(!A.isNew && A.cur === c.code));
       b.addEventListener('click', function () { aOpen(c.code); });
