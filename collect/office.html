@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792486127;</script>
+<script>window.__PAGE_VER=1792489374;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -663,6 +663,14 @@
   .dmove { position: fixed; inset: 0; z-index: 70; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; }
   .dmove-s { width: 100%; max-width: 480px; background: #fff; border-radius: 16px 16px 0 0; padding: 16px 16px calc(18px + env(safe-area-inset-bottom, 0)); }
   .dmove-s h3 { margin: 0 0 6px; }
+  .dmove-s.ogs { max-width: 640px; max-height: 92vh; overflow: auto; }
+  .dmove-s.ogs input:not([type=checkbox]) { display: block; width: 100%; font-size: 15px; padding: 6px; margin-top: 2px; }
+  .ogs .og2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ogs h4 { margin: 14px 0 6px; font-size: 14px; }
+  .ogmsg { font-size: 13px; color: var(--ok, #0a7a3a); min-height: 1em; margin: 6px 0 0; } .ogmsg.err { color: var(--err); }
+  .ogsent .r { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .ogsent .r .k { font-weight: 700; } .ogsent .r .n { flex: 1; min-width: 8em; word-break: break-all; }
+  .ogsent .r .o { color: #0a7a3a; } .ogsent .r .u { color: #b3261e; font-weight: 700; } .ogsent .r.del { opacity: .5; }
   .dmove-s label { display: block; font-size: 13px; color: var(--sub); margin-top: 8px; }
   .dmove-s select { display: block; width: 100%; font-size: 16px; padding: 7px; margin-top: 2px; }
   .dmv-pers { display: flex; gap: 6px; } .dmv-pers select { flex: 1; min-width: 0; }
@@ -997,6 +1005,7 @@
       <button type="button" id="dPick" aria-pressed="false">選ぶ</button>
       <button type="button" id="dPdfAll">一括PDF切り出し</button>
       <button type="button" id="dTrash" hidden>破棄したもの</button>
+      <button type="button" id="ogOpen" title="申告書の控え・決算書・試算表・請求書・お知らせ などを この顧問先へ送る（顧問先の画面の「📨 事務所から」に出ます）">📨 顧問先へ送る</button>
     </span>
     <div class="dmsg" id="dcMsg" role="status"></div>
   </div>
@@ -1528,6 +1537,22 @@
     <button type="button" class="btn ghost sm danger" id="dcDel">破棄</button><button type="button" class="btn ghost sm" id="dcNone">全部外す</button><button type="button" class="btn ghost sm" id="dcEnd">やめる</button></span>
 </div>
 
+<div class="dmove" id="ogv" hidden role="dialog" aria-modal="true" aria-labelledby="ogvT">
+  <div class="dmove-s ogs">
+    <h3 id="ogvT">📨 顧問先へ送る</h3>
+    <p class="dmv-now" id="ogvWho"></p>
+    <label>ファイル（PDF・写真・エクセルなど。何個でも）<input type="file" id="ogFiles" multiple></label>
+    <div class="og2"><label>種類 <select id="ogKind"><option>申告書</option><option>決算書</option><option>試算表</option><option>請求書</option><option>お知らせ</option><option>その他</option></select></label>
+      <label>年分 <input id="ogYear" inputmode="numeric" maxlength="4" placeholder="例 2025"></label></div>
+    <label>ひとこと（顧問先に出ます・任意）<input id="ogMemo" maxlength="300" placeholder="例 控えです。保管しておいてください"></label>
+    <label class="chk"><input type="checkbox" id="ogMail"> 顧問先メールで「お送りしました」と知らせる</label>
+    <div class="dmv-b"><button type="button" class="btn" id="ogGo">送る</button><button type="button" class="btn ghost" id="ogCancel">閉じる</button></div>
+    <p class="ogmsg" id="ogMsg"></p>
+    <h4>送ったもの</h4>
+    <div id="ogSent" class="ogsent"></div>
+  </div>
+</div>
+
 <div class="dmove" id="dmove" hidden role="dialog" aria-modal="true" aria-labelledby="dmvT">
   <div class="dmove-s">
     <h3 id="dmvT">別の月分・箱へ移す</h3>
@@ -1966,7 +1991,7 @@
     if (!soft) {
     Object.keys(C).forEach(function (k) { delete C[k]; });
     Object.keys(IMG).forEach(function (k) { delete IMG[k]; }); QUEUE = [];
-    S.dcsel = {}; S.dcpick = false; S.trashView = false; S.trash = null; S.trashN = 0;
+    S.dcsel = {}; S.dcpick = false; S.trashView = false; S.trash = null; S.trashN = 0; $('ogv').hidden = true;
     }
     clientTheme();
     const c = S.clients.find(function (x) { return x.code === S.code; });
@@ -3022,6 +3047,52 @@
     }
   }
   const WSTH = {};
+  /* ================= ★★★ 事務所から（事務所 → 顧問先。2026-10-20） =================
+     箱とは別の欄（顧問先の画面の「📨 事務所から」）。仕訳化・AI 下書きには流れない。顧問先は消せない。開いたら 開いた日時が出る */
+  function ogMsg(t, err) { $('ogMsg').textContent = t || ''; $('ogMsg').className = 'ogmsg' + (err ? ' err' : ''); }
+  function ogDraw(list) {
+    const w = $('ogSent'); w.textContent = '';
+    if (!list.length) { w.appendChild(el('div', 'muted', 'まだ送っていません。')); return; }
+    list.forEach(function (x) {
+      const r = el('div', 'r' + (x.del ? ' del' : ''));
+      r.appendChild(el('span', 'k', x.kind + (x.year ? ' ' + x.year + '年分' : ''))); r.appendChild(el('span', 'n', x.name));
+      r.appendChild(el('span', null, x.at + ' ' + (x.who || '')));
+      r.appendChild(el('span', x.del ? null : x.opened ? 'o' : 'u', x.del ? '取り下げ ' + x.del : x.opened ? '✓ 開いた ' + x.opened : '未読'));
+      if (x.mail) r.title = 'メール：' + x.mail;
+      if (!x.del) { const b = el('button', 'btn ghost sm', '取り下げる'); b.type = 'button'; b.title = '顧問先の画面から消す（Drive のファイルと記録は残ります）';
+        b.addEventListener('click', function () { if (!confirm('「' + x.name + '」を 顧問先の画面から取り下げますか？')) return; const code = S.code; gs('outgoDel', code, x.id).then(function (l) { if (code === S.code) { ogDraw(l); ogMsg('取り下げました。'); } }, function (e) { ogMsg(e.message, true); }); });
+        r.appendChild(b); }
+      w.appendChild(r);
+    });
+  }
+  function ogLoad() { const code = S.code; gs('outgoList', code).then(function (l) { if (code === S.code) ogDraw(l || []); }, function (e) { ogMsg(e.message, true); }); }
+  $('ogOpen').addEventListener('click', function () {
+    if (!S.code) return;
+    const c = (S.clients || []).find(function (x) { return x.code === S.code; }) || { name: '' };
+    $('ogvWho').textContent = S.code + '　' + c.name + ' 様へ';
+    if (!$('ogYear').value) $('ogYear').value = String(new Date().getFullYear() - 1);
+    ogMsg(''); $('ogSent').textContent = '読んでいます…'; $('ogv').hidden = false; ogLoad();
+  });
+  $('ogCancel').addEventListener('click', function () { $('ogv').hidden = true; });
+  $('ogGo').addEventListener('click', async function () {
+    const fs = Array.prototype.slice.call($('ogFiles').files || []), code = S.code;
+    if (!fs.length) { ogMsg('送るファイルを選んでください。', true); return; }
+    const big = fs.filter(function (f) { return f.size > 30 * 1024 * 1024; }); if (big.length) { ogMsg('30MB を超えるものは送れません：' + big.map(function (f) { return f.name; }).join('、'), true); return; }
+    const o0 = { kind: $('ogKind').value, year: $('ogYear').value.trim(), memo: $('ogMemo').value.trim(), mail: $('ogMail').checked };
+    $('ogGo').disabled = true; let n = 0, last = null, mailed = '';
+    try {
+      for (const f of fs) {
+        ogMsg('送っています… ' + (n + 1) + ' / ' + fs.length);
+        const b64 = await new Promise(function (ok, ng) { const rd = new FileReader(); rd.onload = function () { ok(String(rd.result).split(',')[1] || ''); }; rd.onerror = ng; rd.readAsDataURL(f); });
+        const r = await gs('outgoSend', code, Object.assign({}, o0, { name: f.name, mime: f.type || 'application/octet-stream', b64: b64, mail: o0.mail && n === fs.length - 1 }));
+        n++; last = r.list; if (r.mailed) mailed = r.mailed;
+      }
+      if (code === S.code && last) ogDraw(last);
+      $('ogFiles').value = ''; $('ogMemo').value = '';
+      ogMsg(n + '件を送りました。顧問先の画面の「📨 事務所から」に出ます。' + (o0.mail ? (/@/.test(mailed) ? 'メールで知らせました（' + mailed + '）。' : 'メールは送れませんでした：' + mailed) : ''), o0.mail && !/@/.test(mailed));
+    } catch (e) { ogMsg((n ? n + '件は送りました。' : '') + '送れませんでした。' + e.message, true); if (code === S.code) ogLoad(); }
+    finally { $('ogGo').disabled = false; }
+  });
   const D_ICON = '<svg class="dbox-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l2.2-4.4A1 1 0 0 1 6.1 4h11.8a1 1 0 0 1 .9.6L21 9"/><path d="M3 9h5l1.5 3h5L16 9h5v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>';
   const D_ICON_S = D_ICON.replace('dbox-i', 'dmon-i');
   /* ★ 5枚以上の書類（2026-10-15。顧問先の画面と同じ）：4枚を並べて、5枚目からは 束ねた紙（＋N枚）。押すと ひらく */
