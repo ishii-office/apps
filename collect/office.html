@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792394260;</script>
+<script>window.__PAGE_VER=1792462219;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -218,6 +218,12 @@
   .dpz .cbox { border: 1.5px solid var(--dline); border-radius: 12px; background: #fff; padding: 14px; margin-top: 12px; }
   .dpz .muted { color: #888; }
 
+  .aicon { display: flex; gap: 12px; align-items: center; }
+  .aicon canvas { width: 72px; height: 72px; border-radius: 16px; flex: 0 0 auto; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .aicon-r { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .aicon-c { display: flex; flex-wrap: wrap; gap: 6px; }
+  .aicon-c button { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #bbb; cursor: pointer; padding: 0; }
+  .aicon-c button[aria-pressed="true"] { box-shadow: 0 0 0 3px #1f3a5f; }
   .dpz .spsum { margin: 14px 0 6px; padding: 10px 12px; border: 1.5px solid #c8b06a; border-radius: 10px; background: #fffaf0; display: flex; flex-direction: column; gap: 5px; font-size: 13px; }
   .dpz .spsum > b { font-size: 14px; }
   .dpz .spsum .spl { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
@@ -1233,6 +1239,11 @@
           <div class="btns" id="aCnsBtns" hidden><button type="button" class="btn ghost sm" id="aCnsLog">同意の記録を見る</button><button type="button" class="btn ghost sm" id="aCnsWd">撤回を記録する</button><button type="button" class="btn sm" id="aCnsRe" hidden>同意の画面を出す</button><button type="button" class="btn ghost sm" id="aCnsVerify">同意ログの書き換えを確かめる</button></div>
           <div class="log" id="aCnsOut" hidden></div>
         </div></div>
+      <div class="f"><label for="aIconName">ホーム画面のアイコン（顧問先の端末に置くアイコンの 名前と色）</label>
+        <div class="aicon"><canvas id="aIconPv" width="72" height="72" aria-hidden="true"></canvas>
+          <div class="aicon-r"><input id="aIconName" maxlength="12" placeholder="名前 例 丸京 資料（12字まで。空なら「資料提出」）">
+            <div class="aicon-c" id="aIconCs"></div><input type="hidden" id="aIconColor"></div></div>
+        <div class="hint">同じ端末に 何社かのアイコンが並ぶとき（事務所のiPad など）に見分けるため。<b>もう置いてあるアイコンは変わりません</b>。変えたら 顧問先の端末で アイコンを長押しして削除 → 提出URLを開き直して「ホーム画面に追加」してもらってください。</div></div>
       <div class="f"><label for="aAppUrl">専用アプリ（あれば。顧問先の画面に［↗ ○○へ］が出て 行き来できる）</label>
         <div class="url"><input id="aAppName" maxlength="30" placeholder="名前 例 Bar ALLURE" style="max-width:180px"><input id="aAppUrl" maxlength="300" placeholder="URL 例 https://ishii-office.github.io/apps/079/"></div>
         <div class="hint">事務所のアプリ（https://ishii-office.github.io/apps/…）か GAS のURLだけ。専用アプリの側には、この顧問先の提出URLを入れてもらう（憲法「専用アプリと資料回収アプリの行き来」）。</div></div>
@@ -7273,7 +7284,7 @@
     $('aTitle').textContent = c.code + '　' + c.name;
     $('aForm').hidden = false;
     $('aCode').value = c.code; $('aCode').readOnly = true;
-    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); $('aRepTitle').value = c.repTitle || ''; $('aRepName').value = c.repName || ''; $('aExplainer').value = c.explainer || ''; aCnsShow(c); $('aFy').value = c.fy ? String(c.fy) : ''; $('aKind').value = c.kindSet ? c.kind : ''; $('aKindHint').textContent = c.kindSet ? '' : '（いまは 名前から「' + corpKindOf(c) + '」と当てています）';
+    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); $('aRepTitle').value = c.repTitle || ''; $('aRepName').value = c.repName || ''; $('aExplainer').value = c.explainer || ''; $('aIconName').value = c.iconName || ''; aIconSet(c.iconColor || ''); aCnsShow(c); $('aFy').value = c.fy ? String(c.fy) : ''; $('aKind').value = c.kindSet ? c.kind : ''; $('aKindHint').textContent = c.kindSet ? '' : '（いまは 名前から「' + corpKindOf(c) + '」と当てています）';
     $('aBoxes').value = c.boxesRaw ? c.boxes.map(function (b) { return ((c.hidden || []).indexOf(b) >= 0 ? '~' : '') + b; }).join('\n') : '';
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     aThemeSet(c.theme || 'green');
@@ -7286,7 +7297,7 @@
     A.cur = null; A.isNew = true;
     $('aTitle').textContent = '新しい顧問先';
     $('aForm').hidden = false;
-    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName', 'aKind', 'aRepTitle', 'aRepName', 'aExplainer'].forEach(function (k) { $(k).value = ''; }); aCnsShow(null); $('aKindHint').textContent = ''; A.spot = {};
+    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName', 'aKind', 'aRepTitle', 'aRepName', 'aExplainer', 'aIconName'].forEach(function (k) { $(k).value = ''; }); aIconSet(''); aCnsShow(null); $('aKindHint').textContent = ''; A.spot = {};
     $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false; aThemeSet('green'); aLogoShow(null);
     $('aActiveRow').hidden = true; $('aUrlRow').hidden = true;
     $('aSave').textContent = '登録して URL を作る';
@@ -7431,6 +7442,28 @@
     const v = $('aNewBox').value.replace(/[\\\/／:*?"<>|]/g, '').trim().slice(0, 30); if (!v) { $('aNewBox').focus(); return; }
     const l = aTreeGet(); if (l.indexOf(v) < 0) l.push(v); aTreeSet(l); $('aNewBox').value = '';
   });
+  /* ★ ホーム画面のアイコン（2026-10-20）：顧問先の画面（index.html の iconDraw）と同じ形で見本を描く */
+  const ICON_COLORS = [['#0F6E5C', '緑（はじめ）'], ['#1F3A5F', '紺'], ['#1E78C8', '青'], ['#6B3FA0', '紫'], ['#C2456E', '桃'], ['#B8322E', '赤'], ['#D9731A', '橙'], ['#7A5230', '茶'], ['#555F6B', '灰']];
+  function aIconDraw() {
+    const c = $('aIconPv'), x = c.getContext('2d'), u = c.width / 100, color = $('aIconColor').value || ICON_COLORS[0][0];
+    x.clearRect(0, 0, c.width, c.height); x.fillStyle = color; x.fillRect(0, 0, c.width, c.height);
+    const L = 30 * u, T = 20 * u, W = 40 * u, H = 56 * u, F = 12 * u;
+    x.fillStyle = '#fff'; x.beginPath(); x.moveTo(L, T); x.lineTo(L + W - F, T); x.lineTo(L + W, T + F); x.lineTo(L + W, T + H); x.lineTo(L, T + H); x.closePath(); x.fill();
+    x.strokeStyle = color; x.lineWidth = 6 * u; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.beginPath(); x.moveTo(50 * u, 66 * u); x.lineTo(50 * u, 36 * u); x.moveTo(39 * u, 47 * u); x.lineTo(50 * u, 36 * u); x.lineTo(61 * u, 47 * u); x.stroke();
+  }
+  function aIconSet(v) {
+    $('aIconColor').value = v || '';
+    const box = $('aIconCs'); box.textContent = '';
+    ICON_COLORS.forEach(function (p, i) {
+      const b = el('button'); b.type = 'button'; b.style.background = p[0]; b.title = p[1]; b.setAttribute('aria-label', 'アイコンの色 ' + p[1]);
+      b.setAttribute('aria-pressed', String((v || ICON_COLORS[0][0]).toUpperCase() === p[0].toUpperCase()));
+      b.addEventListener('click', function () { aIconSet(i ? p[0] : ''); });
+      box.appendChild(b);
+    });
+    aIconDraw();
+  }
+  aIconSet('');
   $('aNewBox').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('aAddBox').click(); } });
   $('aBoxes').addEventListener('input', aPreview);
   $('aForm').addEventListener('submit', function (e) {
@@ -7438,7 +7471,8 @@
     if (A.busy) return;
     const o = { code: ccode($('aCode').value), fy: $('aFy').value, name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
       boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew, email: $('aEmail').value.trim(), spot: A.spot || {}, appUrl: $('aAppUrl').value.trim(), appName: $('aAppName').value.trim(), kind: $('aKind').value,
-      repTitle: $('aRepTitle').value.trim(), repName: $('aRepName').value.trim(), explainer: $('aExplainer').value.trim() };
+      repTitle: $('aRepTitle').value.trim(), repName: $('aRepName').value.trim(), explainer: $('aExplainer').value.trim(),
+      iconName: $('aIconName').value.trim(), iconColor: $('aIconColor').value };
     A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
     gs('adminSave', o).then(function (l) {
       A.list = l; A.busy = false; $('aSave').disabled = false;
