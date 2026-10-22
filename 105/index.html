@@ -2934,6 +2934,17 @@ function opMark(){
    ============================================================ */
 var _opBase={};
 function opBaseSet(k,v){ if(opShapeOf(k)) _opBase[k]=(v==null?null:String(v)); }
+/** ★★★ はじめの1回（boot）で直に入れたぶんの「もとの姿」を控える（2026-10-22）
+
+    boot は `storage` の包みを通らない（`getManyRaw`）ので、ここを呼ばないと
+    **控えが無いまま** DB に入る。控えが無い入れものは
+    「足すだけ・消さない」になるので、**消したものがサーバに残り続ける**。
+    （出納帳から1件消す → 画面からは消える → 開き直すと戻ってくる）
+
+    ★ すでに控えているものは上書きしない。
+      覚えたぶん（mk_boot1）で描いているあいだに書いたぶんがあると、
+      その控えのほうが新しいため。 */
+function opBaseSeed(k,v){ if(opShapeOf(k) && !(k in _opBase)) opBaseSet(k,v); }
 function opBaseOf(k,def){ return jparse(_opBase[k], def); }
 
 function patchSave(key, shape, patch){
@@ -3272,7 +3283,7 @@ function cashWarm(){
       DB.jmap[jkey(m)]=jparse(g[jkey(m)],{})||{};
       got++;
     });
-    if(got) clearCaches();
+    if(got){ clearCaches(); render(); }
   }).catch(function(){ _cashWarm=0; });          /* こけたら、次にひらいたときやり直す */
 }
 
@@ -9697,10 +9708,16 @@ function viewCash(el){
   });
   el.querySelectorAll('[data-rm]').forEach(function(b){ b.onclick=function(){
     var x=(DB.cash[bk]||[]).filter(function(y){return String(y.id)===b.dataset.rm;})[0];
-    if(!confirm('この記録を消しますか？'+(x&&x.sale?'\n（現金売上の内訳も一緒に消えます）':''))) return;
+    if(!confirm('この記録を消しますか？'+(x&&x.sale?'\n（現金売上の内訳も一緒に消えます）':'')
+                +(x&&x.arPay?'\n（売掛の消込も一緒に消えます）':''))) return;
     DB.cash[bk]=(DB.cash[bk]||[]).filter(function(y){return String(y.id)!==b.dataset.rm;});
     S.cashEdit=null; S.cashJustId=null;
-    saleRemove(m,b.dataset.rm); clearCaches();
+    saleRemove(m,b.dataset.rm);
+    /* ★★★ 売掛の回収なら、消込（payments:）も必ず一緒に消す（2026-10-22）。
+         ここでもやるのは、下の包み（viewCash の上書き）が当たらなかったときの受け皿。
+         消し残すと「何月分」からその月が消えたきり戻らない */
+    try{ if(window.arcRemove_) arcRemove_(x); }catch(e){}
+    clearCaches();
     render(); cashSaveAsync(bk,JSON.stringify(DB.cash[bk])); }; });
 }
 </script>
@@ -11414,6 +11431,11 @@ function bootPreForget_(){
 
 /** 読んだ値を DB に当てる。覚えたぶんでも、サーバの本物でも同じ道を通る */
 async function bootApply_(g, stale){
+  /* ★★★ サーバから読んだぶんは「もとの姿」として控える（2026-10-22）。
+       ここは `storage` の包みを通らないので、控えるのを忘れると
+       **消したものがサーバに残る**（上の `opBaseSeed` を読む）。
+       覚えたぶん（stale）は控えない ── もとの姿は「サーバが持っていたもの」だけ */
+  if(!stale){ try{ Object.keys(g||{}).forEach(function(k){ opBaseSeed(k, g[k]); }); }catch(e){} }
   DB.kgReady = !!(g['migrate:kgunit'] && String(g['migrate:kgunit'])==='1');
   if(!DB.kgReady) return false;
   await loadClients(g);
@@ -11946,7 +11968,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-10-19a 売掛の現金回収を出納帳から直せる／同じ日の中で順番を入れ替えられる（⠿ と ▲▼）／何月分を選ぶと金額が入る';
+var APP_BUILD='2026-10-22a 消したものがサーバにも残らない（はじめの1回で読んだぶんの控え）／売掛の現金回収を消すと消込も必ず消える＝「何月分」にその月が戻る／迷子の消込は入金帳で消せる';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -12850,15 +12872,63 @@ function forLabel(c,key){
   var m=String(key).match(/^\d{4}-(\d{2})$/);
   return m? (+m[1])+'月分' : String(key);
 }
-/** 小口現金の元帳から、売掛回収の行を消すときは入金も一緒に消す */
+/** 小口現金の元帳から、売掛回収の行を消すときは入金も一緒に消す
+
+    ★★★ 消込を取りこぼすと、その月分は売掛から減ったままになり、
+      「何月分」のプルダウンから **その月が消えたきり戻ってこない**
+      （2026-10-22・丸京）。だから【取りこぼしようのない形】にする …
+
+      ① 記録が持っている取引先（`arPay.cid`）の入金帳
+      ② それで当たらなければ、**読み込んである入金帳を id で当たる**
+         （`arPay` を持たない古い記録・取引先を付け替えたあとの記録のため）
+
+      id は記録と入金で同じ（`arcSave` が同じものを使う）ので、これで必ず当たる。 */
+function arcRemove_(x){
+  if(!x) return false;
+  var pks=[];
+  if(x.arPay && x.arPay.cid) pks.push('payments:'+x.arPay.cid);
+  Object.keys(DB.pay||{}).forEach(function(k){
+    if(pks.indexOf(k)>=0) return;
+    if((DB.pay[k]||[]).some(function(p){
+      return String(p.id)===String(x.id) && p.fromCash; })) pks.push(k);
+  });
+  var hit=false;
+  pks.forEach(function(pk){
+    var was=(DB.pay[pk]||[]).length;
+    DB.pay[pk]=(DB.pay[pk]||[]).filter(function(p){ return String(p.id)!==String(x.id); });
+    if(DB.pay[pk].length===was) return;           /* もう無い → 空の差分を送らない */
+    hit=true;
+    cashSaveAsync(pk, JSON.stringify(DB.pay[pk]));
+  });
+  return hit;
+}
+/** ★★★ 迷子の消込か ── そのもとになった【小口現金の行】がもう無い（2026-10-22）
+
+    消込（`payments:` の `fromCash`）は、ふつう小口現金の行と一対。
+    ところが行だけ消えて消込が残ると、その月分は売掛から減ったままになり、
+    **「何月分」からその月が出てこない。しかも入金帳は 🔒 なので、消す手立てが無い。**
+    だから「行がもう無い」と**はっきり分かるときだけ**、入金帳で消せるようにする。
+
+    ★ その月の出納帳を読み込んでいないときは **false**（＝ 🔒 のまま）。
+      読んでいないのに「無い」と言うと、生きている消込を消させてしまう。 */
+function payOrphan_(p){
+  if(!p || !p.fromCash) return false;
+  var bk=bkeyOf(String(p.date||''));
+  if(!bk || !(bk in DB.cash)) return false;
+  return !(DB.cash[bk]||[]).some(function(x){ return String(x.id)===String(p.id); });
+}
 function arcRemove(m,id){
-  var bk=bkey(m);
-  var x=(DB.cash[bk]||[]).filter(function(y){ return String(y.id)===String(id); })[0];
-  if(!x || !x.arPay) return false;
-  var pk='payments:'+x.arPay.cid;
-  DB.pay[pk]=(DB.pay[pk]||[]).filter(function(p){ return String(p.id)!==String(id); });
-  cashSaveAsync(pk, JSON.stringify(DB.pay[pk]));
-  return true;
+  /* ★ 記録は【その記録の日付の月】の入れものに居る（2026-09-27）。
+       いま見ている月で探して見つからなければ、そちらも当たる */
+  var x=(DB.cash[bkey(m)]||[]).filter(function(y){ return String(y.id)===String(id); })[0];
+  if(!x){
+    Object.keys(DB.cash||{}).some(function(k){
+      var y=(DB.cash[k]||[]).filter(function(z){ return String(z.id)===String(id); })[0];
+      if(y){ x=y; return true; }
+      return false;
+    });
+  }
+  return arcRemove_(x);
 }
 
 var _viewCashBase=viewCash;
@@ -13127,6 +13197,9 @@ viewRecv=function(el){
        枠の名前・番号・「この枠に入れる」「入力中」の札は、ぜんぶ要らなくなった */
   var PANE=S.rvPane||'in';
   if(['in','disc','bad','led'].indexOf(PANE)<0) PANE='in';
+  /* ★ 入金帳では「小口現金にもとの行があるか」を見分けたいので、
+       この期ぶんの出納帳をうしろで読んでおく（`cashWarm` は1回きり・1往復） */
+  if(PANE==='led'){ try{ cashWarm(); }catch(e){} }
   var rvm0=(PANE==='led') ? (S.rvMode||'in') : PANE;
   S.rvMode=rvm0;
   var c=S.rvClient?clientById(S.rvClient):null;
@@ -13198,15 +13271,18 @@ viewRecv=function(el){
               '<span class="r num" style="font-weight:700;color:'+col+'">'+yen(a)+'</span>'+
               '<span class="c"><span class="pill '+rvMethodPill(x.method)+'">'+esc(x.method||'')+'</span></span>'+
               '<span class="muted">'+esc(x['for']?forLabel(cc,x['for']):'自動')+'</span>'+
-              '<span class="c">'+(x.fromCash
+              '<span class="c">'+((x.fromCash && !payOrphan_(x))
                 ? '<span title="小口現金タブで消してください">🔒</span>'
-                : '<button class="led-btn rm tap" data-rvdel="'+x.id+'" data-rvcid="'+cc.id+'">🗑 消す</button>')+'</span>'+
+                : '<button class="led-btn rm tap" data-rvdel="'+x.id+'" data-rvcid="'+cc.id+'"'+
+                  (x.fromCash?' title="小口現金にもとの行がありません（迷子の消込）"':'')+'>🗑 消す</button>'+
+                  (x.fromCash?'<span class="muted" style="display:block;font-size:11px">小口現金に行がありません</span>':''))+'</span>'+
             '</div>';
           }).join(''):'<div style="padding:20px;text-align:center;color:#999">この月の記録はまだありません。'+
             '上の［通帳からの連続入力］［値引き］［貸倒れ］から入れてください。</div>')+
         '</div></div></div></div>'+
       '<p class="muted" style="margin:8px 0 0">'+
-        '<b>小口現金から</b>の分（お店から集金した現金）は<b>小口現金タブ</b>で消してください。</p>'+
+        '<b>小口現金から</b>の分（お店から集金した現金）は<b>小口現金タブ</b>で消してください。'+
+        '<br><span style="color:#7A2E3F">小口現金にもとの行が無いもの（迷子の消込）だけ、ここで消せます。</span></p>'+
     '</div>'+
 
     '<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:8px">'+
@@ -13237,9 +13313,11 @@ viewRecv=function(el){
               '<span class="c"><span class="pill '+(p.method==='現金'?'tag-kan':(p.method===BAD_M?'tag-crush':(arIsDisc(p)?'tag-maru':'tag-std')))+'">'+esc(p.method||'')+'</span></span>'+
               '<span class="muted">'+esc(p['for']?forLabel(sel,p['for']):'自動')+'</span>'+
               '<span class="muted">'+esc(p.memo||'')+(p.fromCash?' <span class="arc-badge">小口現金から</span>':'')+'</span>'+
-              '<span class="c">'+(p.fromCash
+              '<span class="c">'+((p.fromCash && !payOrphan_(p))
                 ? '<span title="小口現金タブで消してください">🔒</span>'
-                : '<button class="tap" data-pdel="'+p.id+'" style="border:none;background:transparent;color:#ccc;font-size:16px">🗑</button>')+'</span>'+
+                : '<button class="tap" data-pdel="'+p.id+'"'+
+                  (p.fromCash?' title="小口現金にもとの行がありません（迷子の消込）"':'')+
+                  ' style="border:none;background:transparent;color:'+(p.fromCash?'#7A2E3F':'#ccc')+';font-size:16px">🗑</button>')+'</span>'+
             '</div>';
           }).join(''):'<div style="padding:18px;text-align:center;color:#999">入金の記録がありません。</div>')+
           '</div></div></div></div>';
