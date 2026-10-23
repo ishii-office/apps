@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792489374;</script>
+<script>window.__PAGE_VER=1792742439;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -854,7 +854,12 @@
   .dimg .stt { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 0; text-align: center; padding: 2px 3px; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dimg .pdf { bottom: 24px; }
   .dname { font-size: 12.5px; font-weight: 700; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .dat { font-size: 11.5px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ★ 顧問先からのひとこと（2026-10-23）。写真の下に 黄色で はっきり。2行まで見せ、全文は押したときの大きな画面と 札の上で */
+  .dat { margin-top: 4px; font-size: 12px; font-weight: 700; line-height: 1.4; color: #4A3700; background: #FFF3C4; border: 1px solid #E0B43A; border-radius: 6px; padding: 2px 6px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
+  .dimg .dmemo { position: absolute; right: 4px; top: 4px; font-size: 13px; line-height: 1; padding: 3px 5px; border-radius: 6px; background: #FFF3C4; border: 1px solid #E0B43A; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .dview .dvmemo { padding: 8px 14px; background: #FFF3C4; color: #4A3700; font-weight: 700; font-size: 15px; white-space: pre-wrap; border-bottom: 1px solid #E0B43A; }
+  .dview .dvmemo[hidden] { display: none; }
   .dview { position: fixed; inset: 0; z-index: 50; background: rgba(20,30,28,.92); display: flex; flex-direction: column; }
   .dview .dvbar { display: flex; align-items: center; gap: 8px; padding: 8px 128px 8px 10px; background: #fff; flex-wrap: wrap; }   /* 右は［↻ 開き直す］の場所をあける */
   .dview .dvbar .sp { flex: 1; }
@@ -1003,7 +1008,8 @@
     <span class="dtools">
       <span class="dcols" id="dCols" role="group" aria-label="横に何枚ならべるか"><span>横に</span><button type="button" data-c="0" aria-pressed="false">小</button><button type="button" data-c="2" aria-pressed="false">2</button><button type="button" data-c="3" aria-pressed="false">3</button><button type="button" data-c="4" aria-pressed="false">4</button><button type="button" data-c="5" aria-pressed="false">5</button><button type="button" data-c="6" aria-pressed="false">6</button><button type="button" data-c="7" aria-pressed="false">7</button><button type="button" data-c="8" aria-pressed="false">8</button><button type="button" data-c="9" aria-pressed="false">9</button><button type="button" data-c="10" aria-pressed="false">10</button></span>
       <button type="button" id="dPick" aria-pressed="false">選ぶ</button>
-      <button type="button" id="dPdfAll">一括PDF切り出し</button>
+      <button type="button" id="dPdfAll" title="まとめた書類は その束で1つのPDF、ほかは1枚ずつのPDF（2つ以上なら ZIP 1つ）">一括PDF切り出し</button>
+      <button type="button" id="dPrintAll" title="いま見えているものを 並んでいる順に印刷">🖨 印刷</button>
       <button type="button" id="dTrash" hidden>破棄したもの</button>
       <button type="button" id="ogOpen" title="申告書の控え・決算書・試算表・請求書・お知らせ などを この顧問先へ送る（顧問先の画面の「📨 事務所から」に出ます）">📨 顧問先へ送る</button>
     </span>
@@ -1528,12 +1534,13 @@
     <span class="dvback" id="dvBack"></span>
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
     <button type="button" class="btn ghost sm" id="dvClose">閉じる</button></div>
+  <div class="dvmemo" id="dvMemo" hidden></div>
   <div class="jshot" id="dvBody"></div>
 </div>
 
 <div class="dcbar" id="dcbar" hidden>
   <b id="dcN">0件を選んでいます</b>
-  <span class="dcb"><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn ghost sm" id="dcMove">移す</button>
+  <span class="dcb"><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn sm" id="dcPrint">🖨 印刷</button><button type="button" class="btn ghost sm" id="dcMove">移す</button>
     <button type="button" class="btn ghost sm danger" id="dcDel">破棄</button><button type="button" class="btn ghost sm" id="dcNone">全部外す</button><button type="button" class="btn ghost sm" id="dcEnd">やめる</button></span>
 </div>
 
@@ -2775,9 +2782,12 @@
         sb.addEventListener('click', function () { can.forEach(function (x) { if (all) delete S.dcsel[x.id]; else S.dcsel[x.id] = 1; }); docsDraw(); });
         hd.appendChild(sb);
       } else {
-        const pb = el('button', 'dmon-b', 'PDF切り出し'); pb.type = 'button'; pb.title = 'この箱（中の箱も）の全部を1冊のPDFに';
+        const pb = el('button', 'dmon-b', 'PDF切り出し'); pb.type = 'button'; pb.title = 'この箱（中の箱も）を PDF に（まとめた書類は その束で1つ、ほかは1枚ずつ。2つ以上なら ZIP 1つ）';
         pb.addEventListener('click', function () { cutPdf(sub, boxLabel(bx)); });
         hd.appendChild(pb);
+        const pr = el('button', 'dmon-b', '🖨 印刷'); pr.type = 'button'; pr.title = 'この箱（中の箱も）を 並んでいる順に印刷';
+        pr.addEventListener('click', function () { printDocs(sub, boxLabel(bx)); });
+        hd.appendChild(pr);
         if (wsOk() && inBox.length) {
           const wb = el('button', 'dmon-b', '🗗 別ウィンドウ'); wb.type = 'button'; wb.title = 'この箱を 大きな作業場（別の窓）で開く。並べ替え・まとめ・名前の書き換え・PDF。ほかの箱も 別の窓で並べて開けます';
           wb.addEventListener('click', function () { if (!wsOpen('o:' + S.code + ':' + bx, wsOfficeAd(S.code, bx))) dcMsg('別の窓を開けませんでした。ブラウザの「ポップアップをブロック」を このページだけ許可してください。', true); });
@@ -2835,6 +2845,9 @@
           const pb = el('button', 'dmon-b', 'PDF切り出し'); pb.type = 'button';
           pb.addEventListener('click', function () { cutPdf(items, boxLabel(bx) + '_' + perLabel(p)); });
           row.appendChild(pb);
+          const pr = el('button', 'dmon-b', '🖨 印刷'); pr.type = 'button';
+          pr.addEventListener('click', function () { printDocs(items, boxLabel(bx) + '_' + perLabel(p)); });
+          row.appendChild(pr);
           const can = items.filter(function (x) { return x.status !== 'done'; });
           if (can.length) {
             const db = el('button', 'dmon-b danger', '一括破棄'); db.type = 'button';
@@ -2950,8 +2963,8 @@
     const perDocs = pers.map(function (p) { const ds = docsOf(byPer[p]); nd += ds.length; return ds; });
     h.appendChild(E('span', 'n', items.length + '枚・' + nd + '書類'));
     h.appendChild(E('span', 'sp'));
-    if (ad.pdfEach && items.length) { const b = E('button', null, '1書類ごとに PDF'); b.type = 'button'; b.title = 'まとめた書類はその束で1つ、ほかは1枚ずつ PDF にして保存'; b.addEventListener('click', function () { ad.pdfEach(items); }); h.appendChild(b); }
-    if (ad.pdfOne && items.length) { const b = E('button', null, '全部を 1つのPDFに'); b.type = 'button'; b.addEventListener('click', function () { ad.pdfOne(items); }); h.appendChild(b); }
+    if (ad.pdfAll && items.length) { const b = E('button', null, '⬇ PDFで保存'); b.type = 'button'; b.title = 'まとめた書類は その束で1つのPDF、ほかは1枚ずつのPDF（2つ以上なら ZIP 1つ）'; b.addEventListener('click', function () { ad.pdfAll(items); }); h.appendChild(b); }
+    if (ad.print && items.length) { const b = E('button', null, '🖨 印刷'); b.type = 'button'; b.title = '並んでいる順に 全部を印刷'; b.addEventListener('click', function () { ad.print(items); }); h.appendChild(b); }
     const cl = E('button', null, '閉じる'); cl.type = 'button'; cl.addEventListener('click', function () { o.win.close(); }); h.appendChild(cl);
     root.appendChild(h);
     root.appendChild(E('p', 'wsnote', 'つかんで 左右の端へ落とす＝並べ替え／まん中へ落とす＝1つの書類に／下の小さいページを つかむ＝ページの順番／名前を押して書き換え → Enter'));
@@ -3035,8 +3048,8 @@
         gs('workRename', code, it.id, v).then(function (r) { put(pre + ((r && r.name) || (v + ext))); docsDraw(); say('名前を「' + ((r && r.name) || v + ext) + '」にしました。'); },
           function (e) { put(was); docsDraw(); say('名前を変えられませんでした。' + e.message, true); });
       },
-      pdfEach: function (items) { cutPdfEach(items); },
-      pdfOne: function (items) { cutPdf(items, boxLabel(box)); }
+      pdfAll: function (items) { cutPdf(items, boxLabel(box)); },
+      print: function (items) { printDocs(items, boxLabel(box)); }
     };
   }
   function wsThumbsO(ids) {
@@ -3136,7 +3149,7 @@
     if (tg[0] === 'gone') tile.classList.add('gone');
     if (it.status === 'back' && !it.redo) tile.classList.add('isback');
     tile.appendChild(b);
-    if (it.memo) tile.appendChild(el('div', 'dat', it.memo));
+    if (it.memo) { const mm = el('div', 'dat', '💬 ' + it.memo); mm.title = '顧問先から：' + it.memo; tile.appendChild(mm); const mb = el('span', 'dmemo', '💬'); mb.title = mm.title; b.appendChild(mb); }
     b.addEventListener('click', function () {
       if (DDX.justEnded(tile)) return;
       if (!S.dcpick) { docsOpen(it); return; }
@@ -3575,7 +3588,7 @@
     const docs = {}; si.forEach(function (x) { docs[x.set && x.setOf > 1 ? 'S' + x.set : x.id] = 1; });
     const nd = Object.keys(docs).length;
     $('dcN').textContent = nd + '件を選んでいます' + (nd !== n ? '（写真 ' + n + '枚）' : '');
-    ['dcPdf', 'dcMove', 'dcDel'].forEach(function (k) { $(k).disabled = !n; });
+    ['dcPdf', 'dcPrint', 'dcMove', 'dcDel'].forEach(function (k) { $(k).disabled = !n; });
     $('dcJoin').disabled = n < 2;
   }
 
@@ -3590,7 +3603,7 @@
     $('dPick').setAttribute('aria-pressed', String(!!S.dcpick));
     $('dPick').textContent = S.dcpick ? '選ぶのをやめる' : '選ぶ';
     dcBar();
-    $('dPdfAll').textContent = '一括PDF切り出し（' + (S.dcview || []).length + '）'; $('dPdfAll').disabled = !(S.dcview || []).length;
+    $('dPdfAll').textContent = '一括PDF切り出し（' + (S.dcview || []).length + '）'; $('dPdfAll').disabled = $('dPrintAll').disabled = !(S.dcview || []).length;
   }
   $('dCols').addEventListener('click', function (e) {
     const b = e.target.closest('button[data-c]'); if (!b) return;
@@ -3600,8 +3613,10 @@
   $('dPick').addEventListener('click', function () { S.dcpick = !S.dcpick; if (!S.dcpick) S.dcsel = {}; docsDraw(); });
   function selItems() { return (S.dcview || []).filter(function (x) { return S.dcsel[x.id]; }); }
   $('dPdfAll').addEventListener('click', function () { cutPdf(S.dcview || [], ''); });
+  $('dPrintAll').addEventListener('click', function () { printDocs(S.dcview || [], ''); });
   $('dTrash').addEventListener('click', function () { S.trashView = !S.trashView; S.trash = null; docsDraw(); if (S.trashView) trashLoad(); });
   $('dcPdf').addEventListener('click', function () { cutPdf(selItems(), '選択'); });
+  $('dcPrint').addEventListener('click', function () { printDocs(selItems(), '選択'); });
   $('dcMove').addEventListener('click', function () { dMoveOpen(selItems()); });
   $('dcDel').addEventListener('click', function () { discard(selItems(), '選んだ'); });
   $('dcNone').addEventListener('click', function () { S.dcsel = {}; docsDraw(); });
@@ -3737,52 +3752,132 @@
       im.src = src;
     });
   }
-  /* ★ 1書類ごとに PDF（2026-10-19。作業場から）。まとめた書類はその束で1つ、ほかは1枚ずつ */
-  async function cutPdfEach(items) {
-    const gs0 = dGroups(items);
-    if (gs0.length <= 1) { cutPdf(items, ''); return; }
-    for (let i = 0; i < gs0.length; i++) { await cutPdf(gs0[i], String(i + 1).padStart(2, '0') + '_' + String(gs0[i][0].name || '').replace(/^\d{8}_\d{6}_/, '').replace(/\.[^.]+$/, '')); await new Promise(function (ok) { setTimeout(ok, 350); }); }
-    dcMsg('PDFを ' + gs0.length + '個 切り出しました（1書類ごと）。ブラウザが「複数のファイルのダウンロード」を聞いたら［許可］を押してください。');
+  /* ★★★ PDF の切り出しは 選ばせない（2026-10-23。顧問先の画面と同じ決まり）
+       ・まとめた書類（📎）は その束で 1つのPDF（複数ページ）／まとめていないものは 1枚で 1つのPDF
+       ・PDF が2つ以上になるときは ZIP 1つに入れて保存（ダウンロードが何個も出ないように）。1つなら PDF のまま */
+  async function pdfDocBytes(L, items, fulls, prog) {
+    const doc = await L.PDFDocument.create();
+    let skip = 0, i = 0;
+    for (const it of items) {
+      i++; if (prog) prog(i);
+      const v = fulls[it.id];
+      try {
+        if (v && v.t === 'pdf') {
+          const src = await L.PDFDocument.load(b64bytes(v.b64), { ignoreEncryption: true });
+          (await doc.copyPages(src, src.getPageIndices())).forEach(function (pg) { doc.addPage(pg); });
+        } else if (v && v.t === 'img') {
+          const m = v.src.match(/^data:image\/(jpeg|png);base64,(.*)$/);
+          const img = m ? (m[1] === 'png' ? await doc.embedPng(b64bytes(m[2])) : await doc.embedJpg(b64bytes(m[2]))) : await doc.embedJpg(await toJpeg(v.src));
+          const land = img.width > img.height;
+          const W = land ? 842 : 595, H = land ? 595 : 842, M = 18;
+          const sc = Math.min((W - M * 2) / img.width, (H - M * 2) / img.height);
+          const w = img.width * sc, h = img.height * sc;
+          doc.addPage([W, H]).drawImage(img, { x: (W - w) / 2, y: (H - h) / 2, width: w, height: h });
+        } else skip++;
+      } catch (e) { skip++; }
+    }
+    return { pages: doc.getPageCount(), bytes: doc.getPageCount() ? await doc.save() : null, skip: skip };
   }
+  function pdfFname(tag, ext) {
+    const c = S.clients.find(function (x) { return x.code === S.code; }) || { name: '' };
+    return [S.code, c.name, S.per ? perTag(S.per) : '全月分', S.box || '全部の箱', tag].filter(Boolean).join('_').replace(/[\\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') + (ext || '.pdf');
+  }
+  function docTitle(g) { return String(g[0].name || '').replace(/^\d{8}_\d{6}_/, '').replace(/\.[^.]+$/, '') + (g.length > 1 ? '_' + g.length + '枚' : ''); }
+  function saveBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+  }
+  let PDF_BUSY = false;
   async function cutPdf(items, tag) {
-    if (!items.length) return;
-    const btns = ['dPdfAll', 'dcPdf'].map($); btns.forEach(function (b) { b.disabled = true; });
+    if (!items.length || PDF_BUSY) return;
+    PDF_BUSY = true;
+    const btns = ['dPdfAll', 'dcPdf', 'dPrintAll', 'dcPrint'].map($).filter(Boolean); btns.forEach(function (b) { b.disabled = true; });
     try {
       dcMsg('PDFを作っています… 0 / ' + items.length);
       const L = await pdflib();
       const fulls = await fetchFulls(items, function (n) { dcMsg('PDFを作っています… 写真を集めています ' + n + ' / ' + items.length); });
-      const doc = await L.PDFDocument.create();
-      let skip = 0, i = 0;
-      for (const it of items) {
-        i++; dcMsg('PDFを作っています… ' + i + ' / ' + items.length);
-        const v = fulls[it.id];
-        try {
-          if (v && v.t === 'pdf') {
-            const src = await L.PDFDocument.load(b64bytes(v.b64), { ignoreEncryption: true });
-            const pages = await doc.copyPages(src, src.getPageIndices());
-            pages.forEach(function (pg) { doc.addPage(pg); });
-          } else if (v && v.t === 'img') {
-            const m = v.src.match(/^data:image\/(jpeg|png);base64,(.*)$/);
-            const img = m ? (m[1] === 'png' ? await doc.embedPng(b64bytes(m[2])) : await doc.embedJpg(b64bytes(m[2]))) : await doc.embedJpg(await toJpeg(v.src));
-            const land = img.width > img.height;
-            const W = land ? 842 : 595, H = land ? 595 : 842, M = 18;
-            const sc = Math.min((W - M * 2) / img.width, (H - M * 2) / img.height);
-            const w = img.width * sc, h = img.height * sc;
-            doc.addPage([W, H]).drawImage(img, { x: (W - w) / 2, y: (H - h) / 2, width: w, height: h });
-          } else skip++;
-        } catch (e) { skip++; }
+      const groups = dGroups(items), made = [];
+      let skip = 0;
+      for (let gi = 0; gi < groups.length; gi++) {
+        dcMsg('PDFを作っています… ' + (gi + 1) + ' / ' + groups.length + '書類');
+        const r = await pdfDocBytes(L, groups[gi], fulls);
+        skip += r.skip;
+        if (r.bytes) made.push({ name: docTitle(groups[gi]) + '.pdf', file: new Blob([r.bytes], { type: 'application/pdf' }), pages: r.pages });
       }
-      if (!doc.getPageCount()) { dcMsg('PDFに入れられるものがありませんでした（HEIC の写真などは Drive で開いてください）。', true); return; }
-      const bytes = await doc.save();
-      const c = S.clients.find(function (x) { return x.code === S.code; }) || { name: '' };
-      const fname = [S.code, c.name, S.per ? perTag(S.per) : '全月分', S.box || '全部の箱', tag].filter(Boolean).join('_').replace(/[\\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') + '.pdf';
-      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-      const a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-      dcMsg('PDFを切り出しました：' + fname + '（' + doc.getPageCount() + 'ページ）' + (skip ? '　入れられなかったもの ' + skip + '件（HEIC など。Drive で開いてください）' : ''));
+      if (made.length > 1) made.forEach(function (m, i) { m.name = String(i + 1).padStart(2, '0') + '_' + m.name; });
+      if (!made.length) { dcMsg('PDFに入れられるものがありませんでした（HEIC の写真などは Drive で開いてください）。', true); return; }
+      const sk = skip ? '　入れられなかったもの ' + skip + '件（HEIC など。Drive で開いてください）' : '';
+      if (made.length === 1) {
+        const fname = pdfFname((tag ? tag + '_' : '') + made[0].name.replace(/\.pdf$/, ''));
+        saveBlob(made[0].file, fname);
+        dcMsg('PDFを切り出しました：' + fname + '（' + made[0].pages + 'ページ）' + sk);
+        return;
+      }
+      const zname = pdfFname(tag, '.zip');
+      saveBlob(await zipFiles(made, zname), zname);
+      dcMsg('PDF ' + made.length + '個を ZIP 1つにして保存しました：' + zname + '（まとめた書類は その束で1つ、ほかは1枚ずつ）' + sk);
     } catch (e) {
       dcMsg('PDFを作れませんでした。' + e.message, true);
-    } finally { docsTools(); }
+    } finally { PDF_BUSY = false; btns.forEach(function (b) { b.disabled = false; }); docsTools(); }
+  }
+  /* ★★ 印刷（2026-10-23）。並んでいる順に 1つに綴じて 印刷の画面を出す（見えない枠に PDF を開く）。出ないブラウザは 別のタブ */
+  async function printDocs(items, tag) {
+    if (!items.length || PDF_BUSY) return;
+    PDF_BUSY = true;
+    try {
+      dcMsg('印刷の用意をしています… 0 / ' + items.length);
+      const L = await pdflib();
+      const fulls = await fetchFulls(items, function (n) { dcMsg('印刷の用意をしています… 写真を集めています ' + n + ' / ' + items.length); });
+      const ordered = [].concat.apply([], dGroups(items));
+      const r = await pdfDocBytes(L, ordered, fulls);
+      if (!r.bytes) { dcMsg('印刷できるものがありませんでした（HEIC の写真などは Drive で開いてください）。', true); return; }
+      printBlob(new Blob([r.bytes], { type: 'application/pdf' }));
+      dcMsg('印刷の画面を開きました（' + r.pages + 'ページ）。出てこないときは 新しいタブの PDF から印刷してください。' + (r.skip ? '　入れられなかったもの ' + r.skip + '件' : ''));
+    } catch (e) {
+      dcMsg('印刷できませんでした。' + e.message, true);
+    } finally { PDF_BUSY = false; }
+  }
+  function printBlob(blob) {
+    const url = URL.createObjectURL(blob);
+    const old = document.getElementById('printFrame'); if (old) old.remove();
+    const f = document.createElement('iframe'); f.id = 'printFrame'; f.title = '印刷';
+    f.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+    f.onload = function () { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { const w = window.open(url, '_blank'); if (!w) location.href = url; } };
+    f.src = url; document.body.appendChild(f);
+    setTimeout(function () { URL.revokeObjectURL(url); try { f.remove(); } catch (e) {} }, 600000);
+  }
+  /* ZIP（しまうだけ。名前は UTF-8 の印つき＝Windows でも文字化けしない）。顧問先の画面と同じ作り */
+  let CRC_T = null;
+  function crc32(u) {
+    if (!CRC_T) { CRC_T = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; CRC_T[n] = c >>> 0; } }
+    let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC_T[(c ^ u[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  async function zipFiles(list, name) {
+    const enc = new TextEncoder(), parts = [], cen = [];
+    const d = new Date(), dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF, dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+    const used = {};
+    let off = 0;
+    for (const x of list) {
+      let nm = String(x.name || 'file').replace(/[\\\/:*?"<>|]+/g, '_');
+      if (used[nm]) { const m = nm.match(/^(.*?)(\.[^.]*)?$/); nm = m[1] + '_' + (++used[nm]) + (m[2] || ''); } else used[nm] = 1;
+      const nb = enc.encode(nm), data = new Uint8Array(await x.file.arrayBuffer()), crc = crc32(data);
+      const h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+      h.setUint16(10, dt, true); h.setUint16(12, dd, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true);
+      h.setUint16(26, nb.length, true); h.setUint16(28, 0, true);
+      parts.push(h.buffer, nb, data);
+      const c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+      c.setUint16(12, dt, true); c.setUint16(14, dd, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true);
+      c.setUint16(28, nb.length, true); c.setUint32(42, off, true);
+      cen.push(c.buffer, nb);
+      off += 30 + nb.length + data.length;
+    }
+    const csz = cen.reduce(function (s, b) { return s + b.byteLength; }, 0);
+    const e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, list.length, true); e.setUint16(10, list.length, true); e.setUint32(12, csz, true); e.setUint32(16, off, true);
+    return new Blob(parts.concat(cen, [e.buffer]), { type: 'application/zip' });
   }
 
   /* 大きく見る（画面いっぱい）。仕訳化へも ここから */
@@ -3790,6 +3885,7 @@
     const v = $('dview'); v.hidden = false; document.body.classList.add('dv-on');
     $('dvName').textContent = perLabel(it.period) + '　［' + it.box + '］　' + it.name.replace(/^\d{8}_\d{6}_/, '');
     $('dvDrive').href = it.url;
+    $('dvMemo').textContent = it.memo ? '💬 顧問先から：' + it.memo : ''; $('dvMemo').hidden = !it.memo;
     $('dvMove').onclick = function () { docsClose(); dMoveOpen([it]); };
     dvBackDraw(it);
     $('dvGo').onclick = function () { docsClose(); perPick(it.period); S.box = ''; $('box').value = '';
