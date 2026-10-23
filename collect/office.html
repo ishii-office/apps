@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792742439;</script>
+<script>window.__PAGE_VER=1792746693;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -507,6 +507,60 @@
 
   /* 担当者 */
   .staff { max-width: 640px; }
+  /* ★★★ 改善要望（2026-10-23） */
+  .kzbadge { margin-left: 5px; display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--err); color: #fff; font-size: 11.5px; line-height: 18px; text-align: center; }
+  .kz { max-width: 1100px; }
+  .kzhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 8px; }
+  .kzhead h2 { margin: 0; font-size: 20px; }
+  .kzhead .sp { flex: 1; }
+  .kzflt button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .kzmine { margin: 8px 0 12px; padding: 10px 14px; border-radius: 10px; background: #E5F2E8; border: 1px solid #9CCBA8; }
+  .kzmine h3 { margin: 0 0 6px; font-size: 15px; color: var(--ok); }
+  .kzmine li { margin: 4px 0; }
+  .kzc { border: 1px solid var(--line); border-left: 6px solid #9AA7B4; border-radius: 10px; background: #fff; padding: 10px 14px; margin: 10px 0; }
+  .kzc.st-確認待ち { border-left-color: #C98A12; } .kzc.st-確認済み { border-left-color: #2A6FDB; } .kzc.st-AIへ送った { border-left-color: #7A3FC9; }
+  .kzc.st-改善済み { border-left-color: var(--ok); background: #F6FBF7; } .kzc.st-見送り { opacity: .7; }
+  .kzc .h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .kzc .no { font-weight: 800; font-size: 15px; }
+  .kzc .chip { font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: #EEF1F4; }
+  .kzc .chip.u { background: #FDECEA; color: var(--err); }
+  .kzc .meta { font-size: 12.5px; color: var(--sub); }
+  .kzc dl { display: grid; grid-template-columns: 130px 1fr; gap: 3px 10px; margin: 8px 0; font-size: 14px; }
+  .kzc dt { color: var(--sub); font-weight: 700; } .kzc dd { margin: 0; white-space: pre-wrap; word-break: break-word; }
+  .kzc .shots, .kzf .shots { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+  .kzshot { position: relative; width: 150px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #F4F6F8; font-size: 11.5px; }
+  .kzshot img { display: block; width: 100%; height: 100px; object-fit: contain; background: #fff; cursor: zoom-in; }
+  .kzshot .n { padding: 2px 5px; } .kzshot .x { position: absolute; top: 2px; right: 2px; border: 0; border-radius: 50%; width: 22px; height: 22px; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; line-height: 1; }
+  .kzc .act { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .kzc .done { margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: #E5F2E8; white-space: pre-wrap; font-size: 14px; }
+  .kzc .news { margin: 6px 0 0; padding: 8px 10px; border-radius: 8px; background: #FFF3C4; white-space: pre-wrap; font-size: 14px; }
+  .kzc details { margin-top: 6px; font-size: 12.5px; color: var(--sub); } .kzc details li { margin: 2px 0; }
+  .kzc .dform { margin-top: 8px; padding: 10px; border: 1px dashed var(--ok); border-radius: 8px; display: grid; gap: 6px; }
+  .kzc .dform textarea, .kzf textarea, .kzf input[type=text], .kzf input[type=email], .kzf select { width: 100%; font: inherit; font-size: 14.5px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; box-sizing: border-box; }
+  .kzc .dform textarea { min-height: 70px; }
+  .kzdlg { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.45); overflow: auto; padding: 18px 10px; }
+  .kzdlg[hidden] { display: none; }
+  .kzdlg .box { max-width: 1060px; margin: 0 auto; background: #fff; border-radius: 14px; padding: 16px 18px; }
+  .kzdlg h3 { margin: 0 0 8px; }
+  .kzf { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 14px; }
+  @media (max-width: 860px) { .kzf { grid-template-columns: 1fr; } .kzc dl { grid-template-columns: 1fr; } }
+  .kzf label.f { display: block; font-weight: 700; font-size: 14px; margin: 8px 0 2px; }
+  .kzf label.f small { font-weight: 400; color: var(--sub); }
+  .kzf textarea { min-height: 76px; }
+  .kzf .scr { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; }
+  .kzf .paste { margin-top: 4px; padding: 14px; border: 2px dashed #9AA7B4; border-radius: 8px; text-align: center; color: var(--sub); font-size: 13.5px; }
+  .kzf .paste.on { border-color: var(--accent); background: #EEF4FF; }
+  .kzside { font-size: 13.5px; }
+  .kzchk { padding: 10px 12px; border-radius: 10px; background: #F4F6F8; position: sticky; top: 0; }
+  .kzchk h4 { margin: 0 0 4px; font-size: 14px; }
+  .kzchk li { margin: 3px 0; list-style: none; } .kzchk ul { padding: 0; margin: 0; }
+  .kzchk .ok { color: var(--ok); } .kzchk .ng { color: #9A5B00; font-weight: 700; }
+  .kzchk .sc { font-size: 22px; font-weight: 800; }
+  .kzex { margin-top: 10px; } .kzex summary { cursor: pointer; font-weight: 700; }
+  .kzex .ex { margin: 6px 0; padding: 8px 10px; border-radius: 8px; background: #FFFBEA; border: 1px solid #F0DC98; white-space: pre-wrap; font-size: 13px; }
+  .kzex .bad { background: #FDECEA; border-color: #EBB5AF; }
+  .kzdlg .bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+  .kzcp textarea { width: 100%; min-height: 320px; font: 13px/1.6 ui-monospace, Menlo, Consolas, monospace; box-sizing: border-box; }
   .staff table { border-collapse: collapse; width: 100%; background: var(--paper); margin-bottom: 14px; }
   .staff td, .staff th { border: 1px solid var(--line); padding: 7px 10px; text-align: left; }
   .staff th { background: var(--a-faint); font-size: 13px; }
@@ -985,6 +1039,7 @@
     <button type="button" role="tab" data-tab="Clients" aria-pressed="false">顧問先</button>
     <button type="button" role="tab" data-tab="Dict" aria-pressed="false">仕訳辞書</button>
     <button type="button" role="tab" data-tab="Rule" aria-pressed="false">AIの考え方</button>
+    <button type="button" role="tab" data-tab="Kaizen" aria-pressed="false" id="tabKaizen">改善要望<b class="kzbadge" id="kzBadge" hidden></b></button>
   </span>
   <span class="who"><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
@@ -1525,6 +1580,88 @@
   </div>
 </div>
 
+<!-- ===== ★★★ 改善要望（2026-10-23） ===== -->
+<div class="pane page" id="paneKaizen" hidden>
+  <div class="kz">
+    <div class="kzhead"><h2>改善要望</h2>
+      <button type="button" class="primary" id="kzNew">＋ 改善要望を書く</button>
+      <span class="seg kzflt" id="kzFlt" role="group" aria-label="しぼる"></span>
+      <span class="sp"></span>
+      <button type="button" id="kzCopySel" hidden title="選んだものを まとめて Claude Code に貼る文にする">選んだものを まとめてコピー</button>
+      <button type="button" id="kzReload">↻ 読み直す</button>
+    </div>
+    <p class="note">顧問先から聞いたこと・事務所で気づいたことを 1件ずつ書いてください。マスターが確かめて AI（Claude Code）に渡し、直ったら 書いた人に知らせます。<b>AI はこの文だけを読んで直します</b>。「どこで・何をしたら・どうなって・どうなってほしいか」をそのまま書いてください（右の例文を見ながら）。</p>
+    <div class="kzmine" id="kzMine" hidden></div>
+    <p class="pagemsg" id="kzMsg" role="status"></p>
+    <div id="kzList"></div>
+  </div>
+</div>
+
+<div class="kzdlg" id="kzv" hidden role="dialog" aria-modal="true" aria-labelledby="kzvT">
+  <div class="box">
+    <h3 id="kzvT">改善要望を書く</h3>
+    <div class="kzf">
+      <div>
+        <label class="f" for="kzCode">どこからの要望？ <small>顧問先から聞いたものは その顧問先を</small></label>
+        <select id="kzCode"></select>
+        <label class="f">どの画面？</label>
+        <div class="scr" id="kzScr"><label><input type="radio" name="kzscr" value="顧問先の画面"> 顧問先の画面（資料を送る側）</label><label><input type="radio" name="kzscr" value="事務所の画面"> 事務所の画面（このアプリ）</label><label><input type="radio" name="kzscr" value="両方"> 両方</label><label><input type="radio" name="kzscr" value="わからない"> わからない</label></div>
+        <label class="f" for="kzWhere">どこ <small>タブ・ボタン・欄の名前を 画面に出ているとおりに</small></label>
+        <input type="text" id="kzWhere" maxlength="300" placeholder="例：顧問先の画面 →（箱を選んで撮ったあと）送る前の確認 →「ひとこと」の欄">
+        <label class="f" for="kzNow">いま起きていること <small>何をしたら → どうなったか。エラーの文は「」でそのまま</small></label>
+        <textarea id="kzNow" maxlength="3000" placeholder="例：iPhone（Safari・ホーム画面のアイコンから）で ひとことの欄を押しても キーボードが出ず、字が打てない。エラーは出ない。パソコンでは打てる。"></textarea>
+        <label class="f" for="kzWant">こうしてほしい <small>直ったら どうなっていればいいか</small></label>
+        <textarea id="kzWant" maxlength="3000" placeholder="例：押したら すぐ字が打てるようにしてほしい。送ったあとからでも ひとことを足せると助かる。"></textarea>
+        <label class="f" for="kzSteps">起きるまでの手順 <small>わかれば。番号を付けて</small></label>
+        <textarea id="kzSteps" maxlength="3000" placeholder="1. 箱「現金の領収書」を押す&#10;2. 写真を2枚撮る&#10;3. 送る前の確認で ひとことの欄を押す"></textarea>
+        <label class="f">スクショ <small>どの画面のどこか。Ctrl+V で貼れる・落とせる・選べる（何枚でも）</small></label>
+        <div class="paste" id="kzPaste" tabindex="0">ここを押してから Ctrl+V（Mac は ⌘+V）で 貼り付け ／ 画像を ここへ落とす ／ <label style="text-decoration:underline;cursor:pointer">ファイルを選ぶ<input type="file" id="kzFile" accept="image/*" multiple hidden></label></div>
+        <div class="shots" id="kzShots"></div>
+        <label class="f" style="font-weight:400"><input type="checkbox" id="kzUrgent"> 急ぎ（顧問先が困っている・仕事が止まっている）</label>
+        <label class="f" for="kzMail">直ったら知らせるメール <small>任意。この端末が覚えます</small></label>
+        <input type="email" id="kzMail" maxlength="200" placeholder="例：yamada@example.jp">
+      </div>
+      <div class="kzside">
+        <div class="kzchk" id="kzChk"></div>
+        <details class="kzex" open><summary>例文（このように書くと AI がそのまま直せます）</summary>
+          <div class="ex"><b>例1（顧問先から聞いた・不具合）</b>
+どこ：顧問先の画面 → 送る前の確認 →「ひとこと」の欄
+いま：iPhone（LINE から開いた）で 欄を押しても 字が打てない。エラーは出ない。パソコンでは打てる。
+こうしてほしい：押したら字が打てる。送ったあとでも ひとことを足せる。
+手順：1. 箱を押す 2. 写真を撮る 3. ひとことの欄を押す</div>
+          <div class="ex"><b>例2（事務所で気づいた・使いにくい）</b>
+どこ：事務所の画面 → 回収資料タブ →［PDF切り出し］
+いま：落ちてくる PDF の名前が「01_p1.pdf」で、どの顧問先のものか分からない。
+こうしてほしい：名前の頭に 顧問先コードと顧問先名を付ける（例：001_丸京_01_p1.pdf）。</div>
+          <div class="ex"><b>例3（足してほしい機能）</b>
+どこ：顧問先の画面 → 保管・送信済み → 月分
+いま：送った資料を 1枚ずつしか消せない。
+こうしてほしい：月分ごとに まとめて消せるボタン。消す前に「何件消します」と聞く。事務所に送ったものは消せないままでよい。</div>
+          <div class="ex bad"><b>✕ AI が分からない書き方</b>
+「なんか使いにくいらしい」「うまくいかないって言われた」「前のほうが良かった」
+→ どの画面の・何をしたら・どうなったかが無いと 直しようがありません。顧問先に「どこを押したら」「何が出たか」を聞くか、スクショをもらってください。</div>
+          <div class="ex"><b>顧問先に聞くときの3つ</b>
+① どの画面の どこを押しましたか
+② そのあと 何が出ましたか（出ませんでしたか）。エラーの文はそのまま
+③ ほんとうは どうなってほしいですか
+＋ 使っている端末（iPhone・Android・パソコン）と 開き方（LINE・ホーム画面のアイコン・メールのリンク）</div>
+        </details>
+      </div>
+    </div>
+    <div class="bar"><button type="button" class="primary" id="kzSave">保存する</button><button type="button" id="kzCancel">閉じる</button><span class="pagemsg" id="kzFMsg" role="status"></span></div>
+  </div>
+</div>
+
+<div class="kzdlg kzcp" id="kzcp" hidden role="dialog" aria-modal="true" aria-labelledby="kzcpT">
+  <div class="box">
+    <h3 id="kzcpT">Claude Code に貼る文</h3>
+    <p class="note" id="kzcpN"></p>
+    <div class="bar" style="margin:0 0 8px"><span>コピーする：</span><button type="button" data-part="all">全部</button><button type="button" data-part="req">依頼文だけ</button><button type="button" data-part="shots">スクショのリンクだけ</button><span class="pagemsg" id="kzcpMsg"></span></div>
+    <textarea id="kzcpT2" readonly aria-label="貼る文"></textarea>
+    <div class="bar"><button type="button" class="primary" id="kzcpSent" hidden>貼った（AIへ送った にする）</button><button type="button" id="kzcpClose">閉じる</button></div>
+  </div>
+</div>
+
 <!-- ===== 回収資料を大きく見る ===== -->
 <div class="dview dpz" id="dview" hidden role="dialog" aria-modal="true" aria-label="資料を大きく見る">
   <div class="dvbar"><b id="dvName"></b><span class="sp"></span>
@@ -1635,7 +1772,7 @@
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
-  const LONG_FN = { tehonAnalyze: 370000 };
+  const LONG_FN = { tehonAnalyze: 370000, kaizenShot: 120000 };
   function gs(fn) {
     const args = Array.prototype.slice.call(arguments, 1);
     if (BOOT_WAIT && !READ_FN[fn]) return BOOT_WAIT.then(function () { return gs.apply(null, [fn].concat(args)); });
@@ -1670,7 +1807,7 @@
 
   /* ================= 入口 ================= */
   function fatal(t) { ['gate', 'chg', 'top', 'ctl'].forEach(function (k) { $(k).hidden = true; }); hidePanes(); $('fatal').hidden = false; $('fatalMsg').textContent = t; }
-  function hidePanes() { ['Docs', 'In', 'Dict', 'Out', 'Clients', 'Staff', 'Rule'].forEach(function (k) { $('pane' + k).hidden = true; }); }
+  function hidePanes() { ['Docs', 'In', 'Dict', 'Out', 'Clients', 'Staff', 'Rule', 'Kaizen'].forEach(function (k) { $('pane' + k).hidden = true; }); }
   function showGate(msg) {
     $('top').hidden = true; $('ctl').hidden = true; $('chg').hidden = true; hidePanes();
     $('gate').hidden = false; $('gMsg').textContent = msg || '';
@@ -1736,6 +1873,7 @@
     $('signOut').hidden = LIVE;
     /* 担当者のタブ：シートの窓とアプリのマスターは手入れ、アプリのふつうの担当者は自分の番号だけ */
     $('tabStaff').hidden = false;
+    if (!S.kzOnce) { S.kzOnce = 1; setTimeout(function () { kzLoad(true); }, 1500); }
     $('sAdmin').hidden = !me.master;
     $('sMine').hidden = LIVE;
     $('reopen').hidden = !WEB2;
@@ -1790,6 +1928,7 @@
     if (k === 'Clients') aLoad();
     if (k === 'Staff') sLoad();
     if (k === 'Rule') rLoad();
+    if (k === 'Kaizen') kzLoad(true);
   }
   document.querySelectorAll('#tabs button').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -3879,6 +4018,264 @@
     e.setUint32(0, 0x06054b50, true); e.setUint16(8, list.length, true); e.setUint16(10, list.length, true); e.setUint32(12, csz, true); e.setUint32(16, off, true);
     return new Blob(parts.concat(cen, [e.buffer]), { type: 'application/zip' });
   }
+
+  /* ================= ★★★ 改善要望（2026-10-23。アプリが自分で育つ仕組み） =================
+     担当者が書く → マスターが確かめて直す →［AI に送る］（GitHub の Issue か、コピーして Claude Code に貼る）→ 直ったら［改善済み］
+     → 書いた人に知らせる・顧問先の画面に「新しくなったこと」。履歴は全部残る */
+  const LS_KZMAIL = 'collect_office_kzmail';
+  const KZ = { list: [], me: '', master: false, gh: false, flt: '', sel: {}, edit: null, shots: [], img: {}, imgWant: {}, loaded: 0, cp: null, synced: 0 };
+  const KZ_ST = ['確認待ち', '確認済み', 'AIへ送った', '改善済み', '見送り'];
+  function kzMsg(t, err) { const m = $('kzMsg'); m.textContent = t || ''; m.className = 'pagemsg' + (err ? ' err' : t ? ' ok' : ''); }
+  function kzLoad(force) {
+    if (!force && Date.now() - KZ.loaded < 30000) return Promise.resolve();
+    return gs('kaizenList').then(function (r) {
+      KZ.list = r.list || []; KZ.me = r.me; KZ.master = !!r.master; KZ.gh = !!r.gh; KZ.loaded = Date.now();
+      if (!KZ.flt) KZ.flt = 'all';
+      kzBadge(); if (!$('paneKaizen').hidden) kzDraw();
+      if (KZ.master && KZ.gh && !$('paneKaizen').hidden && Date.now() - KZ.synced > 600000) {
+        KZ.synced = Date.now();
+        gs('kaizenSync').then(function (y) { if (y && y.n) { kzMsg('AI の作業が終わったものが ' + y.n + '件あります（改善内容の下書きを入れました）。'); kzLoad(true); } }, function () {});
+      }
+    }, function (e) { kzMsg(e.message, true); });
+  }
+  function kzMineDone() { return KZ.list.filter(function (x) { return x.who === KZ.me && x.st === '改善済み' && !x.seen; }); }
+  function kzBadge() {
+    const n = KZ.master ? KZ.list.filter(function (x) { return x.st === '確認待ち'; }).length : kzMineDone().length;
+    const mine = kzMineDone().length;
+    $('kzBadge').hidden = !(n || mine); $('kzBadge').textContent = KZ.master ? (n + (mine ? '・🆕' + mine : '')) : '🆕' + mine;
+    $('kzBadge').title = KZ.master ? '確認待ち ' + n + '件' + (mine ? '・自分の要望が直った ' + mine + '件' : '') : '自分の要望が直った ' + mine + '件';
+  }
+  function kzDraw() {
+    const f = $('kzFlt'); f.textContent = '';
+    ['all'].concat(KZ_ST).forEach(function (k) {
+      const n = k === 'all' ? KZ.list.length : KZ.list.filter(function (x) { return x.st === k; }).length;
+      const b = el('button', null, (k === 'all' ? '全部' : k) + ' ' + n); b.type = 'button'; b.setAttribute('aria-pressed', String(KZ.flt === k));
+      b.addEventListener('click', function () { KZ.flt = k; kzDraw(); }); f.appendChild(b);
+    });
+    $('kzCopySel').hidden = !Object.keys(KZ.sel).length;
+    $('kzCopySel').textContent = '選んだ ' + Object.keys(KZ.sel).length + '件を まとめてコピー';
+    /* 自分の要望が直った */
+    const mine = kzMineDone(), mw = $('kzMine'); mw.textContent = ''; mw.hidden = !mine.length;
+    if (mine.length) {
+      mw.appendChild(el('h3', null, '🆕 あなたの改善要望が ' + mine.length + '件 直りました。ありがとうございます'));
+      const ul = el('ul'); mine.forEach(function (x) { const li = el('li'); li.appendChild(el('b', null, x.no + '　')); li.appendChild(document.createTextNode((x.where || x.want).slice(0, 60) + '　→　' + x.done.slice(0, 120))); ul.appendChild(li); }); mw.appendChild(ul);
+      const ok = el('button', null, '見ました'); ok.type = 'button';
+      ok.addEventListener('click', function () { gs('kaizenSeen', mine.map(function (x) { return x.no; })).then(function () { kzLoad(true); }); }); mw.appendChild(ok);
+    }
+    const w = $('kzList'); w.textContent = '';
+    const list = KZ.list.filter(function (x) { return KZ.flt === 'all' || x.st === KZ.flt; });
+    if (!list.length) { w.appendChild(el('p', 'note', KZ.flt === 'all' ? 'まだ改善要望はありません。［＋ 改善要望を書く］から どうぞ。' : '「' + KZ.flt + '」のものは ありません。')); return; }
+    list.forEach(function (x) { w.appendChild(kzCard(x)); });
+  }
+  function kzCanEdit(x) { return KZ.master || (x.who === KZ.me && x.st === '確認待ち'); }
+  function kzCard(x) {
+    const c = el('div', 'kzc st-' + x.st); c.dataset.no = x.no;
+    const h = el('div', 'h');
+    if (KZ.master && x.st !== '改善済み' && x.st !== '見送り') { const ck = el('input'); ck.type = 'checkbox'; ck.checked = !!KZ.sel[x.no]; ck.title = 'まとめてコピーに入れる'; ck.addEventListener('change', function () { if (ck.checked) KZ.sel[x.no] = 1; else delete KZ.sel[x.no]; kzDraw(); }); h.appendChild(ck); }
+    h.appendChild(el('span', 'no', x.no));
+    h.appendChild(el('span', 'chip', x.st));
+    if (x.urgent) h.appendChild(el('span', 'chip u', '急ぎ'));
+    h.appendChild(el('span', 'chip', x.code ? x.code + ' ' + x.cname : '事務所から'));
+    h.appendChild(el('span', 'meta', x.at + '　' + x.who + ' さん' + (x.chk ? '　／　確かめた人：' + x.chk : '') + (x.issue ? '　／　' : '')));
+    if (x.iurl) { const a = el('a', 'meta', 'GitHub #' + x.issue); a.href = x.iurl; a.target = '_blank'; a.rel = 'noopener'; h.appendChild(a); }
+    c.appendChild(h);
+    const dl = el('dl');
+    [['画面', x.screen], ['どこ', x.where], ['いま起きていること', x.now], ['こうしてほしい', x.want], ['手順', x.steps]].forEach(function (p) { if (!p[1]) return; dl.appendChild(el('dt', null, p[0])); dl.appendChild(el('dd', null, p[1])); });
+    c.appendChild(dl);
+    if (x.shots && x.shots.length) c.appendChild(kzShotsEl(x.shots, null));
+    if (x.done) { const d = el('div', 'done'); d.appendChild(el('b', null, '改善内容' + (x.doneAt ? '（' + x.doneAt + '）' : '') + '\n')); d.appendChild(document.createTextNode(x.done)); c.appendChild(d); }
+    if (x.news) { const d = el('div', 'news'); d.appendChild(el('b', null, '顧問先へのお知らせ（' + (x.newsTo || 'まだ出していない') + '）\n')); d.appendChild(document.createTextNode(x.news)); c.appendChild(d); }
+    const act = el('div', 'act');
+    const btn = function (t, fn, cls) { const b = el('button', cls || null, t); b.type = 'button'; b.addEventListener('click', fn); act.appendChild(b); return b; };
+    if (kzCanEdit(x)) btn('直す', function () { kzOpen(x); });
+    btn('依頼文をコピー', function () { kzCopy([x], false); });
+    if (KZ.master) {
+      if (x.st === '確認待ち') btn('✓ 確認済みにする', function () { kzSt(x.no, '確認済み'); }, 'primary');
+      if (x.st === '確認済み' || x.st === 'AIへ送った') btn(x.st === 'AIへ送った' ? 'AI にもう一度送る' : '🤖 AI に送る', function () { kzSend(x); }, x.st === '確認済み' ? 'primary' : null);
+      if (x.st !== '確認待ち' && x.st !== '改善済み') btn('確認待ちに戻す', function () { kzSt(x.no, '確認待ち'); });
+      if (x.st === 'AIへ送った' || x.st === '確認済み' || x.st === '改善済み') btn(x.st === '改善済み' ? '改善内容・お知らせを直す' : '✓ 改善済みにする…', function () { kzDoneForm(c, x); }, x.st === 'AIへ送った' ? 'primary' : null);
+      if (x.st !== '改善済み' && x.st !== '見送り') btn('見送り…', function () { kzSkip(c, x); });
+    }
+    c.appendChild(act);
+    if (x.log && x.log.length) { const d = el('details'); d.appendChild(el('summary', null, '履歴（' + x.log.length + '）')); const ul = el('ul'); x.log.slice().reverse().forEach(function (l) { ul.appendChild(el('li', null, l.at + '　' + l.who + '　' + l.what)); }); d.appendChild(ul); c.appendChild(d); }
+    return c;
+  }
+  /* スクショ（この表に載っているものだけ サーバから中身をもらう） */
+  function kzShotsEl(shots, onDel) {
+    const w = el('div', 'shots');
+    shots.forEach(function (sh) {
+      const b = el('div', 'kzshot'); const im = el('img'); im.alt = sh.note || sh.name || 'スクショ';
+      if (sh.src) im.src = sh.src; else if (KZ.img[sh.id]) im.src = KZ.img[sh.id]; else kzImg(sh.id, im);
+      im.addEventListener('click', function () { const src = im.src; if (!src) return; const wn = window.open('', '_blank'); if (wn) { wn.document.title = sh.name || 'スクショ'; const i2 = wn.document.createElement('img'); i2.src = src; i2.style.maxWidth = '100%'; wn.document.body.appendChild(i2); } });
+      b.appendChild(im); b.appendChild(el('div', 'n', sh.note || sh.name || ''));
+      if (onDel) { const x = el('button', 'x', '×'); x.type = 'button'; x.title = '外す'; x.addEventListener('click', function () { onDel(sh); }); b.appendChild(x); }
+      w.appendChild(b);
+    });
+    return w;
+  }
+  function kzImg(id, im) {
+    (KZ.imgWant[id] || (KZ.imgWant[id] = gs('kaizenImage', id).then(function (src) { KZ.img[id] = src; return src; }, function () { delete KZ.imgWant[id]; return ''; })))
+      .then(function (src) { if (src) im.src = src; });
+  }
+  function kzSt(no, st, why) { kzMsg('…'); return gs('kaizenStatus', no, st, why || '').then(function (x) { kzPut(x); kzMsg(no + ' を「' + st + '」にしました。'); }, function (e) { kzMsg(e.message, true); }); }
+  function kzPut(x) { const i = KZ.list.findIndex(function (y) { return y.no === x.no; }); if (i >= 0) KZ.list[i] = x; else KZ.list.unshift(x); kzBadge(); kzDraw(); }
+  function kzSkip(c, x) {
+    const f = el('div', 'dform'); f.appendChild(el('b', null, '見送る理由（履歴に残ります）'));
+    const t = el('textarea'); t.placeholder = '例：いまの使い方で足りる／別の要望（K-0003）で直る'; f.appendChild(t);
+    const b = el('button', null, '見送りにする'); b.type = 'button'; b.addEventListener('click', function () { kzSt(x.no, '見送り', t.value.trim()); }); f.appendChild(b);
+    c.appendChild(f); t.focus();
+  }
+  function kzDoneForm(c, x) {
+    const old = c.querySelector('.dform'); if (old) { old.remove(); return; }
+    const f = el('div', 'dform');
+    f.appendChild(el('b', null, '改善内容（書いた人・事務所向け。何をどう直したか）'));
+    const d = el('textarea'); d.value = x.done || ''; d.placeholder = 'AI が書いた【改善内容】を貼るか、直したことを書く'; f.appendChild(d);
+    f.appendChild(el('b', null, '顧問先へのお知らせ（顧問先の画面の「新しくなったこと」に出ます。やさしい言葉で 2〜3行。事務所の中のこと・ほかの顧問先の名前は書かない）'));
+    const n = el('textarea'); n.value = x.news || ''; n.placeholder = '例：資料を送るときの「ひとこと」が 書きやすくなりました。送ったあとからでも 長押しで書けます。'; f.appendChild(n);
+    const row = el('div'); row.appendChild(document.createTextNode('お知らせ先：'));
+    const sel = el('select'); ['なし', 'この顧問先', '全員'].forEach(function (k) { const o = el('option', null, k === 'この顧問先' ? (x.code ? 'この顧問先だけ（' + x.cname + '）' : 'この顧問先だけ（顧問先が付いていません）') : k === '全員' ? '全部の顧問先' : '出さない'); o.value = k; if (k === 'この顧問先' && !x.code) o.disabled = true; sel.appendChild(o); });
+    sel.value = x.newsTo || (x.news ? (x.code ? 'この顧問先' : '全員') : 'なし'); row.appendChild(sel); f.appendChild(row);
+    const tl = el('label'); const tc = el('input'); tc.type = 'checkbox'; tc.checked = x.st !== '改善済み'; tl.appendChild(tc); tl.appendChild(document.createTextNode(' 書いた人（' + x.who + ' さん）に 改善内容をメールで知らせる' + (x.mail ? '（' + x.mail + '）' : '（メールが入っていないので アプリの中の印だけ）'))); f.appendChild(tl);
+    const b = el('button', 'primary', '改善済みにする'); b.type = 'button';
+    b.addEventListener('click', function () {
+      b.disabled = true; kzMsg('…');
+      gs('kaizenDone', x.no, { done: d.value, news: n.value, newsTo: sel.value, tell: tc.checked }).then(function (y) { kzPut(y); kzMsg(x.no + ' を 改善済みにしました。' + (y.told && tc.checked ? x.who + ' さんに メールで知らせました。' : '') + (y.newsTo !== 'なし' ? '顧問先の画面に「新しくなったこと」を出します。' : '')); },
+        function (e) { b.disabled = false; kzMsg(e.message, true); });
+    });
+    f.appendChild(b); c.appendChild(f); d.focus();
+  }
+  /* ---- AI に送る（GitHub の Issue）。鍵が無い・送れないときは コピーの窓 ---- */
+  function kzSend(x) {
+    kzMsg('AI に送っています…');
+    gs('kaizenSend', x.no).then(function (r) {
+      if (r.ok) { kzPut(r.item); kzMsg(x.no + ' を GitHub の Issue #' + r.item.issue + ' にしました。Claude Code に「改善要望の Issue #' + r.item.issue + ' を直して」と頼めば始まります（下の文を貼っても同じ）。'); kzCopy([r.item], false, r.prompt); return; }
+      kzMsg(r.err || 'いまは AI へ直接送れません（GitHub の鍵 GITHUB_TOKEN が スクリプトのプロパティに入っていません）。文をコピーして Claude Code に貼ってください。', !!r.err);
+      kzCopy([r.item], true, r.prompt);
+    }, function (e) { kzMsg(e.message, true); });
+  }
+  /* ---- コピーの窓：全部／依頼文だけ／スクショのリンクだけ。まとめても ---- */
+  function kzParts(text) {
+    const i = text.indexOf('\n■ お願い');
+    const shots = text.split('\n').filter(function (l) { return /drive\.google\.com\/file\/d\//.test(l); }).map(function (l) { return l.trim(); }).join('\n');
+    return { all: text, req: i > 0 ? text.slice(0, i) : text, shots: shots || '（スクショはありません）' };
+  }
+  function kzCopy(items, markSent, text0) {
+    const go = function (texts) {
+      const joined = texts.length > 1 ? '以下の ' + texts.length + '件の改善要望を 順に直してください（1件ずつ 終わったら 【改善内容】【顧問先へのお知らせ】を書く）。\n\n' + texts.join('\n\n────────────────\n\n') : texts[0];
+      const parts = texts.map(kzParts);
+      KZ.cp = { items: items, all: joined, req: parts.map(function (p) { return p.req; }).join('\n\n────────────────\n\n'), shots: parts.map(function (p, i) { return items[i].no + '\n' + p.shots; }).join('\n\n') };
+      $('kzcpT2').value = KZ.cp.all;
+      $('kzcpN').textContent = items.map(function (x) { return x.no; }).join('・') + '　…　Claude Code（この会話）に 貼り付けてください。' + (markSent ? '貼ったら 下の［貼った（AIへ送った にする）］を押してください。' : '');
+      $('kzcpSent').hidden = !(markSent && KZ.master && items.some(function (x) { return x.st === '確認済み'; }));
+      $('kzcpMsg').textContent = ''; $('kzcp').hidden = false;
+      kzClip(KZ.cp.all, '全部');
+    };
+    if (text0) { go([text0]); return; }
+    Promise.all(items.map(function (x) { return gs('kaizenPrompt', x.no); })).then(go, function (e) { kzMsg(e.message, true); });
+  }
+  function kzClip(text, what) {
+    const done = function () { $('kzcpMsg').textContent = '✓ ' + what + 'を コピーしました'; };
+    const old = function () { const t = $('kzcpT2'); t.value = text; t.focus(); t.select(); try { document.execCommand('copy'); done(); } catch (e) { $('kzcpMsg').textContent = '下の文を選んで コピーしてください'; } };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(function () { $('kzcpT2').value = text; done(); }, old); return; } } catch (e) {}
+    old();
+  }
+  document.querySelectorAll('#kzcp [data-part]').forEach(function (b) { b.addEventListener('click', function () { if (!KZ.cp) return; kzClip(KZ.cp[b.dataset.part], b.textContent); }); });
+  $('kzcpClose').addEventListener('click', function () { $('kzcp').hidden = true; });
+  $('kzcpSent').addEventListener('click', function () { const its = (KZ.cp && KZ.cp.items) || []; $('kzcp').hidden = true; its.filter(function (x) { return x.st === '確認済み'; }).reduce(function (p, x) { return p.then(function () { return kzSt(x.no, 'AIへ送った', '手で Claude Code に貼った'); }); }, Promise.resolve()); });
+  $('kzCopySel').addEventListener('click', function () { const its = KZ.list.filter(function (x) { return KZ.sel[x.no]; }); if (its.length) kzCopy(its, true); });
+  $('kzReload').addEventListener('click', function () { KZ.synced = 0; kzLoad(true); });
+  /* ---- 書く・直す ---- */
+  const KZ_VAGUE = /なんか|なんとなく|うまく|ちゃんと|おかしい|変な|使いにくい|わかりにくい|分かりにくい|いまいち|微妙|前のほうが|よくない/;
+  function kzForm() { const sc = document.querySelector('input[name="kzscr"]:checked'); return { code: $('kzCode').value, screen: sc ? sc.value : '', where: $('kzWhere').value.trim(), now: $('kzNow').value.trim(), want: $('kzWant').value.trim(), steps: $('kzSteps').value.trim(), urgent: $('kzUrgent').checked, mail: $('kzMail').value.trim() }; }
+  /* 書き方の手引き：AI がそのまま直せる文か。足りないものを 聞き返す形で出す */
+  function kzHints(o, nShots) {
+    const H = [];
+    const add = function (ok, t) { H.push({ ok: ok, t: t }); };
+    add(!!o.screen && o.screen !== 'わからない', o.screen && o.screen !== 'わからない' ? 'どの画面か（' + o.screen + '）' : 'どの画面ですか？ 顧問先の画面（資料を送る側）か、事務所の画面か');
+    add(o.where.length >= 8, o.where.length >= 8 ? 'どこ（タブ・ボタン・欄）' : (o.where ? '「どこ」をもう少し。タブ → ボタン（欄）の名前を 画面に出ているとおりに' : 'どこですか？ 例：回収資料タブ の［PDF切り出し］'));
+    const nowAct = /たら|すると|と、|押|開|入れ|選|撮|送|打|貼|落と/.test(o.now);
+    add(o.now.length >= 15 && nowAct, o.now.length >= 15 && nowAct ? '何をしたら どうなったか' : (o.now ? '「いま起きていること」は「◯◯をしたら → ◯◯になった」の形に' : '何をしたら どうなりましたか？（何も起きない・エラーが出る・遅い など）'));
+    add(o.want.length >= 10, o.want.length >= 10 ? '直ったら どうなっていればいいか' : 'どうなってほしいですか？ 直ったときの姿を1〜2文で');
+    const vague = KZ_VAGUE.test(o.now + ' ' + o.want);
+    add(!vague, !vague ? 'あいまいな言葉がない' : '「うまく・おかしい・使いにくい」だけでは AI が分かりません。何が困るのか（押しても何も起きない／「◯◯」と出る／3回押さないといけない）を書いてください');
+    if (/エラー|出ない|出た|表示/.test(o.now)) add(/「.+」/.test(o.now) || nShots > 0, /「.+」/.test(o.now) || nShots > 0 ? 'エラーの文（「」かスクショ）' : 'エラーの文は「」でそのまま写すか、スクショを貼ってください');
+    if (o.screen === '顧問先の画面' || o.screen === '両方') add(/iPhone|iphone|アイフォン|Android|アンドロイド|スマホ|パソコン|PC|iPad|Mac|Windows/.test(o.now + o.want + o.steps), /iPhone|iphone|アイフォン|Android|アンドロイド|スマホ|パソコン|PC|iPad|Mac|Windows/.test(o.now + o.want + o.steps) ? '顧問先の端末' : '顧問先の端末（iPhone・Android・パソコン）と 開き方（LINE・ホーム画面のアイコン）が分かれば書いてください');
+    add(nShots > 0, nShots > 0 ? 'スクショ ' + nShots + '枚' : 'スクショがあると いちばん早く直ります（Ctrl+V で貼れます）');
+    return H;
+  }
+  function kzChk() {
+    const H = kzHints(kzForm(), KZ.shots.length + (KZ.edit ? (KZ.edit.shots || []).length : 0));
+    const ok = H.filter(function (h) { return h.ok; }).length;
+    const w = $('kzChk'); w.textContent = '';
+    w.appendChild(el('h4', null, 'AI にそのまま渡せるか'));
+    w.appendChild(el('div', 'sc', ok + ' / ' + H.length));
+    const ul = el('ul'); H.forEach(function (h) { ul.appendChild(el('li', h.ok ? 'ok' : 'ng', (h.ok ? '✓ ' : '？ ') + h.t)); }); w.appendChild(ul);
+    w.appendChild(el('p', 'note', ok === H.length ? 'このまま AI に渡せます。' : '「？」のところを足すと AI が迷いません（足りなくても 保存はできます）。'));
+  }
+  ['kzWhere', 'kzNow', 'kzWant', 'kzSteps'].forEach(function (k) { $(k).addEventListener('input', kzChk); });
+  $('kzScr').addEventListener('change', kzChk);
+  function kzOpen(x) {
+    KZ.edit = x || null; KZ.shots = [];
+    const sel = $('kzCode'); sel.textContent = '';
+    const o0 = el('option', null, '事務所で気づいた（顧問先なし）'); o0.value = ''; sel.appendChild(o0);
+    (S.clients || []).forEach(function (c) { const o = el('option', null, c.code + '　' + c.name); o.value = c.code; sel.appendChild(o); });
+    sel.value = x ? x.code : '';
+    document.querySelectorAll('input[name="kzscr"]').forEach(function (r) { r.checked = !!x && r.value === x.screen; });
+    $('kzWhere').value = x ? x.where : ''; $('kzNow').value = x ? x.now : ''; $('kzWant').value = x ? x.want : ''; $('kzSteps').value = x ? x.steps : '';
+    $('kzUrgent').checked = !!(x && x.urgent); $('kzMail').value = x ? x.mail : lsGet(LS_KZMAIL);
+    $('kzvT').textContent = x ? x.no + ' を直す' + (x.who !== KZ.me ? '（' + x.who + ' さんが書いたもの）' : '') : '改善要望を書く';
+    $('kzFMsg').textContent = ''; $('kzSave').disabled = false;
+    kzShotsDraw(); kzChk();
+    $('kzv').hidden = false; $('kzWhere').focus();
+  }
+  function kzShotsDraw() {
+    const w = $('kzShots'); w.textContent = '';
+    const have = KZ.edit ? (KZ.edit.shots || []) : [];
+    if (have.length) w.appendChild(kzShotsEl(have, function (sh) { gs('kaizenShotDel', KZ.edit.no, sh.id).then(function (y) { KZ.edit = y; kzPut(y); kzShotsDraw(); kzChk(); }, function (e) { $('kzFMsg').textContent = e.message; }); }));
+    if (KZ.shots.length) w.appendChild(kzShotsEl(KZ.shots, function (sh) { KZ.shots = KZ.shots.filter(function (y) { return y !== sh; }); kzShotsDraw(); kzChk(); }));
+  }
+  /* 貼る・落とす・選ぶ。大きい写真は 長い辺 2000px・JPEG にして軽くする（スクショは そのまま PNG） */
+  function kzAddFiles(files) {
+    Array.prototype.forEach.call(files || [], function (f) {
+      if (!/^image\//.test(f.type || '')) return;
+      const r = new FileReader();
+      r.onload = function () {
+        const src = r.result, im = new Image();
+        im.onload = function () {
+          let out = src, mime = f.type;
+          if (f.size > 1500000 || Math.max(im.width, im.height) > 2400 || !/png|jpeg/.test(mime)) {
+            const k = Math.min(1, 2000 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+            c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); const g2 = c.getContext('2d'); g2.fillStyle = '#fff'; g2.fillRect(0, 0, c.width, c.height); g2.drawImage(im, 0, 0, c.width, c.height);
+            out = c.toDataURL('image/jpeg', 0.85); mime = 'image/jpeg';
+          }
+          KZ.shots.push({ src: out, mime: mime, name: f.name || 'スクショ', note: '' }); kzShotsDraw(); kzChk();
+        };
+        im.src = src;
+      };
+      r.readAsDataURL(f);
+    });
+  }
+  $('kzFile').addEventListener('change', function () { kzAddFiles(this.files); this.value = ''; });
+  $('kzv').addEventListener('paste', function (e) { const it = e.clipboardData && e.clipboardData.files; if (it && it.length) { e.preventDefault(); kzAddFiles(it); } });
+  $('kzPaste').addEventListener('dragover', function (e) { e.preventDefault(); this.classList.add('on'); });
+  $('kzPaste').addEventListener('dragleave', function () { this.classList.remove('on'); });
+  $('kzPaste').addEventListener('drop', function (e) { e.preventDefault(); this.classList.remove('on'); kzAddFiles(e.dataTransfer && e.dataTransfer.files); });
+  $('kzCancel').addEventListener('click', function () { $('kzv').hidden = true; });
+  $('kzNew').addEventListener('click', function () { kzOpen(null); });
+  $('kzSave').addEventListener('click', function () {
+    const o = kzForm(); if (KZ.edit) o.no = KZ.edit.no;
+    if (o.mail) lsSet(LS_KZMAIL, o.mail);
+    $('kzSave').disabled = true; $('kzFMsg').textContent = '保存しています…';
+    gs('kaizenSave', o).then(function (y) {
+      let p = Promise.resolve(y);
+      KZ.shots.forEach(function (sh, i) { p = p.then(function () { $('kzFMsg').textContent = 'スクショを置いています… ' + (i + 1) + ' / ' + KZ.shots.length; return gs('kaizenShot', y.no, { mime: sh.mime, b64: sh.src.split(',')[1], note: sh.note || '' }); }); });
+      return p;
+    }).then(function (y) {
+      KZ.shots = []; $('kzv').hidden = true; kzPut(y);
+      kzMsg(y.no + ' を 保存しました。' + (KZ.master ? '' : 'マスターが確かめて AI に渡します。'));
+    }, function (e) { $('kzSave').disabled = false; $('kzFMsg').textContent = e.message; });
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('kzcp').hidden) $('kzcp').hidden = true; else if (!$('kzv').hidden) $('kzv').hidden = true; } });
 
   /* 大きく見る（画面いっぱい）。仕訳化へも ここから */
   function docsOpen(it) {
