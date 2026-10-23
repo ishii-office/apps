@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792746693;</script>
+<script>window.__PAGE_VER=1792747734;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -686,6 +686,13 @@
     .dmon-h { flex-basis: 100%; } .dmon-hd { padding: 0 8px 6px 0; justify-content: flex-end; } }
   img.dthumb:not([src]) { visibility: hidden; }
   .dtile.isback .dimg { outline: 2px solid #B3261E; }
+  /* ★ 確認済の印（2026-10-23） */
+  .dchk { display: block; width: 100%; margin-top: 3px; padding: 4px 6px; border: 1.5px dashed #A9B5AF; border-radius: 8px; background: #fff; color: var(--sub); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dchk:hover { border-color: var(--ok); color: var(--ok); }
+  .dtile.chk .dchk { border: 1.5px solid var(--ok); background: var(--ok); color: #fff; }
+  .dtile.chk .dimg img { opacity: .55; }
+  .dtile.chk .dimg::after { content: '✓ 確認済'; position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%) rotate(-8deg); padding: 3px 10px; border: 3px solid var(--ok); border-radius: 8px; color: var(--ok); background: rgba(255,255,255,.85); font-weight: 900; font-size: 17px; white-space: nowrap; pointer-events: none; }
+  #dBody.dmany .dtile.chk .dimg::after { font-size: 12px; padding: 1px 5px; border-width: 2px; }
   .dtile.lifted { opacity: .35; }
   .dkids:empty { display: none; }
   .dkids { margin-top: 10px; }
@@ -1667,6 +1674,7 @@
   <div class="dvbar"><b id="dvName"></b><span class="sp"></span>
     <button type="button" class="btn sm" id="dvGo">仕訳化する</button>
     <button type="button" class="btn ghost sm" id="dvRot" title="90度ずつ回す">↻ 回す</button>
+    <button type="button" class="btn sm" id="dvChk">✓ 確認済にする</button>
     <button type="button" class="btn ghost sm" id="dvMove">別の月分へ移す</button>
     <span class="dvback" id="dvBack"></span>
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
@@ -1677,7 +1685,7 @@
 
 <div class="dcbar" id="dcbar" hidden>
   <b id="dcN">0件を選んでいます</b>
-  <span class="dcb"><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn sm" id="dcPrint">🖨 印刷</button><button type="button" class="btn ghost sm" id="dcMove">移す</button>
+  <span class="dcb"><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn sm" id="dcPrint">🖨 印刷</button><button type="button" class="btn sm" id="dcChk" title="選んだものに 確認済の印を付ける（全部 付いていれば外す）">✓ 確認済</button><button type="button" class="btn ghost sm" id="dcMove">移す</button>
     <button type="button" class="btn ghost sm danger" id="dcDel">破棄</button><button type="button" class="btn ghost sm" id="dcNone">全部外す</button><button type="button" class="btn ghost sm" id="dcEnd">やめる</button></span>
 </div>
 
@@ -2875,13 +2883,14 @@
     const v = IMG[id]; if (!v || v.t !== 'img') return;
     $('dBody').querySelectorAll('img.dthumb[data-id="' + id + '"]').forEach(function (im) { if (im.src !== v.src) im.src = v.src; });
   }
-  /* 並び：月分の新しい順 → 月の中は 事務所が並べた順（まだ並べていない新しいものは上に） */
+  /* 並び：月分の新しい順 → 月の中は 事務所が並べた順 → まだ並べていないものは【撮った順（古い順）】で後ろへ
+     （2026-10-23 改善要望：最初に撮った写真が最後尾だと 入力しにくい） */
   function dSort(a, b) {
     if (a.period !== b.period) return a.period < b.period ? 1 : -1;
     const oa = a.ord || 0, ob = b.ord || 0;
-    if (!oa !== !ob) return oa ? 1 : -1;
+    if (!oa !== !ob) return oa ? -1 : 1;
     if (oa && ob && oa !== ob) return oa - ob;
-    return b.t - a.t;
+    return (a.t - b.t) || ((a.rn || 0) - (b.rn || 0));
   }
   function docsDraw() {
     try { wsRefresh(); } catch (e) {}
@@ -2964,7 +2973,8 @@
         tg.innerHTML = D_ICON_S;
         tg.appendChild(el('b', null, perLabel(p)));
         const n = { todo: 0, back: 0, done: 0, gone: 0 }; items.forEach(function (x) { n[stTag(x)[0]] = (n[stTag(x)[0]] || 0) + 1; });
-        tg.appendChild(el('span', 'dmon-c', items.length + '件' + (n.todo ? '・未確定 ' + n.todo : '') + (n.back ? '・差戻し ' + n.back : '')));
+        const nchk = items.filter(function (x) { return !x.chk && stTag(x)[0] !== 'gone'; }).length;
+        tg.appendChild(el('span', 'dmon-c', items.length + '件' + (nchk ? '・未確認 ' + nchk : '・全部確認済') + (n.todo ? '・未確定 ' + n.todo : '') + (n.back ? '・差戻し ' + n.back : '')));
         tg.appendChild(el('span', 'chev', '▾'));
         tg.addEventListener('click', function () { DOPEN[key] = !open; docsDraw(); });
         row.appendChild(tg);
@@ -3270,6 +3280,25 @@
     st.addEventListener('click', function () { DSTACK[sid] = 1; docsDraw(); });
     w.appendChild(st);
   }
+  function chkShort(v) { const m = String(v || '').match(/^\d{4}\/(\d+\/\d+) [\d:]+ ?(.*)$/); return m ? m[1] + (m[2] ? ' ' + m[2] : '') : ''; }
+  /* まとめた書類は 書類ごと 印を付ける・外す */
+  function docsCheck(list, on) {
+    const ids = {}; list.forEach(function (x) {
+      if (x.set && x.setOf > 1) (S.docs || []).forEach(function (y) { if (y.set === x.set) ids[y.id] = 1; });
+      ids[x.id] = 1;
+    });
+    const keys = Object.keys(ids); if (!keys.length) return;
+    const was = {}; keys.forEach(function (id) { const d = docOf(id); if (d) { was[id] = d.chk || ''; d.chk = on ? '…' : ''; } });
+    docsDraw();
+    gs('workCheck', S.code, keys, !!on).then(function (r) {
+      const m = (r && r.chk) || {}; keys.forEach(function (id) { const d = docOf(id); if (d) d.chk = id in m ? m[id] : (on ? d.chk : ''); });
+      docsDraw();
+      dcMsg(on ? keys.length + '枚を 確認済にしました。' : keys.length + '枚の 確認済を外しました。');
+    }, function (e) {
+      keys.forEach(function (id) { const d = docOf(id); if (d) d.chk = was[id]; }); docsDraw();
+      dcMsg('確認済の印を付けられませんでした。' + e.message, true);
+    });
+  }
   function dTile(it) {
     const tile = el('div', 'dtile'); tile.dataset.id = it.id;
     const b = el('button', 'dimg'); b.type = 'button'; b.title = '押すと大きく';
@@ -3288,6 +3317,12 @@
     if (tg[0] === 'gone') tile.classList.add('gone');
     if (it.status === 'back' && !it.redo) tile.classList.add('isback');
     tile.appendChild(b);
+    /* ★ 確認済（2026-10-23 改善要望）：見た・打った写真に 印を付ける。押すたびに 付ける／外す */
+    if (it.chk) tile.classList.add('chk');
+    const ck = el('button', 'dchk', it.chk ? '✓ 確認済 ' + chkShort(it.chk) : '□ 確認済にする'); ck.type = 'button';
+    ck.title = it.chk ? '確認：' + it.chk + '（押すと外す）' : '見た・入力を終えたら押す（仕訳の確定とは別）';
+    ck.addEventListener('click', function (e) { e.stopPropagation(); docsCheck([it], !it.chk); });
+    tile.appendChild(ck);
     if (it.memo) { const mm = el('div', 'dat', '💬 ' + it.memo); mm.title = '顧問先から：' + it.memo; tile.appendChild(mm); const mb = el('span', 'dmemo', '💬'); mb.title = mm.title; b.appendChild(mb); }
     b.addEventListener('click', function () {
       if (DDX.justEnded(tile)) return;
@@ -3727,7 +3762,8 @@
     const docs = {}; si.forEach(function (x) { docs[x.set && x.setOf > 1 ? 'S' + x.set : x.id] = 1; });
     const nd = Object.keys(docs).length;
     $('dcN').textContent = nd + '件を選んでいます' + (nd !== n ? '（写真 ' + n + '枚）' : '');
-    ['dcPdf', 'dcPrint', 'dcMove', 'dcDel'].forEach(function (k) { $(k).disabled = !n; });
+    ['dcPdf', 'dcPrint', 'dcMove', 'dcDel', 'dcChk'].forEach(function (k) { $(k).disabled = !n; });
+    $('dcChk').textContent = n && si.every(function (x) { return x.chk; }) ? '確認済を外す' : '✓ 確認済にする';
     $('dcJoin').disabled = n < 2;
   }
 
@@ -3749,6 +3785,7 @@
     lsSet(LS_DCOLS, b.dataset.c); docsDraw();
     if (dCrispOn()) $('dBody').querySelectorAll('img.dthumb[data-id]').forEach(function (im) { const id = im.dataset.id; if (IMG[id]) dCrisp(id); });
   });
+  $('dcChk').addEventListener('click', function () { const si = selItems(); if (!si.length) return; docsCheck(si, !si.every(function (x) { return x.chk; })); });
   $('dPick').addEventListener('click', function () { S.dcpick = !S.dcpick; if (!S.dcpick) S.dcsel = {}; docsDraw(); });
   function selItems() { return (S.dcview || []).filter(function (x) { return S.dcsel[x.id]; }); }
   $('dPdfAll').addEventListener('click', function () { cutPdf(S.dcview || [], ''); });
@@ -4284,6 +4321,9 @@
     $('dvDrive').href = it.url;
     $('dvMemo').textContent = it.memo ? '💬 顧問先から：' + it.memo : ''; $('dvMemo').hidden = !it.memo;
     $('dvMove').onclick = function () { docsClose(); dMoveOpen([it]); };
+    const dvChkPaint = function () { $('dvChk').textContent = it.chk ? '✓ 確認済（外す）' : '✓ 確認済にする'; $('dvChk').classList.toggle('ghost', !!it.chk); };
+    dvChkPaint();
+    $('dvChk').onclick = function () { docsCheck([it], !it.chk); dvChkPaint(); };
     dvBackDraw(it);
     $('dvGo').onclick = function () { docsClose(); perPick(it.period); S.box = ''; $('box').value = '';
       selectTab('In'); const go = function () { if (rowOf(it.id)) focusCard(it.id); }; if (S.items.some(function (x) { return x.id === it.id; })) { render(); go(); } else { S.st = 'all'; document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.st === 'all')); }); load().then(go); } };
