@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792917292;</script>
+<script>window.__PAGE_VER=1792926934;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -561,6 +561,7 @@
   .kzex { margin-top: 10px; } .kzex summary { cursor: pointer; font-weight: 700; }
   .kzex .ex { margin: 6px 0; padding: 8px 10px; border-radius: 8px; background: #FFFBEA; border: 1px solid #F0DC98; white-space: pre-wrap; font-size: 13px; }
   .kzex .bad { background: #FDECEA; border-color: #EBB5AF; }
+  .kzname { font-size: 13px; } .kzname h4 { margin: 10px 0 4px; font-size: 13px; color: var(--accent); } .kzname dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 2px 8px; } .kzname dt { font-weight: 700; } .kzname dd { margin: 0; color: var(--sub); } .kzname ol { margin: 0; padding-left: 20px; } .kzname li { margin: 1px 0; } .kzn-how { margin: 6px 0; padding: 6px 8px; background: #EEF4F1; border-radius: 6px; }
   .kzdlg .bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
   .kzcp textarea { width: 100%; min-height: 320px; font: 13px/1.6 ui-monospace, Menlo, Consolas, monospace; box-sizing: border-box; }
   .staff table { border-collapse: collapse; width: 100%; background: var(--paper); margin-bottom: 14px; }
@@ -1618,7 +1619,7 @@
         <select id="kzCode"></select>
         <label class="f">どの画面？</label>
         <div class="scr" id="kzScr"><label><input type="radio" name="kzscr" value="顧問先の画面"> 顧問先の画面（資料を送る側）</label><label><input type="radio" name="kzscr" value="事務所の画面"> 事務所の画面（このアプリ）</label><label><input type="radio" name="kzscr" value="両方"> 両方</label><label><input type="radio" name="kzscr" value="わからない"> わからない</label></div>
-        <label class="f" for="kzWhere">どこ <small>タブ・ボタン・欄の名前を 画面に出ているとおりに</small></label>
+        <label class="f" for="kzWhere">どこ <small>タブ・ボタン・欄の名前を 画面に出ているとおりに（右の「📘 画面の名前」）</small></label>
         <input type="text" id="kzWhere" maxlength="300" placeholder="例：顧問先の画面 →（箱を選んで撮ったあと）送る前の確認 →「ひとこと」の欄">
         <label class="f" for="kzNow">いま起きていること <small>何をしたら → どうなったか。エラーの文は「」でそのまま</small></label>
         <textarea id="kzNow" maxlength="3000" placeholder="例：iPhone（Safari・ホーム画面のアイコンから）で ひとことの欄を押しても キーボードが出ず、字が打てない。エラーは出ない。パソコンでは打てる。"></textarea>
@@ -1635,6 +1636,109 @@
       </div>
       <div class="kzside">
         <div class="kzchk" id="kzChk"></div>
+        <!-- ★ 画面の名前（2026-10-25）。中身は docs/画面の名前.md と同じ。直すときは両方 -->
+        <details class="kzex kzname" id="kzNames"><summary>📘 画面の名前（早見表。「どこ」はこの名前で）</summary>
+          <p class="kzn-how">書き方：<b>どちらの画面 → タブ → 枠や見出し → ボタンや欄</b><br>例：事務所の画面 → 仕訳化タブ → 1件の枠 → 伝票 → 金額の欄</p>
+          <h4>共通の言葉</h4><dl>
+            <dt>タブ</dt><dd>画面のいちばん上に並ぶ 切り替えの見出し。例：［仕訳化］タブ、［保管・送信済み］タブ</dd>
+            <dt>ボタン</dt><dd>押すもの。名前は ［ ］ でくくって書く。例：［確定する］ボタン</dd>
+            <dt>欄</dt><dd>文字や数字を打つところ。例：金額の欄、ひとことの欄</dd>
+            <dt>選び肢（プルダウン）</dt><dd>押すと 一覧が下に開いて 1つ選ぶもの。例：顧問先の欄、月分の欄</dd>
+            <dt>カーソルのある欄</dt><dd>いま打てる欄。黄色く光り 太い枠が付く。Enter で次の欄へ移る</dd>
+            <dt>枠（カード）</dt><dd>1件ぶんを囲った白い四角。例：仕訳化の 1件の枠</dd>
+            <dt>写真の札</dt><dd>写真1枚ぶんの小さな四角（サムネイル）。下に 日時や「確定」の帯が付く</dd>
+            <dt>帯</dt><dd>横に長い色つきの部分。例：月分の帯、札の下の帯</dd>
+            <dt>見出し</dt><dd>箱・年分・月分の名前が書いてある行。押すと 開く／閉じる</dd>
+            <dt>小窓</dt><dd>画面の上に重なって出る窓。例：改善要望を書く の小窓、大きく見る 小窓</dd>
+            <dt>下のバー</dt><dd>［選ぶ］を押したとき 画面の下に出る ボタンの並び</dd>
+            <dt>お知らせ（数秒で消える）</dt><dd>画面の下に一瞬出て 消える文。例：「確定しました」</dd>
+            <dt>印（バッジ）</dt><dd>数字や短い言葉の小さな丸。例：改善要望タブの赤い数字、「同意まだ」</dd>
+            <dt>別ウィンドウ</dt><dd>パソコンで 別に開く窓。例：画像を別ウィンドウ表示、出納帳を別ウィンドウ</dd>
+          </dl>
+          <h4>顧問先の画面　はじめの画面（箱の一覧）</h4><ol>
+            <li><b>顧問先名</b>　「◯◯ 様」。どの顧問先の画面か</li>
+            <li><b>［↻ 開き直す］ボタン</b>　画面を読み直す。押す前の続きから戻る</li>
+            <li><b>［📷 資料撮影・収集］タブ</b>　撮る・選ぶ・送る 側</li>
+            <li><b>［🗂 保管・送信済み］タブ</b>　保管したもの・送ったものを見る側</li>
+            <li><b>箱</b>　「現金の領収書」「通帳」などの入れもの。押すと開く</li>
+            <li><b>箱の一覧</b>　箱が並んだ はじめの画面</li>
+          </ol>
+          <h4>顧問先の画面　箱を開いたところ</h4><ol>
+            <li><b>［‹ 箱の一覧へ］ボタン</b>　箱の一覧に戻る</li>
+            <li><b>月分の帯</b>　いま何年何月分の資料を撮っているか</li>
+            <li><b>［月分を変える］ボタン</b>　撮る月分を選び直す</li>
+            <li><b>［撮る］ボタン</b>　カメラで撮る。となりが［選ぶ］（写真・ファイルを選ぶ）、下が ドラッグ＆ドロップの枠</li>
+            <li><b>開いている箱</b>　いま入れる箱</li>
+          </ol>
+          <h4>顧問先の画面　送る前の確認（トレイ）</h4><ol>
+            <li><b>送る前の確認（トレイ）</b>　撮ったけれど まだ送っていないもの</li>
+            <li><b>写真の札（トレイ）</b>　つかんで 並べ替え・重ねてまとめる</li>
+            <li><b>［×］ボタン</b>　その写真を消す</li>
+            <li><b>ひとことの欄</b>　事務所へのひとこと（任意）</li>
+            <li><b>［PDFで保存］など</b>　送る前でも PDF保存・印刷・選んで保存</li>
+            <li><b>［◯件を事務所に送る］ボタン</b>　事務所へ送る</li>
+            <li><b>［送らずに保管する］ボタン</b>　事務所には まだ送らずに置いておく</li>
+          </ol>
+          <h4>顧問先の画面　保管・送信済み</h4><ol>
+            <li><b>［保管・送信済み］タブ</b></li>
+            <li><b>「事務所に送っていない分」の欄</b>　保管中のもの。押すと 開く／閉じる</li>
+            <li><b>［この箱の全部 事務所に送る］ボタン</b>　保管中を まとめて送る</li>
+            <li><b>「✓ 送信済み」の欄</b>　送ったもの</li>
+            <li><b>月分の見出し</b>　その月分の小箱。年分の見出しの中にある</li>
+            <li><b>写真の札</b>　押すと大きく見る。長押し（パソコンは右クリック）で 移す・ひとこと など</li>
+            <li><b>札の下の帯</b>　送った日時と 状態（✓ 届いた・差戻し など）</li>
+            <li><b>［PDFで保存］（月分）</b>　その月分を PDF に</li>
+            <li><b>保管中の札</b>　金色の点線と「保管中」の帯</li>
+          </ol>
+          <h4>事務所の画面　共通の上の部分 と 回収資料タブ</h4><ol>
+            <li><b>タブの列</b>　回収資料・仕訳化・取込ファイル・担当者・顧問先・仕訳辞書・AIの考え方・改善要望</li>
+            <li><b>［↻ 開き直す］ボタン</b>　読み直す。続きから戻る</li>
+            <li><b>入っている人</b>　ログインしている担当者の名前</li>
+            <li><b>顧問先の欄</b>　いま開いている顧問先。どのタブでも同じ。ここで替えると全部のタブが替わる</li>
+            <li><b>年・月分の欄</b>　何年何月分で絞る</li>
+            <li><b>箱の欄</b>　どの箱で絞る</li>
+            <li><b>並べ方（横に◯枚）</b>　写真の札を横に何枚並べるか</li>
+            <li><b>［選ぶ］ボタン</b>　写真を選んで まとめて操作（下のバーが出る）</li>
+            <li><b>箱の見出し</b>　［PDF切り出し］［印刷］［別ウィンドウ］が並ぶ</li>
+            <li><b>年分の見出し</b>　押すと 開く／閉じる</li>
+            <li><b>月分の見出し</b>　件数・未確認・未確定の数</li>
+            <li><b>写真の札</b>　押すと大きく見る小窓</li>
+            <li><b>［□ 確認済にする］ボタン</b>　見た・打った印。押すと「✓ 確認済」</li>
+            <li><b>札の帯</b>　届いた日時・「✓ 確定」・差戻し など</li>
+            <li><b>［一括PDF切り出し］ボタン</b>　並んでいるものを PDF に</li>
+            <li><b>［📨 顧問先へ送る］ボタン</b>　事務所から 顧問先へ書類を送る</li>
+          </ol>
+          <h4>事務所の画面　仕訳化タブ（辞書を選ぶところ）</h4><ol>
+            <li><b>顧問先の欄</b></li>
+            <li><b>処理する月の欄</b>　日付を「23」だけ打ったときの年月</li>
+            <li><b>未処理・差戻し・確定・全部 の切り替え</b></li>
+            <li><b>並べ方（縦1列・横2列・画像を別ウィンドウ表示）</b></li>
+            <li><b>1件の枠</b>　写真1件ぶん。頭に 番号・箱・状態・届いた日時・ファイル名</li>
+            <li><b>写真の枠</b>　下に［回す］［拡大］［Drive］</li>
+            <li><b>「辞書から選ぶ」</b></li>
+            <li><b>絞り込みの欄（カーソルのある欄）</b>　黄色く光っているのが いま打てる欄。番号を打って Enter</li>
+            <li><b>［＋ 辞書を登録］ボタン</b>　その場で辞書を作る</li>
+            <li><b>辞書の一覧</b>　「いつもの取引」などの群に分かれて並ぶ</li>
+            <li><b>［1仕訳辞書｜複数仕訳辞書］の切り替え</b>　1枚に1行か、通帳などで何行も入れるか</li>
+            <li><b>［⚡ 高速記帳］ボタン</b>　同じ辞書で 日付と金額だけを次々に</li>
+          </ol>
+          <h4>事務所の画面　仕訳化タブ（伝票を打つところ）</h4><ol>
+            <li><b>選んだ辞書の行</b>　辞書の名前と［辞書を選び直す］</li>
+            <li><b>伝票</b>　年月日・借方・貸方・金額・税率・摘要 の表</li>
+            <li><b>年月日の欄（カーソルのある欄）</b>　黄色く光って太い枠。ここに打つ。Enter で 金額の欄へ</li>
+            <li><b>金額の欄</b>　Enter で確定して 次の1件へ</li>
+            <li><b>［✓ 確定する］ボタン</b>　となりに［複数仕訳へ］［この写真にもう1件］</li>
+          </ol>
+          <h4>事務所の画面　改善要望を書く 小窓</h4><ol>
+            <li><b>どこからの要望？</b>　顧問先から聞いたものは その顧問先</li>
+            <li><b>どの画面？</b>　顧問先の画面／事務所の画面／両方／わからない</li>
+            <li><b>どこ</b>　この説明書の名前で書く</li>
+            <li><b>いま起きていること</b></li>
+            <li><b>こうしてほしい</b></li>
+            <li><b>スクショの枠</b>　Ctrl+V で貼る・落とす・選ぶ</li>
+            <li><b>「AI にそのまま渡せるか」の点検</b>　足りないところに「？」</li>
+          </ol>
+        </details>
         <details class="kzex" open><summary>例文（このように書くと AI がそのまま直せます）</summary>
           <div class="ex"><b>例1（顧問先から聞いた・不具合）</b>
 どこ：顧問先の画面 → 送る前の確認 →「ひとこと」の欄
@@ -1843,7 +1947,7 @@
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
   }
-  function signOut(msg) { TOK = ''; lsDel(LS_TOK); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
+  function signOut(msg) { RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
   $('signOut').addEventListener('click', function () { signOut('ログアウトしました。'); });
   $('gate').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -1878,7 +1982,7 @@
   }
   function start(name) {
     S.started = true;
-    resumeLoad();
+    resumeLoad(name);
     $('gate').hidden = true; $('chg').hidden = true;
     const old = bootLoad(name);
     let done;
@@ -1962,6 +2066,7 @@
     if (k === 'Staff') sLoad();
     if (k === 'Rule') rLoad();
     if (k === 'Kaizen') kzLoad(true);
+    setTimeout(resumeKeep, 0);
   }
   document.querySelectorAll('#tabs button').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -2249,18 +2354,25 @@
      右上の［↻ 開き直す］。押した瞬間の様子を 端末に置いてから 開き直し、開いたら そのまま戻す
      … 顧問先・タブ・未処理/確定・箱・月分・処理する月・打ちかけの仕訳（日付・No・金額）・開いていた件・
        辞書の書きかけ・画面の位置。保存中の仕訳は 送り終わるのを待ってから。10分より古いものは使わない */
+  /* ★★ 閉じても・更新しても 前回の続きから（2026-10-25）。開いているあいだ ずっと 端末に置いておく
+       （15秒おき・タブを替えたとき・画面を裏へ回したとき・閉じるとき）。
+       顧問先・タブ・絞り込み・開いていた箱と月分・画面の位置 は 30日、打ちかけの仕訳・辞書の書きかけ は 1日まで戻す。
+       別の担当者が入ったときは 使わない。ログアウトで消す */
   const LS_RESUME = 'collect_office_resume';
-  let RESUME = null, REOPENING = false;
-  function resumeLoad() {
+  var RESUME = null, REOPENING = false, RESUME_OFF = false;   /* var：ログアウト（上の方の関数）からも触るので */
+  const RESUME_NAV = 30 * 86400000, RESUME_DRAFT = 86400000;
+  function resumeLoad(name) {
     let r = null; try { r = JSON.parse(lsGet(LS_RESUME) || 'null'); } catch (e) {}
-    lsDel(LS_RESUME);
-    if (!r || Date.now() - r.at > 600000) return;
+    RESUME_OFF = false;
+    if (!r || Date.now() - r.at > RESUME_NAV || (r.who && name && r.who !== name)) { lsDel(LS_RESUME); return; }
+    if (Date.now() - r.at > RESUME_DRAFT) { r.C = {}; r.slip = null; r.open = {}; r.rep = {}; r.act = ''; }
     RESUME = r;
     S.code = r.code || ''; S.st = r.st || S.st; S.box = r.box || ''; S.per = r.per || '';
   }
   function resumeApply() {
     const r = RESUME; RESUME = null;
     Object.keys(r.C || {}).forEach(function (k) { C[k] = r.C[k]; });
+    Object.assign(DOPEN, r.dopen || {});
     S.open = r.open || {}; S.rep = r.rep || {}; S.act = r.act || '';
     if (r.month) $('month').value = r.month;
     if (r.outMonth) $('outMonth').value = r.outMonth;
@@ -2272,7 +2384,7 @@
     else if (r.dsel != null) openSlip(r.dsel);
     render();
     if (S.booted) selectTab(r.tab || 'In'); else S.resumeTab = r.tab || 'In';
-    [250, 1000].forEach(function (ms) { setTimeout(function () {
+    [250, 1000, 2500].forEach(function (ms) { setTimeout(function () {
       window.scrollTo(0, r.y || 0);
       Object.keys(r.sc || {}).forEach(function (id) { const e = document.getElementById(id); if (e) e.scrollTop = r.sc[id]; });
     }, ms); });
@@ -2281,10 +2393,7 @@
     if (REOPENING) return;
     const b = $('reopen'); b.disabled = true; b.textContent = '保存しています…';
     for (let i = 0; i < 40 && (S.saving || BOOT_WAIT); i++) await new Promise(function (ok) { setTimeout(ok, 500); });
-    const sc = {};
-    document.querySelectorAll('[id]').forEach(function (e) { if (e.scrollTop > 0 && e !== document.documentElement) sc[e.id] = e.scrollTop; });
-    lsSet(LS_RESUME, JSON.stringify({ at: Date.now(), code: S.code, tab: S.tab, st: S.st, box: S.box, per: S.per, month: $('month').value, outMonth: $('outMonth').value,
-      C: C, open: S.open || {}, rep: S.rep || {}, act: S.act || '', dbox: S.dbox, dsel: S.dsel, slip: S.dirty ? readSlip() : null, y: window.scrollY, sc: sc }));
+    resumeKeep();
     REOPENING = true;
     [POP, LPOP].forEach(function (w) { try { if (w && !w.closed) w.close(); } catch (e) {} });
     if (LIVE) { location.reload(); return; }
@@ -2292,6 +2401,19 @@
     location.replace(u.toString());
   }
   $('reopen').addEventListener('click', reopenNow);
+  function resumeKeep() {
+    if (REOPENING || RESUME_OFF || !(TOK || LIVE) || !S.booted) return;
+    if (RESUME) { RESUME._w = (RESUME._w || 0) + 1; if (RESUME._w < 3) return; RESUME = null; }   /* 戻す前に上書きしない（30秒たっても戻せなければ あきらめる） */
+    try {
+      const sc = {};
+      document.querySelectorAll('[id]').forEach(function (e) { if (e.scrollTop > 0 && e !== document.documentElement) sc[e.id] = e.scrollTop; });
+      lsSet(LS_RESUME, JSON.stringify({ at: Date.now(), who: lsGet(LS_NAME) || '', code: S.code, tab: S.tab, st: S.st, box: S.box, per: S.per, month: $('month').value, outMonth: $('outMonth').value,
+        C: C, open: S.open || {}, rep: S.rep || {}, act: S.act || '', dbox: S.dbox, dsel: S.dsel, slip: S.dirty ? readSlip() : null, dopen: DOPEN, y: window.scrollY, sc: sc }));
+    } catch (e) {}
+  }
+  setInterval(resumeKeep, 15000);
+  window.addEventListener('pagehide', resumeKeep);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) resumeKeep(); });
   /* ★ 新しくなったら 小さく知らせる（止めない。開き直しても 直さなくても そのまま続けられる） */
   function verWatch() {
     const mine = Number(window.__PAGE_VER || 0);
