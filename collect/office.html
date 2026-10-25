@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792747734;</script>
+<script>window.__PAGE_VER=1792917292;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -96,6 +96,8 @@
   /* 辞書の手入れ・書き出し・担当者 */
   .page { overflow: auto; padding: 14px 18px; }
   .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; max-width: 1200px; }
+  @keyframes afHit { from { opacity: 1; } to { opacity: 1; } }
+  input:-webkit-autofill:not(#gName):not(#gPin):not(#cCur):not(#cNew):not(#cNew2) { animation: afHit .001s; }
   .bar .sp { flex: 1; }
   .note { color: var(--sub); font-size: 13px; line-height: 1.7; max-width: 1200px; }
   .pagemsg { font-weight: 700; } .pagemsg.err { color: var(--err); } .pagemsg.ok { color: var(--ok); }
@@ -940,6 +942,7 @@
   .ctl[data-tab="Dict"] label:has(#month), .ctl[data-tab="Dict"] #filter, .ctl[data-tab="Dict"] label:has(#perY), .ctl[data-tab="Dict"] label:has(#perM), .ctl[data-tab="Dict"] label:has(#box),
   .ctl[data-tab="Rule"] label:has(#month), .ctl[data-tab="Rule"] #filter, .ctl[data-tab="Rule"] label:has(#perY), .ctl[data-tab="Rule"] label:has(#perM), .ctl[data-tab="Rule"] label:has(#box),
   .ctl[data-tab="Out"] label:has(#month), .ctl[data-tab="Out"] #filter, .ctl[data-tab="Out"] label:has(#perY), .ctl[data-tab="Out"] label:has(#perM), .ctl[data-tab="Out"] label:has(#box) { display: none; }
+  .ctl[data-tab="Clients"] > :not(label:has(#client)) { display: none; }
 
   /* 一括取込ファイル */
   .obox { margin: 14px 0 22px; max-width: 1200px; }
@@ -1387,12 +1390,14 @@
         <span class="note" id="aiState"></span></div>
       <div class="bar"><label class="aiuse">消費税 <select id="aiTaxm" aria-label="消費税の課税方式"><option value="">（決めていない）</option><option value="本則">本則課税</option><option value="簡易">簡易課税</option><option value="免税">免税</option></select></label>
         <span class="note">本則課税にすると 仕訳化で 背骨（出納帳・カード明細）の行ごとに インボイスの印（登録番号あり／帳簿のみの特例の候補／確かめる）を出します</span></div>
-      <div class="bar" id="aiKeyBar" hidden>
-        <input type="password" id="aiKey" placeholder="API キー（sk-ant-…）" autocomplete="off" aria-label="Claude API のキー">
+      <!-- ★ 暗証の欄は 自分の form に入れる（2026-10-25）。form の外に password があると ブラウザが 画面じゅうの欄を
+           ログインの一部とみて 保存した名前（石井重洋 など）を 辞書の絞り込み・顧問先を探す 欄に入れてしまう -->
+      <form class="bar" id="aiKeyBar" hidden autocomplete="off" onsubmit="return false">
+        <input type="password" id="aiKey" placeholder="API キー（sk-ant-…）" autocomplete="new-password" aria-label="Claude API のキー">
         <select id="aiModel" aria-label="AI のモデル"></select>
         <button type="button" class="btn sm" id="aiKeySave">保存</button>
         <button type="button" class="btn ghost sm danger" id="aiKeyDel">キーを消す</button>
-      </div>
+      </form>
       <p class="note">入れると 仕訳化の上に［🤖 AI で下書き］が出ます。日付・金額・相手・登録番号を読み、<b>下の材料をまるごと見て 仕訳を決めます</b>（科目と補助は この顧問先の表の中から）。
         伝票に入るので、見てから Enter で確定します。決め手と 別の案（2つまで）も出ます。<br>
         キーはマスターだけが入れます（スクリプトのプロパティに置き、画面には出しません）。<b>押さなければ料金はかかりません。</b>
@@ -1759,6 +1764,22 @@
   var LS_JLAY = 'collect_office_jlay';
   function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  /* ★ 入口（名前・暗証番号）のほかの欄に ブラウザが 保存した文字を入れないように（2026-10-25）。
+       ・あとから作る欄も含めて autocomplete="off"
+       ・それでも ブラウザが自動で入れたら（:-webkit-autofill）その場で消す */
+  (function () {
+    const LOGIN = { gName: 1, gPin: 1, cCur: 1, cNew: 1, cNew2: 1 };
+    const isTxt = function (e) { return e.tagName === 'TEXTAREA' || (e.tagName === 'INPUT' && /^(text|search|email|tel|url|number|)$/i.test(e.getAttribute('type') || '')); };
+    const fix = function (e) { if (isTxt(e) && !LOGIN[e.id] && e.getAttribute('autocomplete') !== 'off') e.setAttribute('autocomplete', 'off'); };
+    const scan = function (root) { if (root.nodeType !== 1) return; fix(root); root.querySelectorAll && root.querySelectorAll('input,textarea').forEach(fix); };
+    scan(document.documentElement);
+    try { new MutationObserver(function (ms) { ms.forEach(function (m) { m.addedNodes.forEach(scan); }); }).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+    document.addEventListener('animationstart', function (e) {
+      const t = e.target;
+      if (e.animationName !== 'afHit' || !t || LOGIN[t.id] || !isTxt(t)) return;
+      t.value = ''; try { t.dispatchEvent(new Event('input', { bubbles: true })); } catch (x) {}
+    }, true);
+  })();
   function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
   function qp(k) { try { return new URLSearchParams(location.search).get(k) || ''; } catch (e) { return ''; } }
 
@@ -1925,7 +1946,7 @@
     hidePanes(); $('pane' + k).hidden = false;
     /* 隠れた欄にフォーカスが残って テンキーが出たままにならないように */
     const ae = document.activeElement; if (ae && ae.dataset && ae.dataset.tk && !$('pane' + k).contains(ae)) { ae.blur(); tkHide(); }
-    $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Dict' || k === 'Out' || k === 'Rule');
+    $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Dict' || k === 'Out' || k === 'Rule' || k === 'Clients');
     /* 帯の欄は タブに要るものだけ（処理する月・未処理/確定 は仕訳化だけ、月分・箱は 回収資料と仕訳化） */
     $('ctl').dataset.tab = k;
     if (k === 'Docs') docsLoad();
@@ -1933,7 +1954,11 @@
     dcBar();
     if (k === 'In' && S.act && !NARROW.matches) { const r = rowOf(S.act); const f = firstField(r); if (f) f.focus({ preventScroll: true }); }
     if (k === 'Out') oLoad();
-    if (k === 'Clients') aLoad();
+    if (k === 'Clients') {
+      /* ★ 上の「顧問先」で いま開いている顧問先を そのまま開く（2026-10-25）。タブごとに選び直さない */
+      const go = function () { if (S.tab === 'Clients' && S.code && A.cur !== S.code && !A.isNew && A.list.some(function (c) { return c.code === S.code; })) aOpen(S.code); };
+      go(); const pr = aLoad(); if (pr && pr.then) pr.then(go, function () {});
+    }
     if (k === 'Staff') sLoad();
     if (k === 'Rule') rLoad();
     if (k === 'Kaizen') kzLoad(true);
@@ -2138,7 +2163,15 @@
   $('client').addEventListener('change', function () {
     if (S.dirty && !confirm('辞書の書き替えが保存されていません。捨てて顧問先を替えますか？')) { this.value = S.code; return; }
     S.code = this.value; switchClient();
+    if (S.tab === 'Clients' && !A.isNew) aOpen(S.code);
   });
+  /* ★ 顧問先タブで 一覧から選んだら 上の「顧問先」も そろえる（ほかのタブも その顧問先になる。2026-10-25） */
+  function setCode(code) {
+    if (!code || code === S.code || !S.clients.some(function (c) { return c.code === code; })) return true;
+    if (S.dirty && !confirm('辞書の書き替えが保存されていません。捨てて顧問先を替えますか？')) return false;
+    S.code = code; $('client').value = code; switchClient();
+    return true;
+  }
   function switchClient(soft) {
     /* soft … 同じ顧問先のまま 顧問先の並びだけ変わったとき（箱の選び肢だけ作り直す） */
     if (!soft) { S.dirty = false; S.rot = {}; S.dsel = null; S.open = {}; S.rep = {}; S.act = ''; }
@@ -7929,6 +7962,7 @@
   }
   function aOpen(code) {
     const c = A.list.find(function (x) { return x.code === code; }); if (!c) return;
+    if (!setCode(code)) return;
     A.cur = code; A.isNew = false;
     $('aTitle').textContent = c.code + '　' + c.name;
     $('aForm').hidden = false;
@@ -8227,7 +8261,8 @@
   $('iOpen').addEventListener('click', function () {
     const sel = $('iCl'); sel.textContent = '';
     (A.list || []).forEach(function (c) { const o = el('option', null, c.code + ' ' + c.name); o.value = c.code; sel.appendChild(o); });
-    if (A.cur) sel.value = A.cur;
+    sel.value = A.cur || S.code || '';   /* ★ いま開いている顧問先（2026-10-25） */
+    if (!sel.value && sel.options.length) sel.selectedIndex = 0;
     IV.cur = null; $('iEd').hidden = true; $('iPvF').hidden = true;
     $('iDlg').hidden = false; iLoad();
   });
