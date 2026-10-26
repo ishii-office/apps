@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793012829;</script>
+<script>window.__PAGE_VER=1793015656;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1391,6 +1391,7 @@
       <div class="f"><label for="aAppUrl">専用アプリ（あれば。顧問先の画面に［↗ ○○へ］が出て 行き来できる）</label>
         <div class="url"><input id="aAppName" maxlength="30" placeholder="名前 例 Bar ALLURE" style="max-width:180px"><input id="aAppUrl" maxlength="300" placeholder="URL 例 https://ishii-office.github.io/apps/079/"></div>
         <div class="hint">事務所のアプリ（https://ishii-office.github.io/apps/…）か GAS のURLだけ。専用アプリの側には、この顧問先の提出URLを入れてもらう（憲法「専用アプリと資料回収アプリの行き来」）。</div></div>
+      <div class="f"><label for="aTanto">担当者（事務所）</label><select id="aTanto"><option value="">（選んでください）</option></select><span class="hint">改善と効率化の集計は この担当者で数えます</span></div>
       <div class="f"><label for="aStaff">担当者メール</label><input id="aStaff" type="email" maxlength="120" placeholder="（空なら、毎朝の通知は事務所の代表へ）"></div>
       <div class="f">
         <label>箱（資料の種類・口座・カード）　<small class="muted">箱の中に箱も作れます（フォルダと同じ）</small></label>
@@ -1705,7 +1706,7 @@
             <li><b>顧問先名</b>　「◯◯ 様」。どの顧問先の画面か</li>
             <li><b>［↻ 開き直す］ボタン</b>　画面を読み直す。押す前の続きから戻る</li>
             <li><b>［📷 資料撮影・収集］タブ</b>　撮る・選ぶ・送る 側</li>
-            <li><b>［🗂 保管・送信済み］タブ</b>　保管したもの・送ったものを見る側</li>
+            <li><b>［🗂 事務所に送ったもの］タブ</b>　事務所に送ったものだけを見る側（撮ったもの全部は［📷 資料撮影・収集］の箱の中）</li>
             <li><b>箱</b>　「現金の領収書」「通帳」などの入れもの。押すと開く</li>
             <li><b>箱の一覧</b>　箱が並んだ はじめの画面</li>
           </ol>
@@ -1799,7 +1800,7 @@
             <li><b>「AI にそのまま渡せるか」の点検</b>　足りないところに「？」</li>
           </ol>
           <h4>共通の言葉</h4><dl>
-            <dt>タブ</dt><dd>画面のいちばん上に並ぶ 切り替えの見出し。例：［仕訳化］タブ、［保管・送信済み］タブ</dd>
+            <dt>タブ</dt><dd>画面のいちばん上に並ぶ 切り替えの見出し。例：［仕訳化］タブ、［事務所に送ったもの］タブ</dd>
             <dt>ボタン</dt><dd>押すもの。名前は ［ ］ でくくって書く。例：［確定する］ボタン</dd>
             <dt>欄</dt><dd>文字や数字を打つところ。例：金額の欄、ひとことの欄</dd>
             <dt>選び肢（プルダウン）</dt><dd>押すと 一覧が下に開いて 1つ選ぶもの。例：顧問先の欄、月分の欄</dd>
@@ -1827,7 +1828,7 @@
 いま：落ちてくる PDF の名前が「01_p1.pdf」で、どの顧問先のものか分からない。
 こうしてほしい：名前の頭に 顧問先コードと顧問先名を付ける（例：001_丸京_01_p1.pdf）。</div>
           <div class="ex"><b>例3（足してほしい機能）</b>
-どこ：顧問先の画面 → 保管・送信済み → 月分
+どこ：顧問先の画面 → 事務所に送ったもの → 月分
 いま：送った資料を 1枚ずつしか消せない。
 こうしてほしい：月分ごとに まとめて消せるボタン。消す前に「何件消します」と聞く。事務所に送ったものは消せないままでよい。</div>
           <div class="ex bad"><b>✕ AI が分からない書き方</b>
@@ -4369,11 +4370,24 @@
   const KZ_ST = ['確認待ち', '確認済み', 'AIへ送った', '改善済み', '見送り'];
   function kzMsg(t, err) { const m = $('kzMsg'); m.textContent = t || ''; m.className = 'pagemsg' + (err ? ' err' : t ? ' ok' : ''); }
   /* ★★ 改善と効率化の集計（2026-10-26）。マスターは全員、ほかの人は 自分と事務所全体 */
+  /* ★ 顧問先の担当者（事務所）のプルダウン（2026-10-26）。職員の名前だけを1回もらって覚える。名簿に無い古い名前も 消さずに出す */
+  let STAFF_NAMES = null;
+  function aTantoFill(v, onlyStaff) {
+    const sel = $('aTanto'); if (!sel) return;
+    const put = function (names) {
+      const vv = onlyStaff && names.indexOf(v) < 0 ? '' : v;   /* 新しく登録：自分が職員の名簿にあるときだけ はじめから入れる */
+      sel.textContent = ''; sel.appendChild(el('option', null, '（選んでください）')); sel.options[0].value = '';
+      names.concat(vv && names.indexOf(vv) < 0 ? [vv] : []).forEach(function (n) { const o = el('option', null, n); o.value = n; sel.appendChild(o); });
+      sel.value = vv || '';
+    };
+    put(STAFF_NAMES || []);
+    if (!STAFF_NAMES) gs('staffNames').then(function (r) { STAFF_NAMES = r || []; put(STAFF_NAMES); }, function () {});
+  }
   function kzStatsLoad() {
     gs('kaizenStats').then(function (r) {
       const w = $('kzStatsBody'); w.textContent = ''; w.className = '';
-      const H = ['担当者', '改善要望\n（書いた）', 'うち\n改善済み', '直近30日に\n書いた', '回収アプリを\n入れた顧問先', 'うち 運用中\n（30日に届いた）', '届いた資料\n（30日）', '確認済に\nした（30日）'];
-      const F = ['kz', 'kzDone', 'kz30', 'clients', 'active', 'docs30', 'chk30'];
+      const H = ['担当者', '改善要望\n（書いた）', 'うち\n改善済み', '直近30日に\n書いた', '回収アプリを\n入れた顧問先', 'うち 運用中\n（30日に届いた）', '届いた資料\n（30日）', '確認済に\nした（30日）', 'AI下書き\n（30日）', '仕訳化\n（30日）'];
+      const F = ['kz', 'kzDone', 'kz30', 'clients', 'active', 'docs30', 'chk30', 'ai30', 'je30'];
       const tb = el('table', 'kzst'); const tr0 = el('tr'); H.forEach(function (h) { tr0.appendChild(el('th', null, h)); }); tb.appendChild(tr0);
       (r.rows || []).concat([r.total]).forEach(function (x, i, a) {
         const tr = el('tr', i === a.length - 1 ? 'tot' : (x.name === KZ.me ? 'me' : null)); tr.appendChild(el('td', null, x.name));
@@ -4381,7 +4395,7 @@
         tb.appendChild(tr);
       });
       w.appendChild(tb);
-      w.appendChild(el('div', 'note', '回収アプリを入れた顧問先 … 顧問先タブの「説明担当者」がその人で、提出URLを出していて 有効なもの。運用中 … そのうち 直近30日に 顧問先から資料が届いたもの。' + (r.master ? '' : '（マスター以外は 自分と事務所全体だけ出ます）') + '　' + r.at + ' 時点'));
+      w.appendChild(el('div', 'note', '回収アプリを入れた顧問先 … 顧問先タブの「担当者（事務所）」がその人で、提出URLを出していて 有効なもの。運用中 … そのうち 直近30日に 顧問先から資料が届いたもの。AI下書き・仕訳化 … その人の担当先で 直近30日に AIが読めた枚数・確定した仕訳の数（取り消したものは数えない）。確認済にした … その人が押した数。' + (r.master ? '' : '（マスター以外は 自分と事務所全体だけ出ます）') + '　' + r.at + ' 時点'));
     }, function (e) { $('kzStatsBody').textContent = '集計を出せませんでした。' + e.message; });
   }
   function kzLoad(force) {
@@ -8503,7 +8517,7 @@
     $('aTitle').textContent = c.code + '　' + c.name;
     $('aForm').hidden = false;
     $('aCode').value = c.code; $('aCode').readOnly = true;
-    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); $('aRepTitle').value = c.repTitle || ''; $('aRepName').value = c.repName || ''; $('aExplainer').value = c.explainer || ''; $('aIconName').value = c.iconName || ''; aIconSet(c.iconColor || ''); aCnsShow(c); $('aFy').value = c.fy ? String(c.fy) : ''; $('aKind').value = c.kindSet ? c.kind : ''; $('aKindHint').textContent = c.kindSet ? '' : '（いまは 名前から「' + corpKindOf(c) + '」と当てています）';
+    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); $('aRepTitle').value = c.repTitle || ''; $('aRepName').value = c.repName || ''; $('aExplainer').value = c.explainer || ''; aTantoFill(c.tanto || ''); $('aIconName').value = c.iconName || ''; aIconSet(c.iconColor || ''); aCnsShow(c); $('aFy').value = c.fy ? String(c.fy) : ''; $('aKind').value = c.kindSet ? c.kind : ''; $('aKindHint').textContent = c.kindSet ? '' : '（いまは 名前から「' + corpKindOf(c) + '」と当てています）';
     $('aBoxes').value = c.boxesRaw ? c.boxes.map(function (b) { return ((c.hidden || []).indexOf(b) >= 0 ? '~' : '') + b; }).join('\n') : '';
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     aThemeSet(c.theme || 'green');
@@ -8517,7 +8531,7 @@
     A.cur = null; A.isNew = true;
     $('aTitle').textContent = '新しい顧問先';
     $('aForm').hidden = false;
-    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName', 'aKind', 'aRepTitle', 'aRepName', 'aExplainer', 'aIconName'].forEach(function (k) { $(k).value = ''; }); aIconSet(''); aCnsShow(null); $('aKindHint').textContent = ''; A.spot = {};
+    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName', 'aKind', 'aRepTitle', 'aRepName', 'aExplainer', 'aIconName'].forEach(function (k) { $(k).value = ''; }); aTantoFill(S.me && S.me.name || '', true); aIconSet(''); aCnsShow(null); $('aKindHint').textContent = ''; A.spot = {};
     $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false; aThemeSet('green'); aLogoShow(null);
     $('aActiveRow').hidden = true; $('aUrlRow').hidden = true;
     $('aSave').textContent = '登録して URL を作る';
@@ -8691,7 +8705,7 @@
     if (A.busy) return;
     const o = { code: ccode($('aCode').value), fy: $('aFy').value, name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
       boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew, email: $('aEmail').value.trim(), spot: A.spot || {}, appUrl: $('aAppUrl').value.trim(), appName: $('aAppName').value.trim(), kind: $('aKind').value,
-      repTitle: $('aRepTitle').value.trim(), repName: $('aRepName').value.trim(), explainer: $('aExplainer').value.trim(),
+      repTitle: $('aRepTitle').value.trim(), repName: $('aRepName').value.trim(), explainer: $('aExplainer').value.trim(), tanto: $('aTanto').value,
       iconName: $('aIconName').value.trim(), iconColor: $('aIconColor').value };
     A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
     gs('adminSave', o).then(function (l) {
