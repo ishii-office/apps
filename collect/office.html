@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793015656;</script>
+<script>window.__PAGE_VER=1793022389;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1996,12 +1996,25 @@
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
   const LONG_FN = { tehonAnalyze: 370000, kaizenShot: 120000 };
+  /* ★ 総点検（2026-10-26）：読むだけのものは 通信がこけたら 1回だけ自動でやり直す（打ち直させない）。
+     書き込みは やり直さない（二度入るので）。GAS の中（LIVE）でも 返事が来なければ時間切れにする（固まらない） */
+  const NETERR = /サーバの返事がありませんでした|サーバにつながりませんでした|Failed to fetch|NetworkError|Load failed|network/i;
   function gs(fn) {
     const args = Array.prototype.slice.call(arguments, 1);
     if (BOOT_WAIT && !READ_FN[fn]) return BOOT_WAIT.then(function () { return gs.apply(null, [fn].concat(args)); });
+    if (!READ_FN[fn]) return gs1(fn, args);
+    return gs1(fn, args).catch(function (e) {
+      if (!NETERR.test(e.message)) throw e;
+      return new Promise(function (r) { setTimeout(r, 1200); }).then(function () { return gs1(fn, args); });
+    });
+  }
+  function gs1(fn, args) {
     return new Promise(function (ok, ng) {
       if (LIVE) {
-        const r = google.script.run.withSuccessHandler(ok).withFailureHandler(function (e) { ng(new Error(e && e.message ? e.message : String(e))); });
+        let done = false;
+        const t = setTimeout(function () { if (!done) { done = true; ng(new Error('サーバの返事がありませんでした。もう一度どうぞ。')); } }, LONG_FN[fn] || 90000);
+        const r = google.script.run.withSuccessHandler(function (v) { if (done) return; done = true; clearTimeout(t); ok(v); })
+          .withFailureHandler(function (e) { if (done) return; done = true; clearTimeout(t); ng(new Error(e && e.message ? e.message : String(e))); });
         r[fn].apply(r, args); return;
       }
       if (!WEB2) { ng(new Error('送り先（サーバの口）が分かりません。')); return; }
@@ -2146,6 +2159,7 @@
     if (k === 'Docs') docsLoad();
     if (k === 'In' || k === 'Docs') setTimeout(pulse, 0);
     dcBar();
+    if (k === 'In' && S.needRender) render();
     if (k === 'In' && S.act && !NARROW.matches) { const r = rowOf(S.act); const f = firstField(r); if (f) f.focus({ preventScroll: true }); }
     if (k === 'Out') oLoad();
     if (k === 'Clients') {
@@ -2403,10 +2417,11 @@
   }
   function pairSync() {
     if (!S.code) return;
-    if (PANE) { if (!PANE_READY) return; clientUrlOf(S.code).then(function (u) { if (u) try { window.parent.postMessage({ k: 'collect-pair', t: 'client', url: u }, location.origin); } catch (e) {} }, function () {}); return; }
+    const code = S.code;   /* ★ 総点検：返事を待つあいだに 顧問先を替えたら 古い顧問先を並べない */
+    if (PANE) { if (!PANE_READY) return; clientUrlOf(code).then(function (u) { if (code !== S.code) return; if (u) try { window.parent.postMessage({ k: 'collect-pair', t: 'client', url: u }, location.origin); } catch (e) {} }, function () {}); return; }
     if (!document.getElementById('pairFrame')) return;
-    clientUrlOf(S.code).then(function (u) {
-      if (!document.getElementById('pairFrame')) return;
+    clientUrlOf(code).then(function (u) {
+      if (code !== S.code || !document.getElementById('pairFrame')) return;
       if (u) pairOpen(u); else { pairClose(); alert('この顧問先は まだ提出URLがありません（顧問先タブで作ってください）。並べるのをやめました。'); }
     }, function () {});
   }
@@ -2615,7 +2630,9 @@
       const known = S.all.items.reduce(function (m, it) { return Math.max(m, it.t || 0); }, 0);
       const was = PULSE.code === code ? PULSE.n : -1;
       PULSE.code = code; PULSE.n = p.n;
-      if (p.t > known || (was >= 0 && p.n > was)) pulseFetch(code);
+      /* ★ 総点検：同じ時刻を何度も「新しい」と見ない（破棄したものが いちばん新しいと 15秒ごとに読み直していた） */
+      const seenT = PULSE.tc === code ? (PULSE.t || 0) : 0;
+      if (p.t > Math.max(known, seenT) || (was >= 0 && p.n > was)) { PULSE.t = p.t; PULSE.tc = code; pulseFetch(code); }
     }, function () { PULSE.busy = false; });
   }
   function pulseFetch(code) {
@@ -3028,7 +3045,12 @@
   }
 
   /* 一覧を組む。届いた日ごとに区切りを入れる */
+  /* ★ 総点検（2026-10-26）：仕訳化が見えていないとき（回収資料などで 整理しているとき）は 描かない。
+     ドラッグのたびに 全部の伝票を描き直して 写真まで取りに行っていた。仕訳化を開いたときに 1回だけ描く。
+     写真や出納帳の別の窓が開いているときは そちらに映すため いつもどおり描く */
   function render() {
+    if (S.started && S.tab !== 'In' && !(POP && !POP.closed) && !(LPOP && !LPOP.closed)) { S.needRender = true; return; }
+    S.needRender = false;
     jlayPaint();
     /* 月分 → 箱 → 届いた順 に並べ、「2026年8月分 ／ 現金の領収書」で区切る */
     try { S.spm = spineMatch(S.items, S.ai); } catch (e) { S.spm = null; }
@@ -3125,14 +3147,18 @@
       docsThumbs(r.items);
     }, function (e) { $('dBody').textContent = ''; $('dBody').appendChild(el('div', 'cbox', e.message)); });
   }
+  /* 取り寄せ中の絵（同じ絵を 2か所から同時に頼まない。仕訳化の先読みと 回収資料が 同じ絵を2回頼んでいた） */
+  const THIN = {};
   let DTH_RUN = false;
   function docsThumbs(items) {
-    if (DTH_RUN) return;
-    const need = (items || []).map(function (it) { return it.id; }).filter(function (id) { return !(id in THUMB); });
+    if (DTH_RUN && DTH_RUN === S.code) return;
+    const need = (items || []).map(function (it) { return it.id; }).filter(function (id) { return !(id in THUMB) && !THIN[id]; });
     if (!need.length) return;
-    DTH_RUN = true;
-    (function next() { const b = need.splice(0, 40); if (!b.length) { DTH_RUN = false; return; }
-      gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); $('dBody').querySelectorAll('img.dthumb[data-id]').forEach(function (im) { if (!im.src && THUMB[im.dataset.id]) im.src = THUMB[im.dataset.id]; }); next(); }, next); })();
+    /* ★ 総点検：顧問先ごとに走らせる（前の顧問先の取り寄せが終わるまで 新しい顧問先の絵が出なかった） */
+    const code = S.code; DTH_RUN = code;
+    (function next() { if (code !== S.code) { if (DTH_RUN === code) DTH_RUN = false; return; } const b = need.splice(0, 40); if (!b.length) { if (DTH_RUN === code) DTH_RUN = false; return; }
+      b.forEach(function (id) { THIN[id] = 1; }); const un = function () { b.forEach(function (id) { delete THIN[id]; }); };
+      gs('viewerThumbs', b).then(function (t) { un(); b.forEach(function (id) { THUMB[id] = t[id] || null; }); $('dBody').querySelectorAll('img.dthumb[data-id]').forEach(function (im) { if (!im.src && THUMB[im.dataset.id]) im.src = THUMB[im.dataset.id]; }); next(); }, function () { un(); next(); }); })();
   }
   /* ★ 顧問先の画面と同じ見え方（2026-10-06）：箱 → 月分の小箱 → 写真が並ぶ。押すと すぐ大きく。
        事務所だけのもの … PDF切り出し・破棄・選ぶ・別の月分へ移す（月分を整理する）・仕訳化へ */
@@ -3277,9 +3303,7 @@
         const tg = el('button', 'dmon-h'); tg.type = 'button'; tg.setAttribute('aria-expanded', String(open));
         tg.innerHTML = D_ICON_S;
         tg.appendChild(el('b', null, perLabel(p)));
-        const n = { todo: 0, back: 0, done: 0, gone: 0 }; items.forEach(function (x) { n[stTag(x)[0]] = (n[stTag(x)[0]] || 0) + 1; });
-        const nchk = items.filter(function (x) { return !x.chk && stTag(x)[0] !== 'gone'; }).length;
-        tg.appendChild(el('span', 'dmon-c', items.length + '件' + (nchk ? '・未確認 ' + nchk : '・全部確認済') + (n.todo ? '・未確定 ' + n.todo : '') + (n.back ? '・差戻し ' + n.back : '')));
+        tg.appendChild(el('span', 'dmon-c', dMonCount(items)));
         tg.appendChild(el('span', 'chev', '▾'));
         tg.addEventListener('click', function () { DOPEN[key] = !open; docsDraw(); });
         row.appendChild(tg);
@@ -3587,6 +3611,33 @@
   }
   function chkShort(v) { const m = String(v || '').match(/^\d{4}\/(\d+\/\d+) [\d:]+ ?(.*)$/); return m ? m[1] + (m[2] ? ' ' + m[2] : '') : ''; }
   /* まとめた書類は 書類ごと 印を付ける・外す */
+  /* ★ 総点検（2026-10-26）：確認済の印は その写真だけ描き直す（前は 1枚押すたびに 回収資料ぜんぶを2回描き直していた） */
+  function dMonCount(items) {
+    const n = { todo: 0, back: 0, done: 0, gone: 0 }; items.forEach(function (x) { n[stTag(x)[0]] = (n[stTag(x)[0]] || 0) + 1; });
+    const nchk = items.filter(function (x) { return !x.chk && stTag(x)[0] !== 'gone'; }).length;
+    return items.length + '件' + (nchk ? '・未確認 ' + nchk : '・全部確認済') + (n.todo ? '・未確定 ' + n.todo : '') + (n.back ? '・差戻し ' + n.back : '');
+  }
+  function dChkPaint(keys) {
+    let miss = false; const mons = [];
+    keys.forEach(function (id) {
+      const d = docOf(id); if (!d) return;
+      const ts = document.querySelectorAll('.dtile[data-id="' + id + '"]'); if (!ts.length) { miss = true; return; }
+      ts.forEach(function (t) {
+        const mo = t.closest('.dmon'); if (mo && mons.indexOf(mo) < 0) mons.push(mo);
+        t.classList.toggle('chk', !!d.chk);
+        const ck = t.querySelector('.dchk'); if (!ck) return;
+        ck.textContent = d.chk ? '✓ 確認済 ' + chkShort(d.chk) : '□ 確認済にする';
+        ck.title = d.chk ? '確認：' + d.chk + '（押すと外す）' : '見た・入力を終えたら押す（仕訳の確定とは別）';
+      });
+    });
+    if (miss) { docsDraw(); return; }
+    /* 月分の見出しの「未確認 N」も その場で数え直す */
+    mons.forEach(function (mo) {
+      const c = mo.querySelector('.dmon-h .dmon-c'); if (!c) return;
+      c.textContent = dMonCount((S.dcview || []).filter(function (x) { return x.box === mo.dataset.box && x.period === mo.dataset.per; }));
+    });
+    try { dcBar(); } catch (e) {} if (typeof wsRefresh === 'function') wsRefresh();
+  }
   function docsCheck(list, on) {
     const ids = {}; list.forEach(function (x) {
       if (x.set && x.setOf > 1) (S.docs || []).forEach(function (y) { if (y.set === x.set) ids[y.id] = 1; });
@@ -3594,13 +3645,13 @@
     });
     const keys = Object.keys(ids); if (!keys.length) return;
     const was = {}; keys.forEach(function (id) { const d = docOf(id); if (d) { was[id] = d.chk || ''; d.chk = on ? '…' : ''; } });
-    docsDraw();
+    dChkPaint(keys);
     gs('workCheck', S.code, keys, !!on).then(function (r) {
       const m = (r && r.chk) || {}; keys.forEach(function (id) { const d = docOf(id); if (d) d.chk = id in m ? m[id] : (on ? d.chk : ''); });
-      docsDraw();
+      dChkPaint(keys);
       dcMsg(on ? keys.length + '枚を 確認済にしました。' : keys.length + '枚の 確認済を外しました。');
     }, function (e) {
-      keys.forEach(function (id) { const d = docOf(id); if (d) d.chk = was[id]; }); docsDraw();
+      keys.forEach(function (id) { const d = docOf(id); if (d) d.chk = was[id]; }); dChkPaint(keys);
       dcMsg('確認済の印を付けられませんでした。' + e.message, true);
     });
   }
@@ -3671,7 +3722,11 @@
           if (DWAIT[id]) { const f = DWAIT[id]; delete DWAIT[id]; f(); }
         });
         drun--; dPump();
-      }, function () { b.forEach(function (id) { delete INFLIGHT[id]; }); drun--; });
+      }, function () {
+        /* ★ 総点検：こけても 待っている人（大きく見る）を止めない。続きも取りに行く */
+        b.forEach(function (id) { delete INFLIGHT[id]; IMG[id] = IMG[id] || { t: 'drive' }; const f = DWAIT[id]; if (f) { delete DWAIT[id]; f(); } });
+        drun--; dPump();
+      });
     }
   }
 
@@ -3995,7 +4050,7 @@
     docsDraw();
     gs('workOrder', code, now.map(function (x) { return x.id; })).then(function () {
       if (code === S.code) dcMsg('並べ替えました。');
-    }, function (e) { mon.forEach(function (x, i) { x.ord = was[i]; }); docsDraw(); dcMsg('並べ替えられませんでした。' + e.message, true); });
+    }, function (e) { mon.forEach(function (x, i) { x.ord = was[i]; }); if (code !== S.code) return; docsDraw(); dcMsg('並べ替えられませんでした。' + e.message, true); });
   }
   function dMove(list, box, per) {
     if (!Array.isArray(list)) list = [list];
@@ -4013,7 +4068,7 @@
       perFill(S.docs); docsDraw();
       const it0 = list[0];
       dcMsg((list.length > 1 ? list.length + '件を ' : '') + perLabel(it0.period) + '［' + boxLabel(it0.box) + '］へ移しました。');
-    }, function (e) { list.forEach(function (it, i) { it.box = was[i].box; it.period = was[i].period; }); docsDraw(); dcMsg('移せませんでした。' + e.message, true); });
+    }, function (e) { list.forEach(function (it, i) { it.box = was[i].box; it.period = was[i].period; }); if (code !== S.code) return; docsDraw(); dcMsg('移せませんでした。' + e.message, true); });
   }
   let DMV = null;
   function dMoveOpen(list) {
@@ -4111,16 +4166,17 @@
     const list = items.filter(function (x) { return x.status !== 'done'; });
     if (!list.length) { dcMsg('破棄できるものがありません（確定済みは破棄できません）。', true); return; }
     const code = S.code, ids = list.map(function (x) { return x.id; });
-    const keepDocs = S.docs, keepItems = S.items;
+    const keepDocs = S.docs, keepItems = S.items, keepAll = S.all && S.all.items;
     const gone = {}; ids.forEach(function (id) { gone[id] = 1; });
     S.docs = (S.docs || []).filter(function (x) { return !gone[x.id]; });
     S.items = (S.items || []).filter(function (x) { return !gone[x.id]; });
+    if (S.all && S.all.items) S.all.items = S.all.items.filter(function (x) { return !gone[x.id]; });   /* ★ 総点検：未処理/確定を切り替えたとき 破棄したものが戻ってこないように */
     S.dcpick = false; S.dcsel = {}; S.trashN = (S.trashN || 0) + list.length;
     docsDraw(); if (S.tab === 'In') render();
     dcUndo(list.length + '件を破棄しました（破棄したものに 退避）。' + (done ? '確定済みの ' + done + '件は残しました。' : ''), function () { restore(ids); });
     gs('workDiscard', code, ids).then(function () {}, function (e) {
       if (code !== S.code) return;
-      S.docs = keepDocs; S.items = keepItems; S.trashN = Math.max(0, (S.trashN || 0) - list.length);
+      S.docs = keepDocs; S.items = keepItems; if (S.all && keepAll) S.all.items = keepAll; S.trashN = Math.max(0, (S.trashN || 0) - list.length);
       docsDraw(); if (S.tab === 'In') render();
       dcMsg('破棄できませんでした。' + e.message, true);
     });
@@ -4467,7 +4523,7 @@
       });
       mw.appendChild(ul);
       const ok = el('button', null, '見ました（この知らせを閉じる）'); ok.type = 'button';
-      ok.addEventListener('click', function () { gs('kaizenSeen', mine.map(function (x) { return x.no; })).then(function () { kzLoad(true); }); }); mw.appendChild(ok);
+      ok.addEventListener('click', function () { gs('kaizenSeen', mine.map(function (x) { return x.no; })).then(function () { kzLoad(true); }, function (e) { kzMsg('印を付けられませんでした。' + e.message, true); }); }); mw.appendChild(ok);
     }
     const w = $('kzList'); w.textContent = '';
     const list = KZ.list.filter(function (x) { return KZ.flt === 'all' || x.st === KZ.flt; });
@@ -4714,9 +4770,13 @@
     if (o.mail) lsSet(LS_KZMAIL, o.mail);
     $('kzSave').disabled = true; $('kzFMsg').textContent = '保存しています…';
     gs('kaizenSave', o).then(function (y) {
+      /* ★ 総点検（2026-10-26）：書いたものは もう保存できたので KZ.edit に覚える。スクショが途中でこけて 押し直しても 2件目を作らない。
+         置けたスクショは 手元の一覧から外す（押し直しで 同じスクショを2回置かない） */
+      KZ.edit = y;
       let p = Promise.resolve(y);
-      KZ.shots.forEach(function (sh, i) { p = p.then(function () { $('kzFMsg').textContent = 'スクショを置いています… ' + (i + 1) + ' / ' + KZ.shots.length; return gs('kaizenShot', y.no, { mime: sh.mime, b64: sh.src.split(',')[1], note: sh.note || '' }); }); });
-      return p;
+      const list = KZ.shots.slice();
+      list.forEach(function (sh, i) { p = p.then(function () { $('kzFMsg').textContent = 'スクショを置いています… ' + (i + 1) + ' / ' + list.length; return gs('kaizenShot', y.no, { mime: sh.mime, b64: sh.src.split(',')[1], note: sh.note || '' }).then(function (z) { const k = KZ.shots.indexOf(sh); if (k >= 0) KZ.shots.splice(k, 1); return z; }); }); });
+      return p.then(function (z) { return z || y; });
     }).then(function (y) {
       KZ.shots = []; $('kzv').hidden = true; kzPut(y);
       kzMsg(y.no + ' を 保存しました。' + (KZ.master ? '' : 'マスターが確かめて AI に渡します。'));
@@ -5318,7 +5378,15 @@
     GROUPS.forEach(function (g) { list.forEach(function (d) { if ((d.grp || 'いつも') === g[0]) out.push(d); }); });
     return out;
   }
-  function seqOf(box, no) { return boxSeq(box).findIndex(function (d) { return d.no === Number(no); }) + 1; }
+  /* ★ 速さ（2026-10-26）：一覧を描くあいだ 同じ箱の並びを何百回も作り直さない。
+       覚えておくのは 1回の描き終わりまで（次の通信で辞書が変わっても 古い並びを使わない） */
+  let SEQ_MEMO = null;
+  function seqOf(box, no) {
+    if (!SEQ_MEMO) { SEQ_MEMO = {}; Promise.resolve().then(function () { SEQ_MEMO = null; }); }
+    let m = SEQ_MEMO[box];
+    if (!m) { m = SEQ_MEMO[box] = {}; boxSeq(box).forEach(function (d, i) { if (!(d.no in m)) m[d.no] = i + 1; }); }
+    return m[Number(no)] || 0;
+  }
   function dictHit(q, box) {
     const list = boxDict(box);
     q = half(q || '').toLowerCase();
@@ -5589,14 +5657,16 @@
   }, { rootMargin: '1500px 0px' }) : null;
   function actIdx() { const i = (S.view || []).findIndex(function (it) { return it.id === S.act; }); return i < 0 ? 0 : i; }
   function startPrefetch() {
-    const ids = viewIds();
-    const need = ids.filter(function (id) { return !(id in THUMB); });
+    const ids = viewIds(), code = S.code;
+    const need = ids.filter(function (id) { return !(id in THUMB) && !THIN[id]; });
     (function next() {
-      const b = need.splice(0, 40); if (!b.length) return;
+      if (code !== S.code) return;   /* ★ 総点検：顧問先を替えたら 前の顧問先の絵は取りに行かない */
+      const b = need.splice(0, 40).filter(function (id) { return !(id in THUMB) && !THIN[id]; }); if (!b.length) { if (need.length) next(); return; }
+      b.forEach(function (id) { THIN[id] = 1; });
       gs('viewerThumbs', b).then(function (r) {
-        b.forEach(function (id) { THUMB[id] = r[id] || null; if (!IMG[id]) paint(id); });
+        b.forEach(function (id) { delete THIN[id]; THUMB[id] = r[id] || null; if (!IMG[id]) paint(id); });
         next();
-      }, function () { next(); });
+      }, function () { b.forEach(function (id) { delete THIN[id]; }); next(); });
     })();
     prioritize();
   }
@@ -5880,6 +5950,9 @@
       if (sale && String(v.tax || '').trim() === '') { fmsg(w + '売上の行に 課税区分が入っていません', 'err'); go1(row, 'tax', ln); return; }
       if (sale && !taxFree(v.tax) && !(Number(v.rate) > 0)) { fmsg(w + '売上の行に 税率が入っていません（課税区分 ' + v.tax + '）', 'err'); go1(row, 'rate', ln); return; }
     }
+    /* ★ 総点検（2026-10-26）：1回の確定に 合図（op）を1つ。しくじって打ち直したときも 同じ合図を使うので、
+       じつはサーバに届いていたときに 仕訳が2組できない */
+    if (!c.op) c.op = 'wc_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     const saved = JSON.parse(JSON.stringify(c));
     const aiLn = c.aiLn;
     const lines = c.L.map(function (l, ln) { const v = slipVals(it.id, ln); return { amount: parseAmt(l.amount), ov: Object.keys(l.ov).length ? Object.assign({}, l.ov) : null, memo: l.memo != null ? l.memo : '', v: v }; });
@@ -5899,7 +5972,7 @@
     S.saving++; savingMark();
     fmsg('確定：' + d.s + '　' + yen(Math.max(sm.dr, sm.cr)) + '円　' + (k.title || dictLine(k)) + (lines.length > 1 ? '（' + lines.length + '行）' : ''), 'ok');
     const code = S.code;
-    const req = { code: code, fileId: it.id, date: d.s, amount: lines[0].amount, no: k.no, memo: lines[0].memo, ov: lines[0].ov, keep: keep, inv: c.inv || '' };
+    const req = { code: code, fileId: it.id, date: d.s, amount: lines[0].amount, no: k.no, memo: lines[0].memo, ov: lines[0].ov, keep: keep, inv: c.inv || '', op: c.op };
     if (lines.length > 1) req.lines = lines.map(function (x) { return { amount: x.amount, ov: x.ov, memo: x.memo }; });
     gs('workConfirm', req).then(function (r) {
       S.saving--; savingMark();
@@ -6312,7 +6385,8 @@
     fxSysPaint();
     if (!S.code) return;
     const c = Object.assign({}, S.fxConf || { tags: {} }, { sys: this.value });
-    gs('fxConfSave', S.code, c).then(function (r) { S.fxConf = r; fxMsg('やりとりする会計ソフトを 覚えました。', 'ok'); }, function (e) { fxMsg(e.message, 'err'); });
+    const code = S.code;
+    gs('fxConfSave', code, c).then(function (r) { if (code !== S.code) return; S.fxConf = r; fxMsg('やりとりする会計ソフトを 覚えました。', 'ok'); }, function (e) { if (code === S.code) fxMsg(e.message, 'err'); });
   });
   function fxTagList() {
     const m = (S.fxConf && S.fxConf.tags) || {}, n = {};
@@ -6439,13 +6513,17 @@
       rs.forEach(function (r) { if (r.k) got[r.k.kind] = r.k; else bad.push(r.f.name); });
       if (!Object.keys(got).length) { fxMsg('FX の一覧（勘定科目・口座・取引先の CSV、仕訳辞書の JSON）ではありませんでした：' + bad.join('、'), 'err'); return; }
       const done = [];
+      /* ★ 総点検（2026-10-26）：途中で顧問先を替えたら止める（替えた先の科目・取引先・辞書を 元の顧問先に混ぜて保存しないように） */
+      const stay = function () { if (code !== S.code) throw new Error('顧問先が替わったので 取り込みを止めました。もう一度 その顧問先で取り込んでください。'); };
       let p = Promise.resolve();
       /* 混ぜる前に いまの表を読み直す（ほかの人がアプリで足したぶんを消さない） */
       if (got.acct || got.sub) p = p.then(function () { return gs('acctGet', code).then(function (a) { if (code === S.code) acctSet(a); }); }).then(function () {
+        stay();
         const rows = got.acct ? fxMergeAcct(fxBuildAcct(got.acct, got.sub)) : fxBuildAcct(got.acct, got.sub);
         return gs('acctSave', code, rows).then(function (a) { if (code !== S.code) return; acctSet(a); drawAcct(); done.push('勘定科目・口座 ' + a.length + '行'); });
       });
       if (got.party) p = p.then(function () { return gs('partyGet', code).then(function (pp) { if (code === S.code) partySet(pp); }); }).then(function () {
+        stay();
         const H = got.party.h, rows = [];
         got.party.rows.forEach(function (r) {
           const a = half(r[H('勘定科目コード')] || ''), c = half(r[H('取引先コード')] || ''), n = (r[H('取引先名')] || '').trim();
@@ -6454,6 +6532,7 @@
         return gs('partySave', code, fxMergeParty(rows)).then(function (pp) { if (code !== S.code) return; partySet(pp); done.push('取引先 ' + pp.length + '件'); });
       });
       if (got.dict) p = p.then(function () {
+        stay();
         const r = fxDictToApp(got.dict.data);
         return gs('dictSave', code, r.list, { loose: true }).then(function (res) {
           if (code !== S.code) return;
@@ -6579,9 +6658,12 @@
       const g = kkToApp(ok.map(function (r) { return r.rows; }));
       if (!g.entries.length) { fxMsg('仕訳が1行もありませんでした。', 'err'); return; }
       const done = [];
+      const stay = function () { if (code !== S.code) throw new Error('顧問先が替わったので 取り込みを止めました。もう一度 その顧問先で取り込んでください。'); };
       return gs('acctGet', code).then(function (a) { if (code === S.code) acctSet(a); }).then(function () {
+        stay();
         return gs('acctSave', code, fxMergeAcct(g.acct)).then(function (a) { if (code !== S.code) return; acctSet(a); drawAcct(); done.push('勘定科目・口座 ' + a.length + '行'); });
       }).then(function () {
+        stay();
         const m = kkDictMerge(g.entries);
         return gs('dictSave', code, m.list, { loose: true }).then(function (res) {
           if (code !== S.code) return;
@@ -6942,6 +7024,7 @@
       q = q.then(function () {
         if (code !== S.code) return;
         return gs('bankDict', code, it.box, { title: need[sg].pat.title, lines: need[sg].pat.lines }).then(function (r) {
+          if (code !== S.code) return;
           (r.dict || []).forEach(function (x) { if (!S.dict.some(function (y) { return y.no === x.no; })) S.dict.push(x); });
           if (r.added) { drawIndex(); fmsg('型「' + need[sg].pat.title + '」を 辞書 No ' + r.no + ' に足しました。', 'ok'); }
           const e = S.aiEd[it.id] || (S.aiEd[it.id] = {});
@@ -6999,16 +7082,29 @@
     let n = 0;
     Object.keys(r.drafts || {}).forEach(function (id) { S.ai[id] = r.drafts[id]; delete S.aiPend[id]; aiReset(id); n++; });
     Object.keys(r.errors || {}).forEach(function (id) { S.ai[id] = { err: r.errors[id] }; delete S.aiPend[id]; });
-    Object.keys(Object.assign({}, r.drafts || {}, r.errors || {})).forEach(function (id) { const x = itemOf(id); if (x && rowOf(x.id)) { drawCard(x); if (x.id === S.act && !NARROW.matches) focusCard(x.id); } });
+    Object.keys(Object.assign({}, r.drafts || {}, r.errors || {})).forEach(function (id) {
+      const x = itemOf(id); if (!x || !rowOf(x.id) || aiTyping(id)) return;   /* ★ 総点検：打っている最中の伝票は 描き直さない・カーソルも動かさない */
+      drawCard(x); if (x.id === S.act && !NARROW.matches) focusCard(x.id);
+    });
+    try { if (n) S.spm = spineMatch(S.items, S.ai); } catch (e) {}   /* 領収書あり の印も 下書きに合わせる */
     return n;
   }
-  /* 新しい下書きが来たら その写真の伝票を まっさらにして 下書きで出し直す（上書き） */
-  function aiReset(id) { const it = itemOf(id); if (!it || it.status === 'done') return; delete S.aiEd[id]; C[id] = { date: '', no: '', q: '', L: [blankLine()] }; }
+  /* その写真の伝票で いま打っているか（欄にカーソルがあり 何か入っている） */
+  function aiTyping(id) {
+    const row = rowOf(id), ae = document.activeElement, c = C[id];
+    if (!row || !ae || !row.contains(ae) || !/INPUT|SELECT|TEXTAREA/.test(ae.tagName)) return false;
+    return !!(c && (c.no || c.date || (c.L || []).some(function (l) { return l.amount; })));
+  }
+  /* 新しい下書きが来たら その写真の伝票を まっさらにして 下書きで出し直す（上書き）。★ 打っている最中なら 打ったものを残す */
+  function aiReset(id) { const it = itemOf(id); if (!it || it.status === 'done' || aiTyping(id)) return; delete S.aiEd[id]; C[id] = { date: '', no: '', q: '', L: [blankLine()] }; }
   /* まとめて の できあがりを 見にいく（開いたとき・5分おき） */
   let AI_POLL = null;
+  let AI_POLL_CODE = '';
   function aiPollStart(code) {
+    if (AI_POLL && AI_POLL_CODE === code && Object.keys(S.aiPend).length) return;   /* ★ 総点検：同じ顧問先で もう見回っていれば 二重に始めない */
     if (AI_POLL) { clearInterval(AI_POLL); AI_POLL = null; }
     if (!Object.keys(S.aiPend).length) return;
+    AI_POLL_CODE = code;
     const look = function () {
       if (code !== S.code || !Object.keys(S.aiPend).length) { clearInterval(AI_POLL); AI_POLL = null; return; }
       gs('aiBatchCheck', code).then(function (r) {
@@ -7820,7 +7916,8 @@
     $('dCopyBox').hidden = S.dict.length > 0;
   }
   $('dBox').addEventListener('change', function () { if (!slipDirtyOk()) { this.value = S.dbox; return; } S.dbox = this.value; openSlip(null); });
-  $('dSearch').addEventListener('input', drawIndex);
+  let DS_T = 0;
+  $('dSearch').addEventListener('input', function () { clearTimeout(DS_T); DS_T = setTimeout(drawIndex, 120); });
   /* ★ 辞書の並びを つかんで動かす（2026-10-13）。この箱の辞書を 見えている順に 1, 2, 3 … と振り直して保存する。
        ほかの群の見出しへ落とすと その群へ移る */
   (function () {
@@ -8039,13 +8136,14 @@
     const hid = S.heldEdit;
     /* ★ 確かめるのは いま直している1件だけ（ほかの辞書の 表に無いコードで止めない。2026-10-12） */
     return gs('dictSave', code, list, only == null ? undefined : { only: only }).then(function (d) {
-      if (code !== S.code) return;
+      if (code !== S.code) return false;
       if (hid) gs('dictHeldDrop', code, hid).then(function (l) { if (code !== S.code) return; S.held = l || []; heldDraw(); }, function () {});
       S.dict = d; S.dirty = false; drawDict();
       openSlip(selNo != null && d.some(function (x) { return x.no === selNo; }) ? selNo : null);
       dmsg(okMsg, 'ok');
       (S.view || []).forEach(function (it) { if (rowOf(it.id) && !rowOf(it.id).classList.contains('fold')) drawCard(it); });
-    }, function (e) { dmsg(e.message, 'err'); });
+      return true;
+    }, function (e) { if (code === S.code) dmsg(e.message, 'err'); return false; });
   }
   function saveSlip() {
     const o = readSlip();
@@ -8084,12 +8182,13 @@
     });
     if (!n) { dmsg('貼り付けた中に、読める行がありませんでした（タブ区切りで）。', 'err'); return; }
     if (!confirm(n + '件を辞書に入れて保存します。')) return;
-    saveDict(Object.keys(byNo).map(function (k) { return byNo[k]; }), n + '件を入れました。', null).then(function () { $('dPaste').value = ''; });
+    saveDict(Object.keys(byNo).map(function (k) { return byNo[k]; }), n + '件を入れました。', null).then(function (ok) { if (ok) $('dPaste').value = ''; });   /* 保存できなかったときは 貼ったものを残す（打ち直させない） */
   });
   $('dCopy').addEventListener('click', function () {
     const from = $('dFrom').value; if (!from) return;
     dmsg('写しています…');
-    gs('dictCopy', from, S.code).then(function (d) { S.dict = d; S.dirty = false; drawDict(); drawIndex(); openSlip(null); dmsg('写しました（' + d.length + '件）。', 'ok'); },
+    const code = S.code;
+    gs('dictCopy', from, code).then(function (d) { if (code !== S.code) return; S.dict = d; S.dirty = false; drawDict(); drawIndex(); openSlip(null); dmsg('写しました（' + d.length + '件）。', 'ok'); },
       function (e) { dmsg(e.message, 'err'); });
   });
   document.querySelectorAll('#dSub button').forEach(function (b) {
@@ -8137,7 +8236,9 @@
   $('aAdd').addEventListener('click', function () { acctRow({}, false).querySelector('input').focus(); });
   $('aSaveAcct').addEventListener('click', function () {
     amsg2('保存しています…');
-    gs('acctSave', S.code, readAcct()).then(function (a) {
+    const code = S.code;
+    gs('acctSave', code, readAcct()).then(function (a) {
+      if (code !== S.code) return;
       acctSet(a); drawAcct(); amsg2('保存しました（' + a.length + '行）。', 'ok');
     }, function (e) { amsg2(e.message, 'err'); });
   });
@@ -8163,15 +8264,15 @@
   const O = { items: [], acct: {} };
   function oLoad() {
     if (!S.code) return;
-    const code = S.code, ym = ($('outMonth').value || '').replace('-', '/');
+    const code = S.code, ym = ($('outMonth').value || '').replace('-', '/'), seq = O.seq = (O.seq || 0) + 1;
     $('oBody').textContent = ''; $('oBody').appendChild(el('div', 'cbox muted', '読み込み中…'));
     gs('workList', code, 'all').then(function (r) {
-      if (code !== S.code) return;
+      if (code !== S.code || seq !== O.seq) return;   /* ★ 月を続けて変えたとき 古い返事で描き直さない */
       O.items = r.items; O.ym = ym; oDraw();
       const need = r.items.map(function (it) { return it.id; }).filter(function (id) { return !(id in THUMB); });
-      (function next() { const b = need.splice(0, 40); if (!b.length) return;
+      (function next() { if (seq !== O.seq) return; const b = need.splice(0, 40); if (!b.length) return;
         gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); oThumbs(); next(); }, next); })();
-    }, function (e) { $('oBody').textContent = ''; $('oBody').appendChild(el('div', 'cbox', e.message)); });
+    }, function (e) { if (code !== S.code || seq !== O.seq) return; $('oBody').textContent = ''; $('oBody').appendChild(el('div', 'cbox', e.message)); });
   }
   function oThumbs() { $('oBody').querySelectorAll('img.othumb[data-id]').forEach(function (im) { if (!im.src && THUMB[im.dataset.id]) im.src = THUMB[im.dataset.id]; }); }
   function bsAcct(code) { return /^[1-3]/.test(String(code || '')); }
@@ -8575,10 +8676,11 @@
     $('aCnsRe').textContent = cs && cs.type === '撤回' ? 'もう一度 同意の画面を出す' : '同意の画面を出す';
   }
   $('aCnsLog').addEventListener('click', function () {
-    if (!A.cur) return; const out = $('aCnsOut'); out.hidden = false; out.textContent = '読み込み中…';
-    gs('consentLog', A.cur).then(function (l) {
+    if (!A.cur) return; const out = $('aCnsOut'), cur = A.cur; out.hidden = false; out.textContent = '読み込み中…';
+    gs('consentLog', cur).then(function (l) {
+      if (cur !== A.cur) return;   /* ★ 別の顧問先を開いたあとに 前の顧問先の記録を出さない */
       out.textContent = l.length ? l.map(function (x) { return x.at.replace('T', ' ').replace(/\+09:00$/, '') + '　' + x.type + (x.ver ? '　第' + x.ver + '版' : '') + '　' + [x.company, x.title, x.rep].filter(Boolean).join(' ') + (x.mail ? '　控え ' + x.mail : '') + '　説明・記録 ' + (x.expl || '—') + (x.note ? '　（' + x.note + '）' : '') + '　記録ID ' + x.id; }).join('\n') : 'まだ記録はありません。';
-    }, function (e) { out.textContent = e.message; });
+    }, function (e) { if (cur === A.cur) out.textContent = e.message; });
   });
   $('aCnsWd').addEventListener('click', function () {
     if (!A.cur) return;
@@ -8825,7 +8927,8 @@
   $('iSave').addEventListener('click', function () {
     const o = { no: IV.cur && IV.cur.no, code: $('iCl').value, title: $('iTitle').value, date: $('iDate').value, due: $('iDue').value, note: $('iNote').value, lines: iLines() };
     iMsg('保存しています…');
-    gs('invSave', o).then(function (r) { IV.list = r.list; const x = IV.list.filter(function (y) { return y.no === o.no; })[0] || IV.list.filter(function (y) { return y.status === '下書き'; }).sort(function (a, b) { return b.no.localeCompare(a.no); })[0]; if (x) iEdit(x); iMsg('下書きを保存しました（' + (x ? x.no : '') + '）。', 'ok'); }, function (e) { iMsg(e.message, 'err'); });
+    const btn = $('iSave'); if (btn.disabled) return; btn.disabled = true;   /* ★ 二度押しで 下書きが2枚できない */
+    gs('invSave', o).finally(function () { btn.disabled = false; }).then(function (r) { IV.list = r.list; const x = IV.list.filter(function (y) { return y.no === o.no; })[0] || IV.list.filter(function (y) { return y.status === '下書き'; }).sort(function (a, b) { return b.no.localeCompare(a.no); })[0]; if (x) iEdit(x); iMsg('下書きを保存しました（' + (x ? x.no : '') + '）。', 'ok'); }, function (e) { iMsg(e.message, 'err'); });
   });
   $('iPv').addEventListener('click', function () {
     if (!IV.cur || !IV.cur.no) return;
