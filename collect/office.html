@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793009703;</script>
+<script>window.__PAGE_VER=1793011303;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -276,7 +276,7 @@
   .dpz .jshot { position: relative; border: 1.5px solid var(--dline); border-radius: 10px; background: #F4F2EC; min-height: 160px; overflow: auto; max-height: 78vh; }
   .dpz .jshot img { display: block; max-width: 100%; max-height: 76vh; margin: 0 auto; background: #fff; transition: transform .15s; }
   .dpz .jshot.zoom img { max-width: none; max-height: none; width: 200%; }
-  .dpz .jshot .pdfpages { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px; }
+  .dpz .jshot .pdfpages { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px; }
   .dpz .jshot .pdfpages canvas { width: 100%; height: auto; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
   .dpz .jshot.zoom .pdfpages canvas { width: 200%; max-width: none; }
   .dpz .jshot .msg { padding: 30px 12px; text-align: center; color: #777; }
@@ -721,9 +721,21 @@
   .dchk { display: block; width: 100%; margin-top: 3px; padding: 4px 6px; border: 1.5px dashed #A9B5AF; border-radius: 8px; background: #fff; color: var(--sub); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dchk:hover { border-color: var(--ok); color: var(--ok); }
   .dtile.chk .dchk { border: 1.5px solid var(--ok); background: var(--ok); color: #fff; }
-  .dtile.chk .dimg img { opacity: .55; }
-  .dtile.chk .dimg::after { content: '✓ 確認済'; position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%) rotate(-8deg); padding: 3px 10px; border: 3px solid var(--ok); border-radius: 8px; color: var(--ok); background: rgba(255,255,255,.85); font-weight: 900; font-size: 17px; white-space: nowrap; pointer-events: none; }
-  #dBody.dmany .dtile.chk .dimg::after { font-size: 12px; padding: 1px 5px; border-width: 2px; }
+  .dvpos { font-weight: 700; color: var(--accent); background: #fff; border: 1.5px solid var(--accent); border-radius: 999px; padding: 2px 10px; font-size: 13px; white-space: nowrap; }
+  .dvkey { font-size: 12px; color: var(--sub); white-space: nowrap; }
+  #dvMark[aria-pressed="true"] { background: #D0201A; border-color: #D0201A; color: #fff; }
+  .dvmk { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 10px; background: #FFF4F2; border-bottom: 1px solid #E8B4AE; }
+  .dvmk .mk-m, .dvmk .mk-c { display: inline-flex; gap: 4px; }
+  .dvmk .mk-m button { font: inherit; font-size: 13px; font-weight: 700; border: 1.5px solid var(--line); background: #fff; border-radius: 8px; padding: 3px 10px; cursor: pointer; }
+  .dvmk .mk-m button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .dvmk .mk-c button { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; background: var(--c); box-shadow: 0 0 0 1.5px var(--line); cursor: pointer; }
+  .dvmk .mk-c button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--c); }
+  .dvmk .mk-msg { font-size: 12px; color: var(--sub); }
+  .mksvg { position: absolute; pointer-events: none; overflow: visible; transform-origin: 50% 50%; }
+  .dv-mk .mksvg { pointer-events: auto; cursor: crosshair; }
+  .mkin { position: fixed; z-index: 90; font: inherit; font-size: 16px; padding: 3px 6px; border: 2px solid #D0201A; border-radius: 6px; min-width: 200px; }
+  /* ★ 確認済にしても 小さい絵は変えない（下のチェックだけ。2026-10-26） */
+  .dmk { position: absolute; right: 4px; bottom: 4px; background: #fff; border: 1px solid #D0201A; color: #D0201A; border-radius: 6px; font-size: 11px; font-weight: 700; padding: 0 4px; pointer-events: none; }
   .dtile.lifted { opacity: .35; }
   .dkids:empty { display: none; }
   .dkids { margin-top: 10px; }
@@ -1836,11 +1848,23 @@
   <div class="dvbar"><b id="dvName"></b><span class="sp"></span>
     <button type="button" class="btn sm" id="dvGo">仕訳化する</button>
     <button type="button" class="btn ghost sm" id="dvRot" title="90度ずつ回す">↻ 回す</button>
+    <span class="dvpos" id="dvPos" title="この箱の中で 左上から何番目か"></span>
     <button type="button" class="btn sm" id="dvChk">✓ 確認済にする</button>
+    <span class="dvkey" title="テンキーで サクサク確認">0 ▶ 次へ／Enter ▶ 確認済</span>
+    <button type="button" class="btn ghost sm" id="dvMark" title="文字・下線・枠を 重ねて書く（元の写真・PDF は書き換えません）">✏ 書きこむ</button>
     <button type="button" class="btn ghost sm" id="dvMove">別の月分へ移す</button>
     <span class="dvback" id="dvBack"></span>
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
     <button type="button" class="btn ghost sm" id="dvClose">閉じる</button></div>
+  <div class="dvmk" id="dvMkBar" hidden>
+    <span class="mk-m" role="group" aria-label="書き方"><button type="button" data-m="text" aria-pressed="true">文字</button><button type="button" data-m="line" aria-pressed="false">下線</button><button type="button" data-m="box" aria-pressed="false">枠で囲む</button></span>
+    <span class="mk-c" role="group" aria-label="色"><button type="button" data-c="#D0201A" aria-pressed="true" title="赤" style="--c:#D0201A"></button><button type="button" data-c="#111111" aria-pressed="false" title="黒" style="--c:#111111"></button><button type="button" data-c="#1A4FD0" aria-pressed="false" title="青" style="--c:#1A4FD0"></button></span>
+    <button type="button" class="btn ghost sm" id="mkUndo">↶ 1つ戻す</button>
+    <button type="button" class="btn ghost sm" id="mkClear">全部消す</button>
+    <button type="button" class="btn sm primary" id="mkSave">保存して終わる</button>
+    <button type="button" class="btn ghost sm" id="mkCancel">やめる</button>
+    <span class="mk-msg" id="mkMsg">押して書く（文字は 押した所に／下線・枠は なぞる）。元の写真・PDF は書き換えず、重ねて残します。</span>
+  </div>
   <div class="dvmemo" id="dvMemo" hidden></div>
   <div class="jshot" id="dvBody"></div>
 </div>
@@ -3558,6 +3582,7 @@
     ck.title = it.chk ? '確認：' + it.chk + '（押すと外す）' : '見た・入力を終えたら押す（仕訳の確定とは別）';
     ck.addEventListener('click', function (e) { e.stopPropagation(); docsCheck([it], !it.chk); });
     tile.appendChild(ck);
+    if (it.mark && it.mark.length) { const mb2 = el('span', 'dmk', '✏ ' + it.mark.length); mb2.title = '事務所の書きこみ ' + it.mark.length + 'つ'; b.appendChild(mb2); }
     if (it.memo) { const mm = el('div', 'dat', '💬 ' + it.memo); mm.title = '顧問先から：' + it.memo; tile.appendChild(mm); const mb = el('span', 'dmemo', '💬'); mb.title = mm.title; b.appendChild(mb); }
     b.addEventListener('click', function () {
       if (DDX.justEnded(tile)) return;
@@ -4625,7 +4650,9 @@
 
   /* 大きく見る（画面いっぱい）。仕訳化へも ここから */
   function docsOpen(it) {
+    if (MK.on && S.dvIt && S.dvIt.id !== it.id) mkEnd(true);
     const v = $('dview'); v.hidden = false; document.body.classList.add('dv-on');
+    S.dvIt = it; dvPosDraw(it);
     $('dvName').textContent = perLabel(it.period) + '　［' + it.box + '］　' + it.name.replace(/^\d{8}_\d{6}_/, '');
     $('dvDrive').href = it.url;
     $('dvMemo').textContent = it.memo ? '💬 顧問先から：' + it.memo : ''; $('dvMemo').hidden = !it.memo;
@@ -4639,6 +4666,7 @@
     /* ★ すぐ出す：くっきりした中身が手元にあれば それを、無ければ 小さい絵を先に出して 届いたら差し替える */
     const box = $('dvBody');
     S.dvId = it.id;
+    dvPre(it);
     if (fileKind(it.name)) { box.textContent = ''; box.classList.remove('loading'); box.appendChild(fileCard(it)); return; }
     if (IMG[it.id]) { oBig(it, box); return; }
     box.textContent = '';
@@ -4648,17 +4676,24 @@
     dWant(it.id, true, function () { if (S.dvId === it.id && !$('dview').hidden) oBig(it, box); });
   }
   /* 写真を押すと戻る（顧問先の画面と同じ） */
-  /* ★ 写真のまわりの 余白を押しても閉じる（2026-10-13） */
-  $('dvBody').addEventListener('click', function (e) { if (e.target.tagName === 'IMG' || e.target === this) docsClose(); });
+  /* ★ 写真のまわりの 余白を押しても閉じる（2026-10-13）
+     ★ PDF（ページの絵）を押しても戻る（2026-10-26）。書きこみのあいだは 戻らない */
+  $('dvBody').addEventListener('click', function (e) {
+    if (MK.on) return;
+    if (e.target.closest && e.target.closest('button, a, input, select, textarea, label')) return;
+    docsClose();
+  });
   $('dview').addEventListener('click', function (e) { if (e.target === this) docsClose(); });
   /* ★ 大きく見る：画面の高さに まるごと収める・［↻ 回す］（2026-10-12） */
   function dvFit() {
     if ($('dview').hidden) return;
     const box = $('dvBody'), im = box.querySelector('img'); if (!im) return;
     fitImg(im, S.rot[S.dvId] || 0, box.clientWidth - 16, box.clientHeight - 16);
+    mkPaint();
   }
   $('dvBody').addEventListener('load', dvFit, true);
   window.addEventListener('resize', dvFit);
+  window.addEventListener('resize', function () { if (!$('dview').hidden) mkPaint(); });
   /* ---- ★ のぞき見（2026-10-13）---- */
   let PEEK_ON = null, PEEK_HOVER = null, PEEK_I = 0;
   $('dBody').addEventListener('mouseover', function (e) { const t = e.target.closest && e.target.closest('.dtile[data-id]'); if (t) PEEK_HOVER = t.dataset.id; });
@@ -4698,8 +4733,165 @@
     }, true);
   });
   $('dvRot').addEventListener('click', function () { if (!S.dvId) return; S.rot[S.dvId] = ((S.rot[S.dvId] || 0) + 90) % 360; dvFit(); });
-  function docsClose() { S.dvId = ''; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
+  function docsClose() { if (MK.on) mkEnd(true); S.dvId = ''; S.dvIt = null; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
   $('dvClose').addEventListener('click', docsClose);
+
+  /* ================= ★★ 大きく見て サクサク確認（2026-10-26） =================
+     ・この箱の中で 左上から何番目か（3 / 12）
+     ・テンキーの 0（00 でも1つ）で 次へ・Enter で 確認済。← → でも前後へ
+     ・次・その次の中身は 先に取っておく（0 を押した瞬間に出す）
+     ・確認済でなくても 仕訳化はできる（印は 見た・確かめた の目印だけ） */
+  function dvSibs(it) {
+    const t = $('dBody').querySelector('.dtile[data-id="' + (window.CSS && CSS.escape ? CSS.escape(it.id) : it.id) + '"]');
+    const sec = t && t.closest('section.dbox');
+    const ids = sec ? Array.prototype.map.call(sec.querySelectorAll('.dtile[data-id]'), function (x) { return x.dataset.id; }) : [];
+    return ids.length ? ids : [it.id];
+  }
+  function dvPosDraw(it) { const ids = dvSibs(it), i = ids.indexOf(it.id); $('dvPos').textContent = (i + 1) + ' / ' + ids.length + '　（この箱の 左上から）'; }
+  function dvPre(it) {
+    const ids = dvSibs(it), i = ids.indexOf(it.id);
+    [i + 1, i + 2, i - 1].forEach(function (j) { const id = ids[j]; const d = id && docOf(id); if (d && !fileKind(d.name) && !IMG[id]) dWant(id, true); });
+  }
+  function dvStep(dir) {
+    const it = S.dvIt; if (!it) return;
+    const ids = dvSibs(it), i = ids.indexOf(it.id), id = ids[i + dir];
+    if (!id) { dcMsg(dir > 0 ? 'この箱の 最後です。' : 'この箱の 最初です。'); $('dvPos').animate && $('dvPos').animate([{ background: '#FFE3DE' }, { background: '#fff' }], 500); return; }
+    const d = docOf(id); if (d) docsOpen(d);
+  }
+  let DV_ZERO = 0;
+  document.addEventListener('keydown', function (e) {
+    if ($('dview').hidden || !S.dvIt || MK.on || e.ctrlKey || e.metaKey || e.altKey) return;
+    const tg = e.target, tn = tg && tg.tagName;
+    if (tn === 'INPUT' || tn === 'TEXTAREA' || tn === 'SELECT' || (tg && tg.isContentEditable)) return;
+    if (e.key === '0' || e.code === 'Numpad0') {
+      e.preventDefault();
+      const now = Date.now(); if (now - DV_ZERO < 250) return;   /* 00 キーは 0 が2つ来る → 1つだけ進む */
+      DV_ZERO = now; dvStep(1); return;
+    }
+    if (e.key === 'Enter' || e.code === 'NumpadEnter') {
+      e.preventDefault();
+      const it = S.dvIt; if (!it.chk) { docsCheck([it], true); $('dvChk').textContent = '✓ 確認済（外す）'; $('dvChk').classList.add('ghost'); }
+      return;
+    }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); dvStep(1); return; }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); dvStep(-1); }
+  });
+
+  /* ================= ★★ 書きこむ（文字・下線・枠。2026-10-26） =================
+     元の写真・PDF は書き換えない。形だけを 別の列に持ち（workMark）、大きく見るときに 上に重ねる */
+  const MK = { on: false, m: 'text', c: '#D0201A', list: [], was: '', drag: null };
+  function mkTargets() {
+    const b = $('dvBody'); const im = b.querySelector(':scope > img');
+    if (im) return [im];
+    return Array.prototype.slice.call(b.querySelectorAll('.pdfpages > canvas'));
+  }
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  function mkMarks() { return MK.on ? MK.list : ((S.dvIt && S.dvIt.mark) || []); }
+  function mkPaint() {
+    if ($('dview').hidden || !S.dvIt) return;
+    const b = $('dvBody');
+    b.querySelectorAll('.mksvg').forEach(function (x) { x.remove(); });
+    const tg = mkTargets(), ms = mkMarks();
+    if (!MK.on && !ms.length) return;
+    tg.forEach(function (t, p) {
+      const W = t.offsetWidth, H = t.offsetHeight; if (!W || !H) return;
+      const sv = document.createElementNS(SVGNS, 'svg'); sv.setAttribute('class', 'mksvg'); sv.dataset.p = p;
+      sv.setAttribute('viewBox', '0 0 ' + W + ' ' + H); sv.setAttribute('width', W); sv.setAttribute('height', H);
+      sv.style.left = t.offsetLeft + 'px'; sv.style.top = t.offsetTop + 'px'; sv.style.width = W + 'px'; sv.style.height = H + 'px';
+      if (t.tagName === 'IMG') { sv.style.transform = t.style.transform || ''; sv.style.margin = '0'; }
+      ms.filter(function (m) { return (m.p || 0) === p; }).forEach(function (m) { sv.appendChild(mkShape(m, W, H)); });
+      if (MK.drag && MK.drag.p === p && MK.drag.cur) sv.appendChild(mkShape(MK.drag.cur, W, H));
+      t.parentNode.insertBefore(sv, t.nextSibling);
+      if (MK.on) mkBind(sv, p);
+    });
+  }
+  function mkShape(m, W, H) {
+    const sw = Math.max(2, W * 0.004);
+    if (m.t === 'text') {
+      const t = document.createElementNS(SVGNS, 'text'); t.setAttribute('x', m.x * W); t.setAttribute('y', m.y * H);
+      t.setAttribute('fill', m.c); t.setAttribute('font-size', Math.max(12, W * 0.03)); t.setAttribute('font-weight', '700');
+      t.setAttribute('dominant-baseline', 'middle'); t.textContent = m.s; return t;
+    }
+    if (m.t === 'line') {
+      const l = document.createElementNS(SVGNS, 'line'); l.setAttribute('x1', m.x * W); l.setAttribute('y1', m.y * H); l.setAttribute('x2', (m.x + m.w) * W); l.setAttribute('y2', (m.y + m.h) * H);
+      l.setAttribute('stroke', m.c); l.setAttribute('stroke-width', sw); l.setAttribute('stroke-linecap', 'round'); return l;
+    }
+    const r = document.createElementNS(SVGNS, 'rect'); r.setAttribute('x', m.x * W); r.setAttribute('y', m.y * H); r.setAttribute('width', m.w * W); r.setAttribute('height', m.h * H);
+    r.setAttribute('fill', 'none'); r.setAttribute('stroke', m.c); r.setAttribute('stroke-width', sw); r.setAttribute('rx', sw); return r;
+  }
+  function mkPt(sv, e) {
+    const pt = sv.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const q = pt.matrixTransform(sv.getScreenCTM().inverse()); const vb = sv.viewBox.baseVal;
+    return { x: Math.max(0, Math.min(1, q.x / vb.width)), y: Math.max(0, Math.min(1, q.y / vb.height)) };
+  }
+  function mkBind(sv, p) {
+    sv.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      const a = mkPt(sv, e);
+      if (MK.m === 'text') { mkText(e.clientX, e.clientY, p, a); return; }
+      MK.drag = { p: p, a: a, cur: null };
+      try { sv.setPointerCapture(e.pointerId); } catch (x) {}
+    });
+    sv.addEventListener('pointermove', function (e) {
+      if (!MK.drag || MK.drag.p !== p) return;
+      const b = mkPt(sv, e), a = MK.drag.a;
+      MK.drag.cur = mkFrom(a, b); MK.drag.cur.p = p;
+      const old = sv.querySelector('.mkcur'); if (old) old.remove();
+      const vb = sv.viewBox.baseVal, sh = mkShape(MK.drag.cur, vb.width, vb.height); sh.setAttribute('class', 'mkcur'); sv.appendChild(sh);
+    });
+    sv.addEventListener('pointerup', function (e) {
+      if (!MK.drag || MK.drag.p !== p) return;
+      const m = MK.drag.cur; MK.drag = null;
+      if (m && (Math.abs(m.w) > 0.01 || Math.abs(m.h) > 0.01)) { MK.list.push(m); mkDirty(); }
+      mkPaint();
+    });
+    sv.addEventListener('click', function (e) { e.stopPropagation(); });
+  }
+  function mkFrom(a, b) {
+    if (MK.m === 'line') {
+      let dy = b.y - a.y; if (Math.abs(dy) < 0.03) dy = 0;   /* ほぼ横なら まっすぐ横に（下線） */
+      return { p: 0, t: 'line', x: a.x, y: a.y, w: b.x - a.x, h: dy, c: MK.c };
+    }
+    return { p: 0, t: 'box', x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y), c: MK.c };
+  }
+  function mkText(cx, cy, p, a) {
+    const old = document.querySelector('.mkin'); if (old) old.remove();
+    const inp = el('input', 'mkin'); inp.type = 'text'; inp.placeholder = '書く文字（Enter で置く）'; inp.maxLength = 200;
+    inp.style.left = Math.min(cx, innerWidth - 240) + 'px'; inp.style.top = Math.max(4, cy - 16) + 'px'; inp.style.color = MK.c;
+    document.body.appendChild(inp); setTimeout(function () { inp.focus(); }, 0);
+    let fin = false; const done = function (keep) { if (fin) return; fin = true; const v = inp.value.trim(); if (inp.isConnected) inp.remove(); if (keep && v) { MK.list.push({ p: p, t: 'text', x: a.x, y: a.y, w: 0, h: 0, s: v, c: MK.c }); mkDirty(); mkPaint(); } };
+    inp.addEventListener('keydown', function (e) { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); done(true); } if (e.key === 'Escape') { e.preventDefault(); done(false); } });
+    inp.addEventListener('blur', function () { done(true); });
+  }
+  function mkDirty() { $('mkMsg').textContent = '書きこみ ' + MK.list.length + 'つ（まだ保存していません）'; }
+  function mkStart() {
+    const it = S.dvIt; if (!it) return;
+    if (fileKind(it.name)) { dcMsg('この形（エクセルなど）には 書きこめません。', true); return; }
+    MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list);
+    $('dvMark').setAttribute('aria-pressed', 'true'); $('dvMkBar').hidden = false; $('dview').classList.add('dv-mk');
+    $('mkMsg').textContent = '押して書く（文字は 押した所に／下線・枠は なぞる）。元の写真・PDF は書き換えず、重ねて残します。';
+    mkPaint();
+  }
+  /* save … 保存する（変わっていなければ 何もしない） */
+  function mkEnd(save) {
+    const pend = document.querySelector('.mkin'); if (pend && save) pend.blur(); else if (pend) pend.remove();   /* 打ちかけの文字は 置いてから */
+    const it = S.dvIt, list = MK.list, changed = JSON.stringify(list) !== MK.was;
+    MK.on = false; MK.drag = null;
+    $('dvMark').setAttribute('aria-pressed', 'false'); $('dvMkBar').hidden = true; $('dview').classList.remove('dv-mk');
+    if (save && changed && it) {
+      const code = S.code, prev = it.mark; it.mark = list;
+      gs('workMark', code, it.id, list).then(function (r) { it.mark = r.mark; if (S.dvIt === it) mkPaint(); docsDraw(); dcMsg('書きこみを 保存しました（元の資料は そのまま）。'); },
+        function (e) { it.mark = prev; if (S.dvIt === it) mkPaint(); dcMsg('書きこみを 保存できませんでした。' + e.message, true); });
+    }
+    mkPaint();
+  }
+  $('dvMark').addEventListener('click', function () { if (MK.on) mkEnd(true); else mkStart(); });
+  $('mkSave').addEventListener('click', function () { mkEnd(true); });
+  $('mkCancel').addEventListener('click', function () { MK.list = JSON.parse(MK.was || '[]'); mkEnd(false); });
+  $('mkUndo').addEventListener('click', function () { MK.list.pop(); mkDirty(); mkPaint(); });
+  $('mkClear').addEventListener('click', function () { MK.list = []; mkDirty(); mkPaint(); });
+  document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('click', function () { MK.m = b.dataset.m; document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); }); });
+  document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (b) { b.addEventListener('click', function () { MK.c = b.dataset.c; document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); }); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dview').hidden) docsClose(); });
 
   function rowOf(id) { return $('jlist').querySelector('.jdrow[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'); }
@@ -5483,7 +5675,7 @@
             const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
             c.setAttribute('aria-label', it.name + ' ' + n + 'ページ');
             box.appendChild(c);
-            return page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+            return page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise.then(function () { if (st.id === 'dvBody') mkPaint(); });
           });
         });
       }
