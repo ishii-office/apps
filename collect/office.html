@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793022389;</script>
+<script>window.__PAGE_VER=1793050190;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -97,7 +97,9 @@
     #tabs button[data-tab="Out"] { grid-area: 1 / 3; border-right: 0; } #tabs button[data-tab="Staff"] { grid-area: 2 / 3; border-right: 0; }
     #tabs button[data-tab="Clients"] { grid-area: 2 / 2; } #tabs button[data-tab="Dict"] { grid-area: 2 / 1; border-right: 1px solid var(--line); }
     /* 3段目：AIの考え方（2つぶん）と 改善要望 を1行に（2026-10-25。別の行にしない） */
-    #tabs button[data-tab="Rule"] { grid-area: 3 / 1 / 4 / 3; border-right: 1px solid var(--line); } #tabs button[data-tab="Kaizen"] { grid-area: 3 / 3; border-right: 0; }
+    /* ★ 送付物（2026-10-26）：3段目を AIの考え方・改善要望・送付物 の3つに */
+    #tabs button[data-tab="Rule"] { grid-area: 3 / 1; border-right: 1px solid var(--line); } #tabs button[data-tab="Kaizen"] { grid-area: 3 / 2; }
+    #tabs button[data-tab="Send"] { grid-area: 3 / 3; border-right: 0; }
   }
   .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
   .ctl label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -994,7 +996,20 @@
   .ctl[data-tab="Dict"] label:has(#month), .ctl[data-tab="Dict"] #filter, .ctl[data-tab="Dict"] label:has(#perY), .ctl[data-tab="Dict"] label:has(#perM), .ctl[data-tab="Dict"] label:has(#box),
   .ctl[data-tab="Rule"] label:has(#month), .ctl[data-tab="Rule"] #filter, .ctl[data-tab="Rule"] label:has(#perY), .ctl[data-tab="Rule"] label:has(#perM), .ctl[data-tab="Rule"] label:has(#box),
   .ctl[data-tab="Out"] label:has(#month), .ctl[data-tab="Out"] #filter, .ctl[data-tab="Out"] label:has(#perY), .ctl[data-tab="Out"] label:has(#perM), .ctl[data-tab="Out"] label:has(#box) { display: none; }
-  .ctl[data-tab="Clients"] > :not(label:has(#client)) { display: none; }
+  .ctl[data-tab="Clients"] > :not(label:has(#client)), .ctl[data-tab="Send"] > :not(label:has(#client)) { display: none; }
+  /* ★★★ 送付物（事務所 → 顧問先。2026-10-26）。中は 顧問先の画面（index.html?m=send）をそのまま使う */
+  .sd { max-width: 1400px; margin: 0 auto; padding: 10px 14px 0; }
+  .sd h2 { margin: 4px 0 6px; font-size: 19px; }
+  .sd .sdrow { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  .sd .sdsum { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 14px; }
+  .sd .sdsum span { background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+  .sd .sdsum b { font-size: 15px; }
+  .sd details.sdbox { margin: 8px 0; border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 6px 12px; }
+  .sd details.sdbox summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
+  .sd #sdBoxes { width: 100%; min-height: 120px; font: inherit; font-size: 15px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; }
+  .sdwrap { border-top: 1px solid var(--line); margin-top: 6px; }
+  #sdFrame { display: block; width: 100%; height: calc(100vh - 150px); min-height: 520px; border: 0; background: #fff; }
+  #sdFrame[hidden] { display: none; }
   .ctl .toclient { white-space: nowrap; }
 
   /* 一括取込ファイル */
@@ -1106,6 +1121,7 @@
     <button type="button" role="tab" data-tab="Dict" aria-pressed="false">仕訳辞書</button>
     <button type="button" role="tab" data-tab="Rule" aria-pressed="false">AIの考え方</button>
     <button type="button" role="tab" data-tab="Kaizen" aria-pressed="false" id="tabKaizen">改善要望<b class="kzbadge" id="kzBadge" hidden></b></button>
+    <button type="button" role="tab" data-tab="Send" aria-pressed="false" id="tabSend">送付物</button>
   </span>
   <span class="who"><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
@@ -1133,7 +1149,7 @@
       <button type="button" id="dPdfAll" title="まとめた書類は その束で1つのPDF、ほかは1枚ずつのPDF（2つ以上なら ZIP 1つ）">一括PDF切り出し</button>
       <button type="button" id="dPrintAll" title="いま見えているものを 並んでいる順に印刷">🖨 印刷</button>
       <button type="button" id="dTrash" hidden>破棄したもの</button>
-      <button type="button" id="ogOpen" title="申告書の控え・決算書・試算表・請求書・お知らせ などを この顧問先へ送る（顧問先の画面の「📨 事務所から」に出ます）">📨 顧問先へ送る</button>
+      <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button>
     </span>
     <div class="dmsg" id="dcMsg" role="status"></div>
   </div>
@@ -1671,6 +1687,21 @@
   </div>
 </div>
 
+<div class="pane page" id="paneSend" hidden>
+  <div class="sd">
+    <div class="sdrow"><h2>📮 送付物（事務所 → 顧問先）</h2><span class="sdsum" id="sdSum"></span><span class="sp"></span><button type="button" id="sdReload">↻ 読み直す</button><button type="button" id="sdOld" title="前の形（1つずつ送る）で送ったもの・取り下げ">📨 前の形で送ったもの</button></div>
+    <p class="note">申告書の控え・届出書・議事録・覚書・お知らせ などを 顧問先へ送ります。<b>撮る・落とす → 送付ボックスに保管</b>（顧問先には まだ見えません）→ 箱の中で <b>一括か 選んで［顧問先へ送る］</b>。まとめる・バラす・並べ替え・名前・別ウィンドウ・PDF・印刷 は 顧問先の資料回収と同じです。顧問先は［📨 事務所から］で 同じように見て・まとめて・PDF にできます（開いたら「開封」と出ます）。</p>
+    <details class="sdbox" id="sdBoxD"><summary>📦 送付ボックスを つくる・直す（この顧問先）</summary>
+      <p class="note">1行に1つ。/ でつなぐと 中の箱（例：確定申告/2025年分）。空のままなら 事務所の標準を使います。「その他」は いつも最後に付きます。</p>
+      <textarea id="sdBoxes" spellcheck="false"></textarea>
+      <div class="sdrow"><button type="button" class="primary" id="sdBoxSave">この顧問先の箱にする</button><button type="button" id="sdBoxDef" title="箱を決めていない顧問先 全部に効きます">この内容を 事務所の標準にする</button><span class="pagemsg" id="sdBoxMsg" role="status"></span></div>
+      <p class="note">いまの事務所の標準：<span id="sdBoxDefNow"></span></p>
+    </details>
+    <p class="pagemsg" id="sdMsg" role="status"></p>
+  </div>
+  <div class="sdwrap"><iframe id="sdFrame" title="送付物（顧問先へ送る）" hidden></iframe></div>
+</div>
+
 <div class="kzdlg" id="kzv" hidden role="dialog" aria-modal="true" aria-labelledby="kzvT">
   <div class="box">
     <h3 id="kzvT">改善要望を書く</h3>
@@ -2043,7 +2074,7 @@
 
   /* ================= 入口 ================= */
   function fatal(t) { ['gate', 'chg', 'top', 'ctl', 'toClient'].forEach(function (k) { $(k).hidden = true; }); hidePanes(); $('fatal').hidden = false; $('fatalMsg').textContent = t; }
-  function hidePanes() { ['Docs', 'In', 'Dict', 'Out', 'Clients', 'Staff', 'Rule', 'Kaizen'].forEach(function (k) { $('pane' + k).hidden = true; }); }
+  function hidePanes() { ['Docs', 'In', 'Dict', 'Out', 'Clients', 'Staff', 'Rule', 'Kaizen', 'Send'].forEach(function (k) { $('pane' + k).hidden = true; }); }
   function showGate(msg) {
     $('top').hidden = true; $('ctl').hidden = true; $('chg').hidden = true; hidePanes(); $('toClient').hidden = true;
     $('gate').hidden = false; $('gMsg').textContent = msg || '';
@@ -2153,7 +2184,7 @@
     hidePanes(); $('pane' + k).hidden = false;
     /* 隠れた欄にフォーカスが残って テンキーが出たままにならないように */
     const ae = document.activeElement; if (ae && ae.dataset && ae.dataset.tk && !$('pane' + k).contains(ae)) { ae.blur(); tkHide(); }
-    $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Dict' || k === 'Out' || k === 'Rule' || k === 'Clients');
+    $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Dict' || k === 'Out' || k === 'Rule' || k === 'Clients' || k === 'Send');
     /* 帯の欄は タブに要るものだけ（処理する月・未処理/確定 は仕訳化だけ、月分・箱は 回収資料と仕訳化） */
     $('ctl').dataset.tab = k;
     if (k === 'Docs') docsLoad();
@@ -2170,6 +2201,7 @@
     if (k === 'Staff') sLoad();
     if (k === 'Rule') rLoad();
     if (k === 'Kaizen') kzLoad(true); else { try { if (KZ.loaded) kzBadge(); } catch (e) {} }
+    if (k === 'Send') sdLoad();
     setTimeout(resumeKeep, 0);
   }
   document.querySelectorAll('#tabs button').forEach(function (b) {
@@ -2444,6 +2476,7 @@
   function switchClient(soft) {
     /* soft … 同じ顧問先のまま 顧問先の並びだけ変わったとき（箱の選び肢だけ作り直す） */
     if (!soft) { try { pairSync(); } catch (e) {} }
+    if (!soft && S.tab === 'Send') { try { sdLoad(); } catch (e) {} }   /* ★ 送付物：中の顧問先の画面も その顧問先に入れ替える */
     if (!soft) { S.dirty = false; S.rot = {}; S.dsel = null; S.open = {}; S.rep = {}; S.act = ''; }
     if (!soft) {
     Object.keys(C).forEach(function (k) { delete C[k]; });
@@ -3565,6 +3598,55 @@
     ogMsg(''); $('ogSent').textContent = '読んでいます…'; $('ogv').hidden = false; ogLoad();
   });
   $('ogCancel').addEventListener('click', function () { $('ogv').hidden = true; });
+
+  /* ================= ★★★ 送付物（事務所 → 顧問先。2026-10-26） =================
+     中は 顧問先の画面を そのまま使う（index.html?t=…&m=send）。撮る・落とす・保管・まとめる・バラす・別ウィンドウ・PDF・送る は 全部そちら。
+     ここは 顧問先を選ぶ・送付ボックスを決める・数を出す だけ。顧問先を変えたら 中も その顧問先に入れ替える */
+  function sdMsg(t, err) { const m = $('sdMsg'); m.textContent = t || ''; m.className = 'pagemsg' + (err ? ' err' : ''); }
+  function sdSum() {
+    const code = S.code; if (!code) return;
+    gs('sendSummary', code).then(function (o) {
+      if (code !== S.code) return;
+      const w = $('sdSum'); w.textContent = '';
+      [['未送付', o.held], ['送った', o.sent], ['開封', o.opened], ['顧問先が消した', o.cdel]].forEach(function (p) { if (!p[1] && p[0] === '顧問先が消した') return; const sp = el('span'); sp.appendChild(document.createTextNode(p[0] + ' ')); sp.appendChild(el('b', null, String(p[1] || 0))); w.appendChild(sp); });
+    }, function () {});
+  }
+  function sdLoad(force) {
+    const code = S.code, f = $('sdFrame');
+    if (!code) { sdMsg('上で 顧問先を選んでください。'); f.hidden = true; return; }
+    sdMsg(''); sdSum();
+    gs('sendBoxesGet', code).then(function (r) {
+      if (code !== S.code) return;
+      if (document.activeElement !== $('sdBoxes')) $('sdBoxes').value = r.raw || '';
+      $('sdBoxes').placeholder = r.def; $('sdBoxDefNow').textContent = String(r.def || '').split('\n').join('・');
+    }, function (e) { sdMsg(e.message, true); });
+    if (LIVE) { f.hidden = true; sdMsg('送付物は Pages の事務所の画面（ishii-office.github.io）から使えます。', true); return; }
+    clientUrlOf(code).then(function (u) {
+      if (code !== S.code || S.tab !== 'Send') return;
+      if (!u) { f.hidden = true; sdMsg('この顧問先は まだ提出URLがありません（顧問先タブで作ってください）。送付物も そのURLで顧問先に届きます。', true); return; }
+      let x; try { x = new URL(u, location.href); } catch (e) { return; }
+      const src = location.pathname.replace(/[^/]*$/, '') + 'index.html?t=' + encodeURIComponent(x.searchParams.get('t') || '') + '&m=send';
+      if (force || f.dataset.src !== src) { f.dataset.src = src; f.src = src; }
+      f.hidden = false;
+    }, function (e) { sdMsg('開けませんでした。' + e.message, true); });
+  }
+  $('sdReload').addEventListener('click', function () { sdLoad(true); });
+  $('ogToSend').addEventListener('click', function () { selectTab('Send'); });
+  $('sdOld').addEventListener('click', function () { $('ogOpen').click(); });
+  function sdBoxSave(asDef) {
+    const code = S.code; if (!code) return;
+    const t = $('sdBoxes').value;
+    if (asDef && !t.trim()) { $('sdBoxMsg').textContent = '標準にする箱を 書いてください。'; return; }
+    $('sdBoxMsg').textContent = '保存しています…';
+    gs('sendBoxesSave', code, t, !!asDef).then(function (r) {
+      if (code !== S.code) return;
+      if (asDef) { $('sdBoxDefNow').textContent = String(r.def || '').split('\n').join('・'); }
+      $('sdBoxMsg').textContent = asDef ? '事務所の標準にしました（箱を決めていない顧問先に効きます）。' : 'この顧問先の箱にしました。';
+      sdLoad(true);
+    }, function (e) { $('sdBoxMsg').textContent = e.message; });
+  }
+  $('sdBoxSave').addEventListener('click', function () { sdBoxSave(false); });
+  $('sdBoxDef').addEventListener('click', function () { if (confirm('箱を決めていない顧問先 全部の 送付ボックスが この内容になります。よろしいですか？')) sdBoxSave(true); });
   $('ogGo').addEventListener('click', async function () {
     const fs = Array.prototype.slice.call($('ogFiles').files || []), code = S.code;
     if (!fs.length) { ogMsg('送るファイルを選んでください。', true); return; }
