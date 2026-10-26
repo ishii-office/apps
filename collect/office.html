@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793011303;</script>
+<script>window.__PAGE_VER=1793012829;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -74,6 +74,10 @@
   .toclient { font: inherit; font-size: 13px; font-weight: 700; color: #fff; background: var(--accent); border: 1.5px solid var(--accent); border-radius: 999px; padding: 3px 11px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.12); white-space: nowrap; }
   .toclient:disabled { opacity: .6; }
   .toclient[hidden], .reopen[hidden] { display: none; }
+  /* ★★ 並べて表示（2026-10-26）。体を左半分に。transform で 中の「固定」の部品も 左半分に収める */
+  html.paired body { width: 50vw; height: 100vh; overflow: auto; transform: translateZ(0); }
+  .pairframe { position: fixed; top: 0; right: 0; width: 50vw; height: 100vh; border: 0; border-left: 3px solid var(--accent); background: #fff; z-index: 2147483000; }
+  html.ispane #toClient { display: none !important; }
   @media (max-width: 700px) { .toclient .lbl { display: none; } .toclient::after { content: '顧問先'; } }
   @media (min-width: 701px) { .top { padding-right: 260px; } }
   .vtoast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 42px); right: 8px; z-index: 61; max-width: calc(100vw - 16px); display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 7px 8px 7px 12px; box-shadow: 0 6px 20px rgba(0,0,0,.18); font-size: 14px; }
@@ -537,6 +541,13 @@
   .kzm-done { white-space: pre-wrap; margin: 4px 0; }
   .kzm-news { margin-top: 6px; padding: 6px 8px; background: #FFF8E1; border: 1px solid #E6CF85; border-radius: 6px; }
   .kzm-news p { white-space: pre-wrap; margin: 4px 0; }
+  .kzstats { margin: 6px 0 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 6px 10px; }
+  .kzstats summary { font-weight: 700; cursor: pointer; }
+  .kzst { border-collapse: collapse; width: 100%; margin-top: 6px; font-size: 13px; }
+  .kzst th { white-space: pre-line; background: #F4F2EC; font-size: 12px; padding: 4px 6px; border: 1px solid var(--line); }
+  .kzst td { padding: 4px 6px; border: 1px solid var(--line); }
+  .kzst td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .kzst tr.me td { background: #FFF8E1; } .kzst tr.tot td { font-weight: 700; background: #EEF6F2; }
   .kznp { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
   .kznp-t { width: 100%; min-height: 4.5em; box-sizing: border-box; font: inherit; }
   .kznp-o { display: flex; flex-wrap: wrap; gap: 4px 14px; }
@@ -1082,7 +1093,7 @@
 
 <!-- ===== 本体 ===== -->
 <!-- ★ 右上：［📷 顧問先の画面］は［↻ 開き直す］の左（2026-10-26） -->
-<div class="topr"><button type="button" class="toclient" id="toClient" hidden title="いま選んでいる顧問先の 資料提出の画面（顧問先が見ている画面）を開く">📷 <span class="lbl">顧問先の画面</span></button><button type="button" class="reopen" id="reopen" hidden title="打ちかけの仕訳・開いている画面は そのまま残して 開き直します">↻ 開き直す</button></div>
+<div class="topr"><button type="button" class="toclient" id="toClient" hidden title="いま選んでいる顧問先の 資料提出の画面（顧問先が見ている画面）を開く">📷 <span class="lbl">顧問先の画面を表示</span></button><button type="button" class="reopen" id="reopen" hidden title="打ちかけの仕訳・開いている画面は そのまま残して 開き直します">↻ 開き直す</button></div>
 <div class="vtoast" id="vtoast" role="status" hidden><span>アプリが新しくなりました</span><button type="button" id="vtGo">開き直す</button><button type="button" class="x" id="vtX" aria-label="閉じる（このまま続ける）">×</button></div>
 <div class="top" id="top" hidden>
   <span class="brand">資料回収（事務所）</span>
@@ -1652,6 +1663,7 @@
     </div>
     <p class="note">顧問先から聞いたこと・事務所で気づいたことを 1件ずつ書いてください。マスターが確かめて AI（Claude Code）に渡し、直ったら 書いた人に知らせます。<b>AI はこの文だけを読んで直します</b>。「どこで・何をしたら・どうなって・どうなってほしいか」をそのまま書いてください（右の例文を見ながら）。</p>
     <div id="kzNamesTop"></div>
+    <details class="kzstats" id="kzStats" open><summary>📊 改善と効率化の集計（直近30日・勤務評定の目安）</summary><div id="kzStatsBody" class="note">読み込み中…</div></details>
     <div class="kzmine" id="kzMine" hidden></div>
     <p class="pagemsg" id="kzMsg" role="status"></p>
     <div id="kzList"></div>
@@ -2354,25 +2366,57 @@
          トークンは アドレス欄からすぐ消す。どの顧問先かは ログインしたあとで 顧問先の一覧（事務所だけ）から引く */
   var OPEN_CT = (function () { try { const u = new URL(location.href), t = u.searchParams.get('ct') || ''; if (t) { u.searchParams.delete('ct'); history.replaceState(null, '', u.pathname + (u.search || '') + u.hash); } return /^[0-9a-f]{32}$/.test(t) ? t : ''; } catch (e) { return ''; } })();
   function openFromClient() {
-    if (!OPEN_CT) return;
+    if (!OPEN_CT) { PANE_READY = true; return; }
     const t = OPEN_CT; OPEN_CT = '';
     gs('adminList').then(function (l) {
       const c = (l || []).find(function (x) { return x.url && x.url.indexOf('t=' + t) >= 0; });
       if (c && setCode(c.code)) selectTab('Docs');
-    }, function () {});
+      PANE_READY = true;
+    }, function () { PANE_READY = true; });
   }
   function clientUrlOf(code) {
     const c = (A.list || []).find(function (x) { return x.code === code; });
     if (c && c.url) return Promise.resolve(c.url);
     return gs('adminList').then(function (l) { A.list = l || A.list; const d = (l || []).find(function (x) { return x.code === code; }); return d ? d.url : ''; });
   }
+  /* ================= ★★ 顧問先の画面を 隣に並べる（2026-10-26） =================
+     ・［📷 顧問先の画面を表示］で 右半分に その顧問先の画面（同じ大きさ）。もう一度押すと閉じる
+     ・並べているあいだに こちらで顧問先を変えたら、隣も その顧問先の画面に変わる（ちがう顧問先を並べない）
+     ・こちらが 顧問先の画面の隣に並べられた側（pane）なら、顧問先を変えたとき 隣（左）に知らせて そちらを変えてもらう
+     ・別のウィンドウで ほかの顧問先を開くのは かまわない（並べた2つだけ そろえる） */
+  var PANE_READY = false;   /* 隣に並べられた側：はじめに 左の顧問先を開くまでは 知らせない（違う顧問先に飛ばさない） */
+  var PANE = (function () { try { return new URL(location.href).searchParams.get('pane') === '1' && window.parent !== window; } catch (e) { return false; } })();
+  if (PANE) document.documentElement.classList.add('ispane');
+  function paneUrl_(u) { try { const x = new URL(u, location.href); x.searchParams.set('pane', '1'); return x.href; } catch (e) { return u; } }
+  function pairOpen(u) {
+    let f = document.getElementById('pairFrame');
+    if (!f) { f = document.createElement('iframe'); f.id = 'pairFrame'; f.className = 'pairframe'; f.title = '顧問先の画面（並べて表示）'; document.documentElement.appendChild(f); }
+    if (f.dataset.u !== u) { f.dataset.u = u; f.src = paneUrl_(u); }
+    document.documentElement.classList.add('paired');
+    $('toClient').querySelector('.lbl').textContent = '並べるのをやめる'; $('toClient').firstChild.textContent = '✕ ';
+  }
+  function pairClose() {
+    const f = document.getElementById('pairFrame'); if (f) f.remove();
+    document.documentElement.classList.remove('paired');
+    $('toClient').querySelector('.lbl').textContent = '顧問先の画面を表示'; $('toClient').firstChild.textContent = '📷 ';
+  }
+  function pairSync() {
+    if (!S.code) return;
+    if (PANE) { if (!PANE_READY) return; clientUrlOf(S.code).then(function (u) { if (u) try { window.parent.postMessage({ k: 'collect-pair', t: 'client', url: u }, location.origin); } catch (e) {} }, function () {}); return; }
+    if (!document.getElementById('pairFrame')) return;
+    clientUrlOf(S.code).then(function (u) {
+      if (!document.getElementById('pairFrame')) return;
+      if (u) pairOpen(u); else { pairClose(); alert('この顧問先は まだ提出URLがありません（顧問先タブで作ってください）。並べるのをやめました。'); }
+    }, function () {});
+  }
   $('toClient').addEventListener('click', function () {
+    if (document.getElementById('pairFrame')) { pairClose(); return; }
     const code = S.code; if (!code) { alert('先に 顧問先を選んでください。'); return; }
     const b = this; b.disabled = true;
     clientUrlOf(code).then(function (u) {
       b.disabled = false;
       if (!u) { alert('この顧問先は まだ提出URLがありません（顧問先タブで作ってください）。'); return; }
-      location.href = u;
+      pairOpen(u);
     }, function (e) { b.disabled = false; alert('開けませんでした。' + e.message); });
   });
   function setCode(code) {
@@ -2383,6 +2427,7 @@
   }
   function switchClient(soft) {
     /* soft … 同じ顧問先のまま 顧問先の並びだけ変わったとき（箱の選び肢だけ作り直す） */
+    if (!soft) { try { pairSync(); } catch (e) {} }
     if (!soft) { S.dirty = false; S.rot = {}; S.dsel = null; S.open = {}; S.rep = {}; S.act = ''; }
     if (!soft) {
     Object.keys(C).forEach(function (k) { delete C[k]; });
@@ -4323,7 +4368,24 @@
   const KZ = { list: [], me: '', master: false, gh: false, flt: '', sel: {}, edit: null, shots: [], img: {}, imgWant: {}, loaded: 0, cp: null, synced: 0 };
   const KZ_ST = ['確認待ち', '確認済み', 'AIへ送った', '改善済み', '見送り'];
   function kzMsg(t, err) { const m = $('kzMsg'); m.textContent = t || ''; m.className = 'pagemsg' + (err ? ' err' : t ? ' ok' : ''); }
+  /* ★★ 改善と効率化の集計（2026-10-26）。マスターは全員、ほかの人は 自分と事務所全体 */
+  function kzStatsLoad() {
+    gs('kaizenStats').then(function (r) {
+      const w = $('kzStatsBody'); w.textContent = ''; w.className = '';
+      const H = ['担当者', '改善要望\n（書いた）', 'うち\n改善済み', '直近30日に\n書いた', '回収アプリを\n入れた顧問先', 'うち 運用中\n（30日に届いた）', '届いた資料\n（30日）', '確認済に\nした（30日）'];
+      const F = ['kz', 'kzDone', 'kz30', 'clients', 'active', 'docs30', 'chk30'];
+      const tb = el('table', 'kzst'); const tr0 = el('tr'); H.forEach(function (h) { tr0.appendChild(el('th', null, h)); }); tb.appendChild(tr0);
+      (r.rows || []).concat([r.total]).forEach(function (x, i, a) {
+        const tr = el('tr', i === a.length - 1 ? 'tot' : (x.name === KZ.me ? 'me' : null)); tr.appendChild(el('td', null, x.name));
+        F.forEach(function (f) { tr.appendChild(el('td', 'n', String(x[f] || 0) + (f === 'active' && x.clients ? '（' + Math.round(100 * x.active / x.clients) + '%）' : ''))); });
+        tb.appendChild(tr);
+      });
+      w.appendChild(tb);
+      w.appendChild(el('div', 'note', '回収アプリを入れた顧問先 … 顧問先タブの「説明担当者」がその人で、提出URLを出していて 有効なもの。運用中 … そのうち 直近30日に 顧問先から資料が届いたもの。' + (r.master ? '' : '（マスター以外は 自分と事務所全体だけ出ます）') + '　' + r.at + ' 時点'));
+    }, function (e) { $('kzStatsBody').textContent = '集計を出せませんでした。' + e.message; });
+  }
   function kzLoad(force) {
+    if (force && !$('paneKaizen').hidden) kzStatsLoad();
     if (!force && Date.now() - KZ.loaded < 30000) return Promise.resolve();
     return gs('kaizenList').then(function (r) {
       KZ.list = r.list || []; KZ.me = r.me; KZ.master = !!r.master; KZ.gh = !!r.gh; KZ.loaded = Date.now();
