@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1792933879;</script>
+<script>window.__PAGE_VER=1792984024;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1013,6 +1013,8 @@
     #client { min-width: 0; width: 100%; }
     .ctl label:first-child { flex: 1 1 100%; }
   }
+.astop { margin: 6px 0 10px; padding: 10px 12px; border: 2px solid #B3261E; border-radius: 10px; background: #FDECEA; color: #8C1D18; line-height: 1.7; }
+  .astop .btn { margin-left: 6px; }
 </style>
 </head>
 <body>
@@ -1367,6 +1369,8 @@
             <div class="hint" id="aLogoMsg">ロゴの画像（PNG・JPEG。背景が白か透明のもの）を入れると、灰色のうすいモノグラム柄に作って すぐ顧問先の画面の背景になります。入れなければ 事務所のロゴの柄です。</div></div></div></div>
       <div class="f" id="aUrlRow">
         <label for="aUrl">提出URL（顧問先に送るもの）</label>
+        <div class="astop" id="aStop" hidden>⚠ この顧問先は いま<b>止めています</b>。このURLを開くと「このURLは使用できません」と出ます。
+          <button type="button" class="btn primary sm" id="aStopOn">有効にする（URLを使えるように）</button></div>
         <div class="url"><input id="aUrl" readonly><button type="button" id="aCopyUrl">コピー</button></div>
         <div class="aqr"><div class="aqr-img" id="aQr" aria-label="提出URLのQRコード">QRコード</div>
           <div class="aqr-b"><div class="hint">顧問先のスマホのカメラで読み込んでもらうと、そのままブラウザで開きます（LINE などから開いたときも ふだんのブラウザで開き直します）。あとは画面の案内どおり「ホーム画面に追加」で終わりです。</div>
@@ -8120,6 +8124,7 @@
     aThemeSet(c.theme || 'green');
     aLogoShow(c);
     $('aUrlRow').hidden = !c.url; $('aUrl').value = c.url; aQrShow(c.url, c.name);
+    $('aStop').hidden = !c.url || !!c.active;
     $('aSave').textContent = '保存';
     amsg(''); aPreview(); aDraw();
   }
@@ -8507,6 +8512,9 @@
     const done = function () { amsg('コピーしました。', 'ok'); };
     try { navigator.clipboard.writeText(u.value).then(done, function () { document.execCommand('copy'); done(); }); } catch (e) { document.execCommand('copy'); done(); }
   });
+  /* 止めている顧問先は URL の上に赤い札。押せば 有効にして保存（チェックは上のほうで見落としやすい） */
+  $('aStopOn').addEventListener('click', function () { if (A.busy) return; $('aActive').checked = true; $('aForm').requestSubmit(); });
+  $('aActive').addEventListener('change', function () { if (!A.isNew && $('aUrl').value) $('aStop').hidden = $('aActive').checked; });
   $('aReissue').addEventListener('click', function () {
     if (!A.cur || A.busy) return;
     if (!confirm(A.cur + ' の提出URLを作り直します。前のURLは使えなくなります。よろしいですか？')) return;
