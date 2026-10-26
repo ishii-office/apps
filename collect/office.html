@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793006402;</script>
+<script>window.__PAGE_VER=1793009703;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -69,7 +69,13 @@
   /* ★ いつでも開き直す（右上）・新しくなったときの小さなお知らせ（2026-10-12） */
   .reopen { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 5px); right: 8px; z-index: 60; font: inherit; font-size: 13px; font-weight: 700; color: var(--accent); background: rgba(255,255,255,.94); border: 1.5px solid var(--accent); border-radius: 999px; padding: 3px 11px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
   .reopen:disabled { opacity: .6; }
-  @media (min-width: 701px) { .top { padding-right: 124px; } }
+  .topr { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 5px); right: 8px; z-index: 60; display: flex; gap: 6px; align-items: center; }
+  .topr .reopen { position: static; }
+  .toclient { font: inherit; font-size: 13px; font-weight: 700; color: #fff; background: var(--accent); border: 1.5px solid var(--accent); border-radius: 999px; padding: 3px 11px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.12); white-space: nowrap; }
+  .toclient:disabled { opacity: .6; }
+  .toclient[hidden], .reopen[hidden] { display: none; }
+  @media (max-width: 700px) { .toclient .lbl { display: none; } .toclient::after { content: '顧問先'; } }
+  @media (min-width: 701px) { .top { padding-right: 260px; } }
   .vtoast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 42px); right: 8px; z-index: 61; max-width: calc(100vw - 16px); display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 7px 8px 7px 12px; box-shadow: 0 6px 20px rgba(0,0,0,.18); font-size: 14px; }
   .vtoast button { font: inherit; font-size: 14px; font-weight: 700; border-radius: 8px; padding: 4px 10px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
   .vtoast button.x { background: none; color: var(--sub); border: 0; padding: 4px 6px; }
@@ -525,6 +531,22 @@
   .kzmine { margin: 8px 0 12px; padding: 10px 14px; border-radius: 10px; background: #E5F2E8; border: 1px solid #9CCBA8; }
   .kzmine h3 { margin: 0 0 6px; font-size: 15px; color: var(--ok); }
   .kzmine li { margin: 4px 0; }
+  .kzann { display: block; width: 100%; border: 0; border-bottom: 1px solid #9CCBA8; background: #E5F2E8; color: var(--ok); font: inherit; font-weight: 800; padding: 8px 14px; text-align: left; cursor: pointer; }
+  .kzann[hidden] { display: none; }
+  .kzm-it { list-style: none; margin: 8px 0; padding: 8px 10px; background: #fff; border: 1px solid #CFE3D5; border-radius: 8px; }
+  .kzm-done { white-space: pre-wrap; margin: 4px 0; }
+  .kzm-news { margin-top: 6px; padding: 6px 8px; background: #FFF8E1; border: 1px solid #E6CF85; border-radius: 6px; }
+  .kzm-news p { white-space: pre-wrap; margin: 4px 0; }
+  .kznp { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+  .kznp-t { width: 100%; min-height: 4.5em; box-sizing: border-box; font: inherit; }
+  .kznp-o { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .kznp-pick { border: 1px solid var(--line); border-radius: 6px; padding: 6px; background: #fff; }
+  .kznp-q { width: 100%; box-sizing: border-box; margin-bottom: 4px; }
+  .kznp-l { max-height: 220px; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2px 10px; }
+  .kznp-l label[hidden] { display: none; }
+  .kznp > .btn { align-self: flex-start; }
+  .kzm-news .b { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .kzm-news .st { font-weight: 700; }
   .kzc { border: 1px solid var(--line); border-left: 6px solid #9AA7B4; border-radius: 10px; background: #fff; padding: 10px 14px; margin: 10px 0; }
   .kzc.st-確認待ち { border-left-color: #C98A12; } .kzc.st-確認済み { border-left-color: #2A6FDB; } .kzc.st-AIへ送った { border-left-color: #7A3FC9; }
   .kzc.st-改善済み { border-left-color: var(--ok); background: #F6FBF7; } .kzc.st-見送り { opacity: .7; }
@@ -931,7 +953,7 @@
   .dview .dvmemo { padding: 8px 14px; background: #FFF3C4; color: #4A3700; font-weight: 700; font-size: 15px; white-space: pre-wrap; border-bottom: 1px solid #E0B43A; }
   .dview .dvmemo[hidden] { display: none; }
   .dview { position: fixed; inset: 0; z-index: 50; background: rgba(20,30,28,.92); display: flex; flex-direction: column; }
-  .dview .dvbar { display: flex; align-items: center; gap: 8px; padding: 8px 128px 8px 10px; background: #fff; flex-wrap: wrap; }   /* 右は［↻ 開き直す］の場所をあける */
+  .dview .dvbar { display: flex; align-items: center; gap: 8px; padding: 8px 260px 8px 10px; background: #fff; flex-wrap: wrap; }   /* 右は［📷 顧問先の画面］［↻ 開き直す］の場所をあける */
   .dview .dvbar .sp { flex: 1; }
   .dview .dvback { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .dview .dvback select, .dview .dvback input { font-size: 13px; max-width: 240px; }
@@ -949,7 +971,7 @@
   .ctl[data-tab="Dict"] label:has(#month), .ctl[data-tab="Dict"] #filter, .ctl[data-tab="Dict"] label:has(#perY), .ctl[data-tab="Dict"] label:has(#perM), .ctl[data-tab="Dict"] label:has(#box),
   .ctl[data-tab="Rule"] label:has(#month), .ctl[data-tab="Rule"] #filter, .ctl[data-tab="Rule"] label:has(#perY), .ctl[data-tab="Rule"] label:has(#perM), .ctl[data-tab="Rule"] label:has(#box),
   .ctl[data-tab="Out"] label:has(#month), .ctl[data-tab="Out"] #filter, .ctl[data-tab="Out"] label:has(#perY), .ctl[data-tab="Out"] label:has(#perM), .ctl[data-tab="Out"] label:has(#box) { display: none; }
-  .ctl[data-tab="Clients"] > :not(label:has(#client)):not(#toClient) { display: none; }
+  .ctl[data-tab="Clients"] > :not(label:has(#client)) { display: none; }
   .ctl .toclient { white-space: nowrap; }
 
   /* 一括取込ファイル */
@@ -1047,7 +1069,8 @@
 <div class="gate" id="fatal" hidden><h1>資料回収（事務所）</h1><p id="fatalMsg"></p></div>
 
 <!-- ===== 本体 ===== -->
-<button type="button" class="reopen" id="reopen" hidden title="打ちかけの仕訳・開いている画面は そのまま残して 開き直します">↻ 開き直す</button>
+<!-- ★ 右上：［📷 顧問先の画面］は［↻ 開き直す］の左（2026-10-26） -->
+<div class="topr"><button type="button" class="toclient" id="toClient" hidden title="いま選んでいる顧問先の 資料提出の画面（顧問先が見ている画面）を開く">📷 <span class="lbl">顧問先の画面</span></button><button type="button" class="reopen" id="reopen" hidden title="打ちかけの仕訳・開いている画面は そのまま残して 開き直します">↻ 開き直す</button></div>
 <div class="vtoast" id="vtoast" role="status" hidden><span>アプリが新しくなりました</span><button type="button" id="vtGo">開き直す</button><button type="button" class="x" id="vtX" aria-label="閉じる（このまま続ける）">×</button></div>
 <div class="top" id="top" hidden>
   <span class="brand">資料回収（事務所）</span>
@@ -1063,9 +1086,9 @@
   </span>
   <span class="who"><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
+<button type="button" class="kzann" id="kzAnn" hidden></button>
 <div class="ctl" id="ctl" hidden>
   <label>顧問先 <select id="client"></select></label>
-  <button type="button" class="btn sm toclient" id="toClient" title="この顧問先の 資料提出の画面（顧問先が見ている画面）を開く">📷 顧問先の画面</button>
   <label title="日付を「23」だけ打ったときに使う年月">処理する月 <input type="month" id="month"></label>
   <span class="seg" role="group" aria-label="表示する写真" id="filter">
     <button type="button" data-st="todo" aria-pressed="true">未処理 <b id="cTodo">0</b></button>
@@ -1644,8 +1667,8 @@
         <div class="paste" id="kzPaste" tabindex="0">ここを押してから Ctrl+V（Mac は ⌘+V）で 貼り付け ／ 画像を ここへ落とす ／ <label style="text-decoration:underline;cursor:pointer">ファイルを選ぶ<input type="file" id="kzFile" accept="image/*" multiple hidden></label></div>
         <div class="shots" id="kzShots"></div>
         <label class="f" style="font-weight:400"><input type="checkbox" id="kzUrgent"> 急ぎ（顧問先が困っている・仕事が止まっている）</label>
-        <label class="f" for="kzMail">直ったら知らせるメール <small>任意。この端末が覚えます</small></label>
-        <input type="email" id="kzMail" maxlength="200" placeholder="例：yamada@example.jp">
+        <!-- 直ったら アプリで知らせる（メールは出さない。2026-10-26）。欄は 前に入れた値を壊さないよう 隠して残す -->
+        <input type="hidden" id="kzMail">
       </div>
       <div class="kzside">
         <div class="kzchk" id="kzChk"></div>
@@ -1969,10 +1992,10 @@
   const S = { clients: [], code: '', st: 'todo', box: '', items: [], view: [], cur: -1, counts: {}, dict: [], img: {}, rot: {}, busy: false, dirty: false, started: false, tab: 'In', dcpick: false, dcsel: {}, dcview: [] };
 
   /* ================= 入口 ================= */
-  function fatal(t) { ['gate', 'chg', 'top', 'ctl'].forEach(function (k) { $(k).hidden = true; }); hidePanes(); $('fatal').hidden = false; $('fatalMsg').textContent = t; }
+  function fatal(t) { ['gate', 'chg', 'top', 'ctl', 'toClient'].forEach(function (k) { $(k).hidden = true; }); hidePanes(); $('fatal').hidden = false; $('fatalMsg').textContent = t; }
   function hidePanes() { ['Docs', 'In', 'Dict', 'Out', 'Clients', 'Staff', 'Rule', 'Kaizen'].forEach(function (k) { $('pane' + k).hidden = true; }); }
   function showGate(msg) {
-    $('top').hidden = true; $('ctl').hidden = true; $('chg').hidden = true; hidePanes();
+    $('top').hidden = true; $('ctl').hidden = true; $('chg').hidden = true; hidePanes(); $('toClient').hidden = true;
     $('gate').hidden = false; $('gMsg').textContent = msg || '';
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
@@ -2031,7 +2054,7 @@
     const me = b.me;
     S.me = me;
     if (me.must) { showChange(true); return; }
-    $('top').hidden = false;
+    $('top').hidden = false; $('toClient').hidden = false;
     $('whoName').textContent = (me.name || name) ? (me.name || name) + ' さん' + (me.master && !LIVE ? '（マスター）' : '') : '';
     $('signOut').hidden = LIVE;
     /* 担当者のタブ：シートの窓とアプリのマスターは手入れ、アプリのふつうの担当者は自分の番号だけ */
@@ -2095,7 +2118,7 @@
     }
     if (k === 'Staff') sLoad();
     if (k === 'Rule') rLoad();
-    if (k === 'Kaizen') kzLoad(true);
+    if (k === 'Kaizen') kzLoad(true); else { try { if (KZ.loaded) kzBadge(); } catch (e) {} }
     setTimeout(resumeKeep, 0);
   }
   document.querySelectorAll('#tabs button').forEach(function (b) {
@@ -2320,7 +2343,7 @@
     return gs('adminList').then(function (l) { A.list = l || A.list; const d = (l || []).find(function (x) { return x.code === code; }); return d ? d.url : ''; });
   }
   $('toClient').addEventListener('click', function () {
-    const code = S.code; if (!code) return;
+    const code = S.code; if (!code) { alert('先に 顧問先を選んでください。'); return; }
     const b = this; b.disabled = true;
     clientUrlOf(code).then(function (u) {
       b.disabled = false;
@@ -4287,13 +4310,19 @@
       }
     }, function (e) { kzMsg(e.message, true); });
   }
-  function kzMineDone() { return KZ.list.filter(function (x) { return x.who === KZ.me && x.st === '改善済み' && !x.seen; }); }
+  /* 自分の要望が直ったもの。見ていないもの と、顧問先へのお知らせを まだ決めていないもの（決めるまで 出しつづける） */
+  function kzMineDone() { return KZ.list.filter(function (x) { return x.who === KZ.me && x.st === '改善済み' && (!x.seen || (x.news && !x.newsTo)); }); }
   function kzBadge() {
     const n = KZ.master ? KZ.list.filter(function (x) { return x.st === '確認待ち'; }).length : kzMineDone().length;
     const mine = kzMineDone().length;
     $('kzBadge').hidden = !(n || mine); $('kzBadge').textContent = KZ.master ? (n + (mine ? '・🆕' + mine : '')) : '🆕' + mine;
     $('kzBadge').title = KZ.master ? '確認待ち ' + n + '件' + (mine ? '・自分の要望が直った ' + mine + '件' : '') : '自分の要望が直った ' + mine + '件';
+    /* ★ どのタブにいても 上に出す（2026-10-26）。押すと 改善要望タブで 中身と結果が見られる */
+    const md = kzMineDone(), an = $('kzAnn');
+    an.hidden = !md.length || ($('paneKaizen') && !$('paneKaizen').hidden);
+    if (md.length) an.textContent = '🆕 あなたの改善要望 ' + md.map(function (x) { return x.no; }).join('・') + ' が 直りました（アプリに入りました）。押すと 何をどう直したか が見られます ›';
   }
+  $('kzAnn').addEventListener('click', function () { selectTab('Kaizen'); });
   function kzDraw() {
     const f = $('kzFlt'); f.textContent = '';
     ['all'].concat(KZ_ST).forEach(function (k) {
@@ -4307,8 +4336,36 @@
     const mine = kzMineDone(), mw = $('kzMine'); mw.textContent = ''; mw.hidden = !mine.length;
     if (mine.length) {
       mw.appendChild(el('h3', null, '🆕 あなたの改善要望が ' + mine.length + '件 直りました。ありがとうございます'));
-      const ul = el('ul'); mine.forEach(function (x) { const li = el('li'); li.appendChild(el('b', null, x.no + '　')); li.appendChild(document.createTextNode((x.where || x.want).slice(0, 60) + '　→　' + x.done.slice(0, 120))); ul.appendChild(li); }); mw.appendChild(ul);
-      const ok = el('button', null, '見ました'); ok.type = 'button';
+      const ul = el('ul');
+      mine.forEach(function (x) {
+        const li = el('li', 'kzm-it');
+        li.appendChild(el('b', null, x.no + '　' + (x.where || x.want).slice(0, 60)));
+        li.appendChild(el('div', 'note', '直った日：' + (x.doneAt || '')));
+        li.appendChild(el('div', 'kzm-done', '【改善内容】\n' + (x.done || '')));
+        /* 顧問先へのお知らせ … 出すか・どこへ出すかは 書いた人が決める（下書きは そのまま出せる文） */
+        const nw = el('div', 'kzm-news');
+        if (!x.newsTo) {
+          nw.appendChild(el('div', 'note', '顧問先の画面に「🆕 お知らせ」として出しますか？ 下の文は そのまま出せる下書きです（直してもかまいません）。'));
+          nw.appendChild(kzNewsPicker(x, 'この内容で決める', function (to, codes, text, back) {
+            gs('kaizenNews', x.no, to, codes, text).then(function (y) { kzMsg(to === 'なし' ? 'お知らせは 出さないことにしました。' : '顧問先の画面に お知らせを出しました（' + kzToLabel(y) + '）。'); kzLoad(true); },
+              function (e) { back(); kzMsg(e.message, true); });
+          }));
+        } else {
+          if (x.news) { nw.appendChild(el('b', null, '【顧問先へのお知らせ】')); nw.appendChild(el('p', null, x.news)); }
+          nw.appendChild(el('div', 'st', x.newsTo === 'なし' ? (x.news ? '→ 出さないことにしました' : '→ 顧問先の画面は変わらないので、お知らせはありません') : '→ ' + kzToLabel(x) + 'の画面に 出しています'));
+          if (x.newsTo === 'なし') {
+            const again = el('button', 'btn sm', 'やっぱり お知らせを書いて出す'); again.type = 'button';
+            again.addEventListener('click', function () { again.remove(); nw.appendChild(kzNewsPicker(Object.assign({}, x, { newsTo: '' }), 'この内容で決める', function (to, codes, text, back) {
+              gs('kaizenNews', x.no, to, codes, text).then(function (y) { kzMsg(to === 'なし' ? 'お知らせは 出さないことにしました。' : '顧問先の画面に お知らせを出しました（' + kzToLabel(y) + '）。'); kzLoad(true); }, function (e) { back(); kzMsg(e.message, true); });
+            })); });
+            nw.appendChild(again);
+          }
+        }
+        li.appendChild(nw);
+        ul.appendChild(li);
+      });
+      mw.appendChild(ul);
+      const ok = el('button', null, '見ました（この知らせを閉じる）'); ok.type = 'button';
       ok.addEventListener('click', function () { gs('kaizenSeen', mine.map(function (x) { return x.no; })).then(function () { kzLoad(true); }); }); mw.appendChild(ok);
     }
     const w = $('kzList'); w.textContent = '';
@@ -4374,24 +4431,62 @@
     const b = el('button', null, '見送りにする'); b.type = 'button'; b.addEventListener('click', function () { kzSt(x.no, '見送り', t.value.trim()); }); f.appendChild(b);
     c.appendChild(f); t.focus();
   }
+  /* ★ 顧問先へのお知らせ：文（そのまま出せる下書き）と 出し先（担当の顧問先／全部／選んだ顧問先 何社でも／出さない）
+     書いた人の「直りました」と マスターの［改善済みにする］で 同じものを使う。send(to, codes, text) */
+  function kzNewsPicker(x, label, send) {
+    const w = el('div', 'kznp');
+    w.appendChild(el('b', null, '顧問先へのお知らせ（顧問先の画面の「🆕 アプリが新しくなりました」に出ます。やさしい言葉で 2〜3行。直してから出せます）'));
+    const n = el('textarea', 'kznp-t'); n.value = x.news || ''; n.placeholder = '例：資料を送るときの「ひとこと」が 書きやすくなりました。送ったあとからでも 書けます。'; w.appendChild(n);
+    const nm = 'kznp' + x.no + Math.random().toString(36).slice(2, 6);
+    const opts = el('div', 'kznp-o');
+    const pick = el('div', 'kznp-pick'); pick.hidden = true;
+    const choices = [];
+    if (x.code) choices.push(['この顧問先', '担当の顧問先（' + (x.cname || x.code) + ' 様）だけ']);
+    choices.push(['全員', '全部の顧問先'], ['選んだ顧問先', '顧問先を選ぶ（何社でも）'], ['なし', '出さない']);
+    const cur = x.newsTo || (x.news ? (x.code ? 'この顧問先' : '全員') : 'なし');
+    choices.forEach(function (k) {
+      const l = el('label'); const r = el('input'); r.type = 'radio'; r.name = nm; r.value = k[0]; r.checked = k[0] === cur;
+      r.addEventListener('change', function () { pick.hidden = r.value !== '選んだ顧問先'; }); l.appendChild(r); l.appendChild(document.createTextNode(' ' + k[1])); opts.appendChild(l);
+    });
+    w.appendChild(opts);
+    /* 顧問先を選ぶ（さがす・全部えらぶ・外す） */
+    const had = {}; (x.newsCodes || []).forEach(function (c) { had[c] = 1; }); if (!x.newsCodes || !x.newsCodes.length) { if (x.code) had[x.code] = 1; }
+    const q = el('input', 'kznp-q'); q.type = 'search'; q.placeholder = '顧問先をさがす（名前・コード）'; pick.appendChild(q);
+    const cnt = el('span', 'note'); pick.appendChild(cnt);
+    const ul = el('div', 'kznp-l');
+    (S.clients || []).forEach(function (c) {
+      const l = el('label'); l.dataset.k = (c.code + ' ' + c.name).toLowerCase();
+      const ck = el('input'); ck.type = 'checkbox'; ck.value = c.code; ck.checked = !!had[c.code]; ck.addEventListener('change', recount);
+      l.appendChild(ck); l.appendChild(document.createTextNode(' ' + c.code + ' ' + c.name)); ul.appendChild(l);
+    });
+    pick.appendChild(ul);
+    function recount() { cnt.textContent = '　選んでいる顧問先：' + ul.querySelectorAll('input:checked').length + '社'; }
+    q.addEventListener('input', function () { const v = q.value.trim().toLowerCase(); ul.querySelectorAll('label').forEach(function (l) { l.hidden = !!v && l.dataset.k.indexOf(v) < 0; }); });
+    recount(); pick.hidden = cur !== '選んだ顧問先';
+    w.appendChild(pick);
+    const b = el('button', 'btn primary', label); b.type = 'button';
+    b.addEventListener('click', function () {
+      const r = w.querySelector('input[name="' + nm + '"]:checked'); const to = r ? r.value : 'なし';
+      const codes = Array.prototype.map.call(ul.querySelectorAll('input:checked'), function (c) { return c.value; });
+      if (to === '選んだ顧問先' && !codes.length) { kzMsg('お知らせを出す顧問先を 1つ以上選んでください。', true); return; }
+      b.disabled = true; send(to, codes, n.value, function () { b.disabled = false; });
+    });
+    w.appendChild(b);
+    return w;
+  }
+  function kzToLabel(x) { return x.newsTo === '全員' ? '全部の顧問先' : x.newsTo === '選んだ顧問先' ? '選んだ顧問先 ' + (x.newsCodes || []).length + '社' : (x.cname || x.code) + ' 様'; }
   function kzDoneForm(c, x) {
     const old = c.querySelector('.dform'); if (old) { old.remove(); return; }
     const f = el('div', 'dform');
-    f.appendChild(el('b', null, '改善内容（書いた人・事務所向け。何をどう直したか）'));
-    const d = el('textarea'); d.value = x.done || ''; d.placeholder = 'AI が書いた【改善内容】を貼るか、直したことを書く'; f.appendChild(d);
-    f.appendChild(el('b', null, '顧問先へのお知らせ（顧問先の画面の「新しくなったこと」に出ます。やさしい言葉で 2〜3行。事務所の中のこと・ほかの顧問先の名前は書かない）'));
-    const n = el('textarea'); n.value = x.news || ''; n.placeholder = '例：資料を送るときの「ひとこと」が 書きやすくなりました。送ったあとからでも 長押しで書けます。'; f.appendChild(n);
-    const row = el('div'); row.appendChild(document.createTextNode('お知らせ先：'));
-    const sel = el('select'); ['なし', 'この顧問先', '全員'].forEach(function (k) { const o = el('option', null, k === 'この顧問先' ? (x.code ? 'この顧問先だけ（' + x.cname + '）' : 'この顧問先だけ（顧問先が付いていません）') : k === '全員' ? '全部の顧問先' : '出さない'); o.value = k; if (k === 'この顧問先' && !x.code) o.disabled = true; sel.appendChild(o); });
-    sel.value = x.newsTo || (x.news ? (x.code ? 'この顧問先' : '全員') : 'なし'); row.appendChild(sel); f.appendChild(row);
-    const tl = el('label'); const tc = el('input'); tc.type = 'checkbox'; tc.checked = x.st !== '改善済み'; tl.appendChild(tc); tl.appendChild(document.createTextNode(' 書いた人（' + x.who + ' さん）に 改善内容をメールで知らせる' + (x.mail ? '（' + x.mail + '）' : '（メールが入っていないので アプリの中の印だけ）'))); f.appendChild(tl);
-    const b = el('button', 'primary', '改善済みにする'); b.type = 'button';
-    b.addEventListener('click', function () {
-      b.disabled = true; kzMsg('…');
-      gs('kaizenDone', x.no, { done: d.value, news: n.value, newsTo: sel.value, tell: tc.checked }).then(function (y) { kzPut(y); kzMsg(x.no + ' を 改善済みにしました。' + (y.told && tc.checked ? x.who + ' さんに メールで知らせました。' : '') + (y.newsTo !== 'なし' ? '顧問先の画面に「新しくなったこと」を出します。' : '')); },
-        function (e) { b.disabled = false; kzMsg(e.message, true); });
-    });
-    f.appendChild(b); c.appendChild(f); d.focus();
+    f.appendChild(el('b', null, '改善内容（書いた人・事務所向け。何をどう直したか。空のままなら ひとりでに書きます）'));
+    const d = el('textarea'); d.value = x.done || ''; d.placeholder = '空のままで かまいません（AI の【改善内容】か 要望の文から ひとりでに書きます）'; f.appendChild(d);
+    f.appendChild(el('div', 'note', '書いた人（' + x.who + ' さん）には アプリで知らせます（事務所の画面の上の帯と 改善要望タブ）。メールは出しません。'));
+    f.appendChild(kzNewsPicker(x, '改善済みにする', function (to, codes, text, back) {
+      kzMsg('…');
+      gs('kaizenDone', x.no, { done: d.value, news: text, newsTo: to, codes: codes }).then(function (y) { kzPut(y); kzMsg(x.no + ' を 改善済みにしました。' + x.who + ' さんの画面に 知らせを出します。' + (y.newsTo !== 'なし' ? '顧問先の画面に「新しくなったこと」を出します（' + kzToLabel(y) + '）。' : '')); },
+        function (e) { back(); kzMsg(e.message, true); });
+    }));
+    c.appendChild(f); d.focus();
   }
   /* ---- AI に送る（GitHub の Issue）。鍵が無い・送れないときは コピーの窓 ---- */
   function kzSend(x) {
