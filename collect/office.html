@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793004927;</script>
+<script>window.__PAGE_VER=1793006402;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -949,7 +949,8 @@
   .ctl[data-tab="Dict"] label:has(#month), .ctl[data-tab="Dict"] #filter, .ctl[data-tab="Dict"] label:has(#perY), .ctl[data-tab="Dict"] label:has(#perM), .ctl[data-tab="Dict"] label:has(#box),
   .ctl[data-tab="Rule"] label:has(#month), .ctl[data-tab="Rule"] #filter, .ctl[data-tab="Rule"] label:has(#perY), .ctl[data-tab="Rule"] label:has(#perM), .ctl[data-tab="Rule"] label:has(#box),
   .ctl[data-tab="Out"] label:has(#month), .ctl[data-tab="Out"] #filter, .ctl[data-tab="Out"] label:has(#perY), .ctl[data-tab="Out"] label:has(#perM), .ctl[data-tab="Out"] label:has(#box) { display: none; }
-  .ctl[data-tab="Clients"] > :not(label:has(#client)) { display: none; }
+  .ctl[data-tab="Clients"] > :not(label:has(#client)):not(#toClient) { display: none; }
+  .ctl .toclient { white-space: nowrap; }
 
   /* 一括取込ファイル */
   .obox { margin: 14px 0 22px; max-width: 1200px; }
@@ -1064,6 +1065,7 @@
 </div>
 <div class="ctl" id="ctl" hidden>
   <label>顧問先 <select id="client"></select></label>
+  <button type="button" class="btn sm toclient" id="toClient" title="この顧問先の 資料提出の画面（顧問先が見ている画面）を開く">📷 顧問先の画面</button>
   <label title="日付を「23」だけ打ったときに使う年月">処理する月 <input type="month" id="month"></label>
   <span class="seg" role="group" aria-label="表示する写真" id="filter">
     <button type="button" data-st="todo" aria-pressed="true">未処理 <b id="cTodo">0</b></button>
@@ -1764,6 +1766,7 @@
             <dt>お知らせ（数秒で消える）</dt><dd>画面の下に一瞬出て 消える文。例：「確定しました」</dd>
             <dt>印（バッジ）</dt><dd>数字や短い言葉の小さな丸。例：改善要望タブの赤い数字、「同意まだ」</dd>
             <dt>別ウィンドウ</dt><dd>パソコンで 別に開く窓。例：画像を別ウィンドウ表示、出納帳を別ウィンドウ</dd>
+                      <dt>［🏢 事務所の画面へ］／［📷 顧問先の画面］</dt><dd>顧問先の画面の右上と、事務所の画面の顧問先の欄のとなり。押すと もう一方の画面で 同じ顧問先が開く。［🏢 事務所の画面へ］は 事務所の画面にログインしている端末にだけ出る（顧問先には出ない）</dd>
           </dl>
         </details>
         <details class="kzex" open><summary>例文（このように書くと AI がそのまま直せます）</summary>
@@ -2047,7 +2050,7 @@
     S.pendBundle = b.bundle || null;
     fillClients(b.bundle ? b.bundle.code : r.sel);
     if (S.pendBundle) { const pb = S.pendBundle; S.pendBundle = null; applyBundle(pb); }
-    if (first) { S.booted = true; selectTab(S.resumeTab || { in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In'); S.resumeTab = ''; verWatch(); }
+    if (first) { S.booted = true; selectTab(S.resumeTab || { in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In'); S.resumeTab = ''; verWatch(); openFromClient(); }
   }
 
   function fillClients(sel, force) {
@@ -2298,6 +2301,33 @@
     if (S.tab === 'Clients' && !A.isNew) aOpen(S.code);
   });
   /* ★ 顧問先タブで 一覧から選んだら 上の「顧問先」も そろえる（ほかのタブも その顧問先になる。2026-10-25） */
+  /* ★★ 顧問先の画面と 行き来する（2026-10-26 改善要望 K-0001）
+       ・［📷 顧問先の画面］… いま選んでいる顧問先の 資料提出の画面を開く（提出URL）
+       ・顧問先の画面の［🏢 事務所の画面へ］から来たとき（?ct=トークン）… その顧問先を選んで開く。
+         トークンは アドレス欄からすぐ消す。どの顧問先かは ログインしたあとで 顧問先の一覧（事務所だけ）から引く */
+  var OPEN_CT = (function () { try { const u = new URL(location.href), t = u.searchParams.get('ct') || ''; if (t) { u.searchParams.delete('ct'); history.replaceState(null, '', u.pathname + (u.search || '') + u.hash); } return /^[0-9a-f]{32}$/.test(t) ? t : ''; } catch (e) { return ''; } })();
+  function openFromClient() {
+    if (!OPEN_CT) return;
+    const t = OPEN_CT; OPEN_CT = '';
+    gs('adminList').then(function (l) {
+      const c = (l || []).find(function (x) { return x.url && x.url.indexOf('t=' + t) >= 0; });
+      if (c && setCode(c.code)) selectTab('Docs');
+    }, function () {});
+  }
+  function clientUrlOf(code) {
+    const c = (A.list || []).find(function (x) { return x.code === code; });
+    if (c && c.url) return Promise.resolve(c.url);
+    return gs('adminList').then(function (l) { A.list = l || A.list; const d = (l || []).find(function (x) { return x.code === code; }); return d ? d.url : ''; });
+  }
+  $('toClient').addEventListener('click', function () {
+    const code = S.code; if (!code) return;
+    const b = this; b.disabled = true;
+    clientUrlOf(code).then(function (u) {
+      b.disabled = false;
+      if (!u) { alert('この顧問先は まだ提出URLがありません（顧問先タブで作ってください）。'); return; }
+      location.href = u;
+    }, function (e) { b.disabled = false; alert('開けませんでした。' + e.message); });
+  });
   function setCode(code) {
     if (!code || code === S.code || !S.clients.some(function (c) { return c.code === code; })) return true;
     if (S.dirty && !confirm('辞書の書き替えが保存されていません。捨てて顧問先を替えますか？')) return false;
