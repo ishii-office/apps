@@ -11673,7 +11673,10 @@ boot();
 .arblk-h{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 2px 8px}
 .arblk-h .abcode{color:var(--ai);font-weight:700;font-size:15px}
 .arblk-h .abname{font-size:19px}
-.arblk-h .abzan{margin-left:auto;font-size:16px;font-weight:700;color:#c9c2b2}
+.arblk-h .abopn{margin-left:auto;display:flex;align-items:center;gap:6px;
+  font-size:12.5px;color:var(--muted,#7a7a7a);font-weight:700}
+.arblk-h .abopn .ar-open-in{width:92px;padding:5px 7px;font-size:14px}
+.arblk-h .abzan{font-size:16px;font-weight:700;color:#c9c2b2}
 .arblk-h .abzan.pos{color:#7A2E3F}
 .arblk-h .abzan.neg{color:var(--ice)}
 .arblk-h .abopen{flex:0 0 auto}
@@ -11690,6 +11693,8 @@ boot();
 @media(max-width:560px){
   .arblk{padding:8px 7px 7px}
   .arblk-h .abname{font-size:17px}
+  .arblk-h .abopn{margin-left:0;flex:1 1 100%;order:3}
+  .arblk-h .abzan{margin-left:auto}
   .arpay{gap:7px;padding:8px}
   .arpay .apd{flex:1 1 44%;min-width:0;width:auto}
   .arpay .apa{flex:1 1 44%;width:auto;min-width:0;font-size:21px}
@@ -12073,7 +12078,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-10-27a 小口現金は【出納帳を見ながら入れる】1タブに（上に出納帳／下は 入金出金→日付→金額→取引の種類。写真は任意）／売掛帳を上から並べて そこから回収を入れる（現金は出納帳と同じ1件・古い月分から充当・二重計上の止め金つき）';
+var APP_BUILD='2026-10-27b 小口現金は【出納帳を見ながら入れる】1タブに（上に出納帳／下は 入金出金→日付→金額→取引の種類。写真は任意）／売掛帳を上から並べて そこから回収を入れる（現金は出納帳と同じ1件・古い月分から充当・二重計上の止め金つき）／前期繰越は一覧のままその場で直せる';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -12410,6 +12415,15 @@ function arBlockHtml(c,L,fy){
       '<span class="num abcode">'+fmtCode(c.code)+'</span>'+
       '<b class="abname">'+esc(c.name)+'</b>'+
       '<span class="pill tag-slip">'+SHIME_LABEL[c.shime]+'</span>'+
+      /* ★ 前期繰越（期首）は、一覧のままその場で直せる（2026-10-27 に戻した）。
+           発生月ごとの内訳が入っている店は、数のボタンにして
+           ［1店だけ開く］の内訳の画面へ送る（一覧では月ごとに直せないため） */
+      '<span class="abopn">前期繰越 '+(L.openBreak
+        ? '<button class="btn ghost tap sm num" data-aopn="'+esc(c.id)+'" '+
+          'title="発生月ごとの内訳が入っています。開いて直してください" '+
+          'style="padding:3px 7px;font-size:13px">'+yen(L.open)+' ▸</button>'
+        : '<input class="num ar-open-in" data-aopen="'+esc(c.id)+'" inputmode="numeric" '+
+          'value="'+(L.open||'')+'" placeholder="0">')+'</span>'+
       '<span class="abzan num'+(bal>0?' pos':(bal<0?' neg':''))+'">残高 '+
         (bal<0?'△':'')+yen(Math.abs(bal))+'</span>'+
       '<button class="btn ghost tap sm abopen" data-aopn="'+esc(c.id)+'">1店だけ開く（印刷）</button>'+
@@ -12500,7 +12514,9 @@ function arList(el,fy){
     '<b>1行＝回収1件。</b>手書きの売掛帳と同じ並びです。売上金額はその月のいちばん上の行にだけ出ます。'+
     '回収がまだ無い月も1行出るので、<b>滞留がそのまま見えます</b>。'+
     '<b>小切手はとりあえず「現金」で入れて</b>、当座に入った日は表の欄に書いてください。'+
-    '前期繰越（期首）の内訳を直すときは［1店だけ開く］から。</p>';
+    '<b>前期繰越</b>の欄はその場で直せます（期首の売掛残高）。'+
+    '<b>発生月ごとの内訳</b>を入れている店は金額のボタンになります。'+
+    '押すとその店の売掛帳が開いて、月ごとに直せます。</p>';
 
   el.querySelector('#aPrev').onclick=function(){ S.arFy=fy-1; S.arShow=AR_PAGE; render(); };
   el.querySelector('#aNext').onclick=function(){ S.arFy=fy+1; S.arShow=AR_PAGE; render(); };
@@ -12517,6 +12533,18 @@ function arList(el,fy){
   if(S.arQ.trim()) filterRows(body,S.arQ);
   el.querySelectorAll('[data-aopn]').forEach(function(b){
     b.onclick=function(){ S.arClient=b.dataset.aopn; window.scrollTo({top:0}); render(); }; });
+  /* ★ 前期繰越（期首）を、一覧のままその場で直す（2026-10-27 に戻した） */
+  el.querySelectorAll('[data-aopen]').forEach(function(inp){
+    inp.onfocus=function(){ inp.select(); };
+    inp.onchange=async function(){
+      var n=Math.max(0,parseInt(String(inp.value).replace(/[^0-9]/g,''),10)||0);
+      DB.arOpen[fy]=DB.arOpen[fy]||{};
+      if(n) DB.arOpen[fy][inp.dataset.aopen]=n; else delete DB.arOpen[fy][inp.dataset.aopen];
+      await saveArOpen(fy);
+      clearCaches();
+      toast('前期繰越を直しました'); render();
+    };
+  });
   arBindPay(el,fy);
   arBindNote(el);
 }
