@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793052427;</script>
+<script>window.__PAGE_VER=1793065260;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1703,6 +1703,7 @@
       <div class="sdrow"><button type="button" class="primary" id="sdBoxSave">この顧問先の箱にする</button><button type="button" id="sdBoxDef" title="箱を決めていない顧問先 全部に効きます">この内容を 事務所の標準にする</button><span class="pagemsg" id="sdBoxMsg" role="status"></span></div>
       <p class="note">いまの事務所の標準：<span id="sdBoxDefNow"></span></p>
     </details>
+    <p class="note" id="lnRow" hidden>💬 公式LINE：この顧問先で つないでいる人 <b id="lnN">0</b>人　<button type="button" id="lnOff">つながりを外す</button>　<small>（顧問先が［💬公式LINEへ］から送る「連携コード」でつながります。LINE で届いた写真は「その他」の箱に入ります）</small></p>
     <details class="sdbox" id="sdSignD"><summary>✍ 承認（電子サイン）の記録</summary>
       <p class="note">送付物の書類を長押し（右クリック）→［✍ 承認をお願いする］。顧問先は 書類を開いて確かめ、お名前と 登録メールに届く確認コード（二段階の本人確認）で承認します。承認すると 承認証明書（PDF）が 書類と同じところにでき、顧問先と事務所に 控えのメールが届きます。記録は 書き替えられない形（ハッシュの鎖）で シート「承認ログ」に残ります。</p>
       <div class="sdrow"><button type="button" id="sgVerify">🔗 承認ログを 確かめる（書き替え・差し替えが無いか）</button><span class="pagemsg" id="sgMsg" role="status"></span></div>
@@ -2165,7 +2166,7 @@
     S.pendBundle = b.bundle || null;
     fillClients(b.bundle ? b.bundle.code : r.sel);
     if (S.pendBundle) { const pb = S.pendBundle; S.pendBundle = null; applyBundle(pb); }
-    if (first) { S.booted = true; selectTab(S.resumeTab || { in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In'); S.resumeTab = ''; verWatch(); openFromClient(); }
+    if (first) { S.booted = true; selectTab(S.resumeTab || { in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In'); S.resumeTab = ''; verWatch(); openFromClient(); setTimeout(lnCheck, 3000); }
   }
 
   function fillClients(sel, force) {
@@ -3610,6 +3611,49 @@
   });
   $('ogCancel').addEventListener('click', function () { $('ogv').hidden = true; });
 
+
+  /* ★★ 公式LINE から届いたら 担当者に知らせる（2026-10-27）
+       事務所の画面を開いているあいだ（裏に回っていても）1分おきに聞き、届いていれば ポップ通知・アイコンの数・画面の中の知らせ。
+       閉じているあいだは いつもの「新しい提出」のメール。担当者が自分の顧問先だけ（担当者が空の顧問先は みんなに） */
+  const LN = { since: 0, n: 0, busy: false };
+  const LS_LNSINCE = 'collect_line_since';
+  function lnBadge() { try { if (navigator.setAppBadge) { if (LN.n) navigator.setAppBadge(LN.n); else navigator.clearAppBadge(); } } catch (e) {} document.title = (LN.n ? '(' + LN.n + ') ' : '') + document.title.replace(/^\(\d+\) /, ''); }
+  function lnGo(code) {
+    try { window.focus(); } catch (e) {}
+    if (code && S.clients && S.clients.some(function (c) { return c.code === code; }) && S.code !== code) { S.code = code; $('client').value = code; switchClient(); }
+    selectTab('In');
+    LN.n = 0; lnBadge();
+  }
+  function lnCheck() {
+    if (!S.started || !S.booted || LN.busy || LIVE) return;
+    if (!LN.since) { LN.since = Number(lsGet(LS_LNSINCE) || 0) || Date.now(); }
+    LN.busy = true;
+    gs('lineNews', LN.since).then(function (r) {
+      LN.busy = false;
+      LN.since = r.t || LN.since; lsSet(LS_LNSINCE, String(LN.since));
+      (r.items || []).forEach(function (x) {
+        LN.n += x.n;
+        const text = x.name + ' 様から LINE で ' + x.n + '件 届きました（その他の箱）';
+        try {
+          if (window.Notification && Notification.permission === 'granted') {
+            const nt = new Notification('💬 公式LINE から届きました', { body: text, tag: 'line-' + x.code, icon: 'icon-192.png' });
+            nt.onclick = function () { nt.close(); lnGo(x.code); };
+          }
+        } catch (e) {}
+        if (typeof fmsg === 'function') fmsg('💬 ' + text, 'ok');
+      });
+      lnBadge();
+    }, function () { LN.busy = false; });
+  }
+  setInterval(lnCheck, 60000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { lnCheck(); setTimeout(function () { if (!document.hidden && LN.n) { LN.n = 0; lnBadge(); } }, 4000); } });
+  /* 通知の許可は 押したときにしか聞けない（ブラウザの決まり）。ログインしたあとの はじめの1回のクリックで聞く */
+  document.addEventListener('click', function lnAsk() {
+    if (!S.started) return;
+    document.removeEventListener('click', lnAsk, true);
+    try { if (window.Notification && Notification.permission === 'default') Notification.requestPermission(); } catch (e) {}
+  }, true);
+
   /* ================= ★★★ 送付物（事務所 → 顧問先。2026-10-26） =================
      中は 顧問先の画面を そのまま使う（index.html?t=…&m=send）。撮る・落とす・保管・まとめる・バラす・別ウィンドウ・PDF・送る は 全部そちら。
      ここは 顧問先を選ぶ・送付ボックスを決める・数を出す だけ。顧問先を変えたら 中も その顧問先に入れ替える */
@@ -3625,7 +3669,7 @@
   function sdLoad(force) {
     const code = S.code, f = $('sdFrame');
     if (!code) { sdMsg('上で 顧問先を選んでください。'); f.hidden = true; return; }
-    sdMsg(''); sdSum(); $('sgList').textContent = ''; $('sgMsg').textContent = ''; sgLoad();
+    sdMsg(''); sdSum(); lnInfo(); $('sgList').textContent = ''; $('sgMsg').textContent = ''; sgLoad();
     gs('sendBoxesGet', code).then(function (r) {
       if (code !== S.code) return;
       if (document.activeElement !== $('sdBoxes')) $('sdBoxes').value = r.raw || '';
@@ -3669,6 +3713,14 @@
     }, function (e) { w.textContent = e.message; });
   }
   $('sdSignD').addEventListener('toggle', sgLoad);
+  function lnInfo() {
+    const code = S.code; if (!code || LIVE) return;
+    gs('lineInfo', code).then(function (r) { if (code !== S.code) return; $('lnRow').hidden = !r.on; $('lnN').textContent = String(r.n || 0); $('lnOff').hidden = !r.n; }, function () {});
+  }
+  $('lnOff').addEventListener('click', function () {
+    const code = S.code; if (!code || !confirm('この顧問先と 公式LINE のつながりを外します（LINE で送られた写真が アプリに入らなくなります。顧問先がもう一度「連携コード」を送れば つながります）。')) return;
+    gs('lineUnlink', code).then(function (r) { if (code === S.code) { $('lnN').textContent = String(r.n || 0); $('lnOff').hidden = !r.n; } }, function (e) { sdMsg(e.message, true); });
+  });
   $('sgVerify').addEventListener('click', function () {
     $('sgMsg').textContent = '確かめています…';
     gs('signVerify').then(function (r) {
