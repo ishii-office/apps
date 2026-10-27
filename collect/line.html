@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>資料アプリを開く</title>
+<title>資料アプリ</title>
 <script>window.__API_URL='https://script.google.com/macros/s/AKfycbxcRaVoS6NF2sedBw_pS28o-8349pj51kbF6yTnZYTOq4DF8RmcOgtwi2uKvJ0358mhpw/exec';</script>
 <style>
   body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif; background: #F5F2EA; color: #222; }
@@ -31,6 +31,8 @@
 (function () {
   var LIFF_ID = '2012229599-XN9zmUpb';
   var API = window.__API_URL || '';
+  /* ［写真を撮る］から来たか（LIFF は 付けた ?cam=1 を liff.state に入れて渡してくることがある）。ログインし直しても忘れないよう 覚えておく */
+  try { var q = location.search + decodeURIComponent((location.search.match(/liff\.state=([^&]*)/) || [])[1] || ''); if (/[?&]cam=1/.test(q)) sessionStorage.setItem('lcam', '1'); } catch (e) {}
   function $(i) { return document.getElementById(i); }
   function say(title, msg, retry) { $('t').textContent = title; $('m').textContent = msg || ''; $('sp').hidden = true; $('again').hidden = !retry; }
   $('again').addEventListener('click', function () { location.reload(); });
@@ -46,7 +48,10 @@
           say('開けませんでした', (o && o.msg) || 'もう一度 メニューから開いてください。', true); return;
         }
         sessionStorage.removeItem('lfx');
-        if (o.r && o.r.url && /^https:\/\/(ishii-office\.github\.io|script\.google\.com)\/[^\s?#]*\?(?:[^\s#]*&)?t=[0-9a-f]{32}$/.test(o.r.url)) { location.replace(o.r.url); return; }
+        if (o.r && o.r.url && /^https:\/\/(ishii-office\.github\.io|script\.google\.com)\/[^\s?#]*\?(?:[^\s#]*&)?t=[0-9a-f]{32}$/.test(o.r.url)) {
+          var cam = sessionStorage.getItem('lcam') === '1'; sessionStorage.removeItem('lcam');
+          location.replace(o.r.url + (cam ? '&cam=line' : '')); return;
+        }
         say('まだ つながっていません', (o.r && o.r.msg) || '', false);
       }, function () { say('つながりませんでした', '電波の良いところで もう一度ためしてください。', true); });
   }
