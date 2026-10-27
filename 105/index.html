@@ -809,6 +809,25 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
   border-top:2px solid var(--line);padding-top:7px;font-size:16px;font-weight:800}
 .cmtot b{font-size:21px}
 @media(max-width:560px){ .cmrow b{flex:0 0 104px;font-size:14px} }
+/* ★★★ 取引の入力タブの【上】に出納帳（2026-10-27・丸京）
+     入力しながら、いま入れたものがすぐ上に積まれていくのが見える。
+     高さを切って中だけ転がす ── 切らないと、100件の月で入力欄が画面の外へ行く */
+.ledtop{margin:0 0 14px}
+.ledtop .cbox.led{margin:0}
+.ledtop .gbody{max-height:44vh;overflow-y:auto}
+/* ★★★ 日付 → 金額 の帯。辞書より上に出すので、大きく見やすく */
+.cashhead{margin:0 0 12px;padding:11px 12px;border-radius:12px;
+  border:2px solid var(--line);background:#fff}
+.cashhead.in {border-color:var(--ice);background:var(--iceBg)}
+.cashhead.out{border-color:var(--pink);background:#FDF2F5}
+.cashhead .lbl{font-size:13px}
+.cashhead .cash-date{font-size:21px;font-weight:700}
+.cashhead .cash-amt{font-size:32px}
+@media(max-width:560px){
+  .cashhead{padding:9px 9px}
+  .cashhead .cash-date{font-size:19px}
+  .cashhead .cash-amt{font-size:27px}
+}
 .amtday{flex-wrap:nowrap}
 .amtday .amtcell{flex:0 0 auto;width:200px}
 .amtday .daycell{flex:1 1 auto;min-width:180px}
@@ -1261,6 +1280,10 @@ body.jrnwide header, body.jrnwide main{max-width:1560px}
   .cbox.led .ledmin{min-width:0}
   .cbox.led .ghead{display:none}
   .cbox.led .gbody{max-height:none}
+  /* ★ ただし 入力タブの上に載せた出納帳だけは高さを切る（2026-10-27）。
+       切らないと、100件ある月で入力の枠が画面の外まで押し出される。
+       ここに書くのは、すぐ上の .cbox.led の指定より【あと】でないと効かないため */
+  .ledtop .cbox.led .gbody{max-height:38vh;overflow-y:auto}
   .cbox.led .grow{
     /* 右の列は中身に合わせる。7桁（−1,600,000）でも切れないように */
     grid-template-columns:minmax(0,1fr) max-content !important;
@@ -3283,7 +3306,10 @@ function cashWarm(){
       DB.jmap[jkey(m)]=jparse(g[jkey(m)],{})||{};
       got++;
     });
-    if(got){ clearCaches(); render(); }
+    /* ★ 打っている最中は描き直さない（2026-10-27）。
+         描き直すと、打ちかけの金額が消える（`cashTyping` と同じ決まり）。
+         描き直さなくても、次に描いたときに出れば足りる */
+    if(got){ clearCaches(); if(!cashTyping()) render(); }
   }).catch(function(){ _cashWarm=0; });          /* こけたら、次にひらいたときやり直す */
 }
 
@@ -3766,6 +3792,7 @@ var S = {
   cashDir:'out',
   cashImg:null, cashImgType:null, cashImgUrl:null, cashPics:null,
   cashDate:null,
+  cashAmt:'',              /* 打ちかけの金額（辞書を押しても消さない） */
   cashJustId:null,
   cashKind:null,          /* 小口現金の「取引の型」 */
   cashMemoPre:'',         /* 型から入れる内容の下書き */
@@ -6137,14 +6164,16 @@ function cashPaint(el){
     Array.prototype.forEach.call(mins,function(q){ var v=num(q); t+=v; mark(q,v>0); });
     if(!t) need.push('金額');
   }else{
-    var cm=form.querySelector('#cm');
+    /* ★ 金額と日付は【辞書より上】＝ #cf の外に出た（2026-10-27）。
+         `form` の中だけを見ていると塗れなくなるので、el から引く */
+    var cm=el.querySelector('#cm');
     if(cm){ var v2=num(cm); mark(cm,v2>0); if(!v2) need.push('金額'); }
   }
 
-  /* 精算日。既定で今日が入っているので、たいてい緑のまま */
-  var cd=form.querySelector('#cd');
+  /* 日付。既定で今日が入っているので、たいてい緑のまま */
+  var cd=el.querySelector('#cd');
   if(cd) mark(cd, !!String(cd.value||'').trim());
-  if(cd && !String(cd.value||'').trim()) need.push('精算日');
+  if(cd && !String(cd.value||'').trim()) need.push('日付');
 
   /* 記録ボタン。足りないものを、ボタンのすぐ上に出す */
   var box=form.querySelector('#cneed');
@@ -6182,6 +6211,12 @@ function cashTyping(){
   var ms=document.querySelectorAll('.cmin');
   for(var j=0;j<ms.length;j++)
     if(String(ms[j].value||'').replace(/[^0-9]/g,'')) return true;
+  /* ★ 売掛帳の「回収を入れる」の金額（2026-10-27）。
+       売掛帳をひらくと `cashWarm` がうしろで小口現金を読んで描き直すので、
+       ここを見ないと**打ちかけの回収額が消える** */
+  var as=document.querySelectorAll('.arpay .apa');
+  for(var k=0;k<as.length;k++)
+    if(String(as[k].value||'').replace(/[^0-9]/g,'')) return true;
   return false;
 }
 
@@ -7705,7 +7740,7 @@ function jdBind(el, m){
   el.querySelectorAll('[data-jfix]').forEach(function(b){ b.onclick=function(){
     var x=jRows(m).filter(function(q){ return String(q.id)===b.dataset.jfix; })[0];
     if(!x) return;
-    S.cashEdit=x; S.cashKind=x.kind||''; S.cashDir=x.dir; S.cashPane='in';
+    S.cashEdit=x; S.cashAmt=''; S.cashKind=x.kind||''; S.cashDir=x.dir; S.cashPane='in';
     S.cashJust=null; S.cashJustShow=false; render(); }; });
   el.querySelectorAll('[data-jkind]').forEach(function(b){ b.onclick=function(){
     if(!b.dataset.jkind) return;
@@ -8695,9 +8730,42 @@ function viewCash(el){
     ? multiRows.map(function(_,i){ return (e.amts&&e.amts[i])||''; }) : [];
   var multiSum  = multiVals.reduce(function(a,b){ return a+(Number(b)||0); },0);
   var _nPic = cashPicCount();
+  /* ★ 写真は任意（2026-10-27）。証憑は資料回収アプリが一括で集める */
   var shotLabel = _nPic
     ? '📷 もう1枚とる／選ぶ'
-    : (isArc ? '📷 受領書の写真をとる／選ぶ' : '📷 領収書の写真をとる／選ぶ');
+    : (isArc ? '📷 受領書の写真をとる／選ぶ（任意）' : '📷 領収書の写真をとる／選ぶ（任意）');
+
+  /* ★★★ 日付 → 金額 → 取引の種類 の順に出す（2026-10-27・丸京）
+
+       「取引の入力は、写真を撮りながらではなく、現金出納帳をそのまま入力していく
+         スタイルに変更したい。下部にはまず、出金or入金の別、次に大きく見やすく
+         日付、金額、取引の種類。」
+
+       だから 日付と金額は【辞書より上】に出す。**型を選ぶ前から打てる。**
+       ・売掛の現金回収（`isArc`）は、お店を選ぶ枠（#arcslot）が
+         回収日・金額を持っているので、ここには出さない（二重になる）
+       ・店売り・複数仕訳は金額の欄を出さない（今までどおり）
+       ★ 打った金額は `S.cashAmt` に預ける。預けないと、
+         **そのあと取引の種類を押した瞬間の描き直しで消える** */
+  var amtVal = (S.cashAmt!=null && S.cashAmt!=='') ? S.cashAmt : (e.amount||'');
+  var headHtml = isArc ? '' :
+    '<div class="row cash-f amtday cashhead '+(S.cashDir==='out'?'out':'in')+'" '+
+         'style="gap:12px;align-items:flex-end">'+
+      '<div class="daycell">'+
+        '<label class="lbl">日付　<span class="daysub" style="font-weight:400">小口現金が動いた日</span></label>'+
+        '<span class="dwrap'+(gap===0?' today':'')+'">'+
+          '<input type="date" id="cd" class="cash-date" value="'+formDate+'">'+
+          /* 既定は今日。ずれている日だけ「◯日前」と出す
+             （枠は残す。消すと、日を変えたときに書き込む先が無くなる） */
+          '<span class="dnote'+(gap===0?' today':'')+'" id="dnote">'+
+            (gap===0?'':dayNote(formDate))+'</span>'+
+        '</span>'+
+      '</div>'+
+      (multiRows || S.saleOn ? '' :
+      '<div class="amtcell"><label class="lbl">金額</label>'+
+        '<input id="cm" class="num cash-amt" inputmode="numeric" '+
+          'value="'+esc(String(amtVal||''))+'" placeholder="0"></div>')+
+    '</div>';
 
   var formHtml=
   '<div id="cf" class="cbox-in'+(isArc?' arconly':'')+'">'+
@@ -8726,34 +8794,7 @@ function viewCash(el){
       }).join('')+
       '<div class="cmtot"><span>合計</span><b id="cmtot">'+yen(multiSum)+'</b></div>'+
     '</div>')+
-    (isArc ? '' :
-    '<div class="row cash-f amtday" style="gap:12px;align-items:flex-end">'+
-      /* ★★ 店売りのときは【金額】の欄を出さない（2026-09-27・お重さん）。
-           上の「受け取った合計金額」がそのまま金額になるので、二重表示だった */
-      (multiRows || S.saleOn ? '' :
-      '<div class="amtcell"><label class="lbl">金額</label>'+
-        '<input id="cm" class="num cash-amt" inputmode="numeric" '+
-          'value="'+(e.amount||'')+'" placeholder="0"></div>')+
-      '<div class="daycell"'+(multiRows||S.saleOn?' style="flex:1 1 100%"':'')+'>'+
-        '<label class="lbl">精算日　<span class="daysub" style="font-weight:400">小口現金が動いた日</span></label>'+
-        '<span class="dwrap'+(gap===0?' today':'')+'">'+
-          '<input type="date" id="cd" class="cash-date" value="'+formDate+'">'+
-          /* 既定は今日。ずれている日だけ「◯日前」と出す
-             （枠は残す。消すと、日を変えたときに書き込む先が無くなる） */
-          '<span class="dnote'+(gap===0?' today':'')+'" id="dnote">'+
-            (gap===0?'':dayNote(formDate))+'</span>'+
-        '</span>'+
-      '</div>'+
-    '</div>')+
-    (noShot ? '' :
-    '<div class="dropzone" id="dz">'+
-      '<label class="btn ghost tap shotbtn"><span id="shotlbl">'+shotLabel+'</span>'+
-        /* ★ multiple … まとめて選ぶのも、続けて撮るのも、同じ口で受ける（2026-09-21） */
-        '<input type="file" id="cfile" accept="image/*,application/pdf" capture="environment" multiple style="display:none">'+
-      '</label>'+
-      '<span class="muted shothint"'+(_nPic?' style="display:none"':'')+'>何枚でも足せます</span>'+
-      '<span id="cprev">'+attachChip()+'</span>'+
-    '</div>')+
+    /* ★★★ 日付と金額は【辞書より上】へ出した（2026-10-27）。下の headHtml を読む */
     (isArc ? '' :
       baseMemo
       ? '<div class="cash-f"><label class="lbl">摘要（任意）'+
@@ -8764,6 +8805,17 @@ function viewCash(el){
         '<input id="cn" class="cash-memo" lang="ja" value="'+esc(memoVal)+'" placeholder="'+
           (mo==='sale'?'空欄でOK':(isOut?'例：ガソリン　スタンド名':'例：預金から引き出し'))+'">'+
         '</div>')+
+    (noShot ? '' :
+    '<div class="dropzone" id="dz">'+
+      '<label class="btn ghost tap shotbtn"><span id="shotlbl">'+shotLabel+'</span>'+
+        /* ★ multiple … まとめて選ぶのも、続けて撮るのも、同じ口で受ける（2026-09-21） */
+        '<input type="file" id="cfile" accept="image/*,application/pdf" capture="environment" multiple style="display:none">'+
+      '</label>'+
+      /* ★★ 写真は【任意】（2026-10-27・丸京）。証憑は資料回収アプリが一括で集めるので、
+       1件ずつ撮らなくてよい。撮りたいときだけ撮る */
+      '<span class="muted shothint"'+(_nPic?' style="display:none"':'')+'>任意。資料回収アプリでまとめて集めるなら、ここは空でかまいません</span>'+
+      '<span id="cprev">'+attachChip()+'</span>'+
+    '</div>')+
     /* ★ 記録ボタンは1つだけ。売掛の回収は上の枠のボタンで記録する（2026-09-21） */
     (isArc ? '' :
     '<div class="cneed" id="cneed"></div>'+
@@ -8881,6 +8933,8 @@ function viewCash(el){
     return x.dir===SIDE && !x.gone && !x.auto; });
   var kindsHtml =
   sideHtml +
+  /* ★★★ 日付と金額は【辞書より上】（2026-10-27）。型を選ぶ前から打てる */
+  headHtml +
   /* ★ 「入金 … 何が入ったか」「出金 … 何に払ったか」の見出しは出さない（2026-09-21）。
        すぐ上のバーで［入金］［出金］を選んでいるので、見れば分かる。
      ★★ 群（いつもの取引／たまにある取引／分からないとき）で割る（2026-09-24）。
@@ -9130,12 +9184,18 @@ function viewCash(el){
   '</div>';
 
   el.innerHTML = monthHtml + segHtml +
+    /* ★★★ 入力タブの【いちばん上】に出納帳を置く（2026-10-27・丸京）
+         「上部に出納帳がある。その月の入力したところまで。…
+           確定すると上部の出納帳に付け足されていく。
+           以上の方が一元的にみれて分かりやすい。」
+         別タブへ飛んで確かめる往復をやめる。直す・消すはそのまま使える */
     (PANE==='in'
       /* ★ 辞書はいつも出したまま。型を選んだら、その下に入力欄が出る。
            「入れました」は、その入力の枠のすぐ下（＝［記録する］のすぐ下） */
       /* ★ いちばん下に［取引の種類をつくる］（2026-09-24）。
            **顧問先の入力画面は変えない。作れるボタンを置くだけ** */
-      ? kindsHtml + (kdNow ? boxesHtml : '') + justHtml +
+      ? '<div class="ledtop">'+ledHtml+'</div>' +
+        kindsHtml + (kdNow ? boxesHtml : '') + justHtml +
         '<button class="mkkind tap" id="mkkind">＋ 取引の種類をつくる・直す（事務所）</button>'
       : '')+
     (PANE==='led'   ? noticeHtml + cardsHtml + ledHtml : '')+
@@ -9223,10 +9283,19 @@ function viewCash(el){
     var jl=el.querySelector('.justline');
     if(jl && jl.scrollIntoView) try{ jl.scrollIntoView({block:'center'}); }catch(e){}
   }
+  /* ★★★ 入れた1件が、上の出納帳に積まれたのを見せる（2026-10-27）。
+       高さを切ってあるので、黙っていると画面の外（下）に入る。
+       **ページは動かさない。出納帳の中だけを転がす** */
+  if(S.cashJustId){
+    var lt=el.querySelector('.ledtop .gbody'), jr=lt&&lt.querySelector('.grow.just');
+    if(lt && jr) try{
+      lt.scrollTop += (jr.getBoundingClientRect().bottom - lt.getBoundingClientRect().bottom) + 8;
+    }catch(e){}
+  }
 
   var cfEl=el.querySelector('#cf'); if(cfEl) enterNav(cfEl);
   var goMonth=function(d){ S.month=d; S.cashEdit=null; cashImgDrop();
-    S.cashJustId=null; S.cashDate=null; S.cashCsv=false; S.cashDay=''; render(); };
+    S.cashJustId=null; S.cashDate=null; S.cashAmt=''; S.cashCsv=false; S.cashDay=''; render(); };
   el.querySelector('#mp').onclick=function(){ goMonth(new Date(m.getFullYear(),m.getMonth()-1,1)); };
   var msel=el.querySelector('#msel');
   if(msel) msel.onchange=function(){
@@ -9291,6 +9360,12 @@ function viewCash(el){
     render(); }; });
   bindSaleBox(el);
 
+  /* ★★★ 打った金額は預けておく（2026-10-27）。
+       金額の欄が【辞書より上】へ出たので、打ったあとに取引の種類を押す。
+       預けないと、その描き直しで消えてしまう */
+  var cmEl=el.querySelector('#cm');
+  if(cmEl) cmEl.addEventListener('input',function(){ S.cashAmt=cmEl.value; });
+
   var cd=el.querySelector('#cd'), dn=el.querySelector('#dnote');
   if(cd){
   var refreshDay=function(){
@@ -9309,13 +9384,13 @@ function viewCash(el){
   if(cclr) cclr.onclick=function(){
     S.cashEdit=null; cashImgDrop();
     S.saleClient=null; S.saleItems=null; S.saleQ=''; S.saleLump='';
-    S.cashDate=null; S.cashJustId=null;
+    S.cashDate=null; S.cashJustId=null; S.cashAmt='';
     toast('入力をクリアしました');
     render();
   };
 
   var cnew=el.querySelector('#cnew'); if(cnew) cnew.onclick=function(){
-    S.cashEdit=null; cashImgDrop();
+    S.cashEdit=null; S.cashAmt=''; cashImgDrop();
     S.saleOn=false; S.saleClient=null; S.saleItems=null; S.saleQ=''; S.saleLump=''; render(); };
 
   /* ★ 合計は【描き直さずに】その場で動かす。描き直すと打ちかけの金額が消える */
@@ -9388,7 +9463,7 @@ function viewCash(el){
     /* ★ 写真はここで手放す。世代も進めて、送信中のものが次の取引へ入らないようにする */
     S.cashEdit=null; cashImgDrop();
     S.saleOn=false; S.saleClient=null; S.saleItems=null; S.saleQ=''; S.saleLump='';
-    S.cashJustId=rec.id; S.cashDate=d;
+    S.cashJustId=rec.id; S.cashDate=d; S.cashAmt='';
     /* ★ 入れたら すぐ辞書へ戻す。入ったことは【入力の枠のすぐ下】の1行で知らせる */
     S.cashJust={ d:String(d).slice(5).replace('-','/'), fd:String(d), t:(memo||'（内容なし）'), a:amt,
                  mv:(moved?bkeyLabel(tk):'') };
@@ -9655,7 +9730,7 @@ function viewCash(el){
     if(raw) openDataUrl(raw); }; });
   el.querySelectorAll('[data-ed]').forEach(function(b){ b.onclick=function(){
     var x=(DB.cash[bk]||[]).filter(function(y){return String(y.id)===b.dataset.ed;})[0];
-    if(x){ S.cashEdit=x; S.cashDir=x.dir; S.kindOpen=false; S.cashSide=x.dir;
+    if(x){ S.cashEdit=x; S.cashAmt=''; S.cashDir=x.dir; S.kindOpen=false; S.cashSide=x.dir;
       S.cashPane='in'; S.cashJust=null; S.cashJustShow=false;   /* 直すのは入力タブ */
       cashImgNewGen();                      /* 送信中のものを切り離してから入れ替える */
       /* ★ 直しても同じ写真は Drive で二重にしない（uid をそのまま持ち越す） */
@@ -11591,6 +11666,36 @@ boot();
 <style>
 /* ---- 売掛帳（倍率つき） ---- */
 .ar-wrap{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:auto;max-height:78vh}
+/* ★★★ 売掛帳を上から並べる（2026-10-27・丸京） */
+.arstack{display:flex;flex-direction:column;gap:18px}
+.arblk{border:2px solid var(--line);border-radius:14px;background:#FBF9F4;padding:10px 10px 8px}
+.arblk .ar-wrap{max-height:none}      /* 並べるときは、中で転がさない（ページが転がる） */
+.arblk-h{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 2px 8px}
+.arblk-h .abcode{color:var(--ai);font-weight:700;font-size:15px}
+.arblk-h .abname{font-size:19px}
+.arblk-h .abzan{margin-left:auto;font-size:16px;font-weight:700;color:#c9c2b2}
+.arblk-h .abzan.pos{color:#7A2E3F}
+.arblk-h .abzan.neg{color:var(--ice)}
+.arblk-h .abopen{flex:0 0 auto}
+/* 回収を入れる1行 */
+.arpay{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  margin:9px 2px 2px;padding:10px 11px;border-radius:11px;
+  border:2px solid var(--gold);background:#FFFDF5}
+.arpay .apl{font-weight:700;color:#8a6d3b;font-size:15px}
+.arpay .apd{font-size:17px;padding:8px 9px}
+.arpay .apa{width:150px;font-size:23px;font-weight:700;text-align:right;padding:8px 11px}
+.arpay .apm{font-size:16px;padding:9px 8px}
+.arpay .apok{padding:11px 20px;font-size:16px}
+.arpay .aphint{font-size:12px;flex:1 1 100%}
+@media(max-width:560px){
+  .arblk{padding:8px 7px 7px}
+  .arblk-h .abname{font-size:17px}
+  .arpay{gap:7px;padding:8px}
+  .arpay .apd{flex:1 1 44%;min-width:0;width:auto}
+  .arpay .apa{flex:1 1 44%;width:auto;min-width:0;font-size:21px}
+  .arpay .apm{flex:1 1 55%;min-width:0}
+  .arpay .apok{flex:1 1 40%}
+}
 .ar-t{border-collapse:separate;border-spacing:0;background:#fff}
 .ar-t th,.ar-t td{border-right:1px solid #D9D2C4;border-bottom:1px solid #E7E1D5;white-space:nowrap}
 .ar-t thead th{position:sticky;top:0;z-index:3;background:var(--ai);color:#fff;font-weight:700;
@@ -11968,7 +12073,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-10-22a 消したものがサーバにも残らない（はじめの1回で読んだぶんの控え）／売掛の現金回収を消すと消込も必ず消える＝「何月分」にその月が戻る／迷子の消込は入金帳で消せる';
+var APP_BUILD='2026-10-27a 小口現金は【出納帳を見ながら入れる】1タブに（上に出納帳／下は 入金出金→日付→金額→取引の種類。写真は任意）／売掛帳を上から並べて そこから回収を入れる（現金は出納帳と同じ1件・古い月分から充当・二重計上の止め金つき）';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -12002,6 +12107,75 @@ function arHit_(p, kind, amt){
            method:String(p.method||''), memo:String(p.memo||''),
            kitte:String(p.kitte||''), 'for':String(p['for']||'') };
 }
+
+/* ============================================================
+   ★★★ 売掛帳から回収を入れる（2026-10-27・丸京）
+
+   「売掛帳で記入した場合には、同時に現金出納帳に売掛の現金回収が記録され、
+     現金出納帳に記録されたら売掛帳にも記録されるように、相互で連携して。
+     そうすると、二重計上にならない。システム的にもならないようにしてね。同一日付で。」
+
+   ★ 二重計上が起きない作りは2段構え
+     ① **現金の回収は、売掛帳と出納帳に【同じ id で1件】しか作らない。**
+        どちらから入れても `payments:<店>` と `cashbook:<月>` が同じ id の対になる。
+        数えるものが1つなので、そもそも二重になりようがない
+     ② それでも人は同じものを2回入れる。**同じ取引先・同じ日・同じ金額・同じ方法**が
+        すでにあったら、入れずに知らせる（`arPayDup_`）
+
+   ★ 現金以外（振込・口座振替・相殺・値引き…）は **売掛帳だけ**。
+     現金は1円も動いていないので、出納帳に入れてはいけない。
+   ★ 「何月分」は付けない ＝ **古い月分から順に充当**（`arLedger` の FIFO）。
+     一部だけ回収（1万円など）でも、古いものから自然に埋まる。
+   ============================================================ */
+function arPayDup_(cid, d, amt, method, skipId){
+  var sk=skipId?String(skipId):'';
+  return (DB.pay['payments:'+cid]||[]).filter(function(p){
+    if(sk && String(p.id)===sk) return false;
+    return String(p.date)===String(d)
+        && Math.round(Number(p.amount)||0)===Math.round(amt)
+        && String(p.method||'')===String(method);
+  })[0] || null;
+}
+async function arPayAdd(c, d, amt, method){
+  if(!c) return false;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(d||''))){ alert('回収日を入れてください。'); return false; }
+  amt=Math.round(Number(amt)||0);
+  if(!(amt>0)){ alert('金額を入れてください。'); return false; }
+  if(arPayDup_(c.id, d, amt, method)){
+    alert('もう入っています。\n\n'+c.name+'　'+String(d).slice(5).replace('-','/')+'　'+
+          yen(amt)+'（'+method+'）\n\n'+
+          '同じ取引先・同じ日・同じ金額・同じ方法の回収は、二重計上になるので入れません。\n'+
+          'ちがう回収なら、金額か日付を見直してください。');
+    return false;
+  }
+  var isCash = (method==='現金');
+  /* ★ 現金のときは、その月の出納帳を読んでから書く。
+       読まずに書くと、その月を開いたときの姿とずれる */
+  if(isCash){
+    var bk=bkeyOf(d);
+    if(!(bk in DB.cash)){
+      try{ var g=await storage.getMany([bk]); DB.cash[bk]=jparse(g[bk],[])||[]; }
+      catch(e){ alert('その月の小口現金を読めませんでした。少し待ってからもう一度ためしてください。'); return false; }
+    }
+  }
+  var pk='payments:'+c.id, id=Date.now();
+  var rec={id:id, date:d, amount:amt, method:method, memo:'', 'for':''};
+  if(isCash) rec.fromCash=true;
+  DB.pay[pk]=(DB.pay[pk]||[]).concat([rec]);
+  if(isCash){
+    cashPut({id:id, date:d, dir:'in', account:'', amount:amt, kind:'ar',
+             party:c.name, memo:'売掛の現金回収　'+c.name, sale:null,
+             arPay:{cid:c.id, code:c.code, name:c.name, 'for':''},
+             imgUrl:null, imgPend:null, img:null, imgType:null, pics:null},
+            null, bkeyOf(d));
+  }
+  clearCaches();
+  cashSaveAsync(pk, JSON.stringify(DB.pay[pk]));
+  return true;
+}
+/** 売掛帳で選べる回収の方法。**現金だけが小口現金の出納帳とつながる** */
+var AR_METHODS=['現金','振込（当座）','振込（普通）','振込','口座振替','相殺',
+                '値引き','貸倒れ','振込手数料'];
 function arLedger(c, fy){
   var cols=fyCols(fy);
   var bill=(arBilledFy(fy)[c.id]||zero12());
@@ -12187,6 +12361,8 @@ function periodStartOf(c,col){
    4. 売掛帳タブ
    ============================================================ */
 S.arFy=null; S.arClient=null; S.arWide=true; S.arQ=''; S.arShime=0; S.arOnly=false;
+S.arShow=0;      /* 並べて出している店の数（2026-10-27。0 なら AR_PAGE 店） */
+S.arJust=null;   /* いま回収を入れた店 */
 S.arScale=1.5;
 
 function arNeed(fy){
@@ -12200,6 +12376,9 @@ function arLoad(fy){ return Promise.all([ensureLedger(fy), ensureMonths(arNeed(f
 function viewAr(el){
   if(S.arFy==null) S.arFy=fyOf(S.date);
   var fy=S.arFy;
+  /* ★ 現金で回収を入れると小口現金の出納帳にも書くので、
+       この期ぶんをうしろで読んでおく（`cashWarm` は1回きり・1往復） */
+  try{ cashWarm(); }catch(e){}
   if(!arReady(fy)){
     el.innerHTML='<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
     arLoad(fy).then(render); return;
@@ -12208,7 +12387,49 @@ function viewAr(el){
   if(S.arClient) arDetail(el,fy); else arList(el,fy);
 }
 
-/* ---------- 一覧（文字を大きく） ---------- */
+/* ---------- ★★★ 売掛帳を【上から並べる】（2026-10-27・丸京） ----------
+
+   「現在はある取引先をクリックして選ぶとその取引先の売掛帳がでてくるように
+     なっているが、上から売掛帳をもう並べてほしい。そこに売掛の回収については
+     いつどこにどういう方法で回収したのかを入れていってもらう。」
+
+   店をひとつ選んで開く → 戻る → 次の店、の往復をやめる。
+   **上から順に売掛帳が並んでいて、その下の1行で回収を入れていく。**
+
+   ★ 一度に全部（253店）は描かない。1画面ぶんずつ（`AR_PAGE` 店）出して、
+     ［さらに出す］で足す。全部描くと表が3,000行を超えて、電話では動かない。
+   ★ 1店だけ大きく見たい・刷りたいときは、見出しの［1店だけ開く］（今までの画面）。
+   -------------------------------------------------------------------- */
+var AR_PAGE=15;
+
+/** 1店ぶんの かたまり（見出し ＋ 売掛帳 ＋ 回収を入れる1行） */
+function arBlockHtml(c,L,fy){
+  var bal=L.bal;
+  return '<div class="arblk" data-arcid="'+esc(c.id)+'" data-s="'+esc(searchKey(c))+'">'+
+    '<div class="arblk-h">'+
+      '<span class="num abcode">'+fmtCode(c.code)+'</span>'+
+      '<b class="abname">'+esc(c.name)+'</b>'+
+      '<span class="pill tag-slip">'+SHIME_LABEL[c.shime]+'</span>'+
+      '<span class="abzan num'+(bal>0?' pos':(bal<0?' neg':''))+'">残高 '+
+        (bal<0?'△':'')+yen(Math.abs(bal))+'</span>'+
+      '<button class="btn ghost tap sm abopen" data-aopn="'+esc(c.id)+'">1店だけ開く（印刷）</button>'+
+    '</div>'+
+    arDetailHtml(c,L,fy)+
+    /* ★★★ ここに回収を入れていく。何月分は選ばせない＝【古い月分から順に当たる】 */
+    '<div class="arpay">'+
+      '<span class="apl">回収を入れる</span>'+
+      '<input type="date" class="cash-date apd" data-apd="'+esc(c.id)+'" value="'+esc(ymd(new Date()))+'">'+
+      '<input class="num apa" inputmode="numeric" placeholder="金額" data-apa="'+esc(c.id)+'">'+
+      '<select class="apm" data-apm="'+esc(c.id)+'">'+
+        AR_METHODS.map(function(x){ return '<option>'+esc(x)+'</option>'; }).join('')+
+      '</select>'+
+      '<button class="btn tap apok" data-apok="'+esc(c.id)+'">記録する</button>'+
+      '<span class="aphint muted">古い月分から順に当たります。'+
+        '<b>現金</b>で入れると、小口現金の出納帳にも同じ1件が入ります</span>'+
+    '</div>'+
+  '</div>';
+}
+
 function arList(el,fy){
   var rows=arSummary(fy).filter(function(x){
     if(S.arShime && x.c.shime!==S.arShime) return false;
@@ -12220,12 +12441,13 @@ function arList(el,fy){
   rows.forEach(function(x){ tOpen+=x.open; tBill+=x.billed; tCash+=x.cash; tBank+=x.bank; tDisc+=x.disc;
     tDisc2+=x.discOnly||0; tBad+=x.bad||0;
     if(x.bal>0){ tBal+=x.bal; nBal++; } });
-  /* ★ 横スクロールを出さないための幅。合計が下の min-width と合うようにしてあります */
-  var C='58px minmax(84px,1.2fr) 38px 84px 92px 80px 80px 84px 104px 58px 50px';
+
+  var show=Math.min(rows.length, S.arShow||AR_PAGE);
+  var shown=rows.slice(0,show);
 
   el.innerHTML=
   '<div class="row" style="justify-content:space-between;margin-bottom:8px">'+
-    '<div class="mincho" style="font-size:21px">売掛帳（取引先別）</div>'+
+    '<div class="mincho" style="font-size:21px">売掛帳</div>'+
     '<div class="row">'+
       '<button class="btn ghost tap sm" id="aPrev">‹ '+fyLabel(fy-1)+'</button>'+
       '<b style="font-size:17px;color:var(--ai)">'+fyLabel(fy)+'</b>'+
@@ -12234,9 +12456,12 @@ function arList(el,fy){
     '</div>'+
   '</div>'+
   '<p class="muted" style="margin:0 0 12px;font-size:13px">'+fyRange(fy)+'。金額はすべて<b>税込</b>です。'+
-    '<b>前期繰越</b>＝期首（1月末）の売掛残高。<b>発生</b>＝その月分の請求額（注文入力または売上台帳の手入力）。'+
-    '現金の回収は「小口現金（売掛の現金回収、現金売上はここ）」、振込は「売掛の振込回収」タブで入れた分が出ます。'+
-    '<b>現金売上は売掛が立たないので出ません。</b></p>'+
+    '<b>売掛帳が上から順に並びます。</b>その下の1行で、'+
+    '<b>いつ・いくら・どういう方法で</b>回収したかを入れてください。'+
+    '<b>何月分かは選びません</b> ── 古い月分から順に当たります'+
+    '（一部だけの回収でも、そのぶんだけ古い月から埋まります）。'+
+    '<b style="color:#7a5c19">現金</b>で入れると、<b>小口現金の出納帳にも同じ1件</b>が入ります'+
+    '（逆に出納帳で入れた現金回収も、ここに出ます）。</p>'+
 
   '<div class="ar-sum">'+
     '<div class="ar-box"><div class="k">前期繰越（期首）</div><div class="v num">'+yen(tOpen)+'</div></div>'+
@@ -12254,64 +12479,104 @@ function arList(el,fy){
     '<label class="row" style="gap:5px;font-size:15px;color:var(--ai);font-weight:700;margin-left:6px">'+
       '<input type="checkbox" id="aonly" '+(S.arOnly?'checked':'')+' style="width:20px;height:20px;padding:0">残高のある店だけ</label>'+
     '<input id="aq" value="'+esc(S.arQ)+'" placeholder="コード・店名・よみ で検索" style="flex:1;min-width:220px;font-size:17px;padding:11px 12px">'+
-    '<span class="muted" style="font-size:14px">'+rows.length+'店</span>'+
+    '<span class="lbl" style="margin:0">大きさ</span>'+
+    [[1,'100%'],[1.25,'125%'],[1.5,'150%']].map(function(x){
+      return '<button class="chip tap '+(arZ()===x[0]?'on':'')+'" data-az="'+x[0]+'">'+x[1]+'</button>'; }).join('')+
+    '<span class="muted" style="font-size:14px">'+show+' / '+rows.length+'店</span>'+
   '</div>'+
 
-  '<div class="gridwrap arl"><div class="gscroll"><div style="min-width:812px">'+
-    '<div class="ghead" style="grid-template-columns:'+C+'">'+
-      '<span>コード</span><span>取引先</span><span class="c">締め</span>'+
-      '<span class="r">前期繰越<br><span style="font-weight:400;font-size:10px">直せます</span></span>'+
-      '<span class="r">当期の<br>発生</span><span class="r">現金<br>回収</span><span class="r">振込<br>回収</span>'+
-      '<span class="r">値引き・貸倒れ<br>振込手数料</span>'+
-      '<span class="r" style="padding-right:8px">残高</span><span class="r">最終<br>入金</span><span class="c">売掛帳</span></div>'+
-    '<div class="gbody" id="abody">'+
-      (rows.length?rows.map(function(x){
-        return '<div class="grow" data-s="'+esc(searchKey(x.c))+'" style="grid-template-columns:'+C+'">'+
-          '<span class="num" style="color:var(--ai);font-weight:700">'+fmtCode(x.c.code)+'</span>'+
-          '<span class="nm" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.c.name)+'</span>'+
-          '<span class="c muted" style="font-size:10.5px">'+SHIME_LABEL[x.c.shime]+'</span>'+
-          '<span class="r">'+(x.openBreak
-            ? '<button class="btn ghost tap sm num" data-aopn="'+x.c.id+'" '+
-              'title="発生月ごとの内訳が入っています。開いて直してください" '+
-              'style="padding:3px 7px;font-size:12.5px">'+yen(x.open)+' ▸</button>'
-            : '<input class="num ar-open-in" data-aopen="'+x.c.id+'" inputmode="numeric" '+
-              'value="'+(x.open||'')+'" placeholder="0" style="width:72px;padding:4px 5px;font-size:13px">')+'</span>'+
-          '<span class="r num">'+(x.billed?yen(x.billed):'—')+'</span>'+
-          '<span class="r num" style="color:#7a5c19">'+(x.cash?yen(x.cash):'—')+'</span>'+
-          '<span class="r num" style="color:var(--ai)">'+(x.bank?yen(x.bank):'—')+'</span>'+
-          '<span class="r num" style="color:#6B5B95">'+(x.disc?yen(x.disc):'—')+'</span>'+
-          '<span class="r num" style="font-size:15.5px;font-weight:700;padding-right:8px;color:'+
-            (x.bal>0?'#7A2E3F':x.bal<0?'var(--ice)':'#c9c2b2')+'">'+
-            (x.bal<0?'△':'')+(x.bal?yen(Math.abs(x.bal)):'—')+'</span>'+
-          '<span class="r num muted" style="font-size:11.5px">'+esc(x.last?x.last.slice(5).replace('-','/'):'—')+'</span>'+
-          '<span class="c"><button class="btn ghost tap sm" data-aopn="'+x.c.id+'" '+
-            'style="padding:4px 8px;font-size:12px">開く</button></span>'+
-        '</div>';
-      }).join(''):'<div style="padding:24px;text-align:center;color:#999">該当なし</div>')+
-      '<div class="empty" style="padding:24px;text-align:center;color:#999;display:none">該当なし</div>'+
-    '</div></div></div></div>'+
-  '<p class="muted" style="margin:10px 0 0;font-size:13px">「前期繰越」の欄はその場で直せます（期首の売掛残高）。'+
-    '<b>発生月ごとの内訳</b>を入れている店は金額のボタンになります。押すとその店の売掛帳が開いて、月ごとに直せます。'+
-    'まとめて入れ直すときは、点検タブの「はじめの取り込み」を使ってください。</p>';
+  '<div id="abody" class="arstack">'+
+    (shown.length
+      ? shown.map(function(x){ return arBlockHtml(x.c, x.L, fy); }).join('')
+      : '')+
+    '<div class="empty" style="padding:24px;text-align:center;color:#999'+
+      (shown.length?';display:none':'')+'">該当なし</div>'+
+  '</div>'+
+  (rows.length>show
+    ? '<button class="btn ghost tap" id="aMore" style="width:100%;margin-top:12px;font-size:17px;padding:14px">'+
+      'さらに '+Math.min(AR_PAGE, rows.length-show)+'店 を出す（のこり '+(rows.length-show)+'店）</button>'
+    : '')+
+  '<p class="muted" style="margin:10px 0 0;font-size:13px">'+
+    '<b>1行＝回収1件。</b>手書きの売掛帳と同じ並びです。売上金額はその月のいちばん上の行にだけ出ます。'+
+    '回収がまだ無い月も1行出るので、<b>滞留がそのまま見えます</b>。'+
+    '<b>小切手はとりあえず「現金」で入れて</b>、当座に入った日は表の欄に書いてください。'+
+    '前期繰越（期首）の内訳を直すときは［1店だけ開く］から。</p>';
 
-  el.querySelector('#aPrev').onclick=function(){ S.arFy=fy-1; render(); };
-  el.querySelector('#aNext').onclick=function(){ S.arFy=fy+1; render(); };
+  el.querySelector('#aPrev').onclick=function(){ S.arFy=fy-1; S.arShow=AR_PAGE; render(); };
+  el.querySelector('#aNext').onclick=function(){ S.arFy=fy+1; S.arShow=AR_PAGE; render(); };
   el.querySelector('#aSheet').onclick=function(){ arToSheet(fy); };
-  el.querySelectorAll('[data-as]').forEach(function(b){ b.onclick=function(){ S.arShime=+b.dataset.as; render(); }; });
-  el.querySelector('#aonly').onchange=function(e){ S.arOnly=e.target.checked; render(); };
+  el.querySelectorAll('[data-as]').forEach(function(b){ b.onclick=function(){
+    S.arShime=+b.dataset.as; S.arShow=AR_PAGE; render(); }; });
+  el.querySelectorAll('[data-az]').forEach(function(b){ b.onclick=function(){
+    S.arScale=+b.dataset.az; render(); }; });
+  el.querySelector('#aonly').onchange=function(e){ S.arOnly=e.target.checked; S.arShow=AR_PAGE; render(); };
+  var am=el.querySelector('#aMore');
+  if(am) am.onclick=function(){ S.arShow=show+AR_PAGE; render(); };
   var q=el.querySelector('#aq'), body=el.querySelector('#abody');
   q.oninput=function(){ S.arQ=q.value; filterRows(body,S.arQ); };
   if(S.arQ.trim()) filterRows(body,S.arQ);
   el.querySelectorAll('[data-aopn]').forEach(function(b){
     b.onclick=function(){ S.arClient=b.dataset.aopn; window.scrollTo({top:0}); render(); }; });
-  el.querySelectorAll('[data-aopen]').forEach(function(inp){
-    inp.onfocus=function(){ inp.select(); };
-    inp.onchange=async function(){
-      var n=Math.max(0,parseInt(String(inp.value).replace(/[^0-9]/g,''),10)||0);
-      DB.arOpen[fy]=DB.arOpen[fy]||{};
-      if(n) DB.arOpen[fy][inp.dataset.aopen]=n; else delete DB.arOpen[fy][inp.dataset.aopen];
-      await saveArOpen(fy);
-      toast('前期繰越を直しました'); render();
+  arBindPay(el,fy);
+  arBindNote(el);
+}
+
+/** ★★★ 回収を入れる1行（売掛帳の下）。現金なら出納帳にも同じ1件が入る */
+function arBindPay(el,fy){
+  el.querySelectorAll('[data-apok]').forEach(function(b){
+    b.onclick=async function(){
+      var cid=b.dataset.apok, c=clientById(cid);
+      if(!c) return;
+      var blk=b.closest('.arblk');
+      var d=(blk.querySelector('[data-apd]')||{}).value||'';
+      var av=(blk.querySelector('[data-apa]')||{}).value||'';
+      var mt=(blk.querySelector('[data-apm]')||{}).value||'現金';
+      var amt=parseInt(String(av).replace(/[^0-9]/g,''),10)||0;
+      b.disabled=true;
+      var ok=false;
+      try{ ok=await arPayAdd(c, d, amt, mt); }finally{ b.disabled=false; }
+      if(!ok) return;
+      toast(c.name+'　'+yen(amt)+'（'+mt+'）を入れました'+
+        (mt==='現金'?'　→ 小口現金の出納帳にも入りました':''));
+      /* 入れたあと、その店の売掛帳がすぐ上で積み上がるのが見える */
+      S.arJust=cid;
+      render();
+      setTimeout(function(){
+        var t=document.querySelector('.arblk[data-arcid="'+cid+'"]');
+        if(t && t.scrollIntoView) try{ t.scrollIntoView({block:'center'}); }catch(e){}
+      },40);
+    };
+  });
+  /* 金額の欄で Enter → そのまま記録する */
+  el.querySelectorAll('[data-apa]').forEach(function(q){
+    q.onkeydown=function(e){
+      if(e.key!=='Enter') return;
+      e.preventDefault();
+      var blk=q.closest('.arblk'), ok=blk&&blk.querySelector('[data-apok]');
+      if(ok) ok.click();
+    };
+  });
+}
+
+/** 小切手が当座に入った日／メモ を、その場で書く（1店の画面と並べた画面で共用） */
+function arBindNote(el){
+  el.querySelectorAll('.arin').forEach(function(q){
+    q.onchange=function(){
+      var pid=q.dataset.arp, key=q.dataset.ark;
+      if(!pid) return;
+      /* ★ 並べた画面では、どの店の行かを かたまり（.arblk）から引く */
+      var blk=q.closest('.arblk');
+      var cid=blk ? blk.dataset.arcid : S.arClient;
+      if(!cid) return;
+      var pk='payments:'+cid, list=DB.pay[pk]||[];
+      var x=list.filter(function(z){ return String(z.id)===String(pid); })[0];
+      if(!x) return;
+      var v=String(q.value||'').trim();
+      if(String(x[key]||'')===v) return;          /* 変わっていなければ何もしない */
+      x[key]=v;
+      cashSaveAsync(pk, JSON.stringify(list));
+      toast(key==='kitte'?'小切手が当座に入った日を入れました':'メモを入れました');
+      render();
     };
   });
 }
@@ -12502,7 +12767,7 @@ function arDetail(el,fy){
 
   el.innerHTML=
   '<div class="row" style="margin-bottom:8px">'+
-    '<button class="btn ghost tap" id="aBack">‹ 取引先の一覧</button>'+
+    '<button class="btn ghost tap" id="aBack">‹ 売掛帳をぜんぶ見る</button>'+
     '<div class="iv-jump"><input id="aj" placeholder="ほかの取引先へ（コード・店名・よみ）" autocomplete="off" style="width:100%;font-size:16px">'+
       '<div id="ajs" class="sug" style="position:absolute;left:0;right:0;top:100%;z-index:9"></div></div>'+
     '<span class="lbl" style="margin:0">大きさ</span>'+
@@ -12538,7 +12803,20 @@ function arDetail(el,fy){
   '</div>'+
 
   arOpenEditorHtml(c,L,fy)+
-  arDetailHtml(c,L,fy)+
+  '<div class="arblk" data-arcid="'+esc(c.id)+'">'+
+    arDetailHtml(c,L,fy)+
+    '<div class="arpay">'+
+      '<span class="apl">回収を入れる</span>'+
+      '<input type="date" class="cash-date apd" data-apd="'+esc(c.id)+'" value="'+esc(ymd(new Date()))+'">'+
+      '<input class="num apa" inputmode="numeric" placeholder="金額" data-apa="'+esc(c.id)+'">'+
+      '<select class="apm" data-apm="'+esc(c.id)+'">'+
+        AR_METHODS.map(function(x){ return '<option>'+esc(x)+'</option>'; }).join('')+
+      '</select>'+
+      '<button class="btn tap apok" data-apok="'+esc(c.id)+'">記録する</button>'+
+      '<span class="aphint muted">古い月分から順に当たります。'+
+        '<b>現金</b>で入れると、小口現金の出納帳にも同じ1件が入ります</span>'+
+    '</div>'+
+  '</div>'+
   '<p class="muted" style="margin:10px 0 0;font-size:13px">'+
     '<b>1行＝回収1件。</b>手書きの売掛帳と同じ並びです。売上金額はその月のいちばん上の行にだけ出ます。'+
     '1回の入金が古い月から順に当たって分かれたときは、分かれたぶんずつ行になります。'+
@@ -12554,6 +12832,8 @@ function arDetail(el,fy){
     '<span class="num">売掛残高 '+(L.bal<0?'△':'')+yen(Math.abs(L.bal))+'</span></div>';
 
   el.querySelector('#aBack').onclick=function(){ S.arClient=null; window.scrollTo({top:0}); render(); };
+  /* 1店の画面でも、回収はその場で入れられる */
+  arBindPay(el,fy);
   el.querySelectorAll('[data-az]').forEach(function(b){ b.onclick=function(){ S.arScale=+b.dataset.az; render(); }; });
   el.querySelector('#aPrint').onclick=function(){ arPrint(c,L,fy); };
 
@@ -12561,21 +12841,8 @@ function arDetail(el,fy){
        書き込み先は入金の1件（`payments:<店>`）。**売掛の残高は1円も動かない**。
        打ちおわって枠から離れたときだけ保存する（1文字ごとには送らない）。
        同じ入金が2行に割れているときは、どちらに書いても同じ1件に入る */
-  el.querySelectorAll('.arin').forEach(function(q){
-    q.onchange=function(){
-      var pid=q.dataset.arp, key=q.dataset.ark;
-      if(!pid) return;
-      var pk='payments:'+c.id, list=DB.pay[pk]||[];
-      var x=list.filter(function(z){ return String(z.id)===String(pid); })[0];
-      if(!x) return;
-      var v=String(q.value||'').trim();
-      if(String(x[key]||'')===v) return;          /* 変わっていなければ何もしない */
-      x[key]=v;
-      cashSaveAsync(pk, JSON.stringify(list));
-      toast(key==='kitte'?'小切手が当座に入った日を入れました':'メモを入れました');
-      render();
-    };
-  });
+  /* ★ 並べた画面と同じものを使う（`arBindNote`）。**片方だけ直さない** */
+  arBindNote(el);
   wireArOpenEditor(el,c,fy);
   var aj=el.querySelector('#aj'), ajs=el.querySelector('#ajs');
   function sug(){
@@ -12800,6 +13067,17 @@ function arcSave(el,m){
        id を変えると、伝票チェックの ✓（jmap）も写真の預かりも迷子になる */
   var ed=S.arcEdit?String(S.arcEdit):'';
   var edBk=S.arcEditBk||'', edPk=S.arcEditPk||'';
+  /* ★★★ 二重計上を【機械で】止める（2026-10-27・丸京）。
+       売掛帳からも出納帳からも入れられるようになったので、
+       同じ取引先・同じ日・同じ金額・同じ方法がもうあれば入れない。
+       直している1件は数に入れない */
+  if(arPayDup_(c.id, d, amt, '現金', ed)){
+    alert('もう入っています。\n\n'+c.name+'　'+String(d).slice(5).replace('-','/')+'　'+
+          yen(amt)+'（現金）\n\n'+
+          '同じ取引先・同じ日・同じ金額の現金回収は、二重計上になるので入れません。\n'+
+          '売掛帳からも入れられるので、そちらで入れていないか見てください。');
+    return;
+  }
   var id=ed?Number(ed):Date.now();
   /* ★ 受領書の写真も一緒に残す（2026-09-21）。
        領収書はこちらが渡すもので、もらってくるのは【受領書】。
