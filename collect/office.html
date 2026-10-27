@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793065260;</script>
+<script>window.__PAGE_VER=1793067912;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1703,7 +1703,7 @@
       <div class="sdrow"><button type="button" class="primary" id="sdBoxSave">この顧問先の箱にする</button><button type="button" id="sdBoxDef" title="箱を決めていない顧問先 全部に効きます">この内容を 事務所の標準にする</button><span class="pagemsg" id="sdBoxMsg" role="status"></span></div>
       <p class="note">いまの事務所の標準：<span id="sdBoxDefNow"></span></p>
     </details>
-    <p class="note" id="lnRow" hidden>💬 公式LINE：この顧問先で つないでいる人 <b id="lnN">0</b>人　<button type="button" id="lnOff">つながりを外す</button>　<small>（顧問先が［💬公式LINEへ］から送る「連携コード」でつながります。LINE で届いた写真は「その他」の箱に入ります）</small></p>
+    <p class="note" id="lnRow" hidden>💬 公式LINE：この顧問先で つないでいる人 <b id="lnN">0</b>人　<button type="button" id="lnOff">つながりを外す</button>　<small>（顧問先が［💬公式LINEへ］から送る「連携コード」でつながります。LINE で届いた写真は「公式LINEから」の箱に入ります）</small></p>
     <details class="sdbox" id="sdSignD"><summary>✍ 承認（電子サイン）の記録</summary>
       <p class="note">送付物の書類を長押し（右クリック）→［✍ 承認をお願いする］。顧問先は 書類を開いて確かめ、お名前と 登録メールに届く確認コード（二段階の本人確認）で承認します。承認すると 承認証明書（PDF）が 書類と同じところにでき、顧問先と事務所に 控えのメールが届きます。記録は 書き替えられない形（ハッシュの鎖）で シート「承認ログ」に残ります。</p>
       <div class="sdrow"><button type="button" id="sgVerify">🔗 承認ログを 確かめる（書き替え・差し替えが無いか）</button><span class="pagemsg" id="sgMsg" role="status"></span></div>
@@ -3320,10 +3320,14 @@
       }
       sec.appendChild(hd);
       const pers = [];
-      inBox.forEach(function (x) { if (pers.indexOf(x.period) < 0) pers.push(x.period); });
+      /* ★ 公式LINEから の箱は 何年何月分に分けない（2026-10-27）。1つの並びにまとめる */
+      const noPer = bx === LINE_BOX;
+      const pOf = function (x) { return noPer ? '' : x.period; };
+      inBox.forEach(function (x) { if (pers.indexOf(pOf(x)) < 0) pers.push(pOf(x)); });
       /* ★ 箱 › 年分 › 月分（2026-10-07）。はじめは いちばん新しい年分が開いている */
       const ywrap = {};
-      pers.map(function (p) { return String(p || '').slice(0, 4) || '----'; }).filter(function (y, i, a) { return a.indexOf(y) === i; }).forEach(function (y, yi) {
+      if (noPer) ywrap['----'] = sec;
+      else pers.map(function (p) { return String(p || '').slice(0, 4) || '----'; }).filter(function (y, i, a) { return a.indexOf(y) === i; }).forEach(function (y, yi) {
         const yItems = inBox.filter(function (x) { return (String(x.period || '').slice(0, 4) || '----') === y; });
         const yKey = bx + '|y' + y;
         const yOpen = yKey in DOPEN ? DOPEN[yKey] : (S.per ? true : yi === 0);
@@ -3339,7 +3343,7 @@
         ywrap[y] = yk;
       });
       pers.forEach(function (p, pi) {
-        const items = inBox.filter(function (x) { return x.period === p; });
+        const items = inBox.filter(function (x) { return pOf(x) === p; });
         const key = bx + '|' + p;
         const yk = ywrap[String(p || '').slice(0, 4) || '----'];
         const open = key in DOPEN ? DOPEN[key] : (S.per ? true : pi === 0);
@@ -3347,7 +3351,7 @@
         const row = el('div', 'dmon-hd');
         const tg = el('button', 'dmon-h'); tg.type = 'button'; tg.setAttribute('aria-expanded', String(open));
         tg.innerHTML = D_ICON_S;
-        tg.appendChild(el('b', null, perLabel(p)));
+        tg.appendChild(el('b', null, noPer ? '届いたもの（年月の区切りなし）' : perLabel(p)));
         tg.appendChild(el('span', 'dmon-c', dMonCount(items)));
         tg.appendChild(el('span', 'chev', '▾'));
         tg.addEventListener('click', function () { DOPEN[key] = !open; docsDraw(); });
@@ -3612,6 +3616,7 @@
   $('ogCancel').addEventListener('click', function () { $('ogv').hidden = true; });
 
 
+  const LINE_BOX = '公式LINEから';   /* Code.js の LINE_BOX と同じ名前 */
   /* ★★ 公式LINE から届いたら 担当者に知らせる（2026-10-27）
        事務所の画面を開いているあいだ（裏に回っていても）1分おきに聞き、届いていれば ポップ通知・アイコンの数・画面の中の知らせ。
        閉じているあいだは いつもの「新しい提出」のメール。担当者が自分の顧問先だけ（担当者が空の顧問先は みんなに） */
@@ -3633,7 +3638,7 @@
       LN.since = r.t || LN.since; lsSet(LS_LNSINCE, String(LN.since));
       (r.items || []).forEach(function (x) {
         LN.n += x.n;
-        const text = x.name + ' 様から LINE で ' + x.n + '件 届きました（その他の箱）';
+        const text = x.name + ' 様から LINE で ' + x.n + '件 届きました（' + LINE_BOX + '）';
         try {
           if (window.Notification && Notification.permission === 'granted') {
             const nt = new Notification('💬 公式LINE から届きました', { body: text, tag: 'line-' + x.code, icon: 'icon-192.png' });
