@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793050190;</script>
+<script>window.__PAGE_VER=1793052427;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1006,6 +1006,12 @@
   .sd .sdsum b { font-size: 15px; }
   .sd details.sdbox { margin: 8px 0; border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 6px 12px; }
   .sd details.sdbox summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
+  .sglist { display: grid; gap: 6px; margin: 8px 0; }
+  .sglist .sgi { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; border-top: 1px solid var(--line); padding: 6px 0; font-size: 13px; }
+  .sglist .sgi b { font-size: 14px; }
+  .sglist .sgt { border-radius: 8px; padding: 1px 8px; font-weight: 700; background: #eee; }
+  .sglist .sgt.ok { background: #DDF0E4; color: #1F6B3A; } .sglist .sgt.req { background: #FFF1CC; color: #7A5600; }
+  .sglist code { font-size: 11px; color: #666; }
   .sd #sdBoxes { width: 100%; min-height: 120px; font: inherit; font-size: 15px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; }
   .sdwrap { border-top: 1px solid var(--line); margin-top: 6px; }
   #sdFrame { display: block; width: 100%; height: calc(100vh - 150px); min-height: 520px; border: 0; background: #fff; }
@@ -1696,6 +1702,11 @@
       <textarea id="sdBoxes" spellcheck="false"></textarea>
       <div class="sdrow"><button type="button" class="primary" id="sdBoxSave">この顧問先の箱にする</button><button type="button" id="sdBoxDef" title="箱を決めていない顧問先 全部に効きます">この内容を 事務所の標準にする</button><span class="pagemsg" id="sdBoxMsg" role="status"></span></div>
       <p class="note">いまの事務所の標準：<span id="sdBoxDefNow"></span></p>
+    </details>
+    <details class="sdbox" id="sdSignD"><summary>✍ 承認（電子サイン）の記録</summary>
+      <p class="note">送付物の書類を長押し（右クリック）→［✍ 承認をお願いする］。顧問先は 書類を開いて確かめ、お名前と 登録メールに届く確認コード（二段階の本人確認）で承認します。承認すると 承認証明書（PDF）が 書類と同じところにでき、顧問先と事務所に 控えのメールが届きます。記録は 書き替えられない形（ハッシュの鎖）で シート「承認ログ」に残ります。</p>
+      <div class="sdrow"><button type="button" id="sgVerify">🔗 承認ログを 確かめる（書き替え・差し替えが無いか）</button><span class="pagemsg" id="sgMsg" role="status"></span></div>
+      <div id="sgList" class="sglist"></div>
     </details>
     <p class="pagemsg" id="sdMsg" role="status"></p>
   </div>
@@ -3614,7 +3625,7 @@
   function sdLoad(force) {
     const code = S.code, f = $('sdFrame');
     if (!code) { sdMsg('上で 顧問先を選んでください。'); f.hidden = true; return; }
-    sdMsg(''); sdSum();
+    sdMsg(''); sdSum(); $('sgList').textContent = ''; $('sgMsg').textContent = ''; sgLoad();
     gs('sendBoxesGet', code).then(function (r) {
       if (code !== S.code) return;
       if (document.activeElement !== $('sdBoxes')) $('sdBoxes').value = r.raw || '';
@@ -3631,6 +3642,40 @@
     }, function (e) { sdMsg('開けませんでした。' + e.message, true); });
   }
   $('sdReload').addEventListener('click', function () { sdLoad(true); });
+  /* ★ 電子サイン（承認）の記録（2026-10-26）。開いたときだけ読む */
+  function sgLoad() {
+    const code = S.code, w = $('sgList'); if (!code || !$('sdSignD').open) return;
+    w.textContent = '読んでいます…';
+    gs('signList', code).then(function (list) {
+      if (code !== S.code) return;
+      w.textContent = '';
+      if (!list.length) { w.textContent = 'この顧問先には まだ 承認のお願いがありません。'; return; }
+      list.forEach(function (r) {
+        const d = el('div', 'sgi');
+        d.appendChild(el('span', 'sgt' + (r.type === '承認' ? ' ok' : r.type === '承認依頼' ? ' req' : ''), r.type));
+        d.appendChild(el('b', null, r.name));
+        d.appendChild(el('span', null, String(r.at || '').replace('T', ' ').replace(/\+09:00$/, '')));
+        if (r.type === '承認') d.appendChild(el('span', null, r.signer + (r.role ? '（' + r.role + '）' : '')));
+        if (r.type !== '承認' && r.staff) d.appendChild(el('span', null, '担当 ' + r.staff));
+        if (r.note) d.appendChild(el('span', null, '「' + r.note + '」'));
+        d.appendChild(el('code', null, 'SHA-256 ' + String(r.hash || '').slice(0, 16) + '…'));
+        if (r.cert) { const b = el('button', null, '📄 承認証明書'); b.type = 'button';
+          b.addEventListener('click', function () { b.disabled = true; gs('signCertById', r.id).then(function (f) { b.disabled = false;
+            const a = el('a'); a.href = URL.createObjectURL(new Blob([b64bytes(f.b64)], { type: 'application/pdf' })); a.download = f.name || '承認証明書.pdf'; document.body.appendChild(a); a.click(); a.remove(); },
+            function (e) { b.disabled = false; $('sgMsg').textContent = e.message; }); });
+          d.appendChild(b); }
+        w.appendChild(d);
+      });
+    }, function (e) { w.textContent = e.message; });
+  }
+  $('sdSignD').addEventListener('toggle', sgLoad);
+  $('sgVerify').addEventListener('click', function () {
+    $('sgMsg').textContent = '確かめています…';
+    gs('signVerify').then(function (r) {
+      $('sgMsg').textContent = (r.ok ? r.n + '行。書き替えは見つかりませんでした（ハッシュの鎖が 最後までつながっています）。' : r.n + '行のうち ' + r.bad.length + '行が合いません：' + r.bad.slice(0, 5).map(function (b) { return b.row + '行目 ' + b.why; }).join('／')) +
+        (r.changed && r.changed.length ? '　★ 承認のあとで変わった書類：' + r.changed.map(function (c) { return c.name + '（' + c.why + '）'; }).join('／') : (r.n ? '　承認した書類は どれも 承認したときのままです。' : ''));
+    }, function (e) { $('sgMsg').textContent = e.message; });
+  });
   $('ogToSend').addEventListener('click', function () { selectTab('Send'); });
   $('sdOld').addEventListener('click', function () { $('ogOpen').click(); });
   function sdBoxSave(asDef) {
