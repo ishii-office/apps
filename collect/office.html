@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793067912;</script>
+<script>window.__PAGE_VER=1793070275;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1703,7 +1703,7 @@
       <div class="sdrow"><button type="button" class="primary" id="sdBoxSave">この顧問先の箱にする</button><button type="button" id="sdBoxDef" title="箱を決めていない顧問先 全部に効きます">この内容を 事務所の標準にする</button><span class="pagemsg" id="sdBoxMsg" role="status"></span></div>
       <p class="note">いまの事務所の標準：<span id="sdBoxDefNow"></span></p>
     </details>
-    <p class="note" id="lnRow" hidden>💬 公式LINE：この顧問先で つないでいる人 <b id="lnN">0</b>人　<button type="button" id="lnOff">つながりを外す</button>　<small>（顧問先が［💬公式LINEへ］から送る「連携コード」でつながります。LINE で届いた写真は「公式LINEから」の箱に入ります）</small></p>
+    <p class="note" id="lnRow" hidden>💬 公式LINE：この顧問先で つないでいる人 <b id="lnN">0</b>人　<button type="button" id="lnOff">つながりを外す</button>　<button type="button" id="lnMenu" title="公式LINE の下のメニュー（資料アプリ・写真を撮る・チャット）を作って、つないだ人にだけ出します">公式LINE のメニューを作る</button>　<small>（顧問先が［💬公式LINEへ］から送る「連携コード」でつながります。LINE で届いた写真は「公式LINEから」の箱に入ります）</small></p>
     <details class="sdbox" id="sdSignD"><summary>✍ 承認（電子サイン）の記録</summary>
       <p class="note">送付物の書類を長押し（右クリック）→［✍ 承認をお願いする］。顧問先は 書類を開いて確かめ、お名前と 登録メールに届く確認コード（二段階の本人確認）で承認します。承認すると 承認証明書（PDF）が 書類と同じところにでき、顧問先と事務所に 控えのメールが届きます。記録は 書き替えられない形（ハッシュの鎖）で シート「承認ログ」に残ります。</p>
       <div class="sdrow"><button type="button" id="sgVerify">🔗 承認ログを 確かめる（書き替え・差し替えが無いか）</button><span class="pagemsg" id="sgMsg" role="status"></span></div>
@@ -3720,8 +3720,13 @@
   $('sdSignD').addEventListener('toggle', sgLoad);
   function lnInfo() {
     const code = S.code; if (!code || LIVE) return;
-    gs('lineInfo', code).then(function (r) { if (code !== S.code) return; $('lnRow').hidden = !r.on; $('lnN').textContent = String(r.n || 0); $('lnOff').hidden = !r.n; }, function () {});
+    gs('lineInfo', code).then(function (r) { if (code !== S.code) return; $('lnRow').hidden = !r.on; $('lnN').textContent = String(r.n || 0); $('lnOff').hidden = !r.n; $('lnMenu').textContent = r.menu ? '公式LINE のメニューを作り直す' : '公式LINE のメニューを作る'; }, function () {});
   }
+  $('lnMenu').addEventListener('click', function () {
+    const b = $('lnMenu'); b.disabled = true; sdMsg('公式LINE のメニューを作っています…');
+    gs('lineMenuSetup').then(function (r) { b.disabled = false; b.textContent = '公式LINE のメニューを作り直す'; sdMsg('公式LINE のメニューを作りました。いま つないでいる ' + r.n + '人に出ています（これから つなぐ人にも 自動で出ます）。'); },
+      function (e) { b.disabled = false; sdMsg(e.message, true); });
+  });
   $('lnOff').addEventListener('click', function () {
     const code = S.code; if (!code || !confirm('この顧問先と 公式LINE のつながりを外します（LINE で送られた写真が アプリに入らなくなります。顧問先がもう一度「連携コード」を送れば つながります）。')) return;
     gs('lineUnlink', code).then(function (r) { if (code === S.code) { $('lnN').textContent = String(r.n || 0); $('lnOff').hidden = !r.n; } }, function (e) { sdMsg(e.message, true); });
