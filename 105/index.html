@@ -846,6 +846,17 @@ main{max-width:1180px;margin:0 auto;padding:16px 16px 90px}
     box-sizing:border-box;text-align:center}
   .amtday .dnote{display:block;text-align:center;padding-top:2px;white-space:nowrap}
   .amtday .dnote:empty{display:none}
+  /* ★★★ iPhone の日付欄は【中身の幅より縮まない】ので、枠から右へはみ出していた（2026-10-27・丸京）。
+       appearance を外すと width:100% が効く。外枠（dwrap）の線は重ねない */
+  .amtday .daycell,.amtday .dwrap{min-width:0}
+  .amtday .dwrap{border:none;background:transparent;padding:0}
+  .amtday .cash-date{min-height:53px}
+  .amtday{align-items:flex-end}
+}
+@media(max-width:560px){
+  .cash-date{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;
+    box-sizing:border-box;min-height:44px;background:#fff}
+  .cash-date::-webkit-date-and-time-value{text-align:center;margin:0}
 }
 
 /* 売掛の現金回収 … 電話では 取引先 → 回収日 → 金額 → 記録する を縦に積む（2026-09-21） */
@@ -5745,10 +5756,6 @@ function kindsDirty(){ _kindsCache=null; }
 /** 事務所が直した取引の種類を残す（触ったところだけ送る） */
 function saveKinds(){ kindsDirty(); listSave('kinds:master', DB.kinds||[], 'k'); }
 
-var CASH_PH_OUT=['ガソリン','高速代','駐車場代','消耗品','事務用品','掃除用品',
-  'お茶・お菓子','飲食代','切手・郵便','修理代','材料・仕入','新聞','電気代','水道代','電話代','会費',
-  '預金へ預け入れ'];
-var CASH_PH_IN=['預金から引き出し','売掛金を現金で回収','現金売上','社長から入金','つり銭の補充'];
 
 /* ============================================================
    ★★★ 出納帳は【同じ日のまとまり】で出す（2026-09-27・お重さん）
@@ -5866,19 +5873,6 @@ function cashBalanceAt(m,ds){
     bal += (x.dir==='in'? x.amount : -x.amount);
   });
   return bal;
-}
-function oftenPhrases(){
-  var cnt={};
-  Object.keys(DB.cash).forEach(function(k){
-    (DB.cash[k]||[]).forEach(function(x){
-      var t=String(x.memo||'').trim();
-      if(!t || t.length>12) return;
-      cnt[t]=(cnt[t]||0)+1;
-    });
-  });
-  var fixed=CASH_PH_OUT.concat(CASH_PH_IN);
-  return Object.keys(cnt).filter(function(t){ return cnt[t]>=2 && fixed.indexOf(t)<0; })
-    .sort(function(a,b){ return cnt[b]-cnt[a]; }).slice(0,6);
 }
 function dayGap(ds){
   if(!ds) return null;
@@ -6211,12 +6205,11 @@ function cashTyping(){
   var ms=document.querySelectorAll('.cmin');
   for(var j=0;j<ms.length;j++)
     if(String(ms[j].value||'').replace(/[^0-9]/g,'')) return true;
-  /* ★ 売掛帳の「回収を入れる」の金額（2026-10-27）。
+  /* ★ 売掛帳のマスを打っている最中（2026-10-27）。
        売掛帳をひらくと `cashWarm` がうしろで小口現金を読んで描き直すので、
        ここを見ないと**打ちかけの回収額が消える** */
-  var as=document.querySelectorAll('.arpay .apa');
-  for(var k=0;k<as.length;k++)
-    if(String(as[k].value||'').replace(/[^0-9]/g,'')) return true;
+  var ae=document.activeElement;
+  if(ae && ae.closest && ae.closest('.ar-flat')) return true;
   return false;
 }
 
@@ -11680,53 +11673,25 @@ boot();
 .arblk-h .abzan.pos{color:#7A2E3F}
 .arblk-h .abzan.neg{color:var(--ice)}
 .arblk-h .abopen{flex:0 0 auto}
-/* 回収を入れる1行 */
-.arpay{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
-  margin:9px 2px 2px;padding:10px 11px;border-radius:11px;
-  border:2px solid var(--gold);background:#FFFDF5}
-.arpay .apl{font-weight:700;color:#8a6d3b;font-size:15px}
-.arpay .apd{font-size:17px;padding:8px 9px}
-.arpay .apa{width:150px;font-size:23px;font-weight:700;text-align:right;padding:8px 11px}
-.arpay .apm{font-size:16px;padding:9px 8px}
-.arpay .apok{padding:11px 20px;font-size:16px}
-.arpay .aphint{font-size:12px;flex:1 1 100%}
 @media(max-width:560px){
   .arblk{padding:8px 7px 7px}
   .arblk-h .abname{font-size:17px}
   .arblk-h .abopn{margin-left:0;flex:1 1 100%;order:3}
   .arblk-h .abzan{margin-left:auto}
-  .arpay{gap:7px;padding:8px}
-  .arpay .apd{flex:1 1 44%;min-width:0;width:auto}
-  .arpay .apa{flex:1 1 44%;width:auto;min-width:0;font-size:21px}
-  .arpay .apm{flex:1 1 55%;min-width:0}
-  .arpay .apok{flex:1 1 40%}
 }
 .ar-t{border-collapse:separate;border-spacing:0;background:#fff}
 .ar-t th,.ar-t td{border-right:1px solid #D9D2C4;border-bottom:1px solid #E7E1D5;white-space:nowrap}
 .ar-t thead th{position:sticky;top:0;z-index:3;background:var(--ai);color:#fff;font-weight:700;
   text-align:center;border-right:1px solid #24405c}
-.ar-t thead th.mg{background:#2B4359;letter-spacing:1px}
-.ar-t thead th.mg.even{background:#3A5872}
-.ar-t .sk{position:sticky;z-index:2;background:#FBF9F4}
-.ar-t thead .sk{z-index:5;background:var(--ai)}
-.ar-t .sk1{left:0}
-.ar-t .sk2{left:0;border-right:2px solid var(--ai) !important;text-align:left}
 .ar-t tbody tr:hover td{background:#EAF1F5}
-.ar-t tbody tr:hover td.sk{background:#DCE8F0}
-.ar-t td.day{text-align:center;color:#7a6a4a}
 .ar-t td.cash{text-align:right;color:#7a5c19;background:#FFFCF4}
-.ar-t td.bank{text-align:right;color:#20405E;background:#F5F9FC}
 .ar-t td.disc{text-align:right;color:#6B5B95;background:#F7F5FB}
 .ar-t td.hatsu{text-align:right;color:#7A2E3F;background:#FDF7F9}
 .ar-t td.zan{text-align:right;font-weight:700;border-right:2px solid #C9C2B2 !important}
 .ar-t td.zan.pos{color:#7A2E3F}
 .ar-t td.zan.neg{color:var(--ice)}
 .ar-t td.zan.zero{color:#d5cfc0}
-.ar-t tr.prev td.sk{background:#F5EEDD;font-weight:700}
-.ar-t tr.adv td.sk{background:#EAF1F5;font-weight:700;color:var(--ice)}
 .ar-t tr.tot td{background:#D9E8F1 !important;font-weight:700;border-top:2px solid var(--ai)}
-.ar-t tr.tot td.sk{background:#C8DCE9 !important}
-.ar-t tr.now td.sk1{box-shadow:inset 4px 0 0 var(--gold)}
 /* ★★★ 縦1本の売掛帳（2026-09-25）。確認表（make_ar_check_sheet.py）と同じ並び */
 /* ★ 合わせて 100%。横スクロールさせない（右へ長い帳面をやめたのだから、
      はみ出したら意味がない）。数字は折り返さず、区分とメモだけ折り返す */
@@ -11734,15 +11699,15 @@ boot();
 .ar-flat th,.ar-flat td{overflow:hidden;text-overflow:ellipsis}
 /* ★ 見出しは折り返す（nowrap のままだと「値引きそ…」で切れる） */
 .ar-flat thead th{white-space:normal;line-height:1.25}
-.ar-flat th.c0,.ar-flat td.c0{width:20%;text-align:left;white-space:normal}
-.ar-flat th.c1,.ar-flat td.c1{width:10%}
-.ar-flat th.c2,.ar-flat td.c2{width:7%;text-align:center}
+.ar-flat th.c0,.ar-flat td.c0{width:12%;text-align:left;white-space:normal}
+.ar-flat th.c1,.ar-flat td.c1{width:9%}
+.ar-flat th.c2,.ar-flat td.c2{width:14%;text-align:center}
 .ar-flat th.c3,.ar-flat td.c3{width:10%}
-.ar-flat th.c4,.ar-flat td.c4{width:10%}
-.ar-flat th.c5,.ar-flat td.c5{width:11%}
-.ar-flat th.c6,.ar-flat td.c6{width:11%;text-align:center}
+.ar-flat th.c4,.ar-flat td.c4{width:15%}
+.ar-flat th.c5,.ar-flat td.c5{width:10%}
+.ar-flat th.c6,.ar-flat td.c6{width:12%;text-align:center}
 .ar-flat th.c7,.ar-flat td.c7{width:8%;text-align:center}
-.ar-flat th.c8,.ar-flat td.c8{width:13%;white-space:normal}
+.ar-flat th.c8,.ar-flat td.c8{width:10%;white-space:normal}
 .ar-flat tbody tr.cont td.c0{border-bottom-color:#F2EEE4}
 .ar-flat tr.prev td.c0{background:#F5EEDD;font-weight:700}
 .ar-flat tr.adv td.c0{background:#EAF1F5;font-weight:700;color:var(--ice)}
@@ -11757,6 +11722,26 @@ boot();
 .arin{width:100%;border:1px dashed #CFC7B4;border-radius:5px;background:#fff;
   font-family:inherit;padding:2px 5px;box-sizing:border-box}
 .arin:focus{border-style:solid;border-color:var(--ai);outline:2px solid var(--gold)}
+/* ★★★ 売掛帳に じかに書くマス（2026-10-27・丸京）。手書きの帳面のように、
+     ふだんは枠を出さず うすい下線だけ。押したときだけ 少し浮かせて白くする
+     （大きく広げると帳面が見えなくなるので、ほんの少しだけ） */
+.ar-flat td.c2,.ar-flat td.c3,.ar-flat td.c4,.ar-flat td.c6{overflow:visible}
+.ar-flat .ae{width:100%;min-width:0;box-sizing:border-box;border:0;border-bottom:1px dashed #D8CCB2;
+  border-radius:4px;background:transparent;font-family:inherit;color:inherit;padding:2px 3px;margin:0;
+  transition:transform .08s,box-shadow .08s,background .08s}
+.ar-flat .ae.an{text-align:right;font-variant-numeric:tabular-nums}
+.ar-flat .ae.ad{text-align:center;cursor:pointer}
+.ar-flat select.ae{cursor:pointer;padding:2px 0}
+.ar-flat .ae:hover{background:#FFF6DF}
+.ar-flat .ae:focus{outline:2px solid var(--ai);background:#fff;position:relative;z-index:4;
+  transform:scale(1.07);box-shadow:0 3px 12px rgba(0,0,0,.18);border-bottom-color:transparent}
+.ar-flat tr.blank td{background:#FFFDF6}
+.ar-flat tr.blank .ae.an{border-bottom-color:var(--gold)}
+.ar-flat .adw{display:flex;gap:3px;align-items:center}
+.ar-flat .adw select{flex:0 0 52%}
+.ar-flat .adw .an{flex:1 1 auto}
+.ar-flat td.c3 .ae.an{color:#7a5c19;font-weight:700}
+.ar-flat td.c4 .ae.an{color:#6B5B95;font-weight:700}
 /* ★ 電話では【小切手の日・メモ】をたたむ。9列は 390px に入らない。
      書き込むのは事務所（パソコン）なので、電話では読めれば足りる */
 @media(max-width:700px){
@@ -11765,13 +11750,17 @@ boot();
   .ar-flat th,.ar-flat td{font-size:11.5px !important;padding:4px 3px !important}
   .ar-flat th.c7,.ar-flat td.c7,.ar-flat th.c8,.ar-flat td.c8{display:none}
   .ar-flat td.c0 .muted{display:none}          /* 「令和8.2」は出さない（区分で分かる） */
-  .ar-flat th.c0,.ar-flat td.c0{width:16%}
-  .ar-flat th.c1,.ar-flat td.c1{width:17%}
-  .ar-flat th.c2,.ar-flat td.c2{width:11%}
-  .ar-flat th.c3,.ar-flat td.c3{width:16%}
-  .ar-flat th.c4,.ar-flat td.c4{width:10%}
+  .ar-flat th.c0,.ar-flat td.c0{width:10%}
+  .ar-flat th.c1,.ar-flat td.c1{width:18%}
+  .ar-flat th.c2,.ar-flat td.c2{width:14%}
+  .ar-flat th.c3,.ar-flat td.c3{width:15%}
+  .ar-flat th.c4,.ar-flat td.c4{width:12%}
   .ar-flat th.c5,.ar-flat td.c5{width:17%}
-  .ar-flat th.c6,.ar-flat td.c6{width:13%}
+  .ar-flat th.c6,.ar-flat td.c6{width:14%}
+  .ar-flat .ae{font-size:11px !important;padding:2px 1px}
+  .ar-flat .adw{flex-direction:column;gap:1px}
+  .ar-flat .ae.ad{-webkit-appearance:none;appearance:none}
+  .ar-flat .ae:focus{transform:none}
   .ar-flat .armet{padding:1px 3px;font-size:10px;font-weight:700}
 }
 .ar-open-in{text-align:right;font-weight:700}
@@ -11914,14 +11903,6 @@ function arOpenMonths(fy){
   return out.reverse();
 }
 function arOpenListOf(fy,id){ return arOpenParse((DB.arOpen[fy]||{})[id]); }
-function arOpenOf(fy,id){
-  var t=0; arOpenListOf(fy,id).forEach(function(x){ t+=x.amt; }); return t;
-}
-/** 内訳（月ごと）を持っているか。持っていれば一覧では直接いじらせない */
-function arOpenHasBreak(fy,id){
-  var l=arOpenListOf(fy,id);
-  return l.length>1 || (l.length===1 && l[0].key!=='old');
-}
 async function saveArOpen(fy){
   clearCaches();
   mapSave('ar:open:'+fy, DB.arOpen[fy]||{});
@@ -12024,14 +12005,6 @@ function monthGross(c,fy,idx){
   var a=arBilledFy(fy)[c.id];
   return a? Math.round(a[idx]||0) : 0;
 }
-/** 'YYYY-MM' から請求額（税込）。期をまたいでも拾えます */
-function grossOfYm(c,ymk){
-  var y=+String(ymk).slice(0,4), m=+String(ymk).slice(5);
-  var fy=(m>=FY_START_MONTH)?y:y-1;
-  var i=fyIndexOf(ymk,fy);
-  if(i<0) return 0;
-  return monthGross(c,fy,i);
-}
 
 /* ============================================================
    2. 売掛帳の計算
@@ -12078,7 +12051,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-10-27b 小口現金は【出納帳を見ながら入れる】1タブに（上に出納帳／下は 入金出金→日付→金額→取引の種類。写真は任意）／売掛帳を上から並べて そこから回収を入れる（現金は出納帳と同じ1件・古い月分から充当・二重計上の止め金つき）／前期繰越は一覧のままその場で直せる';
+var APP_BUILD='2026-10-27c 売掛帳に【じかに書く】（回収日はカレンダー・受入金額・方法＝現金／普通預金入金／当座預金入金…・値引きその他は事由を選ぶ。打てばその場で保存・その店だけ即描き直し。記録するボタンと下の入力欄は無し）／小口現金：電話で日付欄が枠からはみ出さない';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -12114,24 +12087,39 @@ function arHit_(p, kind, amt){
 }
 
 /* ============================================================
-   ★★★ 売掛帳から回収を入れる（2026-10-27・丸京）
+   ★★★ 売掛帳に【じかに書く】（2026-10-27・丸京。PCの大きい画面で入れる）
 
-   「売掛帳で記入した場合には、同時に現金出納帳に売掛の現金回収が記録され、
-     現金出納帳に記録されたら売掛帳にも記録されるように、相互で連携して。
-     そうすると、二重計上にならない。システム的にもならないようにしてね。同一日付で。」
+   「売掛帳とは別に入力欄があるのではなく、直接売掛帳に書ける仕様にしてほしい。
+     …売掛帳という手書きの帳面に書いていた感覚で入れていけるようにして。
+     日付を入れる場合はカレンダーで選べるように。
+     記録するボタンではなく、数字等を入力したらその時同時に保存されるように。
+     かつなんといってもそれらの反映は瞬時に。」
 
-   ★ 二重計上が起きない作りは2段構え
+   - 回収日・受入金額・方法・値引きその他（事由と金額）は、表のマスにそのまま打つ
+   - **打って枠を離れた（か Enter を押した）その時に保存**。ボタンは無い
+   - 描き直すのは**その店のかたまりだけ**（`arBlockRefresh_`）。打っている場所はそのまま
+   - まだ残っている月には【空の1行】が出る。そこに打てば、その月分の回収として入る
+     （その月で余ったぶんは古い月から順に当たる。前受は前受の行へ）
+
+   ★ 二重計上が起きない作りは今までどおり2段構え
      ① **現金の回収は、売掛帳と出納帳に【同じ id で1件】しか作らない。**
-        どちらから入れても `payments:<店>` と `cashbook:<月>` が同じ id の対になる。
-        数えるものが1つなので、そもそも二重になりようがない
-     ② それでも人は同じものを2回入れる。**同じ取引先・同じ日・同じ金額・同じ方法**が
-        すでにあったら、入れずに知らせる（`arPayDup_`）
-
-   ★ 現金以外（振込・口座振替・相殺・値引き…）は **売掛帳だけ**。
-     現金は1円も動いていないので、出納帳に入れてはいけない。
-   ★ 「何月分」は付けない ＝ **古い月分から順に充当**（`arLedger` の FIFO）。
-     一部だけ回収（1万円など）でも、古いものから自然に埋まる。
+        方法を 現金 ⇄ 預金 に変えたら、出納帳の1件も足す・消す・直す
+     ② 同じ取引先・同じ日・同じ金額・同じ方法・同じ月分は入れない（`arPayDup_`）
+   ★ 現金以外（預金入金・口座振替・相殺・値引き…）は **売掛帳だけ**。
    ============================================================ */
+/** 方法（お金が入ったもの）。左が持ち方、右が画面の言葉。**現金だけが小口現金の出納帳とつながる** */
+var AR_RECV=[['現金','現金'],['振込（普通）','普通預金入金'],['振込（当座）','当座預金入金'],
+             ['口座振替','口座振替'],['相殺','相殺']];
+/** 値引きその他の事由（お金は入っていないが、そのぶん売掛が減る） */
+var AR_DISC=[['値引き','値引き'],['貸倒れ','貸倒れ'],['振込手数料','振込手数料（差引）']];
+/** 持ち方 → 画面の言葉（古い「振込」「値引き・貸倒れ」もそのまま出す） */
+function arMethodLabel(m){
+  var all=AR_RECV.concat(AR_DISC);
+  for(var i=0;i<all.length;i++) if(all[i][0]===m) return all[i][1];
+  return m==='振込' ? '預金入金（旧）' : String(m||'');
+}
+/* ★ 月分は見ない。同じ日に同じ額・同じ方法がもうあれば、どの行に書いても二重とみなす
+     （2つの月分を同じ日に同じ額で払うことはまず無い。あれば合計で1件に入れる） */
 function arPayDup_(cid, d, amt, method, skipId){
   var sk=skipId?String(skipId):'';
   return (DB.pay['payments:'+cid]||[]).filter(function(p){
@@ -12141,46 +12129,88 @@ function arPayDup_(cid, d, amt, method, skipId){
         && String(p.method||'')===String(method);
   })[0] || null;
 }
-async function arPayAdd(c, d, amt, method){
-  if(!c) return false;
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(d||''))){ alert('回収日を入れてください。'); return false; }
-  amt=Math.round(Number(amt)||0);
-  if(!(amt>0)){ alert('金額を入れてください。'); return false; }
-  if(arPayDup_(c.id, d, amt, method)){
-    alert('もう入っています。\n\n'+c.name+'　'+String(d).slice(5).replace('-','/')+'　'+
-          yen(amt)+'（'+method+'）\n\n'+
-          '同じ取引先・同じ日・同じ金額・同じ方法の回収は、二重計上になるので入れません。\n'+
-          'ちがう回収なら、金額か日付を見直してください。');
-    return false;
+/** 現金の回収に対になる出納帳の1件 */
+function arCashRec_(c, p){
+  return {id:p.id, date:p.date, dir:'in', account:'', amount:Math.round(Number(p.amount)||0), kind:'ar',
+          party:c.name, memo:'売掛の現金回収　'+c.name, sale:null,
+          arPay:{cid:c.id, code:c.code, name:c.name, 'for':String(p['for']||'')},
+          imgUrl:null, imgPend:null, img:null, imgType:null, pics:null};
+}
+/** その月の出納帳を読んでおく（読まずに書くと、その月を開いたときの姿とずれる） */
+async function arCashLoad_(d){
+  var bk=bkeyOf(d);
+  if(bk in DB.cash) return true;
+  try{ var g=await storage.getMany([bk]); if(!(bk in DB.cash)) DB.cash[bk]=jparse(g[bk],[])||[]; return true; }
+  catch(e){ alert('その月の小口現金を読めませんでした。少し待ってからもう一度ためしてください。'); return false; }
+}
+/** 出納帳から その id の1件を探す（日付の月にいる。いなければ読んである月を全部） */
+function arCashFind_(id, d){
+  var bk=bkeyOf(d);
+  var x=(DB.cash[bk]||[]).filter(function(y){ return String(y.id)===String(id); })[0];
+  if(x) return {k:bk, x:x};
+  var hit=null;
+  Object.keys(DB.cash||{}).some(function(k){
+    var y=(DB.cash[k]||[]).filter(function(z){ return String(z.id)===String(id); })[0];
+    if(y){ hit={k:k, x:y}; return true; } return false;
+  });
+  return hit;
+}
+/**
+ * ★★★ 売掛の回収1件を、入れる・直す・消す（売掛帳のマスから）。
+ *   old … いまの1件（無ければ新しく入れる）／ nw … 直したあとの1件（null なら消す）
+ * 現金が絡むときは、出納帳の対の1件も同じ id で合わせる。
+ */
+async function arPaySet_(c, old, nw){
+  var pk='payments:'+c.id;
+  /* ★★★ 出納帳と【同じ id の対】になっている回収だけ、出納帳もいっしょに直す。
+       2〜4月に帳面から起こした現金回収（fromCash なし）は、出納帳では【集金の束】の1行に
+       入っているので、対が無い。ここで出納帳に足すと 確定した月末残（472,880／448,077）が狂う。
+       だから そういう回収は 売掛帳だけを直す（出納帳には触らない） */
+  var link = !old || !!old.fromCash || !arIsCash(old);
+  var wasCash=!!(old && arIsCash(old)) && link, isCash=!!(nw && arIsCash(nw)) && link;
+  if(isCash && !(await arCashLoad_(nw.date))) return false;
+  if(wasCash && !(await arCashLoad_(old.date))) return false;
+  var list=(DB.pay[pk]||[]).slice();
+  if(old) list=list.filter(function(p){ return String(p.id)!==String(old.id); });
+  if(nw){
+    if(isCash) nw.fromCash=true; else if(link) delete nw.fromCash;
+    list.push(nw);
   }
-  var isCash = (method==='現金');
-  /* ★ 現金のときは、その月の出納帳を読んでから書く。
-       読まずに書くと、その月を開いたときの姿とずれる */
-  if(isCash){
-    var bk=bkeyOf(d);
-    if(!(bk in DB.cash)){
-      try{ var g=await storage.getMany([bk]); DB.cash[bk]=jparse(g[bk],[])||[]; }
-      catch(e){ alert('その月の小口現金を読めませんでした。少し待ってからもう一度ためしてください。'); return false; }
-    }
+  DB.pay[pk]=list;
+  /* 出納帳の対 */
+  if(wasCash && !isCash){
+    var f=arCashFind_(old.id, old.date);
+    if(f){ DB.cash[f.k]=(DB.cash[f.k]||[]).filter(function(y){ return String(y.id)!==String(old.id); });
+           cashSaveAsync(f.k, JSON.stringify(DB.cash[f.k])); }
+  }else if(isCash){
+    var f2=wasCash ? arCashFind_(old.id, old.date) : null;
+    var rec=arCashRec_(c, nw);
+    if(f2){
+      /* 写真・メモの書き足し・並び順など、出納帳で持っているものは残す */
+      var keep=f2.x;
+      ['imgUrl','imgPend','img','imgType','pics'].forEach(function(k){ if(keep[k]!=null) rec[k]=keep[k]; });
+      if(keep.memo && String(keep.memo).indexOf('売掛の現金回収')!==0) rec.memo=keep.memo;
+      cashPut(rec, String(old.id), f2.k);
+    }else cashPut(rec, null, bkeyOf(nw.date));
   }
-  var pk='payments:'+c.id, id=Date.now();
-  var rec={id:id, date:d, amount:amt, method:method, memo:'', 'for':''};
-  if(isCash) rec.fromCash=true;
-  DB.pay[pk]=(DB.pay[pk]||[]).concat([rec]);
-  if(isCash){
-    cashPut({id:id, date:d, dir:'in', account:'', amount:amt, kind:'ar',
-             party:c.name, memo:'売掛の現金回収　'+c.name, sale:null,
-             arPay:{cid:c.id, code:c.code, name:c.name, 'for':''},
-             imgUrl:null, imgPend:null, img:null, imgType:null, pics:null},
-            null, bkeyOf(d));
-  }
+  /* ★ 全店ぶんのまとめ（arSummary）は捨てない。描き直すときに この店の1件だけ入れ替える
+       （arSumPatch_）。捨てると 1マス打つたびに 260店ぶん計算し直すことになる */
+  var ak='ARS|'+S.arFy, ars=_cache.agg[ak];
   clearCaches();
+  if(ars) _cache.agg[ak]=ars;
   cashSaveAsync(pk, JSON.stringify(DB.pay[pk]));
   return true;
 }
-/** 売掛帳で選べる回収の方法。**現金だけが小口現金の出納帳とつながる** */
-var AR_METHODS=['現金','振込（当座）','振込（普通）','振込','口座振替','相殺',
-                '値引き','貸倒れ','振込手数料'];
+/** まとめ（arSummary）の その店の1件だけを入れ替える */
+function arSumPatch_(c, L, fy){
+  var list=_cache.agg['ARS|'+fy]; if(!list) return;
+  for(var i=0;i<list.length;i++) if(list[i].c.id===c.id){
+    list[i]={c:c, open:L.open, openBreak:L.openBreak, billed:L.billed, cash:L.cash,
+             bank:L.bank, disc:L.disc, discOnly:L.discOnly, bad:L.bad, fee:L.fee,
+             bal:L.bal, adv:L.adv.amt, last:L.lastPay, tot:L.tot, L:L};
+    return;
+  }
+}
 function arLedger(c, fy){
   var cols=fyCols(fy);
   var bill=(arBilledFy(fy)[c.id]||zero12());
@@ -12357,17 +12387,12 @@ function periodEndOf(c,col){
   if(c.shime===31 || cashOnly(c)) return new Date(col.y,col.m,0);
   return new Date(col.y,col.m-1,c.shime);
 }
-function periodStartOf(c,col){
-  if(c.shime===31 || cashOnly(c)) return new Date(col.y,col.m-1,1);
-  return new Date(col.y,col.m-2,c.shime+1);
-}
 
 /* ============================================================
    4. 売掛帳タブ
    ============================================================ */
-S.arFy=null; S.arClient=null; S.arWide=true; S.arQ=''; S.arShime=0; S.arOnly=false;
+S.arFy=null; S.arClient=null; S.arQ=''; S.arShime=0; S.arOnly=false;
 S.arShow=0;      /* 並べて出している店の数（2026-10-27。0 なら AR_PAGE 店） */
-S.arJust=null;   /* いま回収を入れた店 */
 S.arScale=1.5;
 
 function arNeed(fy){
@@ -12407,7 +12432,7 @@ function viewAr(el){
    -------------------------------------------------------------------- */
 var AR_PAGE=15;
 
-/** 1店ぶんの かたまり（見出し ＋ 売掛帳 ＋ 回収を入れる1行） */
+/** 1店ぶんの かたまり（見出し ＋ 売掛帳）。回収は売掛帳のマスにじかに書く */
 function arBlockHtml(c,L,fy){
   var bal=L.bal;
   return '<div class="arblk" data-arcid="'+esc(c.id)+'" data-s="'+esc(searchKey(c))+'">'+
@@ -12429,33 +12454,31 @@ function arBlockHtml(c,L,fy){
       '<button class="btn ghost tap sm abopen" data-aopn="'+esc(c.id)+'">1店だけ開く（印刷）</button>'+
     '</div>'+
     arDetailHtml(c,L,fy)+
-    /* ★★★ ここに回収を入れていく。何月分は選ばせない＝【古い月分から順に当たる】 */
-    '<div class="arpay">'+
-      '<span class="apl">回収を入れる</span>'+
-      '<input type="date" class="cash-date apd" data-apd="'+esc(c.id)+'" value="'+esc(ymd(new Date()))+'">'+
-      '<input class="num apa" inputmode="numeric" placeholder="金額" data-apa="'+esc(c.id)+'">'+
-      '<select class="apm" data-apm="'+esc(c.id)+'">'+
-        AR_METHODS.map(function(x){ return '<option>'+esc(x)+'</option>'; }).join('')+
-      '</select>'+
-      '<button class="btn tap apok" data-apok="'+esc(c.id)+'">記録する</button>'+
-      '<span class="aphint muted">古い月分から順に当たります。'+
-        '<b>現金</b>で入れると、小口現金の出納帳にも同じ1件が入ります</span>'+
-    '</div>'+
   '</div>';
 }
-
-function arList(el,fy){
-  var rows=arSummary(fy).filter(function(x){
+function arSumHtml_(rows){
+  var tOpen=0,tBill=0,tCash=0,tBank=0,tDisc2=0,tBad=0,tBal=0,nBal=0;
+  rows.forEach(function(x){ tOpen+=x.open; tBill+=x.billed; tCash+=x.cash; tBank+=x.bank;
+    tDisc2+=x.discOnly||0; tBad+=x.bad||0;
+    if(x.bal>0){ tBal+=x.bal; nBal++; } });
+  return '<div class="ar-box"><div class="k">前期繰越（期首）</div><div class="v num">'+yen(tOpen)+'</div></div>'+
+    '<div class="ar-box"><div class="k">当期の発生（請求）</div><div class="v num">'+yen(tBill)+'</div></div>'+
+    '<div class="ar-box"><div class="k">現金回収</div><div class="v num" style="color:#7a5c19">'+yen(tCash)+'</div></div>'+
+    '<div class="ar-box"><div class="k">預金入金ほか</div><div class="v num" style="color:var(--ai)">'+yen(tBank)+'</div></div>'+
+    '<div class="ar-box"><div class="k">値引き</div><div class="v num" style="color:#6B5B95">'+yen(tDisc2)+'</div></div>'+
+    '<div class="ar-box"><div class="k">貸倒れ</div><div class="v num" style="color:#7A2E3F">'+yen(tBad)+'</div></div>'+
+    '<div class="ar-box zan"><div class="k">残高（未回収）'+nBal+'店</div><div class="v num">'+yen(tBal)+'</div></div>';
+}
+function arListRows_(fy){
+  return arSummary(fy).filter(function(x){
     if(S.arShime && x.c.shime!==S.arShime) return false;
     if(S.arOnly && x.bal<=0) return false;
     return true;
   }).sort(function(a,b){ return codeNum(a.c)-codeNum(b.c); });
+}
 
-  var tOpen=0,tBill=0,tCash=0,tBank=0,tDisc=0,tDisc2=0,tBad=0,tBal=0,nBal=0;
-  rows.forEach(function(x){ tOpen+=x.open; tBill+=x.billed; tCash+=x.cash; tBank+=x.bank; tDisc+=x.disc;
-    tDisc2+=x.discOnly||0; tBad+=x.bad||0;
-    if(x.bal>0){ tBal+=x.bal; nBal++; } });
-
+function arList(el,fy){
+  var rows=arListRows_(fy);
   var show=Math.min(rows.length, S.arShow||AR_PAGE);
   var shown=rows.slice(0,show);
 
@@ -12470,22 +12493,13 @@ function arList(el,fy){
     '</div>'+
   '</div>'+
   '<p class="muted" style="margin:0 0 12px;font-size:13px">'+fyRange(fy)+'。金額はすべて<b>税込</b>です。'+
-    '<b>売掛帳が上から順に並びます。</b>その下の1行で、'+
-    '<b>いつ・いくら・どういう方法で</b>回収したかを入れてください。'+
-    '<b>何月分かは選びません</b> ── 古い月分から順に当たります'+
-    '（一部だけの回収でも、そのぶんだけ古い月から埋まります）。'+
+    '<b>手書きの売掛帳と同じように、表のマスにじかに書いてください。</b>'+
+    '回収日（カレンダー）・受入金額・方法・値引きその他を打って<b>枠を離れるか Enter で、その場で入ります</b>（記録するボタンはありません）。'+
+    'まだ残っている月には<b>空の1行</b>が出ます。'+
     '<b style="color:#7a5c19">現金</b>で入れると、<b>小口現金の出納帳にも同じ1件</b>が入ります'+
-    '（逆に出納帳で入れた現金回収も、ここに出ます）。</p>'+
+    '（逆に出納帳で入れた現金回収も、ここに出ます）。金額を消すとその回収は消えます。</p>'+
 
-  '<div class="ar-sum">'+
-    '<div class="ar-box"><div class="k">前期繰越（期首）</div><div class="v num">'+yen(tOpen)+'</div></div>'+
-    '<div class="ar-box"><div class="k">当期の発生（請求）</div><div class="v num">'+yen(tBill)+'</div></div>'+
-    '<div class="ar-box"><div class="k">現金回収</div><div class="v num" style="color:#7a5c19">'+yen(tCash)+'</div></div>'+
-    '<div class="ar-box"><div class="k">銀行振込回収</div><div class="v num" style="color:var(--ai)">'+yen(tBank)+'</div></div>'+
-    '<div class="ar-box"><div class="k">値引き</div><div class="v num" style="color:#6B5B95">'+yen(tDisc2)+'</div></div>'+
-    '<div class="ar-box"><div class="k">貸倒れ</div><div class="v num" style="color:#7A2E3F">'+yen(tBad)+'</div></div>'+
-    '<div class="ar-box zan"><div class="k">残高（未回収）'+nBal+'店</div><div class="v num">'+yen(tBal)+'</div></div>'+
-  '</div>'+
+  '<div class="ar-sum" id="arsum">'+arSumHtml_(rows)+'</div>'+
 
   '<div class="row" style="margin-bottom:8px">'+
     [[0,'全部'],[20,'20締'],[25,'25締'],[31,'末締']].map(function(x){
@@ -12500,9 +12514,7 @@ function arList(el,fy){
   '</div>'+
 
   '<div id="abody" class="arstack">'+
-    (shown.length
-      ? shown.map(function(x){ return arBlockHtml(x.c, x.L, fy); }).join('')
-      : '')+
+    shown.map(function(x){ return arBlockHtml(x.c, x.L, fy); }).join('')+
     '<div class="empty" style="padding:24px;text-align:center;color:#999'+
       (shown.length?';display:none':'')+'">該当なし</div>'+
   '</div>'+
@@ -12511,12 +12523,11 @@ function arList(el,fy){
       'さらに '+Math.min(AR_PAGE, rows.length-show)+'店 を出す（のこり '+(rows.length-show)+'店）</button>'
     : '')+
   '<p class="muted" style="margin:10px 0 0;font-size:13px">'+
-    '<b>1行＝回収1件。</b>手書きの売掛帳と同じ並びです。売上金額はその月のいちばん上の行にだけ出ます。'+
-    '回収がまだ無い月も1行出るので、<b>滞留がそのまま見えます</b>。'+
+    '<b>1行＝回収1件。</b>売上金額はその月のいちばん上の行にだけ出ます。'+
+    '空の行に打つと<b>その月分</b>の回収として入り、余ったぶんは古い月から順に当たります。'+
     '<b>小切手はとりあえず「現金」で入れて</b>、当座に入った日は表の欄に書いてください。'+
-    '<b>前期繰越</b>の欄はその場で直せます（期首の売掛残高）。'+
-    '<b>発生月ごとの内訳</b>を入れている店は金額のボタンになります。'+
-    '押すとその店の売掛帳が開いて、月ごとに直せます。</p>';
+    '<b>前期繰越</b>の欄もその場で直せます。<b>発生月ごとの内訳</b>を入れている店は金額のボタンになり、'+
+    '押すとその店の売掛帳が開いて月ごとに直せます。</p>';
 
   el.querySelector('#aPrev').onclick=function(){ S.arFy=fy-1; S.arShow=AR_PAGE; render(); };
   el.querySelector('#aNext').onclick=function(){ S.arFy=fy+1; S.arShow=AR_PAGE; render(); };
@@ -12531,10 +12542,15 @@ function arList(el,fy){
   var q=el.querySelector('#aq'), body=el.querySelector('#abody');
   q.oninput=function(){ S.arQ=q.value; filterRows(body,S.arQ); };
   if(S.arQ.trim()) filterRows(body,S.arQ);
-  el.querySelectorAll('[data-aopn]').forEach(function(b){
+  el.querySelectorAll('.arblk').forEach(function(b){ arBindBlock_(b,fy); });
+}
+
+/** 1店ぶんのかたまりに、押す・書くを付ける（並べた画面・1店の画面・描き直したかたまりで共用） */
+function arBindBlock_(blk,fy){
+  blk.querySelectorAll('[data-aopn]').forEach(function(b){
     b.onclick=function(){ S.arClient=b.dataset.aopn; window.scrollTo({top:0}); render(); }; });
   /* ★ 前期繰越（期首）を、一覧のままその場で直す（2026-10-27 に戻した） */
-  el.querySelectorAll('[data-aopen]').forEach(function(inp){
+  blk.querySelectorAll('[data-aopen]').forEach(function(inp){
     inp.onfocus=function(){ inp.select(); };
     inp.onchange=async function(){
       var n=Math.max(0,parseInt(String(inp.value).replace(/[^0-9]/g,''),10)||0);
@@ -12542,48 +12558,12 @@ function arList(el,fy){
       if(n) DB.arOpen[fy][inp.dataset.aopen]=n; else delete DB.arOpen[fy][inp.dataset.aopen];
       await saveArOpen(fy);
       clearCaches();
-      toast('前期繰越を直しました'); render();
+      toast('前期繰越を直しました');
+      arBlockRefresh_(inp.dataset.aopen, null, false);
     };
   });
-  arBindPay(el,fy);
-  arBindNote(el);
-}
-
-/** ★★★ 回収を入れる1行（売掛帳の下）。現金なら出納帳にも同じ1件が入る */
-function arBindPay(el,fy){
-  el.querySelectorAll('[data-apok]').forEach(function(b){
-    b.onclick=async function(){
-      var cid=b.dataset.apok, c=clientById(cid);
-      if(!c) return;
-      var blk=b.closest('.arblk');
-      var d=(blk.querySelector('[data-apd]')||{}).value||'';
-      var av=(blk.querySelector('[data-apa]')||{}).value||'';
-      var mt=(blk.querySelector('[data-apm]')||{}).value||'現金';
-      var amt=parseInt(String(av).replace(/[^0-9]/g,''),10)||0;
-      b.disabled=true;
-      var ok=false;
-      try{ ok=await arPayAdd(c, d, amt, mt); }finally{ b.disabled=false; }
-      if(!ok) return;
-      toast(c.name+'　'+yen(amt)+'（'+mt+'）を入れました'+
-        (mt==='現金'?'　→ 小口現金の出納帳にも入りました':''));
-      /* 入れたあと、その店の売掛帳がすぐ上で積み上がるのが見える */
-      S.arJust=cid;
-      render();
-      setTimeout(function(){
-        var t=document.querySelector('.arblk[data-arcid="'+cid+'"]');
-        if(t && t.scrollIntoView) try{ t.scrollIntoView({block:'center'}); }catch(e){}
-      },40);
-    };
-  });
-  /* 金額の欄で Enter → そのまま記録する */
-  el.querySelectorAll('[data-apa]').forEach(function(q){
-    q.onkeydown=function(e){
-      if(e.key!=='Enter') return;
-      e.preventDefault();
-      var blk=q.closest('.arblk'), ok=blk&&blk.querySelector('[data-apok]');
-      if(ok) ok.click();
-    };
-  });
+  arBindNote(blk);
+  arBindEdit_(blk);
 }
 
 /** 小切手が当座に入った日／メモ を、その場で書く（1店の画面と並べた画面で共用） */
@@ -12604,9 +12584,171 @@ function arBindNote(el){
       x[key]=v;
       cashSaveAsync(pk, JSON.stringify(list));
       toast(key==='kitte'?'小切手が当座に入った日を入れました':'メモを入れました');
-      render();
     };
   });
+}
+
+/* ============================================================
+   ★★★ 売掛帳のマスに じかに書く（2026-10-27・丸京）
+   - 打って【枠を離れる】か【Enter】で、その場で保存（記録するボタンは無い）
+   - Enter は次のマスへ進む（帳面を右へ・下へ書いていく感覚）
+   - 描き直すのは【その店のかたまりだけ】。打っている場所（フォーカス）はそのまま
+   - 空の1行（まだ残っている月）は、日付・方法を先に選んでも消えない（S.arDraft）。
+     金額を打った時点で1件になる
+   ============================================================ */
+S.arDraft={};
+var _arQ=Promise.resolve();
+function arNum_(v){ return Math.max(0,parseInt(String(v||'').replace(/[^0-9]/g,''),10)||0); }
+function arEdOrder_(blk){
+  return Array.prototype.slice.call(blk.querySelectorAll('.ae,.arin')).filter(function(x){
+    return !x.disabled && x.offsetParent!==null; });
+}
+function arBindEdit_(blk){
+  blk.querySelectorAll('.ae').forEach(function(inp){
+    if(inp.dataset.n) inp.onfocus=function(){ try{ inp.select(); }catch(e){} };
+    inp.onchange=function(){ arCommit_(inp,false); };
+  });
+  blk.querySelectorAll('.ae,.arin').forEach(function(inp){
+    inp.addEventListener('keydown',function(e){
+      if(e.key!=='Enter' || e.isComposing) return;
+      e.preventDefault();
+      if(inp.classList.contains('ae')) arCommit_(inp,true);
+      else{ inp.dispatchEvent(new Event('change')); arFocusNext_(inp); }
+    });
+  });
+}
+function arFocusNext_(inp){
+  var blk=inp.closest('.arblk'); if(!blk) return;
+  var all=arEdOrder_(blk), i=all.indexOf(inp);
+  var nx=all[i+1];
+  if(nx){ nx.focus(); try{ if(nx.dataset.n) nx.select(); }catch(e){} }
+  else inp.blur();
+}
+/** その店のかたまりだけを描き直す。fk は「描き直したあと居てほしいマス」、adv なら その次へ */
+function arBlockRefresh_(cid, fk, adv, newId){
+  var fy=S.arFy, c=clientById(cid);
+  var old=document.querySelector('.arblk[data-arcid="'+cid+'"]');
+  if(!c || !old || S.arClient){
+    /* 1店の画面は見出しの数字もあるので全部描き直す（1店ぶんなので一瞬） */
+    var keep=fk || ((document.activeElement||{}).dataset||{}).k || '';
+    render();
+    arRefocus_(document, keep, adv && !!fk);
+    return;
+  }
+  var act=document.activeElement, actK='';
+  if(act && old.contains(act) && act.dataset) actK=act.dataset.k||'';
+  /* 空の行に打って1件になったら、その行のマスは new → 新しい id に名前が変わる */
+  if(newId && actK) actK=actK.replace('|new|','|'+newId+'|');
+  var L=arLedger(c,fy);
+  arSumPatch_(c, L, fy);
+  var tmp=document.createElement('div');
+  tmp.innerHTML=arBlockHtml(c, L, fy);
+  var nb=tmp.firstChild;
+  nb.style.display=old.style.display;
+  old.parentNode.replaceChild(nb, old);
+  arBindBlock_(nb, fy);
+  /* Enter のときだけ 次のマスへ。枠を離れて別のマスを押したときは、押したマスに居させる */
+  if(fk && adv) arRefocus_(nb, fk, true);
+  else if(actK) arRefocus_(nb, actK, false);
+  /* 上の合計は、打つ手を止めないように あとから入れ替える */
+  setTimeout(function(){
+    var sm=document.getElementById('arsum');
+    if(sm && !S.arClient) try{ sm.innerHTML=arSumHtml_(arListRows_(fy)); }catch(e){}
+  },0);
+}
+function arRefocus_(root, k, adv){
+  if(!k) return;
+  var t=root.querySelector('[data-k="'+String(k).replace(/"/g,'')+'"]');
+  if(!t) return;
+  if(adv){ arFocusNext_(t); return; }
+  t.focus(); try{ if(t.dataset.n) t.select(); }catch(e){}
+}
+/** マス1つを保存する（順番に1つずつ。重ねると古い姿で書いてしまう） */
+function arCommit_(inp, adv){
+  _arQ=_arQ.then(function(){ return arCommitRun_(inp, adv); }).catch(function(e){
+    try{ console.error(e); }catch(_){}
+    toast('入れられませんでした：'+(e&&e.message||e));
+  });
+  return _arQ;
+}
+async function arCommitRun_(inp, adv){
+  /* ★ 前の保存のあいだに かたまりが描き直されていたら、いまのマスに乗り換える
+       （古い行の hamt で計算すると、割れ方が変わったあとの額をまちがえる） */
+  if(!document.contains(inp)){
+    var cur=inp.dataset.k ? document.querySelector('[data-k="'+String(inp.dataset.k).replace(/"/g,'')+'"]') : null;
+    if(!cur) return;
+    cur.value=inp.value; inp=cur;
+  }
+  var tr=inp.closest('tr'), blk=inp.closest('.arblk');
+  if(!tr || !blk) return;
+  var cid=blk.dataset.arcid, c=clientById(cid); if(!c) return;
+  var rk=tr.dataset.rk||'', pid=tr.dataset.pid||'', f=inp.dataset.f;
+  var val=String(inp.value||'').trim();
+  var num=!!inp.dataset.n;
+  var same = num ? (arNum_(val)===arNum_(inp.dataset.v)) : (val===String(inp.dataset.v||''));
+  if(same){ if(adv) arFocusNext_(inp); return; }
+  inp.dataset.v=val;                 /* Enter のあとの change で二度入れない */
+  var dk=cid+'|'+rk;
+
+  /* ---- 空の行：金額が入るまでは 日付・方法を覚えておくだけ ---- */
+  if(!pid){
+    var dr=S.arDraft[dk]=S.arDraft[dk]||{};
+    if(f==='d'){ dr.d=val; if(adv) arFocusNext_(inp); return; }
+    if(f==='m'){ dr.m=val; if(adv) arFocusNext_(inp); return; }
+    if(f==='r'){ dr.r=val; if(adv) arFocusNext_(inp); return; }
+    var amt=arNum_(val); if(!amt){ if(adv) arFocusNext_(inp); return; }
+    var d=dr.d || ymd(new Date());
+    var method = (f==='x') ? (dr.r||DISC_M) : (dr.m||'現金');
+    var forKey = (rk==='adv') ? '' : rk;
+    if(arPayDup_(cid, d, amt, method)){
+      alert('もう入っています。\n\n'+c.name+'　'+mdOf_(d)+'　'+yen(amt)+'（'+arMethodLabel(method)+'）\n\n'+
+            '同じ取引先・同じ日・同じ金額・同じ方法の回収は、二重計上になるので入れません。');
+      inp.value=''; inp.dataset.v=''; return;
+    }
+    var nw={id:Date.now(), date:d, amount:amt, method:method, memo:'', 'for':forKey};
+    if(!(await arPaySet_(c, null, nw))){ inp.value=''; inp.dataset.v=''; return; }
+    delete S.arDraft[dk];
+    toast(c.name+'　'+yen(amt)+'（'+arMethodLabel(method)+'）を入れました'+
+      (arIsCash(nw)?'　→ 小口現金の出納帳にも入りました':''));
+    arBlockRefresh_(cid, rk+'|'+nw.id+'|'+f, adv, nw.id);
+    return;
+  }
+
+  /* ---- 入っている回収を直す ---- */
+  var pk='payments:'+cid;
+  var p=(DB.pay[pk]||[]).filter(function(z){ return String(z.id)===String(pid); })[0];
+  if(!p){ arBlockRefresh_(cid, null, false); return; }
+  var nw2=JSON.parse(JSON.stringify(p));
+  if(f==='d'){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(val)){ inp.value=p.date; inp.dataset.v=p.date; return; }
+    nw2.date=val;
+  }else if(f==='m' || f==='r'){
+    nw2.method=val;
+  }else{
+    var hamt=Number(tr.dataset.hamt)||0;
+    var tot=Math.round(Number(p.amount)||0)-hamt+arNum_(val);
+    if(tot<=0){
+      if(!confirm(c.name+'　'+mdOf_(p.date)+'　'+yen(p.amount)+'（'+arMethodLabel(p.method)+'）の回収を消します。'+
+                  (arIsCash(p)?'\n小口現金の出納帳からも消えます。':'')+'\n\nよろしいですか。')){
+        inp.value=hamt?hamt.toLocaleString():''; inp.dataset.v=inp.value; return;
+      }
+      await arPaySet_(c, p, null);
+      toast('回収を消しました'+(arIsCash(p)?'（小口現金の出納帳からも消しました）':''));
+      arBlockRefresh_(cid, null, false);
+      return;
+    }
+    nw2.amount=tot;
+  }
+  if(arPayDup_(cid, nw2.date, nw2.amount, nw2.method, p.id)){
+    alert('同じ日・同じ金額・同じ方法の回収がもう入っています。二重計上になるので直せません。');
+    arBlockRefresh_(cid, null, false); return;
+  }
+  if(!(await arPaySet_(c, p, nw2))){ arBlockRefresh_(cid, null, false); return; }
+  var cashMsg = (arIsCash(p)!==arIsCash(nw2))
+    ? (arIsCash(nw2)?'　→ 小口現金の出納帳にも入れました':'　→ 小口現金の出納帳から外しました')
+    : (arIsCash(nw2)?'　→ 小口現金の出納帳も直しました':'');
+  toast('直しました'+cashMsg);
+  arBlockRefresh_(cid, rk+'|'+pid+'|'+f, adv);
 }
 
 /* ---------- 1店の売掛帳（クロス表・倍率つき） ---------- */
@@ -12615,8 +12757,7 @@ function arZ(){ return S.arScale||1.2; }
 function arDims(){
   var z=arZ();
   var r=function(n){ return Math.round(n*z); };
-  return { z:z, fs:r(12.5), pad:r(4)+'px '+r(6)+'px',
-           sk1:r(84), sk2:r(70), day:r(38), money:r(70), zan:r(78), head:r(11.5) };
+  return { z:z, fs:r(12.5), pad:r(4)+'px '+r(6)+'px', head:r(11.5) };
 }
 /* ★ 月ごとのマス（arCell）は、横に月を並べる表をやめたので無くした（2026-09-25） */
 /* ---------- 前期繰越（期首）を発生月ごとに入れる ---------- */
@@ -12725,45 +12866,86 @@ function arFlatRows(L){
   });
   return out;
 }
+/** 選ぶ欄（方法・値引きの事由）。いまの値が表に無いとき（古い書き方）は、その値も出す */
+function arSel_(list, cur, f, k, fs){
+  var has=list.some(function(x){ return x[0]===cur; });
+  var opts=(cur && !has ? [[cur, arMethodLabel(cur)]] : []).concat(list);
+  return '<select class="ae as" data-f="'+f+'" data-k="'+esc(k)+'" data-v="'+esc(cur)+'" style="font-size:'+fs+'px">'+
+    opts.map(function(x){ return '<option value="'+esc(x[0])+'"'+(x[0]===cur?' selected':'')+'>'+esc(x[1])+'</option>'; }).join('')+
+    '</select>';
+}
 function arDetailHtml(c,L,fy){
   var D=arDims();
   var cs='font-size:'+D.fs+'px;padding:'+D.pad;
   var hs='font-size:'+D.head+'px;padding:'+D.pad;
   var nowKey=ym(new Date());
+  var fsIn=Math.round(D.fs*1.0);
   var head='<tr>'+
     ['区分（発生年月）','売上金額','回収日','受入金額','値引きその他','差引残高',
      '方法','小切手が<br>当座に入った日','メモ']
       .map(function(t,i){ return '<th class="c'+i+'" style="'+hs+'">'+t+'</th>'; }).join('')+
     '</tr>';
 
-  var lines=arFlatRows(L);
+  /* ★★★ まだ残っている月には【空の1行】を足す。そこに打てば その月分の回収になる */
+  var lines=[];
+  arFlatRows(L).forEach(function(x, i, all){
+    var R=x.R, h=x.hit;
+    x.edit = !!h || (R.key!=='adv' && x.bal>0);
+    lines.push(x);
+    var nx=all[i+1];
+    var lastOfRow = !nx || nx.R!==R;
+    if(h && lastOfRow && R.key!=='adv' && x.bal>0)
+      lines.push({R:R, first:false, amt:0, hit:null, bal:x.bal, edit:true, blank:true});
+  });
+
   var body=lines.map(function(x){
     var R=x.R, h=x.hit;
     var cls=(R.arise<0?'prev':'')+(R.key===nowKey?' now':'')+(R.key==='adv'?' adv':'')+
-            (x.first?'':' cont');
+            (x.first?'':' cont')+(x.edit?' ed':'')+(x.edit&&!h?' blank':'');
     var recv = h ? (h.kind==='disc'?0:h.amt) : 0;
     var disc = h ? (h.kind==='disc'?h.amt:0) : 0;
     var bcls = x.bal>0?'zan pos':(x.bal<0?'zan neg':'zan zero');
     var btxt = x.bal<0 ? '△'+Math.abs(x.bal).toLocaleString() : x.bal.toLocaleString();
-    var tin=function(k,v,ph,w){
+    var tin=function(k,v,ph){
       return '<input class="arin" data-arp="'+esc(h?h.pid:'')+'" data-ark="'+k+'" '+
         'value="'+esc(v||'')+'" '+(ph?'placeholder="'+ph+'" ':'')+
-        'style="width:'+w+'px;font-size:'+Math.round(D.fs*0.92)+'px">'; };
-    return '<tr class="'+cls+'">'+
+        'style="font-size:'+Math.round(D.fs*0.92)+'px">'; };
+    var c2,c3,c4,c6;
+    if(x.edit){
+      var kb=R.key+'|'+(h?h.pid:'new')+'|';
+      var dr=(!h && S.arDraft[c.id+'|'+R.key])||{};
+      var dv=h?h.date:(dr.d||'');
+      var num=function(f,v){ var t=v?Number(v).toLocaleString():'';
+        return '<input class="ae an num" data-n="1" data-f="'+f+'" data-k="'+esc(kb+f)+'" data-v="'+esc(t)+'" '+
+          'inputmode="numeric" value="'+esc(t)+'" style="font-size:'+fsIn+'px">'; };
+      c2='<input type="date" class="ae ad" data-f="d" data-k="'+esc(kb+'d')+'" data-v="'+esc(dv)+'" '+
+         'value="'+esc(dv)+'" style="font-size:'+fsIn+'px">';
+      var isDisc=h && h.kind==='disc';
+      c3 = isDisc ? '' : num('a', recv);
+      c4 = (h && !isDisc) ? '' :
+        '<div class="adw">'+arSel_(AR_DISC, isDisc?h.method:(dr.r||DISC_M), 'r', kb+'r', Math.round(fsIn*0.86))+
+          num('x', disc)+'</div>';
+      c6 = isDisc ? '' : arSel_(AR_RECV, h?h.method:(dr.m||'現金'), 'm', kb+'m', Math.round(fsIn*0.9));
+    }else{
+      c2=(h?esc(mdOf_(h.date)):'');
+      c3=(recv?recv.toLocaleString():'');
+      c4=(disc?disc.toLocaleString():'');
+      c6=(h?'<span class="armet '+(h.kind==='cash'?'m-cash':(h.kind==='bank'?'m-bank':'m-disc'))+'">'+
+          esc(arMethodLabel(h.method)||'—')+'</span>':'');
+    }
+    return '<tr class="'+cls+'" data-rk="'+esc(R.key)+'" data-pid="'+esc(h?h.pid:'')+'" data-hamt="'+(h?h.amt:0)+'">'+
       '<td class="c0" style="'+cs+'">'+(x.first
           ? esc(R.label)+(R.sub?'<span class="muted" style="font-size:'+Math.round(D.fs*0.72)+
               'px;margin-left:3px">'+esc(R.sub)+'</span>':'')
           : '')+'</td>'+
       arMoneyCell_(x.amt,'c1 hatsu',D)+
-      '<td class="c2" style="'+cs+'">'+(h?esc(mdOf_(h.date)):'')+'</td>'+
-      arMoneyCell_(recv,'c3 cash',D)+
-      arMoneyCell_(disc,'c4 disc',D)+
+      '<td class="c2" style="'+cs+'">'+c2+'</td>'+
+      '<td class="c3 cash num" style="'+cs+'">'+c3+'</td>'+
+      '<td class="c4 disc num" style="'+cs+'">'+c4+'</td>'+
       '<td class="c5 '+bcls+' num" style="'+cs+'">'+btxt+'</td>'+
-      '<td class="c6" style="'+cs+'">'+(h?'<span class="armet '+
-          (h.kind==='cash'?'m-cash':(h.kind==='bank'?'m-bank':'m-disc'))+'">'+
-          esc(h.method||'—')+'</span>':'')+'</td>'+
-      '<td class="c7" style="'+cs+'">'+(h?tin('kitte',h.kitte,'',70):'')+'</td>'+
-      '<td class="c8" style="'+cs+'">'+(h?tin('memo',h.memo,'',150):'')+'</td>'+
+      '<td class="c6" style="'+cs+'">'+c6+'</td>'+
+      '<td class="c7" style="'+cs+'">'+(h?tin('kitte',h.kitte,''):'')+'</td>'+
+      '<td class="c8" style="'+cs+'">'+(h?tin('memo',h.memo,''):'')+'</td>'+
     '</tr>';
   }).join('');
 
@@ -12833,17 +13015,6 @@ function arDetail(el,fy){
   arOpenEditorHtml(c,L,fy)+
   '<div class="arblk" data-arcid="'+esc(c.id)+'">'+
     arDetailHtml(c,L,fy)+
-    '<div class="arpay">'+
-      '<span class="apl">回収を入れる</span>'+
-      '<input type="date" class="cash-date apd" data-apd="'+esc(c.id)+'" value="'+esc(ymd(new Date()))+'">'+
-      '<input class="num apa" inputmode="numeric" placeholder="金額" data-apa="'+esc(c.id)+'">'+
-      '<select class="apm" data-apm="'+esc(c.id)+'">'+
-        AR_METHODS.map(function(x){ return '<option>'+esc(x)+'</option>'; }).join('')+
-      '</select>'+
-      '<button class="btn tap apok" data-apok="'+esc(c.id)+'">記録する</button>'+
-      '<span class="aphint muted">古い月分から順に当たります。'+
-        '<b>現金</b>で入れると、小口現金の出納帳にも同じ1件が入ります</span>'+
-    '</div>'+
   '</div>'+
   '<p class="muted" style="margin:10px 0 0;font-size:13px">'+
     '<b>1行＝回収1件。</b>手書きの売掛帳と同じ並びです。売上金額はその月のいちばん上の行にだけ出ます。'+
@@ -12860,8 +13031,8 @@ function arDetail(el,fy){
     '<span class="num">売掛残高 '+(L.bal<0?'△':'')+yen(Math.abs(L.bal))+'</span></div>';
 
   el.querySelector('#aBack').onclick=function(){ S.arClient=null; window.scrollTo({top:0}); render(); };
-  /* 1店の画面でも、回収はその場で入れられる */
-  arBindPay(el,fy);
+  /* 1店の画面でも、回収は売掛帳のマスにじかに書く */
+  arBindEdit_(el.querySelector('.arblk'));
   el.querySelectorAll('[data-az]').forEach(function(b){ b.onclick=function(){ S.arScale=+b.dataset.az; render(); }; });
   el.querySelector('#aPrint').onclick=function(){ arPrint(c,L,fy); };
 
@@ -13120,6 +13291,9 @@ function arcSave(el,m){
   var pk='payments:'+c.id;
   /* ★ 直しのときは、もとの入金を消してから入れ直す。
        取引先を選び直していたら、もとのお店の入金帳からも消す */
+  /* ★ 売掛帳で書いた 小切手が当座に入った日・メモ は、出納帳から直しても残す */
+  var prevPay=null;
+  if(ed) prevPay=(DB.pay[edPk||pk]||[]).filter(function(q){ return String(q.id)===ed; })[0]||null;
   if(ed){
     if(edPk && edPk!==pk){
       DB.pay[edPk]=(DB.pay[edPk]||[]).filter(function(q){ return String(q.id)!==ed; });
@@ -13127,8 +13301,10 @@ function arcSave(el,m){
     }
     DB.pay[pk]=(DB.pay[pk]||[]).filter(function(q){ return String(q.id)!==ed; });
   }
-  DB.pay[pk]=(DB.pay[pk]||[]).concat([{id:id, date:d, amount:amt, method:'現金',
-                                       memo:'小口現金から', 'for':forKey, fromCash:true}]);
+  var npay={id:id, date:d, amount:amt, method:'現金',
+            memo:(prevPay&&prevPay.memo)||'小口現金から', 'for':forKey, fromCash:true};
+  if(prevPay && prevPay.kitte) npay.kitte=prevPay.kitte;
+  DB.pay[pk]=(DB.pay[pk]||[]).concat([npay]);
   S.cashJustId=id; S.arcEdit=null; S.arcEditBk=null; S.arcEditPk=null;
   S.arcClient=null; S.arcQ=''; S.arcAmt=''; S.arcFor=''; S.arcDate=d;
   cashImgDrop();
@@ -13149,6 +13325,14 @@ function arcSave(el,m){
    【同じ id のまま】入れ替わる。 */
 function arcEditStart(x){
   if(!x || !x.arPay) return;
+  /* ★★★ 帳面から起こした行（2〜4月）は、売掛の消込と同じ id の対になっていない。
+       ここで直すと 売掛帳に もう1件足して 二重になる。だから 売掛帳のほうで直してもらう */
+  var paired=(DB.pay['payments:'+x.arPay.cid]||[]).some(function(p){ return String(p.id)===String(x.id); });
+  if(!paired){
+    alert('この行は帳面から起こした行で、売掛帳の回収と1対1ではありません。\n\n'+
+          '回収の中身は【売掛帳】のマスで直してください（出納帳の金額は変わりません）。');
+    return;
+  }
   S.arcEdit=String(x.id);
   S.arcEditBk=bkeyOf(x.date);
   S.arcEditPk='payments:'+x.arPay.cid;
