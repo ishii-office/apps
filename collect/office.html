@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793191687;</script>
+<script>window.__PAGE_VER=1793198017;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -248,6 +248,21 @@
   .dpz .jinv.ok { color: #0a7a3a; } .dpz .jinv.sp { color: #2a5fb0; } .dpz .jinv.ng { color: #b3261e; }
   .dpz .spinv { font-weight: 700; color: #6b4d00; }
   .dpz .jsprc { display: inline-block; margin-top: 3px; padding: 1px 8px; border: 1px solid #c8b06a; border-radius: 999px; background: #fffaf0; color: #6b4d00; font-size: 12px; cursor: pointer; }
+  .jfin:empty { display: none; }
+  .jfin { margin: 8px 0 16px; }
+  .jfinbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border: 2px solid var(--ok); border-radius: 10px; background: #EEF8F1; }
+  .jfinbar b { color: var(--ok); }
+  .jfinrow { display: flex; gap: 12px; align-items: flex-start; padding: 10px; margin-top: 8px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+  .jfinpic { flex: 0 0 240px; display: flex; flex-direction: column; gap: 6px; }
+  .jfinpic img { width: 100%; max-height: 340px; object-fit: contain; background: #F4F2EC; border-radius: 6px; }
+  .jfinpdf { padding: 30px 8px; text-align: center; background: #F4F2EC; border-radius: 6px; font-weight: 700; color: var(--sub); word-break: break-all; }
+  .jfinslip { flex: 1; min-width: 0; }
+  .jfinhd { font-weight: 700; margin-bottom: 6px; word-break: break-all; }
+  .jfintb { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-bottom: 8px; }
+  .jfintb th, .jfintb td { border: 1px solid var(--line); padding: 4px 6px; text-align: left; }
+  .jfintb th { background: #F3F6F5; font-size: 12px; }
+  .jfintb td.amt { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  @media (max-width: 700px) { .jfinrow { flex-direction: column; } .jfinpic { flex-basis: auto; width: 100%; } }
   .dpz .jdsep { display: flex; align-items: center; gap: 10px; margin: 18px 0 8px; }
   .dpz .jdsep b { font-size: 20px; font-weight: 800; color: var(--ai); font-variant-numeric: tabular-nums; }
   .dpz .jdsep span { font-size: 13px; color: #888; }
@@ -734,13 +749,22 @@
   .dchk { display: block; width: 100%; margin-top: 3px; padding: 4px 6px; border: 1.5px dashed #A9B5AF; border-radius: 8px; background: #fff; color: var(--sub); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dchk:hover { border-color: var(--ok); color: var(--ok); }
   .dtile.chk .dchk { border: 1.5px solid var(--ok); background: var(--ok); color: #fff; }
+  /* ★★ 済んだものは 小さい絵の【右上に ✓】だけ（2026-10-28）。確認済＝緑・対象外＝黒・破棄＝赤。下のボタンは出さない
+     （汎用の .chk { display:flex } が効いて 絵が横に潰れていたので 打ち消す） */
+  .dtile.chk { display: block; font-weight: inherit !important; }
+  .dtile { position: relative; }
+  .dbadge { display: none; position: absolute; top: 9px; right: 9px; z-index: 3; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; padding: 0; background: var(--ok); color: #fff; font: inherit; font-size: 16px; font-weight: 900; line-height: 1; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+  .dtile.chk .dbadge, .dtile.skip .dbadge, .dtile.trashed .dbadge { display: block; }
+  .dtile.skip .dbadge { background: #111; }
+  .dtile.trashed .dbadge { background: #D0201A; }
+  .dtile.chk .dchk, .dtile.chk .dskip, .dtile.skip .dchk, .dtile.skip .dskip { display: none; }
   /* ★ 対象外・破棄済み（2026-10-28） */
   .dskip { display: block; width: 100%; margin-top: 3px; padding: 3px 6px; border: 1px solid #C9CFD6; border-radius: 8px; background: #fff; color: #667; font: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dtile.skip .dimg { outline: 3px dashed #B07A00; outline-offset: -3px; }
   .dimg .stt.skip { background: #8A6100; color: #fff; }
   .dtile.skip .dskip { border-color: #8A6100; color: #8A6100; }
-  .dtile.trashed { opacity: .55; filter: grayscale(1); }
-  .dtile.trashed:hover { opacity: .9; }
+  .dtile.trashed .dimg { opacity: .55; filter: grayscale(1); }
+  .dtile.trashed:hover .dimg { opacity: .9; }
   .dtile.trashed .dimg { cursor: default; }
   .stt.trashed { background: #555 !important; color: #fff !important; text-decoration: line-through; }
   .drevive { display: block; width: 100%; margin-top: 3px; padding: 4px 6px; border: 1.5px solid #1f3a5f; border-radius: 8px; background: #fff; color: #1f3a5f; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
@@ -1919,7 +1943,7 @@
     <button type="button" class="btn ghost sm" id="dvRot" title="90度ずつ回す">↻ 回す</button>
     <span class="dvpos" id="dvPos" title="この箱の中で 左上から何番目か"></span>
     <button type="button" class="btn sm" id="dvChk">✓ 確認済にする</button>
-    <span class="dvkey" title="テンキーで サクサク確認">0 ▶ 次へ／Enter ▶ 確認済</span>
+    <span class="dvkey" title="テンキーで サクサク確認（最後の1枚のあとは 一覧に戻る）">Enter 確認済→次／1 対象外→次／2 破棄→次／0 戻して元通り</span>
     <button type="button" class="btn ghost sm" id="dvMark" title="文字・下線・枠を 重ねて書く（元の写真・PDF は書き換えません）">✏ 書きこむ</button>
     <button type="button" class="btn ghost sm" id="dvMove">別の月分へ移す</button>
     <span class="dvback" id="dvBack"></span>
@@ -3132,8 +3156,10 @@
     counts();
     if (!S.view.length) { l.appendChild(el('div', 'cbox muted', S.st === 'todo' ? '未処理の写真はありません。おつかれさまでした。' : '写真がありません。')); return; }
     let grp = '', gper = null;
+    const finPh = function (g) { if (!g) return; const fp = el('div', 'jfin'); fp.dataset.g = g; l.appendChild(fp); };
     S.view.forEach(function (it, i) {
       const gk = it.period + '|' + it.box;
+      if (gk !== grp) finPh(grp);
       if (it.period !== gper) { gper = it.period; const sp = spineSumEl(it.period); if (sp) l.appendChild(sp); }
       if (gk !== grp) {
         grp = gk;
@@ -3145,6 +3171,7 @@
       l.appendChild(row);
       drawCard(it);
     });
+    finPh(grp); jFinSync();
     startPrefetch();
     if (!S.act || !S.view.some(function (it) { return it.id === S.act; })) {
       const f = S.view.find(function (it) { return it.status !== 'done'; }) || S.view[0];
@@ -3867,6 +3894,10 @@
     st.addEventListener('click', function () { DSTACK[sid] = 1; docsDraw(); });
     w.appendChild(st);
   }
+  function dBadgeTitle(t, d) {
+    const bd = t.querySelector('.dbadge'); if (!bd) return;
+    bd.title = d.skip ? '対象外：' + d.skip + '（押すと 対象に戻す）' : d.chk ? '確認済：' + d.chk + '（押すと 未確認に戻す）' : '';
+  }
   function chkShort(v) { const m = String(v || '').match(/^\d{4}\/(\d+\/\d+) [\d:]+ ?(.*)$/); return m ? m[1] + (m[2] ? ' ' + m[2] : '') : ''; }
   /* まとめた書類は 書類ごと 印を付ける・外す */
   /* ★ 総点検（2026-10-26）：確認済の印は その写真だけ描き直す（前は 1枚押すたびに 回収資料ぜんぶを2回描き直していた） */
@@ -3882,7 +3913,7 @@
       const ts = document.querySelectorAll('.dtile[data-id="' + id + '"]'); if (!ts.length) { miss = true; return; }
       ts.forEach(function (t) {
         const mo = t.closest('.dmon'); if (mo && mons.indexOf(mo) < 0) mons.push(mo);
-        t.classList.toggle('chk', !!d.chk);
+        t.classList.toggle('chk', !!d.chk); dBadgeTitle(t, d);
         const ck = t.querySelector('.dchk'); if (!ck) return;
         ck.textContent = d.chk ? '✓ 確認済 ' + chkShort(d.chk) : '□ 確認済にする';
         ck.title = d.chk ? '確認：' + d.chk + '（押すと外す）' : '見た・入力を終えたら押す（仕訳の確定とは別）';
@@ -3948,7 +3979,8 @@
     b.appendChild(el('span', 'stt trashed', '破棄済み'));
     b.title = '破棄：' + (it.trash || '');
     tile.appendChild(b);
-    const rb = el('button', 'drevive', '↩ 復活'); rb.type = 'button'; rb.title = '元の箱・月分に戻す';
+    /* 右上の赤い ✓ を押すと 復活（元の箱・月分に戻す） */
+    const rb = el('button', 'dbadge drevive', '✓'); rb.type = 'button'; rb.title = '破棄済み（押すと 復活。元の箱・月分に戻す）'; rb.setAttribute('aria-label', '復活');
     rb.addEventListener('click', function (e) { e.stopPropagation(); rb.disabled = true; restore([it.id]); });
     tile.appendChild(rb);
     return tile;
@@ -3985,6 +4017,10 @@
       sk.addEventListener('click', function (e) { e.stopPropagation(); docsSkip([it], !it.skip); });
       tile.appendChild(sk);
     }
+    /* 右上の ✓：確認済＝緑（押すと外す）・対象外＝黒（押すと 対象に戻す） */
+    const bd = el('button', 'dbadge', '✓'); bd.type = 'button';
+    bd.addEventListener('click', function (e) { e.stopPropagation(); if (it.skip) docsSkip([it], false); else if (it.chk) docsCheck([it], false); });
+    tile.appendChild(bd); dBadgeTitle(tile, it);
     if (it.mark && it.mark.length) { const mb2 = el('span', 'dmk', '✏ ' + it.mark.length); mb2.title = '事務所の書きこみ ' + it.mark.length + 'つ'; b.appendChild(mb2); }
     if (it.memo) { const mm = el('div', 'dat', '💬 ' + it.memo); mm.title = '顧問先から：' + it.memo; tile.appendChild(mm); const mb = el('span', 'dmemo', '💬'); mb.title = mm.title; b.appendChild(mb); }
     b.addEventListener('click', function () {
@@ -5240,12 +5276,12 @@
     }, true);
   });
   $('dvRot').addEventListener('click', function () { if (!S.dvId) return; S.rot[S.dvId] = ((S.rot[S.dvId] || 0) + 90) % 360; dvFit(); });
-  function docsClose() { if (MK.on) mkEnd(true); S.dvId = ''; S.dvIt = null; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
+  function docsClose() { if (MK.on) mkEnd(true); S.dvId = ''; S.dvIt = null; S.dvSeq = null; S.dvMemo = null; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
   $('dvClose').addEventListener('click', docsClose);
 
   /* ================= ★★ 大きく見て サクサク確認（2026-10-26） =================
      ・この箱の中で 左上から何番目か（3 / 12）
-     ・テンキーの 0（00 でも1つ）で 次へ・1 で 前へ・Enter で 確認済（もう一度 Enter で 未確認に戻す）。← → でも前後へ
+     ・テンキー（2026-10-28）：Enter＝確認済→次／1＝対象外→次／2＝破棄→次／0（00 でも1つ）＝1枚戻って元通り。← → は 見るだけで前後へ
      ・★ ホイールを回すだけで 写真が拡大・縮小（Ctrl を押しながらでも 画面ではなく 写真）。カーソルの所を中心に。
        拡大中は つかんで動かす。押す（動かさずに）＝元の大きさ。元の大きさで押す＝閉じる（2026-10-28）
      ・次・その次の中身は 先に取っておく（0 を押した瞬間に出す）
@@ -5256,36 +5292,77 @@
     const ids = sec ? Array.prototype.map.call(sec.querySelectorAll('.dtile[data-id]'), function (x) { return x.dataset.id; }) : [];
     return ids.length ? ids : [it.id];
   }
-  function dvPosDraw(it) { const ids = dvSibs(it), i = ids.indexOf(it.id); $('dvPos').textContent = (i + 1) + ' / ' + ids.length + '　（この箱の 左上から）'; }
+  /* ★ 開いたときの並びを 覚えておく（2026-10-28）。破棄・対象外で描き直しても 前後がずれないように */
+  function dvSeq(it) {
+    if (!S.dvSeq || S.dvSeq.indexOf(it.id) < 0) { S.dvSeq = dvSibs(it); S.dvMemo = {}; }
+    S.dvMemo[it.id] = it;
+    return S.dvSeq;
+  }
+  function dvDoc(id) { return docOf(id) || (S.dvMemo && S.dvMemo[id]) || null; }
+  function dvPosDraw(it) { const ids = dvSeq(it), i = ids.indexOf(it.id); $('dvPos').textContent = (i + 1) + ' / ' + ids.length + '　（この箱の 左上から）'; }
   function dvPre(it) {
-    const ids = dvSibs(it), i = ids.indexOf(it.id);
+    const ids = dvSeq(it), i = ids.indexOf(it.id);
     [i + 1, i + 2, i - 1].forEach(function (j) { const id = ids[j]; const d = id && docOf(id); if (d && !fileKind(d.name) && !IMG[id]) dWant(id, true); });
   }
-  function dvStep(dir) {
+  /* 次・前の資料（まとめた書類は 1つとして飛ばす）。無ければ null */
+  function dvNextId(it, dir) {
+    const ids = dvSeq(it); let i = ids.indexOf(it.id);
+    const same = function (id) { const d = dvDoc(id); return !!(it.set && it.setOf > 1 && d && d.set === it.set); };
+    do { i += dir; } while (i >= 0 && i < ids.length && same(ids[i]));
+    let id = ids[i]; if (!id) return null;
+    if (dir < 0) { const d = dvDoc(id); if (d && d.set && d.setOf > 1) { const f = ids.find(function (x) { const y = dvDoc(x); return y && y.set === d.set; }); if (f) id = f; } }
+    return id;
+  }
+  function dvStep(dir, closeAtEnd) {
     const it = S.dvIt; if (!it) return;
-    const ids = dvSibs(it), i = ids.indexOf(it.id), id = ids[i + dir];
-    if (!id) { dcMsg(dir > 0 ? 'この箱の 最後です。' : 'この箱の 最初です。'); $('dvPos').animate && $('dvPos').animate([{ background: '#FFE3DE' }, { background: '#fff' }], 500); return; }
-    const d = docOf(id); if (d) docsOpen(d);
+    const id = dvNextId(it, dir);
+    if (!id) {
+      if (dir > 0 && closeAtEnd) { docsClose(); dcMsg('この箱の 最後まで 見ました。'); return; }
+      dcMsg(dir > 0 ? 'この箱の 最後です。' : 'この箱の 最初です。'); $('dvPos').animate && $('dvPos').animate([{ background: '#FFE3DE' }, { background: '#fff' }], 500); return;
+    }
+    const d = dvDoc(id); if (d) docsOpen(d);
+  }
+  /* ★★ テンキーで さばく（2026-10-28）
+     Enter＝確認済にして次へ／1＝対象外にして次へ／2＝破棄して次へ（最後の1枚のあとは 小さい絵の一覧に戻る）
+     0＝1枚戻って その資料を 元通り（確認済・対象外・破棄を どれも外した ただの状態）に */
+  function dvAct(k) {
+    const it = S.dvIt; if (!it) return;
+    if (k === 'chk') { if (!it.chk) docsCheck([it], true); }
+    else if (it.status === 'done') { dcMsg('確定済みは ' + (k === 'skip' ? '対象外' : '破棄') + 'にできません（仕訳を取り消してから）。', true); return; }
+    else if (k === 'skip') { if (!it.skip) docsSkip([it], true); }
+    else if (k === 'trash') {
+      const list = it.set && it.setOf > 1 ? (S.docs || []).filter(function (y) { return y.set === it.set; }) : [it];
+      const nx = dvNextId(it, 1);   /* 破棄すると 一覧から抜けるので 先に次を決める */
+      discard(list);
+      if (nx) { const d = dvDoc(nx); if (d) docsOpen(d); } else { docsClose(); dcMsg('この箱の 最後まで 見ました。'); }
+      return;
+    }
+    dvStep(1, true);
   }
   let DV_ZERO = 0;
+  function dvUndoPrev() {
+    const it = S.dvIt; if (!it) return;
+    const id = dvNextId(it, -1);
+    if (!id) { dcMsg('この箱の 最初です。'); return; }
+    const d = dvDoc(id); if (!d) return;
+    docsOpen(d);
+    if (!docOf(id)) { restore([id]); return; }   /* 破棄していた → 復活 */
+    if (d.skip) docsSkip([d], false);
+    if (d.chk) docsCheck([d], false);
+    $('dvChk').textContent = '✓ 確認済にする'; $('dvChk').classList.remove('ghost');
+  }
   document.addEventListener('keydown', function (e) {
     if ($('dview').hidden || !S.dvIt || MK.on || e.ctrlKey || e.metaKey || e.altKey) return;
     const tg = e.target, tn = tg && tg.tagName;
     if (tn === 'INPUT' || tn === 'TEXTAREA' || tn === 'SELECT' || (tg && tg.isContentEditable)) return;
     if (e.key === '0' || e.code === 'Numpad0') {
       e.preventDefault();
-      const now = Date.now(); if (now - DV_ZERO < 250) return;   /* 00 キーは 0 が2つ来る → 1つだけ進む */
-      DV_ZERO = now; dvStep(1); return;
+      const now = e.timeStamp || Date.now();   /* 押した時刻で比べる（前の処理が重くても 2つ目を拾わない） */ if (now - DV_ZERO < 250) return;   /* 00 キーは 0 が2つ来る → 1つだけ */
+      DV_ZERO = now; dvUndoPrev(); return;
     }
-    /* ★ テンキーの 1 で 前へ（2026-10-28） */
-    if (e.code === 'Numpad1' || e.key === '1') { e.preventDefault(); dvStep(-1); return; }
-    /* ★ Enter で 確認済 ⇄ もう一度 Enter で 未確認に戻す（2026-10-28） */
-    if (e.key === 'Enter' || e.code === 'NumpadEnter') {
-      e.preventDefault();
-      const it = S.dvIt; const on = !it.chk; docsCheck([it], on);
-      $('dvChk').textContent = on ? '✓ 確認済（外す）' : '✓ 確認済にする'; $('dvChk').classList.toggle('ghost', on);
-      return;
-    }
+    if (e.key === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); dvAct('chk'); return; }
+    if (e.code === 'Numpad1' || e.key === '1') { e.preventDefault(); dvAct('skip'); return; }
+    if (e.code === 'Numpad2' || e.key === '2') { e.preventDefault(); dvAct('trash'); return; }
     if (e.key === '+' || e.key === '=' || e.key === ';') { e.preventDefault(); dvZoom(1.4); return; }
     if (e.key === '-' || e.key === '_') { e.preventDefault(); dvZoom(1 / 1.4); return; }
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); dvStep(1); return; }
@@ -5546,7 +5623,58 @@
     else { vd.className = 'lgv ng'; vd.textContent = '差額 ' + yen(bal - Number(e0)) + '円（アプリ ' + yen(bal) + '円）'; }
     const si = L.querySelector('[data-a="lgs"]'); if (si && o.auto && document.activeElement !== si && si.value === '') si.placeholder = yen(o.s);
   }
+  /* ★★ 最終チェック（2026-10-28）：箱（月分×箱）の写真が ぜんぶ仕訳化できたら、
+       その箱の下に［画像と伝票を並べて見る］。写真と 出来た伝票を 縦に並べて 最後に見る。
+       ［辞書を当て直す］で その1件を確定前に戻し、辞書の選び直しへ */
+  S.jfin = S.jfin || {};
+  function jFinSync() {
+    const l = $('jlist'); if (!l) return;
+    l.querySelectorAll('.jfin[data-g]').forEach(function (fp) {
+      const g = fp.dataset.g, items = (S.view || []).filter(function (x) { return x.period + '|' + x.box === g; });
+      const all = items.length && items.every(function (x) { return x.status === 'done'; });
+      const sig = all ? items.map(function (x) { return x.id + ':' + x.entries.map(function (e) { return e.id + e.amount + e.no; }).join(','); }).join('|') + (S.jfin[g] ? '+' : '-') : '';
+      if (fp.dataset.sig === sig) return;
+      fp.dataset.sig = sig; fp.textContent = '';
+      if (!all) return;
+      const bar = el('div', 'jfinbar');
+      bar.appendChild(el('b', null, '✓ この箱は 全部 仕訳化しました（' + items.length + '件）'));
+      const ob = el('button', 'btn', S.jfin[g] ? '最終チェックを閉じる' : '📋 画像と伝票を並べて 最終チェック'); ob.type = 'button'; ob.dataset.a = 'finopen'; ob.dataset.g = g;
+      bar.appendChild(ob); fp.appendChild(bar);
+      if (!S.jfin[g]) return;
+      items.forEach(function (it, n) {
+        const r = el('div', 'jfinrow'); r.dataset.id = it.id;
+        const pic = el('div', 'jfinpic');
+        const ids = [it.id].concat(subsOf(it.id).map(function (x) { return x.id; }));
+        ids.forEach(function (id) {
+          const d = (S.docs || []).find(function (x) { return x.id === id; }) || it;
+          if (d.pdf || fileKind(d.name || '')) { pic.appendChild(el('div', 'jfinpdf', d.pdf ? 'PDF' : (d.name || ''))); return; }
+          const im = el('img'); im.alt = d.name || ''; const v = IMG[id]; im.src = v && v.t === 'img' ? v.src : (THUMB[id] || '');
+          if (!(v && v.t === 'img') && typeof dWant === 'function') dWant(id, false, function () { const w = IMG[id]; if (w && w.t === 'img') im.src = w.src; });
+          pic.appendChild(im);
+        });
+        r.appendChild(pic);
+        const sl = el('div', 'jfinslip');
+        sl.appendChild(el('div', 'jfinhd', (n + 1) + '.　' + it.name.replace(/^\d{8}_\d{6}_/, '')));
+        const tb = el('table', 'jfintb');
+        const hr = el('tr'); ['日付', '辞書', '借方', '貸方', '金額', '摘要'].forEach(function (x) { hr.appendChild(el('th', null, x)); }); tb.appendChild(hr);
+        it.entries.forEach(function (e) {
+          const tr = el('tr');
+          [e.date, String(seqOf(it.box, e.no) || e.no) + ' ' + ((dictOf(String(e.no)) || {}).title || ''), sideTxt(e.drCode, e.dr), sideTxt(e.crCode, e.cr), yen(e.amount) + '円', (e.memo || '') + (e.out ? '（書き出し済み）' : '')].forEach(function (x, k) { const td = el('td', k === 4 ? 'amt' : null, x); tr.appendChild(td); });
+          tb.appendChild(tr);
+        });
+        sl.appendChild(tb);
+        const rb = el('button', 'btn ghost sm', '✎ 辞書を当て直す'); rb.type = 'button'; rb.dataset.a = 'finre'; rb.dataset.id = it.id;
+        if (it.entries.some(function (e) { return e.out; })) { rb.disabled = true; rb.title = '取込ファイルに変換済み。会計ソフト側で直してください'; }
+        sl.appendChild(rb);
+        r.appendChild(sl);
+        fp.appendChild(r);
+      });
+    });
+  }
   function drawCard(it) {
+    try { return drawCard0(it); } finally { if (S.tab === 'In' || (POP && !POP.closed)) try { jFinSync(); } catch (e) {} }
+  }
+  function drawCard0(it) {
     const row = rowOf(it.id); if (!row) return;
     const i = Number(row.dataset.i);
     const c = card(it.id);
@@ -5976,6 +6104,13 @@
   });
   jl.addEventListener('click', function (e) {
     const t = e.target.closest('[data-a]'); if (!t) return;
+    if (t.dataset.a === 'finopen') { const g = t.dataset.g; if (S.jfin[g]) delete S.jfin[g]; else S.jfin[g] = 1; jFinSync(); return; }
+    if (t.dataset.a === 'finre') {
+      const it = itemOf(t.dataset.id); if (!it) return;
+      undoDone(it);
+      if (it.status !== 'done') { repick(it); focusCard(it.id); }
+      return;
+    }
     if (t.dataset.a === 'spgo') { const id = t.dataset.id; if (rowOf(id)) focusCard(id); else fmsg('その領収書は いまの絞り込み（箱・未処理/確定）の外です。［全部］にすると出ます。', 'err'); return; }
     const row = t.closest('.jdrow'); if (!row) return;
     const it = itemOf(row.dataset.id); if (!it) return;
