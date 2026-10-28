@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793218408;</script>
+<script>window.__PAGE_VER=1793219457;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3521,7 +3521,8 @@
      ad（どの画面か）が 中身と操作を渡す：items() / key / doc / pageN / per / perLabel / thumb / name / locked / need / reorder / join / pageOrder / rename / pdfBtn / pdfAll */
   const WS = {};
   function wsName(key) { let h = 0; for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0; return 'collect_ws_' + (h >>> 0).toString(36); }
-  function wsOk() { return !!(window.matchMedia && window.matchMedia('(min-width: 900px) and (pointer: fine)').matches); }
+  /* ★ スマホでも出す（2026-10-29）。スマホでは 新しいタブで開く（並べ替えは押して選ぶ・バラす・PDF・印刷はそのまま使える） */
+  function wsOk() { return true; }
   function wsOpen(key, ad) {
     let o = WS[key];
     if (o && o.win && !o.win.closed) { o.ad = ad; o.win.focus(); wsDraw(key); return true; }
