@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793219457;</script>
+<script>window.__PAGE_VER=1793221936;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -76,6 +76,7 @@
   .toclient[hidden], .reopen[hidden] { display: none; }
   /* ★★ 並べて表示（2026-10-26）。体を左半分に。transform で 中の「固定」の部品も 左半分に収める */
   html.paired body { width: 50vw; height: 100vh; overflow: auto; transform: translateZ(0); }
+  .tilebar { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 80; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; max-width: calc(100vw - 24px); padding: 10px 14px; background: #fff; border: 2px solid var(--accent); border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.25); font-weight: 700; font-size: 14px; }
   .pairframe { position: fixed; top: 0; right: 0; width: 50vw; height: 100vh; border: 0; border-left: 3px solid var(--accent); background: #fff; z-index: 2147483000; }
   html.ispane #toClient { display: none !important; }
   @media (max-width: 700px) { .toclient .lbl { display: none; } .toclient::after { content: '顧問先'; } }
@@ -2509,37 +2510,75 @@
   var PANE = (function () { try { return new URL(location.href).searchParams.get('pane') === '1' && window.parent !== window; } catch (e) { return false; } })();
   if (PANE) document.documentElement.classList.add('ispane');
   function paneUrl_(u) { try { const x = new URL(u, location.href); x.searchParams.set('pane', '1'); return x.href; } catch (e) { return u; } }
-  function pairOpen(u) {
-    let f = document.getElementById('pairFrame');
-    if (!f) { f = document.createElement('iframe'); f.id = 'pairFrame'; f.className = 'pairframe'; f.title = '顧問先の画面（並べて表示）'; document.documentElement.appendChild(f); }
-    if (f.dataset.u !== u) { f.dataset.u = u; f.src = paneUrl_(u); }
-    document.documentElement.classList.add('paired');
-    $('toClient').querySelector('.lbl').textContent = '並べるのをやめる'; $('toClient').firstChild.textContent = '✕ ';
+  /* ★★ 顧問先の画面は【別のウィンドウ】で 横に並べる（2026-10-29。前は 1つの画面を半分に割っていた）
+       ・パソコン：画面の右半分に 新しい窓。スマホ：新しいタブ。閉じるのは その窓の ×
+       ・このボタンで開いた窓だけ、こちらで ちがう顧問先に変えたら 閉じる（よその顧問先を並べない） */
+  let CWIN = null, CWIN_CODE = '';
+  function halfRect(side) {
+    const sw = screen.availWidth || 1280, sh = screen.availHeight || 800, half = Math.floor(sw / 2), L = screen.availLeft || 0, T = screen.availTop || 0;
+    return { left: side === 'L' ? L : L + half, top: T, width: half, height: sh };
   }
-  function pairClose() {
-    const f = document.getElementById('pairFrame'); if (f) f.remove();
-    document.documentElement.classList.remove('paired');
-    $('toClient').querySelector('.lbl').textContent = '顧問先の画面を表示'; $('toClient').firstChild.textContent = '📷 ';
+  function isNarrow() { return !!(window.matchMedia && window.matchMedia('(max-width: 700px)').matches); }
+  /* 顧問先の画面は【左半分】。スマホは 新しいタブ */
+  function pairWinFeat() {
+    if (isNarrow()) return '';
+    const r = halfRect('L');
+    return 'popup=yes,left=' + r.left + ',top=' + r.top + ',width=' + r.width + ',height=' + r.height;
   }
+  /* 事務所の画面（この窓）を【右半分】へ。ブラウザが 動かすのを許す窓（このアプリが開いた窓・アプリとして入れた窓）なら 自分で寄る */
+  function selfTile() {
+    if (isNarrow()) return true;
+    const r = halfRect('R');
+    try { window.moveTo(r.left, r.top); window.resizeTo(r.width, r.height); } catch (e) {}
+    return Math.abs(window.screenX - r.left) < 24 && Math.abs(window.outerWidth - r.width) < 40;
+  }
+  /* 動かせない窓（ふつうのタブ）のときだけ：1回押すと この事務所の画面を 右半分の窓で開き直す（そのあとは 自動で並ぶ） */
+  function tileOffer(ct) {
+    let b = $('tileGo');
+    if (!b) {
+      b = el('div', 'tilebar'); b.id = 'tileGo';
+      const go = el('button', 'btn sm', '↔ 事務所の画面を 右半分の窓にして 並べる'); go.type = 'button'; go.id = 'tileGoB';
+      const no = el('button', 'btn ghost sm', 'このまま'); no.type = 'button';
+      b.appendChild(el('span', null, 'この窓は ブラウザが動かせない窓です。'));
+      b.appendChild(go); b.appendChild(no);
+      document.body.appendChild(b);
+      no.addEventListener('click', function () { b.remove(); });
+      go.addEventListener('click', function () {
+        const r = halfRect('R');
+        const w = window.open('office.html?ct=' + encodeURIComponent(b.dataset.ct || ''), 'collect_office_main', 'popup=yes,left=' + r.left + ',top=' + r.top + ',width=' + r.width + ',height=' + r.height);
+        if (!w) { alert('別の窓を開けませんでした。ブラウザの「ポップアップをブロック」を このページだけ許可してください。'); return; }
+        b.textContent = '右半分の窓で 続けてください（この画面は 閉じてかまいません）。';
+      });
+    }
+    b.dataset.ct = ct || '';
+  }
+  function pairClose() { if (CWIN && !CWIN.closed) { try { CWIN.close(); } catch (e) {} } CWIN = null; CWIN_CODE = ''; }
   function pairSync() {
-    if (!S.code) return;
-    const code = S.code;   /* ★ 総点検：返事を待つあいだに 顧問先を替えたら 古い顧問先を並べない */
-    if (PANE) { if (!PANE_READY) return; clientUrlOf(code).then(function (u) { if (code !== S.code) return; if (u) try { window.parent.postMessage({ k: 'collect-pair', t: 'client', url: u }, location.origin); } catch (e) {} }, function () {}); return; }
-    if (!document.getElementById('pairFrame')) return;
-    clientUrlOf(code).then(function (u) {
-      if (code !== S.code || !document.getElementById('pairFrame')) return;
-      if (u) pairOpen(u); else { pairClose(); alert('この顧問先は まだ提出URLがありません（顧問先タブで作ってください）。並べるのをやめました。'); }
-    }, function () {});
+    if (PANE) {
+      if (!S.code || !PANE_READY) return; const code = S.code;
+      clientUrlOf(code).then(function (u) { if (code !== S.code) return; if (u) try { window.parent.postMessage({ k: 'collect-pair', t: 'client', url: u }, location.origin); } catch (e) {} }, function () {});
+      return;
+    }
+    if (CWIN && (CWIN.closed || CWIN_CODE !== S.code)) pairClose();
   }
   $('toClient').addEventListener('click', function () {
-    if (document.getElementById('pairFrame')) { pairClose(); return; }
     const code = S.code; if (!code) { alert('先に 顧問先を選んでください。'); return; }
+    if (CWIN && !CWIN.closed && CWIN_CODE === code) { CWIN.focus(); return; }
+    pairClose();
+    /* ポップアップを止められないよう 押した瞬間に窓を開けて、URL が分かったら そこへ */
+    const w = window.open('', 'collect_client', pairWinFeat());
+    if (!w) { alert('別の窓を開けませんでした。ブラウザの「ポップアップをブロック」を このページだけ許可してください。'); return; }
+    CWIN = w; CWIN_CODE = code;
+    try { w.document.title = '顧問先の画面'; w.document.body.textContent = '開いています…'; } catch (e) {}
     const b = this; b.disabled = true;
     clientUrlOf(code).then(function (u) {
       b.disabled = false;
-      if (!u) { alert('この顧問先は まだ提出URLがありません（顧問先タブで作ってください）。'); return; }
-      pairOpen(u);
-    }, function (e) { b.disabled = false; alert('開けませんでした。' + e.message); });
+      if (CWIN !== w) return;
+      if (!u || code !== S.code) { pairClose(); if (!u) alert('この顧問先は まだ提出URLがありません（顧問先タブで作ってください）。'); return; }
+      w.location.href = u;
+      /* 事務所の画面は 右半分へ。動かせない窓なら 1回押せば並ぶボタンを出す */
+      setTimeout(function () { if (!selfTile()) { let ct = ''; try { ct = new URL(u).searchParams.get('t') || ''; } catch (x) {} tileOffer(ct); } }, 50);
+    }, function (e) { b.disabled = false; if (CWIN === w) pairClose(); alert('開けませんでした。' + e.message); });
   });
   function setCode(code) {
     if (!code || code === S.code || !S.clients.some(function (c) { return c.code === code; })) return true;
@@ -3389,7 +3428,7 @@
         if (wsOk() && sub.length) {
           /* ★ 大きい箱は 中の箱もいっしょに（2026-10-28） */
           const kids = sub.some(function (x) { return x.box !== bx; });
-          const wb = el('button', 'dmon-b', '🗗 別ウィンドウ'); wb.type = 'button'; wb.title = 'この箱' + (kids ? '（中の箱も）' : '') + 'を 大きな作業場（別の窓）で開く。並べ替え・まとめ・バラす・名前の書き換え・PDF。ほかの箱も 別の窓で並べて開けます';
+          const wb = el('button', 'dmon-b', '↗ 別ウィンドウ'); wb.type = 'button'; wb.title = 'この箱' + (kids ? '（中の箱も）' : '') + 'を 大きな作業場（別の窓）で開く。並べ替え・まとめ・バラす・名前の書き換え・PDF。ほかの箱も 別の窓で並べて開けます';
           wb.addEventListener('click', function () { wsGo('o:' + S.code + ':' + bx + (kids ? ':sub' : ''), wsOfficeAd(S.code, bx, { sub: kids })); });
           hd.appendChild(wb);
         }
@@ -3456,7 +3495,7 @@
           row.appendChild(pr);
           /* ★ 小さい箱（月分）だけを 別ウィンドウで（2026-10-28） */
           if (wsOk()) {
-            const wb = el('button', 'dmon-b', '🗗 別ウィンドウ'); wb.type = 'button'; wb.title = 'この月分だけを 別の窓で開く（並べ替え・まとめ・バラす・名前・PDF）';
+            const wb = el('button', 'dmon-b', '↗ 別ウィンドウ'); wb.type = 'button'; wb.title = 'この月分だけを 別の窓で開く（並べ替え・まとめ・バラす・名前・PDF）';
             wb.addEventListener('click', function () { wsGo('o:' + S.code + ':' + bx + ':p' + p, wsOfficeAd(S.code, bx, { per: p })); });
             row.appendChild(wb);
           }
@@ -3512,7 +3551,7 @@
     dcBar();
   }
   /* ================= ★★ 書類整理の作業場（別ウィンドウ。2026-10-19。DocuWorks の机の代わり） =================
-     パソコンで 箱ごとに［🗗 別ウィンドウ］。いくつでも並べて開ける（箱ごとに別の窓）。
+     パソコンで 箱ごとに［↗ 別ウィンドウ］。いくつでも並べて開ける（箱ごとに別の窓）。
      窓の中は この画面が描く（ログインし直さない・データは この画面と同じものを使う）。窓の中で変えたことは この画面にもすぐ映る。
        ・書類（まとめたものは その束で1つ）を大きく並べる。つかんで 左右の端へ落とす＝並べ替え／まん中へ落とす＝1つの書類に
        ・小さいページを つかんで 同じ書類の中へ落とす＝ページの順番
