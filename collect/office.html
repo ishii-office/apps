@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793198017;</script>
+<script>window.__PAGE_VER=1793218408;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -788,6 +788,12 @@
   .dkids { margin-top: 10px; }
   .dbox.sub { margin: 0 0 10px; padding: 10px 12px; border-width: 2px; border-color: #A9CFC4; background: var(--a-faint); }
   .dbox.sub .dbox-h h3 { font-size: 16px; }
+  /* ★★ 箱の中の箱は 左の枠だけ（2026-10-28）。右の枠と右の余白をやめて 右端まで使う＝入れ子が深くても 写真の場所が減らない */
+  .dbox:not(.sub) { padding-right: 4px; }
+  .dbox .dbox.sub, .dbox .dyr, .dbox .dmon { border-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; margin-right: 0; padding-right: 0; }
+  .dbox .dyk { padding-right: 0; }
+  .dbox .dgrid { padding-right: 4px; }
+  @media (max-width: 600px) { .dbox .dbox.sub { padding-left: 8px; } .dbox:not(.sub) { padding-left: 8px; } .dbox .dyk { padding-left: 6px; } .dbox .dgrid { padding-left: 6px; } }
   .dbox.target { border-color: var(--accent); border-style: solid; background: var(--a-tint); }
   .dbox-h .dmon-b { margin-left: 4px; }
   .dtile { -webkit-user-select: none; user-select: none; }
@@ -1014,6 +1020,25 @@
   .dview { position: fixed; inset: 0; z-index: 50; background: rgba(20,30,28,.92); display: flex; flex-direction: column; }
   .dview .dvbar { display: flex; align-items: center; gap: 8px; padding: 8px 260px 8px 10px; background: #fff; flex-wrap: wrap; }   /* 右は［📷 顧問先の画面］［↻ 開き直す］の場所をあける */
   .dview .dvbar .sp { flex: 1; }
+  /* ★★ 上の帯は 詰める（2026-10-28）。名前は1行（はみ出しは …）、ボタンは右へ並べて、写真・明細の場所を広く */
+  .dview .dvbar { flex-wrap: nowrap; gap: 6px; padding: 5px 290px 5px 10px; }
+  .dview #dvName { flex: 0 1 30%; min-width: 0; max-width: 30%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+  .dview .dvtools { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .dview .dvtools > * { white-space: nowrap; }
+  .dview .dvtools .btn.sm { padding: 4px 9px; }
+  .dview .dvtools .dvback { flex-wrap: nowrap; }
+  .dbox-h { flex-wrap: wrap; row-gap: 6px; }
+  .dbox-h h3 { white-space: nowrap; }
+  @media (max-width: 700px) {
+    /* 電話：1行目＝名前（右の［顧問先］［開き直す］の分をあける）、2行目＝ボタンを横に並べて 指で横へ送る */
+    .dview .dvbar { flex-wrap: wrap; padding: 4px 6px; row-gap: 4px; }
+    .dview #dvName { flex: 1 1 100%; max-width: none; padding: 8px 196px 4px 2px; font-size: 13px; }
+    .dview .dvtools { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-bottom: 2px; scrollbar-width: none; }
+    .dview .dvtools::-webkit-scrollbar { display: none; }
+    .dview .dvkey { display: none; }
+    .dview .dvtools .dvpos { padding: 2px 8px; font-size: 12px; }
+    .dview .dvback select, .dview .dvback input { max-width: 150px; }
+  }
   .dview .dvback { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .dview .dvback select, .dview .dvback input { font-size: 13px; max-width: 240px; }
   .dview .dvback .bn { font-size: 13px; color: #b3261e; }
@@ -1938,7 +1963,7 @@
 
 <!-- ===== 回収資料を大きく見る ===== -->
 <div class="dview dpz" id="dview" hidden role="dialog" aria-modal="true" aria-label="資料を大きく見る">
-  <div class="dvbar"><b id="dvName"></b><span class="sp"></span>
+  <div class="dvbar"><b id="dvName"></b><span class="dvtools">
     <button type="button" class="btn sm" id="dvGo">仕訳化する</button>
     <button type="button" class="btn ghost sm" id="dvRot" title="90度ずつ回す">↻ 回す</button>
     <span class="dvpos" id="dvPos" title="この箱の中で 左上から何番目か"></span>
@@ -1948,7 +1973,7 @@
     <button type="button" class="btn ghost sm" id="dvMove">別の月分へ移す</button>
     <span class="dvback" id="dvBack"></span>
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
-    <button type="button" class="btn ghost sm" id="dvClose">閉じる</button></div>
+    <button type="button" class="btn ghost sm" id="dvClose">閉じる</button></span></div>
   <div class="dvmk" id="dvMkBar" hidden>
     <span class="mk-m" role="group" aria-label="書き方"><button type="button" data-m="text" aria-pressed="true">文字</button><button type="button" data-m="line" aria-pressed="false">下線</button><button type="button" data-m="box" aria-pressed="false">枠で囲む</button></span>
     <span class="mk-c" role="group" aria-label="色"><button type="button" data-c="#D0201A" aria-pressed="true" title="赤" style="--c:#D0201A"></button><button type="button" data-c="#111111" aria-pressed="false" title="黒" style="--c:#111111"></button><button type="button" data-c="#1A4FD0" aria-pressed="false" title="青" style="--c:#1A4FD0"></button></span>
@@ -5299,7 +5324,7 @@
     return S.dvSeq;
   }
   function dvDoc(id) { return docOf(id) || (S.dvMemo && S.dvMemo[id]) || null; }
-  function dvPosDraw(it) { const ids = dvSeq(it), i = ids.indexOf(it.id); $('dvPos').textContent = (i + 1) + ' / ' + ids.length + '　（この箱の 左上から）'; }
+  function dvPosDraw(it) { const ids = dvSeq(it), i = ids.indexOf(it.id); $('dvPos').textContent = (i + 1) + ' / ' + ids.length; }
   function dvPre(it) {
     const ids = dvSeq(it), i = ids.indexOf(it.id);
     [i + 1, i + 2, i - 1].forEach(function (j) { const id = ids[j]; const d = id && docOf(id); if (d && !fileKind(d.name) && !IMG[id]) dWant(id, true); });
