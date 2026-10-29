@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793259877;</script>
+<script>window.__PAGE_VER=1793268977;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -10034,7 +10034,7 @@
         const nx = (prompt(s.name + ' さんの新しい名前（暗証番号はそのままです）', s.name) || '').trim();
         if (!nx || nx === s.name) return;
         gs('staffRename', s.name, nx).then(function (r) {
-          sDraw(r.list); smsg(s.name + ' さんを「' + nx + '」に変えました。' + (r.moved ? '顧問先の担当者も ' + r.moved + ' か所 付け替えました。' : '') + '本人は 新しい名前で入り直してください（暗証番号は同じです）。', 'ok');
+          sDraw(r.list); smsg(s.name + ' さんを「' + nx + '」に変えました。' + (r.moved ? '顧問先の担当者・改善要望・確認済の印 などの名前も ' + r.moved + ' か所 付け替えました。' : '') + '本人は 新しい名前で入り直してください（暗証番号は同じです）。', 'ok');
         }, function (e) { smsg(e.message, 'err'); });
       });
       td.appendChild(nb);
