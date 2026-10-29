@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793254603;</script>
+<script>window.__PAGE_VER=1793259007;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -781,6 +781,10 @@
   .dvmk .mk-msg { font-size: 12px; color: var(--sub); }
   .mksvg { position: absolute; pointer-events: none; overflow: visible; transform-origin: 50% 50%; }
   .dv-mk .mksvg { pointer-events: auto; cursor: crosshair; }
+  .dvmk .mk-sel { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 8px; background: #E5EEFF; }
+  .dvmk .mk-sel[hidden] { display: none; }
+  .dv-mk .mksvg text { cursor: move; }
+  .mksel { fill: none; stroke: #1A4FD0; stroke-dasharray: 6 4; pointer-events: none; }
   .mkin { position: fixed; z-index: 90; font: inherit; font-size: 16px; padding: 3px 6px; border: 2px solid #D0201A; border-radius: 6px; min-width: 200px; }
   /* ★ 確認済にしても 小さい絵は変えない（下のチェックだけ。2026-10-26） */
   .dmk { position: absolute; right: 4px; bottom: 4px; background: #fff; border: 1px solid #D0201A; color: #D0201A; border-radius: 6px; font-size: 11px; font-weight: 700; padding: 0 4px; pointer-events: none; }
@@ -1981,6 +1985,7 @@
   <div class="dvmk" id="dvMkBar" hidden>
     <span class="mk-m" role="group" aria-label="書き方"><button type="button" data-m="text" aria-pressed="true">文字</button><button type="button" data-m="line" aria-pressed="false">下線</button><button type="button" data-m="box" aria-pressed="false">枠で囲む</button></span>
     <span class="mk-c" role="group" aria-label="色"><button type="button" data-c="#D0201A" aria-pressed="true" title="赤" style="--c:#D0201A"></button><button type="button" data-c="#111111" aria-pressed="false" title="黒" style="--c:#111111"></button><button type="button" data-c="#1A4FD0" aria-pressed="false" title="青" style="--c:#1A4FD0"></button></span>
+    <span class="mk-sel" id="mkSelBar" hidden><b>選んだ文字：</b><button type="button" class="btn ghost sm" id="mkFix">文字を直す</button><button type="button" class="btn ghost sm" id="mkSmall" title="少し小さく">A－</button><button type="button" class="btn ghost sm" id="mkBig" title="少し大きく">A＋</button><button type="button" class="btn ghost sm" id="mkDel">🗑 消す</button></span>
     <button type="button" class="btn ghost sm" id="mkUndo">↶ 1つ戻す</button>
     <button type="button" class="btn ghost sm" id="mkClear">全部消す</button>
     <button type="button" class="btn sm primary" id="mkSave">保存して終わる</button>
@@ -4753,8 +4758,7 @@
     /* ★ 何年 と 何月分 は別々のプルダウン（2026-10-07） */
     const ys = $('dmvY'), ms = $('dmvM'); ys.textContent = ''; ms.textContent = '';
     if (many) { const o0 = el('option', null, '（そのまま）'); o0.value = ''; ys.appendChild(o0); }
-    const now = new Date();
-    for (let y = now.getFullYear(); y >= 2024; y--) { const o = el('option', null, y + '年'); o.value = String(y); ys.appendChild(o); }
+    for (let y = Number(dmvMax().slice(0, 4)); y >= 2024; y--) { const o = el('option', null, y + '年'); o.value = String(y); ys.appendChild(o); }
     for (let m = 1; m <= 12; m++) { const o = el('option', null, m + '月分'); o.value = String(m).padStart(2, '0'); ms.appendChild(o); }
     const pm = String(it.period || '').match(/^(\d{4})-(\d{2})$/);
     if (!many && pm && ys.querySelector('option[value="' + pm[1] + '"]')) { ys.value = pm[1]; ms.value = pm[2]; } else if (many) ys.value = '';
@@ -4767,9 +4771,10 @@
     $('dmvNow').textContent = many ? list.length + '件を移します' : 'いま：' + perLabel(it.period) + '［' + boxLabel(it.box) + '］　' + it.name.replace(/^\d{8}_\d{6}_/, '');
     $('dmove').hidden = false;
   }
-  /* 先の月は選べない・年が「そのまま」なら月も選ばない */
+  /* ★ 4か月より先の月は選べない（2026-10-29 改善要望 K-0003。顧問先の画面・サーバの PERIOD_AHEAD と同じ）・年が「そのまま」なら月も選ばない */
+  function dmvMax() { const d = new Date(), n = new Date(d.getFullYear(), d.getMonth() + 4, 1); return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0'); }
   function dmvFix() {
-    const y = $('dmvY').value, ms = $('dmvM'), now = new Date(), cur = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    const y = $('dmvY').value, ms = $('dmvM'), cur = dmvMax();
     ms.disabled = !y;
     Array.prototype.forEach.call(ms.options, function (o) { o.disabled = !y || (y + '-' + o.value) > cur; });
     if (y && ms.selectedOptions[0] && ms.selectedOptions[0].disabled) { const ok = Array.prototype.filter.call(ms.options, function (o) { return !o.disabled; }); if (ok.length) ms.value = ok[ok.length - 1].value; }
@@ -5702,7 +5707,9 @@
 
   /* ================= ★★ 書きこむ（文字・下線・枠。2026-10-26） =================
      元の写真・PDF は書き換えない。形だけを 別の列に持ち（workMark）、大きく見るときに 上に重ねる */
-  const MK = { on: false, m: 'text', c: '#D0201A', list: [], was: '', drag: null };
+  const MK = { on: false, m: 'text', c: '#D0201A', list: [], was: '', drag: null, sel: -1, mv: null };
+  /* ★ K-0006（2026-10-29）：書いた文字を 押して選ぶ → つかんで動かす・［文字を直す］（ダブルクリックでも）・［A－］［A＋］・色・［消す］（Delete キーでも）。
+       何もない所を押すと 選ぶのをやめる。大きさは 形の z（1＝ふつう）で持つ */
   function mkTargets() {
     const b = $('dvBody'); const im = b.querySelector(':scope > img');
     if (im) return [im];
@@ -5722,9 +5729,11 @@
       sv.setAttribute('viewBox', '0 0 ' + W + ' ' + H); sv.setAttribute('width', W); sv.setAttribute('height', H);
       sv.style.left = t.offsetLeft + 'px'; sv.style.top = t.offsetTop + 'px'; sv.style.width = W + 'px'; sv.style.height = H + 'px';
       if (t.tagName === 'IMG') { sv.style.transform = t.style.transform || ''; sv.style.margin = '0'; }
-      ms.filter(function (m) { return (m.p || 0) === p; }).forEach(function (m) { sv.appendChild(mkShape(m, W, H)); });
+      let selEl = null;
+      ms.forEach(function (m, i) { if ((m.p || 0) !== p) return; const sh = mkShape(m, W, H); if (MK.on) { sh.dataset.i = i; if (i === MK.sel) selEl = sh; } sv.appendChild(sh); });
       if (MK.drag && MK.drag.p === p && MK.drag.cur) sv.appendChild(mkShape(MK.drag.cur, W, H));
       t.parentNode.insertBefore(sv, t.nextSibling);
+      if (selEl) mkSelBox(sv, selEl);
       if (MK.on) mkBind(sv, p);
     });
   }
@@ -5732,7 +5741,7 @@
     const sw = Math.max(2, W * 0.004);
     if (m.t === 'text') {
       const t = document.createElementNS(SVGNS, 'text'); t.setAttribute('x', m.x * W); t.setAttribute('y', m.y * H);
-      t.setAttribute('fill', m.c); t.setAttribute('font-size', Math.max(12, W * 0.03)); t.setAttribute('font-weight', '700');
+      t.setAttribute('fill', m.c); t.setAttribute('font-size', Math.max(12, W * 0.03) * (m.z || 1)); t.setAttribute('font-weight', '700');
       t.setAttribute('dominant-baseline', 'middle'); t.textContent = m.s; return t;
     }
     if (m.t === 'line') {
@@ -5747,15 +5756,43 @@
     const q = pt.matrixTransform(sv.getScreenCTM().inverse()); const vb = sv.viewBox.baseVal;
     return { x: Math.max(0, Math.min(1, q.x / vb.width)), y: Math.max(0, Math.min(1, q.y / vb.height)) };
   }
+  function mkSelBox(sv, el) {
+    try { const b = el.getBBox(), r = document.createElementNS(SVGNS, 'rect'), pad = 4; r.setAttribute('class', 'mksel'); r.setAttribute('x', b.x - pad); r.setAttribute('y', b.y - pad); r.setAttribute('width', b.width + pad * 2); r.setAttribute('height', b.height + pad * 2); sv.appendChild(r); } catch (e) {}
+  }
+  function mkSelect(i) {
+    MK.sel = i;
+    const m = MK.list[i], on = !!(m && m.t === 'text'); if (!on) MK.sel = -1;
+    $('mkSelBar').hidden = !on;
+    if (on) document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.c === m.c)); });
+    mkPaint();
+  }
+  function mkSelEdit(k) { const m = MK.list[MK.sel]; if (!m) return; k(m); mkDirty(); mkPaint(); }
   function mkBind(sv, p) {
     sv.addEventListener('pointerdown', function (e) {
       e.preventDefault(); e.stopPropagation();
       const a = mkPt(sv, e);
+      /* 書いた文字を押す＝選ぶ（そのまま つかんで動かせる） */
+      const ti = e.target && e.target.dataset && e.target.dataset.i != null ? Number(e.target.dataset.i) : -1;
+      if (ti >= 0 && MK.list[ti] && MK.list[ti].t === 'text') {
+        if (MK.sel !== ti) mkSelect(ti);
+        const m = MK.list[ti];
+        MK.mv = { i: ti, p: p, dx: m.x - a.x, dy: m.y - a.y, moved: false };
+        try { sv.setPointerCapture(e.pointerId); } catch (x) {}
+        return;
+      }
+      if (MK.sel >= 0) { MK.sel = -1; $('mkSelBar').hidden = true; const sb = sv.querySelector('.mksel'); if (sb) sb.remove(); }   /* 何もない所＝選ぶのをやめて ふつうに書く */
       if (MK.m === 'text') { mkText(e.clientX, e.clientY, p, a); return; }
       MK.drag = { p: p, a: a, cur: null };
       try { sv.setPointerCapture(e.pointerId); } catch (x) {}
     });
     sv.addEventListener('pointermove', function (e) {
+      if (MK.mv && MK.mv.p === p) {
+        const b = mkPt(sv, e), m = MK.list[MK.mv.i]; if (!m) return;
+        m.x = Math.max(0, Math.min(1, b.x + MK.mv.dx)); m.y = Math.max(0, Math.min(1, b.y + MK.mv.dy)); MK.mv.moved = true;
+        const vb = sv.viewBox.baseVal, te = sv.querySelector('text[data-i="' + MK.mv.i + '"]');
+        if (te) { te.setAttribute('x', m.x * vb.width); te.setAttribute('y', m.y * vb.height); const sb = sv.querySelector('.mksel'); if (sb) sb.remove(); mkSelBox(sv, te); }
+        return;
+      }
       if (!MK.drag || MK.drag.p !== p) return;
       const b = mkPt(sv, e), a = MK.drag.a;
       MK.drag.cur = mkFrom(a, b); MK.drag.cur.p = p;
@@ -5763,12 +5800,20 @@
       const vb = sv.viewBox.baseVal, sh = mkShape(MK.drag.cur, vb.width, vb.height); sh.setAttribute('class', 'mkcur'); sv.appendChild(sh);
     });
     sv.addEventListener('pointerup', function (e) {
+      if (MK.mv) { const mv = MK.mv; MK.mv = null; if (mv.moved) { mkDirty(); mkPaint(); } return; }
       if (!MK.drag || MK.drag.p !== p) return;
       const m = MK.drag.cur; MK.drag = null;
       if (m && (Math.abs(m.w) > 0.01 || Math.abs(m.h) > 0.01)) { MK.list.push(m); mkDirty(); }
       mkPaint();
     });
     sv.addEventListener('click', function (e) { e.stopPropagation(); });
+    sv.addEventListener('dblclick', function (e) { e.stopPropagation(); const ti = e.target && e.target.dataset && e.target.dataset.i != null ? Number(e.target.dataset.i) : -1; if (ti >= 0) mkFixText(ti); });
+  }
+  /* 選んだ文字を 打ち直す（その場に 欄を出す） */
+  function mkFixText(i) {
+    const m = MK.list[i]; if (!m || m.t !== 'text') return;
+    const te = document.querySelector('#dvBody .mksvg text[data-i="' + i + '"]'), r = te ? te.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, height: 20 };
+    mkText(r.left, r.top + r.height / 2, m.p || 0, { x: m.x, y: m.y }, i);
   }
   function mkFrom(a, b) {
     if (MK.m === 'line') {
@@ -5777,12 +5822,15 @@
     }
     return { p: 0, t: 'box', x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y), c: MK.c };
   }
-  function mkText(cx, cy, p, a) {
+  function mkText(cx, cy, p, a, edit) {
     const old = document.querySelector('.mkin'); if (old) old.remove();
     const inp = el('input', 'mkin'); inp.type = 'text'; inp.placeholder = '書く文字（Enter で置く）'; inp.maxLength = 200;
+    const em = edit != null ? MK.list[edit] : null; if (em) { inp.value = em.s; inp.placeholder = '直す文字（Enter で決める）'; }
     inp.style.left = Math.min(cx, innerWidth - 240) + 'px'; inp.style.top = Math.max(4, cy - 16) + 'px'; inp.style.color = MK.c;
     document.body.appendChild(inp); setTimeout(function () { inp.focus(); }, 0);
-    let fin = false; const done = function (keep) { if (fin) return; fin = true; const v = inp.value.trim(); if (inp.isConnected) inp.remove(); if (keep && v) { MK.list.push({ p: p, t: 'text', x: a.x, y: a.y, w: 0, h: 0, s: v, c: MK.c }); mkDirty(); mkPaint(); } };
+    let fin = false; const done = function (keep) { if (fin) return; fin = true; const v = inp.value.trim(); if (inp.isConnected) inp.remove();
+      if (em) { if (keep && v && v !== em.s) { em.s = v; mkDirty(); } mkPaint(); return; }
+      if (keep && v) { MK.list.push({ p: p, t: 'text', x: a.x, y: a.y, w: 0, h: 0, s: v, c: MK.c }); mkDirty(); mkPaint(); } };
     inp.addEventListener('keydown', function (e) { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); done(true); } if (e.key === 'Escape') { e.preventDefault(); done(false); } });
     inp.addEventListener('blur', function () { done(true); });
   }
@@ -5790,16 +5838,16 @@
   function mkStart() {
     const it = S.dvIt; if (!it) return;
     if (fileKind(it.name)) { dcMsg('この形（エクセルなど）には 書きこめません。', true); return; }
-    MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list);
+    MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true;
     $('dvMark').setAttribute('aria-pressed', 'true'); $('dvMkBar').hidden = false; $('dview').classList.add('dv-mk');
-    $('mkMsg').textContent = '押して書く（文字は 押した所に／下線・枠は なぞる）。元の写真・PDF は書き換えず、重ねて残します。';
+    $('mkMsg').textContent = '押して書く（文字は 押した所に／下線・枠は なぞる）。書いた文字は 押すと選べて、つかんで動かす・直す・大きさや色を変える・消す ができます。元の写真・PDF は書き換えず、重ねて残します。';
     mkPaint();
   }
   /* save … 保存する（変わっていなければ 何もしない） */
   function mkEnd(save) {
     const pend = document.querySelector('.mkin'); if (pend && save) pend.blur(); else if (pend) pend.remove();   /* 打ちかけの文字は 置いてから */
     const it = S.dvIt, list = MK.list, changed = JSON.stringify(list) !== MK.was;
-    MK.on = false; MK.drag = null;
+    MK.on = false; MK.drag = null; MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true;
     $('dvMark').setAttribute('aria-pressed', 'false'); $('dvMkBar').hidden = true; $('dview').classList.remove('dv-mk');
     if (save && changed && it) {
       const code = S.code, prev = it.mark; it.mark = list;
@@ -5811,10 +5859,18 @@
   $('dvMark').addEventListener('click', function () { if (MK.on) mkEnd(true); else mkStart(); });
   $('mkSave').addEventListener('click', function () { mkEnd(true); });
   $('mkCancel').addEventListener('click', function () { MK.list = JSON.parse(MK.was || '[]'); mkEnd(false); });
-  $('mkUndo').addEventListener('click', function () { MK.list.pop(); mkDirty(); mkPaint(); });
-  $('mkClear').addEventListener('click', function () { MK.list = []; mkDirty(); mkPaint(); });
+  $('mkUndo').addEventListener('click', function () { MK.list.pop(); MK.sel = -1; $('mkSelBar').hidden = true; mkDirty(); mkPaint(); });
+  $('mkClear').addEventListener('click', function () { MK.list = []; MK.sel = -1; $('mkSelBar').hidden = true; mkDirty(); mkPaint(); });
+  $('mkFix').addEventListener('click', function () { if (MK.sel >= 0) mkFixText(MK.sel); });
+  $('mkSmall').addEventListener('click', function () { mkSelEdit(function (m) { m.z = Math.max(0.4, Math.round((m.z || 1) / 1.18 * 100) / 100); }); });
+  $('mkBig').addEventListener('click', function () { mkSelEdit(function (m) { m.z = Math.min(5, Math.round((m.z || 1) * 1.18 * 100) / 100); }); });
+  $('mkDel').addEventListener('click', function () { if (MK.sel < 0) return; MK.list.splice(MK.sel, 1); mkSelect(-1); mkDirty(); });
+  document.addEventListener('keydown', function (e) {
+    if (!MK.on || MK.sel < 0) return; const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA') return;
+    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); $('mkDel').click(); }
+  }, true);
   document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('click', function () { MK.m = b.dataset.m; document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); }); });
-  document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (b) { b.addEventListener('click', function () { MK.c = b.dataset.c; document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); }); });
+  document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (b) { b.addEventListener('click', function () { MK.c = b.dataset.c; document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); if (MK.sel >= 0) mkSelEdit(function (m) { m.c = MK.c; }); }); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dview').hidden) docsClose(); });
 
   function rowOf(id) { return $('jlist').querySelector('.jdrow[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'); }
