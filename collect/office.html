@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793259007;</script>
+<script>window.__PAGE_VER=1793259877;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -574,6 +574,9 @@
   .kznp-l { max-height: 220px; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2px 10px; }
   .kznp-l label[hidden] { display: none; }
   .kznp > .btn { align-self: flex-start; }
+  /* ★ まとめて選ぶ（2026-10-29） */
+  .kzall { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .kzall[hidden] { display: none; }
   .kzm-news .b { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
   .kzm-news .st { font-weight: 700; }
   .kzc { border: 1px solid var(--line); border-left: 6px solid #9AA7B4; border-radius: 10px; background: #fff; padding: 10px 14px; margin: 10px 0; }
@@ -1749,7 +1752,9 @@
       <button type="button" class="primary" id="kzNew">＋ 改善要望を書く</button>
       <span class="seg kzflt" id="kzFlt" role="group" aria-label="しぼる"></span>
       <span class="sp"></span>
+      <label class="kzall" id="kzAllW" hidden title="いま出ている要望（改善済み・見送りは除く）を まとめて選ぶ／外す"><input type="checkbox" id="kzAll"> すべて選ぶ</label>
       <button type="button" id="kzCopySel" hidden title="選んだものを まとめて Claude Code に貼る文にする">選んだものを まとめてコピー</button>
+      <button type="button" id="kzDoneSel" hidden title="選んだものを まとめて 改善済みにする（改善内容は ひとりでに書く）">選んだものを まとめて改善済みにする</button>
       <button type="button" id="kzReload">↻ 読み直す</button>
     </div>
     <p class="note">顧問先から聞いたこと・事務所で気づいたことを 1件ずつ書いてください。マスターが確かめて AI（Claude Code）に渡し、直ったら 書いた人に知らせます。<b>AI はこの文だけを読んで直します</b>。「どこで・何をしたら・どうなって・どうなってほしいか」をそのまま書いてください（右の例文を見ながら）。</p>
@@ -5171,8 +5176,17 @@
       const b = el('button', null, (k === 'all' ? '全部' : k) + ' ' + n); b.type = 'button'; b.setAttribute('aria-pressed', String(KZ.flt === k));
       b.addEventListener('click', function () { KZ.flt = k; kzDraw(); }); f.appendChild(b);
     });
-    $('kzCopySel').hidden = !Object.keys(KZ.sel).length;
-    $('kzCopySel').textContent = '選んだ ' + Object.keys(KZ.sel).length + '件を まとめてコピー';
+    /* 選んだもののうち いま一覧にあって まだ済んでいないものだけ数える */
+    Object.keys(KZ.sel).forEach(function (no) { const x = KZ.list.find(function (y) { return y.no === no; }); if (!x || !kzSelOk(x)) delete KZ.sel[no]; });
+    const nSel = Object.keys(KZ.sel).length;
+    $('kzCopySel').hidden = $('kzDoneSel').hidden = !nSel;
+    $('kzCopySel').textContent = '選んだ ' + nSel + '件を まとめてコピー';
+    $('kzDoneSel').textContent = '選んだ ' + nSel + '件を まとめて改善済みにする';
+    /* ★ すべて選ぶ（2026-10-29）。いま出ている（しぼった）もののうち 改善済み・見送り でないもの */
+    const can = kzSelectable(), nOn = can.filter(function (x) { return KZ.sel[x.no]; }).length;
+    $('kzAllW').hidden = !KZ.master || !can.length;
+    $('kzAll').checked = !!can.length && nOn === can.length;
+    $('kzAll').indeterminate = nOn > 0 && nOn < can.length;
     /* 自分の要望が直った */
     const mine = kzMineDone(), mw = $('kzMine'); mw.textContent = ''; mw.hidden = !mine.length;
     if (mine.length) {
@@ -5214,6 +5228,27 @@
     if (!list.length) { w.appendChild(el('p', 'note', KZ.flt === 'all' ? 'まだ改善要望はありません。［＋ 改善要望を書く］から どうぞ。' : '「' + KZ.flt + '」のものは ありません。')); return; }
     list.forEach(function (x) { w.appendChild(kzCard(x)); });
   }
+  function kzSelOk(x) { return x.st !== '改善済み' && x.st !== '見送り'; }
+  function kzSelectable() { return KZ.list.filter(function (x) { return (KZ.flt === 'all' || x.st === KZ.flt) && kzSelOk(x); }); }
+  $('kzAll').addEventListener('change', function () {
+    const can = kzSelectable(), on = this.checked;
+    can.forEach(function (x) { if (on) KZ.sel[x.no] = 1; else delete KZ.sel[x.no]; });
+    kzDraw();
+  });
+  /* ★ まとめて改善済みにする（2026-10-29）。改善内容は 書いてあればそれ、無ければ ひとりでに書く。
+       顧問先へのお知らせは 下書きがあれば 出し先を 書いた人が決める（main に入ったときと同じ） */
+  $('kzDoneSel').addEventListener('click', function () {
+    const nos = Object.keys(KZ.sel); if (!nos.length) return;
+    const b = this;
+    if (b.dataset.ask !== '1') { b.dataset.ask = '1'; b.textContent = 'もう一度押すと ' + nos.length + '件を 改善済みにします'; b.classList.add('primary'); setTimeout(function () { if (b.dataset.ask === '1') { b.dataset.ask = ''; b.classList.remove('primary'); kzDraw(); } }, 6000); return; }
+    b.dataset.ask = ''; b.classList.remove('primary'); b.disabled = true; kzMsg('…');
+    gs('kaizenDoneMany', nos).then(function (r) {
+      b.disabled = false; KZ.sel = {};
+      ((r && r.items) || []).forEach(function (y) { const i = KZ.list.findIndex(function (z) { return z.no === y.no; }); if (i >= 0) KZ.list[i] = y; });
+      kzBadge(); kzDraw();
+      kzMsg(((r && r.n) || 0) + '件を 改善済みにしました。書いた人の画面に 知らせを出します（顧問先へのお知らせの出し先は 書いた人が決めます）。');
+    }, function (e) { b.disabled = false; kzMsg(e.message, true); kzDraw(); });
+  });
   function kzCanEdit(x) { return KZ.master || (x.who === KZ.me && x.st === '確認待ち'); }
   function kzCard(x) {
     const c = el('div', 'kzc st-' + x.st); c.dataset.no = x.no;
