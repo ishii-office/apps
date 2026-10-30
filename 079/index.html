@@ -872,9 +872,13 @@ function authNeed(){
   authGate();
 }
 /** 通信の返事が「暗証番号」の話なら、関所を出す。そうでなければ何もしない */
+var AUTH_GATE_MSG=/暗証番号を入れ(て|直して)ください/;
 function authSniff(e){
   var m=String((e&&e.message)||e||'');
-  if(m.indexOf('暗証番号')>=0){ authNeed(); return true; }
+  /* ★★ 端末の合図を捨ててよいのは【入口の関所の断り】だけ（2026-10-30）。
+       前は「暗証番号」の字があれば捨てていたので、給与タブなどの「暗証番号が違います」でも捨て、
+       次に開くたびに 端末の暗証番号を聞いていた（アリュールのスマホ）。関所の断りは「暗証番号を入れてください／入れ直してください」だけ */
+  if(AUTH_GATE_MSG.test(m)){ authNeed(); return true; }
   return false;
 }
 
