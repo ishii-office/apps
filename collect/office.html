@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793268977;</script>
+<script>window.__PAGE_VER=1793344439;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -757,6 +757,9 @@
      （汎用の .chk { display:flex } が効いて 絵が横に潰れていたので 打ち消す） */
   .dtile.chk { display: block; font-weight: inherit !important; }
   .dtile { position: relative; }
+  .dout { position: absolute; top: 9px; left: 9px; z-index: 3; width: 26px; height: 26px; border-radius: 6px; border: 1.5px solid #fff; padding: 0; background: rgba(31,78,140,.88); color: #fff; font: inherit; font-size: 15px; font-weight: 900; line-height: 1; cursor: grab; box-shadow: 0 1px 4px rgba(0,0,0,.35); opacity: .55; }
+  .dtile:hover .dout, .dout:focus-visible { opacity: 1; }
+  .dbox.fin { outline: 3px dashed var(--accent, #0F6E56); outline-offset: 2px; background: rgba(15,110,86,.06); }
   .dbadge { display: none; position: absolute; top: 9px; right: 9px; z-index: 3; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; padding: 0; background: var(--ok); color: #fff; font: inherit; font-size: 16px; font-weight: 900; line-height: 1; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
   .dtile.chk .dbadge, .dtile.skip .dbadge, .dtile.trashed .dbadge { display: block; }
   .dtile.skip .dbadge { background: #111; }
@@ -2610,6 +2613,7 @@
     S.dcsel = {}; S.dcpick = false; S.trashView = false; S.trash = null; S.trashN = 0; $('ogv').hidden = true;
     }
     clientTheme();
+    try { lnShowPend(); } catch (e) {}
     const c = S.clients.find(function (x) { return x.code === S.code; });
     const bx = $('box'); bx.textContent = ''; const all = el('option', null, 'すべて'); all.value = ''; bx.appendChild(all);
     (c ? c.boxes : []).forEach(function (b) { const o = el('option', null, b); o.value = b; bx.appendChild(o); });
@@ -4023,7 +4027,14 @@
   /* ★★ 公式LINE から届いたら 担当者に知らせる（2026-10-27）
        事務所の画面を開いているあいだ（裏に回っていても）1分おきに聞き、届いていれば ポップ通知・アイコンの数・画面の中の知らせ。
        閉じているあいだは いつもの「新しい提出」のメール。担当者が自分の顧問先だけ（担当者が空の顧問先は みんなに） */
-  const LN = { since: 0, n: 0, busy: false };
+  const LN = { since: 0, n: 0, busy: false, pend: {} };
+  function lnShowPend() {
+    const m = $('formMsg'); if (!m) return;
+    if (m.dataset.ln && m.dataset.ln !== S.code) { m.dataset.ln = ''; fmsg(''); }   /* よその顧問先の知らせは 消す */
+    const pd = S.code && LN.pend[S.code]; if (!pd) return;
+    delete LN.pend[S.code];
+    fmsg('💬 ' + pd.name + ' 様から LINE で ' + pd.n + '件 届きました（' + LINE_BOX + '）', 'ok'); m.dataset.ln = S.code;
+  }
   const LS_LNSINCE = 'collect_line_since';
   function lnBadge() { try { if (navigator.setAppBadge) { if (LN.n) navigator.setAppBadge(LN.n); else navigator.clearAppBadge(); } } catch (e) {} document.title = (LN.n ? '(' + LN.n + ') ' : '') + document.title.replace(/^\(\d+\) /, ''); }
   function lnGo(code) {
@@ -4048,7 +4059,10 @@
             nt.onclick = function () { nt.close(); lnGo(x.code); };
           }
         } catch (e) {}
-        if (typeof fmsg === 'function') fmsg('💬 ' + text, 'ok');
+        /* ★ 画面の中の知らせは 送ってきた顧問先を開いているときだけ（K-0008。2026-10-30）。
+             ほかの顧問先を開いているあいだは 取っておき、その顧問先に切り替えたときに出す（ポップ通知・アイコンの数は これまでどおり） */
+        const pd = LN.pend[x.code] || (LN.pend[x.code] = { name: x.name, n: 0 }); pd.n += x.n;
+        lnShowPend();
       });
       lnBadge();
     }, function () { LN.busy = false; });
@@ -4317,6 +4331,88 @@
     tile.appendChild(rb);
     return tile;
   }
+  /* ★★ K-0010（2026-10-30）：DocuWorks のように 札を パソコンの外へ出す・外から箱へ入れる
+       ・札の左上の［⇲］を つかんで デスクトップ・フォルダ・メール・ブラウザへ落とすと ファイルになる（Chrome・Edge）。押すと ダウンロード
+         1枚のものは 届いたそのままのファイル、まとめた書類（📎）は その束で 1つの PDF
+       ・札そのものを つかむのは これまでどおり 並べ替え・まとめ・別の箱へ移す（アプリの中の動き）。だから 外へ出すのは［⇲］から
+       ・パソコンのファイルを 箱（月分）の上へ落とすと その箱・その月分に入る（officeUpload。事務所が入れました と残る） */
+  const DOUT = {};
+  const DOUT_OK = !!(window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches);
+  function dOutMem(it) {
+    if (!(it.set && it.setOf > 1)) return [it];
+    return (S.docs || []).filter(function (x) { return x.set === it.set; }).sort(function (a, b) { return (a.setN || 0) - (b.setN || 0); });
+  }
+  function dOutPrep(it) {
+    const mem = dOutMem(it), key = mem.map(function (x) { return x.id; }).join(',');
+    if (DOUT[key]) return DOUT[key];
+    const o = { url: '', name: '', mime: '' };
+    o.p = (mem.length === 1
+      ? fileGet(it).then(function (f) { return { blob: f.blob, name: f.name }; })
+      : pdflib().then(function (L) { return fetchFulls(mem, function () {}).then(function (fulls) { return pdfDocBytes(L, mem, fulls); }); })
+          .then(function (r) { if (!r.bytes) throw new Error('PDF に入れられるものがありませんでした'); return { blob: new Blob([r.bytes], { type: 'application/pdf' }), name: docTitle(mem).replace(/[\\\/:*?"<>|]+/g, '_') + '.pdf' }; })
+    ).then(function (f) { o.url = URL.createObjectURL(f.blob); o.name = f.name; o.mime = f.blob.type || 'application/octet-stream'; return o; },
+      function (e) { delete DOUT[key]; o.err = e.message; return o; });
+    DOUT[key] = o;
+    return o;
+  }
+  function dOutHandle(it) {
+    const b = el('button', 'dout', '⇲'); b.type = 'button'; b.draggable = true;
+    b.title = 'つかんで デスクトップ・フォルダ・メール・ブラウザへ落とすと ファイルになります（押すと ダウンロード）' + (it.set && it.setOf > 1 ? '。まとめた書類は 1つの PDF' : '');
+    b.setAttribute('aria-label', 'ファイルとして取り出す');
+    b.addEventListener('mouseenter', function () { dOutPrep(it); });
+    b.addEventListener('pointerdown', function (e) { e.stopPropagation(); dOutPrep(it); });
+    b.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      const o = dOutPrep(it);
+      o.p.then(function () { if (o.err) { dcMsg(o.err, true); return; } const a = document.createElement('a'); a.href = o.url; a.download = o.name; document.body.appendChild(a); a.click(); a.remove(); dcMsg('ダウンロードしました：' + o.name); });
+    });
+    b.addEventListener('dragstart', function (e) {
+      e.stopPropagation();
+      const o = dOutPrep(it);
+      if (!o.url) { e.preventDefault(); dcMsg(o.err || 'ファイルを用意しています。少ししてから もう一度つかんでください。', !!o.err); return; }
+      try { e.dataTransfer.setData('DownloadURL', o.mime + ':' + o.name + ':' + o.url); e.dataTransfer.setData('text/uri-list', o.url); e.dataTransfer.effectAllowed = 'copy'; } catch (x) {}
+    });
+    return b;
+  }
+  /* パソコンのファイルを 箱へ。月分の上なら その月分、箱の見出しなどなら いまの月分（15日までは先月分） */
+  function dDefPer() { const d = new Date(); if (d.getDate() <= 15) d.setMonth(d.getMonth() - 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  function dFileB64(f) { return new Promise(function (ok, ng) { const r = new FileReader(); r.onload = function () { ok(String(r.result).split(',')[1] || ''); }; r.onerror = function () { ng(new Error('ファイルが読めません')); }; r.readAsDataURL(f); }); }
+  const DIN_MIME = { pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', xls: 'application/vnd.ms-excel', xlsm: 'application/vnd.ms-excel.sheet.macroEnabled.12', csv: 'text/csv', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', doc: 'application/msword', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', ppt: 'application/vnd.ms-powerpoint', txt: 'text/plain' };
+  async function dDropIn(files, box, per) {
+    const code = S.code; if (!code || !files.length) return;
+    let ok = 0; const ng = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const ext = (String(f.name).match(/\.([^.]+)$/) || ['', ''])[1].toLowerCase();
+      const mime = DIN_MIME[ext] || f.type;
+      dcMsg('箱に入れています… ' + (i + 1) + ' / ' + files.length + '　' + f.name);
+      try {
+        if (!mime || f.size > 20 * 1024 * 1024) throw new Error(!mime ? 'この形式は入れられません' : '20MB より大きい');
+        const b64 = await dFileB64(f);
+        await gs('officeUpload', code, f.name, mime, b64, box, per, 'oup' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+        ok++;
+      } catch (e) { ng.push(f.name + '（' + e.message + '）'); }
+    }
+    if (code === S.code) docsLoad(true);
+    dcMsg((ok ? ok + '件を［' + boxLabel(box) + '］' + (box === LINE_BOX ? '' : perLabel(per)) + 'に入れました（事務所が入れました と残ります）。' : '') + (ng.length ? '　入れられなかったもの：' + ng.join('・') : ''), !!ng.length && !ok);
+  }
+  (function () {
+    let over = null;
+    const isFiles = function (e) { return !!(e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0); };
+    const spot = function (e) { const sec = e.target && e.target.closest ? e.target.closest('#dBody .dbox') : null; return sec; };
+    const lit = function (sec) { if (over === sec) return; if (over) over.classList.remove('fin'); over = sec; if (sec) sec.classList.add('fin'); };
+    document.addEventListener('dragover', function (e) { if (!isFiles(e)) return; const sec = spot(e); if (!sec) { lit(null); return; } e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; lit(sec); });
+    document.addEventListener('dragleave', function (e) { if (!e.relatedTarget) lit(null); });
+    document.addEventListener('drop', function (e) {
+      if (!isFiles(e)) return;
+      const sec = spot(e); lit(null);
+      if (!sec) return;
+      e.preventDefault(); e.stopPropagation();
+      const mon = e.target.closest('.dmon');
+      const box = sec.dataset.box, per = box === LINE_BOX ? '' : (mon && mon.dataset.per) || dDefPer();
+      dDropIn(Array.prototype.slice.call(e.dataTransfer.files || []), box, per);
+    });
+  })();
   function dTile(it) {
     const tile = el('div', 'dtile'); tile.dataset.id = it.id;
     const b = el('button', 'dimg'); b.type = 'button'; b.title = '押すと大きく';
@@ -4362,6 +4458,7 @@
     });
     /* まとめた書類の写真には 1枚ずつのチェックを出さない（書類の頭に 1つだけ） */
     if (S.dcpick) { if (!(it.set && it.setOf > 1)) b.appendChild(el('span', 'dck')); if (S.dcsel[it.id]) tile.classList.add('sel'); }
+    if (DOUT_OK) tile.appendChild(dOutHandle(it));
     DDX.bind(tile, it);
     if (dObs && !it.pdf && !fic) dObs.observe(tile);
     return tile;
