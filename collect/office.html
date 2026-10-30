@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793344439;</script>
+<script>window.__PAGE_VER=1793360435;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -757,6 +757,11 @@
      （汎用の .chk { display:flex } が効いて 絵が横に潰れていたので 打ち消す） */
   .dtile.chk { display: block; font-weight: inherit !important; }
   .dtile { position: relative; }
+  .alock { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fff; }
+  .alock .st { margin: 0 0 8px; font-weight: 700; }
+  .alock .st.ok { color: var(--accent, #0F6E56); }
+  .alock-r { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 6px; }
+  .alock-r input#aLockPin { width: 180px; letter-spacing: .2em; }
   .dout { position: absolute; top: 9px; left: 9px; z-index: 3; width: 26px; height: 26px; border-radius: 6px; border: 1.5px solid #fff; padding: 0; background: rgba(31,78,140,.88); color: #fff; font: inherit; font-size: 15px; font-weight: 900; line-height: 1; cursor: grab; box-shadow: 0 1px 4px rgba(0,0,0,.35); opacity: .55; }
   .dtile:hover .dout, .dout:focus-visible { opacity: 1; }
   .dbox.fin { outline: 3px dashed var(--accent, #0F6E56); outline-offset: 2px; background: rgba(15,110,86,.06); }
@@ -1478,6 +1483,17 @@
           <div class="hint">［同意の画面を出す］を押すまで、顧問先の画面には 同意の画面は出ません（今までどおり使えます）。導入に行くときに 代表者の役職・氏名・説明担当者を入れて［保存］し、その場で押してください。<br>会社名（＝顧問先名）・役職・代表者氏名・控えのメール（顧問先メールの1つめ）は 同意の画面に 先に印字されます（顧問先が直せます）。説明担当者は 顧問先には入れさせず、ここで入れたものが 同意ログに残ります。</div>
           <div class="btns" id="aCnsBtns" hidden><button type="button" class="btn ghost sm" id="aCnsLog">同意の記録を見る</button><button type="button" class="btn ghost sm" id="aCnsWd">撤回を記録する</button><button type="button" class="btn sm" id="aCnsRe" hidden>同意の画面を出す</button><button type="button" class="btn ghost sm" id="aCnsVerify">同意ログの書き換えを確かめる</button></div>
           <div class="log" id="aCnsOut" hidden></div>
+        </div></div>
+      <div class="f" id="aLockRow" hidden><label>顧問先の画面のパスワード（会社の共用パソコン・社用スマホで だれでも見えないように）</label>
+        <div class="alock">
+          <p class="st" id="aLockSt">読み込み中…</p>
+          <div class="alock-r"><label class="chk"><input id="aLockOn" type="checkbox"> パスワードを使う</label>
+            <input id="aLockPin" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" autocomplete="off" placeholder="4けた（変えるときだけ）" aria-label="4けたのパスワード">
+            <button type="button" class="btn sm" id="aLockSave">この鍵を保存</button></div>
+          <div class="hint">使うと、顧問先の画面を開くたびに「<b>管理者・経営者</b>」か「<b>その他</b>」を選んで入ります。<br>
+            管理者・経営者 … 4けたのパスワードで入り、これまでどおり全部（送ったもの・事務所から届いたもの・消す・移す）。<br>
+            その他 … パスワードなしで入り、<b>撮る・選ぶ・送るだけ</b>（撮ったものは そのまま事務所に届く。これまでに送ったもの・事務所から届いたものは 見えない）。<br>
+            パスワードは ここでしか決められません（顧問先は変えられません）。忘れた・まちがえたと言われたら ここで新しい4けたを入れて［この鍵を保存］。変えると、入っている端末は 入り直しになります。使わない顧問先は これまでどおり 何も聞きません。</div>
         </div></div>
       <div class="f"><label for="aIconName">ホーム画面のアイコン（顧問先の端末に置くアイコンの 名前と色）</label>
         <div class="aicon"><canvas id="aIconPv" width="72" height="72" aria-hidden="true"></canvas>
@@ -9674,6 +9690,7 @@
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     aThemeSet(c.theme || 'green');
     aLogoShow(c);
+    aLockLoad(c.code);
     $('aUrlRow').hidden = !c.url; $('aUrl').value = c.url; aQrShow(c.url, c.name);
     $('aStop').hidden = !c.url || !!c.active;
     $('aSave').textContent = '保存';
@@ -9685,7 +9702,7 @@
     $('aForm').hidden = false;
     ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName', 'aKind', 'aRepTitle', 'aRepName', 'aExplainer', 'aIconName'].forEach(function (k) { $(k).value = ''; }); aTantoFill(S.me && S.me.name || '', true); aIconSet(''); aCnsShow(null); $('aKindHint').textContent = ''; A.spot = {};
     $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false; aThemeSet('green'); aLogoShow(null);
-    $('aActiveRow').hidden = true; $('aUrlRow').hidden = true;
+    $('aActiveRow').hidden = true; $('aUrlRow').hidden = true; $('aLockRow').hidden = true;
     $('aSave').textContent = '登録して URL を作る';
     amsg(''); aPreview(); aDraw(); $('aCode').focus();
   });
@@ -9712,6 +9729,29 @@
   }
   function hidUnder(hid, p) { return Object.keys(hid).some(function (h) { return p !== h && p.indexOf(h + '/') === 0; }); }
   const MYNUM_BOX = '年末調整書類（マイナンバー記載あり）';   /* どの顧問先にも「その他」の前に付く（サーバの parseBoxes_ と同じ） */
+  /* ★★ 顧問先の画面のパスワード（K-0012。2026-10-30）。保存は［この鍵を保存］だけ（上の［保存］とは別） */
+  function aLockPaint(r) {
+    const st = $('aLockSt');
+    $('aLockOn').checked = !!r.on; $('aLockPin').value = '';
+    st.className = 'st' + (r.on ? ' ok' : '');
+    st.textContent = r.on ? '🔒 パスワードを使っています（' + (r.at || '') + (r.by ? '・' + r.by : '') + ' に決めた）' : (r.set ? 'いまは 使っていません（前に決めたパスワードは 残っています）' : 'いまは 使っていません（だれでも開けます）');
+  }
+  function aLockLoad(code) {
+    $('aLockRow').hidden = false; $('aLockSt').className = 'st'; $('aLockSt').textContent = '読み込み中…';
+    gs('clockInfo', code).then(function (r) { if (code === A.cur) aLockPaint(r); }, function (e) { if (code === A.cur) $('aLockSt').textContent = e.message; });
+  }
+  $('aLockSave').addEventListener('click', function () {
+    if (!A.cur) return;
+    const code = A.cur, on = $('aLockOn').checked, pin = $('aLockPin').value.trim();
+    if (pin && !/^\d{4}$/.test(pin)) { amsg('パスワードは 4けたの数字にしてください。', 'err'); $('aLockPin').focus(); return; }
+    $('aLockSave').disabled = true;
+    gs('clockSet', code, on, pin).then(function (r) {
+      $('aLockSave').disabled = false; if (code !== A.cur) return;
+      aLockPaint(r);
+      amsg(r.on ? (pin ? 'パスワードを決めました。顧問先には この4けたを お伝えください（ここには もう出ません）。' : 'パスワードを使うようにしました。') : 'パスワードを使わないようにしました（だれでも開けます）。', 'ok');
+    }, function (e) { $('aLockSave').disabled = false; amsg(e.message, 'err'); });
+  });
+  $('aLockPin').addEventListener('input', function () { this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4); if (this.value.length === 4) $('aLockOn').checked = true; });
   /* ★ 同意の状態（2026-10-18） */
   function aCnsShow(c) {
     const st = $('aCnsSt'), cs = (c && c.consent) || null;
