@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793364982;</script>
+<script>window.__PAGE_VER=1793367807;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -750,6 +750,9 @@
   img.dthumb:not([src]) { visibility: hidden; }
   .dtile.isback .dimg { outline: 2px solid #B3261E; }
   /* ★ 確認済の印（2026-10-23） */
+  .dnm { display: block; width: 100%; margin-top: 3px; padding: 2px 4px; border: 0; border-radius: 4px; background: transparent; color: var(--ink, #222); font: inherit; font-size: 12px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: text; }
+  .dnm:hover { background: #fff; text-decoration: underline dotted; }
+  .dnm-in { display: block; width: 100%; box-sizing: border-box; margin-top: 3px; font: inherit; font-size: 13px; padding: 3px 5px; border: 2px solid var(--ok); border-radius: 4px; background: #fff; }
   .dchk { display: block; width: 100%; margin-top: 3px; padding: 4px 6px; border: 1.5px dashed #A9B5AF; border-radius: 8px; background: #fff; color: var(--sub); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dchk:hover { border-color: var(--ok); color: var(--ok); }
   .dtile.chk .dchk { border: 1.5px solid var(--ok); background: var(--ok); color: #fff; }
@@ -1161,6 +1164,45 @@
   .astop .btn { margin-left: 6px; }
   /* ★ K-0010：札の中の写真だけが つかまれないように（札まるごとを つかむ。写っていない写真だと つかめなかった） */
   .dtile[draggable="true"] img { -webkit-user-drag: none; user-drag: none; }
+  /* ★★★ 差し戻し（2026-10-30） */
+  .dbk-sec { margin: 8px 0 10px; border: 2px solid var(--err); border-radius: 10px; background: #FFF6F5; padding: 8px 10px; }
+  .dbk-h { font-weight: 800; color: var(--err); margin-bottom: 6px; }
+  .bkc { background: var(--paper); border: 1px solid #F0C6C2; border-radius: 9px; padding: 8px 10px; margin: 6px 0; }
+  .bkc.reply { border-color: var(--ok); box-shadow: 0 0 0 2px #CFE9D7; }
+  .bkc-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .bkc-st { font-weight: 800; font-size: 12px; padding: 2px 8px; border-radius: 99px; background: #FBE3E1; color: var(--err); }
+  .bkc-st.reply { background: #DFF3E5; color: var(--ok); }
+  .bkc-w { color: var(--sub); font-size: 12px; }
+  .bkc-why { margin: 4px 0; white-space: pre-wrap; }
+  .bkc-cmt { margin: 4px 0; padding: 5px 8px; border-left: 3px solid var(--ok); background: #F2FAF4; white-space: pre-wrap; }
+  .bkc-g { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+  .bkc-i { width: 112px; padding: 3px; display: flex; flex-direction: column; gap: 3px; border-radius: 8px; }
+  .bkc-i img { width: 100%; height: 100px; object-fit: contain; background: #F4F4F4; border-radius: 5px; }
+  .bkc-i.re { border: 2px solid var(--ok); }
+  .bkc-t { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bkc-b { display: flex; gap: 8px; flex-wrap: wrap; }
+  .dmon-b.danger, button.danger { color: var(--err); border-color: #E7B3AE; }
+  .dbk { position: absolute; left: 12px; top: 34px; z-index: 3; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--err); background: #FFF6F5; color: var(--err); }
+  .bov { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.4); display: flex; align-items: flex-start; justify-content: center; overflow: auto; padding: 30px 12px; }
+  .bov-c { background: var(--paper); border-radius: 12px; padding: 14px 16px; width: min(920px, 100%); box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+  .bov-c h3 { margin: 0 0 6px; }
+  .bov-n { color: var(--sub); margin: 0 0 8px; white-space: pre-wrap; }
+  .bov-m { color: var(--err); min-height: 1.2em; margin: 4px 0; }
+  .bov-b { display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+  .bpk-g { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; max-height: 46vh; overflow: auto; padding: 2px; }
+  .bpk-i { display: flex; flex-direction: column; gap: 3px; padding: 4px; border-radius: 9px; border: 2px solid var(--line); white-space: normal; }
+  .bpk-i.on { border-color: var(--err); background: #FFF0EE; }
+  .bpk-i img { width: 100%; height: 120px; object-fit: contain; background: #F4F4F4; border-radius: 6px; }
+  .bpk-t { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bpk-a { font-size: 11px; color: var(--sub); }
+  .bpk-f { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: start; margin-top: 10px; }
+  .bpk-f textarea { width: 100%; }
+  .bpk-l { font-weight: 700; padding-top: 6px; }
+  .bpk-n { margin-right: auto; color: var(--err); }
+  .bhv-l { margin: 6px 0 10px; padding-left: 20px; }
+  .bhv-l li { margin: 6px 0; }
+  .bhv-at { color: var(--sub); font-size: 12px; }
+  .bhv-t { white-space: pre-wrap; }
 </style>
 </head>
 <body>
@@ -2857,7 +2899,8 @@
     return [it.status, ST_TXT[it.status]];
   }
   const BACK_WHY = ['写真がぼやけて読めません。撮り直してください。', '端が切れています。全体が入るように撮り直してください。',
-    '日付・金額が読めません。', '領収書ではないようです。', '同じものが2回届いています。'];
+    '日付・金額が読めません。', '領収書ではないようです。', '同じものが2回届いています。',
+    '同じ領収書ではないですか？', 'どちらが正しいですか（修正後のものはどれですか）？', '足りないページがあります。'];
 
   /* ================= ★ 並べ方と 写真の別窓（2026-10-08） =================
      ・縦 … いままで（写真の下に 辞書の一覧 → 伝票）
@@ -3321,6 +3364,9 @@
   function docsLoad(force) {
     if (!S.code) return;
     const code = S.code;
+    /* ★★ 差し戻しの記録（2026-10-30）。束で読んだときも 読む */
+    if (S.backsCode !== code) { S.backs = null; S.backsCode = code; }
+    backsLoad();
     /* ★ 束で読んだばかり（1分以内）なら 聞き直さない */
     if (!force && S.docs && Date.now() - (S.docsAt || 0) < 60000) { docsDraw(); docsThumbs(S.docs); return; }
     /* ★ 速さ：前に読んだものを すぐ出して、裏で新しいものに差し替える（タブを移るたびに待たせない） */
@@ -3418,11 +3464,13 @@
     $('dTrash').textContent = '破棄したもの（' + (S.trashN || 0) + '）';
     if (S.trashView) { trashDraw(body); dcBar(); return; }
     const inView = function (it) { return (!S.box || it.box === S.box || it.box.indexOf(S.box + '/') === 0) && perHit(it); };
-    const list = (S.docs || []).filter(inView).sort(dSort);
+    /* ★★ 差し戻し中・再提出（事務所がまだ OK していない）は 箱の中の「↩ 差し戻し」の欄へ。月分の並びには出さない */
+    const blist = (S.docs || []).filter(inView).filter(inBack);
+    const list = (S.docs || []).filter(inView).filter(function (x) { return !inBack(x); }).sort(dSort);
     /* ★ 破棄済み（2026-10-28）：箱・月分の中に 薄く残す（印刷・PDF・選ぶ には入らない） */
     const tlist = (S.trash || []).filter(inView);
-    const both = list.concat(tlist);
-    $('dsum').textContent = list.length + '件' + (tlist.length ? '（ほか 破棄済み ' + tlist.length + '）' : '');
+    const both = list.concat(tlist).concat(blist);
+    $('dsum').textContent = list.length + '件' + (blist.length ? '（ほか 差し戻し ' + blist.length + '）' : '') + (tlist.length ? '（ほか 破棄済み ' + tlist.length + '）' : '');
     dColsPaint();
     S.dcview = list;
     body.classList.toggle('dpicking', !!S.dcpick);
@@ -3467,6 +3515,8 @@
         }
       }
       sec.appendChild(hd);
+      const bIn = blist.filter(function (x) { return x.box === bx; });
+      if (bIn.length) sec.appendChild(backSection(bx, bIn));
       const pers = [];
       /* ★ 公式LINEから の箱は 何年何月分に分けない（2026-10-27）。1つの並びにまとめる */
       const noPer = bx === LINE_BOX;
@@ -3520,6 +3570,9 @@
           const sb = el('button', 'dmon-b', '選ぶ'); sb.type = 'button';
           sb.addEventListener('click', function () { S.dcpick = true; docsDraw(); });
           row.appendChild(sb);
+          const rb = el('button', 'dmon-b dback', '↩ 差し戻し'); rb.type = 'button'; rb.title = 'この月分の書類から 差し戻すものを選ぶ（何枚でも）';
+          rb.addEventListener('click', function () { backPick(bx, p, []); });
+          row.appendChild(rb);
           const pb = el('button', 'dmon-b', 'PDF切り出し'); pb.type = 'button';
           pb.addEventListener('click', function () { cutPdf(items, boxLabel(bx) + '_' + perLabel(p)); });
           row.appendChild(pb);
@@ -4415,6 +4468,41 @@
       dDropIn(Array.prototype.slice.call(e.dataTransfer.files || []), box, per);
     });
   })();
+  function dNameShow(n) { return String(n || '').replace(/^\d{8}_\d{6}_/, '').replace(/\.[A-Za-z0-9]{1,5}$/, ''); }
+  function dNameTag(it) {
+    const b = el('button', 'dnm', dNameShow(it.name) || '（名前なし）'); b.type = 'button';
+    b.title = fileName(it) + '\n押すと 名前を変えられます';
+    b.addEventListener('click', function (e) {
+      e.stopPropagation(); e.preventDefault();
+      const tile = b.closest('.dtile'); const wasDrag = tile && tile.draggable; if (tile) tile.draggable = false;
+      const inp = el('input', 'dnm-in'); inp.type = 'text'; inp.value = dNameShow(it.name); inp.maxLength = 80; inp.setAttribute('aria-label', '新しい名前');
+      let done = false;
+      const fin = function (ok) {
+        if (done) return; done = true;
+        if (tile && wasDrag) tile.draggable = true;
+        const v = inp.value.trim(); inp.replaceWith(b);
+        if (ok && v && v !== dNameShow(it.name)) dRename(it, v);
+      };
+      ['click', 'pointerdown', 'mousedown', 'touchstart', 'dblclick'].forEach(function (ev) { inp.addEventListener(ev, function (e) { e.stopPropagation(); }); });
+      inp.addEventListener('keydown', function (e) {
+        e.stopPropagation();
+        if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); fin(true); } else if (e.key === 'Escape') { e.preventDefault(); fin(false); }
+      });
+      inp.addEventListener('blur', function () { fin(true); });
+      b.replaceWith(inp); inp.focus(); inp.select();
+    });
+    return b;
+  }
+  function dRename(it, v) {
+    const code = S.code, was = it.name, pre = (String(was || '').match(/^\d{8}_\d{6}_/) || [''])[0], ext = (String(was || '').match(/\.[A-Za-z0-9]{1,5}$/) || [''])[0];
+    const put = function (n) {
+      [S.docs, S.items].forEach(function (L) { (L || []).forEach(function (y) { if (y.id === it.id) y.name = n; }); });
+      Object.keys(DOUT).forEach(function (k) { if (k.split(',').indexOf(it.id) >= 0) delete DOUT[k]; });
+    };
+    put(pre + v + ext); docsDraw();
+    gs('workRename', code, it.id, v).then(function (r) { if (S.code !== code) return; put(pre + ((r && r.name) || (v + ext))); docsDraw(); dcMsg('名前を「' + dNameShow((r && r.name) || v) + '」にしました。'); },
+      function (e) { if (S.code !== code) return; put(was); docsDraw(); dcMsg('名前を変えられませんでした。' + e.message, true); });
+  }
   function dTile(it) {
     const tile = el('div', 'dtile'); tile.dataset.id = it.id;
     const b = el('button', 'dimg'); b.type = 'button'; b.title = '押すと大きく';
@@ -4433,6 +4521,14 @@
     if (tg[0] === 'gone') tile.classList.add('gone');
     if (it.status === 'back' && !it.redo) tile.classList.add('isback');
     tile.appendChild(b);
+    /* ★★ 名前（2026-10-30）：押すと その場で変えられる（頭の日時と拡張子はそのまま）。外へ取り出すときも この名前 */
+    if (tg[0] !== 'gone') tile.appendChild(dNameTag(it));
+    /* ★★ 差し戻して 戻ってきたもの：印。押すと経過 */
+    if (it.back && it.backSt === 'ok') {
+      const bk = el('button', 'dbk', it.backRe ? '↩ 撮り直し' : '↩ 差し戻し歴'); bk.type = 'button'; bk.title = '差し戻して 再提出されたものです。押すと経過';
+      bk.addEventListener('click', function (e) { e.stopPropagation(); backHistOpen(it.back); });
+      tile.appendChild(bk);
+    }
     /* ★ 確認済（2026-10-23 改善要望）：見た・打った写真に 印を付ける。押すたびに 付ける／外す */
     if (it.chk) tile.classList.add('chk');
     const ck = el('button', 'dchk', it.chk ? '✓ 確認済 ' + chkShort(it.chk) : '□ 確認済にする'); ck.type = 'button';
@@ -4589,7 +4685,7 @@
     }
     function bind(tile, it) {
       tile.addEventListener('touchstart', function (e) {
-        if (e.touches.length !== 1) return;
+        if (e.touches.length !== 1 || (e.target.closest && e.target.closest('.dnm'))) return;
         const t = e.touches[0];
         if (cur) end(true);
         cur = { it: it, tile: tile, x: t.clientX, y: t.clientY, x0: t.clientX, y0: t.clientY, on: false, touch: true };
@@ -4601,7 +4697,7 @@
            アプリの中で落とせば これまでどおり（並べ替え・まとめ・別の箱へ）、ブラウザの外（デスクトップ・フォルダ・メール）へ落とせば ファイルになる */
       if (DOUT_NAT) { natBind(tile, it); return; }
       tile.addEventListener('pointerdown', function (e) {
-        if (e.pointerType === 'touch' || e.button !== 0) return;
+        if (e.pointerType === 'touch' || e.button !== 0 || (e.target.closest && e.target.closest('.dnm'))) return;
         if (cur) end(true);
         cur = { it: it, tile: tile, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, on: false, mouse: true };
       });
@@ -7265,6 +7361,18 @@
   function dvBackDraw(it) {
     const w = $('dvBack'); w.textContent = '';
     if (it.status === 'done' || it.entries && it.entries.length) return;
+    /* ★★ 2026-10-30：差し戻しは「書類を選んで」まとめて。理由はプルダウン、具体的には 任意 */
+    if (it.back && (it.backSt === 'open' || it.backSt === 'reply')) {
+      w.appendChild(el('span', 'bn', (it.backSt === 'reply' ? '再提出あり：' : '差し戻し中：') + (it.note || '')));
+      const u = el('button', 'btn ghost sm', '差し戻しをやめる'); u.type = 'button';
+      u.addEventListener('click', function () { backCancel(it.back); }); w.appendChild(u); return;
+    }
+    if (it.status !== 'back') {
+      const bb = el('button', 'btn ghost sm danger', '↩ 差し戻す（書類を選ぶ）'); bb.type = 'button';
+      bb.title = 'この書類と いっしょに差し戻すもの（同じ領収書が2枚 など）を選べます';
+      bb.addEventListener('click', function () { backPick(it.box, it.period, [it.id]); });
+      w.appendChild(bb); return;
+    }
     if (it.status === 'back') {
       w.appendChild(el('span', 'bn', '差戻し中：' + (it.note || '')));
       const u = el('button', 'btn ghost sm', '差戻しをやめる'); u.type = 'button';
@@ -7312,6 +7420,150 @@
     });
   }
 
+
+  /* ================= ★★★ 差し戻し（2026-10-30） =================
+     ・［↩ 差し戻す］→ 同じ箱・月分の書類が並ぶ窓。何枚でも選べる（まとめた書類は 1つとして）。理由はプルダウン、具体的には 任意
+     ・差し戻したものは 箱の中の「↩ 差し戻し」の欄へ。顧問先が 撮り直し・コメントで再提出すると そこに出る
+     ・［OK（元の箱へ）］で 元の箱・月分へ戻る。戻ったものには「↩ 差し戻し歴」が付き、押すと経過が見られる */
+  S.backs = null;
+  function backsLoad() {
+    if (!S.code) return Promise.resolve();
+    const code = S.code;
+    return gs('workBacks', code).then(function (r) { if (code !== S.code) return; S.backs = r || []; docsDraw(); }, function () {});
+  }
+  function backOf(id) { return (S.backs || []).find(function (b) { return b.id === id; }); }
+  function inBack(it) { return !!(it && it.back && (it.backSt === 'open' || it.backSt === 'reply')); }
+  function bOverlay(cls) {
+    const v = el('div', 'bov ' + (cls || '')); const c = el('div', 'bov-c'); v.appendChild(c);
+    v.addEventListener('click', function (e) { if (e.target === v) v.remove(); });
+    document.body.appendChild(v); return { v: v, c: c, close: function () { v.remove(); } };
+  }
+  /* 書類を選ぶ窓。box・per の書類（確定・差し戻し中・破棄は出さない）。pre … はじめから選んでおくもの */
+  function backPick(box, per, pre) {
+    const code = S.code;
+    const can = (S.docs || []).filter(function (x) { return x.box === box && (box === LINE_BOX || x.period === per) && x.status === 'todo' && !inBack(x) && !(x.entries && x.entries.length); });
+    const groups = dGroups(can.slice().sort(dSort));
+    if (!groups.length) { dcMsg('差し戻せる書類がありません（確定・差し戻し中のものは 選べません）。', true); return; }
+    const sel = {}; (pre || []).forEach(function (id) { groups.forEach(function (g, gi) { if (g.some(function (x) { return x.id === id; })) sel[gi] = 1; }); });
+    const o = bOverlay('bpk');
+    o.c.appendChild(el('h3', null, '↩ 差し戻す書類を選ぶ（' + boxLabel(box) + (box === LINE_BOX ? '' : '　' + perLabel(per)) + '）'));
+    o.c.appendChild(el('p', 'bov-n', '何枚でも選べます（同じ領収書が2枚・どちらが正しいか など）。まとめた書類（📎）は 1つとして選べます。ほかの書類と 1つにしたいときは 先に まとめておいてください。'));
+    const grid = el('div', 'bpk-g'); o.c.appendChild(grid);
+    const nsel = el('b', 'bpk-n');
+    const paint = function () { grid.querySelectorAll('.bpk-i').forEach(function (d) { d.classList.toggle('on', !!sel[d.dataset.g]); }); nsel.textContent = Object.keys(sel).length + ' 件を選んでいます'; };
+    groups.forEach(function (g, gi) {
+      const d = el('button', 'bpk-i'); d.type = 'button'; d.dataset.g = gi;
+      const im = el('img'); im.alt = g[0].name; if (THUMB[g[0].id]) im.src = THUMB[g[0].id]; d.appendChild(im);
+      d.appendChild(el('span', 'bpk-t', fileName(g[0]) + (g.length > 1 ? '（📎' + g.length + '枚）' : '')));
+      d.appendChild(el('span', 'bpk-a', String(g[0].at || '').replace(/^\d{4}\//, '') + ' 届'));
+      d.addEventListener('click', function () { if (sel[gi]) delete sel[gi]; else sel[gi] = 1; paint(); });
+      grid.appendChild(d);
+    });
+    const f = el('div', 'bpk-f');
+    const why = el('select'); why.setAttribute('aria-label', '差し戻しの理由'); why.appendChild(el('option', null, '理由を選ぶ…')).value = '';
+    BACK_WHY.forEach(function (x) { const op = el('option', null, x); op.value = x; why.appendChild(op); });
+    const det = el('textarea'); det.rows = 3; det.maxLength = 500; det.placeholder = '具体的に（任意。顧問先の画面に そのまま出ます）。例：12/3 の ローソンの領収書が 2枚あります。同じものなら 1枚は消してください。';
+    det.setAttribute('aria-label', '差し戻しの理由（具体的に）');
+    const go = el('button', 'primary', '↩ 差し戻す'); go.type = 'button';
+    const no = el('button', null, 'やめる'); no.type = 'button'; no.addEventListener('click', o.close);
+    const msg = el('div', 'bov-m');
+    go.addEventListener('click', function () {
+      const ids = []; Object.keys(sel).forEach(function (gi) { groups[gi].forEach(function (x) { ids.push(x.id); }); });
+      if (!ids.length) { msg.textContent = '差し戻す書類を選んでください。'; return; }
+      if (!why.value && !det.value.trim()) { msg.textContent = '理由を選ぶか、具体的に書いてください。'; why.focus(); return; }
+      go.disabled = true; msg.textContent = '差し戻しています…';
+      gs('workReturnMany', code, ids, why.value, det.value.trim()).then(function (r) {
+        o.close();
+        /* 開いている写真の下も すぐ「差し戻し中」に（一覧は 読み直しで） */
+        const hit = function (x) { return r && r.ids && r.ids.indexOf(x.id) >= 0; };
+        (S.items || []).forEach(function (x) {
+          if (!hit(x)) return;
+          if (x.status !== 'back' && S.counts) { S.counts[x.status] = (S.counts[x.status] || 1) - 1; S.counts.back = (S.counts.back || 0) + 1; }
+          x.status = 'back'; x.back = r.id; x.backSt = 'open'; x.note = r.note; if (rowOf(x.id)) drawCard(x);
+        });
+        (S.docs || []).forEach(function (x) { if (hit(x)) { x.status = 'back'; x.back = r.id; x.backSt = 'open'; x.note = r.note; } });
+        if (S.counts) counts();
+        if (S.dvIt && r && r.ids && r.ids.indexOf(S.dvIt.id) >= 0) dvBackDraw(S.dvIt);
+        dcMsg(ids.length + '枚を 差し戻しました。顧問先の画面の［' + boxLabel(box) + '］の「差し戻し」に出ます。');
+        if (code === S.code) { docsLoad(true); backsLoad(); }
+      }, function (e) { go.disabled = false; msg.textContent = '差し戻せませんでした：' + e.message; });
+    });
+    f.appendChild(el('label', 'bpk-l', '理由')); f.appendChild(why); f.appendChild(el('label', 'bpk-l', '具体的に（任意）')); f.appendChild(det);
+    const btns = el('div', 'bov-b'); btns.appendChild(nsel); btns.appendChild(go); btns.appendChild(no);
+    o.c.appendChild(f); o.c.appendChild(msg); o.c.appendChild(btns);
+    paint();
+  }
+  function backOk(id) {
+    const code = S.code;
+    dcMsg('元の箱へ戻しています…');
+    gs('workBackOk', code, id).then(function () { dcMsg('確認しました。元の箱・月分へ戻しました（「↩ 差し戻し歴」から経過が見られます）。'); if (code === S.code) { docsLoad(true); backsLoad(); } },
+      function (e) { dcMsg('戻せませんでした：' + e.message, true); });
+  }
+  function backCancel(id) {
+    const code = S.code;
+    gs('workBackCancel', code, id).then(function () { dcMsg('差し戻しをやめました（元の箱へ戻しました）。'); if (S.dvIt && S.dvIt.back === id) docsClose(); if (code === S.code) { docsLoad(true); backsLoad(); } },
+      function (e) { dcMsg('やめられませんでした：' + e.message, true); });
+  }
+  const BACK_ST = { open: '顧問先の返事待ち', reply: '再提出あり（確認してください）', ok: '確認済み（元の箱へ戻しました）', cancel: 'やめた' };
+  function backLogText(e) {
+    if (e.t === 'back') return '事務所が差し戻し（' + (e.n || '') + '枚）' + (e.by ? '　' + e.by : '') + '\n理由：' + [e.why, e.detail].filter(Boolean).join('　');
+    if (e.t === 'photo') return '顧問先が 撮り直した写真を送った（' + (e.n || 1) + '枚）';
+    if (e.t === 'reply') return '顧問先が 再提出' + (e.cmt ? '\nコメント：' + e.cmt : '');
+    if (e.t === 'ok') return '事務所が確認して 元の箱へ戻した' + (e.by ? '　' + e.by : '');
+    if (e.t === 'cancel') return '事務所が 差し戻しをやめた' + (e.by ? '　' + e.by : '');
+    return e.t;
+  }
+  /* 経過（差し戻し → 撮り直し → 再提出 → 確認） */
+  function backHistOpen(id) {
+    const b = backOf(id);
+    const o = bOverlay('bhv');
+    o.c.appendChild(el('h3', null, '↩ 差し戻しの経過'));
+    if (!b) { o.c.appendChild(el('p', 'bov-n', '読み込んでいます…')); backsLoad().then(function () { o.close(); if (backOf(id)) backHistOpen(id); }); return; }
+    o.c.appendChild(el('p', 'bov-n', boxLabel(b.box) + (b.per ? '　' + perLabel(b.per) : '') + '　いま：' + (BACK_ST[b.st] || b.st)));
+    const ul = el('ol', 'bhv-l');
+    (b.log || []).forEach(function (e) { const li = el('li'); li.appendChild(el('span', 'bhv-at', e.at || '')); li.appendChild(el('div', 'bhv-t', backLogText(e))); ul.appendChild(li); });
+    o.c.appendChild(ul);
+    const docs = (S.docs || []).filter(function (x) { return x.back === id; });
+    if (docs.length) {
+      const g = el('div', 'bkc-g');
+      docs.forEach(function (x) { const d = el('button', 'bkc-i' + (x.backRe ? ' re' : '')); d.type = 'button'; const im = el('img'); im.alt = x.name; if (THUMB[x.id]) im.src = THUMB[x.id]; d.appendChild(im); d.appendChild(el('span', 'bkc-t', (x.backRe ? '撮り直し：' : '差し戻した：') + fileName(x))); d.addEventListener('click', function () { o.close(); docsOpen(x); }); g.appendChild(d); });
+      o.c.appendChild(g);
+    }
+    const bt = el('div', 'bov-b'); const cl = el('button', null, '閉じる'); cl.type = 'button'; cl.addEventListener('click', o.close); bt.appendChild(cl); o.c.appendChild(bt);
+  }
+  /* 箱の中の「↩ 差し戻し」の欄 */
+  function backSection(bx, docs) {
+    const ids = {}; docs.forEach(function (x) { ids[x.back] = 1; });
+    const evs = Object.keys(ids).map(function (id) { return backOf(id) || { id: id, st: (docs.find(function (x) { return x.back === id; }) || {}).backSt, why: (docs.find(function (x) { return x.back === id && !x.backRe; }) || {}).note || '', log: [] }; });
+    const w = el('div', 'dbk-sec');
+    w.appendChild(el('div', 'dbk-h', '↩ 差し戻し（' + boxLabel(bx) + '）' + evs.length + '件' + (evs.some(function (b) { return b.st === 'reply'; }) ? '　再提出あり' : '')));
+    evs.forEach(function (b) {
+      const c = el('div', 'bkc ' + (b.st || ''));
+      const top = el('div', 'bkc-top');
+      top.appendChild(el('span', 'bkc-st ' + (b.st || ''), BACK_ST[b.st] || ''));
+      top.appendChild(el('span', 'bkc-w', (b.per ? perLabel(b.per) + '　' : '') + (b.at ? b.at + ' 差し戻し' : '')));
+      c.appendChild(top);
+      c.appendChild(el('div', 'bkc-why', '理由：' + [b.why, b.detail].filter(Boolean).join('　')));
+      if (b.cmt) c.appendChild(el('div', 'bkc-cmt', '顧問先から：' + b.cmt + (b.rat ? '（' + b.rat + '）' : '')));
+      const g = el('div', 'bkc-g');
+      docs.filter(function (x) { return x.back === b.id; }).sort(function (a, z) { return (a.backRe ? 1 : 0) - (z.backRe ? 1 : 0) || a.t - z.t; }).forEach(function (x) {
+        const d = el('button', 'bkc-i' + (x.backRe ? ' re' : '')); d.type = 'button'; d.title = '押すと大きく';
+        const im = el('img', 'dthumb'); im.alt = x.name; im.dataset.id = x.id; if (THUMB[x.id]) im.src = THUMB[x.id]; d.appendChild(im);
+        d.appendChild(el('span', 'bkc-t', (x.backRe ? '🆕 撮り直し ' : '') + fileName(x)));
+        d.addEventListener('click', function () { docsOpen(x); });
+        g.appendChild(d);
+      });
+      c.appendChild(g);
+      const bt = el('div', 'bkc-b');
+      const ok = el('button', 'primary', '✓ OK（元の箱へ戻す）'); ok.type = 'button'; ok.title = '確認して 差し戻す前の箱・月分へ戻す（撮り直したものも いっしょに入ります）';
+      ok.addEventListener('click', function () { backOk(b.id); });
+      const hs = el('button', null, '経過'); hs.type = 'button'; hs.addEventListener('click', function () { backHistOpen(b.id); });
+      const cn = el('button', 'ghost', '差し戻しをやめる'); cn.type = 'button'; cn.addEventListener('click', function () { backCancel(b.id); });
+      bt.appendChild(ok); bt.appendChild(hs); bt.appendChild(cn); c.appendChild(bt);
+      w.appendChild(c);
+    });
+    return w;
+  }
 
   /* 辞書が変わったら、写真の下の一覧と伝票を描き直す */
   function drawDict() {
