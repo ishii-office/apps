@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793435803;</script>
+<script>window.__PAGE_VER=1793444773;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -80,7 +80,8 @@
   .pairframe { position: fixed; top: 0; right: 0; width: 50vw; height: 100vh; border: 0; border-left: 3px solid var(--accent); background: #fff; z-index: 2147483000; }
   html.ispane #toClient { display: none !important; }
   @media (max-width: 700px) { .toclient .lbl { display: none; } .toclient::after { content: '顧問先'; } }
-  @media (min-width: 701px) { .top { padding-right: 260px; } }
+  /* ★ K-0019（2026-10-31）：右上の［📷 顧問先の画面を表示］［↻ 開き直す］の幅は 実際に測って あける（--toprw）。文字が大きい端末でも［ログアウト］と重ならない */
+  @media (min-width: 701px) { .top { padding-right: calc(var(--toprw, 248px) + 16px); } }
   .vtoast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 42px); right: 8px; z-index: 61; max-width: calc(100vw - 16px); display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 7px 8px 7px 12px; box-shadow: 0 6px 20px rgba(0,0,0,.18); font-size: 14px; }
   .vtoast button { font: inherit; font-size: 14px; font-weight: 700; border-radius: 8px; padding: 4px 10px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
   .vtoast button.x { background: none; color: var(--sub); border: 0; padding: 4px 6px; }
@@ -469,7 +470,7 @@
   .preview span { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; background: #fff; font-size: 13px; }
   .preview span.auto { color: var(--sub); border-style: dashed; }
   .atree { border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 4px 0; }
-  .atree:empty::before { content: '（まだ箱がありません。下で足すか、空のままなら いつもの箱）'; display: block; padding: 8px 12px; color: var(--sub); font-size: 13px; }
+  .atree:empty::before { content: '（まだ箱がありません。下で足してください。空のままなら 顧問先の画面には 箱は出ません）'; display: block; padding: 8px 12px; color: var(--sub); font-size: 13px; }
   .arow { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-bottom: 1px solid #F0F2F1; }
   .arow:last-child { border-bottom: 0; }
   /* ★ お願いメール（2026-10-18） */
@@ -1047,7 +1048,7 @@
   .dview .dvmemo { padding: 8px 14px; background: #FFF3C4; color: #4A3700; font-weight: 700; font-size: 15px; white-space: pre-wrap; border-bottom: 1px solid #E0B43A; }
   .dview .dvmemo[hidden] { display: none; }
   .dview { position: fixed; inset: 0; z-index: 50; background: rgba(20,30,28,.92); display: flex; flex-direction: column; }
-  .dview .dvbar { display: flex; align-items: center; gap: 8px; padding: 8px 260px 8px 10px; background: #fff; flex-wrap: wrap; }   /* 右は［📷 顧問先の画面］［↻ 開き直す］の場所をあける */
+  .dview .dvbar { display: flex; align-items: center; gap: 8px; padding: 8px calc(var(--toprw, 248px) + 16px) 8px 10px; background: #fff; flex-wrap: wrap; }   /* 右は［📷 顧問先の画面］［↻ 開き直す］の場所をあける */
   .dview .dvbar .sp { flex: 1; }
   /* ★★ 上の帯は 詰める（2026-10-28）。名前は1行（はみ出しは …）、ボタンは右へ並べて、写真・明細の場所を広く */
   .dview .dvbar { flex-wrap: nowrap; gap: 6px; padding: 5px 290px 5px 10px; }
@@ -1061,7 +1062,7 @@
   @media (max-width: 700px) {
     /* 電話：1行目＝名前（右の［顧問先］［開き直す］の分をあける）、2行目＝ボタンを横に並べて 指で横へ送る */
     .dview .dvbar { flex-wrap: wrap; padding: 4px 6px; row-gap: 4px; }
-    .dview #dvName { flex: 1 1 100%; max-width: none; padding: 8px 196px 4px 2px; font-size: 13px; }
+    .dview #dvName { flex: 1 1 100%; max-width: none; padding: 8px calc(var(--toprw, 184px) + 12px) 4px 2px; font-size: 13px; }
     .dview .dvtools { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-bottom: 2px; scrollbar-width: none; }
     .dview .dvtools::-webkit-scrollbar { display: none; }
     .dview .dvkey { display: none; }
@@ -1248,6 +1249,16 @@
 <!-- ===== 本体 ===== -->
 <!-- ★ 右上：［📷 顧問先の画面］は［↻ 開き直す］の左（2026-10-26） -->
 <div class="topr"><button type="button" class="toclient" id="toClient" hidden title="いま選んでいる顧問先の 資料提出の画面（顧問先が見ている画面）を開く">📷 <span class="lbl">顧問先の画面を表示</span></button><button type="button" class="reopen" id="reopen" hidden title="打ちかけの仕訳・開いている画面は そのまま残して 開き直します">↻ 開き直す</button></div>
+<script>
+/* ★ K-0019：右上のボタンの いまの幅を測って 上の帯の右に その分あける（ボタンが出た・消えた・文字の大きさが変わったときも） */
+(function () {
+  const tr = document.querySelector('.topr'); if (!tr) return;
+  const set = function () { document.documentElement.style.setProperty('--toprw', Math.ceil(tr.getBoundingClientRect().width) + 'px'); };
+  set();
+  if (window.ResizeObserver) new ResizeObserver(set).observe(tr);
+  window.addEventListener('resize', set);
+})();
+</script>
 <div class="vtoast" id="vtoast" role="status" hidden><span>アプリが新しくなりました</span><button type="button" id="vtGo">開き直す</button><button type="button" class="x" id="vtX" aria-label="閉じる（このまま続ける）">×</button></div>
 <div class="top" id="top" hidden>
   <span class="brand">資料回収（事務所）</span>
@@ -1566,7 +1577,7 @@
         <div class="atree-add"><input id="aNewBox" maxlength="30" placeholder="新しい箱の名前（例：通帳）"><button type="button" id="aAddBox">＋ 箱を足す</button></div>
         <div class="hint">［＋中に］でその箱の中に箱を作れます（例：通帳 › 滋賀銀行 › 普通）。↑↓で並べ替え。名前を押すと変えられます。<br>
           ［表示中］を押すと［非表示］になり、<b>顧問先の画面にだけ</b>出なくなります（箱もフォルダも残ります。慣れるまで 現金・売上だけ集める などに）。中の箱もいっしょに隠れます。<br>
-          空なら「現金の領収書・通帳」。「その他」は自動で最後に付きます。30字まで。中の箱は4段まで。<br>
+          空なら 顧問先の画面には 箱は出ません（例：現金の領収書・通帳・カード・売上など、その顧問先に合わせて足します）。箱を1つでも足すと「年末調整書類（マイナンバー記載あり）」「その他」は自動で最後に付きます。30字まで。中の箱は4段まで。<br>
           名前を変えても、もう届いている資料は前の名前の箱のまま残ります（事務所の回収資料で つかんで移せます）。</div>
         <details class="abulk"><summary>まとめて書く</summary>
           <textarea id="aBoxes" placeholder="現金の領収書&#10;通帳/滋賀銀行/普通&#10;通帳/京都信金&#10;カード/○○カード&#10;請求書"></textarea>
@@ -3773,6 +3784,14 @@
     d.getElementById('wzv').addEventListener('click', zclose);
     d.getElementById('wzx').addEventListener('click', function (e) { e.stopPropagation(); zclose(); });
     d.getElementById('wzr').addEventListener('click', function (e) { e.stopPropagation(); });
+    /* ★ K-0020：別ウィンドウで 大きく見ている写真も（元の大きさのとき）つかんで アプリの外へ */
+    const zit = function () { const m = o.zkey ? wsMemOf(o, o.zkey) : null; return m ? (m.find(function (x) { return o.ad.key(x) === o.zkey; }) || m[0]) : null; };
+    d.getElementById('wzi').addEventListener('mouseenter', function () { const it = zit(); if (it && o.ad.out) o.ad.out(it); });
+    d.getElementById('wzi').addEventListener('dragstart', function (e) {
+      const it = zit(), ox = it && o.ad.out ? o.ad.out(it) : null;
+      if (!ox || !ox.url) { e.preventDefault(); if (ox) { const hh = d.getElementById('wzh'); if (hh) hh.textContent = ox.err || 'ファイルを用意しています。少ししてから もう一度つかんでください。'; } return; }
+      try { e.dataTransfer.setData('DownloadURL', ox.mime + ':' + ox.name + ':' + ox.url); e.dataTransfer.effectAllowed = 'copy'; } catch (q) {}
+    });
     wsZKeys(key, d);
     wsDraw(key);
     return true;
@@ -3820,9 +3839,9 @@
       const g = E('div', 'wsg');
       perDocs[pi].forEach(function (mem) {
         const lead = mem[0], lock = mem.some(ad.locked);
-        const c = E('div', 'wc' + (lock ? ' lock' : '')); c.draggable = !lock; c.dataset.k = ad.key(lead);
+        const c = E('div', 'wc' + (lock ? ' lock' : '')); c.draggable = !lock || !!ad.out; c.dataset.k = ad.key(lead);
         const im = E('div', 'im'), src = ad.thumb(lead);
-        if (src) { const i = E('img'); i.src = src; i.alt = ''; im.appendChild(i); } else { im.appendChild(E('div', 'k', ad.name(lead))); if (src === undefined) need.push(ad.key(lead)); }
+        if (src) { const i = E('img'); i.src = src; i.alt = ''; i.draggable = false; im.appendChild(i); } else { im.appendChild(E('div', 'k', ad.name(lead))); if (src === undefined) need.push(ad.key(lead)); }
         c.appendChild(im);
         /* ★ 押すと 大きく（写真が まだ届いていなくても）。並び（o.seq）は キーで前後するため */
         o.seq.push(mem); im.style.cursor = 'zoom-in';
@@ -3856,7 +3875,17 @@
         if (ad.pdfBtn) { const pb = ad.pdfBtn(mem); if (pb) ft.appendChild(pb); }
         c.appendChild(ft);
         const wm = wsActs(o, c, mem, E);
-        c.addEventListener('dragstart', function (e) { if (o.drag) return; o.drag = { mem: mem }; try { e.dataTransfer.setData('text/plain', 'd'); e.dataTransfer.effectAllowed = 'move'; } catch (q) {} });
+        /* ★ K-0020：別ウィンドウの札からも そのまま アプリの外（デスクトップ・フォルダ）へ。Chrome・Edge（ad.out があるとき）。
+           ファイルは つかむ前（マウスを乗せたとき）に 裏で用意。窓の中へ落とせば これまでどおり 並べ替え・まとめ（確定済みは 外へ出すだけ） */
+        if (ad.out) { let ot = 0; c.addEventListener('mouseenter', function () { ot = setTimeout(function () { ad.out(lead); }, 200); }); c.addEventListener('mouseleave', function () { clearTimeout(ot); }); }
+        c.addEventListener('dragstart', function (e) {
+          if (o.drag) return;
+          const bt = e.target && e.target.closest && e.target.closest('button, input');
+          const ox = ad.out && !bt ? ad.out(lead) : null;
+          if (lock && !(ox && ox.url)) { e.preventDefault(); if (ox) wsMsg(key, ox.err || 'ファイルを用意しています。少ししてから もう一度つかんでください。', !!ox.err); return; }
+          if (!lock) o.drag = { mem: mem };
+          try { e.dataTransfer.setData('text/plain', 'd'); if (ox && ox.url) { e.dataTransfer.setData('DownloadURL', ox.mime + ':' + ox.name + ':' + ox.url); e.dataTransfer.effectAllowed = lock ? 'copy' : 'copyMove'; } else e.dataTransfer.effectAllowed = 'move'; } catch (q) {}
+        });
         c.addEventListener('dragend', function () { o.drag = null; if (o.wait) wsDraw(key); });
         const zone = function (e) { const r = c.getBoundingClientRect(), f = (e.clientX - r.left) / r.width; return f < 0.28 ? 'l' : f > 0.72 ? 'r' : 'c'; };
         c.addEventListener('dragover', function (e) { const dg = o.drag; if (!dg || dg.page || dg.mem === mem || wm === 'trash') return; e.preventDefault(); const z = zone(e); c.classList.toggle('zl', z === 'l'); c.classList.toggle('zr', z === 'r'); c.classList.toggle('zc', z === 'c'); });
@@ -3917,6 +3946,7 @@
     const d = o.win.document, img = d.getElementById('wzi'), tok = {};
     if (d.getElementById('wzv').hidden || !o.zseq) o.zseq = o.seq.map(function (m) { return o.ad.key(m[0]); });
     o.zkey = o.ad.key(it); o.ztok = tok; o.zpages = null; o.zpg = 0; o.zp.reset();
+    img.draggable = !!(o.ad.out && o.ad.out(it));
     const t = o.ad.thumb(it); if (t) img.src = t; else img.removeAttribute('src');
     const ld = d.getElementById('wzl'); ld.hidden = true;
     d.getElementById('wzv').hidden = false;
@@ -4030,6 +4060,8 @@
       thumb: function (it) { return THUMB[it.id]; }, name: nm,
       stat: function (it) { return isT(it) ? '破棄済み' : stTag(it)[1]; }, locked: function (it) { return it.status === 'done' || isT(it); },
       need: function (ids) { wsThumbsO(ids); },
+      /* ★ K-0020：アプリの外へ（サムネイルと同じもの。まとめた書類は その束で1つの PDF・［PDFにする］も効く） */
+      out: DOUT_NAT ? function (it) { return it && !fileKind(it.name) ? dOutPrep(it) : null; } : null,
       /* ★ サムネイルと同じ：確認済（緑）・対象外（黒）・破棄（赤）・書きこむ（2026-10-29） */
       mark: function (it) { return isT(it) ? 'trash' : it.skip ? 'skip' : it.chk ? 'chk' : ''; },
       check: function (mem, on) { docsCheck(mem, on); },
@@ -10133,11 +10165,10 @@
   });
   function aPreview() {
     const p = $('aPreview'); p.textContent = '';
-    let list = boxesOf($('aBoxes').value);
-    const auto = !list.length;
-    if (auto) list = ['現金の領収書', '通帳'];
+    const list = boxesOf($('aBoxes').value);
+    /* ★ K-0018：箱を決めていないうちは 何も並べない（顧問先の画面にも 箱は出ない。いつもの箱は 例として 上の説明に書くだけ） */
     const hid = hiddenOf($('aBoxes').value);
-    list.concat([MYNUM_BOX, 'その他']).forEach(function (b, i) { p.appendChild(el('span', (auto || i >= list.length ? 'auto' : '') + (!auto && (hid[b] || hidUnder(hid, b)) ? ' off' : '') || null, b.split('/').join(' › '))); });
+    if (list.length) list.concat([MYNUM_BOX, 'その他']).forEach(function (b, i) { p.appendChild(el('span', (i >= list.length ? 'auto' : '') + ((hid[b] || hidUnder(hid, b)) ? ' off' : '') || null, b.split('/').join(' › '))); });
     aTreeDraw();
   }
   /* ---- 箱の木（箱の中に箱）。中身は aBoxes（1行1つの道すじ）と同じものを持つ ---- */
