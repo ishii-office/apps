@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793367807;</script>
+<script>window.__PAGE_VER=1793435803;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -508,6 +508,9 @@
   .mlog { font-size: 12.5px; color: #555; max-height: 160px; overflow: auto; }
   .arow .spt { font: inherit; font-size: 12px; padding: 3px 8px; border-radius: 999px; border: 1px solid #BFD3CC; background: #fff; color: #476; cursor: pointer; white-space: nowrap; }
   .arow .spt.on { background: #FFF1D6; border-color: #E2B65A; color: #7A5300; font-weight: 700; }
+  .arow .spt.day { background: #E3F0FB; border-color: #8DB8DE; color: #1F4E8C; font-weight: 700; }
+  .arow .ask { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .arow .ask.on { background: #EEF6F1; border-color: #9CCBA8; color: var(--ok); font-weight: 700; }
   .arow .sptd { font: inherit; font-size: 12px; padding: 2px 4px; border: 1px solid #E2B65A; border-radius: 6px; width: 132px; }
   .arow .nm { flex: 1; min-width: 0; text-align: left; font: inherit; font-weight: 700; background: none; border: 0; padding: 6px 4px; cursor: pointer; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .arow .nm::before { content: '▢ '; color: var(--accent); }
@@ -553,8 +556,11 @@
   .kzmine { margin: 8px 0 12px; padding: 10px 14px; border-radius: 10px; background: #E5F2E8; border: 1px solid #9CCBA8; }
   .kzmine h3 { margin: 0 0 6px; font-size: 15px; color: var(--ok); }
   .kzmine li { margin: 4px 0; }
-  .kzann { display: block; width: 100%; border: 0; border-bottom: 1px solid #9CCBA8; background: #E5F2E8; color: var(--ok); font: inherit; font-weight: 800; padding: 8px 14px; text-align: left; cursor: pointer; }
+  .kzann { display: flex; align-items: center; gap: 8px; width: 100%; border-bottom: 1px solid #9CCBA8; background: #E5F2E8; padding: 4px 14px 4px 8px; box-sizing: border-box; }
   .kzann[hidden] { display: none; }
+  .kzann-t { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ok); font: inherit; font-weight: 800; padding: 4px 0; text-align: left; cursor: pointer; }
+  .kzann-x { flex: none; width: 28px; height: 28px; border-radius: 50%; border: 1px solid #9CCBA8; background: #fff; color: var(--ok); font: inherit; font-size: 17px; font-weight: 800; line-height: 1; padding: 0; cursor: pointer; }
+  .kzann-x:hover { background: var(--ok); color: #fff; }
   .kzm-it { list-style: none; margin: 8px 0; padding: 8px 10px; background: #fff; border: 1px solid #CFE3D5; border-radius: 8px; }
   .kzm-done { white-space: pre-wrap; margin: 4px 0; }
   .kzm-news { margin-top: 6px; padding: 6px 8px; background: #FFF8E1; border: 1px solid #E6CF85; border-radius: 6px; }
@@ -638,6 +644,8 @@
   .dtools button.danger { color: #B3261E; border-color: #E7B4AF; }
   #sBody td button + button { margin-left: 6px; }
   #sBody td:last-child { white-space: nowrap; }
+  .dcols.doutfmt[hidden] { display: none; }
+  .dcols.doutfmt button[aria-pressed="true"] { background: var(--ok); color: #fff; font-weight: 800; }
   .dcols { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; }
   .dcols > span { font-size: 12.5px; color: var(--sub); padding: 0 8px; }
   .dtools .dcols button { border: 0; border-left: 1px solid var(--line); border-radius: 0; padding: 6px 12px; }
@@ -745,6 +753,7 @@
   .dmon-b { font: inherit; font-size: 12.5px; font-weight: 700; padding: 5px 9px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
   .dmon-b.danger { color: #B3261E; border-color: #E7B4AF; }
   .dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 0 8px 10px; }
+  .dgrid > .dday { grid-column: 1 / -1; font-size: 13px; font-weight: 800; color: var(--ok); border-bottom: 1px dashed var(--line); padding: 4px 2px 2px; }
   @media (max-width: 600px) { .dgrid { grid-template-columns: repeat(3, 1fr); gap: 6px; } .dbox { padding: 10px; }
     .dmon-h { flex-basis: 100%; } .dmon-hd { padding: 0 8px 6px 0; justify-content: flex-end; } }
   img.dthumb:not([src]) { visibility: hidden; }
@@ -805,11 +814,14 @@
   .dkids { margin-top: 10px; }
   .dbox.sub { margin: 0 0 10px; padding: 10px 12px; border-width: 2px; border-color: #A9CFC4; background: var(--a-faint); }
   .dbox.sub .dbox-h h3 { font-size: 16px; }
-  /* ★★ 箱の中の箱は 左の枠だけ（2026-10-28）。右の枠と右の余白をやめて 右端まで使う＝入れ子が深くても 写真の場所が減らない */
-  .dbox:not(.sub) { padding-right: 4px; }
-  .dbox .dbox.sub, .dbox .dyr, .dbox .dmon { border-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; margin-right: 0; padding-right: 0; }
-  .dbox .dyk { padding-right: 0; }
-  .dbox .dgrid { padding-right: 4px; }
+  /* ★★ 箱の中の箱は 左の枠だけ（2026-10-28）。右の枠と右の余白をやめて 右端まで使う＝入れ子が深くても 写真の場所が減らない
+       ★ K-0015（2026-10-31）：これは【スマホだけ】。パソコンは 右の枠も付けて 見切れて見えないように元へ */
+  @media (max-width: 700px) {
+    .dbox:not(.sub) { padding-right: 4px; }
+    .dbox .dbox.sub, .dbox .dyr, .dbox .dmon { border-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; margin-right: 0; padding-right: 0; }
+    .dbox .dyk { padding-right: 0; }
+    .dbox .dgrid { padding-right: 4px; }
+  }
   @media (max-width: 600px) { .dbox .dbox.sub { padding-left: 8px; } .dbox:not(.sub) { padding-left: 8px; } .dbox .dyk { padding-left: 6px; } .dbox .dgrid { padding-left: 6px; } }
   .dbox.target { border-color: var(--accent); border-style: solid; background: var(--a-tint); }
   .dbox-h .dmon-b { margin-left: 4px; }
@@ -1252,7 +1264,7 @@
   </span>
   <span class="who"><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
-<button type="button" class="kzann" id="kzAnn" hidden></button>
+<div class="kzann" id="kzAnn" hidden><button type="button" class="kzann-x" id="kzAnnX" aria-label="このお知らせを消す" title="このお知らせを消す（改善要望タブには残ります）">×</button><button type="button" class="kzann-t" id="kzAnnT"></button></div>
 <div class="ctl" id="ctl" hidden>
   <label>顧問先 <select id="client"></select></label>
   <label title="日付を「23」だけ打ったときに使う年月">処理する月 <input type="month" id="month"></label>
@@ -1272,6 +1284,7 @@
   <div class="dhead"><span class="jlsum" id="dsum"></span>
     <span class="dtools">
       <span class="dcols" id="dCols" role="group" aria-label="横に何枚ならべるか"><span>横に</span><button type="button" data-c="0" aria-pressed="false">小</button><button type="button" data-c="2" aria-pressed="false">2</button><button type="button" data-c="3" aria-pressed="false">3</button><button type="button" data-c="4" aria-pressed="false">4</button><button type="button" data-c="5" aria-pressed="false">5</button><button type="button" data-c="6" aria-pressed="false">6</button><button type="button" data-c="7" aria-pressed="false">7</button><button type="button" data-c="8" aria-pressed="false">8</button><button type="button" data-c="9" aria-pressed="false">9</button><button type="button" data-c="10" aria-pressed="false">10</button></span>
+      <span class="dcols doutfmt" id="dOutFmt" role="group" aria-label="外へドラッグして出すときの形" title="札・大きく見ている写真を つかんで デスクトップなどへ落とすときの形（この端末が覚えます）"><span>外へ出すとき</span><button type="button" data-f="img" aria-pressed="true">写真のまま</button><button type="button" data-f="pdf" aria-pressed="false">PDFにする</button></span>
       <button type="button" id="dPick" aria-pressed="false">選ぶ</button>
       <button type="button" id="dPdfAll" title="まとめた書類は その束で1つのPDF、ほかは1枚ずつのPDF（2つ以上なら ZIP 1つ）">一括PDF切り出し</button>
       <button type="button" id="dPrintAll" title="いま見えているものを 並んでいる順に印刷">🖨 印刷</button>
@@ -1412,7 +1425,7 @@
         <label>やりとりする会計ソフト <select id="fxSys" aria-label="やりとりする会計ソフト">
           <option value="fxmc">FXマイスタークラウド</option><option value="fx2c">FX2クラウド</option>
           <option value="e21">e21マイスター（スタンドアロン）</option><option value="fx2">FX2（スタンドアロン）</option>
-          <option value="kaikeio">会計王（ソリマチ）</option></select></label>
+          <option value="kaikeio">会計王（ソリマチ）</option><option value="yayoi">弥生会計</option></select></label>
         <span class="note" id="fxSysNote"></span>
       </div>
       <h4 class="fxh">FX → アプリ</h4>
@@ -1437,7 +1450,7 @@
     </details>
   <p class="note">確定した伝票を 回収ボックスごとに並べます。見て よければ［取込ファイルへ変換］。<b>まとめ方</b>で その月ぜんぶ（一括）か、回収ボックスごと（下の箱だけでも）かを選べます。
     ファイル名は「顧問先コード_顧問先名_年月（_回収ボックス）_作った日時」。変換先の会計ソフトは 下の「やりとりする会計ソフト」で決まります
-    （TKC FX クラウドシリーズ＝「仕訳帳(Excel)の読込」の形（44列）・1ファイル60行まで・日付をまたがない／会計王＝仕訳データ CSV）。そのまま この端末に保存します。控えは顧問先フォルダ「一括読み込みエクセル」に作った日時つきで残ります。変換した仕訳は取り消せなくなります。</p>
+    （TKC FX クラウドシリーズ＝「仕訳帳(Excel)の読込」の形（44列）・1ファイル60行まで・日付をまたがない／会計王＝仕訳データ CSV／弥生会計＝仕訳日記帳のインポートの形の CSV）。そのまま この端末に保存します。控えは顧問先フォルダ「一括読み込みエクセル」に作った日時つきで残ります。変換した仕訳は取り消せなくなります。</p>
   <div id="oBody"><div class="cbox muted">読み込み中…</div></div>
 </div>
 
@@ -3595,7 +3608,12 @@
         mon.appendChild(row);
         if (open && !yk.hidden) {
           const grid = el('div', 'dgrid');
-          dGroups(items).forEach(function (g) {
+          /* ★ K-0014：日ごとの箱は 日ごとに見出しを入れて並べる（日の無いものは 最後） */
+          const dayed = items.some(function (x) { return x.day; });
+          let dgs = dGroups(items), lastDay = null;
+          if (dayed) dgs = dgs.slice().sort(function (a, b) { const da = a[0].day || '9999', db = b[0].day || '9999'; return da < db ? -1 : da > db ? 1 : 0; });
+          dgs.forEach(function (g) {
+            if (dayed && (g[0].day || '') !== lastDay) { lastDay = g[0].day || ''; grid.appendChild(el('div', 'dday', lastDay ? dDayLabel(lastDay) : '日の指定なし')); }
             if (g.length < 2) { grid.appendChild(dTile(g[0])); return; }
             const w = el('div', 'dset'); w.dataset.set = g[0].set;
             const cl = el('button', 'dclip', '📎 ' + g.length + '枚で1つの書類'); cl.type = 'button'; cl.title = 'ダブルクリックで バラす（右クリック・スマホは長押しでも）';
@@ -4413,12 +4431,29 @@
     if (!(it.set && it.setOf > 1)) return [it];
     return (S.docs || []).filter(function (x) { return x.set === it.set; }).sort(function (a, b) { return (a.setN || 0) - (b.setN || 0); });
   }
+  /* ★ K-0013：外へ出すときの形。'pdf' … 写真（JPEG・PNG）も 1枚の PDF にして出す。この端末が覚える */
+  function dOutFmt() { try { return localStorage.getItem('collect_outfmt_o') === 'pdf' ? 'pdf' : 'img'; } catch (e) { return 'img'; } }
+  function dOutFmtPaint() {
+    const w = $('dOutFmt'); if (!w) return;
+    w.hidden = !DOUT_NAT;
+    w.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.f === dOutFmt())); });
+  }
+  $('dOutFmt').addEventListener('click', function (e) {
+    const b = e.target.closest('button[data-f]'); if (!b) return;
+    try { localStorage.setItem('collect_outfmt_o', b.dataset.f); } catch (x) {}
+    dOutFmtPaint(); dcMsg(b.dataset.f === 'pdf' ? '外へドラッグすると 写真も PDF になります。' : '外へドラッグすると 写真は 写真のまま出ます。');
+  });
+  dOutFmtPaint();
   function dOutPrep(it) {
-    const mem = dOutMem(it), key = mem.map(function (x) { return x.id; }).join(',');
+    const mem = dOutMem(it), asPdf = mem.length === 1 && dOutFmt() === 'pdf' && !it.pdf && !fileKind(it.name);
+    const key = (asPdf ? 'pdf:' : '') + mem.map(function (x) { return x.id; }).join(',');
     if (DOUT[key]) return DOUT[key];
     const o = { url: '', name: '', mime: '' };
     const v1 = mem.length === 1 ? IMG[it.id] : null;   /* くっきりした中身が 手元にあれば サーバに聞かない */
-    o.p = (mem.length === 1
+    o.p = (asPdf
+      ? pdflib().then(function (L) { return fetchFulls(mem, function () {}).then(function (fulls) { return pdfDocBytes(L, mem, fulls); }); })
+          .then(function (r) { if (!r.bytes) throw new Error('PDF に入れられませんでした'); return { blob: new Blob([r.bytes], { type: 'application/pdf' }), name: docTitle(mem).replace(/[\\\/:*?"<>|]+/g, '_') + '.pdf' }; })
+      : mem.length === 1
       ? (v1 && v1.t === 'pdf' && v1.b64 ? Promise.resolve({ blob: new Blob([b64bytes(v1.b64)], { type: 'application/pdf' }), name: fileName(it) })
         : v1 && v1.t === 'img' && /^data:/.test(v1.src || '') ? fetch(v1.src).then(function (x) { return x.blob(); }).then(function (bl) { return { blob: bl, name: fileName(it) }; })
         : fileGet(it).then(function (f) { return { blob: f.blob, name: f.name }; }))
@@ -4497,7 +4532,7 @@
     const code = S.code, was = it.name, pre = (String(was || '').match(/^\d{8}_\d{6}_/) || [''])[0], ext = (String(was || '').match(/\.[A-Za-z0-9]{1,5}$/) || [''])[0];
     const put = function (n) {
       [S.docs, S.items].forEach(function (L) { (L || []).forEach(function (y) { if (y.id === it.id) y.name = n; }); });
-      Object.keys(DOUT).forEach(function (k) { if (k.split(',').indexOf(it.id) >= 0) delete DOUT[k]; });
+      Object.keys(DOUT).forEach(function (k) { if (k.replace(/^pdf:/, '').split(',').indexOf(it.id) >= 0) delete DOUT[k]; });
     };
     put(pre + v + ext); docsDraw();
     gs('workRename', code, it.id, v).then(function (r) { if (S.code !== code) return; put(pre + ((r && r.name) || (v + ext))); docsDraw(); dcMsg('名前を「' + dNameShow((r && r.name) || v) + '」にしました。'); },
@@ -4778,6 +4813,7 @@
      ・バラす … クリップを ダブルクリック ／ 右クリック［バラす］。その場で 順に1つずつに戻る
      ・確定済みは まとめない・バラさない（仕訳を取り消してから） */
   /* 月の並び（dSort）の中で、まとめた書類は 1枚目の場所に 順に並べる */
+  function dDayLabel(d) { const m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!m) return ''; const w = '日月火水木金土'.charAt(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getDay()); return Number(m[2]) + '月' + Number(m[3]) + '日（' + w + '）'; }
   function dGroups(items) {
     const out = [], seen = {};
     items.forEach(function (it) {
@@ -5401,10 +5437,19 @@
     $('kzBadge').title = KZ.master ? '確認待ち ' + n + '件' + (mine ? '・自分の要望が直った ' + mine + '件' : '') : '自分の要望が直った ' + mine + '件';
     /* ★ どのタブにいても 上に出す（2026-10-26）。押すと 改善要望タブで 中身と結果が見られる */
     const md = kzMineDone(), an = $('kzAnn');
-    an.hidden = !md.length || ($('paneKaizen') && !$('paneKaizen').hidden);
-    if (md.length) an.textContent = '🆕 あなたの改善要望 ' + md.map(function (x) { return x.no; }).join('・') + ' が 直りました（アプリに入りました）。押すと 何をどう直したか が見られます ›';
+    /* ★ K-0016：頭の［×］で消せる。消した番号は この端末が覚え、新しく直ったものが来たら また出す */
+    const gone = kzAnnGone(), fresh = md.filter(function (x) { return gone.indexOf(x.no) < 0; });
+    an.hidden = !fresh.length || ($('paneKaizen') && !$('paneKaizen').hidden);
+    if (md.length) $('kzAnnT').textContent = '🆕 あなたの改善要望 ' + md.map(function (x) { return x.no; }).join('・') + ' が 直りました（アプリに入りました）。押すと 何をどう直したか が見られます ›';
   }
-  $('kzAnn').addEventListener('click', function () { selectTab('Kaizen'); });
+  function kzAnnGone() { try { const v = JSON.parse(localStorage.getItem('collect_kzann_x') || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+  $('kzAnnT').addEventListener('click', function () { selectTab('Kaizen'); });
+  $('kzAnnX').addEventListener('click', function (e) {
+    e.stopPropagation();
+    const nos = kzMineDone().map(function (x) { return x.no; });
+    try { localStorage.setItem('collect_kzann_x', JSON.stringify(kzAnnGone().concat(nos).filter(function (v, i, a) { return a.indexOf(v) === i; }).slice(-300))); } catch (e2) {}
+    $('kzAnn').hidden = true;
+  });
   function kzDraw() {
     const f = $('kzFlt'); f.textContent = '';
     ['all'].concat(KZ_ST).forEach(function (k) {
@@ -7731,6 +7776,10 @@
     const v = $('fxSys').value, ok = !!FX_READY[v], kk = v === 'kaikeio';
     $('fxBox').classList.toggle('off', !ok);
     $('fxBox').classList.toggle('kk', kk);
+    if (v === 'yayoi') {
+      $('fxSysNote').textContent = '弥生会計：取込ファイルは 弥生の「仕訳日記帳のインポート」の形（25列の CSV・Shift_JIS）で出ます。弥生は科目コードを持たないので 勘定科目・補助科目は【名前】で当たります（アプリの科目名・口座名を 弥生と同じにしておいてください）。弥生からアプリへの取り込み（辞書づくり）は まだできません。';
+      return;
+    }
     $('fxSysNote').textContent = kk ? '会計王：仕訳データ（SIWAKE 3.02 の xls／CSV）を取り込むと 科目と辞書になり、取込ファイルは 会計王の仕訳データ（CSV）で出ます。'
       : ok ? 'クラウド版：一括読込 Excel・切り出しの CSV／JSON でやりとりします。' : 'スタンドアロン版のファイルの形は確認中です。届いたら対応します（いまは取り込み・書き出しはできません）。';
     $('fxDropTxt').textContent = kk ? '会計王から書き出した 仕訳データ（xls／CSV。1行目が //SFD … SIWAKE）を ここへドラッグ＆ドロップ。使っている科目と、仕訳の組み合わせが 辞書になります'
@@ -9653,7 +9702,7 @@
     Object.keys(cnt).sort().forEach(function (b) { const d = b.split('/').length - 1; const o = el('option', null, '　'.repeat(d) + b.split('/').pop() + '（' + cnt[b] + '件' + (Object.keys(cnt).some(function (x) { return x.indexOf(b + '/') === 0; }) ? '・下の箱も' : '') + '）'); o.value = b; sel.appendChild(o); });
     sel.value = cnt[cur] ? cur : '';
     if (cur && !cnt[cur]) { oDraw(); return; }
-    const sysName = { fxmc: 'FXマイスタークラウド', fx2c: 'FX2クラウド', e21: 'e21マイスター', fx2: 'FX2', kaikeio: '会計王' }[(S.fxConf && S.fxConf.sys) || 'fxmc'] || 'FX';
+    const sysName = { fxmc: 'FXマイスタークラウド', fx2c: 'FX2クラウド', e21: 'e21マイスター', fx2: 'FX2', kaikeio: '会計王', yayoi: '弥生会計' }[(S.fxConf && S.fxConf.sys) || 'fxmc'] || 'FX';
     $('outSys').textContent = '変換先：' + sysName + '（このタブの「やりとりする会計ソフト」で変えられます）';
     $('outGo').textContent = cur ? '［' + cur + '］を取込ファイルへ変換' : '取込ファイルへ変換（' + ym.replace('/', '年') + '月ぜんぶ）';
     if (!n) { body.appendChild(el('div', 'cbox muted', ym + ' に確定した伝票はありません。')); return; }
@@ -9734,11 +9783,15 @@
     o.textContent = '変換しています…'; o.className = 'pagemsg';
     const bx = $('outBox').value;
     gs('workExport', S.code, ym, bx).then(function (r) {
-      o.textContent = (bx ? '［' + bx + '］' : '') + (r.sys === 'kaikeio'
+      o.textContent = (bx ? '［' + bx + '］' : '') + (r.sys === 'yayoi'
+        ? r.count + '件を 弥生会計の取込ファイル（CSV）にしました。弥生会計の［ファイル］→［インポート］で読み込んでください。' +
+          (r.miss ? '★ 税区分を当てられなかった ' + r.miss + '件は 対象外にしました（弥生で直してください）。' : '') +
+          (r.noName ? '★ 科目名の無い ' + r.noName + '件があります（弥生で科目を入れてください）。' : '')
+        : r.sys === 'kaikeio'
         ? r.count + '件（伝票 ' + r.slips + '枚）を 会計王の仕訳データ（CSV）にしました。会計王の［汎用データ受入］で読み込んでください。' +
           (r.miss ? '★ 税区分を当てられなかった ' + r.miss + '件は 0 にしました（会計王で直してください）。' : '')
         : r.count + '件を取込ファイルにしました。' + (r.cut ? '（摘要が FX の上限 全角40文字を超えた ' + r.cut + '件は、そこで切りました）' : ''));
-      o.className = 'pagemsg ' + (r.miss ? 'err' : 'ok');
+      o.className = 'pagemsg ' + (r.miss || r.noName ? 'err' : 'ok');
       /* ★ そのまま端末に落とす（保存先を選ばせない。Drive も開かない）。控えは Drive に作った日時つきで残る */
       (r.dl || []).forEach(function (f, i) {
         const bin = atob(f.b64); const u8 = new Uint8Array(bin.length);
@@ -9973,7 +10026,7 @@
     $('aTitle').textContent = c.code + '　' + c.name;
     $('aForm').hidden = false;
     $('aCode').value = c.code; $('aCode').readOnly = true;
-    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); $('aRepTitle').value = c.repTitle || ''; $('aRepName').value = c.repName || ''; $('aExplainer').value = c.explainer || ''; aTantoFill(c.tanto || ''); $('aIconName').value = c.iconName || ''; aIconSet(c.iconColor || ''); aCnsShow(c); $('aFy').value = c.fy ? String(c.fy) : ''; $('aKind').value = c.kindSet ? c.kind : ''; $('aKindHint').textContent = c.kindSet ? '' : '（いまは 名前から「' + corpKindOf(c) + '」と当てています）';
+    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); A.bconf = JSON.parse(JSON.stringify(c.bconf || {})); $('aRepTitle').value = c.repTitle || ''; $('aRepName').value = c.repName || ''; $('aExplainer').value = c.explainer || ''; aTantoFill(c.tanto || ''); $('aIconName').value = c.iconName || ''; aIconSet(c.iconColor || ''); aCnsShow(c); $('aFy').value = c.fy ? String(c.fy) : ''; $('aKind').value = c.kindSet ? c.kind : ''; $('aKindHint').textContent = c.kindSet ? '' : '（いまは 名前から「' + corpKindOf(c) + '」と当てています）';
     $('aBoxes').value = c.boxesRaw ? c.boxes.map(function (b) { return ((c.hidden || []).indexOf(b) >= 0 ? '~' : '') + b; }).join('\n') : '';
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     aThemeSet(c.theme || 'green');
@@ -9988,7 +10041,7 @@
     A.cur = null; A.isNew = true;
     $('aTitle').textContent = '新しい顧問先';
     $('aForm').hidden = false;
-    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName', 'aKind', 'aRepTitle', 'aRepName', 'aExplainer', 'aIconName'].forEach(function (k) { $(k).value = ''; }); aTantoFill(S.me && S.me.name || '', true); aIconSet(''); aCnsShow(null); $('aKindHint').textContent = ''; A.spot = {};
+    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName', 'aKind', 'aRepTitle', 'aRepName', 'aExplainer', 'aIconName'].forEach(function (k) { $(k).value = ''; }); aTantoFill(S.me && S.me.name || '', true); aIconSet(''); aCnsShow(null); $('aKindHint').textContent = ''; A.spot = {}; A.bconf = {};
     $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false; aThemeSet('green'); aLogoShow(null);
     $('aActiveRow').hidden = true; $('aUrlRow').hidden = true; $('aLockRow').hidden = true;
     $('aSave').textContent = '登録して URL を作る';
@@ -10106,16 +10159,43 @@
         const mv = function (x) { return x === path ? np : x.indexOf(path + '/') === 0 ? np + x.slice(path.length) : x; };
         const h0 = hiddenOf($('aBoxes').value), h1 = {}; Object.keys(h0).forEach(function (k) { h1[mv(k)] = 1; });
         const s1 = {}; Object.keys(A.spot || {}).forEach(function (k) { s1[mv(k)] = A.spot[k]; }); A.spot = s1;
+        const c1 = {}; Object.keys(A.bconf || {}).forEach(function (k) { c1[mv(k)] = A.bconf[k]; }); A.bconf = c1;
         aTreeSet(aTreeGet().map(mv), h1);
       });
       row.appendChild(nm);
       /* ★ スポットの箱（2026-10-18）：年末調整など。顧問先は 何年何月分を選ばず、提出期限が出る。中に箱がある箱には付けない */
       if (!aTreeGet().some(function (x) { return x.indexOf(path + '/') === 0; })) {
         const isS = path in (A.spot || {});
-        const sb = el('button', 'spt' + (isS ? ' on' : ''), isS ? 'スポット' : '毎月'); sb.type = 'button';
-        sb.title = isS ? '押すと 毎月の箱（何年何月分を選ぶ）に戻します' : '押すと スポットの箱（年末調整など。何年何月分を選ばず 提出期限を出す）にします';
-        sb.addEventListener('click', function () { A.spot = A.spot || {}; if (path in A.spot) delete A.spot[path]; else A.spot[path] = ''; aTreeDraw(); });
+        A.bconf = A.bconf || {};
+        const bc = A.bconf[path] || {}, isD = !isS && !!bc.day;
+        /* ★ K-0014：押すたびに 毎月 → スポット → 日ごと → 毎月 */
+        const sb = el('button', 'spt' + (isS ? ' on' : isD ? ' day' : ''), isS ? 'スポット' : isD ? '日ごと' : '毎月'); sb.type = 'button';
+        sb.title = isS ? 'スポットの箱（年末調整など。提出期限を出す）。押すと 日ごとの箱（飲食店の毎日の領収書など。何年何月何日を選ぶ）にします' : isD ? '日ごとの箱（何年何月何日を選ぶ）。押すと 毎月の箱（何年何月分を選ぶ）に戻します' : '押すと スポットの箱（年末調整など。何年何月分を選ばず 提出期限を出す）にします';
+        sb.addEventListener('click', function () {
+          A.spot = A.spot || {};
+          const cur = A.bconf[path] || {};
+          if (path in A.spot) { delete A.spot[path]; cur.day = 1; }
+          else if (cur.day) delete cur.day;
+          else A.spot[path] = '';
+          if (cur.day || cur.ask) A.bconf[path] = cur; else delete A.bconf[path];
+          aTreeDraw();
+        });
         row.appendChild(sb);
+        /* ★ K-0014：箱を開いたときの 問いかけ（「何年何月入金の資料ですか」など）。空なら いつもの文 */
+        if (!isS) {
+          const ab = el('button', 'sm2 ask' + (bc.ask ? ' on' : ''), bc.ask ? '問いかけ：' + bc.ask : '問いかけ'); ab.type = 'button';
+          ab.title = '顧問先が この箱を開いたときの問いかけ（空なら「' + (isD ? '何年何月何日の資料ですか' : '何年何月分の資料ですか') + '」）';
+          ab.addEventListener('click', function () {
+            const v = prompt('「' + segs[d] + '」を開いたときの問いかけ（40字まで。空にすると いつもの文）\n例：何年何月入金の資料ですか／何年何月発生の資料ですか／何年何月（20日〆）の給与ですか', bc.ask || (isD ? '何年何月何日の資料ですか' : '何年何月分の資料ですか'));
+            if (v == null) return;
+            const t = v.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 40);
+            const cur = A.bconf[path] || {};
+            if (t && t !== '何年何月分の資料ですか' && t !== '何年何月何日の資料ですか') cur.ask = t; else delete cur.ask;
+            if (cur.day || cur.ask) A.bconf[path] = cur; else delete A.bconf[path];
+            aTreeDraw();
+          });
+          row.appendChild(ab);
+        }
         if (isS) { const dd = el('input', 'sptd'); dd.type = 'date'; dd.value = A.spot[path] || ''; dd.title = '提出期限（空なら 期限なし）'; dd.setAttribute('aria-label', segs[d] + 'の提出期限');
           dd.addEventListener('change', function () { A.spot[path] = dd.value || ''; }); row.appendChild(dd); }
       }
@@ -10185,7 +10265,7 @@
     e.preventDefault();
     if (A.busy) return;
     const o = { code: ccode($('aCode').value), fy: $('aFy').value, name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
-      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew, email: $('aEmail').value.trim(), spot: A.spot || {}, appUrl: $('aAppUrl').value.trim(), appName: $('aAppName').value.trim(), kind: $('aKind').value,
+      boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew, email: $('aEmail').value.trim(), spot: A.spot || {}, bconf: A.bconf || {}, appUrl: $('aAppUrl').value.trim(), appName: $('aAppName').value.trim(), kind: $('aKind').value,
       repTitle: $('aRepTitle').value.trim(), repName: $('aRepName').value.trim(), explainer: $('aExplainer').value.trim(), tanto: $('aTanto').value,
       iconName: $('aIconName').value.trim(), iconColor: $('aIconColor').value };
     A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
