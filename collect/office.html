@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793523882;</script>
+<script>window.__PAGE_VER=1793524532;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -4456,7 +4456,7 @@
          1枚のものは 届いたそのままのファイル、まとめた書類（📎）は その束で 1つの PDF
        ・パソコンのファイルを 箱（月分）の上へ落とすと その箱・その月分に入る（officeUpload。事務所が入れました と残る） */
   const DOUT = {};
-  const DOUT_OK = !!(window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches);
+  const DOUT_OK = !!(window.matchMedia && (matchMedia('(hover: hover) and (pointer: fine)').matches || matchMedia('(any-hover: hover) and (any-pointer: fine)').matches));   /* ★ K-0021 続き：タッチ画面つきのパソコンでも マウスがあれば 外へ出せる */
   /* ブラウザの外へ ファイルとして落とせるのは Chrome・Edge（DownloadURL）。ほかのブラウザは これまでどおりの つかみ方 */
   const DOUT_NAT = DOUT_OK && /Chrome\//.test(navigator.userAgent);
   function dOutMem(it) {
@@ -4800,7 +4800,8 @@
       tile.addEventListener('dragstart', function (e) {
         if (downBtn || (cur && cur.touch)) { e.preventDefault(); return; }
         const list = items(it);
-        const o = list.length === 1 && !fileKind(it.name) ? dOutPrep(it) : null;
+        const one = list.length === 1 || (it.set && it.setOf > 1 && list.every(function (x) { return x.set === it.set; }));   /* ★ 1つの書類（まとめた束）を選んでつかんだときも 1つの PDF で外へ */
+        const o = one && !fileKind(it.name) ? dOutPrep(it) : null;
         try {
           e.dataTransfer.effectAllowed = 'copyMove';
           e.dataTransfer.setData('text/plain', String(it.name || ''));
@@ -4839,7 +4840,7 @@
     document.addEventListener('touchcancel', function () { if (cur && cur.touch) end(true); });
     window.addEventListener('pointermove', function (e) {
       if (!cur || !cur.mouse) return;
-      if (!(e.buttons & 1)) { if (cur.on) end(false); else cur = null; return; }
+      if (!(e.buttons & 1)) { if (cur.on) end(true); else cur = null; return; }   /* ★ K-0021 続き：窓の外で離した（戻ってきた）ときは 何もしない（「移す」を出さない） */
       if (!cur.on) { if (Math.abs(e.clientX - cur.sx) + Math.abs(e.clientY - cur.sy) < 6) return; start(cur); }
       e.preventDefault(); move(cur, e.clientX, e.clientY);
     });
