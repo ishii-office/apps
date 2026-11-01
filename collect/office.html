@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793529224;</script>
+<script>window.__PAGE_VER=1793532785;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -780,6 +780,7 @@
   .dtile.chk .dbadge, .dtile.skip .dbadge, .dtile.trashed .dbadge { display: block; }
   .dtile.skip .dbadge { background: #111; }
   .dtile.trashed .dbadge { background: #D0201A; }
+  .dtile.trashed .dbadge.dpurge { right: 42px; background: #333; font-size: 13px; }   /* ★ 2026-11-01 ドライブから完全に消す */
   .dtile.chk .dchk, .dtile.chk .dskip, .dtile.skip .dchk, .dtile.skip .dskip { display: none; }
   /* ★ 対象外・破棄済み（2026-10-28） */
   .dskip { display: block; width: 100%; margin-top: 3px; padding: 3px 6px; border: 1px solid #C9CFD6; border-radius: 8px; background: #fff; color: #667; font: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -801,6 +802,12 @@
   .dvmk .mk-c button { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; background: var(--c); box-shadow: 0 0 0 1.5px var(--line); cursor: pointer; }
   .dvmk .mk-c button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--c); }
   .dvmk .mk-msg { font-size: 12px; color: var(--sub); }
+  /* ★ 2026-11-01 事務所のハンコ */
+  .dvmk .mk-st { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .dvmk .mk-st button { font: inherit; font-size: 12.5px; font-weight: 700; border: 1.5px solid var(--line); background: #fff; border-radius: 8px; padding: 2px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+  .dvmk .mk-st button[aria-pressed="true"] { border-color: #D0201A; box-shadow: 0 0 0 2px #D0201A33; }
+  .dvmk .mk-st button img { height: 22px; width: auto; }
+  .dvmk .mk-st .stx { border: 0; background: none; color: #999; padding: 0 2px; font-size: 13px; }
   .mksvg { position: absolute; pointer-events: none; overflow: visible; transform-origin: 50% 50%; }
   .dv-mk .mksvg { pointer-events: auto; cursor: crosshair; }
   .dvmk .mk-sel { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 8px; background: #E5EEFF; }
@@ -2073,9 +2080,10 @@
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
     <button type="button" class="btn ghost sm" id="dvClose">閉じる</button></span></div>
   <div class="dvmk" id="dvMkBar" hidden>
-    <span class="mk-m" role="group" aria-label="書き方"><button type="button" data-m="text" aria-pressed="true">文字</button><button type="button" data-m="line" aria-pressed="false">下線</button><button type="button" data-m="box" aria-pressed="false">枠で囲む</button></span>
+    <span class="mk-m" role="group" aria-label="書き方"><button type="button" data-m="text" aria-pressed="true">文字</button><button type="button" data-m="line" aria-pressed="false">下線</button><button type="button" data-m="box" aria-pressed="false">枠で囲む</button><button type="button" data-m="stamp" aria-pressed="false" title="事務所のハンコを押す（押した所に置く。日付印は 今日の日付）">🔴 ハンコ</button></span>
     <span class="mk-c" role="group" aria-label="色"><button type="button" data-c="#D0201A" aria-pressed="true" title="赤" style="--c:#D0201A"></button><button type="button" data-c="#111111" aria-pressed="false" title="黒" style="--c:#111111"></button><button type="button" data-c="#1A4FD0" aria-pressed="false" title="青" style="--c:#1A4FD0"></button></span>
-    <span class="mk-sel" id="mkSelBar" hidden><b>選んだ文字：</b><button type="button" class="btn ghost sm" id="mkFix">文字を直す</button><button type="button" class="btn ghost sm" id="mkSmall" title="少し小さく">A－</button><button type="button" class="btn ghost sm" id="mkBig" title="少し大きく">A＋</button><button type="button" class="btn ghost sm" id="mkDel">🗑 消す</button></span>
+    <span class="mk-st" id="mkStBar" hidden></span>
+    <span class="mk-sel" id="mkSelBar" hidden><b id="mkSelL">選んだ文字：</b><button type="button" class="btn ghost sm" id="mkFix">文字を直す</button><button type="button" class="btn ghost sm" id="mkSmall" title="少し小さく">A－</button><button type="button" class="btn ghost sm" id="mkBig" title="少し大きく">A＋</button><button type="button" class="btn ghost sm" id="mkDel">🗑 消す</button></span>
     <button type="button" class="btn ghost sm" id="mkUndo">↶ 1つ戻す</button>
     <button type="button" class="btn ghost sm" id="mkClear">全部消す</button>
     <button type="button" class="btn sm primary" id="mkSave">保存して終わる</button>
@@ -2088,7 +2096,7 @@
 
 <div class="dcbar" id="dcbar" hidden>
   <b id="dcN">0件を選んでいます</b>
-  <span class="dcb"><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn sm" id="dcPrint">🖨 印刷</button><button type="button" class="btn sm" id="dcChk" title="選んだものに 確認済の印を付ける（全部 付いていれば外す）">✓ 確認済</button><button type="button" class="btn ghost sm" id="dcSkip" title="選んだものを 仕訳化・AI下書きの対象から外す（全部 対象外なら 対象に戻す）。印刷・PDF には入ります">⊘ 対象外にする</button><button type="button" class="btn ghost sm" id="dcMove">移す</button>
+  <span class="dcb"><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn sm" id="dcPrint">🖨 印刷</button><button type="button" class="btn sm" id="dcChk" title="選んだものに 確認済の印を付ける（全部 付いていれば外す）">✓ 確認済</button><button type="button" class="btn ghost sm" id="dcSkip" title="選んだものを 仕訳化・AI下書きの対象から外す（全部 対象外なら 対象に戻す）。印刷・PDF には入ります">⊘ 対象外にする</button><button type="button" class="btn ghost sm" id="dcMove">移す</button><button type="button" class="btn ghost sm" id="dcToImg" title="選んだ書類の PDF を ページごとの写真（JPEG）に変える。元の PDF は 破棄したもの へ（戻せる）">🖼 画像に変換</button><button type="button" class="btn ghost sm" id="dcToPdf" title="選んだ書類（写真・まとめた書類）を 1つの PDF に変える。元の写真は 破棄したもの へ（戻せる）">📄 PDFに変換</button>
     <button type="button" class="btn ghost sm danger" id="dcDel">破棄</button><button type="button" class="btn ghost sm" id="dcNone">全部外す</button><button type="button" class="btn ghost sm" id="dcEnd">やめる</button></span>
 </div>
 
@@ -2195,7 +2203,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, viewerImage: 1,
+  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -4501,6 +4509,10 @@
     const rb = el('button', 'dbadge drevive', '✓'); rb.type = 'button'; rb.title = '破棄済み（押すと 復活。元の箱・月分に戻す）'; rb.setAttribute('aria-label', '復活');
     rb.addEventListener('click', function (e) { e.stopPropagation(); rb.disabled = true; restore([it.id]); });
     tile.appendChild(rb);
+    /* ★ 2026-11-01：破棄済みの札から そのまま ドライブからも完全に消す（ゴミ箱にも残さない） */
+    const pb = el('button', 'dbadge dpurge', '🗑'); pb.type = 'button'; pb.title = 'ドライブから 完全に消す（ゴミ箱にも残りません。戻せません）'; pb.setAttribute('aria-label', 'ドライブから完全に消す');
+    pb.addEventListener('click', function (e) { e.stopPropagation(); purge([it.id]); });
+    tile.appendChild(pb);
     return tile;
   }
   /* ★★ K-0010（2026-10-30）：DocuWorks のように 札を パソコンの外へ出す・外から箱へ入れる
@@ -5072,6 +5084,9 @@
       { const tl = S.dcsel[it.id] ? selItems() : [it]; const allSkip = tl.every(function (x) { return x.skip; });
         add(allSkip ? '↩ 仕訳化の対象に戻す' + (tl.length > 1 ? '（' + tl.length + '枚）' : '') : '⊘ 対象外にする（仕訳化・AI下書きに出さない）' + (tl.length > 1 ? '（' + tl.length + '枚）' : ''), tl.some(function (x) { return x.status !== 'done'; }), function () { docsSkip(tl, !allSkip); }); }
       add('別の月分・箱へ移す', it.status !== 'done', function () { dMoveOpen(S.dcsel[it.id] ? dSelOrder('').map(docOf).filter(Boolean) : [it]); });
+      { const cl = S.dcsel[it.id] ? selItems() : [it];
+        add('🖼 画像（JPEG）に変換', convDocs(cl, 'img').length > 0, function () { convertDocs(cl, 'img'); });
+        add('📄 PDFに変換', convDocs(cl, 'pdf').length > 0, function () { convertDocs(cl, 'pdf'); }); }
     }
     if (Object.keys(S.dcsel).length) add('選ぶのをやめる', true, function () { S.dcsel = {}; S.dcpick = false; docsDraw(); });
     document.body.appendChild(m);
@@ -5212,6 +5227,7 @@
     const nd = Object.keys(docs).length;
     $('dcN').textContent = nd + '件を選んでいます' + (nd !== n ? '（写真 ' + n + '枚）' : '');
     ['dcPdf', 'dcPrint', 'dcMove', 'dcDel', 'dcChk', 'dcSkip'].forEach(function (k) { $(k).disabled = !n; });
+    $('dcToImg').disabled = !convDocs(si, 'img').length; $('dcToPdf').disabled = !convDocs(si, 'pdf').length;
     $('dcSkip').textContent = n && si.every(function (x) { return x.skip; }) ? '↩ 対象に戻す' : '⊘ 対象外にする';
     $('dcChk').textContent = n && si.every(function (x) { return x.chk; }) ? '確認済を外す' : '✓ 確認済にする';
     $('dcJoin').disabled = n < 2;
@@ -5246,9 +5262,93 @@
   $('dcPrint').addEventListener('click', function () { printDocs(selItems(), '選択'); });
   $('dcMove').addEventListener('click', function () { dMoveOpen(selItems()); });
   $('dcDel').addEventListener('click', function () { discard(selItems(), '選んだ'); });
+  $('dcToImg').addEventListener('click', function () { convertDocs(selItems(), 'img'); });
+  $('dcToPdf').addEventListener('click', function () { convertDocs(selItems(), 'pdf'); });
   $('dcNone').addEventListener('click', function () { S.dcsel = {}; docsDraw(); });
   $('dcEnd').addEventListener('click', function () { S.dcpick = false; S.dcsel = {}; docsDraw(); });
 
+  /* ================= ★★ 変換（2026-11-01。DocuWorks の［イメージに変換］［PDFに変換］の代わり） =================
+     ・画像に変換 … 書類の中の PDF を ページごとの写真（JPEG）にする。写真のページは そのまま。できた写真は 1つの書類にまとまる
+     ・PDFに変換 … 書類（写真・まとめた書類・PDF）を 1つの PDF にする
+     ・できたものは 同じ箱・同じ月分の 同じ並びに入る。元のファイルは 破棄したもの へ（いつでも戻せる・Drive にも残る）
+     ・書きこみ・ハンコは できたものへ写す（ページを数え直す）。確定済みの書類・エクセルなどは 変換しない */
+  function convDocs(list, to) {
+    return dDocsOf(list || []).map(dOutMem).filter(function (mem) {
+      if (!mem.length || mem.some(function (x) { return x.status === 'done' || fileKind(x.name); })) return false;
+      return to === 'img' ? mem.some(function (x) { return x.pdf; }) : (mem.some(function (x) { return !x.pdf; }) || mem.length > 1);
+    });
+  }
+  function convB64(blob) { return new Promise(function (ok, ng) { const r = new FileReader(); r.onload = function () { ok(String(r.result).split(',')[1] || ''); }; r.onerror = function () { ng(new Error('読めません')); }; r.readAsDataURL(blob); }); }
+  function convThumb(canvas) {
+    const tr = Math.min(1, 400 / Math.max(canvas.width, canvas.height));
+    const t = document.createElement('canvas'); t.width = Math.max(1, Math.round(canvas.width * tr)); t.height = Math.max(1, Math.round(canvas.height * tr));
+    t.getContext('2d').drawImage(canvas, 0, 0, t.width, t.height);
+    let d = t.toDataURL('image/jpeg', 0.6); if (d.length > 44000) d = t.toDataURL('image/jpeg', 0.4);
+    return d.length > 44000 ? '' : d;
+  }
+  function convOp() { return 'cnv' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function convBase(it) { return fileName(it).replace(/\.[^.]+$/, '') || '書類'; }
+  let CONV_RUN = false;
+  async function convertDocs(list, to) {
+    if (CONV_RUN) { dcMsg('いま 変換しています。終わるまで お待ちください。', true); return; }
+    const docs = convDocs(list, to);
+    if (!docs.length) { dcMsg(to === 'img' ? '画像に変換できる PDF がありません（確定済み・エクセルなどは 変換しません）。' : 'PDF に変換できるものがありません（確定済み・エクセルなどは 変換しません）。', true); return; }
+    const code = S.code; CONV_RUN = true;
+    const out = [], ng = [];
+    try {
+      for (let di = 0; di < docs.length; di++) {
+        const mem = docs[di], head = '変換しています… ' + (di + 1) + ' / ' + docs.length + '　' + docTitle(mem);
+        dcMsg(head);
+        try {
+          const fulls = await fetchFulls(mem, function () {});
+          if (mem.some(function (x) { const v = fulls[x.id]; return !v || (v.t !== 'pdf' && v.t !== 'img'); })) throw new Error('大きすぎて ここでは開けません');
+          if (to === 'img') {
+            const lib = await pdfjs(), seq = [], marks = {};
+            for (const m of mem) {
+              if (!m.pdf) { seq.push(m.id); continue; }
+              const pdf = await lib.getDocument({ data: b64bytes(fulls[m.id].b64) }).promise;
+              for (let p = 1; p <= pdf.numPages; p++) {
+                dcMsg(head + '（' + p + ' / ' + pdf.numPages + 'ページ）');
+                const pg = await pdf.getPage(p), v0 = pg.getViewport({ scale: 1 });
+                const sc = Math.min(3, 2000 / Math.max(v0.width, v0.height)), vp = pg.getViewport({ scale: sc });
+                const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+                const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+                await pg.render({ canvasContext: x, viewport: vp }).promise;
+                const blob = await new Promise(function (ok) { c.toBlob(ok, 'image/jpeg', 0.88); });
+                const r = await gs('officeUpload', code, convBase(m) + (pdf.numPages > 1 ? '_' + String(p).padStart(2, '0') : '') + '.jpg', 'image/jpeg', await convB64(blob), m.box, m.period, convOp(), '事務所が画像に変換', convThumb(c));
+                const k = 'k:' + r.k; seq.push(k);
+                const pm = (m.mark || []).filter(function (q) { return (q.p || 0) === p - 1; }).map(function (q) { return Object.assign({}, q, { p: 0 }); });
+                if (pm.length) marks[k] = pm;
+              }
+            }
+            out.push({ src: mem.map(function (x) { return x.id; }), seq: seq, marks: marks });
+          } else {
+            const L = await pdflib();
+            const r0 = await pdfDocBytes(L, mem, fulls);
+            if (!r0.bytes || r0.skip) throw new Error('PDF に入れられないページがありました');
+            /* 書きこみの ページを数え直す（写真は1ページ・PDF は その枚数） */
+            let off = 0; const ms = [];
+            for (const m of mem) {
+              const n = m.pdf ? (await L.PDFDocument.load(b64bytes(fulls[m.id].b64), { ignoreEncryption: true })).getPageCount() : 1;
+              (m.mark || []).forEach(function (q) { ms.push(Object.assign({}, q, { p: (q.p || 0) + off })); });
+              off += n;
+            }
+            const th = THUMB[mem[0].id] && /^data:image\/(jpeg|png);base64,/.test(THUMB[mem[0].id]) && THUMB[mem[0].id].length < 44000 ? THUMB[mem[0].id] : '';
+            const r = await gs('officeUpload', code, convBase(mem[0]) + '.pdf', 'application/pdf', await convB64(new Blob([r0.bytes], { type: 'application/pdf' })), mem[0].box, mem[0].period, convOp(), '事務所がPDFに変換', th);
+            const k = 'k:' + r.k, marks = {}; if (ms.length) marks[k] = ms;
+            out.push({ src: mem.map(function (x) { return x.id; }), seq: [k], marks: marks });
+          }
+        } catch (e) { ng.push(docTitle(mem) + '（' + e.message + '）'); }
+      }
+      if (out.length) {
+        const r = await gs('workConvertDone', code, out);
+        S.dcpick = false; S.dcsel = {};
+        if (code === S.code) { docsLoad(true); trashLoad(); }
+        dcMsg((to === 'img' ? out.length + '件の書類を 画像（JPEG ' + r.made + '枚）に変換しました。' : out.length + '件を PDF に変換しました。') + '元のファイル ' + r.n + '件は 破棄したもの に入れました（戻せます）。' + (ng.length ? '　変換できなかったもの：' + ng.join('・') : ''), !!ng.length);
+      } else dcMsg('変換できませんでした。' + ng.join('・'), true);
+    } catch (e) { dcMsg('変換できませんでした。' + e.message, true); }
+    finally { CONV_RUN = false; }
+  }
   /* 破棄：★ 押しまちがい・勘違いがあるので すぐには消さない。【破棄したもの】へ退避するだけ（いつでも戻せる）。
      だから「本当に？」とは聞かない。押した瞬間に一覧から外し、［元に戻す］を出す */
   function discard(items, what) {
@@ -5294,12 +5394,12 @@
   }
   function purge(ids) {
     if (!ids.length) return;
-    if (!confirm(ids.length + '件を 完全に消しますか？\n（Drive のゴミ箱に入り、30日で消えます。アプリからは戻せません）')) return;
+    if (!confirm(ids.length + '件を Googleドライブから 完全に消しますか？\n（ドライブのゴミ箱にも残りません。アプリからも ドライブからも 戻せません）')) return;
     const code = S.code;
     S.trash = (S.trash || []).filter(function (x) { return ids.indexOf(x.id) < 0; });
     S.trashN = Math.max(0, (S.trashN || 0) - ids.length);
     docsDraw();
-    gs('workPurge', code, ids).then(function (r) { if (code === S.code) dcMsg(r.n + '件を 完全に消しました。' + (r.kept ? '（電子保存の ' + r.kept + '件は 保存期間のあいだ消せないので 残しました）' : ''), !!r.kept); },
+    gs('workPurge', code, ids).then(function (r) { if (code === S.code) dcMsg(r.n + '件を ドライブから 完全に消しました。' + (r.kept ? '（電子保存の ' + r.kept + '件は 保存期間のあいだ消せないので 残しました）' : ''), !!r.kept); },
       function (e) { dcMsg('消せませんでした。' + e.message, true); trashLoad(); });
   }
   /* ---- 破棄したもの（退避）：戻す・完全に消す ---- */
@@ -5323,7 +5423,7 @@
     if (l.length) {
       const ra = el('button', 'dmon-b', '全部戻す'); ra.type = 'button';
       ra.addEventListener('click', function () { restore(l.map(function (x) { return x.id; })); });
-      const pa = el('button', 'dmon-b danger', '全部 完全に消す'); pa.type = 'button';
+      const pa = el('button', 'dmon-b danger', '全部 ドライブから完全に消す'); pa.type = 'button';
       pa.addEventListener('click', function () { purge(l.map(function (x) { return x.id; })); });
       hd.appendChild(ra); hd.appendChild(pa);
     }
@@ -5339,7 +5439,7 @@
       tile.appendChild(b);
       const bt = el('div', 'trash-b');
       const r1 = el('button', 'dmon-b', '戻す'); r1.type = 'button'; r1.addEventListener('click', function () { restore([it.id]); });
-      const p1 = el('button', 'dmon-b danger', '完全に消す'); p1.type = 'button'; p1.addEventListener('click', function () { purge([it.id]); });
+      const p1 = el('button', 'dmon-b danger', 'ドライブから完全に消す'); p1.type = 'button'; p1.addEventListener('click', function () { purge([it.id]); });
       bt.appendChild(r1); bt.appendChild(p1); tile.appendChild(bt);
       grid.appendChild(tile);
     });
@@ -6164,7 +6264,70 @@
 
   /* ================= ★★ 書きこむ（文字・下線・枠。2026-10-26） =================
      元の写真・PDF は書き換えない。形だけを 別の列に持ち（workMark）、大きく見るときに 上に重ねる */
-  const MK = { on: false, m: 'text', c: '#D0201A', list: [], was: '', drag: null, sel: -1, mv: null };
+  const MK = { on: false, m: 'text', c: '#D0201A', list: [], was: '', drag: null, sel: -1, mv: null, st: 'auto' };
+  /* ★★ 事務所のハンコ（2026-11-01）：日付印（はじめから使える）と 登録したハンコの画像。押すと 書きこみの1つとして重ねる（元の資料は書き換えない） */
+  let STAMPS = null, STAMPS_P = null;
+  function stampsLoad() {
+    if (STAMPS) return Promise.resolve(STAMPS);
+    if (!STAMPS_P) STAMPS_P = gs('stampList').then(function (r) { STAMPS = r || { office: '', list: [] }; return STAMPS; }, function () { STAMPS_P = null; return { office: '', list: [] }; });
+    return STAMPS_P;
+  }
+  function stampOf(id) { return id === 'auto' ? null : ((STAMPS && STAMPS.list) || []).find(function (x) { return x.id === id; }) || null; }
+  function stampToday() { const d = new Date(); return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0'); }
+  const STAMP_ASPECT = {};
+  function stampAspect(st) {
+    if (!st) return 1; if (STAMP_ASPECT[st.id]) return STAMP_ASPECT[st.id];
+    const im = new Image(); im.onload = function () { STAMP_ASPECT[st.id] = im.naturalHeight / Math.max(1, im.naturalWidth); }; im.src = st.data;
+    return 1;
+  }
+  function stampBar() {
+    const bar = $('mkStBar'); bar.textContent = '';
+    bar.hidden = !(MK.on && MK.m === 'stamp');
+    if (bar.hidden) return;
+    const mkb = function (id, label, img) {
+      const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(MK.st === id));
+      if (img) { const im = el('img'); im.src = img; im.alt = ''; b.appendChild(im); }
+      b.appendChild(document.createTextNode(label));
+      b.addEventListener('click', function () { MK.st = id; stampBar(); });
+      bar.appendChild(b); return b;
+    };
+    mkb('auto', '日付印（' + ((STAMPS && STAMPS.office) || '事務所') + '）');
+    ((STAMPS && STAMPS.list) || []).forEach(function (st) {
+      mkb(st.id, st.name + (st.date ? '（日付）' : ''), st.data);
+      const x = el('button', 'stx', '✕'); x.type = 'button'; x.title = '「' + st.name + '」を 消す（押したハンコは消えません）';
+      x.addEventListener('click', function () { if (!confirm('ハンコ「' + st.name + '」を 登録から消しますか？')) return; gs('stampDelete', st.id).then(function () { STAMPS.list = STAMPS.list.filter(function (y) { return y.id !== st.id; }); if (MK.st === st.id) MK.st = 'auto'; stampBar(); }, function (e) { dcMsg(e.message, true); }); });
+      bar.appendChild(x);
+    });
+    const add = el('button', null, '＋ ハンコを登録'); add.type = 'button'; add.title = 'ハンコの画像（PNG・JPEG）を選ぶ。白いところは透明にします';
+    add.addEventListener('click', function () { const f = el('input'); f.type = 'file'; f.accept = 'image/png,image/jpeg'; f.addEventListener('change', function () { if (f.files[0]) stampRegister(f.files[0]); }); f.click(); });
+    bar.appendChild(add);
+  }
+  /* ハンコの画像を 長い辺 320px の PNG にして登録。白っぽいところは 透明に（紙に押したハンコを撮ったもの・スキャンしたもの でも使えるように） */
+  function stampRegister(file) {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = function () {
+      URL.revokeObjectURL(url);
+      const r = Math.min(1, 320 / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.naturalWidth * r)); c.height = Math.max(1, Math.round(im.naturalHeight * r));
+      const x = c.getContext('2d'); x.drawImage(im, 0, 0, c.width, c.height);
+      try { const d = x.getImageData(0, 0, c.width, c.height), a = d.data; for (let i = 0; i < a.length; i += 4) { if (a[i] > 225 && a[i + 1] > 225 && a[i + 2] > 225) a[i + 3] = 0; } x.putImageData(d, 0, 0); } catch (e) {}
+      let data = c.toDataURL('image/png');
+      if (data.length > 48000) { const c2 = document.createElement('canvas'); c2.width = Math.round(c.width * 0.6); c2.height = Math.round(c.height * 0.6); c2.getContext('2d').drawImage(c, 0, 0, c2.width, c2.height); data = c2.toDataURL('image/png'); }
+      const name = (prompt('ハンコの名前（例：受付印・確認印・担当者印）', file.name.replace(/\.[^.]+$/, '')) || '').trim();
+      if (!name) return;
+      const date = confirm('ハンコの真ん中に 押した日の日付を入れますか？\n（OK＝入れる／キャンセル＝入れない）');
+      gs('stampSave', name, data, date).then(function (st) { stampsLoad().then(function () { STAMPS.list.push(st); MK.st = st.id; stampBar(); dcMsg('ハンコ「' + st.name + '」を登録しました。押したい所を押すと 置けます。'); }); }, function (e) { dcMsg('ハンコを登録できませんでした。' + e.message, true); });
+    };
+    im.onerror = function () { URL.revokeObjectURL(url); dcMsg('画像が読めませんでした（PNG・JPEG を選んでください）。', true); };
+    im.src = url;
+  }
+  /* 置く：押した所が まん中。大きさは ページの幅の 16%（日付印は丸く・画像は 縦横の比を保つ） */
+  function stampPut(p, a, W, H) {
+    const st = stampOf(MK.st), w = 0.16, asp = st ? stampAspect(st) : 1;
+    const h = w * asp * W / Math.max(1, H);
+    MK.list.push({ p: p, t: 'stamp', s: st ? st.id : 'auto', d: (!st || st.date) ? stampToday() : '', x: Math.max(0, Math.min(1 - w, a.x - w / 2)), y: Math.max(0, Math.min(1 - h, a.y - h / 2)), w: w, h: h, c: MK.c });
+    MK.sel = MK.list.length - 1; mkSelect(MK.sel); mkDirty();
+  }
   /* ★ K-0006（2026-10-29）：書いた文字を 押して選ぶ → つかんで動かす・［文字を直す］（ダブルクリックでも）・［A－］［A＋］・色・［消す］（Delete キーでも）。
        何もない所を押すと 選ぶのをやめる。大きさは 形の z（1＝ふつう）で持つ */
   function mkTargets() {
@@ -6180,6 +6343,7 @@
     b.querySelectorAll('.mksvg').forEach(function (x) { x.remove(); });
     const tg = mkTargets(), ms = mkMarks();
     if (!MK.on && !ms.length) return;
+    if (STAMPS === null && ms.some(function (m) { return m.t === 'stamp'; })) { stampsLoad().then(function () { mkPaint(); }); }
     tg.forEach(function (t, p) {
       const W = t.offsetWidth, H = t.offsetHeight; if (!W || !H) return;
       const sv = document.createElementNS(SVGNS, 'svg'); sv.setAttribute('class', 'mksvg'); sv.dataset.p = p;
@@ -6196,6 +6360,7 @@
   }
   function mkShape(m, W, H) {
     const sw = Math.max(2, W * 0.004);
+    if (m.t === 'stamp') return stampShape(m, W, H);
     if (m.t === 'text') {
       const t = document.createElementNS(SVGNS, 'text'); t.setAttribute('x', m.x * W); t.setAttribute('y', m.y * H);
       t.setAttribute('fill', m.c); t.setAttribute('font-size', Math.max(12, W * 0.03) * (m.z || 1)); t.setAttribute('font-weight', '700');
@@ -6208,6 +6373,27 @@
     const r = document.createElementNS(SVGNS, 'rect'); r.setAttribute('x', m.x * W); r.setAttribute('y', m.y * H); r.setAttribute('width', m.w * W); r.setAttribute('height', m.h * H);
     r.setAttribute('fill', 'none'); r.setAttribute('stroke', m.c); r.setAttribute('stroke-width', sw); r.setAttribute('rx', sw); return r;
   }
+  function stampShape(m, W, H) {
+    const g = document.createElementNS(SVGNS, 'g'), x = m.x * W, y = m.y * H, w = m.w * W, h = m.h * H, c = m.c || '#D0201A';
+    const mk = function (t, at) { const e = document.createElementNS(SVGNS, t); Object.keys(at).forEach(function (k) { e.setAttribute(k, at[k]); }); g.appendChild(e); return e; };
+    const tx = function (s, cy, fs) { const e = mk('text', { x: x + w / 2, y: cy, fill: c, 'font-size': fs, 'font-weight': '700', 'text-anchor': 'middle', 'dominant-baseline': 'middle' }); e.textContent = s; return e; };
+    const st = stampOf(m.s);
+    if (m.s === 'auto' || !st) {
+      if (m.s !== 'auto' && STAMPS === null) stampsLoad().then(mkPaint);
+      const r = Math.min(w, h) / 2, cx = x + w / 2, cy = y + h / 2, lw = Math.max(1.5, r * 0.06);
+      mk('circle', { cx: cx, cy: cy, r: r - lw, fill: 'rgba(255,255,255,.05)', stroke: c, 'stroke-width': lw });
+      mk('line', { x1: cx - r * 0.86, y1: cy - r * 0.3, x2: cx + r * 0.86, y2: cy - r * 0.3, stroke: c, 'stroke-width': lw * 0.8 });
+      mk('line', { x1: cx - r * 0.86, y1: cy + r * 0.3, x2: cx + r * 0.86, y2: cy + r * 0.3, stroke: c, 'stroke-width': lw * 0.8 });
+      const off = String((STAMPS && STAMPS.office) || '事務所').replace(/税理士事務所$/, '').slice(0, 7);
+      tx(off, cy - r * 0.6, r * 0.27); tx(m.d || '', cy, r * 0.27); tx(m.s === 'auto' ? '受付' : '', cy + r * 0.6, r * 0.3);
+      if (m.s !== 'auto') { const q = mk('rect', { x: x, y: y, width: w, height: h, fill: 'none', stroke: '#999', 'stroke-dasharray': '4 3' }); void q; }
+    } else {
+      mk('image', { href: st.data, x: x, y: y, width: w, height: h, preserveAspectRatio: 'xMidYMid meet' });
+      if (m.d) tx(m.d, y + h / 2, Math.max(9, Math.min(w, h) * 0.13));
+    }
+    mk('rect', { x: x, y: y, width: w, height: h, fill: 'transparent', stroke: 'none' });   /* どこを押しても つかめるように */
+    return g;
+  }
   function mkPt(sv, e) {
     const pt = sv.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
     const q = pt.matrixTransform(sv.getScreenCTM().inverse()); const vb = sv.viewBox.baseVal;
@@ -6218,8 +6404,9 @@
   }
   function mkSelect(i) {
     MK.sel = i;
-    const m = MK.list[i], on = !!(m && m.t === 'text'); if (!on) MK.sel = -1;
+    const m = MK.list[i], on = !!(m && (m.t === 'text' || m.t === 'stamp')); if (!on) MK.sel = -1;
     $('mkSelBar').hidden = !on;
+    if (on) { $('mkSelL').textContent = m.t === 'stamp' ? '選んだハンコ：' : '選んだ文字：'; $('mkFix').hidden = m.t === 'stamp'; }
     if (on) document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.c === m.c)); });
     mkPaint();
   }
@@ -6229,16 +6416,18 @@
       e.preventDefault(); e.stopPropagation();
       const a = mkPt(sv, e);
       /* 書いた文字を押す＝選ぶ（そのまま つかんで動かせる） */
-      const ti = e.target && e.target.dataset && e.target.dataset.i != null ? Number(e.target.dataset.i) : -1;
-      if (ti >= 0 && MK.list[ti] && MK.list[ti].t === 'text') {
+      const hit = e.target && e.target.closest ? e.target.closest('[data-i]') : null;
+      const ti = hit ? Number(hit.dataset.i) : -1;
+      if (ti >= 0 && MK.list[ti] && (MK.list[ti].t === 'text' || MK.list[ti].t === 'stamp')) {
         if (MK.sel !== ti) mkSelect(ti);
         const m = MK.list[ti];
-        MK.mv = { i: ti, p: p, dx: m.x - a.x, dy: m.y - a.y, moved: false };
+        MK.mv = { i: ti, p: p, dx: m.x - a.x, dy: m.y - a.y, x0: m.x, y0: m.y, moved: false };
         try { sv.setPointerCapture(e.pointerId); } catch (x) {}
         return;
       }
       if (MK.sel >= 0) { MK.sel = -1; $('mkSelBar').hidden = true; const sb = sv.querySelector('.mksel'); if (sb) sb.remove(); }   /* 何もない所＝選ぶのをやめて ふつうに書く */
       if (MK.m === 'text') { mkText(e.clientX, e.clientY, p, a); return; }
+      if (MK.m === 'stamp') { const vb = sv.viewBox.baseVal; stampPut(p, a, vb.width, vb.height); return; }
       MK.drag = { p: p, a: a, cur: null };
       try { sv.setPointerCapture(e.pointerId); } catch (x) {}
     });
@@ -6247,6 +6436,7 @@
         const b = mkPt(sv, e), m = MK.list[MK.mv.i]; if (!m) return;
         m.x = Math.max(0, Math.min(1, b.x + MK.mv.dx)); m.y = Math.max(0, Math.min(1, b.y + MK.mv.dy)); MK.mv.moved = true;
         const vb = sv.viewBox.baseVal, te = sv.querySelector('text[data-i="' + MK.mv.i + '"]');
+        if (m.t === 'stamp') { m.x = Math.min(m.x, 1 - m.w); m.y = Math.min(m.y, 1 - m.h); const ge = sv.querySelector('g[data-i="' + MK.mv.i + '"]'); if (ge) ge.setAttribute('transform', 'translate(' + ((m.x - MK.mv.x0) * vb.width) + ' ' + ((m.y - MK.mv.y0) * vb.height) + ')'); const sb = sv.querySelector('.mksel'); if (sb) sb.remove(); return; }
         if (te) { te.setAttribute('x', m.x * vb.width); te.setAttribute('y', m.y * vb.height); const sb = sv.querySelector('.mksel'); if (sb) sb.remove(); mkSelBox(sv, te); }
         return;
       }
@@ -6264,7 +6454,7 @@
       mkPaint();
     });
     sv.addEventListener('click', function (e) { e.stopPropagation(); });
-    sv.addEventListener('dblclick', function (e) { e.stopPropagation(); const ti = e.target && e.target.dataset && e.target.dataset.i != null ? Number(e.target.dataset.i) : -1; if (ti >= 0) mkFixText(ti); });
+    sv.addEventListener('dblclick', function (e) { e.stopPropagation(); const h = e.target && e.target.closest ? e.target.closest('[data-i]') : null; const ti = h ? Number(h.dataset.i) : -1; if (ti >= 0 && MK.list[ti] && MK.list[ti].t === 'text') mkFixText(ti); });
   }
   /* 選んだ文字を 打ち直す（その場に 欄を出す） */
   function mkFixText(i) {
@@ -6296,7 +6486,7 @@
     const it = S.dvIt; if (!it) return;
     if (fileKind(it.name)) { dcMsg('この形（エクセルなど）には 書きこめません。', true); return; }
     MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true;
-    $('dvMark').setAttribute('aria-pressed', 'true'); $('dvMkBar').hidden = false; $('dview').classList.add('dv-mk');
+    $('dvMark').setAttribute('aria-pressed', 'true'); $('dvMkBar').hidden = false; $('dview').classList.add('dv-mk'); stampsLoad().then(stampBar);
     $('mkMsg').textContent = '押して書く（文字は 押した所に／下線・枠は なぞる）。書いた文字は 押すと選べて、つかんで動かす・直す・大きさや色を変える・消す ができます。元の写真・PDF は書き換えず、重ねて残します。';
     mkPaint();
   }
@@ -6305,7 +6495,7 @@
     const pend = document.querySelector('.mkin'); if (pend && save) pend.blur(); else if (pend) pend.remove();   /* 打ちかけの文字は 置いてから */
     const it = S.dvIt, list = MK.list, changed = JSON.stringify(list) !== MK.was;
     MK.on = false; MK.drag = null; MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true;
-    $('dvMark').setAttribute('aria-pressed', 'false'); $('dvMkBar').hidden = true; $('dview').classList.remove('dv-mk');
+    $('dvMark').setAttribute('aria-pressed', 'false'); $('dvMkBar').hidden = true; $('dview').classList.remove('dv-mk'); $('mkStBar').hidden = true;
     if (save && changed && it) {
       const code = S.code, prev = it.mark; it.mark = list;
       gs('workMark', code, it.id, list).then(function (r) { it.mark = r.mark; if (S.dvIt === it) mkPaint(); docsDraw(); dcMsg('書きこみを 保存しました（元の資料は そのまま）。'); },
@@ -6319,14 +6509,15 @@
   $('mkUndo').addEventListener('click', function () { MK.list.pop(); MK.sel = -1; $('mkSelBar').hidden = true; mkDirty(); mkPaint(); });
   $('mkClear').addEventListener('click', function () { MK.list = []; MK.sel = -1; $('mkSelBar').hidden = true; mkDirty(); mkPaint(); });
   $('mkFix').addEventListener('click', function () { if (MK.sel >= 0) mkFixText(MK.sel); });
-  $('mkSmall').addEventListener('click', function () { mkSelEdit(function (m) { m.z = Math.max(0.4, Math.round((m.z || 1) / 1.18 * 100) / 100); }); });
-  $('mkBig').addEventListener('click', function () { mkSelEdit(function (m) { m.z = Math.min(5, Math.round((m.z || 1) * 1.18 * 100) / 100); }); });
+  function stampZoom(m, k) { const w = Math.max(0.04, Math.min(0.6, m.w * k)), h = m.h * w / m.w; m.x = Math.max(0, Math.min(1 - w, m.x + (m.w - w) / 2)); m.y = Math.max(0, Math.min(1 - h, m.y + (m.h - h) / 2)); m.w = w; m.h = h; }
+  $('mkSmall').addEventListener('click', function () { mkSelEdit(function (m) { if (m.t === 'stamp') { stampZoom(m, 1 / 1.18); return; } m.z = Math.max(0.4, Math.round((m.z || 1) / 1.18 * 100) / 100); }); });
+  $('mkBig').addEventListener('click', function () { mkSelEdit(function (m) { if (m.t === 'stamp') { stampZoom(m, 1.18); return; } m.z = Math.min(5, Math.round((m.z || 1) * 1.18 * 100) / 100); }); });
   $('mkDel').addEventListener('click', function () { if (MK.sel < 0) return; MK.list.splice(MK.sel, 1); mkSelect(-1); mkDirty(); });
   document.addEventListener('keydown', function (e) {
     if (!MK.on || MK.sel < 0) return; const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA') return;
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); $('mkDel').click(); }
   }, true);
-  document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('click', function () { MK.m = b.dataset.m; document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); }); });
+  document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('click', function () { MK.m = b.dataset.m; document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); if (MK.m === 'stamp') stampsLoad().then(stampBar); else stampBar(); }); });
   document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (b) { b.addEventListener('click', function () { MK.c = b.dataset.c; document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); if (MK.sel >= 0) mkSelEdit(function (m) { m.c = MK.c; }); }); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dview').hidden) docsClose(); });
 
