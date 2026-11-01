@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793524532;</script>
+<script>window.__PAGE_VER=1793525253;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -4503,7 +4503,7 @@
   function dOutSave(list, el) {
     const onWall = !el || el === document.body || el === document.documentElement || !(el.closest && el.closest('#dBody, .dbox, .dmon, .dtile, button, input, select, textarea'));
     if (!onWall) { dMoveOpen(list); return; }   /* 箱の中で離したときは これまでどおり 移す先を選ぶ */
-    const it = list.length === 1 ? list[0] : null;
+    const it = list.length === 1 || (list[0].set && list[0].setOf > 1 && list.every(function (x) { return x.set === list[0].set; })) ? list[0] : null;
     if (!it || fileKind(it.name)) { dcMsg('外へ出せるのは 1つずつです（エクセルなどは 開いてから保存してください）。', true); return; }
     const o = dOutPrep(it);
     dcMsg('保存しています…');
@@ -4766,8 +4766,8 @@
       else if (c.tgt && c.tgt.ord) dReorder(c.list, c.tgt.id, c.tgt.before);
       else if (c.tgt) dMove(c.list, c.tgt.box, c.tgt.per);
       /* ★ K-0021 続き（2026-11-01）：パソコンの Chrome・Edge で 箱の外（壁紙の余白）に離したときは「移す」を出さず、その書類を ファイルで保存（ダウンロード） */
-      else if (c.nat && !c.same) dOutSave(c.list, c.dropEl);
-      else if (!c.same) dMoveOpen(c.list);
+      /* ★ K-0021 続き（さらに）：どのつかみ方でも同じに。窓の外・壁紙の余白で離した → ファイルで保存／箱の中 → これまでどおり「移す」 */
+      else if (!c.same) dOutSave(c.list, c.outside ? null : (c.dropEl || document.elementFromPoint(c.x, c.y)));
     }
     function bind(tile, it) {
       tile.addEventListener('touchstart', function (e) {
@@ -4844,7 +4844,7 @@
       if (!cur.on) { if (Math.abs(e.clientX - cur.sx) + Math.abs(e.clientY - cur.sy) < 6) return; start(cur); }
       e.preventDefault(); move(cur, e.clientX, e.clientY);
     });
-    window.addEventListener('pointerup', function () { if (cur && cur.mouse) end(false); });
+    window.addEventListener('pointerup', function (e) { if (cur && cur.mouse) { if (cur.on && (e.clientX < 0 || e.clientY < 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight)) { cur.outside = true; cur.tgt = null; cur.same = false; } end(false); } });   /* ★ 窓の外で離した */
     window.addEventListener('pointercancel', function () { if (cur && cur.mouse) end(true); });
     window.addEventListener('blur', function () { if (cur && cur.nat) return; end(true); clean(); });
     document.addEventListener('visibilitychange', function () { if (document.hidden) { end(true); clean(); } });
