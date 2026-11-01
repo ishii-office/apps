@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793533494;</script>
+<script>window.__PAGE_VER=1793536828;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1080,6 +1080,30 @@
   .dview .dvback select, .dview .dvback input { font-size: 13px; max-width: 240px; }
   .dview .dvback .bn { font-size: 13px; color: #b3261e; }
   .dview .jshot { flex: 1; min-height: 0; max-height: none; border-radius: 0; border: 0; overflow: auto; display: flex; align-items: center; justify-content: center; }
+  /* ★ 2026-11-01 まとめ書類：ページ送り（〈 〉・スワイプ）と 並べて見る（左にページの一覧・右に大きく） */
+  .dview .dvmain { flex: 1; min-height: 0; display: flex; }
+  .dview .dvstage { flex: 1; min-width: 0; min-height: 0; display: flex; position: relative; }
+  .dview .dvstage .jshot { min-width: 0; }
+  .dview .dvnav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 4; width: 46px; height: 92px; border: 0; border-radius: 12px; background: rgba(255,255,255,.82); color: #1f3a5f; font: inherit; font-size: 34px; font-weight: 900; line-height: 1; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.3); }
+  .dview .dvnav:hover { background: #fff; }
+  .dview .dvnav.prev { left: 8px; } .dview .dvnav.next { right: 8px; }
+  .dview .dvnav[hidden] { display: none; }
+  .dview .dvpg { border-color: #8A6100; color: #8A6100; }
+  .dview #dvSplit[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .dview .dvside { flex: 0 0 50%; max-width: 50%; overflow: auto; background: #E9EEF0; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; align-content: start; }
+  .dview .dvside[hidden] { display: none; }
+  .dview .dvside .sp { position: relative; background: #fff; border: 3px solid transparent; border-radius: 10px; padding: 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .dview .dvside .sp.on { border-color: #D0201A; box-shadow: 0 0 0 3px #D0201A33; }
+  .dview .dvside .sp img { width: 100%; height: 170px; object-fit: contain; background: #f6f6f4; border-radius: 6px; }
+  .dview .dvside .sp .pn { font-size: 13px; font-weight: 800; color: #1f3a5f; }
+  @media (max-width: 700px) {
+    .dview .dvnav { display: none; }   /* スマホは スワイプ（左＝次・右＝前・下＝一覧へ） */
+    .dview .dvmain { flex-direction: column-reverse; }
+    .dview .dvside { flex: 0 0 auto; max-width: none; height: 116px; display: flex; overflow-x: auto; overflow-y: hidden; padding: 6px; gap: 6px; }
+    .dview .dvside .sp { flex: 0 0 74px; padding: 3px; }
+    .dview .dvside .sp img { height: 76px; }
+    .dview .dvside .sp .pn { font-size: 11px; }
+  }
   .dview .jshot img { max-height: none; flex: none; transition: transform .15s; }
   .dview .jshot { cursor: zoom-out; }
   .dview .jshot.zin { cursor: grab; overflow: hidden; } .dview .jshot.zin img { transition: none; } .dview .jshot.zgrab { cursor: grabbing; }
@@ -2072,6 +2096,8 @@
     <button type="button" class="btn ghost sm" id="dvRot" title="90度ずつ回す">↻ 回す</button>
     <button type="button" class="btn ghost sm" id="dvZout" title="縮小（－・Ctrl＋ホイール）" aria-label="縮小">🔍－</button><button type="button" class="btn ghost sm" id="dvZin" title="拡大（＋・Ctrl＋ホイール）" aria-label="拡大">🔍＋</button>
     <span class="dvpos" id="dvPos" title="この箱の中で 左上から何番目か"></span>
+    <span class="dvpos dvpg" id="dvPg" hidden title="この書類（まとめた書類）の 何ページ目か"></span>
+    <button type="button" class="btn ghost sm" id="dvSplit" hidden aria-pressed="false" title="左に この書類のページの一覧・右に 選んだページを大きく（DocuWorks と同じ見え方）">▥ 並べて見る</button>
     <button type="button" class="btn sm" id="dvChk">✓ 確認済にする</button>
     <span class="dvkey" title="テンキーで サクサク確認（最後の1枚のあとは 一覧に戻る）">Enter 確認済→次／1 対象外→次／2 破棄→次／0 戻して元通り</span>
     <button type="button" class="btn ghost sm" id="dvMark" title="文字・下線・枠を 重ねて書く（元の写真・PDF は書き換えません）">✏ 書きこむ</button>
@@ -2091,7 +2117,14 @@
     <span class="mk-msg" id="mkMsg">押して書く（文字は 押した所に／下線・枠は なぞる）。元の写真・PDF は書き換えず、重ねて残します。</span>
   </div>
   <div class="dvmemo" id="dvMemo" hidden></div>
-  <div class="jshot" id="dvBody"></div>
+  <div class="dvmain" id="dvwMain">
+    <div class="dvside" id="dvwSide" hidden aria-label="この書類のページ"></div>
+    <div class="dvstage">
+      <button type="button" class="dvnav prev" id="dvPrev" title="前のページ（←）" aria-label="前のページ">〈</button>
+      <div class="jshot" id="dvBody"></div>
+      <button type="button" class="dvnav next" id="dvNext" title="次のページ（→）" aria-label="次のページ">〉</button>
+    </div>
+  </div>
 </div>
 
 <div class="dcbar" id="dcbar" hidden>
@@ -6112,7 +6145,7 @@
     if (MK.on && S.dvIt && S.dvIt.id !== it.id) mkEnd(true);
     const v = $('dview'); v.hidden = false; document.body.classList.add('dv-on');
     if (!S.dvIt || S.dvIt.id !== it.id) { DVZ.s = 1; DVZ.x = 0; DVZ.y = 0; $('dvBody').classList.remove('zin'); }
-    S.dvIt = it; dvPosDraw(it);
+    S.dvIt = it; dvPosDraw(it); dvChrome(it);
     if (DOUT_NAT && !fileKind(it.name)) dOutPrep(it);
     $('dvName').textContent = perLabel(it.period) + '　［' + it.box + '］　' + it.name.replace(/^\d{8}_\d{6}_/, '');
     $('dvDrive').href = it.url;
@@ -6260,7 +6293,7 @@
     }, true);
   });
   $('dvRot').addEventListener('click', function () { if (!S.dvId) return; S.rot[S.dvId] = ((S.rot[S.dvId] || 0) + 90) % 360; dvFit(); });
-  function docsClose() { if (MK.on) mkEnd(true); S.dvId = ''; S.dvIt = null; S.dvSeq = null; S.dvMemo = null; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
+  function docsClose() { if (MK.on) mkEnd(true); S.dvId = ''; S.dvIt = null; S.dvSeq = null; S.dvMemo = null; $('dvwSide').textContent = ''; $('dvwSide').dataset.set = ''; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
   $('dvClose').addEventListener('click', docsClose);
 
   /* ================= ★★ 大きく見て サクサク確認（2026-10-26） =================
@@ -6306,6 +6339,70 @@
     }
     const d = dvDoc(id); if (d) docsOpen(d);
   }
+  /* ★★ まとめ書類のページ送り（2026-11-01）。まとめた書類なら その中の次・前のページへ。
+       書類の最後（最初）のページから先は 次（前）の書類へ（前へ戻るときは その書類の最後のページ） */
+  function dvPageTo(it, dir) {
+    if (it.set && it.setOf > 1) { const m = dMembers(it.set), j = m.indexOf(it.id) + dir; if (j >= 0 && j < m.length) return m[j]; }
+    let id = dvNextId(it, dir); if (!id) return null;
+    if (dir < 0) { const d = dvDoc(id); if (d && d.set && d.setOf > 1) { const m = dMembers(d.set); if (m.length) id = m[m.length - 1]; } }
+    return id;
+  }
+  function dvPage(dir) {
+    const it = S.dvIt; if (!it) return;
+    const id = dvPageTo(it, dir);
+    if (!id) { dcMsg(dir > 0 ? 'この箱の 最後です。' : 'この箱の 最初です。'); $('dvPos').animate && $('dvPos').animate([{ background: '#FFE3DE' }, { background: '#fff' }], 500); return; }
+    const d = dvDoc(id); if (d) docsOpen(d);
+  }
+  $('dvPrev').addEventListener('click', function (e) { e.stopPropagation(); dvPage(-1); });
+  $('dvNext').addEventListener('click', function (e) { e.stopPropagation(); dvPage(1); });
+  /* 並べて見る（左にページの一覧・右に大きく）。この端末が覚える */
+  function dvSplitOn() { return lsGet('collect_dvsplit_o') === '1'; }
+  function dvChrome(it) {
+    const multi = !!(it.set && it.setOf > 1), m = multi ? dMembers(it.set) : [it.id];
+    $('dvPg').hidden = !multi; if (multi) $('dvPg').textContent = (m.indexOf(it.id) + 1) + ' / ' + m.length + 'ページ';
+    $('dvSplit').hidden = !multi; $('dvSplit').setAttribute('aria-pressed', String(multi && dvSplitOn()));
+    $('dvPrev').hidden = !dvPageTo(it, -1); $('dvNext').hidden = !dvPageTo(it, 1);
+    const side = $('dvwSide'), on = multi && dvSplitOn();
+    side.hidden = !on; $('dview').classList.toggle('dv-split', on);
+    if (!on) { side.textContent = ''; return; }
+    if (side.dataset.set !== it.set || side.children.length !== m.length) {
+      side.textContent = ''; side.dataset.set = it.set;
+      const need = [];
+      m.forEach(function (id, i) {
+        const d = dvDoc(id), b = el('div', 'sp'); b.dataset.id = id; b.title = (i + 1) + 'ページ目を 大きく';
+        const im = el('img'); im.alt = ''; const vi = IMG[id];
+        if (THUMB[id]) im.src = THUMB[id]; else if (vi && vi.t === 'img') im.src = vi.src; else need.push(id);
+        im.onerror = function () { im.removeAttribute('src'); };
+        b.appendChild(im); b.appendChild(el('span', 'pn', (i + 1) + 'ページ'));
+        b.addEventListener('click', function (e) { e.stopPropagation(); if (d) docsOpen(d); });
+        side.appendChild(b);
+      });
+      /* 小さい絵が無いものは くっきりした中身で（PDF は 小さい絵だけ） */
+      const put = function (id) { const im = side.querySelector('.sp[data-id="' + id + '"] img'); if (!im) return; const v = IMG[id]; if (THUMB[id]) im.src = THUMB[id]; else if (v && v.t === 'img') im.src = v.src; };
+      if (need.length) thumbsGet(need).then(function (t) { need.forEach(function (id) { THUMB[id] = (t && t[id]) || null; put(id); if (!THUMB[id]) dWant(id, false, function () { put(id); }); }); }, function () {});
+    }
+    side.querySelectorAll('.sp').forEach(function (b) { b.classList.toggle('on', b.dataset.id === it.id); });
+    const cur = side.querySelector('.sp.on'); if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+  $('dvSplit').addEventListener('click', function (e) {
+    e.stopPropagation(); lsSet('collect_dvsplit_o', dvSplitOn() ? '' : '1');
+    if (S.dvIt) { dvChrome(S.dvIt); requestAnimationFrame(dvFit); }
+  });
+  /* スマホ：左へスワイプ＝次のページ／右へ＝前のページ／下へ＝一覧（サムネイル）に戻る。拡大中・書きこみ中は 効かない */
+  (function () {
+    let st = null;
+    $('dvwMain').addEventListener('touchstart', function (e) {
+      if (MK.on || DVZ.s > 1 || e.touches.length !== 1 || (e.target.closest && e.target.closest('.dvside'))) { st = null; return; }
+      const t = e.touches[0]; st = { x: t.clientX, y: t.clientY, at: Date.now(), top: $('dvBody').scrollTop };
+    }, { passive: true });
+    $('dvwMain').addEventListener('touchmove', function (e) { if (st && e.touches.length > 1) st = null; }, { passive: true });
+    $('dvwMain').addEventListener('touchend', function (e) {
+      if (!st) return; const t = e.changedTouches[0], dx = t.clientX - st.x, dy = t.clientY - st.y, s0 = st; st = null;
+      if (Date.now() - s0.at > 900) return;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4) { dvPage(dx < 0 ? 1 : -1); return; }
+      if (dy > 90 && dy > Math.abs(dx) * 1.4 && s0.top <= 0) docsClose();
+    });
+  })();
   /* ★★ テンキーで さばく（2026-10-28）
      Enter＝確認済にして次へ／1＝対象外にして次へ／2＝破棄して次へ（最後の1枚のあとは 小さい絵の一覧に戻る）
      0＝1枚戻って その資料を 元通り（確認済・対象外・破棄を どれも外した ただの状態）に */
@@ -6349,8 +6446,8 @@
     if (e.code === 'Numpad2' || e.key === '2') { e.preventDefault(); dvAct('trash'); return; }
     if (e.key === '+' || e.key === '=' || e.key === ';') { e.preventDefault(); dvZoom(1.4); return; }
     if (e.key === '-' || e.key === '_') { e.preventDefault(); dvZoom(1 / 1.4); return; }
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); dvStep(1); return; }
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); dvStep(-1); }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); dvPage(1); return; }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); dvPage(-1); }
   });
 
   /* ================= ★★ 書きこむ（文字・下線・枠。2026-10-26） =================
