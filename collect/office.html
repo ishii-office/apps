@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793532785;</script>
+<script>window.__PAGE_VER=1793533494;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -4548,11 +4548,19 @@
   dOutFmtPaint();
   function dOutPrep(it) {
     const mem = dOutMem(it), asPdf = mem.length === 1 && dOutFmt() === 'pdf' && !it.pdf && !fileKind(it.name);
-    const key = (asPdf ? 'pdf:' : '') + mem.map(function (x) { return x.id; }).join(',');
+    /* ★ 2026-11-01：書きこみ・ハンコのある1枚は 焼きこんで出す（PDF は PDF のまま・写真は写真のまま） */
+    const marked = mem.length === 1 && !asPdf && (it.mark || []).length > 0 && !fileKind(it.name);
+    const key = (asPdf ? 'pdf:' : '') + mem.map(function (x) { return x.id + (x.mark && x.mark.length ? '~' + JSON.stringify(x.mark).length + x.mark.length : ''); }).join(',');
     if (DOUT[key]) return DOUT[key];
     const o = { url: '', name: '', mime: '' };
     const v1 = mem.length === 1 ? IMG[it.id] : null;   /* くっきりした中身が 手元にあれば サーバに聞かない */
-    o.p = (asPdf
+    o.p = (marked
+      ? fetchFulls(mem, function () {}).then(function (fulls) {
+          const v = fulls[it.id];
+          if (v && v.t === 'img') return marksReady(mem).then(function () { return marksOnImage(v.src, it.mark.filter(function (q) { return (q.p || 0) === 0; })); }).then(function (u) { return { blob: new Blob([u], { type: 'image/jpeg' }), name: fileName(it).replace(/\.[^.]+$/, '') + '.jpg' }; });
+          return pdflib().then(function (L) { return pdfDocBytes(L, mem, fulls); }).then(function (r) { if (!r.bytes) throw new Error('PDF に入れられませんでした'); return { blob: new Blob([r.bytes], { type: 'application/pdf' }), name: fileName(it).replace(/\.[^.]+$/, '') + '.pdf' }; });
+        })
+      : asPdf
       ? pdflib().then(function (L) { return fetchFulls(mem, function () {}).then(function (fulls) { return pdfDocBytes(L, mem, fulls); }); })
           .then(function (r) { if (!r.bytes) throw new Error('PDF に入れられませんでした'); return { blob: new Blob([r.bytes], { type: 'application/pdf' }), name: docTitle(mem).replace(/[\\\/:*?"<>|]+/g, '_') + '.pdf' }; })
       : mem.length === 1
@@ -4585,7 +4593,7 @@
   function dOutPrepMany(list) {
     const docs = dDocsOf(list);
     if (docs.length < 2) return docs.length ? dOutPrep(docs[0]) : null;
-    const key = 'zip:' + dOutFmt() + ':' + docs.map(function (x) { return x.id; }).join(',');
+    const key = 'zip:' + dOutFmt() + ':' + docs.map(function (x) { return x.id + (x.mark && x.mark.length ? '~' + JSON.stringify(x.mark).length : ''); }).join(',');
     if (DOUT[key]) return DOUT[key];
     const o = { url: '', name: '', mime: 'application/zip' };
     o.p = Promise.all(docs.map(function (d) { const q = dOutPrep(d); return Promise.resolve(q.p || q).then(function () { if (!q.url) throw new Error(q.err || 'ファイルを用意できませんでした'); return fetch(q.url).then(function (r) { return r.blob(); }).then(function (b) { return { name: q.name, file: b }; }); }); }))
@@ -5324,7 +5332,7 @@
             out.push({ src: mem.map(function (x) { return x.id; }), seq: seq, marks: marks });
           } else {
             const L = await pdflib();
-            const r0 = await pdfDocBytes(L, mem, fulls);
+            const r0 = await pdfDocBytes(L, mem, fulls, null, { noMarks: true });
             if (!r0.bytes || r0.skip) throw new Error('PDF に入れられないページがありました');
             /* 書きこみの ページを数え直す（写真は1ページ・PDF は その枚数） */
             let off = 0; const ms = [];
@@ -5486,19 +5494,102 @@
   /* ★★★ PDF の切り出しは 選ばせない（2026-10-23。顧問先の画面と同じ決まり）
        ・まとめた書類（📎）は その束で 1つのPDF（複数ページ）／まとめていないものは 1枚で 1つのPDF
        ・PDF が2つ以上になるときは ZIP 1つに入れて保存（ダウンロードが何個も出ないように）。1つなら PDF のまま */
-  async function pdfDocBytes(L, items, fulls, prog) {
+  /* ★★ 書きこみ・ハンコを 印刷・PDF・外へ出すファイルに 焼きこむ（2026-11-01）。
+       大きく見る小窓と同じ形を キャンバスに描く（文字の大きさ・線の太さは ページの幅に対する割合なので 同じ見え方になる）。
+       元の写真・PDF（Drive のファイル）は書き換えない。出すときだけ 重ねる */
+  const STAMP_IMG = {};
+  async function marksReady(items) {
+    if (!items.some(function (it) { return (it.mark || []).some(function (m) { return m.t === 'stamp' && m.s !== 'auto'; }); })) { if (items.some(function (it) { return (it.mark || []).length; })) await stampsLoad(); return; }
+    await stampsLoad();
+    await Promise.all(((STAMPS && STAMPS.list) || []).map(function (st) {
+      if (STAMP_IMG[st.id]) return null;
+      return new Promise(function (ok) { const im = new Image(); im.onload = function () { STAMP_IMG[st.id] = im; ok(); }; im.onerror = function () { ok(); }; im.src = st.data; });
+    }));
+  }
+  function marksDraw(x, ms, W, H) {
+    ms.forEach(function (m) {
+      const c = m.c || '#D0201A', sw = Math.max(1.5, W * 0.004);
+      x.save(); x.strokeStyle = c; x.fillStyle = c; x.lineCap = 'round';
+      if (m.t === 'text') {
+        x.font = '700 ' + (Math.max(12 * W / 1000, W * 0.03) * (m.z || 1)) + 'px sans-serif'; x.textBaseline = 'middle'; x.fillText(m.s || '', m.x * W, m.y * H);
+      } else if (m.t === 'line') {
+        x.lineWidth = sw; x.beginPath(); x.moveTo(m.x * W, m.y * H); x.lineTo((m.x + m.w) * W, (m.y + m.h) * H); x.stroke();
+      } else if (m.t === 'box') {
+        x.lineWidth = sw; x.strokeRect(m.x * W, m.y * H, m.w * W, m.h * H);
+      } else if (m.t === 'stamp') {
+        const bx = m.x * W, by = m.y * H, bw = m.w * W, bh = m.h * H;
+        const txt = function (t, cy, fs) { x.font = '700 ' + fs + 'px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(t, bx + bw / 2, cy); };
+        const im = m.s !== 'auto' ? STAMP_IMG[m.s] : null;
+        if (im) {
+          const k = Math.min(bw / im.naturalWidth, bh / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
+          x.drawImage(im, bx + (bw - iw) / 2, by + (bh - ih) / 2, iw, ih);
+          if (m.d) txt(m.d, by + bh / 2, Math.max(9 * W / 1000, Math.min(bw, bh) * 0.13));
+        } else {
+          const r = Math.min(bw, bh) / 2, cx = bx + bw / 2, cy = by + bh / 2, lw = Math.max(1.5, r * 0.06);
+          x.lineWidth = lw; x.beginPath(); x.arc(cx, cy, r - lw, 0, Math.PI * 2); x.stroke();
+          x.lineWidth = lw * 0.8; x.beginPath(); x.moveTo(cx - r * 0.86, cy - r * 0.3); x.lineTo(cx + r * 0.86, cy - r * 0.3); x.moveTo(cx - r * 0.86, cy + r * 0.3); x.lineTo(cx + r * 0.86, cy + r * 0.3); x.stroke();
+          const off = String((STAMPS && STAMPS.office) || '事務所').replace(/税理士事務所$/, '').slice(0, 7);
+          txt(off, cy - r * 0.6, r * 0.27); txt(m.d || '', cy, r * 0.27); if (m.s === 'auto') txt('受付', cy + r * 0.6, r * 0.3);
+        }
+      }
+      x.restore();
+    });
+  }
+  /* 写真に焼きこむ（長い辺 2400px まで）→ JPEG のバイト */
+  function marksOnImage(src, ms) {
+    return new Promise(function (ok, ng) {
+      const im = new Image();
+      im.onload = function () {
+        const k = Math.min(1, 2400 / Math.max(im.naturalWidth, im.naturalHeight));
+        const c = document.createElement('canvas'); c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+        const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+        marksDraw(x, ms, c.width, c.height);
+        ok(b64bytes(c.toDataURL('image/jpeg', 0.9).split(',')[1]));
+      };
+      im.onerror = function () { ng(new Error('写真が読めません')); };
+      im.src = src;
+    });
+  }
+  /* PDF のページに 重ねる絵（透明な PNG）。ページの見た目の向き（回転）に合わせて描いてから 元の向きへ戻す */
+  function marksOverlayPng(ms, pw, ph, rot) {
+    rot = ((rot || 0) % 360 + 360) % 360;
+    const vw = rot % 180 ? ph : pw, vh = rot % 180 ? pw : ph;   /* 見た目の幅・高さ */
+    const sc = 1600 / Math.max(vw, vh);
+    const v = document.createElement('canvas'); v.width = Math.round(vw * sc); v.height = Math.round(vh * sc);
+    marksDraw(v.getContext('2d'), ms, v.width, v.height);
+    let c = v;
+    if (rot) {
+      c = document.createElement('canvas'); c.width = Math.round(pw * sc); c.height = Math.round(ph * sc);
+      const x = c.getContext('2d'); x.translate(c.width / 2, c.height / 2); x.rotate(-rot * Math.PI / 180); x.drawImage(v, -v.width / 2, -v.height / 2);
+    }
+    return b64bytes(c.toDataURL('image/png').split(',')[1]);
+  }
+  /* opt.noMarks … 焼きこまない（変換：書きこみは できたものへ 形のまま写すので） */
+  async function pdfDocBytes(L, items, fulls, prog, opt) {
     const doc = await L.PDFDocument.create();
+    const burn = !(opt && opt.noMarks);
+    if (burn) await marksReady(items);
     let skip = 0, i = 0;
     for (const it of items) {
       i++; if (prog) prog(i);
-      const v = fulls[it.id];
+      const v = fulls[it.id], mk = burn ? (it.mark || []) : [];
       try {
         if (v && v.t === 'pdf') {
           const src = await L.PDFDocument.load(b64bytes(v.b64), { ignoreEncryption: true });
-          (await doc.copyPages(src, src.getPageIndices())).forEach(function (pg) { doc.addPage(pg); });
+          const pages = await doc.copyPages(src, src.getPageIndices());
+          for (let pi = 0; pi < pages.length; pi++) {
+            const pg = pages[pi]; doc.addPage(pg);
+            const ms = mk.filter(function (m) { return (m.p || 0) === pi; });
+            if (!ms.length) continue;
+            const sz = pg.getSize(), rot = pg.getRotation ? pg.getRotation().angle : 0;
+            const ov = await doc.embedPng(marksOverlayPng(ms, sz.width, sz.height, rot));
+            pg.drawImage(ov, { x: 0, y: 0, width: sz.width, height: sz.height });
+          }
         } else if (v && v.t === 'img') {
           const m = v.src.match(/^data:image\/(jpeg|png);base64,(.*)$/);
-          const img = m ? (m[1] === 'png' ? await doc.embedPng(b64bytes(m[2])) : await doc.embedJpg(b64bytes(m[2]))) : await doc.embedJpg(await toJpeg(v.src));
+          const ms = mk.filter(function (q) { return (q.p || 0) === 0; });
+          const img = ms.length ? await doc.embedJpg(await marksOnImage(v.src, ms))
+            : m ? (m[1] === 'png' ? await doc.embedPng(b64bytes(m[2])) : await doc.embedJpg(b64bytes(m[2]))) : await doc.embedJpg(await toJpeg(v.src));
           const land = img.width > img.height;
           const W = land ? 842 : 595, H = land ? 595 : 842, M = 18;
           const sc = Math.min((W - M * 2) / img.width, (H - M * 2) / img.height);
