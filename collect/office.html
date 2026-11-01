@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793525253;</script>
+<script>window.__PAGE_VER=1793526691;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3650,6 +3650,8 @@
             hd.appendChild(cl); if (!S.dcpick && g.every(function (x) { return x.status !== 'done'; })) hd.appendChild(sp);
             w.appendChild(hd);
             if (!S.dcpick && g.every(function (x) { return x.status !== 'done'; })) { DDX.bindSet(cl, w, g); cl.title += '／つかんで ほかの書類の真ん中へ落とすと 2つの書類を1つにまとめる'; }
+            /* ★ K-0021 続き：選んでいる書類（束）は 枠のどこを つかんでも（写真のあいだ・見出しでも）選んだもの全部を つかむ */
+            if (S.dcpick && DOUT_NAT && g.some(function (x) { return S.dcsel[x.id]; })) DDX.bindWrap(w, g.find(function (x) { return S.dcsel[x.id]; }));
             dStack(w, g);
             grid.appendChild(w);
           });
@@ -3772,6 +3774,7 @@
       '.zstage{flex:1 1 auto;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}.zstage img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:50% 50%;user-select:none;background:#fff}.zstage.zin{cursor:grab}.zstage.zgrab{cursor:grabbing}' +
       '.zbar{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;cursor:default}.zbar button{font:inherit;font-size:16px;font-weight:800;color:#fff;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.5);border-radius:10px;padding:6px 12px;cursor:pointer;min-width:44px}.zbar button:disabled{opacity:.35;cursor:default}.zbar .zpct{color:#fff;font-weight:800;font-size:14px;min-width:54px;text-align:center}' +
       '.wzc{color:#fff;font-size:15px;font-weight:700;padding:8px 16px 0;text-align:center}.wzl{color:#cfe;font-size:13px}.zhint{color:#aaa;font-size:12px;padding:4px 0 10px}.wzx{position:absolute;top:10px;right:14px;font:inherit;font-size:20px;color:#fff;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.5);border-radius:10px;padding:2px 12px;cursor:pointer;z-index:2}' +
+      '.wc.sel{border-color:#b07d00;box-shadow:0 0 0 3px #b07d00}.wsmq{position:fixed;z-index:40;border:2px dashed #b07d00;background:rgba(176,125,0,.12);pointer-events:none}' +
       '</style></head><body><div id="ws"></div>' +
       '<div class="wzv" id="wzv" hidden role="dialog" aria-label="大きく見る"><button type="button" class="wzx" id="wzx" title="閉じる（Esc）">✕</button><div class="zstage" id="wzs"><img id="wzi" alt="" draggable="false"></div>' +
       '<div class="zbar" id="wzb"><button type="button" data-z="out" title="縮小（－）" aria-label="縮小">🔍－</button><span class="zpct" data-z="pct">100%</span><button type="button" data-z="in" title="拡大（＋）" aria-label="拡大">🔍＋</button><button type="button" data-z="fit" title="元の大きさ">元の大きさ</button></div>' +
@@ -3793,11 +3796,56 @@
       try { e.dataTransfer.setData('DownloadURL', ox.mime + ':' + ox.name + ':' + ox.url); e.dataTransfer.effectAllowed = 'copy'; } catch (q) {}
     });
     wsZKeys(key, d);
+    wsSelBind(key, d);
     wsDraw(key);
     return true;
   }
   function wsRefresh() { Object.keys(WS).forEach(function (k) { if (!WS[k].win || WS[k].win.closed) { delete WS[k]; return; } if (WS[k].ad.alive && !WS[k].ad.alive()) { try { WS[k].win.close(); } catch (e) {} delete WS[k]; return; } wsDraw(k); }); }
   window.addEventListener('beforeunload', function () { Object.keys(WS).forEach(function (k) { try { if (WS[k].win && !WS[k].win.closed) WS[k].win.close(); } catch (e) {} }); });
+  /* ★ K-0021 続き：別ウィンドウでも 何もない所から 押したまま囲んで選ぶ（一覧と同じ）。写真のない所を クリック・右クリックで 選ぶのをやめる。
+       選んでいる書類を つかむと 選んだもの全部（並べ替え・まとめ・外へ＝2つ以上なら ZIP） */
+  function wsSelList(o, lead) {
+    const k = o.ad.key(lead), ks = Object.keys(o.sel || {});
+    if (!o.sel || !o.sel[k] || ks.length < 2) return null;
+    const out = [];
+    (o.seq || []).forEach(function (m) { if (o.sel[o.ad.key(m[0])]) m.forEach(function (x) { out.push(x); }); });
+    return out.length ? out : null;
+  }
+  function wsSelPaint(o) { const d = o.win.document; d.querySelectorAll('.wc[data-k]').forEach(function (c) { c.classList.toggle('sel', !!(o.sel && o.sel[c.dataset.k])); }); const n = Object.keys(o.sel || {}).length; wsMsg(o.key, n ? n + '書類を選んでいます（つかむと まとめて動かせます・写真のない所を押すと やめます）' : ''); }
+  function wsSelBind(key, d) {
+    const o = WS[key]; o.key = key; o.sel = o.sel || {};
+    let mq = null;
+    const blank = function (e) { return !(e.target.closest && e.target.closest('.wc, button, input, a, select, label, .wzv, .wsh')); };
+    d.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'touch' || e.button !== 0 || !blank(e)) return;
+      mq = { x: e.clientX, y: e.clientY, on: false, add: !!(e.ctrlKey || e.shiftKey || e.metaKey) };
+    });
+    d.addEventListener('pointermove', function (e) {
+      if (!mq) return;
+      if (!(e.buttons & 1)) { mq = null; return; }
+      if (!mq.on) { if (Math.abs(e.clientX - mq.x) + Math.abs(e.clientY - mq.y) < 8) return; mq.on = true; mq.box = d.createElement('div'); mq.box.className = 'wsmq'; d.body.appendChild(mq.box); mq.base = mq.add ? Object.assign({}, o.sel) : {}; }
+      e.preventDefault();
+      const l = Math.min(mq.x, e.clientX), t = Math.min(mq.y, e.clientY), r = Math.max(mq.x, e.clientX), b = Math.max(mq.y, e.clientY);
+      Object.assign(mq.box.style, { left: l + 'px', top: t + 'px', width: (r - l) + 'px', height: (b - t) + 'px' });
+      const sel = Object.assign({}, mq.base);
+      d.querySelectorAll('.wc[data-k]').forEach(function (c) { const q = c.getBoundingClientRect(); if (q.left < r && q.right > l && q.top < b && q.bottom > t) sel[c.dataset.k] = 1; });
+      o.sel = sel; wsSelPaint(o);
+    });
+    d.addEventListener('pointerup', function () {
+      const m = mq; mq = null; if (!m) return;
+      if (m.box) m.box.remove();
+      if (!m.on && !m.add && Object.keys(o.sel).length) { o.sel = {}; wsSelPaint(o); }
+    });
+    d.addEventListener('contextmenu', function (e) { if (!blank(e) || !Object.keys(o.sel).length) return; e.preventDefault(); o.sel = {}; wsSelPaint(o); });
+    /* Ctrl（Mac は ⌘）・Shift を押しながら 札を押すと 1つずつ 選ぶ／外す */
+    d.addEventListener('click', function (e) {
+      if (!(e.ctrlKey || e.metaKey || e.shiftKey)) return;
+      const c = e.target.closest && e.target.closest('.wc[data-k]'); if (!c || (e.target.closest('button, input'))) return;
+      e.preventDefault(); e.stopPropagation();
+      if (o.sel[c.dataset.k]) delete o.sel[c.dataset.k]; else o.sel[c.dataset.k] = 1;
+      wsSelPaint(o);
+    }, true);
+  }
   function wsMsg(key, t, err) { const o = WS[key]; if (!o || o.win.closed) return; const m = o.win.document.getElementById('wsmsg'); if (m) { m.textContent = t || ''; m.className = 'wsmsg' + (err ? ' err' : ''); } }
   function wsDraw(key) {
     const o = WS[key]; if (!o || !o.win || o.win.closed) return;
@@ -3839,7 +3887,8 @@
       const g = E('div', 'wsg');
       perDocs[pi].forEach(function (mem) {
         const lead = mem[0], lock = mem.some(ad.locked);
-        const c = E('div', 'wc' + (lock ? ' lock' : '')); c.draggable = !lock || !!ad.out; c.dataset.k = ad.key(lead);
+        const c = E('div', 'wc' + (lock ? ' lock' : '') + (o.sel && o.sel[ad.key(lead)] ? ' sel' : '')); c.draggable = !lock || !!ad.out; c.dataset.k = ad.key(lead);
+        o.mems = o.mems || {}; o.mems[ad.key(lead)] = mem;
         const im = E('div', 'im'), src = ad.thumb(lead);
         if (src) { const i = E('img'); i.src = src; i.alt = ''; i.draggable = false; im.appendChild(i); } else { im.appendChild(E('div', 'k', ad.name(lead))); if (src === undefined) need.push(ad.key(lead)); }
         c.appendChild(im);
@@ -3877,21 +3926,24 @@
         const wm = wsActs(o, c, mem, E);
         /* ★ K-0020：別ウィンドウの札からも そのまま アプリの外（デスクトップ・フォルダ）へ。Chrome・Edge（ad.out があるとき）。
            ファイルは つかむ前（マウスを乗せたとき）に 裏で用意。窓の中へ落とせば これまでどおり 並べ替え・まとめ（確定済みは 外へ出すだけ） */
-        if (ad.out) { let ot = 0; c.addEventListener('mouseenter', function () { ot = setTimeout(function () { ad.out(lead); }, 200); }); c.addEventListener('mouseleave', function () { clearTimeout(ot); }); }
+        if (ad.out) { let ot = 0; c.addEventListener('mouseenter', function () { ot = setTimeout(function () { const sl = wsSelList(o, lead); if (sl && ad.outMany) ad.outMany(sl); else ad.out(lead); }, 200); }); c.addEventListener('mouseleave', function () { clearTimeout(ot); }); }
         c.addEventListener('dragstart', function (e) {
           if (o.drag) return;
           const bt = e.target && e.target.closest && e.target.closest('button, input');
-          const ox = ad.out && !bt ? ad.out(lead) : null;
-          if (lock && !(ox && ox.url)) { e.preventDefault(); if (ox) wsMsg(key, ox.err || 'ファイルを用意しています。少ししてから もう一度つかんでください。', !!ox.err); return; }
-          if (!lock) o.drag = { mem: mem };
-          try { e.dataTransfer.setData('text/plain', 'd'); if (ox && ox.url) { e.dataTransfer.setData('DownloadURL', ox.mime + ':' + ox.name + ':' + ox.url); e.dataTransfer.effectAllowed = lock ? 'copy' : 'copyMove'; } else e.dataTransfer.effectAllowed = 'move'; } catch (q) {}
+          /* ★ K-0021 続き：選んでいる書類を つかんだら 選んだもの全部（窓の中＝並べ替え・まとめ／外＝2つ以上なら ZIP 1つ） */
+          const sl = wsSelList(o, lead), dm = sl || mem, dlock = dm.some(ad.locked);
+          const ox = bt ? null : sl && ad.outMany ? ad.outMany(sl) : ad.out ? ad.out(lead) : null;
+          if (dlock && !(ox && ox.url)) { e.preventDefault(); if (ox) wsMsg(key, ox.err || 'ファイルを用意しています。少ししてから もう一度つかんでください。', !!ox.err); return; }
+          if (!dlock) o.drag = { mem: dm, keys: sl ? Object.keys(o.sel) : [ad.key(lead)] };
+          try { e.dataTransfer.setData('text/plain', 'd'); if (ox && ox.url) { e.dataTransfer.setData('DownloadURL', ox.mime + ':' + ox.name + ':' + ox.url); e.dataTransfer.effectAllowed = dlock ? 'copy' : 'copyMove'; } else e.dataTransfer.effectAllowed = 'move'; } catch (q) {}
         });
         c.addEventListener('dragend', function () { o.drag = null; if (o.wait) wsDraw(key); });
         const zone = function (e) { const r = c.getBoundingClientRect(), f = (e.clientX - r.left) / r.width; return f < 0.28 ? 'l' : f > 0.72 ? 'r' : 'c'; };
-        c.addEventListener('dragover', function (e) { const dg = o.drag; if (!dg || dg.page || dg.mem === mem || wm === 'trash') return; e.preventDefault(); const z = zone(e); c.classList.toggle('zl', z === 'l'); c.classList.toggle('zr', z === 'r'); c.classList.toggle('zc', z === 'c'); });
+        c.addEventListener('dragover', function (e) { const dg = o.drag; if (!dg || dg.page || dg.mem === mem || (dg.keys && dg.keys.indexOf(ad.key(lead)) >= 0) || wm === 'trash') return; e.preventDefault(); const z = zone(e); c.classList.toggle('zl', z === 'l'); c.classList.toggle('zr', z === 'r'); c.classList.toggle('zc', z === 'c'); });
         c.addEventListener('dragleave', function (e) { if (!c.contains(e.relatedTarget)) c.classList.remove('zl', 'zr', 'zc'); });
         c.addEventListener('drop', function (e) {
-          const dg = o.drag; c.classList.remove('zl', 'zr', 'zc'); if (!dg || dg.page || dg.mem === mem || wm === 'trash') return; e.preventDefault();
+          const dg = o.drag; c.classList.remove('zl', 'zr', 'zc'); if (!dg || dg.page || dg.mem === mem || (dg.keys && dg.keys.indexOf(ad.key(lead)) >= 0) || wm === 'trash') return; e.preventDefault();
+          o.sel = {};
           const z = zone(e); o.drag = null;
           if (z === 'c') { if (lock || dg.mem.some(ad.locked)) { wsMsg(key, '確定済みのものは まとめられません。', true); wsDraw(key); return; } ad.join([lead].concat(mem.slice(1), dg.mem)); }
           else if (ad.per(dg.mem[0]) !== ad.per(lead)) { wsMsg(key, '並べ替えは 同じ月分の中だけです（別の月分へは まん中へ落として まとめるか、移すで）。', true); wsDraw(key); }
@@ -4062,6 +4114,7 @@
       need: function (ids) { wsThumbsO(ids); },
       /* ★ K-0020：アプリの外へ（サムネイルと同じもの。まとめた書類は その束で1つの PDF・［PDFにする］も効く） */
       out: DOUT_NAT ? function (it) { return it && !fileKind(it.name) ? dOutPrep(it) : null; } : null,
+      outMany: DOUT_NAT ? function (list) { return list.some(function (x) { return fileKind(x.name); }) ? null : dOutPrepMany(list); } : null,
       /* ★ サムネイルと同じ：確認済（緑）・対象外（黒）・破棄（赤）・書きこむ（2026-10-29） */
       mark: function (it) { return isT(it) ? 'trash' : it.skip ? 'skip' : it.chk ? 'chk' : ''; },
       check: function (mem, on) { docsCheck(mem, on); },
@@ -4456,7 +4509,9 @@
          1枚のものは 届いたそのままのファイル、まとめた書類（📎）は その束で 1つの PDF
        ・パソコンのファイルを 箱（月分）の上へ落とすと その箱・その月分に入る（officeUpload。事務所が入れました と残る） */
   const DOUT = {};
-  const DOUT_OK = !!(window.matchMedia && (matchMedia('(hover: hover) and (pointer: fine)').matches || matchMedia('(any-hover: hover) and (any-pointer: fine)').matches));   /* ★ K-0021 続き：タッチ画面つきのパソコンでも マウスがあれば 外へ出せる */
+  /* ★ K-0021 続き（2026-11-01 さらに）：マウスかタッチかの判定（hover・pointer）は 機械によって外れる（タッチ画面つきのパソコンで 外へ出せなかった）。
+       パソコン（スマホ・タブレットでない）なら いつも つかめるようにする。指でつかんだときは これまでどおり 自分で動かす つかみ方 */
+  const DOUT_OK = !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) && !(/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
   /* ブラウザの外へ ファイルとして落とせるのは Chrome・Edge（DownloadURL）。ほかのブラウザは これまでどおりの つかみ方 */
   const DOUT_NAT = DOUT_OK && /Chrome\//.test(navigator.userAgent);
   function dOutMem(it) {
@@ -4503,15 +4558,30 @@
   function dOutSave(list, el) {
     const onWall = !el || el === document.body || el === document.documentElement || !(el.closest && el.closest('#dBody, .dbox, .dmon, .dtile, button, input, select, textarea'));
     if (!onWall) { dMoveOpen(list); return; }   /* 箱の中で離したときは これまでどおり 移す先を選ぶ */
-    const it = list.length === 1 || (list[0].set && list[0].setOf > 1 && list.every(function (x) { return x.set === list[0].set; })) ? list[0] : null;
-    if (!it || fileKind(it.name)) { dcMsg('外へ出せるのは 1つずつです（エクセルなどは 開いてから保存してください）。', true); return; }
-    const o = dOutPrep(it);
+    if (!list.length || list.some(function (x) { return fileKind(x.name); })) { dcMsg('エクセルなどは 外へ出せません（開いてから保存してください）。', true); return; }
+    const o = dOutPrepMany(list);
     dcMsg('保存しています…');
     Promise.resolve(o.p || o).then(function () {
       if (!o.url) { dcMsg(o.err || 'ファイルを用意できませんでした。もう一度 ためしてください。', true); return; }
       const a = document.createElement('a'); a.href = o.url; a.download = o.name; document.body.appendChild(a); a.click(); a.remove();
       dcMsg('「' + o.name + '」を 保存しました（ダウンロード）。デスクトップやフォルダへ 直接出すときは、ブラウザの窓の外へ 落としてください。');
     });
+  }
+  /* ★ K-0021 続き：選んだ書類を まとめて外へ … 1書類ずつのファイル（まとめた書類は その束で1つの PDF・［写真のまま］［PDFにする］も効く）を ZIP 1つにして渡す。
+       ブラウザは 1回のドラッグで 1つのファイルしか渡せないため（2つ以上の書類なら ZIP） */
+  function dDocsOf(list) { const out = [], seen = {}; list.forEach(function (x) { const k = x.set && x.setOf > 1 ? 's:' + x.set : 'i:' + x.id; if (seen[k]) return; seen[k] = 1; out.push(x); }); return out; }
+  function dOutPrepMany(list) {
+    const docs = dDocsOf(list);
+    if (docs.length < 2) return docs.length ? dOutPrep(docs[0]) : null;
+    const key = 'zip:' + dOutFmt() + ':' + docs.map(function (x) { return x.id; }).join(',');
+    if (DOUT[key]) return DOUT[key];
+    const o = { url: '', name: '', mime: 'application/zip' };
+    o.p = Promise.all(docs.map(function (d) { const q = dOutPrep(d); return Promise.resolve(q.p || q).then(function () { if (!q.url) throw new Error(q.err || 'ファイルを用意できませんでした'); return fetch(q.url).then(function (r) { return r.blob(); }).then(function (b) { return { name: q.name, file: b }; }); }); }))
+      .then(function (files) { files.forEach(function (f, i) { f.name = String(i + 1).padStart(2, '0') + '_' + f.name; }); o.name = pdfFname(boxLabel(docs[0].box) + '_' + docs.length + '書類', '.zip'); return zipFiles(files, o.name); })
+      .then(function (z) { return dOutUrl(z).then(function (u) { o.url = u; return o; }); })
+      .catch(function (e) { delete DOUT[key]; o.err = e.message; return o; });
+    DOUT[key] = o;
+    return o;
   }
   /* パソコンのファイルを 箱へ。月分の上なら その月分、箱の見出しなどなら いまの月分（15日までは先月分） */
   function dDefPer() { const d = new Date(); if (d.getDate() <= 15) d.setMonth(d.getMonth() - 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
@@ -4790,18 +4860,19 @@
       tile.addEventListener('dragstart', function (e) { e.preventDefault(); });
     }
     /* ファイルは つかむ前（マウスを乗せたとき）に 裏で用意しておく（つかんだ瞬間に渡さないといけないため） */
-    function natBind(tile, it) {
+    function natBind(tile, it, wrapOnly) {
       tile.draggable = true;
       let ht = 0, downBtn = false;
       tile.querySelectorAll('img').forEach(function (im) { im.draggable = false; });
-      tile.addEventListener('mouseenter', function () { if (!fileKind(it.name)) ht = setTimeout(function () { dOutPrep(it); }, 200); });
+      tile.addEventListener('mouseenter', function () { if (!fileKind(it.name)) ht = setTimeout(function () { const l = items(it); if (!l.some(function (x) { return fileKind(x.name); })) dOutPrepMany(l); }, 200); });
       tile.addEventListener('mouseleave', function () { clearTimeout(ht); });
-      tile.addEventListener('pointerdown', function (e) { const b = e.target.closest && e.target.closest('button, input, a, select, label'); downBtn = !!(b && !b.classList.contains('dimg')); });
+      tile.addEventListener('pointerdown', function (e) { const b = e.target.closest && e.target.closest('button, input, a, select, label'); downBtn = !!(b && !b.classList.contains('dimg') && !(wrapOnly && b.classList.contains('dclip'))); });
       tile.addEventListener('dragstart', function (e) {
+        if (wrapOnly && e.target !== tile) return;   /* 束の中の写真から始まったときは 写真の側に任せる */
         if (downBtn || (cur && cur.touch)) { e.preventDefault(); return; }
         const list = items(it);
-        const one = list.length === 1 || (it.set && it.setOf > 1 && list.every(function (x) { return x.set === it.set; }));   /* ★ 1つの書類（まとめた束）を選んでつかんだときも 1つの PDF で外へ */
-        const o = one && !fileKind(it.name) ? dOutPrep(it) : null;
+        /* ★ 1つの書類なら そのファイル、選んだ書類が2つ以上なら ZIP 1つ（dOutPrepMany） */
+        const o = list.some(function (x) { return fileKind(x.name); }) ? null : dOutPrepMany(list);
         try {
           e.dataTransfer.effectAllowed = 'copyMove';
           e.dataTransfer.setData('text/plain', String(it.name || ''));
@@ -4857,7 +4928,11 @@
         cur = { it: g[0], all: g, tile: wrap, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, on: false, mouse: true };
       });
     }
-    return { bind: bind, bindSet: bindSet, justEnded: function (t) { return t === endEl && Date.now() - endAt < 700; } };
+    /* ★ K-0021 続き：選んでいる束の枠（写真の外の所）を つかんだとき。写真の上なら 写真の側が受ける */
+    function bindWrap(wrap, it) {
+      natBind(wrap, it, true);
+    }
+    return { bind: bind, bindSet: bindSet, bindWrap: bindWrap, justEnded: function (t) { return t === endEl && Date.now() - endAt < 700; } };
   })();
 
   /* ================= ★ 何枚かで1つの書類（2026-10-11） =================
@@ -5006,9 +5081,10 @@
   document.addEventListener('pointerdown', function (e) { if (!e.target.closest || !e.target.closest('.dctx')) dCtxClose(); }, true);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') dCtxClose(); });
   window.addEventListener('scroll', dCtxClose, true);
+  /* ★ K-0021 続き：選んだあと 写真のない所を 右クリック（または ふつうにクリック）すると 選ぶのをやめる */
   $('dBody').addEventListener('contextmenu', function (e) {
-    if (e.target.closest('.dtile, .dclip')) return;
-    if (Object.keys(S.dcsel).length) { e.preventDefault(); dCtx(e, null); }
+    if (e.target.closest('.dtile, .dclip, .dset.sel, button, a, input, select, label')) return;
+    if (Object.keys(S.dcsel).length) { e.preventDefault(); S.dcsel = {}; S.dcpick = false; docsDraw(); dcMsg('選ぶのをやめました。'); }
   });
   $('dcJoin').addEventListener('click', function () { dJoin(dSelOrder('')); });
   /* ★ 押したまま 何もないところから 囲んで選ぶ（パソコン） */
@@ -5017,7 +5093,8 @@
     $('dBody').addEventListener('pointerdown', function (e) {
       if (e.pointerType === 'touch' || e.button !== 0 || S.trashView) return;
       if (e.target.closest('.dtile, button, a, input, select, label, .dclip')) return;
-      mq = { x: e.clientX, y: e.clientY, on: false, base: (e.ctrlKey || e.shiftKey || e.metaKey) ? Object.assign({}, S.dcsel) : {} };
+      if (e.target.closest('.dset.sel')) return;   /* 選んでいる束の枠は つかむ所 */
+      mq = { x: e.clientX, y: e.clientY, on: false, base_k: !!(e.ctrlKey || e.shiftKey || e.metaKey), base: (e.ctrlKey || e.shiftKey || e.metaKey) ? Object.assign({}, S.dcsel) : {} };
     });
     window.addEventListener('pointermove', function (e) {
       if (!mq) return;
@@ -5035,7 +5112,9 @@
       mq.sel = sel;
     });
     function end() {
-      const m = mq; mq = null; if (!m || !m.on) return;
+      const m = mq; mq = null;
+      if (m && !m.on && !m.base_k && Object.keys(S.dcsel).length) { S.dcsel = {}; S.dcpick = false; docsDraw(); return; }   /* ★ 写真のない所を ふつうにクリック ＝ 選ぶのをやめる */
+      if (!m || !m.on) return;
       if (m.box) m.box.remove();
       S.dcsel = m.sel || {}; S.dcpick = Object.keys(S.dcsel).length > 0; docsDraw();
       if (S.dcpick) dcMsg(Object.keys(S.dcsel).length + '件を選びました。右クリック［まとめる］か 下の［📎 まとめる］で 左から順に1つの書類になります。');
