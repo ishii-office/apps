@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793526691;</script>
+<script>window.__PAGE_VER=1793529224;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3415,7 +3415,7 @@
     const code = S.code; DTH_RUN = code;
     (function next() { if (code !== S.code) { if (DTH_RUN === code) DTH_RUN = false; return; } const b = need.splice(0, 40); if (!b.length) { if (DTH_RUN === code) DTH_RUN = false; return; }
       b.forEach(function (id) { THIN[id] = 1; }); const un = function () { b.forEach(function (id) { delete THIN[id]; }); };
-      gs('viewerThumbs', b).then(function (t) { un(); b.forEach(function (id) { THUMB[id] = t[id] || null; }); $('dBody').querySelectorAll('img.dthumb[data-id]').forEach(function (im) { if (!im.src && THUMB[im.dataset.id]) im.src = THUMB[im.dataset.id]; }); next(); }, function () { un(); next(); }); })();
+      thumbsGet(b).then(function (t) { un(); b.forEach(function (id) { THUMB[id] = t[id] || null; }); $('dBody').querySelectorAll('img.dthumb[data-id]').forEach(function (im) { if (!im.src && THUMB[im.dataset.id]) im.src = THUMB[im.dataset.id]; }); next(); }, function () { un(); next(); }); })();
   }
   /* ★ 顧問先の画面と同じ見え方（2026-10-06）：箱 → 月分の小箱 → 写真が並ぶ。押すと すぐ大きく。
        事務所だけのもの … PDF切り出し・破棄・選ぶ・別の月分へ移す（月分を整理する）・仕訳化へ */
@@ -4147,7 +4147,7 @@
     const need = ids.filter(function (id) { return !(id in THUMB) && !WSTH[id]; });
     for (let i = 0; i < need.length; i += 40) {
       const b = need.slice(i, i + 40); b.forEach(function (id) { WSTH[id] = 1; });
-      gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { delete WSTH[id]; THUMB[id] = (t && t[id]) || null; }); wsRefresh(); }, function () { b.forEach(function (id) { delete WSTH[id]; }); });
+      thumbsGet(b).then(function (t) { b.forEach(function (id) { delete WSTH[id]; THUMB[id] = (t && t[id]) || null; }); wsRefresh(); }, function () { b.forEach(function (id) { delete WSTH[id]; }); });
     }
   }
   const WSTH = {};
@@ -5310,7 +5310,7 @@
       S.trash = l; S.trashN = l.length; docsDraw();
       const need = l.map(function (x) { return x.id; }).filter(function (id) { return !(id in THUMB); });
       (function next() { const b = need.splice(0, 40); if (!b.length) return;
-        gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); if (S.tab === 'Docs') docsDraw(); next(); }, next); })();
+        thumbsGet(b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); if (S.tab === 'Docs') docsDraw(); next(); }, next); })();
     }, function (e) { dcMsg(e.message, true); });
   }
   function trashDraw(body) {
@@ -7018,6 +7018,53 @@
      ・画面から遠く離れた PDF は絵を捨てる（電話のメモリを食わないように）。戻れば手元の中身からすぐ描き直す */
   const IMG = {};            /* id → { t:'img', src } | { t:'pdf', b64 } | { t:'drive' } */
   const THUMB = {};          /* id → dataURL | null */
+  /* ★★ 開いたらすぐ写真（2026-11-01）：小さい絵は この端末（IndexedDB）にも覚える。
+       前は 顧問先を開くたびに サーバへ40枚ずつ取りにいっていた。いまは 覚えている絵を先に出し、無いものだけ サーバへ聞く。
+       事務所に届いた書類の絵は 中身が変わらない（書きこめるのは 顧問先が送る前のものだけ）ので 覚えたままでよい */
+  const OTHDB = (function () {
+    let dbp = null;
+    function db() {
+      if (dbp) return dbp;
+      dbp = new Promise(function (ok, ng) {
+        try { const r = indexedDB.open('collect_th_o', 1); r.onupgradeneeded = function () { r.result.createObjectStore('t', { keyPath: 'k' }); }; r.onsuccess = function () { ok(r.result); }; r.onerror = function () { ng(r.error); }; } catch (e) { ng(e); }
+      });
+      return dbp;
+    }
+    function tx(mode, fn) {
+      return db().then(function (d) { return new Promise(function (ok, ng) { const t = d.transaction('t', mode); const req = fn(t.objectStore('t')); t.oncomplete = function () { ok(req && req.result); }; t.onerror = function () { ng(t.error); }; t.onabort = function () { ng(t.error); }; }); });
+    }
+    return {
+      many: function (ks) {
+        return tx('readonly', function (s) { const o = {}; ks.forEach(function (k) { const r = s.get(k); r.onsuccess = function () { if (r.result && r.result.v) o[k] = r.result.v; }; }); return { get result() { return o; } }; }).catch(function () { return {}; });
+      },
+      put: function (o) { return tx('readwrite', function (s) { const at = Date.now(); Object.keys(o).forEach(function (k) { s.put({ k: k, v: o[k], at: at }); }); return null; }).catch(function () {}); },
+      prune: function () {
+        return tx('readonly', function (s) { return s.getAll(); }).then(function (all) {
+          if (!all || all.length <= 4000) return;
+          all.sort(function (a, b) { return a.at - b.at; });
+          const gone = all.slice(0, all.length - 3500).map(function (x) { return x.k; });
+          return tx('readwrite', function (s) { gone.forEach(function (k) { s.delete(k); }); return null; });
+        }).catch(function () {});
+      }
+    };
+  })();
+  setTimeout(function () { OTHDB.prune(); }, 20000);
+  /* gs('viewerThumbs', ids) と同じ形で返す。端末に覚えたものは サーバに聞かない */
+  function thumbsGet(ids) {
+    ids = (ids || []).map(String);
+    const t0 = new Promise(function (ok) { setTimeout(function () { ok(null); }, 1500); });   /* 端末が遅いときは 待たずに サーバへ */
+    return Promise.race([typeof indexedDB === 'undefined' ? Promise.resolve({}) : OTHDB.many(ids), t0]).then(function (hit) {
+      hit = hit || {};
+      const miss = ids.filter(function (id) { return !hit[id]; });
+      if (!miss.length) return hit;
+      return gs('viewerThumbs', miss).then(function (t) {
+        const keep = {};
+        miss.forEach(function (id) { const v = t && t[id]; if (v) { hit[id] = v; if (/^data:image\//.test(v) && v.length < 120000) keep[id] = v; } });
+        if (Object.keys(keep).length) OTHDB.put(keep);
+        return hit;
+      });
+    });
+  }
   const INFLIGHT = {};
   let QUEUE = [];
   let running = 0;
@@ -7038,7 +7085,7 @@
       if (code !== S.code) return;   /* ★ 総点検：顧問先を替えたら 前の顧問先の絵は取りに行かない */
       const b = need.splice(0, 40).filter(function (id) { return !(id in THUMB) && !THIN[id]; }); if (!b.length) { if (need.length) next(); return; }
       b.forEach(function (id) { THIN[id] = 1; });
-      gs('viewerThumbs', b).then(function (r) {
+      thumbsGet(b).then(function (r) {
         b.forEach(function (id) { delete THIN[id]; THUMB[id] = r[id] || null; if (!IMG[id]) paint(id); });
         next();
       }, function () { b.forEach(function (id) { delete THIN[id]; }); next(); });
@@ -8896,7 +8943,7 @@
       b.appendChild(fr);
       c.appendChild(b); box.appendChild(c);
     });
-    if (need.length) gs('viewerThumbs', need.slice(0, 40)).then(function (t) { need.forEach(function (id) { THUMB[id] = (t || {})[id] || null; }); if (need.some(function (id) { return THUMB[id]; })) tqDraw(); }, function () { need.forEach(function (id) { THUMB[id] = null; }); });
+    if (need.length) thumbsGet(need.slice(0, 40)).then(function (t) { need.forEach(function (id) { THUMB[id] = (t || {})[id] || null; }); if (need.some(function (id) { return THUMB[id]; })) tqDraw(); }, function () { need.forEach(function (id) { THUMB[id] = null; }); });
     /* 積んだ経験 */
     const ex = $('tqExp'); ex.textContent = '';
     const mine = r.exp.filter(function (x) { return x.scope !== '*'; }).length, off = r.exp.length - mine;
@@ -9807,7 +9854,7 @@
       O.items = r.items; O.ym = ym; oDraw();
       const need = r.items.map(function (it) { return it.id; }).filter(function (id) { return !(id in THUMB); });
       (function next() { if (seq !== O.seq) return; const b = need.splice(0, 40); if (!b.length) return;
-        gs('viewerThumbs', b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); oThumbs(); next(); }, next); })();
+        thumbsGet(b).then(function (t) { b.forEach(function (id) { THUMB[id] = t[id] || null; }); oThumbs(); next(); }, next); })();
     }, function (e) { if (code !== S.code || seq !== O.seq) return; $('oBody').textContent = ''; $('oBody').appendChild(el('div', 'cbox', e.message)); });
   }
   function oThumbs() { $('oBody').querySelectorAll('img.othumb[data-id]').forEach(function (im) { if (!im.src && THUMB[im.dataset.id]) im.src = THUMB[im.dataset.id]; }); }
