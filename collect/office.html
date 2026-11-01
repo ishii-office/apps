@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793444773;</script>
+<script>window.__PAGE_VER=1793522031;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -4464,7 +4464,10 @@
     return (S.docs || []).filter(function (x) { return x.set === it.set; }).sort(function (a, b) { return (a.setN || 0) - (b.setN || 0); });
   }
   /* ★ K-0013：外へ出すときの形。'pdf' … 写真（JPEG・PNG）も 1枚の PDF にして出す。この端末が覚える */
-  function dOutFmt() { try { return localStorage.getItem('collect_outfmt_o') === 'pdf' ? 'pdf' : 'img'; } catch (e) { return 'img'; } }
+  /* ★ K-0021（2026-11-01）：はじめは［PDFにする］。［写真のまま］を選んだ端末だけ 写真のまま */
+  function dOutFmt() { try { return localStorage.getItem('collect_outfmt_o') === 'img' ? 'img' : 'pdf'; } catch (e) { return 'pdf'; } }
+  /* ★ K-0021：外へ渡す中身は data: の URL（blob: は Chrome がデスクトップへ落とすときに 読めないことがある） */
+  function dOutUrl(b) { return new Promise(function (ok, ng) { const r = new FileReader(); r.onload = function () { ok(String(r.result)); }; r.onerror = function () { ng(new Error('ファイルを用意できませんでした')); }; r.readAsDataURL(b); }); }
   function dOutFmtPaint() {
     const w = $('dOutFmt'); if (!w) return;
     w.hidden = !DOUT_NAT;
@@ -4491,8 +4494,8 @@
         : fileGet(it).then(function (f) { return { blob: f.blob, name: f.name }; }))
       : pdflib().then(function (L) { return fetchFulls(mem, function () {}).then(function (fulls) { return pdfDocBytes(L, mem, fulls); }); })
           .then(function (r) { if (!r.bytes) throw new Error('PDF に入れられるものがありませんでした'); return { blob: new Blob([r.bytes], { type: 'application/pdf' }), name: docTitle(mem).replace(/[\\\/:*?"<>|]+/g, '_') + '.pdf' }; })
-    ).then(function (f) { o.url = URL.createObjectURL(f.blob); o.name = f.name; o.mime = f.blob.type || 'application/octet-stream'; return o; },
-      function (e) { delete DOUT[key]; o.err = e.message; return o; });
+    ).then(function (f) { o.name = f.name; o.mime = f.blob.type || 'application/octet-stream'; return dOutUrl(f.blob).then(function (u) { o.url = u; return o; }); })
+      .catch(function (e) { delete DOUT[key]; o.err = e.message; return o; });
     DOUT[key] = o;
     return o;
   }
