@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793605323;</script>
+<script>window.__PAGE_VER=1793609572;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -728,7 +728,7 @@
   .dset.sel .dsetck { background: var(--accent); border-color: var(--accent); }
   .dset.sel .dsetck::after { content: '✓'; position: absolute; inset: 0; color: #fff; font-weight: 900; font-size: 16px; line-height: 20px; text-align: center; }
   /* 顧問先の画面と同じ：点線の箱 → 月分の小箱 → 写真 */
-  .dbox { max-width: 1400px; margin: 0 0 14px; padding: 12px 14px; border-radius: 16px; background: linear-gradient(180deg, #fff 0%, var(--a-faint) 100%); border: 2.5px dashed var(--a-mid); }
+  .dbox { max-width: none; margin: 0 0 14px; padding: 12px 14px; border-radius: 16px; background: linear-gradient(180deg, #fff 0%, var(--a-faint) 100%); border: 2.5px dashed var(--a-mid); }
   .dbox-h { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .dbox-h h3 { margin: 0; font-size: 18px; }
   .dbox-i { width: 26px; height: 26px; color: var(--accent); flex-shrink: 0; }
@@ -1127,7 +1127,7 @@
   .ctl[data-tab="Out"] label:has(#month), .ctl[data-tab="Out"] #filter, .ctl[data-tab="Out"] label:has(#perY), .ctl[data-tab="Out"] label:has(#perM), .ctl[data-tab="Out"] label:has(#box) { display: none; }
   .ctl[data-tab="Clients"] > :not(label:has(#client)), .ctl[data-tab="Send"] > :not(label:has(#client)) { display: none; }
   /* ★★★ 送付物（事務所 → 顧問先。2026-10-26）。中は 顧問先の画面（index.html?m=send）をそのまま使う */
-  .sd { max-width: 1400px; margin: 0 auto; padding: 10px 14px 0; }
+  .sd { max-width: none; margin: 0 auto; padding: 10px 14px 0; }
   .sd h2 { margin: 4px 0 6px; font-size: 19px; }
   .sd .sdrow { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
   .sd .sdsum { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 14px; }
