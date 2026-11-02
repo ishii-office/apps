@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793603539;</script>
+<script>window.__PAGE_VER=1793605323;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -851,6 +851,11 @@
   .dgrid.trash .dimg img { opacity: .55; filter: grayscale(.6); }
   .trash-b { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
   .trash-b .dmon-b { flex: 1; padding: 4px 2px; }
+  .dgrid.trash .dimg { cursor: pointer; position: relative; }
+  .dgrid.trash .tck { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,.35); color: #fff; font: 900 16px/24px sans-serif; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  .dgrid.trash .dtile.tpick { outline: 3px solid #D0201A; outline-offset: 1px; }
+  .dgrid.trash .dtile.tpick .tck { background: #D0201A; }
+  .dgrid.trash .dtile.tpick .dimg img { opacity: .8; }
   .dghost { position: fixed; z-index: 60; width: 80px; height: 106px; border-radius: 8px; overflow: hidden; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.35); background: #fff; border: 2px solid var(--accent); font-size: 11px; }
   .dghost img { width: 100%; height: 100%; object-fit: cover; }
   .dimg img { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
@@ -2737,7 +2742,7 @@
     if (!soft) {
     Object.keys(C).forEach(function (k) { delete C[k]; });
     Object.keys(IMG).forEach(function (k) { delete IMG[k]; }); QUEUE = [];
-    S.dcsel = {}; S.dcpick = false; S.trashView = false; S.trash = null; S.trashN = 0; $('ogv').hidden = true;
+    S.dcsel = {}; S.dcpick = false; S.trashView = false; S.trash = null; S.tsel = {}; S.trashN = 0; $('ogv').hidden = true;
     }
     clientTheme();
     try { lnShowPend(); } catch (e) {}
@@ -5573,7 +5578,21 @@
     const back = el('button', 'dmon-b', '← 回収資料に戻る'); back.type = 'button';
     back.addEventListener('click', function () { S.trashView = false; docsDraw(); });
     hd.appendChild(back);
+    /* ★ 2026-11-02：選んで 戻す・完全に消す（札を押すと選ぶ）。全部も これまでどおり */
+    const tsel = S.tsel = S.tsel || {};
+    Object.keys(tsel).forEach(function (id) { if (!l.some(function (x) { return x.id === id; })) delete tsel[id]; });
+    const pick = l.filter(function (x) { return tsel[x.id]; }).map(function (x) { return x.id; });
     if (l.length) {
+      const sa = el('button', 'dmon-b tsel-all', pick.length === l.length ? '選ぶのを全部外す' : '全部選ぶ'); sa.type = 'button';
+      sa.addEventListener('click', function () { const all = pick.length === l.length; l.forEach(function (x) { if (all) delete tsel[x.id]; else tsel[x.id] = 1; }); docsDraw(); });
+      hd.appendChild(sa);
+      if (pick.length) {
+        const rs = el('button', 'dmon-b tsel-restore', '選んだ ' + pick.length + '件を戻す'); rs.type = 'button';
+        rs.addEventListener('click', function () { restore(pick); pick.forEach(function (id) { delete tsel[id]; }); });
+        const ps = el('button', 'dmon-b danger tsel-purge', '選んだ ' + pick.length + '件を ドライブから完全に消す'); ps.type = 'button';
+        ps.addEventListener('click', function () { purge(pick); });
+        hd.appendChild(rs); hd.appendChild(ps);
+      }
       const ra = el('button', 'dmon-b', '全部戻す'); ra.type = 'button';
       ra.addEventListener('click', function () { restore(l.map(function (x) { return x.id; })); });
       const pa = el('button', 'dmon-b danger', '全部 ドライブから完全に消す'); pa.type = 'button';
@@ -5585,9 +5604,12 @@
     if (!l.length) { body.appendChild(el('div', 'cbox muted', '破棄したものは ありません。')); return; }
     const grid = el('div', 'dgrid trash');
     l.forEach(function (it) {
-      const tile = el('div', 'dtile'); tile.dataset.id = it.id;
+      const tile = el('div', 'dtile' + (tsel[it.id] ? ' tpick' : '')); tile.dataset.id = it.id;
       const im = el('img', 'dthumb'); im.alt = it.name; if (THUMB[it.id]) im.src = THUMB[it.id]; im.onerror = function () { im.removeAttribute('src'); };
       const b = el('div', 'dimg'); b.appendChild(im); if (it.pdf) b.appendChild(el('span', 'pdf', 'PDF'));
+      const ck = el('span', 'tck', tsel[it.id] ? '✓' : ''); ck.title = '押すと 選ぶ／外す'; b.appendChild(ck);
+      b.title = '押すと 選ぶ／外す';
+      b.addEventListener('click', function () { if (tsel[it.id]) delete tsel[it.id]; else tsel[it.id] = 1; docsDraw(); });
       b.appendChild(el('span', 'stt gone', perLabel(it.period) + '［' + boxLabel(it.box) + '］'));
       tile.appendChild(b);
       const bt = el('div', 'trash-b');
