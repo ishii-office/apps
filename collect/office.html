@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793578390;</script>
+<script>window.__PAGE_VER=1793592814;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1887,8 +1887,11 @@
     <div class="sdrow"><h2>📮 送付物（事務所 → 顧問先）</h2><span class="sdsum" id="sdSum"></span><span class="sp"></span><button type="button" id="sdReload">↻ 読み直す</button><button type="button" id="sdOld" title="前の形（1つずつ送る）で送ったもの・取り下げ">📨 前の形で送ったもの</button></div>
     <p class="note">申告書の控え・届出書・議事録・覚書・お知らせ などを 顧問先へ送ります。<b>撮る・落とす → 送付ボックスに保管</b>（顧問先には まだ見えません）→ 箱の中で <b>一括か 選んで［顧問先へ送る］</b>。まとめる・バラす・並べ替え・名前・別ウィンドウ・PDF・印刷 は 顧問先の資料回収と同じです。顧問先は［📨 事務所から］で 同じように見て・まとめて・PDF にできます（開いたら「開封」と出ます）。</p>
     <details class="sdbox" id="sdBoxD"><summary>📦 送付ボックスを つくる・直す（この顧問先）</summary>
-      <p class="note">1行に1つ。/ でつなぐと 中の箱（例：確定申告/2025年分）。空のままなら 事務所の標準を使います。「その他」は いつも最後に付きます。</p>
-      <textarea id="sdBoxes" spellcheck="false"></textarea>
+      <div class="atree" id="sdTree" aria-label="送付ボックスの並び"></div>
+      <div class="atree-add"><input id="sdNewBox" maxlength="30" placeholder="新しい箱の名前（例：決算書）"><button type="button" id="sdAddBox">＋ 箱を足す</button></div>
+      <p class="note">顧問先の箱と同じ作り方です。［＋中に］でその箱の中に箱（例：確定申告 › 2025年分）。↑↓で並べ替え。名前を押すと変えられます。×で外す（もう送ったものは消えません）。「その他」は いつも最後に付きます。直したら［この顧問先の箱にする］で決まります。<br>箱を決めていない顧問先は 事務所の標準を使います（はじめは 標準が並んでいます）。</p>
+      <details class="abulk"><summary>まとめて書く</summary><p class="note">1行に1つ。/ でつなぐと 中の箱。空のままなら 事務所の標準を使います。</p>
+      <textarea id="sdBoxes" spellcheck="false"></textarea></details>
       <div class="sdrow"><button type="button" class="primary" id="sdBoxSave">この顧問先の箱にする</button><button type="button" id="sdBoxDef" title="箱を決めていない顧問先 全部に効きます">この内容を 事務所の標準にする</button><span class="pagemsg" id="sdBoxMsg" role="status"></span></div>
       <p class="note">いまの事務所の標準：<span id="sdBoxDefNow"></span></p>
     </details>
@@ -3952,7 +3955,7 @@
           mem.forEach(function (x, i) {
             const pp = E('div', 'p', String(i + 1)); pp.draggable = !lock; pp.dataset.k = ad.key(x);
             const ps = ad.thumb(x); if (ps) pp.style.backgroundImage = 'url("' + ps + '")'; else if (ps === undefined) need.push(ad.key(x));
-            pp.addEventListener('dragstart', function (e) { e.stopPropagation(); o.drag = { page: x, mem: mem }; try { e.dataTransfer.setData('text/plain', 'p'); e.dataTransfer.effectAllowed = 'move'; } catch (q) {} });
+            pp.addEventListener('dragstart', function (e) { e.stopPropagation(); o.drag = { page: x, mem: mem }; try { if (!dtPutFile(e, null)) e.dataTransfer.setData('text/plain', 'p'); e.dataTransfer.effectAllowed = 'move'; } catch (q) {} });
             pp.addEventListener('dragend', function () { o.drag = null; if (o.wait) wsDraw(key); });
             pp.addEventListener('dragover', function (e) { const dg = o.drag; if (!dg || !dg.page || dg.mem !== mem || dg.page === x) return; e.preventDefault(); e.stopPropagation(); const r = pp.getBoundingClientRect(), before = e.clientX < r.left + r.width / 2; pp.classList.toggle('zl', before); pp.classList.toggle('zr', !before); });
             pp.addEventListener('dragleave', function () { pp.classList.remove('zl', 'zr'); });
@@ -3978,7 +3981,7 @@
           const ox = bt ? null : sl && ad.outMany ? ad.outMany(sl) : ad.out ? ad.out(lead) : null;
           if (dlock && !(ox && ox.url)) { e.preventDefault(); if (ox) wsMsg(key, ox.err || 'ファイルを用意しています。少ししてから もう一度つかんでください。', !!ox.err); return; }
           if (!dlock) o.drag = { mem: dm, keys: sl ? Object.keys(o.sel) : [ad.key(lead)] };
-          try { if (ox && ox.url) { e.dataTransfer.setData('DownloadURL', ox.mime + ':' + ox.name + ':' + ox.url); e.dataTransfer.effectAllowed = dlock ? 'copy' : 'copyMove'; } else e.dataTransfer.effectAllowed = 'move'; if (!(ox && ox.url && dtPutFile(e, ox))) e.dataTransfer.setData('text/plain', 'd'); } catch (q) {}
+          try { if (ox && ox.url) { e.dataTransfer.setData('DownloadURL', ox.mime + ':' + ox.name + ':' + ox.url); e.dataTransfer.effectAllowed = dlock ? 'copy' : 'copyMove'; } else e.dataTransfer.effectAllowed = 'move'; if (!dtPutFile(e, ox)) e.dataTransfer.setData('text/plain', 'd'); } catch (q) {}
         });
         c.addEventListener('dragend', function () { o.drag = null; if (o.wait) wsDraw(key); });
         const zone = function (e) { const r = c.getBoundingClientRect(), f = (e.clientX - r.left) / r.width; return f < 0.28 ? 'l' : f > 0.72 ? 'r' : 'c'; };
@@ -4310,7 +4313,7 @@
     gs('sendBoxesGet', code).then(function (r) {
       if (code !== S.code) return;
       if (document.activeElement !== $('sdBoxes')) $('sdBoxes').value = r.raw || '';
-      $('sdBoxes').placeholder = r.def; $('sdBoxDefNow').textContent = String(r.def || '').split('\n').join('・');
+      $('sdBoxes').placeholder = r.def; $('sdBoxDefNow').textContent = String(r.def || '').split('\n').join('・'); sdTreeDraw();
     }, function (e) { sdMsg(e.message, true); });
     if (LIVE) { f.hidden = true; sdMsg('送付物は Pages の事務所の画面（ishii-office.github.io）から使えます。', true); return; }
     clientUrlOf(code).then(function (u) {
@@ -4397,6 +4400,58 @@
   });
   $('ogToSend').addEventListener('click', function () { selectTab('Send'); });
   $('sdOld').addEventListener('click', function () { $('ogOpen').click(); });
+  /* ★ 2026-11-01：送付ボックスも 顧問先の箱と同じ「箱の並び」で直す（名前・＋中に・↑↓・×・＋箱を足す）。
+       中身は これまでどおり #sdBoxes（1行に1つの道すじ）。空なら 事務所の標準を並べて見せ、さわったら この顧問先の箱になる */
+  function sdTreeGet() { const t = $('sdBoxes').value.trim() || String($('sdBoxes').placeholder || ''); return t.split(/\r?\n/).map(function (x) { return x.split('/').map(function (y) { return y.replace(/[\\／:*?"<>|]/g, '').trim(); }).filter(Boolean).join('/'); }).filter(function (x, i, a) { return x && x !== 'その他' && a.indexOf(x) === i; }); }
+  function sdTreeSet(list) { $('sdBoxes').value = list.join('\n'); sdTreeDraw(); $('sdBoxMsg').textContent = 'まだ決めていません。［この顧問先の箱にする］で 決まります。'; }
+  function sdSub(list, path) { return list.filter(function (x) { return x === path || x.indexOf(path + '/') === 0; }); }
+  function sdTreeDraw() {
+    const t = $('sdTree'); if (!t) return; t.textContent = '';
+    const list = sdTreeGet();
+    list.forEach(function (path) {
+      const segs = path.split('/'), d = segs.length - 1;
+      const row = el('div', 'arow' + (d ? ' d' + Math.min(d, 3) : '')); row.dataset.box = path;
+      const nm = el('button', 'nm', segs[d]); nm.type = 'button'; nm.title = '押すと名前を変えられます';
+      nm.addEventListener('click', function () {
+        const v = prompt('箱の名前', segs[d]); if (v == null) return;
+        const nv = v.replace(/[\\\/／:*?"<>|]/g, '').trim().slice(0, 30); if (!nv || nv === segs[d]) return;
+        const np = segs.slice(0, d).concat([nv]).join('/');
+        sdTreeSet(sdTreeGet().map(function (x) { return x === path ? np : x.indexOf(path + '/') === 0 ? np + x.slice(path.length) : x; }));
+      });
+      row.appendChild(nm);
+      const b = function (txt, cls, fn, title) { const x = el('button', 'sm2' + (cls ? ' ' + cls : ''), txt); x.type = 'button'; if (title) x.title = title; x.addEventListener('click', fn); row.appendChild(x); };
+      if (d < 3) b('＋中に', '', function () {
+        const v = prompt('「' + segs[d] + '」の中に作る箱の名前'); if (v == null) return;
+        const nv = v.replace(/[\\\/／:*?"<>|]/g, '').trim().slice(0, 30); if (!nv) return;
+        const l = sdTreeGet(), blk = sdSub(l, path), at = l.indexOf(blk[blk.length - 1]) + 1;
+        if (l.indexOf(path + '/' + nv) < 0) l.splice(at, 0, path + '/' + nv); sdTreeSet(l);
+      }, 'この箱の中に箱を作る');
+      b('↑', '', function () { sdShift(path, -1); }, '上へ');
+      b('↓', '', function () { sdShift(path, 1); }, '下へ');
+      b('×', 'del', function () {
+        const l = sdTreeGet(), blk = sdSub(l, path);
+        if (!confirm('「' + segs[d] + '」' + (blk.length > 1 ? '（中の箱 ' + (blk.length - 1) + 'つも）' : '') + 'を 箱の並びから外しますか？\n（もう送ったもの・保管しているものは消えません）')) return;
+        sdTreeSet(l.filter(function (x) { return blk.indexOf(x) < 0; }));
+      }, '外す');
+      t.appendChild(row);
+    });
+    const ot = el('div', 'arow'); const on = el('span', 'nm', 'その他（いつも最後）'); on.style.color = 'var(--sub)'; on.style.cursor = 'default'; ot.appendChild(on); t.appendChild(ot);
+  }
+  function sdShift(path, dir) {
+    const l = sdTreeGet(), par = path.split('/').slice(0, -1).join('/');
+    const sibs = l.filter(function (x) { return x.split('/').slice(0, -1).join('/') === par; });
+    const i = sibs.indexOf(path), j = i + dir; if (j < 0 || j >= sibs.length) return;
+    const a = dir < 0 ? sibs[j] : path, b2 = dir < 0 ? path : sibs[j];
+    const blkA = sdSub(l, a), blkB = sdSub(l, b2), at = l.indexOf(blkA[0]);
+    const rest = l.filter(function (x) { return blkA.indexOf(x) < 0 && blkB.indexOf(x) < 0; });
+    rest.splice.apply(rest, [at, 0].concat(blkB, blkA)); sdTreeSet(rest);
+  }
+  $('sdAddBox').addEventListener('click', function () {
+    const nv = $('sdNewBox').value.replace(/[\\\/／:*?"<>|]/g, '').trim().slice(0, 30); if (!nv) { $('sdNewBox').focus(); return; }
+    const l = sdTreeGet(); if (l.indexOf(nv) < 0) l.push(nv); $('sdNewBox').value = ''; sdTreeSet(l);
+  });
+  $('sdNewBox').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('sdAddBox').click(); } });
+  $('sdBoxes').addEventListener('input', sdTreeDraw);
   function sdBoxSave(asDef) {
     const code = S.code; if (!code) return;
     const t = $('sdBoxes').value;
@@ -4569,16 +4624,12 @@
   /* ★ K-0021（2026-11-01）：はじめは［PDFにする］。［写真のまま］を選んだ端末だけ 写真のまま */
   function dOutFmt() { try { return localStorage.getItem('collect_outfmt_o') === 'img' ? 'img' : 'pdf'; } catch (e) { return 'pdf'; } }
   /* ★ K-0021：外へ渡す中身は data: の URL（blob: は Chrome がデスクトップへ落とすときに 読めないことがある） */
-  /* ★ 2026-11-01：メール（Gmail など ブラウザの中）へ落としても 添付になるように、ファイルそのものも渡す。
-       名前を文字（text/plain）で渡すと Gmail は本文に名前を書いてしまうので、ファイルを渡せたときは 文字は渡さない */
-  function dtPutFile(e, o) {
-    if (!o || !o.blob || !e.dataTransfer || !e.dataTransfer.items) return false;
-    try {
-      const W = e.view || (e.target && e.target.ownerDocument && e.target.ownerDocument.defaultView) || window;
-      e.dataTransfer.items.add(new W.File([o.blob], o.name || 'file', { type: o.mime || o.blob.type || 'application/octet-stream' }));
-      return true;
-    } catch (x) { return false; }
-  }
+  /* ★ 2026-11-01（2回目）：ブラウザの外（デスクトップ・フォルダ）へは DownloadURL でファイルになる。
+       Gmail など【ブラウザの中の別のページ】へは、Chrome は ページで作ったファイルを渡さず 名前の文字だけ渡す（本文に名前が入ってしまった）。
+       だから ファイル（items.add）も 名前の文字（text/plain）も 渡さない。Chrome は 文字が無くても ドラッグできる。
+       返す：ファイル（DownloadURL）を渡せたか。渡せないとき（Chrome 以外）だけ 呼ぶ側が 文字を入れる */
+  const DT_CHROME = /Chrome\//.test(navigator.userAgent);
+  function dtPutFile(e, o) { return DT_CHROME || !!(o && o.url); }
   function dOutUrl(b) { return new Promise(function (ok, ng) { const r = new FileReader(); r.onload = function () { ok(String(r.result)); }; r.onerror = function () { ng(new Error('ファイルを用意できませんでした')); }; r.readAsDataURL(b); }); }
   function dOutFmtPaint() {
     const w = $('dOutFmt'); if (!w) return;
