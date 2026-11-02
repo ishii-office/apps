@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793609572;</script>
+<script>window.__PAGE_VER=1793614480;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2426,7 +2426,41 @@
     if (k === 'Kaizen') kzLoad(true); else { try { if (KZ.loaded) kzBadge(); } catch (e) {} }
     if (k === 'Send') sdLoad();
     setTimeout(resumeKeep, 0);
+    if (typeof onavRec === 'function') onavRec(k);
   }
+  /* ★★ 2026-11-02：スマホは 左右にスワイプで 前の画面・次の画面（タブ）へ（顧問先の画面と同じ考え）。
+       右へなでる＝前に見ていたタブ、左へなでる＝次（戻る前のタブ）。大きく見る・小窓・入力欄・横に流れる所・つかんでいる最中は 効かない */
+  var ONAV = [], ONAVI = -1, ONAVGO = false;
+  function onavRec(k) {
+    if (ONAVGO) return;
+    if (ONAV[ONAVI] === k) return;
+    ONAV.splice(ONAVI + 1); ONAV.push(k); if (ONAV.length > 60) ONAV.shift(); ONAVI = ONAV.length - 1;
+  }
+  function onavTo(i) { const k = ONAV[i]; if (!k || !$('pane' + k)) return; ONAVGO = true; try { selectTab(k); } finally { ONAVGO = false; } ONAVI = i; }
+  (function () {
+    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    let st = null;
+    const blocked = function (el) {
+      if (($('dview') && !$('dview').hidden) || document.body.classList.contains('noscroll') || document.body.classList.contains('dragging') || document.body.classList.contains('ddragging')) return true;
+      for (let n = el; n && n !== document.body; n = n.parentElement) {
+        if (n.matches && n.matches('input, textarea, select, [contenteditable="true"], dialog, [role="dialog"]')) return true;
+        if (n.scrollWidth > n.clientWidth + 4) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; }
+      }
+      return false;
+    };
+    document.addEventListener('touchstart', function (e) {
+      st = null;
+      if (!coarse || e.touches.length !== 1 || blocked(e.target)) return;
+      st = { x: e.touches[0].clientX, y: e.touches[0].clientY, at: Date.now() };
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) { if (st && (e.touches.length > 1 || document.body.classList.contains('dragging') || document.body.classList.contains('ddragging'))) st = null; }, { passive: true });
+    document.addEventListener('touchend', function (e) {
+      const s = st; st = null; if (!s || document.body.classList.contains('dragging') || document.body.classList.contains('ddragging')) return;
+      const t = e.changedTouches[0], dx = t.clientX - s.x, dy = t.clientY - s.y;
+      if (Date.now() - s.at > 800 || Math.abs(dx) < 80 || Math.abs(dx) < Math.abs(dy) * 2) return;
+      if (dx > 0) { if (ONAVI > 0) onavTo(ONAVI - 1); } else if (ONAVI < ONAV.length - 1) onavTo(ONAVI + 1);
+    }, { passive: true });
+  })();
   document.querySelectorAll('#tabs button').forEach(function (b) {
     b.addEventListener('click', function () {
       if (S.dirty && b.dataset.tab !== 'Dict' && S.tab === 'Dict' && !confirm('辞書の書き替えが保存されていません。このまま移りますか？')) return;
