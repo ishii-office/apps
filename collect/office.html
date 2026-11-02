@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793616562;</script>
+<script>window.__PAGE_VER=1793618893;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -789,7 +789,13 @@
   .dtile.skip .dskip { border-color: #8A6100; color: #8A6100; }
   .dtile.trashed .dimg { opacity: .55; filter: grayscale(1); }
   .dtile.trashed:hover .dimg { opacity: .9; }
-  .dtile.trashed .dimg { cursor: default; }
+  .dtile.trashed .dimg { cursor: pointer; }
+  /* ★ 2026-11-02：破棄済みの札の 復活の ✓ が 横いっぱいの赤い帯に崩れていた（.drevive の指定が かぶっていた） */
+  .dtile.trashed .dbadge.drevive { width: 28px; height: 28px; margin: 0; padding: 0; border-radius: 50%; border: 2px solid #fff; background: #D0201A; color: #fff; font-size: 16px; }
+  .dtile.trashed.tpick { outline: 3px solid #D0201A; outline-offset: 1px; }
+  .dtile.trashed.tpick .dimg { opacity: .95; }
+  .dtile.trashed.tpick .dimg::after { content: '✓ 選んでいます'; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); background: #D0201A; color: #fff; font-weight: 800; font-size: 13px; padding: 3px 9px; border-radius: 999px; }
+  .dtile.trashed .dimg { position: relative; }
   .stt.trashed { background: #555 !important; color: #fff !important; text-decoration: line-through; }
   .drevive { display: block; width: 100%; margin-top: 3px; padding: 4px 6px; border: 1.5px solid #1f3a5f; border-radius: 8px; background: #fff; color: #1f3a5f; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
   .dvpos { font-weight: 700; color: var(--accent); background: #fff; border: 1.5px solid var(--accent); border-radius: 999px; padding: 2px 10px; font-size: 13px; white-space: nowrap; }
@@ -844,6 +850,8 @@
   .dcb { display: flex; flex-wrap: wrap; gap: 6px; }
   .dcbar .danger { color: #B3261E; border-color: #E7B4AF; }
   .dpicking { padding-bottom: 120px; }
+  #dcMarq.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  body.dmarqon #dBody, body.dmarqon #dBody * { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   .dmsg .undo { margin-left: 10px; font: inherit; font-size: 13px; font-weight: 800; color: var(--accent); background: #fff; border: 1.5px solid var(--accent); border-radius: 8px; padding: 3px 10px; cursor: pointer; }
   .trash-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 10px; }
   .trash-h b { font-size: 16px; margin-right: 6px; }
@@ -2138,7 +2146,7 @@
 
 <div class="dcbar" id="dcbar" hidden>
   <b id="dcN">0件を選んでいます</b>
-  <span class="dcb"><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn sm" id="dcPrint">🖨 印刷</button><button type="button" class="btn sm" id="dcGmail" title="選んだ書類を Gmail の下書きに 添付する（1書類＝1ファイル）">✉ Gmailに添付</button><button type="button" class="btn sm" id="dcChk" title="選んだものに 確認済の印を付ける（全部 付いていれば外す）">✓ 確認済</button><button type="button" class="btn ghost sm" id="dcSkip" title="選んだものを 仕訳化・AI下書きの対象から外す（全部 対象外なら 対象に戻す）。印刷・PDF には入ります">⊘ 対象外にする</button><button type="button" class="btn ghost sm" id="dcMove">↪ 別の箱へ移す</button><button type="button" class="btn ghost sm" id="dcToImg" title="選んだ書類の PDF を ページごとの写真（JPEG）に変える。元の PDF は 破棄したもの へ（戻せる）">🖼 画像に変換</button><button type="button" class="btn ghost sm" id="dcToPdf" title="選んだ書類（写真・まとめた書類）を 1つの PDF に変える。元の写真は 破棄したもの へ（戻せる）">📄 PDFに変換</button>
+  <span class="dcb"><button type="button" class="btn ghost sm" id="dcMarq" title="スマホ：押してから 指でなぞって四角く囲むと、中の書類を まとめて選べます（パソコンは 何もないところから マウスで囲めます）">⬚ 範囲で選ぶ</button><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn sm" id="dcPrint">🖨 印刷</button><button type="button" class="btn sm" id="dcGmail" title="選んだ書類を Gmail の下書きに 添付する（1書類＝1ファイル）">✉ Gmailに添付</button><button type="button" class="btn sm" id="dcChk" title="選んだものに 確認済の印を付ける（全部 付いていれば外す）">✓ 確認済</button><button type="button" class="btn ghost sm" id="dcSkip" title="選んだものを 仕訳化・AI下書きの対象から外す（全部 対象外なら 対象に戻す）。印刷・PDF には入ります">⊘ 対象外にする</button><button type="button" class="btn ghost sm" id="dcMove">↪ 別の箱へ移す</button><button type="button" class="btn ghost sm" id="dcToImg" title="選んだ書類の PDF を ページごとの写真（JPEG）に変える。元の PDF は 破棄したもの へ（戻せる）">🖼 画像に変換</button><button type="button" class="btn ghost sm" id="dcToPdf" title="選んだ書類（写真・まとめた書類）を 1つの PDF に変える。元の写真は 破棄したもの へ（戻せる）">📄 PDFに変換</button>
     <button type="button" class="btn ghost sm danger" id="dcDel">破棄</button><button type="button" class="btn ghost sm" id="dcNone">全部外す</button><button type="button" class="btn ghost sm" id="dcEnd">やめる</button></span>
 </div>
 
@@ -2441,7 +2449,7 @@
     const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     let st = null;
     const blocked = function (el) {
-      if (($('dview') && !$('dview').hidden) || document.body.classList.contains('noscroll') || document.body.classList.contains('dragging') || document.body.classList.contains('ddragging')) return true;
+      if (($('dview') && !$('dview').hidden) || document.body.classList.contains('noscroll') || document.body.classList.contains('dragging') || document.body.classList.contains('ddragging') || document.body.classList.contains('dmarqon')) return true;
       for (let n = el; n && n !== document.body; n = n.parentElement) {
         if (n.matches && n.matches('input, textarea, select, [contenteditable="true"], dialog, [role="dialog"]')) return true;
         if (n.scrollWidth > n.clientWidth + 4) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; }
@@ -3676,15 +3684,10 @@
           row.appendChild(eb);
         } else if (open && items.length) {
           const sb = el('button', 'dmon-b', '選ぶ'); sb.type = 'button';
-          sb.addEventListener('click', function () { S.dcpick = true; docsDraw(); });
+          sb.title = '選んで まとめる・別の箱へ移す・PDF・印刷・確認済・対象外・破棄 など';
+          sb.addEventListener('click', function () { S.dcpick = true; docsDraw(); dcMsg('押して選び、上の［📎 まとめる］［↪ 別の箱へ移す］などを押してください。スマホは［⬚ 範囲で選ぶ］で 囲んでも選べます。'); });
           row.appendChild(sb);
-          /* ★ K-0023：選んで 別の箱（別の月分）へ移す。押すと選ぶ形になり、選んで上の［別の箱へ移す］。全部なら［この月を全部選ぶ］。
-               ★ クラス名 .dmove は 移す先を選ぶ窓（画面いっぱい）の名前なので 使わない */
-          if (items.some(function (x) { return x.status !== 'done'; })) {
-            const mb = el('button', 'dmon-b dmvb', '↪ 別の箱へ移す'); mb.type = 'button'; mb.title = '移すものを選んで 別の箱・月分へ';
-            mb.addEventListener('click', function () { S.dcpick = true; S.dcsel = {}; docsDraw(); dcMsg('移すものを押して選び、［別の箱へ移す］を押してください。まとめて移すときは［この月を全部選ぶ］。'); });
-            row.appendChild(mb);
-          }
+          /* ★ 2026-11-02：［別の箱へ移す］は［選ぶ］と同じ（選ぶと 上の帯に［↪ 別の箱へ移す］が出る）ので 1つにした */
           const rb = el('button', 'dmon-b dback', '↩ 差し戻し'); rb.type = 'button'; rb.title = 'この月分の書類から 差し戻すものを選ぶ（何枚でも）';
           rb.addEventListener('click', function () { backPick(bx, p, []); });
           row.appendChild(rb);
@@ -3706,6 +3709,20 @@
             db.addEventListener('click', function () { discard(can, boxLabel(bx) + ' ' + perLabel(p) + 'の'); });
             row.appendChild(db);
           }
+        }
+        /* ★ 2026-11-02：破棄済みは 札を押して選び［選んだ N件を ドライブから消す］、または［破棄済みを全部 ドライブから消す］（確認は出さない） */
+        if (open && titems.length) {
+          const tsel = S.tsel = S.tsel || {};
+          const tp = titems.filter(function (x) { return tsel[x.id]; }).map(function (x) { return x.id; });
+          if (tp.length) {
+            const ps = el('button', 'dmon-b danger tpurge-sel', '🗑 選んだ ' + tp.length + '件を ドライブから消す'); ps.type = 'button';
+            ps.addEventListener('click', function () { purge(tp); });
+            row.appendChild(ps);
+          }
+          const pa = el('button', 'dmon-b danger tpurge-all', '🗑 破棄済みを全部 ドライブから消す（' + titems.length + '）'); pa.type = 'button';
+          pa.title = '破棄済みの札を押すと 選べます（選んだものだけ消すこともできます）';
+          pa.addEventListener('click', function () { purge(titems.map(function (x) { return x.id; })); });
+          row.appendChild(pa);
         }
         mon.appendChild(row);
         if (open && !yk.hidden) {
@@ -4640,7 +4657,10 @@
     const im = el('img', 'dthumb'); im.alt = it.name; if (THUMB[it.id]) im.src = THUMB[it.id]; im.onerror = function () { im.removeAttribute('src'); };
     b.appendChild(im); if (it.pdf) b.appendChild(el('span', 'pdf', 'PDF'));
     b.appendChild(el('span', 'stt trashed', '破棄済み'));
-    b.title = '破棄：' + (it.trash || '');
+    b.title = '破棄：' + (it.trash || '') + '（押すと 選ぶ／外す。選んで まとめて ドライブから消せます）';
+    /* ★ 2026-11-02：破棄済みの札は 押すと選ぶ（まとめて ドライブから消すため） */
+    if ((S.tsel || {})[it.id]) tile.classList.add('tpick');
+    b.addEventListener('click', function (e) { e.stopPropagation(); const t = S.tsel = S.tsel || {}; if (t[it.id]) delete t[it.id]; else t[it.id] = 1; docsDraw(); });
     tile.appendChild(b);
     /* 右上の赤い ✓ を押すと 復活（元の箱・月分に戻す） */
     const rb = el('button', 'dbadge drevive', '✓'); rb.type = 'button'; rb.title = '破棄済み（押すと 復活。元の箱・月分に戻す）'; rb.setAttribute('aria-label', '復活');
@@ -5294,6 +5314,68 @@
     window.addEventListener('pointerup', end);
   })();
 
+  /* ★ スマホでも 囲んで選ぶ（2026-11-02）。［⬚ 範囲で選ぶ］を押しているあいだ、指でなぞった四角の中の書類を選ぶ。
+       ・画面の上下の端へ寄せると 自動で送る（長い箱でも囲める）
+       ・指を少し動かすまでは ふつうの「押す」（1枚ずつ選ぶ）のまま
+       ・このあいだは 長押しでつかむ・左右のスワイプは 働かない */
+  function dMarqSet(on) {
+    S.dmarq = !!on; document.body.classList.toggle('dmarqon', S.dmarq);
+    const b = $('dcMarq'); if (b) { b.classList.toggle('on', S.dmarq); b.textContent = S.dmarq ? '⬚ 囲んで選べます（押すと終わる）' : '⬚ 範囲で選ぶ'; }
+  }
+  $('dcMarq').addEventListener('click', function () { dMarqSet(!S.dmarq); if (S.dmarq) dcMsg('指で 四角く なぞって囲むと、中の書類を選びます。終わったら もう一度［⬚ 囲んで選べます］を押してください。'); });
+  (function () {
+    let tq = null, raf = 0;
+    function draw() {
+      if (!tq) return;
+      const sx = window.scrollX, sy = window.scrollY;
+      const x0 = tq.px - sx, y0 = tq.py - sy;
+      const l = Math.min(x0, tq.cx), t = Math.min(y0, tq.cy), r = Math.max(x0, tq.cx), b = Math.max(y0, tq.cy);
+      Object.assign(tq.box.style, { left: l + 'px', top: t + 'px', width: (r - l) + 'px', height: (b - t) + 'px' });
+      const sel = Object.assign({}, tq.base);
+      $('dBody').querySelectorAll('.dtile[data-id]').forEach(function (tl) {
+        const q = tl.getBoundingClientRect(); if (q.left < r && q.right > l && q.top < b && q.bottom > t) sel[tl.dataset.id] = 1;
+        tl.classList.toggle('sel', !!sel[tl.dataset.id]);
+      });
+      tq.sel = sel;
+    }
+    function edge() {
+      raf = 0; if (!tq || !tq.on) return;
+      const h = window.innerHeight, m = 70; let dy = 0;
+      if (tq.cy < m) dy = -Math.ceil((m - tq.cy) / 4); else if (tq.cy > h - m) dy = Math.ceil((tq.cy - (h - m)) / 4);
+      if (dy) { window.scrollBy(0, dy); draw(); raf = requestAnimationFrame(edge); }
+    }
+    $('dBody').addEventListener('pointerdown', function (e) {
+      if (!S.dmarq || e.pointerType === 'mouse' || S.trashView) return;
+      const ctl = e.target.closest('button, a, input, select, label, textarea');
+      if (ctl && !ctl.closest('.dimg')) return;   /* 写真の札（.dimg）は ボタンだが ここから囲み始めてよい */
+      e.stopPropagation();   /* 長押しでつかむ を始めさせない */
+      tq = { id: e.pointerId, px: e.clientX + window.scrollX, py: e.clientY + window.scrollY, cx: e.clientX, cy: e.clientY, on: false, base: Object.assign({}, S.dcsel) };
+    }, true);
+    $('dBody').addEventListener('dragstart', function (e) { if (S.dmarq) e.preventDefault(); }, true);
+    $('dBody').addEventListener('contextmenu', function (e) { if (S.dmarq) e.preventDefault(); }, true);
+    window.addEventListener('pointermove', function (e) {
+      if (!tq || e.pointerId !== tq.id) return;
+      tq.cx = e.clientX; tq.cy = e.clientY;
+      if (!tq.on) {
+        if (Math.abs(tq.px - window.scrollX - e.clientX) + Math.abs(tq.py - window.scrollY - e.clientY) < 10) return;
+        tq.on = true; tq.box = el('div', 'dmarq'); document.body.appendChild(tq.box);
+      }
+      e.preventDefault(); draw();
+      if (!raf) raf = requestAnimationFrame(edge);
+    }, { passive: false });
+    function end(e) {
+      if (!tq || (e && e.pointerId !== tq.id)) return;
+      const m = tq; tq = null; if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      if (!m.on) return;
+      if (m.box) m.box.remove();
+      S.dcsel = m.sel || {}; S.dcpick = true; dTouchClickBlock = Date.now(); docsDraw();
+      dcMsg(Object.keys(S.dcsel).length + '件を選んでいます。続けて囲めば 足していけます。');
+    }
+    window.addEventListener('pointerup', end); window.addEventListener('pointercancel', end);
+  })();
+  var dTouchClickBlock = 0;
+  document.addEventListener('click', function (e) { if (Date.now() - dTouchClickBlock < 400 && e.target.closest && e.target.closest('#dBody')) { e.preventDefault(); e.stopPropagation(); } }, true);
+
   /* ★ 同じ月分の中で並べ替える（2026-10-07）。つかんだもの（選んでいれば選んだもの全部）を 落とした写真の前／後ろへ */
   function dReorder(list, toId, before) {
     if (!list.length) return;
@@ -5378,6 +5460,7 @@
   function dcBar() {
     const bar = $('dcbar'); if (!bar) return;
     bar.hidden = !S.dcpick || $('paneDocs').hidden;
+    if (S.dmarq && bar.hidden) dMarqSet(false);   /* 選ぶのをやめたら 囲む も終わる */
     const si = selItems(), n = si.length;
     /* 書類の数で言う（まとめた書類は 1件） */
     const docs = {}; si.forEach(function (x) { docs[x.set && x.setOf > 1 ? 'S' + x.set : x.id] = 1; });
@@ -5586,7 +5669,8 @@
   }
   function purge(ids) {
     if (!ids.length) return;
-    if (!confirm(ids.length + '件を Googleドライブから 完全に消しますか？\n（ドライブのゴミ箱にも残りません。アプリからも ドライブからも 戻せません）')) return;
+    /* ★ 2026-11-02：確認は出さない（破棄済みは もう一度 選んで消すので 二度聞かない） */
+    if (S.tsel) ids.forEach(function (id) { delete S.tsel[id]; });
     const code = S.code;
     S.trash = (S.trash || []).filter(function (x) { return ids.indexOf(x.id) < 0; });
     S.trashN = Math.max(0, (S.trashN || 0) - ids.length);
