@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793536828;</script>
+<script>window.__PAGE_VER=1793578390;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3692,7 +3692,9 @@
             w.appendChild(hd);
             if (!S.dcpick && g.every(function (x) { return x.status !== 'done'; })) { DDX.bindSet(cl, w, g); cl.title += '／つかんで ほかの書類の真ん中へ落とすと 2つの書類を1つにまとめる'; }
             /* ★ K-0021 続き：選んでいる書類（束）は 枠のどこを つかんでも（写真のあいだ・見出しでも）選んだもの全部を つかむ */
-            if (S.dcpick && DOUT_NAT && g.some(function (x) { return S.dcsel[x.id]; })) DDX.bindWrap(w, g.find(function (x) { return S.dcsel[x.id]; }));
+            /* ★ 2026-11-01：選んでいなくても 点線の枠のどこを つかんでも（写真のあいだ・見出し・余白）この書類まるごと。
+                 選んでいる書類なら 選んだもの全部（ほかに選んだ写真・書類も いっしょに） */
+            if (DOUT_NAT) DDX.bindWrap(w, g.find(function (x) { return S.dcsel[x.id]; }) || g[0], g);
             dStack(w, g);
             grid.appendChild(w);
           });
@@ -3834,7 +3836,7 @@
     d.getElementById('wzi').addEventListener('dragstart', function (e) {
       const it = zit(), ox = it && o.ad.out ? o.ad.out(it) : null;
       if (!ox || !ox.url) { e.preventDefault(); if (ox) { const hh = d.getElementById('wzh'); if (hh) hh.textContent = ox.err || 'ファイルを用意しています。少ししてから もう一度つかんでください。'; } return; }
-      try { e.dataTransfer.setData('DownloadURL', ox.mime + ':' + ox.name + ':' + ox.url); e.dataTransfer.effectAllowed = 'copy'; } catch (q) {}
+      try { e.dataTransfer.setData('DownloadURL', ox.mime + ':' + ox.name + ':' + ox.url); dtPutFile(e, ox); e.dataTransfer.effectAllowed = 'copy'; } catch (q) {}
     });
     wsZKeys(key, d);
     wsSelBind(key, d);
@@ -3976,7 +3978,7 @@
           const ox = bt ? null : sl && ad.outMany ? ad.outMany(sl) : ad.out ? ad.out(lead) : null;
           if (dlock && !(ox && ox.url)) { e.preventDefault(); if (ox) wsMsg(key, ox.err || 'ファイルを用意しています。少ししてから もう一度つかんでください。', !!ox.err); return; }
           if (!dlock) o.drag = { mem: dm, keys: sl ? Object.keys(o.sel) : [ad.key(lead)] };
-          try { e.dataTransfer.setData('text/plain', 'd'); if (ox && ox.url) { e.dataTransfer.setData('DownloadURL', ox.mime + ':' + ox.name + ':' + ox.url); e.dataTransfer.effectAllowed = dlock ? 'copy' : 'copyMove'; } else e.dataTransfer.effectAllowed = 'move'; } catch (q) {}
+          try { if (ox && ox.url) { e.dataTransfer.setData('DownloadURL', ox.mime + ':' + ox.name + ':' + ox.url); e.dataTransfer.effectAllowed = dlock ? 'copy' : 'copyMove'; } else e.dataTransfer.effectAllowed = 'move'; if (!(ox && ox.url && dtPutFile(e, ox))) e.dataTransfer.setData('text/plain', 'd'); } catch (q) {}
         });
         c.addEventListener('dragend', function () { o.drag = null; if (o.wait) wsDraw(key); });
         const zone = function (e) { const r = c.getBoundingClientRect(), f = (e.clientX - r.left) / r.width; return f < 0.28 ? 'l' : f > 0.72 ? 'r' : 'c'; };
@@ -4567,6 +4569,16 @@
   /* ★ K-0021（2026-11-01）：はじめは［PDFにする］。［写真のまま］を選んだ端末だけ 写真のまま */
   function dOutFmt() { try { return localStorage.getItem('collect_outfmt_o') === 'img' ? 'img' : 'pdf'; } catch (e) { return 'pdf'; } }
   /* ★ K-0021：外へ渡す中身は data: の URL（blob: は Chrome がデスクトップへ落とすときに 読めないことがある） */
+  /* ★ 2026-11-01：メール（Gmail など ブラウザの中）へ落としても 添付になるように、ファイルそのものも渡す。
+       名前を文字（text/plain）で渡すと Gmail は本文に名前を書いてしまうので、ファイルを渡せたときは 文字は渡さない */
+  function dtPutFile(e, o) {
+    if (!o || !o.blob || !e.dataTransfer || !e.dataTransfer.items) return false;
+    try {
+      const W = e.view || (e.target && e.target.ownerDocument && e.target.ownerDocument.defaultView) || window;
+      e.dataTransfer.items.add(new W.File([o.blob], o.name || 'file', { type: o.mime || o.blob.type || 'application/octet-stream' }));
+      return true;
+    } catch (x) { return false; }
+  }
   function dOutUrl(b) { return new Promise(function (ok, ng) { const r = new FileReader(); r.onload = function () { ok(String(r.result)); }; r.onerror = function () { ng(new Error('ファイルを用意できませんでした')); }; r.readAsDataURL(b); }); }
   function dOutFmtPaint() {
     const w = $('dOutFmt'); if (!w) return;
@@ -4602,7 +4614,7 @@
         : fileGet(it).then(function (f) { return { blob: f.blob, name: f.name }; }))
       : pdflib().then(function (L) { return fetchFulls(mem, function () {}).then(function (fulls) { return pdfDocBytes(L, mem, fulls); }); })
           .then(function (r) { if (!r.bytes) throw new Error('PDF に入れられるものがありませんでした'); return { blob: new Blob([r.bytes], { type: 'application/pdf' }), name: docTitle(mem).replace(/[\\\/:*?"<>|]+/g, '_') + '.pdf' }; })
-    ).then(function (f) { o.name = f.name; o.mime = f.blob.type || 'application/octet-stream'; return dOutUrl(f.blob).then(function (u) { o.url = u; return o; }); })
+    ).then(function (f) { o.name = f.name; o.mime = f.blob.type || 'application/octet-stream'; o.blob = f.blob; return dOutUrl(f.blob).then(function (u) { o.url = u; return o; }); })
       .catch(function (e) { delete DOUT[key]; o.err = e.message; return o; });
     DOUT[key] = o;
     return o;
@@ -4631,7 +4643,7 @@
     const o = { url: '', name: '', mime: 'application/zip' };
     o.p = Promise.all(docs.map(function (d) { const q = dOutPrep(d); return Promise.resolve(q.p || q).then(function () { if (!q.url) throw new Error(q.err || 'ファイルを用意できませんでした'); return fetch(q.url).then(function (r) { return r.blob(); }).then(function (b) { return { name: q.name, file: b }; }); }); }))
       .then(function (files) { files.forEach(function (f, i) { f.name = String(i + 1).padStart(2, '0') + '_' + f.name; }); o.name = pdfFname(boxLabel(docs[0].box) + '_' + docs.length + '書類', '.zip'); return zipFiles(files, o.name); })
-      .then(function (z) { return dOutUrl(z).then(function (u) { o.url = u; return o; }); })
+      .then(function (z) { o.blob = z; return dOutUrl(z).then(function (u) { o.url = u; return o; }); })
       .catch(function (e) { delete DOUT[key]; o.err = e.message; return o; });
     DOUT[key] = o;
     return o;
@@ -4819,6 +4831,7 @@
       document.querySelectorAll('.dmon.target, .dbox.target').forEach(function (x) { x.classList.remove('target'); });
       document.querySelectorAll('.dtile.ins-l, .dtile.ins-r, .dtile.joinhit').forEach(function (x) { x.classList.remove('ins-l', 'ins-r', 'joinhit'); }); document.body.classList.remove('ddragging'); }
     function items(it) { return S.dcpick && S.dcsel[it.id] ? (S.docs || []).filter(function (x) { return S.dcsel[x.id]; }) : [it]; }
+    const itemsSel = items;
     function start(c) {
       clean();
       c.on = true; c.list = c.all ? c.all.slice() : items(c.it);
@@ -4913,7 +4926,9 @@
       tile.addEventListener('dragstart', function (e) { e.preventDefault(); });
     }
     /* ファイルは つかむ前（マウスを乗せたとき）に 裏で用意しておく（つかんだ瞬間に渡さないといけないため） */
-    function natBind(tile, it, wrapOnly) {
+    function natBind(tile, it, wrapOnly, grp) {
+      /* 束の枠：選んでいれば 選んだもの全部、選んでいなければ その書類（束）まるごと */
+      const items = function (x) { return grp && !(S.dcpick && S.dcsel[x.id]) ? grp.slice() : itemsSel(x); };
       tile.draggable = true;
       let ht = 0, downBtn = false;
       tile.querySelectorAll('img').forEach(function (im) { im.draggable = false; });
@@ -4928,8 +4943,8 @@
         const o = list.some(function (x) { return fileKind(x.name); }) ? null : dOutPrepMany(list);
         try {
           e.dataTransfer.effectAllowed = 'copyMove';
-          e.dataTransfer.setData('text/plain', String(it.name || ''));
           if (o && o.url) e.dataTransfer.setData('DownloadURL', o.mime + ':' + o.name + ':' + o.url);
+          if (!dtPutFile(e, o)) e.dataTransfer.setData('text/plain', String(it.name || ''));
           const im = tile.querySelector('img'); if (im && im.complete && im.naturalWidth) e.dataTransfer.setDragImage(im, 40, 40);
         } catch (x) {}
         if (cur) end(true);
@@ -4982,8 +4997,8 @@
       });
     }
     /* ★ K-0021 続き：選んでいる束の枠（写真の外の所）を つかんだとき。写真の上なら 写真の側が受ける */
-    function bindWrap(wrap, it) {
-      natBind(wrap, it, true);
+    function bindWrap(wrap, it, g) {
+      natBind(wrap, it, true, g);
     }
     return { bind: bind, bindSet: bindSet, bindWrap: bindWrap, justEnded: function (t) { return t === endEl && Date.now() - endAt < 700; } };
   })();
@@ -6220,7 +6235,7 @@
     if (!DOUT_NAT || MK.on || DVZ.s > 1 || !it || !im || im.tagName !== 'IMG' || im.parentNode !== $('dvBody') || fileKind(it.name)) { e.preventDefault(); return; }
     const o = dOutPrep(it);
     if (!o.url) { e.preventDefault(); dcMsg(o.err || 'ファイルを用意しています。少ししてから もう一度つかんでください。', !!o.err); return; }
-    try { e.dataTransfer.setData('DownloadURL', o.mime + ':' + o.name + ':' + o.url); e.dataTransfer.effectAllowed = 'copy'; } catch (x) {}
+    try { e.dataTransfer.setData('DownloadURL', o.mime + ':' + o.name + ':' + o.url); dtPutFile(e, o); e.dataTransfer.effectAllowed = 'copy'; } catch (x) {}
   });
   $('dvBody').addEventListener('pointerdown', function (e) {
     if (MK.on || DVZ.s <= 1 || e.button > 0) return;
