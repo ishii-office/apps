@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793592814;</script>
+<script>window.__PAGE_VER=1793603539;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2105,6 +2105,7 @@
     <span class="dvkey" title="テンキーで サクサク確認（最後の1枚のあとは 一覧に戻る）">Enter 確認済→次／1 対象外→次／2 破棄→次／0 戻して元通り</span>
     <button type="button" class="btn ghost sm" id="dvMark" title="文字・下線・枠を 重ねて書く（元の写真・PDF は書き換えません）">✏ 書きこむ</button>
     <button type="button" class="btn ghost sm" id="dvMove">別の月分へ移す</button>
+    <button type="button" class="btn ghost sm" id="dvGmail" title="この書類を Gmail の下書きに 添付する">✉ Gmailに添付</button>
     <span class="dvback" id="dvBack"></span>
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
     <button type="button" class="btn ghost sm" id="dvClose">閉じる</button></span></div>
@@ -2132,7 +2133,7 @@
 
 <div class="dcbar" id="dcbar" hidden>
   <b id="dcN">0件を選んでいます</b>
-  <span class="dcb"><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn sm" id="dcPrint">🖨 印刷</button><button type="button" class="btn sm" id="dcChk" title="選んだものに 確認済の印を付ける（全部 付いていれば外す）">✓ 確認済</button><button type="button" class="btn ghost sm" id="dcSkip" title="選んだものを 仕訳化・AI下書きの対象から外す（全部 対象外なら 対象に戻す）。印刷・PDF には入ります">⊘ 対象外にする</button><button type="button" class="btn ghost sm" id="dcMove">移す</button><button type="button" class="btn ghost sm" id="dcToImg" title="選んだ書類の PDF を ページごとの写真（JPEG）に変える。元の PDF は 破棄したもの へ（戻せる）">🖼 画像に変換</button><button type="button" class="btn ghost sm" id="dcToPdf" title="選んだ書類（写真・まとめた書類）を 1つの PDF に変える。元の写真は 破棄したもの へ（戻せる）">📄 PDFに変換</button>
+  <span class="dcb"><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn sm" id="dcPrint">🖨 印刷</button><button type="button" class="btn sm" id="dcGmail" title="選んだ書類を Gmail の下書きに 添付する（1書類＝1ファイル）">✉ Gmailに添付</button><button type="button" class="btn sm" id="dcChk" title="選んだものに 確認済の印を付ける（全部 付いていれば外す）">✓ 確認済</button><button type="button" class="btn ghost sm" id="dcSkip" title="選んだものを 仕訳化・AI下書きの対象から外す（全部 対象外なら 対象に戻す）。印刷・PDF には入ります">⊘ 対象外にする</button><button type="button" class="btn ghost sm" id="dcMove">↪ 別の箱へ移す</button><button type="button" class="btn ghost sm" id="dcToImg" title="選んだ書類の PDF を ページごとの写真（JPEG）に変える。元の PDF は 破棄したもの へ（戻せる）">🖼 画像に変換</button><button type="button" class="btn ghost sm" id="dcToPdf" title="選んだ書類（写真・まとめた書類）を 1つの PDF に変える。元の写真は 破棄したもの へ（戻せる）">📄 PDFに変換</button>
     <button type="button" class="btn ghost sm danger" id="dcDel">破棄</button><button type="button" class="btn ghost sm" id="dcNone">全部外す</button><button type="button" class="btn ghost sm" id="dcEnd">やめる</button></span>
 </div>
 
@@ -3638,6 +3639,13 @@
           const sb = el('button', 'dmon-b', '選ぶ'); sb.type = 'button';
           sb.addEventListener('click', function () { S.dcpick = true; docsDraw(); });
           row.appendChild(sb);
+          /* ★ K-0023：選んで 別の箱（別の月分）へ移す。押すと選ぶ形になり、選んで上の［別の箱へ移す］。全部なら［この月を全部選ぶ］。
+               ★ クラス名 .dmove は 移す先を選ぶ窓（画面いっぱい）の名前なので 使わない */
+          if (items.some(function (x) { return x.status !== 'done'; })) {
+            const mb = el('button', 'dmon-b dmvb', '↪ 別の箱へ移す'); mb.type = 'button'; mb.title = '移すものを選んで 別の箱・月分へ';
+            mb.addEventListener('click', function () { S.dcpick = true; S.dcsel = {}; docsDraw(); dcMsg('移すものを押して選び、［別の箱へ移す］を押してください。まとめて移すときは［この月を全部選ぶ］。'); });
+            row.appendChild(mb);
+          }
           const rb = el('button', 'dmon-b dback', '↩ 差し戻し'); rb.type = 'button'; rb.title = 'この月分の書類から 差し戻すものを選ぶ（何枚でも）';
           rb.addEventListener('click', function () { backPick(bx, p, []); });
           row.appendChild(rb);
@@ -4674,6 +4682,8 @@
   function dOutSave(list, el) {
     const onWall = !el || el === document.body || el === document.documentElement || !(el.closest && el.closest('#dBody, .dbox, .dmon, .dtile, button, input, select, textarea'));
     if (!onWall) { dMoveOpen(list); return; }   /* 箱の中で離したときは これまでどおり 移す先を選ぶ */
+    /* ★ K-0023：アプリの中の 壁紙の余白で離したときは 何もしない（元の場所に戻る）。外へ出すのは ブラウザの窓の外へ落としたときだけ */
+    if (el) { dcMsg('元の場所に 戻しました（別の箱へは 箱の上で離す・外へは ブラウザの窓の外へ）。'); return; }
     if (!list.length || list.some(function (x) { return fileKind(x.name); })) { dcMsg('エクセルなどは 外へ出せません（開いてから保存してください）。', true); return; }
     const o = dOutPrepMany(list);
     dcMsg('保存しています…');
@@ -5191,6 +5201,7 @@
       { const tl = S.dcsel[it.id] ? selItems() : [it]; const allSkip = tl.every(function (x) { return x.skip; });
         add(allSkip ? '↩ 仕訳化の対象に戻す' + (tl.length > 1 ? '（' + tl.length + '枚）' : '') : '⊘ 対象外にする（仕訳化・AI下書きに出さない）' + (tl.length > 1 ? '（' + tl.length + '枚）' : ''), tl.some(function (x) { return x.status !== 'done'; }), function () { docsSkip(tl, !allSkip); }); }
       add('別の月分・箱へ移す', it.status !== 'done', function () { dMoveOpen(S.dcsel[it.id] ? dSelOrder('').map(docOf).filter(Boolean) : [it]); });
+      add('✉ Gmailに添付', !fileKind(it.name), function () { dGmail(S.dcsel[it.id] ? dSelOrder('').map(docOf).filter(Boolean) : [it]); });
       { const cl = S.dcsel[it.id] ? selItems() : [it];
         add('🖼 画像（JPEG）に変換', convDocs(cl, 'img').length > 0, function () { convertDocs(cl, 'img'); });
         add('📄 PDFに変換', convDocs(cl, 'pdf').length > 0, function () { convertDocs(cl, 'pdf'); }); }
@@ -5365,6 +5376,41 @@
   $('dPdfAll').addEventListener('click', function () { cutPdf(S.dcview || [], ''); });
   $('dPrintAll').addEventListener('click', function () { printDocs(S.dcview || [], ''); });
   $('dTrash').addEventListener('click', function () { S.trashView = !S.trashView; S.trash = null; docsDraw(); if (S.trashView) trashLoad(); });
+  /* ★★ K-0023（2026-11-02）：Gmail に添付する。ブラウザの中の Gmail へは ドラッグでファイルを渡せない（名前の文字しか届かない）ので ボタンで。
+       ① サーバで Gmail の下書きを作って開く（添付つき・宛先は顧問先のメール）
+       ② それができないとき（Gmail の権限をまだ承認していない など）は、ファイルを保存して Gmail の新規作成を開く（保存したファイルを添付してもらう） */
+  async function dGmail(list) {
+    const docs = dDocsOf((list || []).filter(function (x) { return x && !fileKind(x.name); }));
+    if (!docs.length) { dcMsg('添付できる書類がありません（エクセルなどは 開いてから保存して添付してください）。', true); return; }
+    dcMsg('Gmail に添付するファイルを用意しています…（' + docs.length + '件）');
+    const files = [];
+    try {
+      for (let i = 0; i < docs.length; i++) {
+        const o = dOutPrep(docs[i]); await Promise.resolve(o.p || o);
+        if (!o.blob) throw new Error(o.err || 'ファイルを用意できませんでした');
+        files.push({ name: o.name, mime: o.mime || o.blob.type || 'application/octet-stream', blob: o.blob });
+      }
+    } catch (e) { dcMsg('ファイルを用意できませんでした。' + e.message, true); return; }
+    const size = files.reduce(function (a, f) { return a + f.blob.size; }, 0);
+    if (size > 24 * 1024 * 1024) { dcMsg('添付が 25MB を超えます。いくつかに分けてください。', true); return; }
+    const win = window.open('', '_blank');   /* 押した流れの中で 窓を開いておく（あとで開くと ブラウザに止められる） */
+    try {
+      dcMsg('Gmail の下書きを作っています…');
+      const up = [];
+      for (let i = 0; i < files.length; i++) up.push({ name: files[i].name, mime: files[i].mime, b64: await dFileB64(files[i].blob) });
+      const r = await gs('gmailDraft', S.code, up, '');
+      if (!r || !r.url) throw new Error('下書きを作れませんでした');
+      if (win) win.location.href = r.url; else window.open(r.url, '_blank');
+      dcMsg('Gmail の下書きに ' + r.n + '件 添付しました（件名「' + r.subject + '」' + (r.to ? '・宛先 ' + r.to : '・宛先は空') + '）。開いた Gmail で 確かめて送ってください。');
+    } catch (e) {
+      /* 下書きを作れないときは ファイルを保存して Gmail の新規作成へ */
+      files.forEach(function (f) { const a = document.createElement('a'); a.href = URL.createObjectURL(f.blob); a.download = f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 60000); });
+      const u = 'https://mail.google.com/mail/?view=cm&fs=1&su=' + encodeURIComponent('資料のお送り（' + files.length + '件）');
+      if (win) win.location.href = u; else window.open(u, '_blank');
+      dcMsg('下書きを作れなかったので（' + e.message + '）、ファイルを保存して Gmail の新規作成を開きました。保存した「' + files.map(function (f) { return f.name; }).join('」「') + '」を 添付してください。', true);
+    }
+  }
+  $('dcGmail').addEventListener('click', function () { dGmail(selItems()); });
   $('dcPdf').addEventListener('click', function () { cutPdf(selItems(), '選択'); });
   $('dcPrint').addEventListener('click', function () { printDocs(selItems(), '選択'); });
   $('dcMove').addEventListener('click', function () { dMoveOpen(selItems()); });
@@ -6217,6 +6263,7 @@
     $('dvDrive').href = it.url;
     $('dvMemo').textContent = it.memo ? '💬 顧問先から：' + it.memo : ''; $('dvMemo').hidden = !it.memo;
     $('dvMove').onclick = function () { docsClose(); dMoveOpen([it]); };
+    $('dvGmail').onclick = function () { dGmail([it]); };
     const dvChkPaint = function () { $('dvChk').textContent = it.chk ? '✓ 確認済（外す）' : '✓ 確認済にする'; $('dvChk').classList.toggle('ghost', !!it.chk); };
     dvChkPaint();
     $('dvChk').onclick = function () { docsCheck([it], !it.chk); dvChkPaint(); };
@@ -6424,22 +6471,27 @@
   /* 並べて見る（左にページの一覧・右に大きく）。この端末が覚える */
   function dvSplitOn() { return lsGet('collect_dvsplit_o') === '1'; }
   function dvChrome(it) {
-    const multi = !!(it.set && it.setOf > 1), m = multi ? dMembers(it.set) : [it.id];
+    const multi = !!(it.set && it.setOf > 1); let m = multi ? dMembers(it.set) : [it.id];
     $('dvPg').hidden = !multi; if (multi) $('dvPg').textContent = (m.indexOf(it.id) + 1) + ' / ' + m.length + 'ページ';
-    $('dvSplit').hidden = !multi; $('dvSplit').setAttribute('aria-pressed', String(multi && dvSplitOn()));
+    /* ★ K-0023：まとめた書類でなくても、箱の中が2つ以上なら 並べて見られる（左にこの箱の一覧・右に大きく） */
+    const sq = multi ? m : (typeof dvSeq === 'function' ? dvSeq(it) : [it.id]) || [it.id], can = sq.length > 1, skey = multi ? 's:' + it.set : 'b:' + sq.join(',');
+    $('dvSplit').hidden = !can; $('dvSplit').setAttribute('aria-pressed', String(can && dvSplitOn()));
+    $('dvSplit').title = multi ? '左に この書類のページの一覧・右に 選んだページを大きく' : '左に この箱の一覧・右に 選んだものを大きく';
     $('dvPrev').hidden = !dvPageTo(it, -1); $('dvNext').hidden = !dvPageTo(it, 1);
-    const side = $('dvwSide'), on = multi && dvSplitOn();
+    const side = $('dvwSide'), on = can && dvSplitOn();
     side.hidden = !on; $('dview').classList.toggle('dv-split', on);
-    if (!on) { side.textContent = ''; return; }
-    if (side.dataset.set !== it.set || side.children.length !== m.length) {
-      side.textContent = ''; side.dataset.set = it.set;
+    side.setAttribute('aria-label', multi ? 'この書類のページ' : 'この箱の一覧');
+    if (!on) { side.textContent = ''; side.dataset.set = ''; return; }
+    m = sq;
+    if (side.dataset.set !== skey || side.children.length !== m.length) {
+      side.textContent = ''; side.dataset.set = skey;
       const need = [];
       m.forEach(function (id, i) {
-        const d = dvDoc(id), b = el('div', 'sp'); b.dataset.id = id; b.title = (i + 1) + 'ページ目を 大きく';
+        const d = dvDoc(id), b = el('div', 'sp'); b.dataset.id = id; b.title = (i + 1) + (multi ? 'ページ目' : '番目') + 'を 大きく';
         const im = el('img'); im.alt = ''; const vi = IMG[id];
         if (THUMB[id]) im.src = THUMB[id]; else if (vi && vi.t === 'img') im.src = vi.src; else need.push(id);
         im.onerror = function () { im.removeAttribute('src'); };
-        b.appendChild(im); b.appendChild(el('span', 'pn', (i + 1) + 'ページ'));
+        b.appendChild(im); b.appendChild(el('span', 'pn', (i + 1) + (multi ? 'ページ' : '')));
         b.addEventListener('click', function (e) { e.stopPropagation(); if (d) docsOpen(d); });
         side.appendChild(b);
       });
