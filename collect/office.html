@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793689348;</script>
+<script>window.__PAGE_VER=1793692942;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3561,7 +3561,10 @@
   /* ★ 顧問先の画面と同じ見え方（2026-10-06）：箱 → 月分の小箱 → 写真が並ぶ。押すと すぐ大きく。
        事務所だけのもの … PDF切り出し・破棄・選ぶ・別の月分へ移す（月分を整理する）・仕訳化へ */
   const DOPEN = {};      /* 箱|月分 → 開いているか（押して選んだもの） */
-  function boxLabel(b) { return String(b || '').split('/').join(' › '); }
+  /* ★ 2026-11-03：「年末調整書類（マイナンバー記載あり）」の箱は 画面では「年末調整書類」と出す。
+       中の名前（履歴・フォルダ・AI に回さない見分け）は 変えない（変えると 送ったものとつながらず、マイナンバーの守りも外れる） */
+  function bxDisp(s) { s = String(s || ''); return s === '年末調整書類（マイナンバー記載あり）' ? '年末調整書類' : s; }
+  function boxLabel(b) { return String(b || '').split('/').map(bxDisp).join(' › '); }
   /* ★ 顧問先の画面と同じ見え方（2026-10-06）：箱（中の箱）→ 月分の小箱 → 写真が並ぶ。押すと すぐ大きく。
        事務所だけのもの … PDF切り出し・破棄・選ぶ・別の月分／箱へ移す（整理する）・仕訳化へ */
   /* ★ 電子帳簿保存法の検索（2026-10-08）：取引年月日・金額・取引先。範囲と組み合わせで絞る（確定した仕訳から） */
@@ -3656,7 +3659,7 @@
       const sub = list.filter(function (x) { return x.box === bx || x.box.indexOf(bx + '/') === 0; });
       const sec = el('section', 'dbox' + (depth ? ' sub' : '')); sec.dataset.box = bx;
       const hd = el('div', 'dbox-h'); hd.innerHTML = D_ICON;
-      const h3 = el('h3', null, segs[depth]); if (depth) h3.title = boxLabel(bx); hd.appendChild(h3);
+      const h3 = el('h3', null, bxDisp(segs[depth])); if (depth) h3.title = boxLabel(bx); hd.appendChild(h3);
       hd.appendChild(el('span', 'dbox-c', sub.length + '件'));
       if (S.dcpick) {
         const can = sub;
@@ -5478,7 +5481,7 @@
     const bs = $('dmvBox'); bs.textContent = '';
     if (many) { const o0 = el('option', null, '（箱はそのまま）'); o0.value = ''; bs.appendChild(o0); }
     (S.boxes || []).concat(!many && (S.boxes || []).indexOf(it.box) < 0 ? [it.box] : []).forEach(function (b) {
-      const o = el('option', null, '　'.repeat(b.split('/').length - 1) + (b.indexOf('/') >= 0 ? '└ ' : '') + b.split('/').pop()); o.value = b; bs.appendChild(o); });
+      const o = el('option', null, '　'.repeat(b.split('/').length - 1) + (b.indexOf('/') >= 0 ? '└ ' : '') + bxDisp(b.split('/').pop())); o.value = b; bs.appendChild(o); });
     bs.value = many ? '' : it.box;
     $('dmvNow').textContent = many ? list.length + '件を移します' : 'いま：' + perLabel(it.period) + '［' + boxLabel(it.box) + '］　' + it.name.replace(/^\d{8}_\d{6}_/, '');
     $('dmove').hidden = false;
@@ -10564,7 +10567,7 @@
     /* まとめ方：その月ぜんぶ ＋ その月に仕訳がある回収ボックス（上の箱は 下の箱もまとめる） */
     sel.textContent = '';
     const all = el('option', null, 'その月ぜんぶ（一括）'); all.value = ''; sel.appendChild(all);
-    Object.keys(cnt).sort().forEach(function (b) { const d = b.split('/').length - 1; const o = el('option', null, '　'.repeat(d) + b.split('/').pop() + '（' + cnt[b] + '件' + (Object.keys(cnt).some(function (x) { return x.indexOf(b + '/') === 0; }) ? '・下の箱も' : '') + '）'); o.value = b; sel.appendChild(o); });
+    Object.keys(cnt).sort().forEach(function (b) { const d = b.split('/').length - 1; const o = el('option', null, '　'.repeat(d) + bxDisp(b.split('/').pop()) + '（' + cnt[b] + '件' + (Object.keys(cnt).some(function (x) { return x.indexOf(b + '/') === 0; }) ? '・下の箱も' : '') + '）'); o.value = b; sel.appendChild(o); });
     sel.value = cnt[cur] ? cur : '';
     if (cur && !cnt[cur]) { oDraw(); return; }
     const sysName = { fxmc: 'FXマイスタークラウド', fx2c: 'FX2クラウド', e21: 'e21マイスター', fx2: 'FX2', kaikeio: '会計王', yayoi: '弥生会計' }[(S.fxConf && S.fxConf.sys) || 'fxmc'] || 'FX';
@@ -11001,7 +11004,7 @@
     const list = boxesOf($('aBoxes').value);
     /* ★ K-0018：箱を決めていないうちは 何も並べない（顧問先の画面にも 箱は出ない。いつもの箱は 例として 上の説明に書くだけ） */
     const hid = hiddenOf($('aBoxes').value);
-    if (list.length) list.concat(['その他']).forEach(function (b, i) { p.appendChild(el('span', (i >= list.length ? 'auto' : '') + ((hid[b] || hidUnder(hid, b)) ? ' off' : '') || null, b.split('/').join(' › '))); });
+    if (list.length) list.concat(['その他']).forEach(function (b, i) { p.appendChild(el('span', (i >= list.length ? 'auto' : '') + ((hid[b] || hidUnder(hid, b)) ? ' off' : '') || null, boxLabel(b))); });
     aTreeDraw();
   }
   /* ---- 箱の木（箱の中に箱）。中身は aBoxes（1行1つの道すじ）と同じものを持つ ---- */
