@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793692942;</script>
+<script>window.__PAGE_VER=1793699765;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2254,6 +2254,38 @@
   })();
   const WEB2 = !LIVE && !!API_URL;
   let TOK = LIVE ? '' : lsGet(LS_TOK);
+  /* ★★ 2026-11-03：入ったしるし（合図）は 必ず残す。「一度入ったのに また暗証番号を聞かれた」の直し。
+       github.io のこの住所は 全部のアプリ（105・708 …）の画面が分け合っていて、端末の置き場（localStorage・約5MB）が いっぱいだと
+       合図の書き込みが だまって失敗し、次に開いたとき また聞いていた。
+       ① 書けなかったら この画面の大きい控え（前に読んだもの など）を捨てて 書き直す
+       ② 置き場とは別の入れもの（IndexedDB）にも 控えを置き、置き場に無いときは そこから戻す */
+  const AUTH_IDB = 'collect_office_auth';
+  function authIdb(mode, fn) {
+    return new Promise(function (ok) {
+      try {
+        const r = indexedDB.open(AUTH_IDB, 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore('a'); };
+        r.onerror = function () { ok(null); };
+        r.onsuccess = function () {
+          try { const db = r.result, tx = db.transaction('a', mode), st = tx.objectStore('a'); const q = fn(st); tx.oncomplete = function () { db.close(); ok(q && 'result' in q ? q.result : null); }; tx.onerror = tx.onabort = function () { db.close(); ok(null); }; }
+          catch (e) { ok(null); }
+        };
+      } catch (e) { ok(null); }
+    });
+  }
+  function tokSave(t, name) {
+    const put = function () { localStorage.setItem(LS_TOK, t); if (name != null) localStorage.setItem(LS_NAME, name); };
+    try { put(); }
+    catch (e) {
+      try {
+        Object.keys(localStorage).forEach(function (k) { if (/^collect_office_/.test(k) && k !== LS_TOK && k !== LS_NAME && String(localStorage.getItem(k) || '').length > 2000) localStorage.removeItem(k); });
+        put();
+      } catch (e2) {}
+    }
+    authIdb('readwrite', function (st) { return st.put({ tok: t, name: name != null ? name : lsGet(LS_NAME), at: Date.now() }, 'tok'); });
+  }
+  function tokDrop() { authIdb('readwrite', function (st) { return st.delete('tok'); }); }
+  function tokBack() { return authIdb('readonly', function (st) { return st.get('tok'); }); }
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
@@ -2316,7 +2348,7 @@
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
   }
-  function signOut(msg) { RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
+  function signOut(msg) { RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
   $('signOut').addEventListener('click', function () { signOut('ログアウトしました。'); });
   $('gate').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -2325,7 +2357,7 @@
     $('gGo').disabled = true; $('gMsg').textContent = '';
     gs('staffSignIn', name, pin).then(function (r) {
       $('gGo').disabled = false; $('gPin').value = '';
-      TOK = r.tok; lsSet(LS_TOK, r.tok); lsSet(LS_NAME, r.name);
+      TOK = r.tok; tokSave(r.tok, r.name);
       /* はじめの番号のままのとき：いま打った番号は、変える画面の「いまの番号」にだけ使う（端末には残さない） */
       if (r.must) { showChange(true, pin); return; }
       start(r.name);
@@ -11373,7 +11405,7 @@
     $('cGo').disabled = true; $('cMsg').textContent = '';
     gs('staffChangePin', a, b).then(function (r) {
       $('cGo').disabled = false; $('cCur').value = ''; $('cNew').value = ''; $('cNew2').value = '';
-      TOK = r.tok; lsSet(LS_TOK, r.tok);
+      TOK = r.tok; tokSave(r.tok);
       $('chg').hidden = true;
       start(r.name);
       if (!chgMust) setTimeout(function () { smsg('暗証番号を変えました。', 'ok'); }, 50);
@@ -11427,7 +11459,15 @@
   (function boot() {
     if (LIVE) { start(''); return; }
     if (!WEB2) { fatal('送り先（サーバの口）が分かりません。事務所の代表にお問い合わせください。'); return; }
-    if (!TOK) { showGate(''); return; }
+    if (!TOK) {
+      /* 置き場に無ければ 控え（IndexedDB）から戻す。期限切れ・変えた番号の合図は サーバが断る（そのときは 入り直し） */
+      tokBack().then(function (b) {
+        if (b && b.tok) { TOK = b.tok; try { localStorage.setItem(LS_TOK, b.tok); if (b.name) localStorage.setItem(LS_NAME, b.name); } catch (e) {} start(b.name || lsGet(LS_NAME)); return; }
+        showGate('');
+      });
+      return;
+    }
+    tokSave(TOK);   /* 前に入った端末も 控えを置いておく */
     start(lsGet(LS_NAME));
   })();
 </script>
