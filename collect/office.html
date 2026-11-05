@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793758268;</script>
+<script>window.__PAGE_VER=1793845411;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1264,6 +1264,18 @@
   .ptr { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 6px); z-index: 9000; transform: translate(-50%, 0); padding: 8px 16px; border-radius: 999px; background: #fff; color: #333;
          border: 1.5px solid #c9d3d0; box-shadow: 0 4px 14px rgba(0,0,0,.15); font-size: 15px; font-weight: 700; pointer-events: none; white-space: nowrap; }
   .ptr.go { background: #0F6E56; color: #fff; border-color: #0F6E56; }
+  /* ★★ 顧問先から届いた知らせ・未処理の数（2026-11-04） */
+  .arrbtn { font: inherit; font-size: 13px; font-weight: 800; border: 1.5px solid var(--accent, #0F6E56); color: var(--accent, #0F6E56); background: #fff; border-radius: 999px; padding: 3px 10px; margin-right: 8px; cursor: pointer; white-space: nowrap; }
+  .arrbtn.has { background: #B3261E; border-color: #B3261E; color: #fff; }
+  .arrpop { position: fixed; z-index: 80; top: 56px; right: 12px; width: min(420px, calc(100vw - 24px)); max-height: 70vh; overflow: auto; background: #fff; border: 1.5px solid #c9d3d0; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.18); padding: 10px 12px; }
+  .arrpop h4 { margin: 2px 0 6px; font-size: 15px; }
+  .arrpop .arr-note { font-size: 12px; color: #667; margin: 0 0 8px; line-height: 1.5; }
+  .arrpop .arr-row { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; font: inherit; font-size: 14px; background: #fff; border: 0; border-top: 1px solid #eef1f0; padding: 8px 4px; cursor: pointer; }
+  .arrpop .arr-row:hover { background: #F3F8F6; }
+  .arrpop .arr-row .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .arrpop .arr-row b { color: #B3261E; font-size: 16px; }
+  .arrpop .arr-row small { color: #778; }
+  .arrpop .arr-all { font-size: 12px; display: flex; gap: 6px; align-items: center; margin: 0 0 6px; }
 </style>
 </head>
 <body>
@@ -1321,8 +1333,9 @@
     <button type="button" role="tab" data-tab="Kaizen" aria-pressed="false" id="tabKaizen">改善要望<b class="kzbadge" id="kzBadge" hidden></b></button>
     <button type="button" role="tab" data-tab="Send" aria-pressed="false" id="tabSend">送付物</button>
   </span>
-  <span class="who"><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
+  <span class="who"><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥 未処理 <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
+<div class="arrpop" id="arrPop" hidden role="dialog" aria-label="未処理の資料（顧問先ごと）"></div>
 <div class="kzann" id="kzAnn" hidden><button type="button" class="kzann-x" id="kzAnnX" aria-label="このお知らせを消す" title="このお知らせを消す（改善要望タブには残ります）">×</button><button type="button" class="kzann-t" id="kzAnnT"></button></div>
 <div class="ctl" id="ctl" hidden>
   <label>顧問先 <select id="client"></select></label>
@@ -2290,7 +2303,7 @@
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
   const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1,
-    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1 };
+    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, lineNews: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
   const LONG_FN = { tehonAnalyze: 370000, kaizenShot: 120000 };
@@ -2348,7 +2361,7 @@
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
   }
-  function signOut(msg) { RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
+  function signOut(msg) { try { $('arrBtn').hidden = true; $('arrPop').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
   $('signOut').addEventListener('click', function () { signOut('ログアウトしました。'); });
   $('gate').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -4434,6 +4447,63 @@
     }, function () { LN.busy = false; });
   }
   setInterval(lnCheck, 60000);
+  /* ★★ 顧問先が［事務所に送る］を押して届いたら 担当者のパソコンに知らせる・どれだけ溜まっているか（2026-11-04）
+       1分おき（と 画面に戻ったとき）に arriveNews を聞く。届いていれば ポップ通知（押すと その顧問先の仕訳化へ）・題の数。
+       右上の［📥 未処理 N］… 担当の顧問先ごとの 未処理（届いて まだ確定・確認済にしていないもの）。押すと 一覧（押すと その顧問先へ）。
+       公式LINE から届いたものは lnCheck が知らせる（二重にしない） */
+  const AR = { since: 0, busy: false, pend: [], all: false };
+  const LS_ARSINCE = 'collect_arr_since';
+  function arDraw() {
+    const tot = AR.pend.reduce(function (a, y) { return a + y.n; }, 0);
+    $('arrN').textContent = String(tot); $('arrBtn').hidden = !S.started || LIVE; $('arrBtn').classList.toggle('has', tot > 0);
+    const pop = $('arrPop'); if (pop.hidden) return;
+    pop.textContent = '';
+    pop.appendChild(el('h4', null, '📥 未処理の資料（' + tot + '件）'));
+    pop.appendChild(el('p', 'arr-note', (AR.all ? '全部の顧問先' : '担当の顧問先（担当者が空の顧問先も）') + 'から届いて、まだ 確定・確認済にしていないもの。押すと その顧問先の仕訳化へ。'));
+    if (S.me && S.me.master) {
+      const lb = el('label', 'arr-all'); const cb = el('input'); cb.type = 'checkbox'; cb.checked = AR.all;
+      cb.addEventListener('change', function () { AR.all = cb.checked; arCheck(true); });
+      lb.appendChild(cb); lb.appendChild(document.createTextNode('全部の顧問先を見る（マスター）')); pop.appendChild(lb);
+    }
+    if (!AR.pend.length) { pop.appendChild(el('p', 'arr-note', '未処理の資料は ありません。')); return; }
+    AR.pend.forEach(function (y) {
+      const b = el('button', 'arr-row'); b.type = 'button';
+      b.appendChild(el('span', 'nm', y.code + '　' + y.name + ' 様'));
+      b.appendChild(el('b', null, y.n + '件'));
+      b.appendChild(el('small', null, y.old + ' から'));
+      b.addEventListener('click', function () { $('arrPop').hidden = true; $('arrBtn').setAttribute('aria-expanded', 'false'); lnGo(y.code); });
+      pop.appendChild(b);
+    });
+  }
+  function arCheck(force) {
+    if (!S.started || !S.booted || LIVE || (AR.busy && !force)) return;
+    if (!AR.since) AR.since = Number(lsGet(LS_ARSINCE) || 0) || Date.now();
+    AR.busy = true;
+    gs('arriveNews', AR.since, AR.all).then(function (r) {
+      AR.busy = false;
+      AR.since = r.t || AR.since; lsSet(LS_ARSINCE, String(AR.since));
+      (r.items || []).forEach(function (x) {
+        LN.n += x.n;
+        try {
+          if (window.Notification && Notification.permission === 'granted') {
+            const nt = new Notification('📷 ' + x.name + ' 様から 届きました', { body: x.n + '件 届きました。押すと 仕訳化の画面を開きます。', tag: 'arr-' + x.code, icon: 'icon-192.png' });
+            nt.onclick = function () { nt.close(); lnGo(x.code); };
+          }
+        } catch (e) {}
+      });
+      AR.pend = r.pend || [];
+      arDraw(); lnBadge();
+    }, function () { AR.busy = false; });
+  }
+  $('arrBtn').addEventListener('click', function (e) {
+    e.stopPropagation();
+    const p = $('arrPop'); p.hidden = !p.hidden; $('arrBtn').setAttribute('aria-expanded', String(!p.hidden));
+    if (!p.hidden) { arDraw(); arCheck(true); }
+  });
+  document.addEventListener('click', function (e) { const p = $('arrPop'); if (!p.hidden && !e.target.closest('#arrPop, #arrBtn')) { p.hidden = true; $('arrBtn').setAttribute('aria-expanded', 'false'); } });
+  setInterval(arCheck, 60000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) arCheck(); });
+  (function arFirst() { if (S.started && S.booted) { arCheck(); return; } setTimeout(arFirst, 2000); })();
   document.addEventListener('visibilitychange', function () { if (!document.hidden) { lnCheck(); setTimeout(function () { if (!document.hidden && LN.n) { LN.n = 0; lnBadge(); } }, 4000); } });
   /* 通知の許可は 押したときにしか聞けない（ブラウザの決まり）。ログインしたあとの はじめの1回のクリックで聞く */
   document.addEventListener('click', function lnAsk() {
