@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794057143;</script>
+<script>window.__PAGE_VER=1794068840;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1275,6 +1275,8 @@
   .arrpop .arr-row { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; font: inherit; font-size: 14px; background: #fff; border: 0; border-top: 1px solid #eef1f0; padding: 8px 4px; cursor: pointer; }
   .arrpop .arr-row:hover { background: #F3F8F6; }
   .arrpop .arr-row .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bxlist { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow: auto; margin: 8px 0; }
+  .bxlist label { display: flex; align-items: center; gap: 6px; font-size: 15px; }
   .obstrip { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; padding: 6px 10px; background: #FFF8E1; border: 1px solid #F0D98A; border-radius: 10px; font-weight: 700; }
   .obv { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; padding: 16px; }
   .obv[hidden] { display: none; }
@@ -1354,6 +1356,15 @@
   <span class="who"><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥 未処理 <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
 <div class="arrpop" id="arrPop" hidden role="dialog" aria-label="未処理の資料（顧問先ごと）"></div>
+<!-- ★ 箱を複数えらぶ（2026-11-07） -->
+<div class="obv" id="bxPop" hidden role="dialog" aria-modal="true" aria-labelledby="bxT">
+  <div class="obbox" style="width:min(420px,100%)">
+    <div class="obh"><h3 id="bxT">絞る箱を選ぶ（いくつでも）</h3></div>
+    <p class="note">選んだ箱（中の箱も）だけが 仕訳化・回収資料に並びます。AI で下書きも この箱だけ。</p>
+    <div class="bxlist" id="bxList"></div>
+    <div class="obnav"><button type="button" class="btn sm" id="bxOk">この箱で絞る</button><button type="button" class="btn ghost sm" id="bxNo">やめる</button></div>
+  </div>
+</div>
 <!-- ★ 出納帳（顧問先が書いたもの。見るだけ。2026-11-07） -->
 <div class="obv" id="obv" hidden role="dialog" aria-modal="true" aria-labelledby="obT">
   <div class="obbox">
@@ -2887,7 +2898,8 @@
     const bx = $('box'); bx.textContent = ''; const all = el('option', null, 'すべて'); all.value = ''; bx.appendChild(all);
     (c ? c.boxes : []).forEach(function (b) { const o = el('option', null, b); o.value = b; bx.appendChild(o); });
     if (!soft || (c ? c.boxes : []).indexOf(S.box) < 0) S.box = '';
-    bx.value = S.box;
+    if (!soft) S.bsel = []; else S.bsel = (S.bsel || []).filter(function (b) { return (c ? c.boxes : []).indexOf(b) >= 0; });
+    boxSelPaint();
     $('dictTitle').textContent = '仕訳辞書の登録・編集：' + (c ? c.code + '　' + c.name : '');
     /* 回収ボックスの選び肢：その顧問先の箱 ＋ その他 ＋ 共通（どの箱にも出す） */
     S.boxes = (c ? c.boxes : []).filter(function (b) { return b !== 'その他' && b !== '年末調整書類（マイナンバー記載あり）'; }).concat(['その他']);   /* マイナンバー記載の箱は AI に回さないので 辞書の選び肢にも出さない */
@@ -2976,6 +2988,7 @@
     if (r.outMonth) $('outMonth').value = r.outMonth;
     document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.st === S.st)); });
     $('box').value = S.box; if ($('box').value !== S.box) S.box = '';
+    S.bsel = (r.bsel || []).filter(function (b) { return Array.from($('box').options).some(function (o) { return o.value === b; }); }); boxSelPaint();
     perPick(S.per);
     if (r.dbox != null && S.boxes.concat(['']).indexOf(r.dbox) >= 0) { S.dbox = r.dbox; boxOpt($('dBox'), r.dbox); $('dBox').value = r.dbox; }
     if (r.slip) { openSlip(null, r.slip); S.dsel = r.dsel; $('sDel').hidden = !S.dsel; $('sDup').hidden = !S.dsel; drawIndex(); }
@@ -3050,7 +3063,7 @@
     try {
       const sc = {};
       document.querySelectorAll('[id]').forEach(function (e) { if (e.scrollTop > 0 && e !== document.documentElement) sc[e.id] = e.scrollTop; });
-      lsSet(LS_RESUME, JSON.stringify({ at: Date.now(), who: lsGet(LS_NAME) || '', code: S.code, tab: S.tab, st: S.st, box: S.box, per: S.per, month: $('month').value, outMonth: $('outMonth').value,
+      lsSet(LS_RESUME, JSON.stringify({ at: Date.now(), who: lsGet(LS_NAME) || '', code: S.code, tab: S.tab, st: S.st, box: S.box, bsel: S.bsel || [], per: S.per, month: $('month').value, outMonth: $('outMonth').value,
         C: C, open: S.open || {}, rep: S.rep || {}, act: S.act || '', dbox: S.dbox, dsel: S.dsel, slip: S.dirty ? readSlip() : null, dopen: DOPEN, y: window.scrollY, sc: sc }));
     } catch (e) {}
   }
@@ -3074,7 +3087,38 @@
   }
   $('vtGo').addEventListener('click', function () { $('vtoast').hidden = true; reopenNow(); });
   $('vtX').addEventListener('click', function () { $('vtoast').hidden = true; });
-  $('box').addEventListener('change', function () { S.box = this.value; if (S.tab === 'Docs') docsDraw(); else render(); });
+  /* ★ 2026-11-07：回収資料タブで替えても 仕訳化タブの並びを作り直す（前は 仕訳化に戻っても 前の箱のまま並んでいた） */
+  $('box').addEventListener('change', function () {
+    if (this.value === '__multi') { boxSelPaint(); bxPopOpen(); return; }
+    if (this.value === '__set') return;
+    S.box = this.value; S.bsel = []; boxSelPaint(); boxChanged();
+  });
+  function boxChanged() { if (S.tab === 'Docs') docsDraw(); render(); }
+  /* 箱の欄：すべて／1つ／「選んだ箱（n）」／「複数の箱を選ぶ…」 */
+  function boxSelPaint() {
+    const bx = $('box');
+    Array.from(bx.querySelectorAll('option[value="__set"],option[value="__multi"]')).forEach(function (o) { o.remove(); });
+    if (S.bsel && S.bsel.length) { const o = el('option', null, '選んだ箱（' + S.bsel.length + '）：' + S.bsel.map(bxDisp).join('・')); o.value = '__set'; bx.appendChild(o); }
+    const m = el('option', null, '複数の箱を選ぶ…'); m.value = '__multi'; bx.appendChild(m);
+    bx.value = S.bsel && S.bsel.length ? '__set' : S.box;
+  }
+  function bxPopOpen() {
+    const c = S.clients.find(function (x) { return x.code === S.code; });
+    const w = $('bxPop'), l = $('bxList'); l.textContent = '';
+    const cur = {}; boxKeys().forEach(function (k) { cur[k] = 1; });
+    (c ? c.boxes : []).forEach(function (b) {
+      const lb = el('label'); const cb = el('input'); cb.type = 'checkbox'; cb.value = b; cb.checked = !!cur[b];
+      lb.appendChild(cb); lb.appendChild(document.createTextNode(' ' + boxLabel(b))); l.appendChild(lb);
+    });
+    w.hidden = false;
+  }
+  $('bxOk').addEventListener('click', function () {
+    const ks = Array.from(document.querySelectorAll('#bxList input:checked')).map(function (x) { return x.value; });
+    $('bxPop').hidden = true;
+    if (ks.length === 1) { S.box = ks[0]; S.bsel = []; } else { S.box = ''; S.bsel = ks; }
+    boxSelPaint(); boxChanged();
+  });
+  $('bxNo').addEventListener('click', function () { $('bxPop').hidden = true; boxSelPaint(); });
   document.querySelectorAll('#filter button').forEach(function (b) {
     b.addEventListener('click', function () { S.st = b.dataset.st; document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); load(); });
   });
@@ -3535,7 +3579,7 @@
     /* 月分 → 箱 → 届いた順 に並べ、「2026年8月分 ／ 現金の領収書」で区切る */
     try { S.spm = spineMatch(S.items, S.ai); } catch (e) { S.spm = null; }
     /* ★ 対象外（2026-10-28）は 仕訳化にも AI下書きにも出さない（回収資料では［対象に戻す］で戻せる） */
-    S.view = S.items.filter(function (it) { return (!S.box || it.box === S.box) && perHit(it) && stTag(it)[0] !== 'skip'; })
+    S.view = S.items.filter(function (it) { return boxHit(it) && perHit(it) && stTag(it)[0] !== 'skip'; })
       .sort(function (a, b) { return a.period !== b.period ? (a.period < b.period ? -1 : 1) : a.box !== b.box ? boxIdx(a.box) - boxIdx(b.box) : a.t - b.t; });
     /* ★ 何枚かで1つの書類（2026-10-11）：1枚目を1件として並べ、2枚目からは その下に写真だけ出す */
     S.sub = {}; S.subOf = {};
@@ -3578,6 +3622,9 @@
     const ae = document.activeElement;
     if (S.tab === 'In' && !NARROW.matches && (!ae || ae === document.body)) { const r = rowOf(S.act); const f = firstField(r); if (f) f.focus({ preventScroll: true }); }
   }
+  /* ★ 箱で絞る（2026-11-07）：仕訳化も 回収資料も 箱単位。1つ（中の箱も含む）・すべて・複数（S.bsel）を選べる。AI 下書きも この絞り込みの中だけ */
+  function boxKeys() { return S.bsel && S.bsel.length ? S.bsel : (S.box ? [S.box] : []); }
+  function boxHit(it) { const ks = boxKeys(), b = String(it.box || ''); return !ks.length || ks.some(function (k) { return b === k || b.indexOf(k + '/') === 0; }); }
   function perLabel(v) { const m = String(v || '').match(/^(\d{4})-(\d{2})$/); return m ? m[1] + '年' + Number(m[2]) + '月分' : '月分なし'; }
   function boxIdx(b) { const c = S.clients.find(function (x) { return x.code === S.code; }); const i = c ? c.boxes.indexOf(b) : -1; return i < 0 ? 99 : i; }
   /* ★ 年 と 月分 は別々のプルダウン（2026-10-07。月分を1つに並べると どんどん長くなる）
@@ -3610,8 +3657,8 @@
     perFillM(); $('perM').value = v.length > 4 ? v.slice(5, 7) : '';
     S.per = $('perY').value ? $('perY').value + ($('perM').value ? '-' + $('perM').value : '') : '';
   }
-  $('perY').addEventListener('change', function () { perFillM(); $('perM').value = ''; S.per = this.value; if (S.tab === 'Docs') docsDraw(); else render(); });
-  $('perM').addEventListener('change', function () { S.per = $('perY').value + (this.value ? '-' + this.value : ''); if (S.tab === 'Docs') docsDraw(); else render(); });
+  $('perY').addEventListener('change', function () { perFillM(); $('perM').value = ''; S.per = this.value; if (S.tab === 'Docs') docsDraw(); render(); });
+  $('perM').addEventListener('change', function () { S.per = $('perY').value + (this.value ? '-' + this.value : ''); if (S.tab === 'Docs') docsDraw(); render(); });
 
   /* ================= 回収資料 =================
      送ってもらった資料を ただ並べる（月分 ／ 箱 ごと）。仕訳化するかどうかに関係なく 全部。
@@ -3722,7 +3769,7 @@
     $('dTrash').hidden = !S.trashN && !S.trashView;
     $('dTrash').textContent = '破棄したもの（' + (S.trashN || 0) + '）';
     if (S.trashView) { trashDraw(body); dcBar(); return; }
-    const inView = function (it) { return (!S.box || it.box === S.box || it.box.indexOf(S.box + '/') === 0) && perHit(it); };
+    const inView = function (it) { return boxHit(it) && perHit(it); };
     /* ★★ 差し戻し中・再提出（事務所がまだ OK していない）は 箱の中の「↩ 差し戻し」の欄へ。月分の並びには出さない */
     const blist = (S.docs || []).filter(inView).filter(inBack);
     const list = (S.docs || []).filter(inView).filter(function (x) { return !inBack(x); }).sort(dSort);
@@ -4633,7 +4680,7 @@
     try { window.focus(); } catch (e) {}
     if (code && !setCode(code)) return;
     perPick('');
-    S.box = box || ''; $('box').value = S.box; if ($('box').value !== S.box) { S.box = ''; $('box').value = ''; }
+    S.box = box || ''; S.bsel = []; $('box').value = S.box; if ($('box').value !== S.box) { S.box = ''; $('box').value = ''; } boxSelPaint();
     if (S.tab === 'Docs') docsLoad(); else selectTab('Docs');
     LN.n = 0; lnBadge();
   }
@@ -5956,12 +6003,12 @@
     /* ★ 破棄したものは 箱の中に「破棄済み」で残る（2026-10-28） */
     const keepTrash = S.trash;
     S.trash = (S.trash || []).concat(list.map(function (x) { return { id: x.id, name: x.name, box: x.box, period: x.period, pdf: x.pdf, trash: 'いま', url: x.url }; }));
-    docsDraw(); if (S.tab === 'In') render();
+    docsDraw(); render();
     dcUndo(list.length + '件を破棄しました（破棄したものに 退避）。' + (done ? '確定済みの ' + done + '件は残しました。' : ''), function () { restore(ids); });
     gs('workDiscard', code, ids).then(function () {}, function (e) {
       if (code !== S.code) return;
       S.docs = keepDocs; S.items = keepItems; if (S.all && keepAll) S.all.items = keepAll; S.trash = keepTrash; S.trashN = Math.max(0, (S.trashN || 0) - list.length);
-      docsDraw(); if (S.tab === 'In') render();
+      docsDraw(); render();
       dcMsg('破棄できませんでした。' + e.message, true);
     });
   }
@@ -5990,7 +6037,11 @@
     const code = S.code;
     S.trash = (S.trash || []).filter(function (x) { return ids.indexOf(x.id) < 0; });
     S.trashN = Math.max(0, (S.trashN || 0) - ids.length);
-    docsDraw();
+    /* ★ 2026-11-07：消したものは 仕訳化の並びからも外す */
+    const gone = {}; ids.forEach(function (id) { gone[id] = 1; });
+    S.items = (S.items || []).filter(function (x) { return !gone[x.id]; }); S.docs = (S.docs || []).filter(function (x) { return !gone[x.id]; });
+    if (S.all && S.all.items) S.all.items = S.all.items.filter(function (x) { return !gone[x.id]; });
+    docsDraw(); render();
     gs('workPurge', code, ids).then(function (r) { if (code === S.code) dcMsg(r.n + '件を ドライブから 完全に消しました。' + (r.kept ? '（電子保存の ' + r.kept + '件は 保存期間のあいだ消せないので 残しました）' : ''), !!r.kept); },
       function (e) { dcMsg('消せませんでした。' + e.message, true); trashLoad(); });
   }
@@ -6203,7 +6254,7 @@
   }
   function pdfFname(tag, ext) {
     const c = S.clients.find(function (x) { return x.code === S.code; }) || { name: '' };
-    return [S.code, c.name, S.per ? perTag(S.per) : '全月分', S.box || '全部の箱', tag].filter(Boolean).join('_').replace(/[\\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') + (ext || '.pdf');
+    return [S.code, c.name, S.per ? perTag(S.per) : '全月分', (S.bsel && S.bsel.length ? S.bsel.join('・') : S.box) || '全部の箱', tag].filter(Boolean).join('_').replace(/[\\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') + (ext || '.pdf');
   }
   function docTitle(g) { return String(g[0].name || '').replace(/^\d{8}_\d{6}_/, '').replace(/\.[^.]+$/, '') + (g.length > 1 ? '_' + g.length + '枚' : ''); }
   function saveBlob(blob, name) {
@@ -6735,7 +6786,7 @@
     dvChkPaint();
     $('dvChk').onclick = function () { docsCheck([it], !it.chk); dvChkPaint(); };
     dvBackDraw(it);
-    $('dvGo').onclick = function () { docsClose(); perPick(it.period); S.box = ''; $('box').value = '';
+    $('dvGo').onclick = function () { docsClose(); perPick(it.period); S.box = ''; S.bsel = []; boxSelPaint();
       selectTab('In'); const go = function () { if (rowOf(it.id)) focusCard(it.id); }; if (S.items.some(function (x) { return x.id === it.id; })) { render(); go(); } else { S.st = 'all'; document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.st === 'all')); }); load().then(go); } };
     /* ★ すぐ出す：くっきりした中身が手元にあれば それを、無ければ 小さい絵を先に出して 届いたら差し替える */
     const box = $('dvBody');
