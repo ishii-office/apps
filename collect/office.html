@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794068840;</script>
+<script>window.__PAGE_VER=1794071894;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1369,7 +1369,7 @@
 <div class="obv" id="obv" hidden role="dialog" aria-modal="true" aria-labelledby="obT">
   <div class="obbox">
     <div class="obh"><h3 id="obT">📒 出納帳</h3><button type="button" class="btn ghost sm" id="obClose">閉じる</button></div>
-    <div class="obnav"><button type="button" class="btn ghost sm" id="obPrev">‹ 前の月</button><b id="obYm"></b><button type="button" class="btn ghost sm" id="obNext">次の月 ›</button><button type="button" class="btn ghost sm" id="obCsv" title="この月の出納帳を CSV（エクセルで開ける）で保存">CSV で保存</button></div>
+    <div class="obnav"><button type="button" class="btn ghost sm" id="obPrev">‹ 前の月</button><b id="obYm"></b><button type="button" class="btn ghost sm" id="obNext">次の月 ›</button><button type="button" class="btn ghost sm" id="obCsv" title="この月の出納帳を CSV（エクセルで開ける）で保存">CSV で保存</button><button type="button" class="btn sm" id="obToWork" title="この月の出納帳を CSV にして この箱へ入れる。仕訳化では 1行ずつ仕訳の下書きになり（背骨）、領収書は 証憑として当たる">🤖 この月を仕訳化に回す</button></div>
     <div class="obwrap"><table class="obtbl"><thead><tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th></tr></thead><tbody id="obBody"></tbody></table></div>
     <p class="note" id="obMsg"></p>
   </div>
@@ -4664,6 +4664,16 @@
     tr('cy', [[''], ['この月の計'], [obYen(d.inSum) || '0', 'n'], [obYen(d.outSum) || '0', 'n'], [Number(d.end).toLocaleString('ja-JP'), 'n' + (d.end < 0 ? ' neg' : '')]]);
   }
   function obMove(dir) { const m = OB.ym.split('-'), d = new Date(Number(m[0]), Number(m[1]) - 1 + dir, 1); OB.ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); obLoad(); }
+  /* ★ アプリに書いた出納帳を 背骨として仕訳化へ（2026-11-07）。その月の CSV にして この箱へ入れる（前に作ったものは 入れ替え） */
+  $('obToWork').addEventListener('click', function () {
+    const b = $('obToWork'); if (b.disabled) return; b.disabled = true; $('obMsg').textContent = '仕訳化に回しています…';
+    const box = OB.box, code = S.code;
+    gs('officeBookDoc', code, box, OB.ym).then(function (r) {
+      b.disabled = false;
+      $('obMsg').textContent = '✓ ' + r.name + '（' + r.rows + '行）を［' + boxLabel(box) + '］に入れました' + (r.replaced ? '（前のものと入れ替え）' : '') + '。仕訳化で［🤖 AI で下書き］を押すと 1行ずつ仕訳の下書きになり、領収書は 証憑として当たります。';
+      if (code === S.code) { try { docsLoad(true); } catch (e) {} try { load(); } catch (e) {} }
+    }, function (e) { b.disabled = false; $('obMsg').textContent = '仕訳化に回せませんでした。' + e.message; });
+  });
   $('obClose').addEventListener('click', function () { $('obv').hidden = true; });
   $('obv').addEventListener('click', function (e) { if (e.target === $('obv')) $('obv').hidden = true; });
   $('obPrev').addEventListener('click', function () { obMove(-1); });
@@ -7367,7 +7377,10 @@
   const SPINE_BOX_RE = /^(通帳|カード|クレジット|現金出納帳|出納帳)/, MULTI_DEF_RE = /^(カード|クレジット|現金出納帳|出納帳)/;
   function spineBox(box) { return SPINE_BOX_RE.test(String(box || '')); }
   function multiDef(box) { return MULTI_DEF_RE.test(String(box || '')); }
-  function isMulti(it) { if (isSheetFile(it)) return true; const m = lsJ(LS_JMULTI), k = S.code + '|' + it.box; if (m[S.code + '|#' + it.id] && it.entries.length) return true; if (m[k] === 0) return false; return !!m[k] || multiDef(it.box); }
+  /* ★ 2026-11-07：［1仕訳辞書］［複数仕訳辞書］は 写真1枚ずつ（S.code|@id）。同じ箱に 領収書と出納帳の写真が混ざっていても その写真だけ 明細として読める。
+       写真ごとに選んでいなければ 前のとおり 箱ごと（S.code|箱）→ 箱の決まり（カード・出納帳 は明細） */
+  function isMulti(it) { if (isSheetFile(it)) return true; const m = lsJ(LS_JMULTI), k = S.code + '|' + it.box, p = S.code + '|@' + it.id; if (m[S.code + '|#' + it.id] && it.entries.length) return true; if (p in m) return !!m[p]; if (m[k] === 0) return false; return !!m[k] || multiDef(it.box); }
+  function setMultiOne(it, on) { const m = lsJ(LS_JMULTI); m[S.code + '|@' + it.id] = on ? 1 : 0; lsSetJ(LS_JMULTI, m); }
   function multiLocked(it) { return !!lsJ(LS_JMULTI)[S.code + '|#' + it.id] && it.entries.length > 0; }
   function setMulti(it, on) { const m = lsJ(LS_JMULTI), k = S.code + '|' + it.box; if (on) m[k] = 1; else if (multiDef(it.box)) m[k] = 0; else delete m[k]; lsSetJ(LS_JMULTI, m); }
   function lockMulti(it, on) { const m = lsJ(LS_JMULTI), k = S.code + '|#' + it.id; if (on) m[k] = 1; else delete m[k]; lsSetJ(LS_JMULTI, m); }
@@ -7997,14 +8010,22 @@
     if (a === 'rep') {
       if (S.rep[it.id]) { delete S.rep[it.id]; drawCard(it); markAct(); fmsg('高速記帳をやめました。', 'ok'); return; }
       S.rep[it.id] = 1; S.act = it.id;
-      if (!isMulti(it)) { setMulti(it, true); (S.view || []).forEach(function (x) { if (x.box === it.box && x.id !== it.id && rowOf(x.id) && !rowOf(x.id).classList.contains('fold')) drawCard(x); }); }
+      if (!isMulti(it)) { if (spineBox(it.box)) { setMulti(it, true); (S.view || []).forEach(function (x) { if (x.box === it.box && x.id !== it.id && rowOf(x.id) && !rowOf(x.id).classList.contains('fold')) drawCard(x); }); } else setMultiOne(it, true); }
       drawCard(it); markAct();
       const r2 = rowOf(it.id);
       if (dictOf(card(it.id).no)) { go1(r2, 'date'); fmsg('高速記帳：日付 → 金額 → Enter で 次々に入ります（Esc でやめる）。', 'ok'); }
       else { const q = r2 && r2.querySelector('[data-k="q"]'); if (q) q.focus(); fmsg('高速記帳：辞書を選ぶと、そのまま 日付と金額だけで 次々に入ります（Esc でやめる）。', 'ok'); }
       return;
     }
-    if (a === 'mode') { if (t.dataset.m === '1' && multiLocked(it)) return; setMulti(it, t.dataset.m === 'n'); (S.view || []).forEach(function (x) { if (x.box === it.box && rowOf(x.id) && !rowOf(x.id).classList.contains('fold')) drawCard(x); }); markAct(); return; }
+    /* ★ 2026-11-07：通帳・カード・出納帳の箱は どのページも明細なので 箱ごと（前のとおり）。ほかの箱（領収書など）は 写真1枚ずつ */
+    if (a === 'mode') {
+      if (t.dataset.m === '1' && multiLocked(it)) return;
+      const on = t.dataset.m === 'n';
+      if (spineBox(it.box)) { setMulti(it, on); const m = lsJ(LS_JMULTI); delete m[S.code + '|@' + it.id]; lsSetJ(LS_JMULTI, m); (S.view || []).forEach(function (x) { if (x.box === it.box && rowOf(x.id) && !rowOf(x.id).classList.contains('fold')) drawCard(x); }); }
+      else { setMultiOne(it, on); drawCard(it); }
+      try { S.spm = spineMatch(S.items, S.ai); } catch (e) {}
+      markAct(); return;
+    }
     if (a === 'more') { confirmEntry(it, true); return; }
     if (a === 'addline') { const c = card(it.id); c.L.push(blankLine()); drawCard(it); go1(row, 'drCode', c.L.length - 1); return; }
     if (a === 'dropline') { const c = card(it.id); c.L.splice(Number(t.dataset.ln), 1); drawCard(it); return; }
