@@ -37,3 +37,61 @@ self.addEventListener('fetch', function (e) {
     return up.then(function (r) { return r || fetch(req); });
   }));
 });
+
+/* ★★★ 事務所の画面を閉じていても 担当者の端末に知らせる（Web プッシュ。2026-11-07）
+   ・サーバからの知らせには 中身が無い。ここで 事務所の合図（collect_office_auth・IndexedDB）を持って サーバに「何が届いたか」を聞き、
+     顧問先ごとに「📷 コード 名前 様から 届きました」を出す（事務所の画面が出すものと 同じ札＝tag なので 二重に並ばない）
+   ・聞けなかったら（合図が切れた・電波が無い）「顧問先から 資料が届きました」だけ出す（知らせは 必ず1つ出す決まり）
+   ・押すと 事務所の画面を開いて その顧問先の その箱を出す（開いていれば そこへ） */
+function idbAuth(fn) {
+  return new Promise(function (ok) {
+    try {
+      const r = indexedDB.open('collect_office_auth', 1);
+      r.onupgradeneeded = function () { r.result.createObjectStore('a'); };
+      r.onerror = function () { ok(null); };
+      r.onsuccess = function () {
+        try { const db = r.result, tx = db.transaction('a', 'readwrite'), st = tx.objectStore('a'); const q = fn(st); tx.oncomplete = function () { db.close(); ok(q && 'result' in q ? q.result : null); }; tx.onerror = tx.onabort = function () { db.close(); ok(null); }; }
+        catch (e) { ok(null); }
+      };
+    } catch (e) { ok(null); }
+  });
+}
+function askSrv(api, tok, fn, args) {
+  return fetch(api, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args, tok: tok }) })
+    .then(function (r) { return r.json(); }).then(function (o) { if (!o || !o.ok) throw new Error('ng'); return o.r; });
+}
+function officeUrl(code, box) { return new URL('office.html' + (code ? '?arr=' + encodeURIComponent(code) + (box ? '&box=' + encodeURIComponent(box) : '') : ''), SCOPE).href; }
+async function onPush() {
+  const shown = [];
+  try {
+    const a = await idbAuth(function (st) { return st.get('tok'); });
+    const api = await idbAuth(function (st) { return st.get('api'); });
+    const since = Number(await idbAuth(function (st) { return st.get('psince'); })) || Date.now() - 15 * 60000;
+    if (a && a.tok && api) {
+      const r = await askSrv(api, a.tok, 'arriveNews', [since, false]);
+      if (r && r.t) await idbAuth(function (st) { return st.put(r.t, 'psince'); });
+      for (const x of (r && r.items) || []) {
+        shown.push(self.registration.showNotification('📷 ' + x.code + ' ' + x.name + ' 様から 届きました', { body: x.n + '件 届きました' + (x.box ? '（' + x.box + '）' : '') + '。押すと 回収資料を開きます。', tag: 'arr-' + x.code, icon: 'icon-192.png', data: { url: officeUrl(x.code, x.box) } }));
+      }
+      const lsince = Number(await idbAuth(function (st) { return st.get('lsince'); })) || since;
+      const l = await askSrv(api, a.tok, 'lineNews', [lsince]).catch(function () { return null; });
+      if (l && l.t) await idbAuth(function (st) { return st.put(l.t, 'lsince'); });
+      for (const x of (l && l.items) || []) {
+        shown.push(self.registration.showNotification('💬 ' + x.code + ' ' + x.name + ' 様から 公式LINEで届きました', { body: x.n + '件 届きました。押すと 事務所の画面を開きます。', tag: 'line-' + x.code, icon: 'icon-192.png', data: { url: officeUrl(x.code, '') } }));
+      }
+    }
+  } catch (e) {}
+  if (!shown.length) shown.push(self.registration.showNotification('📷 顧問先から 資料が届きました', { body: '押すと 事務所の画面を開きます。', tag: 'arr-any', icon: 'icon-192.png', data: { url: officeUrl('', '') } }));
+  return Promise.all(shown);
+}
+self.addEventListener('push', function (e) { e.waitUntil(onPush()); });
+self.addEventListener('notificationclick', function (e) {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || officeUrl('', '');
+  const u = new URL(url);
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cs) {
+    const off = cs.find(function (c) { return /\/office\.html/.test(c.url); });
+    if (off) { off.postMessage({ arr: u.searchParams.get('arr') || '', box: u.searchParams.get('box') || '' }); return off.focus(); }
+    return self.clients.openWindow(url);
+  }));
+});

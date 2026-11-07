@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1793930319;</script>
+<script>window.__PAGE_VER=1794051761;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -512,6 +512,7 @@
   .arow .spt.day { background: #E3F0FB; border-color: #8DB8DE; color: #1F4E8C; font-weight: 700; }
   .arow .ask { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .arow .ask.on { background: #EEF6F1; border-color: #9CCBA8; color: var(--ok); font-weight: 700; }
+  .arow .book.on { background: #FFF6D6; border-color: #E0C25A; color: #7A5A00; font-weight: 700; }
   .arow .sptd { font: inherit; font-size: 12px; padding: 2px 4px; border: 1px solid #E2B65A; border-radius: 6px; width: 132px; }
   .arow .nm { flex: 1; min-width: 0; text-align: left; font: inherit; font-weight: 700; background: none; border: 0; padding: 6px 4px; cursor: pointer; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .arow .nm::before { content: '▢ '; color: var(--accent); }
@@ -1273,6 +1274,22 @@
   .arrpop .arr-row { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; font: inherit; font-size: 14px; background: #fff; border: 0; border-top: 1px solid #eef1f0; padding: 8px 4px; cursor: pointer; }
   .arrpop .arr-row:hover { background: #F3F8F6; }
   .arrpop .arr-row .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .obstrip { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; padding: 6px 10px; background: #FFF8E1; border: 1px solid #F0D98A; border-radius: 10px; font-weight: 700; }
+  .obv { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .obv[hidden] { display: none; }
+  .obbox { background: #fff; border-radius: 12px; width: min(760px, 100%); max-height: 90vh; display: flex; flex-direction: column; padding: 14px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+  .obh { display: flex; align-items: center; justify-content: space-between; gap: 8px; } .obh h3 { margin: 0; font-size: 17px; }
+  .obnav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0; } .obnav b { min-width: 8em; text-align: center; }
+  .obwrap { overflow: auto; border: 1px solid #e3e8e6; border-radius: 8px; }
+  .obtbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .obtbl th { position: sticky; top: 0; background: #F3F6F5; text-align: left; padding: 6px; font-size: 12px; }
+  .obtbl td { padding: 6px; border-top: 1px solid #eef1f0; } .obtbl .n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .obtbl tr.cy td { background: #FAFAFA; color: #555; } .obtbl .neg { color: #B3261E; }
+  .arrpop .arr-push { padding: 6px 4px 8px; border-bottom: 1px solid #eef1f0; margin-bottom: 4px; }
+  .arrpop .arr-push .btn { width: 100%; }
+  .arrpop .arr-boxes { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 4px 8px 12px; }
+  .arrpop .arr-box { font: inherit; font-size: 12px; background: #F3F8F6; border: 1px solid #cfe0da; border-radius: 999px; padding: 2px 8px; cursor: pointer; }
+  .arrpop .arr-box:hover { background: #E2F0EB; }
   .arrpop .arr-row b { color: #B3261E; font-size: 16px; }
   .arrpop .arr-row small { color: #778; }
   .arrpop .arr-all { font-size: 12px; display: flex; gap: 6px; align-items: center; margin: 0 0 6px; }
@@ -1336,6 +1353,15 @@
   <span class="who"><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥 未処理 <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
 <div class="arrpop" id="arrPop" hidden role="dialog" aria-label="未処理の資料（顧問先ごと）"></div>
+<!-- ★ 出納帳（顧問先が書いたもの。見るだけ。2026-11-07） -->
+<div class="obv" id="obv" hidden role="dialog" aria-modal="true" aria-labelledby="obT">
+  <div class="obbox">
+    <div class="obh"><h3 id="obT">📒 出納帳</h3><button type="button" class="btn ghost sm" id="obClose">閉じる</button></div>
+    <div class="obnav"><button type="button" class="btn ghost sm" id="obPrev">‹ 前の月</button><b id="obYm"></b><button type="button" class="btn ghost sm" id="obNext">次の月 ›</button><button type="button" class="btn ghost sm" id="obCsv" title="この月の出納帳を CSV（エクセルで開ける）で保存">CSV で保存</button></div>
+    <div class="obwrap"><table class="obtbl"><thead><tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th></tr></thead><tbody id="obBody"></tbody></table></div>
+    <p class="note" id="obMsg"></p>
+  </div>
+</div>
 <div class="kzann" id="kzAnn" hidden><button type="button" class="kzann-x" id="kzAnnX" aria-label="このお知らせを消す" title="このお知らせを消す（改善要望タブには残ります）">×</button><button type="button" class="kzann-t" id="kzAnnT"></button></div>
 <div class="ctl" id="ctl" hidden>
   <label>顧問先 <select id="client"></select></label>
@@ -1630,7 +1656,8 @@
       <div class="f"><label for="aAppUrl">専用アプリ（あれば。顧問先の画面に［↗ ○○へ］が出て 行き来できる）</label>
         <div class="url"><input id="aAppName" maxlength="30" placeholder="名前 例 Bar ALLURE" style="max-width:180px"><input id="aAppUrl" maxlength="300" placeholder="URL 例 https://ishii-office.github.io/apps/079/"></div>
         <div class="hint">事務所のアプリ（https://ishii-office.github.io/apps/…）か GAS のURLだけ。専用アプリの側には、この顧問先の提出URLを入れてもらう（憲法「専用アプリと資料回収アプリの行き来」）。</div></div>
-      <div class="f"><label for="aTanto">担当者（事務所）</label><select id="aTanto"><option value="">（選んでください）</option></select><span class="hint">改善と効率化の集計は この担当者で数えます</span></div>
+      <div class="f"><label for="aTanto">担当者（事務所）</label><select id="aTanto"><option value="">（選んでください）</option></select><span class="hint">巡回に行く担当者。改善と効率化の集計は この担当者で数えます</span></div>
+      <div class="f"><label for="aSub">補助担当者（事務所）</label><select id="aSub"><option value="">（なし）</option></select><span class="hint">事務所の中で受ける人。<b>補助担当者にも 提出通知（顧問先から届いたときのお知らせ）が届きます</b></span></div>
       <div class="f"><label for="aStaff">担当者メール</label><input id="aStaff" type="email" maxlength="120" placeholder="（空なら、毎朝の通知は事務所の代表へ）"></div>
       <div class="f">
         <label>箱（資料の種類・口座・カード）　<small class="muted">箱の中に箱も作れます（フォルダと同じ）</small></label>
@@ -2303,7 +2330,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1,
+  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, lineNews: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -3703,6 +3730,14 @@
     S.dcview = list;
     body.classList.toggle('dpicking', !!S.dcpick);
     docsTools();
+    /* ★ 出納帳（2026-11-07）：顧問先が 出納帳を付けた箱で書いたもの。資料が届いていなくても いつも上に出す（見るだけ） */
+    const books = (S.clients.find(function (c) { return c.code === S.code; }) || {}).books || [];
+    if (books.length) {
+      const st = el('div', 'obstrip'); st.appendChild(el('span', null, '📒 出納帳'));
+      books.forEach(function (k) { const kb = el('button', 'dmon-b obgo', boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 出納帳（日付・摘要・入金・出金・残高）を見る';
+        kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : ''); }); st.appendChild(kb); });
+      body.appendChild(st);
+    }
     if (!both.length) { body.appendChild(el('div', 'cbox muted', 'まだ資料は届いていません。')); return; }
     /* 箱の並び：顧問先の箱（親 → 中の箱）＋ 資料にだけある箱（前の名前など） */
     const order = (S.boxes || []).slice();
@@ -4474,21 +4509,129 @@
     const pop = $('arrPop'); if (pop.hidden) return;
     pop.textContent = '';
     pop.appendChild(el('h4', null, '📥 未処理の資料（' + tot + '件）'));
-    pop.appendChild(el('p', 'arr-note', (AR.all ? '全部の顧問先' : '担当の顧問先（担当者が空の顧問先も）') + 'から届いて、まだ 確定・確認済にしていないもの。押すと その顧問先の仕訳化へ。'));
+    pop.appendChild(el('p', 'arr-note', (AR.all ? '全部の顧問先' : '担当・補助担当の顧問先（担当者が空の顧問先も）') + 'から届いて、まだ 確定・確認済にしていないもの。押すと 回収資料タブで その箱を開きます。'));
+    pop.appendChild(pushBox());
     if (S.me && S.me.master) {
       const lb = el('label', 'arr-all'); const cb = el('input'); cb.type = 'checkbox'; cb.checked = AR.all;
       cb.addEventListener('change', function () { AR.all = cb.checked; arCheck(true); });
       lb.appendChild(cb); lb.appendChild(document.createTextNode('全部の顧問先を見る（マスター）')); pop.appendChild(lb);
     }
     if (!AR.pend.length) { pop.appendChild(el('p', 'arr-note', '未処理の資料は ありません。')); return; }
+    const shut = function () { $('arrPop').hidden = true; $('arrBtn').setAttribute('aria-expanded', 'false'); };
     AR.pend.forEach(function (y) {
       const b = el('button', 'arr-row'); b.type = 'button';
       b.appendChild(el('span', 'nm', y.code + '　' + y.name + ' 様'));
       b.appendChild(el('b', null, y.n + '件'));
       b.appendChild(el('small', null, y.old + ' から'));
-      b.addEventListener('click', function () { $('arrPop').hidden = true; $('arrBtn').setAttribute('aria-expanded', 'false'); lnGo(y.code); });
+      b.addEventListener('click', function () { shut(); arGo(y.code, y.box || ''); });
       pop.appendChild(b);
+      /* 箱が2つ以上なら 箱ごとにも押せる */
+      if ((y.boxes || []).length > 1) {
+        const bx = el('div', 'arr-boxes');
+        y.boxes.forEach(function (q) { const c = el('button', 'arr-box', q.box + ' ' + q.n); c.type = 'button'; c.addEventListener('click', function () { shut(); arGo(y.code, q.box); }); bx.appendChild(c); });
+        pop.appendChild(bx);
+      }
     });
+  }
+  /* ★★★ 事務所の画面を閉じていても この端末に知らせる（Web プッシュ。2026-11-07）
+       押すと 通知の許可を聞き、この端末（パソコン・スマホ）を サーバの宛先に登録する。知らせを受けて出すのは sw.js。
+       iPhone・iPad は ホーム画面に追加した 事務所の画面からだけ（Apple の決まり） */
+  const PUSH = { on: null, busy: false, msg: '' };
+  function pushCan() { return !LIVE && WEB2 && 'serviceWorker' in navigator && 'PushManager' in window && window.Notification; }
+  function b64uU8(s) { const b = atob(String(s).replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((String(s).length + 3) % 4)); const u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+  function pushReg() { return navigator.serviceWorker.register('sw.js', { scope: './' }).then(function () { return navigator.serviceWorker.ready; }); }
+  function pushBox() {
+    const w = el('div', 'arr-push');
+    const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const home = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+    if (!pushCan()) {
+      w.appendChild(el('p', 'arr-note', ios && !home ? '🔔 iPhone・iPad で 閉じていても通知を受けるには、この事務所の画面を Safari の 共有 →「ホーム画面に追加」し、そのアイコンから開いて ここを押してください。' : '🔔 この端末（ブラウザ）は 閉じているときの通知に対応していません。'));
+      return w;
+    }
+    const b = el('button', 'btn sm' + (PUSH.on ? ' ghost' : ''), PUSH.on ? '🔕 この端末への通知をやめる' : '🔔 この端末に通知を届ける（閉じていても）'); b.type = 'button'; b.id = 'pushBtn'; b.disabled = PUSH.busy;
+    b.addEventListener('click', function (e) { e.stopPropagation(); PUSH.on ? pushOff() : pushOn(); });
+    w.appendChild(b);
+    w.appendChild(el('p', 'arr-note', PUSH.msg || (PUSH.on ? 'この端末に 届くたびに通知が出ます（担当・補助担当の顧問先）。' : '押すと、事務所の画面を閉じていても 顧問先から届くたびに この端末に通知が出ます。パソコン・スマホ それぞれで押してください。')));
+    return w;
+  }
+  function pushPaint(msg) { if (msg != null) PUSH.msg = msg; if (!$('arrPop').hidden) arDraw(); }
+  async function pushOn() {
+    PUSH.busy = true; pushPaint('');
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') throw new Error('通知が許可されませんでした。ブラウザの設定で このサイトの通知を「許可」にしてから もう一度どうぞ。');
+      const reg = await pushReg();
+      const k = await gs('pushKey');
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uU8(k.key) });
+      await authIdb('readwrite', function (st) { st.put(API_URL, 'api'); return st.put({ tok: TOK, name: lsGet(LS_NAME), at: Date.now() }, 'tok'); });
+      await gs('pushSub', { endpoint: sub.endpoint, ua: navigator.userAgent });
+      PUSH.on = true; PUSH.busy = false; pushPaint('✓ この端末に 通知が届くようにしました。');
+    } catch (e) { PUSH.busy = false; pushPaint('通知を届けられませんでした。' + e.message); }
+  }
+  async function pushOff() {
+    PUSH.busy = true; pushPaint('');
+    try {
+      const reg = await navigator.serviceWorker.getRegistration('./');
+      const sub = reg && await reg.pushManager.getSubscription();
+      if (sub) { await gs('pushUnsub', { endpoint: sub.endpoint }); try { await sub.unsubscribe(); } catch (e) {} }
+      PUSH.on = false; PUSH.busy = false; pushPaint('この端末への通知を やめました。');
+    } catch (e) { PUSH.busy = false; pushPaint('やめられませんでした。' + e.message); }
+  }
+  /* 開いたとき：この端末が登録済みか（合図が新しくなっていれば 入れ直す）。sw.js から「その顧問先を開いて」が来たら開く */
+  async function pushCheck() {
+    if (!pushCan()) return;
+    try {
+      const reg = await navigator.serviceWorker.getRegistration('./');
+      const sub = reg && reg.pushManager && await reg.pushManager.getSubscription();
+      if (!sub) { PUSH.on = false; return; }
+      const st = await gs('pushState', sub.endpoint);
+      PUSH.on = true;
+      authIdb('readwrite', function (x) { x.put(API_URL, 'api'); return x.put({ tok: TOK, name: lsGet(LS_NAME), at: Date.now() }, 'tok'); });
+      if (!st.here && Notification.permission === 'granted') gs('pushSub', { endpoint: sub.endpoint, ua: navigator.userAgent }).catch(function () {});
+    } catch (e) {}
+  }
+  try { if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', function (e) { const d = e.data || {}; if (d && 'arr' in d) arGo(String(d.arr || ''), String(d.box || '')); }); } catch (e) {}
+  const ARR_OPEN = (function () { try { const u = new URL(location.href), c = u.searchParams.get('arr'); if (c == null) return null; const b = u.searchParams.get('box') || ''; u.searchParams.delete('arr'); u.searchParams.delete('box'); history.replaceState(null, '', u.pathname + (u.search || '') + u.hash); return { code: c, box: b }; } catch (e) { return null; } })();
+  (function pushFirst() { if (S.started && S.booted) { pushCheck(); if (ARR_OPEN) arGo(ARR_OPEN.code, ARR_OPEN.box); return; } setTimeout(pushFirst, 1500); })();
+  /* ★ 出納帳（顧問先が書いたもの。見るだけ。2026-11-07） */
+  const OB = { box: '', ym: '', data: null };
+  function obYmNow() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  function obOpen(box, ym) { OB.box = box; OB.ym = ym || obYmNow(); $('obT').textContent = '📒 出納帳［' + boxLabel(box) + '］'; $('obv').hidden = false; obLoad(); }
+  function obLoad() {
+    const m = OB.ym.split('-'); $('obYm').textContent = m[0] + '年' + Number(m[1]) + '月分'; OB.data = null; obDraw(); $('obMsg').textContent = '読み込んでいます…';
+    const want = OB.box + '|' + OB.ym;
+    gs('officeBook', S.code, OB.box, OB.ym).then(function (r) { if (OB.box + '|' + OB.ym !== want) return; OB.data = r; obDraw(); $('obMsg').textContent = r.rows.length ? '' : 'この月は まだ書かれていません。'; },
+      function (e) { $('obMsg').textContent = '読み込めませんでした。' + e.message; });
+  }
+  function obYen(n) { return n ? Number(n).toLocaleString('ja-JP') : ''; }
+  function obDraw() {
+    const tb = $('obBody'); tb.textContent = ''; const d = OB.data; if (!d) return;
+    const tr = function (cls, cells) { const r = el('tr', cls); cells.forEach(function (c) { r.appendChild(el('td', c[1] || '', c[0])); }); tb.appendChild(r); };
+    tr('cy', [[''], ['前月からの繰越'], ['', 'n'], ['', 'n'], [Number(d.carry).toLocaleString('ja-JP'), 'n' + (d.carry < 0 ? ' neg' : '')]]);
+    d.rows.forEach(function (x) { tr('', [[x.date.slice(5).replace('-', '/')], [x.memo], [obYen(x.in), 'n'], [obYen(x.out), 'n'], [Number(x.bal).toLocaleString('ja-JP'), 'n' + (x.bal < 0 ? ' neg' : '')]]); });
+    tr('cy', [[''], ['この月の計'], [obYen(d.inSum) || '0', 'n'], [obYen(d.outSum) || '0', 'n'], [Number(d.end).toLocaleString('ja-JP'), 'n' + (d.end < 0 ? ' neg' : '')]]);
+  }
+  function obMove(dir) { const m = OB.ym.split('-'), d = new Date(Number(m[0]), Number(m[1]) - 1 + dir, 1); OB.ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); obLoad(); }
+  $('obClose').addEventListener('click', function () { $('obv').hidden = true; });
+  $('obv').addEventListener('click', function (e) { if (e.target === $('obv')) $('obv').hidden = true; });
+  $('obPrev').addEventListener('click', function () { obMove(-1); });
+  $('obNext').addEventListener('click', function () { obMove(1); });
+  $('obCsv').addEventListener('click', function () {
+    const d = OB.data; if (!d) return;
+    const q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    const lines = [['日付', '摘要', '入金', '出金', '残高'], ['', '前月からの繰越', '', '', d.carry]].concat(d.rows.map(function (x) { return [x.date, x.memo, x.in || '', x.out || '', x.bal]; })).concat([['', 'この月の計', d.inSum, d.outSum, d.end]]);
+    const c = S.clients.find(function (x) { return x.code === S.code; }) || { name: '' };
+    saveBlob(new Blob(['\ufeff' + lines.map(function (l) { return l.map(q).join(','); }).join('\r\n')], { type: 'text/csv' }), [S.code, c.name, boxLabel(OB.box), OB.ym, '出納帳'].join('_').replace(/[\\\/:*?"<>|\s]+/g, '_') + '.csv');
+  });
+  /* ★ 押すと 回収資料タブで その顧問先の その箱を開く（全月分。2026-11-07） */
+  function arGo(code, box) {
+    try { window.focus(); } catch (e) {}
+    if (code && !setCode(code)) return;
+    perPick('');
+    S.box = box || ''; $('box').value = S.box; if ($('box').value !== S.box) { S.box = ''; $('box').value = ''; }
+    if (S.tab === 'Docs') docsLoad(); else selectTab('Docs');
+    LN.n = 0; lnBadge();
   }
   function arCheck(force) {
     if (!S.started || !S.booted || LIVE || (AR.busy && !force)) return;
@@ -4501,8 +4644,8 @@
         LN.n += x.n;
         try {
           if (window.Notification && Notification.permission === 'granted') {
-            const nt = new Notification('📷 ' + x.name + ' 様から 届きました', { body: x.n + '件 届きました。押すと 仕訳化の画面を開きます。', tag: 'arr-' + x.code, icon: 'icon-192.png' });
-            nt.onclick = function () { nt.close(); lnGo(x.code); };
+            const nt = new Notification('📷 ' + x.code + ' ' + x.name + ' 様から 届きました', { body: x.n + '件 届きました（' + (x.box || '') + '）。押すと 回収資料を開きます。', tag: 'arr-' + x.code, icon: 'icon-192.png' });
+            nt.onclick = function () { nt.close(); arGo(x.code, x.box || ''); };
           }
         } catch (e) {}
       });
@@ -6173,6 +6316,17 @@
       sel.textContent = ''; sel.appendChild(el('option', null, '（選んでください）')); sel.options[0].value = '';
       names.concat(vv && names.indexOf(vv) < 0 ? [vv] : []).forEach(function (n) { const o = el('option', null, n); o.value = n; sel.appendChild(o); });
       sel.value = vv || '';
+    };
+    put(STAFF_NAMES || []);
+    if (!STAFF_NAMES) gs('staffNames').then(function (r) { STAFF_NAMES = r || []; put(STAFF_NAMES); }, function () {});
+  }
+  /* ★ 補助担当者（2026-11-07）。職員の名前から選ぶ（空＝なし） */
+  function aSubFill(v) {
+    const sel = $('aSub'); if (!sel) return;
+    const put = function (names) {
+      sel.textContent = ''; sel.appendChild(el('option', null, '（なし）')); sel.options[0].value = '';
+      names.concat(v && names.indexOf(v) < 0 ? [v] : []).forEach(function (n) { const o = el('option', null, n); o.value = n; sel.appendChild(o); });
+      sel.value = v || '';
     };
     put(STAFF_NAMES || []);
     if (!STAFF_NAMES) gs('staffNames').then(function (r) { STAFF_NAMES = r || []; put(STAFF_NAMES); }, function () {});
@@ -11011,7 +11165,7 @@
     $('aTitle').textContent = c.code + '　' + c.name;
     $('aForm').hidden = false;
     $('aCode').value = c.code; $('aCode').readOnly = true;
-    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); A.bconf = JSON.parse(JSON.stringify(c.bconf || {})); $('aRepTitle').value = c.repTitle || ''; $('aRepName').value = c.repName || ''; $('aExplainer').value = c.explainer || ''; aTantoFill(c.tanto || ''); $('aIconName').value = c.iconName || ''; aIconSet(c.iconColor || ''); aCnsShow(c); $('aFy').value = c.fy ? String(c.fy) : ''; $('aKind').value = c.kindSet ? c.kind : ''; $('aKindHint').textContent = c.kindSet ? '' : '（いまは 名前から「' + corpKindOf(c) + '」と当てています）';
+    $('aName').value = c.name; $('aStaff').value = c.staff; $('aEmail').value = c.email || ''; $('aAppUrl').value = c.appUrl || ''; $('aAppName').value = c.appName || ''; A.spot = Object.assign({}, c.spot || {}); A.bconf = JSON.parse(JSON.stringify(c.bconf || {})); $('aRepTitle').value = c.repTitle || ''; $('aRepName').value = c.repName || ''; $('aExplainer').value = c.explainer || ''; aTantoFill(c.tanto || ''); aSubFill(c.sub || ''); $('aIconName').value = c.iconName || ''; aIconSet(c.iconColor || ''); aCnsShow(c); $('aFy').value = c.fy ? String(c.fy) : ''; $('aKind').value = c.kindSet ? c.kind : ''; $('aKindHint').textContent = c.kindSet ? '' : '（いまは 名前から「' + corpKindOf(c) + '」と当てています）';
     $('aBoxes').value = c.boxesRaw ? c.boxes.map(function (b) { return ((c.hidden || []).indexOf(b) >= 0 ? '~' : '') + b; }).join('\n') : '';
     $('aActive').checked = c.active; $('aActiveRow').hidden = false; $('aScan').checked = !!c.scan;
     aThemeSet(c.theme || 'green');
@@ -11026,7 +11180,7 @@
     A.cur = null; A.isNew = true;
     $('aTitle').textContent = '新しい顧問先';
     $('aForm').hidden = false;
-    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName', 'aKind', 'aRepTitle', 'aRepName', 'aExplainer', 'aIconName'].forEach(function (k) { $(k).value = ''; }); aTantoFill(S.me && S.me.name || '', true); aIconSet(''); aCnsShow(null); $('aKindHint').textContent = ''; A.spot = {}; A.bconf = {};
+    ['aCode', 'aName', 'aStaff', 'aBoxes', 'aFy', 'aEmail', 'aAppUrl', 'aAppName', 'aKind', 'aRepTitle', 'aRepName', 'aExplainer', 'aIconName'].forEach(function (k) { $(k).value = ''; }); aTantoFill(S.me && S.me.name || '', true); aSubFill(''); aIconSet(''); aCnsShow(null); $('aKindHint').textContent = ''; A.spot = {}; A.bconf = {};
     $('aCode').readOnly = false; $('aActive').checked = true; $('aScan').checked = false; aThemeSet('green'); aLogoShow(null);
     $('aActiveRow').hidden = true; $('aUrlRow').hidden = true; $('aLockRow').hidden = true;
     $('aSave').textContent = '登録して URL を作る';
@@ -11161,7 +11315,7 @@
           if (path in A.spot) { delete A.spot[path]; cur.day = 1; }
           else if (cur.day) delete cur.day;
           else A.spot[path] = '';
-          if (cur.day || cur.ask) A.bconf[path] = cur; else delete A.bconf[path];
+          if (cur.day || cur.ask || cur.book) A.bconf[path] = cur; else delete A.bconf[path];
           aTreeDraw();
         });
         row.appendChild(sb);
@@ -11175,10 +11329,20 @@
             const t = v.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 40);
             const cur = A.bconf[path] || {};
             if (t && t !== '何年何月分の資料ですか' && t !== '何年何月何日の資料ですか') cur.ask = t; else delete cur.ask;
-            if (cur.day || cur.ask) A.bconf[path] = cur; else delete A.bconf[path];
+            if (cur.day || cur.ask || cur.book) A.bconf[path] = cur; else delete A.bconf[path];
             aTreeDraw();
           });
           row.appendChild(ab);
+          /* ★ 出納帳（2026-11-07）：入れると 顧問先の画面の 何年何月分の右に［📒 出納帳］が出る（日付・摘要・入金・出金・残高） */
+          const bk = el('button', 'sm2 book' + (bc.book ? ' on' : ''), bc.book ? '📒 出納帳あり' : '出納帳'); bk.type = 'button';
+          bk.title = bc.book ? '顧問先が この箱で 出納帳（日付・摘要・入金・出金・残高）を書けます。押すと やめます' : '押すと この箱に 出納帳を付けます（顧問先が 日付・摘要・入金・出金 を書けて 残高が出る。科目は選ばない）';
+          bk.addEventListener('click', function () {
+            const cur = A.bconf[path] || {};
+            if (cur.book) delete cur.book; else cur.book = 1;
+            if (cur.day || cur.ask || cur.book) A.bconf[path] = cur; else delete A.bconf[path];
+            aTreeDraw();
+          });
+          row.appendChild(bk);
         }
         if (isS) { const dd = el('input', 'sptd'); dd.type = 'date'; dd.value = A.spot[path] || ''; dd.title = '提出期限（空なら 期限なし）'; dd.setAttribute('aria-label', segs[d] + 'の提出期限');
           dd.addEventListener('change', function () { A.spot[path] = dd.value || ''; }); row.appendChild(dd); }
@@ -11252,7 +11416,7 @@
     if (A.busy) return;
     const o = { code: ccode($('aCode').value), fy: $('aFy').value, name: $('aName').value.trim(), staff: $('aStaff').value.trim(),
       boxes: boxesOf($('aBoxes').value), hidden: Object.keys(hiddenOf($('aBoxes').value)), active: $('aActive').checked, scan: $('aScan').checked, theme: $('aTheme').value || 'green', isNew: A.isNew, email: $('aEmail').value.trim(), spot: A.spot || {}, bconf: A.bconf || {}, appUrl: $('aAppUrl').value.trim(), appName: $('aAppName').value.trim(), kind: $('aKind').value,
-      repTitle: $('aRepTitle').value.trim(), repName: $('aRepName').value.trim(), explainer: $('aExplainer').value.trim(), tanto: $('aTanto').value,
+      repTitle: $('aRepTitle').value.trim(), repName: $('aRepName').value.trim(), explainer: $('aExplainer').value.trim(), tanto: $('aTanto').value, sub: $('aSub').value,
       iconName: $('aIconName').value.trim(), iconColor: $('aIconColor').value };
     A.busy = true; $('aSave').disabled = true; amsg('保存しています…');
     gs('adminSave', o).then(function (l) {
