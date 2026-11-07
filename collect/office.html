@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794071894;</script>
+<script>window.__PAGE_VER=1794088974;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1275,6 +1275,21 @@
   .arrpop .arr-row { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; font: inherit; font-size: 14px; background: #fff; border: 0; border-top: 1px solid #eef1f0; padding: 8px 4px; cursor: pointer; }
   .arrpop .arr-row:hover { background: #F3F8F6; }
   .arrpop .arr-row .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bdtag { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: #2E7D32; color: #fff; font-size: 12px; font-weight: 800; }
+  .bdbtn { margin-left: 8px; font: inherit; font-size: 12px; padding: 2px 8px; border: 1px solid #b9c7c1; border-radius: 999px; background: #fff; cursor: pointer; }
+  .bdbtn.on { color: #555; }
+  .jdsep.bdone b, .jdsep.bdone span { color: #2E7D32; }
+  .dmon.bdone { background: #EAF6EC; border-color: #9CCBA8; }
+  .dmon.bdone > .dmon-hd { background: #DDF0E0; }
+  /* 処理済ボックスにしますか：パソコンは 右下に浮かべる（上のタブ・下のテンキーを ふさがない）。スマホは 一覧のすぐ上 */
+  .bdask { position: fixed; right: 18px; bottom: 18px; z-index: 70; background: #fff; border: 2px solid #2E7D32; border-radius: 12px; padding: 10px 14px; box-shadow: 0 8px 30px rgba(0,0,0,.25); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; max-width: min(520px, calc(100% - 36px)); font-weight: 700; }
+  @media (max-width: 760px) { .bdask { position: static; margin: 8px 0; max-width: none; box-shadow: none; } }
+  .bdask[hidden] { display: none; }
+  .bdout { margin: 6px 0 14px; padding: 10px; border: 1px solid #cfe0da; border-radius: 10px; background: #FBFDFC; }
+  .bdout h3, .otitle { margin: 0 0 6px; font-size: 15px; }
+  .bdtbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .bdtbl th { text-align: left; font-size: 12px; background: #F3F6F5; padding: 5px; } .bdtbl td { padding: 6px 5px; border-top: 1px solid #eef1f0; vertical-align: top; }
+  .bdtbl .n { text-align: right; } .bdtbl tr.wait { background: #FFF8E1; } .bdtbl .bdwait { color: #8A5A00; } .bdtbl .bdex { color: #2E7D32; } .bdtbl .fname { font-size: 12px; color: #555; word-break: break-all; }
   .bxlist { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow: auto; margin: 8px 0; }
   .bxlist label { display: flex; align-items: center; gap: 6px; font-size: 15px; }
   .obstrip { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; padding: 6px 10px; background: #FFF8E1; border: 1px solid #F0D98A; border-radius: 10px; font-weight: 700; }
@@ -1425,6 +1440,7 @@
       <button type="button" class="jpop" id="jPopGo" hidden>📎 画像を別ウィンドウ表示</button><button type="button" class="jwin" id="jLedGo" title="複数仕訳辞書の写真の 出納帳を 別ウィンドウに">📒 出納帳を別ウィンドウ</button><button type="button" class="jwin" id="jAi" hidden title="この画面の未処理の写真を AI に読ませて、日付・金額・辞書の下書きを付ける（もう一度押すと 読み直して上書き）">🤖 AI で下書き</button><button type="button" class="jwin" id="jArrange" title="写真・辞書の一覧（この画面）・出納帳の3つを 重ならないように並べる。モニターが何枚あっても使える">🪟 3つに並べる</button>
       <span class="jlsave" id="saving" role="status"></span>
     </div>
+    <div class="bdask" id="bdAsk" hidden role="status" aria-live="polite"></div>
     <div class="jlist" id="jlist"><div class="cbox muted">読み込み中…</div></div>
     <div class="jmsg" id="formMsg" role="status"></div>
   </div>
@@ -1561,6 +1577,8 @@
   <p class="note">確定した伝票を 回収ボックスごとに並べます。見て よければ［取込ファイルへ変換］。<b>まとめ方</b>で その月ぜんぶ（一括）か、回収ボックスごと（下の箱だけでも）かを選べます。
     ファイル名は「顧問先コード_顧問先名_年月（_回収ボックス）_作った日時」。変換先の会計ソフトは 下の「やりとりする会計ソフト」で決まります
     （TKC FX クラウドシリーズ＝「仕訳帳(Excel)の読込」の形（44列）・1ファイル60行まで・日付をまたがない／会計王＝仕訳データ CSV／弥生会計＝仕訳日記帳のインポートの形の CSV）。そのまま この端末に保存します。控えは顧問先フォルダ「一括読み込みエクセル」に作った日時つきで残ります。変換した仕訳は取り消せなくなります。</p>
+  <div class="bdout" id="bdOut"></div>
+  <h3 class="otitle">月ごと（仕訳の日付）</h3>
   <div id="oBody"><div class="cbox muted">読み込み中…</div></div>
 </div>
 
@@ -2342,7 +2360,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1,
+  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, boxDoneList: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, lineNews: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -2894,6 +2912,7 @@
     }
     clientTheme();
     try { lnShowPend(); } catch (e) {}
+    if (!soft) { S.bdone = {}; S.bdCode = ''; try { bdLoad(S.code); } catch (e) {} }
     const c = S.clients.find(function (x) { return x.code === S.code; });
     const bx = $('box'); bx.textContent = ''; const all = el('option', null, 'すべて'); all.value = ''; bx.appendChild(all);
     (c ? c.boxes : []).forEach(function (b) { const o = el('option', null, b); o.value = b; bx.appendChild(o); });
@@ -3604,7 +3623,7 @@
       if (gk !== grp) {
         grp = gk;
         const sep = el('div', 'jdsep'); sep.appendChild(el('b', null, perLabel(it.period)));
-        sep.appendChild(el('span', null, it.box)); sep.appendChild(el('i'));
+        sep.appendChild(el('span', null, it.box)); bdMark(sep, it.period, it.box); sep.appendChild(el('i'));
         l.appendChild(sep);
       }
       const row = el('div', 'jdrow'); row.dataset.id = it.id; row.dataset.i = String(i);
@@ -3657,8 +3676,8 @@
     perFillM(); $('perM').value = v.length > 4 ? v.slice(5, 7) : '';
     S.per = $('perY').value ? $('perY').value + ($('perM').value ? '-' + $('perM').value : '') : '';
   }
-  $('perY').addEventListener('change', function () { perFillM(); $('perM').value = ''; S.per = this.value; if (S.tab === 'Docs') docsDraw(); render(); });
-  $('perM').addEventListener('change', function () { S.per = $('perY').value + (this.value ? '-' + this.value : ''); if (S.tab === 'Docs') docsDraw(); render(); });
+  $('perY').addEventListener('change', function () { S.perPicked = S.perPicked || {}; S.perPicked[S.code] = 1; perFillM(); $('perM').value = ''; S.per = this.value; if (S.tab === 'Docs') docsDraw(); render(); });
+  $('perM').addEventListener('change', function () { S.perPicked = S.perPicked || {}; S.perPicked[S.code] = 1; S.per = $('perY').value + (this.value ? '-' + this.value : ''); if (S.tab === 'Docs') docsDraw(); render(); });
 
   /* ================= 回収資料 =================
      送ってもらった資料を ただ並べる（月分 ／ 箱 ごと）。仕訳化するかどうかに関係なく 全部。
@@ -3871,6 +3890,7 @@
         tg.appendChild(el('span', 'chev', '▾'));
         tg.addEventListener('click', function () { DOPEN[key] = !open; docsDraw(); });
         row.appendChild(tg);
+        if (!noPer && p) bdMark(row, p, bx, mon);
         if (open && S.dcpick) {
           const all = items.every(function (x) { return S.dcsel[x.id]; });
           const sb = el('button', 'dmon-b', all ? 'この月を全部外す' : 'この月を全部選ぶ'); sb.type = 'button';
@@ -4685,6 +4705,146 @@
     const c = S.clients.find(function (x) { return x.code === S.code; }) || { name: '' };
     saveBlob(new Blob(['\ufeff' + lines.map(function (l) { return l.map(q).join(','); }).join('\r\n')], { type: 'text/csv' }), [S.code, c.name, boxLabel(OB.box), OB.ym, '出納帳'].join('_').replace(/[\\\/:*?"<>|\s]+/g, '_') + '.csv');
   });
+  /* ================= ★★ 処理済ボックス（2026-11-07）── 月分 × 箱 =================
+       ・仕訳化の区切り（2026年9月分 現金の領収書）と 回収資料の月分の見出しに「✓ 処理済」の色と［処理済にする］［処理済を外す］
+       ・仕訳化で その月分・箱を 全部確定（か 対象外）にしたら「処理済ボックスにしますか」→［はい］で処理済
+       ・処理済になったものは 取込ファイルタブに「取込待ち」で並ぶ（ファイルにしたら「ファイル化済み」）
+       ・仕訳化を開いたら はじめは 処理済の月分の翌月（選んでいる箱があれば その箱の） */
+  function bdKey(per, box) { return String(per || '') + '|' + String(box || ''); }
+  function bdIs(per, box) { const x = (S.bdone || {})[bdKey(per, box)]; return !!(x && x.at); }
+  function bdLoad(code) {
+    if (!code) return;
+    gs('boxDoneList', code).then(function (l) {
+      if (code !== S.code) return;
+      S.bdone = {}; (l || []).forEach(function (x) { S.bdone[bdKey(x.per, x.box)] = x; }); S.bdCode = code;
+      bdInitPer();
+      if (S.tab === 'Docs') docsDraw(); render(); if (S.tab === 'Out' && O.items) oDraw();
+    }, function () {});
+  }
+  function bdInitPer() {
+    S.perPicked = S.perPicked || {};
+    if (S.perPicked[S.code]) return;
+    S.perPicked[S.code] = 1;
+    const ks = boxKeys();
+    const done = Object.keys(S.bdone || {}).map(function (k) { return S.bdone[k]; }).filter(function (x) { return x.at && (!ks.length || ks.some(function (b) { return x.box === b || x.box.indexOf(b + '/') === 0; })); });
+    if (!done.length) return;
+    const last = done.map(function (x) { return x.per; }).sort().pop();
+    const m = last.split('-'), d = new Date(Number(m[0]), Number(m[1]), 1);
+    const next = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    perFill();
+    const have = PERS.filter(function (p) { return p >= next; }).sort();
+    const pick = PERS.indexOf(next) >= 0 ? next : have[0];
+    if (!pick) return;
+    perPick(pick);
+  }
+  function bdMark(host, per, box, wrap) {
+    const on = bdIs(per, box);
+    if (on) { host.classList.add('bdone'); if (wrap) wrap.classList.add('bdone'); host.appendChild(el('span', 'bdtag', '✓ 処理済')); }
+    const b = el('button', 'bdbtn' + (on ? ' on' : ''), on ? '処理済を外す' : '処理済にする'); b.type = 'button';
+    b.title = on ? 'この月分・この箱の「処理済」を外す（取込ファイルタブの 取込待ちから外れる）' : 'この月分・この箱を 処理済ボックスにする（取込ファイルタブに 取込待ちで並ぶ）';
+    b.addEventListener('click', function (e) { e.stopPropagation(); bdSet(per, box, !on); });
+    host.appendChild(b);
+  }
+  function bdSet(per, box, on) {
+    const code = S.code, k = bdKey(per, box);
+    S.bdone = S.bdone || {};
+    const was = S.bdone[k] ? Object.assign({}, S.bdone[k]) : null;
+    S.bdone[k] = Object.assign({ per: per, box: box }, S.bdone[k] || {}, { at: on ? 'いま' : '' });
+    if (S.tab === 'Docs') docsDraw(); render(); if (S.tab === 'Out' && O.items) oDraw();
+    gs('boxDoneSet', code, per, box, !!on).then(function (l) {
+      if (code !== S.code) return;
+      S.bdone = {}; (l || []).forEach(function (x) { S.bdone[bdKey(x.per, x.box)] = x; });
+      if (S.tab === 'Docs') docsDraw(); render(); if (S.tab === 'Out' && O.items) oDraw();
+      fmsg((on ? '処理済ボックスにしました：' : '処理済を外しました：') + perLabel(per) + '［' + boxLabel(box) + '］' + (on ? '（取込ファイルタブに 取込待ちで並びます）' : ''), 'ok');
+    }, function (e) {
+      if (code !== S.code) return;
+      if (was) S.bdone[k] = was; else delete S.bdone[k];
+      if (S.tab === 'Docs') docsDraw(); render();
+      fmsg('処理済にできませんでした。' + e.message, 'err');
+    });
+  }
+  /* 全部 確定（か 対象外）になったら 聞く。同じ組は 1回だけ */
+  function bdCheck(it) {
+    if (!it || !it.period || !it.box || bdIs(it.period, it.box)) return;
+    const k = bdKey(it.period, it.box); S.bdAsked = S.bdAsked || {}; if (S.bdAsked[k]) return;
+    const pool = {};
+    [S.docs || [], (S.all && S.all.items) || [], S.items || []].forEach(function (l) { l.forEach(function (x) { if (x.period === it.period && x.box === it.box && !x.trash) pool[x.id] = x; }); });
+    const left = Object.keys(pool).map(function (id) { return pool[id]; }).filter(function (x) { return x.status !== 'done' && stTag(x)[0] !== 'skip'; });
+    if (left.length) return;
+    S.bdAsked[k] = 1;
+    const w = $('bdAsk'); w.textContent = '';
+    w.appendChild(el('span', null, perLabel(it.period) + '［' + boxLabel(it.box) + '］を 全部仕訳にしました。処理済ボックスにしますか？'));
+    const y = el('button', 'btn sm', 'はい（処理済にする）'); y.type = 'button'; y.addEventListener('click', function () { w.hidden = true; bdSet(it.period, it.box, true); });
+    const n = el('button', 'btn ghost sm', 'あとで'); n.type = 'button'; n.addEventListener('click', function () { w.hidden = true; });
+    w.appendChild(y); w.appendChild(n); w.hidden = false;
+  }
+  /* ---- 取込ファイルタブ：処理済ボックスの一覧（取込待ち／ファイル化済み） ---- */
+  S.bdSel = {};
+  function bdOutDraw() {
+    const w = $('bdOut'); if (!w) return; w.textContent = '';
+    const rows = Object.keys(S.bdone || {}).map(function (k) { return S.bdone[k]; }).filter(function (x) { return x.at || x.exAt; })
+      .sort(function (a, b) { return a.per !== b.per ? (a.per < b.per ? 1 : -1) : boxIdx(a.box) - boxIdx(b.box); });
+    w.appendChild(el('h3', null, '処理済ボックス（月分 × 箱）'));
+    if (!rows.length) { w.appendChild(el('p', 'note', 'まだ 処理済ボックスは ありません。仕訳化・回収資料の［処理済にする］で ここに並びます。')); return; }
+    const cntOf = function (x) { let n = 0; (O.items || []).forEach(function (it) { if (it.status === 'done' && it.period === x.per && it.box === x.box) n += (it.entries || []).length; }); return n; };
+    const tb = el('table', 'bdtbl');
+    tb.innerHTML = '<thead><tr><th></th><th>月分</th><th>箱</th><th class="n">仕訳</th><th>状態</th><th></th></tr></thead>';
+    const tbody = el('tbody');
+    rows.forEach(function (x) {
+      const k = bdKey(x.per, x.box), tr = el('tr', x.exAt ? 'ex' : x.at ? 'wait' : '');
+      const c0 = el('td'); if (x.at) { const cb = el('input'); cb.type = 'checkbox'; cb.checked = !!S.bdSel[k]; cb.setAttribute('aria-label', perLabel(x.per) + ' ' + x.box + ' を選ぶ'); cb.addEventListener('change', function () { if (cb.checked) S.bdSel[k] = 1; else delete S.bdSel[k]; bdOutDraw(); }); c0.appendChild(cb); } tr.appendChild(c0);
+      tr.appendChild(el('td', null, perLabel(x.per)));
+      tr.appendChild(el('td', 'bx', boxLabel(x.box)));
+      tr.appendChild(el('td', 'n', String(cntOf(x))));
+      const st = el('td', 'st');
+      if (x.exAt) { st.appendChild(el('b', 'bdex', '✓ ファイル化済み')); st.appendChild(el('span', 'note', '　' + x.exAt + (x.exBy ? '（' + x.exBy + '）' : '') + (x.exN ? '　' + x.exN + '件' : ''))); if (x.exFile) st.appendChild(el('div', 'fname', x.exFile)); }
+      else st.appendChild(el('b', 'bdwait', '取込待ち'));
+      if (!x.at) st.appendChild(el('div', 'note', '（処理済を外しています）'));
+      tr.appendChild(st);
+      const c5 = el('td'); if (x.at) { const b = el('button', 'btn sm' + (x.exAt ? ' ghost' : ''), x.exAt ? 'もう一度ファイル化' : 'ファイル化'); b.type = 'button'; b.addEventListener('click', function () { bdExport([x]); }); c5.appendChild(b); } tr.appendChild(c5);
+      tbody.appendChild(tr);
+    });
+    tb.appendChild(tbody); w.appendChild(tb);
+    const bar = el('div', 'bar');
+    const wait = rows.filter(function (x) { return x.at && !x.exAt; });
+    const all = el('button', 'btn ghost sm', '取込待ちを全部選ぶ（' + wait.length + '）'); all.type = 'button'; all.disabled = !wait.length;
+    all.addEventListener('click', function () { wait.forEach(function (x) { S.bdSel[bdKey(x.per, x.box)] = 1; }); bdOutDraw(); });
+    const picked = rows.filter(function (x) { return x.at && S.bdSel[bdKey(x.per, x.box)]; });
+    const go = el('button', 'primary', '選んだ箱をファイル化（' + picked.length + '）'); go.type = 'button'; go.disabled = !picked.length;
+    go.addEventListener('click', function () { bdExport(picked); });
+    bar.appendChild(all); bar.appendChild(go); bar.appendChild(el('span', 'note', '1つの箱ごとに 取込ファイルを作ります（名前に 月分と箱が入ります）'));
+    w.appendChild(bar);
+  }
+  let BD_RUN = false;
+  async function bdExport(list) {
+    if (BD_RUN || !list.length) return;
+    const o = $('oMsg'), l = $('oLink'); l.textContent = '';
+    if (S.saving) { o.textContent = 'まだ保存中の確定があります。少し待ってからもう一度どうぞ。'; o.className = 'pagemsg err'; return; }
+    BD_RUN = true; const code = S.code, ok = [], ng = [];
+    for (let i = 0; i < list.length; i++) {
+      const x = list[i];
+      o.textContent = 'ファイルにしています… ' + (i + 1) + ' / ' + list.length + '　' + perLabel(x.per) + '［' + boxLabel(x.box) + '］'; o.className = 'pagemsg';
+      try {
+        const r = await gs('workExport', code, x.per, x.box, x.per);
+        oDownload(r, l, perLabel(x.per) + '［' + boxLabel(x.box) + '］');
+        ok.push(perLabel(x.per) + '［' + boxLabel(x.box) + '］' + r.count + '件'); delete S.bdSel[bdKey(x.per, x.box)];
+      } catch (e) { ng.push(perLabel(x.per) + '［' + boxLabel(x.box) + '］：' + e.message); }
+    }
+    BD_RUN = false;
+    o.textContent = (ok.length ? '取込ファイルにしました：' + ok.join('・') + '。' : '') + (ng.length ? '　できなかったもの：' + ng.join('・') : '');
+    o.className = 'pagemsg ' + (ng.length ? 'err' : 'ok');
+    if (code === S.code) { bdLoad(code); load(); oLoad(); }
+  }
+  function oDownload(r, l, head) {
+    (r.dl || []).forEach(function (f, i) {
+      const bin = atob(f.b64); const u8 = new Uint8Array(bin.length);
+      for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
+      const href = URL.createObjectURL(new Blob([u8], { type: f.mime || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      const a = el('a', null, (head ? head + '　' : '') + f.name); a.href = href; a.download = f.name;
+      const d = el('div'); d.appendChild(a); l.appendChild(d);
+      setTimeout(function () { a.click(); }, i * 400);
+    });
+  }
   /* ★ 押すと 回収資料タブで その顧問先の その箱を開く（全月分。2026-11-07） */
   function arGo(code, box) {
     try { window.focus(); } catch (e) {}
@@ -8511,6 +8671,8 @@
   /* 仕訳化で変わった状態を 回収資料の一覧（S.docs）にも映す（タブを移ったとき すぐ正しく出るように） */
   function docSync(it) {
     (S.docs || []).forEach(function (x) { if (x.id === it.id) { x.status = it.status; x.entries = it.entries.slice(); x.note = it.note; } });
+    if (S.all && S.all.items) S.all.items.forEach(function (x) { if (x.id === it.id && x !== it) { x.status = it.status; x.entries = it.entries.slice(); x.note = it.note; } });
+    if (it.status === 'done') { try { bdCheck(it); } catch (e) {} }
   }
   /* ★ 複数仕訳辞書：［この写真を確定する］ */
   function pageDone(it) {
@@ -10896,6 +11058,7 @@
   function oThumbs() { $('oBody').querySelectorAll('img.othumb[data-id]').forEach(function (im) { if (!im.src && THUMB[im.dataset.id]) im.src = THUMB[im.dataset.id]; }); }
   function bsAcct(code) { return /^[1-3]/.test(String(code || '')); }
   function oDraw() {
+    try { bdOutDraw(); } catch (e) {}
     const body = $('oBody'); body.textContent = '';
     const ym = O.ym;
     /* 箱ごとに その月の仕訳を集める */
@@ -11008,14 +11171,7 @@
         : r.count + '件を取込ファイルにしました。' + (r.cut ? '（摘要が FX の上限 全角40文字を超えた ' + r.cut + '件は、そこで切りました）' : ''));
       o.className = 'pagemsg ' + (r.miss || r.noName ? 'err' : 'ok');
       /* ★ そのまま端末に落とす（保存先を選ばせない。Drive も開かない）。控えは Drive に作った日時つきで残る */
-      (r.dl || []).forEach(function (f, i) {
-        const bin = atob(f.b64); const u8 = new Uint8Array(bin.length);
-        for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
-        const href = URL.createObjectURL(new Blob([u8], { type: f.mime || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-        const a = el('a', null, f.name); a.href = href; a.download = f.name;
-        const d = el('div'); d.appendChild(a); l.appendChild(d);
-        setTimeout(function () { a.click(); }, i * 400);
-      });
+      oDownload(r, l, '');
       load(); oLoad();
     }, function (e) { o.textContent = e.message; o.className = 'pagemsg err'; });
   });
