@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794051761;</script>
+<script>window.__PAGE_VER=1794057143;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -105,6 +105,7 @@
   }
   .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
   .ctl label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .ctl label[hidden] { display: none !important; }
   #client { min-width: 220px; }
 
   .pane { flex: 1; min-height: 0; }
@@ -1365,7 +1366,7 @@
 <div class="kzann" id="kzAnn" hidden><button type="button" class="kzann-x" id="kzAnnX" aria-label="このお知らせを消す" title="このお知らせを消す（改善要望タブには残ります）">×</button><button type="button" class="kzann-t" id="kzAnnT"></button></div>
 <div class="ctl" id="ctl" hidden>
   <label>顧問先 <select id="client"></select></label>
-  <label title="日付を「23」だけ打ったときに使う年月">処理する月 <input type="month" id="month"></label>
+  <label class="month-hide" title="（中で使うだけ。画面には出さない）" hidden>処理する月 <input type="month" id="month"></label>
   <span class="seg" role="group" aria-label="表示する写真" id="filter">
     <button type="button" data-st="todo" aria-pressed="true">未処理 <b id="cTodo">0</b></button>
     <button type="button" data-st="back" aria-pressed="false">差戻し <b id="cBack">0</b></button>
@@ -2061,7 +2062,7 @@
           <a class="kzn-img" href="names/o2.jpg" target="_blank" rel="noopener"><img loading="lazy" src="names/o2.jpg" alt="事務所の画面 仕訳化タブ（辞書を選ぶところ）"></a>
           <ol>
             <li><b>顧問先の欄</b></li>
-            <li><b>処理する月の欄</b>　日付を「23」だけ打ったときの年月</li>
+            <li><b>年・月分の欄</b>　どの月分を出すか。日付を「23」だけ打ったときも この月（資料に月分があれば その月）</li>
             <li><b>未処理・差戻し・確定・全部 の切り替え</b></li>
             <li><b>並べ方（縦1列・横2列・画像を別ウィンドウ表示）</b></li>
             <li><b>1件の枠</b>　写真1件ぶん。頭に 番号・箱・状態・届いた日時・ファイル名</li>
@@ -2492,7 +2493,8 @@
     hidePanes(); $('pane' + k).hidden = false;
     /* 隠れた欄にフォーカスが残って テンキーが出たままにならないように */
     const ae = document.activeElement; if (ae && ae.dataset && ae.dataset.tk && !$('pane' + k).contains(ae)) { ae.blur(); tkHide(); }
-    $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Dict' || k === 'Out' || k === 'Rule' || k === 'Clients' || k === 'Send');
+    /* ★ 2026-11-07：顧問先タブは 下の一覧で選ぶので 上の帯（顧問先の欄）を出さない（選ぶところを1つに） */
+    $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Dict' || k === 'Out' || k === 'Rule' || k === 'Send');
     /* 帯の欄は タブに要るものだけ（処理する月・未処理/確定 は仕訳化だけ、月分・箱は 回収資料と仕訳化） */
     $('ctl').dataset.tab = k;
     if (k === 'Docs') docsLoad();
@@ -2567,7 +2569,9 @@
     const y = b ? b[0] : pm ? Number(pm[1]) : 0, m = b ? b[1] : pm ? Number(pm[2]) : 0;
     return y ? y + '/' + String(m).padStart(2, '0') + '/' : '';
   }
-  function baseYM() { const v = $('month').value || ''; const m = v.match(/^(\d{4})-(\d{2})$/); return m ? [Number(m[1]), Number(m[2])] : null; }
+  /* ★ 2026-11-07：「処理する月」の欄は無くした（年・月分の欄と 紛らわしかった）。日付を「23」だけ打ったときの年月は
+       ① その資料の月分（parseDate が先に見る）② 上の 年・月分 で選んでいる月 ③ 今月 の順 */
+  function baseYM() { const p = String(S.per || ''); const v = /^\d{4}-\d{2}$/.test(p) ? p : ($('month').value || ''); const m = v.match(/^(\d{4})-(\d{2})$/); return m ? [Number(m[1]), Number(m[2])] : null; }
   /* 日付：23 → 処理する月の23日 / 9/23・0923 → 処理する月の年の9月23日 / 2025/9/23・20250923 → そのまま */
   /* ★ その資料の月分（8月分）があれば「23」は 8月23日。無ければ 処理する月 */
   function parseDate(s, per) {
