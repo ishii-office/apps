@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794150739;</script>
+<script>window.__PAGE_VER=1794153329;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3607,7 +3607,7 @@
       const d = (ai || {})[it.id]; if (!d || d.err || !it.period) return;
       const P = per[it.period] = per[it.period] || { lines: [], rc: [], inc: [] };
       if (d.multi) (d.lines || []).forEach(function (l, i) { const a = Math.abs(Math.round(Number(l.amount) || 0)); if (!a) return; const o = { sid: it.id, box: it.box, ln: i, day: dayNo(l.date), date: l.date || '', amount: a, desc: l.desc || '' }; if (l.dir !== '入') P.lines.push(o); else P.inc.push(o); });
-      else if (!spineBox(it.box) && !isSheetFile(it)) { const a = Math.abs(Math.round(Number(d.amount) || 0)); if (a) P.rc.push({ id: it.id, box: it.box, day: dayNo(d.date), date: d.date || '', amount: a, party: d.party || '' }); }
+      else if (!isSheetFile(it) && !d.looksMulti) {   /* ★ カードの箱の領収書も（2026-11-09） */ const a = Math.abs(Math.round(Number(d.amount) || 0)); if (a) P.rc.push({ id: it.id, box: it.box, day: dayNo(d.date), date: d.date || '', amount: a, party: d.party || '' }); }
     });
     Object.keys(per).forEach(function (pk) {
       const P = per[pk]; if (!P.lines.length && !P.inc.length) return;
@@ -10357,11 +10357,17 @@
   function aiGo(code, btn, todo, batch) {
     /* 前のやり方（ルール・型）は 写真を そのまま明細で読む（型で 元金＋利息を当てるため）。一本化は 総合判断のやり方だけ */
     if (S.aiWay == null) return gs('aiStatus').then(function (r) { S.aiWay = r.way || 'v2'; }, function () { S.aiWay = 'v2'; }).then(function () { return aiGo(code, btn, todo, batch); });
-    const bk = S.aiWay === 'v1' ? [] : todo.filter(needBook);
+    /* ★★ 2026-11-09：カードの箱には 領収書も入る。もう1枚の領収書と分かっているもの（1取引の下書き）は 出納帳化に回さない */
+    const rcLike = function (it) { const d = (S.ai || {})[it.id]; return !!(d && !d.err && !d.looksMulti && (!d.multi || ((d.lines || []).length <= 1 && !subsOf(it.id).length))); };
+    const bk = S.aiWay === 'v1' ? [] : todo.filter(function (it) { return needBook(it) && !rcLike(it); });
+    todo.forEach(function (it) { if (S.aiWay !== 'v1' && needBook(it) && rcLike(it)) setMultiOne(it, false); });
     if (!bk.length) return aiGo2(code, btn, todo, batch);
+    /* 明細らしいもの（1取引と読めなかった・何枚かを1つの書類にしたもの）を先に。1回に読めるのは 8枚まで */
+    const lk = function (it) { const d = (S.ai || {})[it.id]; return d && (d.looksMulti || (d.multi && (d.lines || []).length > 1)) ? 0 : subsOf(it.id).length ? 1 : 2; };
+    bk.sort(function (a, b) { return lk(a) - lk(b); });
     const grp = {}; bk.forEach(function (it) { const k = it.box + '|' + String(it.period).slice(0, 7); (grp[k] = grp[k] || []).push(it); });
     AI_BUSY = true; btn.classList.add('busy');
-    const csvs = [], said = [];
+    const csvs = [], said = [], back = [];
     let q = Promise.resolve();
     Object.keys(grp).forEach(function (k) {
       q = q.then(function () {
@@ -10369,6 +10375,9 @@
         btn.textContent = '📒 出納帳に起こしています…（' + grp[k][0].box + '・' + perLabel(String(grp[k][0].period).slice(0, 7)) + '）';
         return aiBookFirst(code, grp[k]).then(function (o) {
           if (o.csv) csvs.push(o.csv);
+          /* ★★ 明細のページではなかった写真（領収書など）は 対象外にせず、1枚ずつの仕訳（1仕訳辞書）に回す */
+          const got = o.r.bookIds || [];
+          grp[k].forEach(function (x) { if (got.indexOf(x.id) < 0 && !subsOf(x.id).some(function (y) { return got.indexOf(y.id) >= 0; })) { setMultiOne(x, false); back.push(x); } });
           said.push('［' + grp[k][0].box + '］' + o.r.n + '行を出納帳に起こしました' + (o.r.merged ? '（重なり ' + o.r.merged + '件を1つに）' : '') + ((o.r.pre || o.r.post) ? '（月分以外 ' + ((o.r.pre || 0) + (o.r.post || 0)) + '行は 入れていません）' : '') + (o.r.book && o.r.book.off ? '・紙の残高と合わない行 ' + o.r.book.off : '') + ((o.r.parts || []).length > 1 ? '・使う人ごと ' + o.r.parts.map(function (pt) { return pt.who + ' ' + yen(pt.sum) + '円' + (pt.ok ? '（請求額と一致）' : '（⚠ 請求額 ' + yen(pt.total) + '円とちがう）'); }).join('／') : ''));
         }, function (e) { said.push('［' + grp[k][0].box + '］出納帳に起こせませんでした：' + e.message); });
       });
@@ -10376,7 +10385,8 @@
     return q.then(function () {
       AI_BUSY = false; btn.classList.remove('busy'); btn.textContent = '🤖 AI で下書き';
       if (code !== S.code) return;
-      const rest = todo.filter(function (x) { return bk.indexOf(x) < 0; });
+      const rest = todo.filter(function (x) { return bk.indexOf(x) < 0; }).concat(back);
+      if (back.length) said.push('明細ではなかった写真 ' + back.length + '枚（領収書など）は 1枚ずつ仕訳の下書きをします');
       csvs.forEach(function (x) { if (!rest.some(function (y) { return y.id === x.id; })) rest.push(x); });
       fmsg(said.join('　') + (rest.length ? '。続けて 1行ずつ仕訳の下書きをします…' : ''), 'ok');
       if (rest.length) return aiGo2(code, btn, rest, batch);
