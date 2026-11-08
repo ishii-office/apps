@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794129028;</script>
+<script>window.__PAGE_VER=1794130364;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3582,12 +3582,12 @@
     const per = {}, out = { rcpt: {}, line: {}, sum: {} };
     (items || []).forEach(function (it) {
       const d = (ai || {})[it.id]; if (!d || d.err || !it.period) return;
-      const P = per[it.period] = per[it.period] || { lines: [], rc: [] };
-      if (d.multi) (d.lines || []).forEach(function (l, i) { const a = Math.abs(Math.round(Number(l.amount) || 0)); if (a && l.dir !== '入') P.lines.push({ sid: it.id, box: it.box, ln: i, day: dayNo(l.date), date: l.date || '', amount: a, desc: l.desc || '' }); });
+      const P = per[it.period] = per[it.period] || { lines: [], rc: [], inc: [] };
+      if (d.multi) (d.lines || []).forEach(function (l, i) { const a = Math.abs(Math.round(Number(l.amount) || 0)); if (!a) return; const o = { sid: it.id, box: it.box, ln: i, day: dayNo(l.date), date: l.date || '', amount: a, desc: l.desc || '' }; if (l.dir !== '入') P.lines.push(o); else P.inc.push(o); });
       else if (!spineBox(it.box) && !isSheetFile(it)) { const a = Math.abs(Math.round(Number(d.amount) || 0)); if (a) P.rc.push({ id: it.id, box: it.box, day: dayNo(d.date), date: d.date || '', amount: a, party: d.party || '' }); }
     });
     Object.keys(per).forEach(function (pk) {
-      const P = per[pk]; if (!P.lines.length) return;
+      const P = per[pk]; if (!P.lines.length && !P.inc.length) return;
       const used = {};
       [3, 10].forEach(function (win, pass) {
         P.rc.forEach(function (r) {
@@ -3599,7 +3599,7 @@
           out.rcpt[r.id] = l; out.line[k] = r.id;
         });
       });
-      out.sum[pk] = { lines: P.lines.length, hit: Object.keys(used).length, all: P.lines,
+      out.sum[pk] = { lines: P.lines.length, hit: Object.keys(used).length, all: P.lines, inc: P.inc,
         left: P.rc.filter(function (r) { return !out.rcpt[r.id]; }),
         bare: P.lines.filter(function (l) { return !used[l.sid + '|' + l.ln]; }) };
     });
@@ -3697,13 +3697,19 @@
     const s = S.spm && S.spm.sum[pk]; if (!s) return null;
     const w = el('div', 'spsum');
     w.appendChild(el('b', null, '🧾 背骨（出納帳・カード明細）と領収書'));
-    w.appendChild(el('span', null, '行 ' + s.lines + '　領収書が当たった ' + s.hit + '　領収書のない行 ' + s.bare.length + '　どの行にも当たらない領収書 ' + s.left.length));
+    w.appendChild(el('span', null, '出金の行 ' + s.lines + '　領収書が当たった ' + s.hit + '　領収書のない行 ' + s.bare.length + '　入金の行 ' + (s.inc || []).length + '　どの行にも当たらない領収書 ' + s.left.length));
     if (s.left.length) {
       const d = el('div', 'spl'); d.appendChild(el('span', 'nt', '当たらない領収書（記帳漏れ・別の払い方・別の月 のどれか）：'));
       s.left.forEach(function (r) { const b = el('button', 'aialt', (r.date ? r.date.slice(5).replace('-', '/') + ' ' : '') + yen(r.amount) + '円' + (r.party ? ' ' + r.party : '')); b.type = 'button'; b.dataset.a = 'spgo'; b.dataset.id = r.id; d.appendChild(b); });
       w.appendChild(d);
     }
     if (s.bare.length) w.appendChild(el('div', 'nt', '領収書のない行は 取引先と過去の仕訳で決めます（AI の下書きがそうしています）。'));
+    /* ★ 入金の行（領収書が無い）は 背骨の行から 1件ずつ仕訳にする。押すと その出納帳・通帳へ（2026-11-08） */
+    if ((s.inc || []).length) {
+      const d2 = el('div', 'spl'); d2.appendChild(el('span', 'nt', '入金の行（領収書なし。出納帳・通帳の行で仕訳）：'));
+      s.inc.forEach(function (l) { const b = el('button', 'aialt', (l.date ? l.date.slice(5).replace('-', '/') + ' ' : '') + '入 ' + yen(l.amount) + '円' + (l.desc ? ' ' + l.desc : '')); b.type = 'button'; b.dataset.a = 'spgo'; b.dataset.id = l.sid; d2.appendChild(b); });
+      w.appendChild(d2);
+    }
     if (taxmHon()) {
       const n = { ok: 0, sp: 0, ng: 0 };
       (s.all || []).forEach(function (l) { const v = invOf(l, S.spm.line[l.sid + '|' + l.ln] ? (S.ai || {})[S.spm.line[l.sid + '|' + l.ln]] : null); if (v) n[v.k]++; });
@@ -9825,6 +9831,8 @@
       }
     }
     if (d.date) c.date = d.date.replace(/-/g, '/');
+    /* ★ 証憑に日付が無いときは 当たった背骨の行（出納帳・通帳）の日付（2026-11-08。現金で払った日） */
+    else { const sp = S.spm && S.spm.rcpt && S.spm.rcpt[it.id]; if (sp && sp.date) c.date = String(sp.date).replace(/-/g, '/'); }
     if (!base) return false;
     c.no = String(base.no); c.q = ''; c.L = dictLinesOf(base).map(function () { return blankLine(); });
     c.inv = d.invoiceNo || '';
@@ -9835,6 +9843,10 @@
       if (rates.length === 1 && !taxFree(ov.tax != null ? ov.tax : base.tax) && Number(base.rate || 0) && rates[0] !== Number(ov.rate != null ? ov.rate : base.rate)) { ov.rate = rates[0]; ov.red = rates[0] === 8; }
       const pm = aiParty(d.party);
       if (pm && !base.party) { ov.party = pm.code; ov.partyName = pm.name; }
+      /* ★ 取引先の表に無くても 読んだ相手の名前は 取引先名の欄へ（摘要に混ぜない。2026-11-08） */
+      else if (!pm && !base.party && !base.partyName && String(d.party || '').trim()) ov.partyName = String(d.party).trim().slice(0, 60);
+      /* ★ 事務所の憲法（登録番号あり 5／なし 52／税込1万円未満は 少額特例 5）。サーバが決めた課税区分 */
+      if (d.taxFix && String(d.taxFix) !== String(ov.tax != null ? ov.tax : base.tax) && /^(5|52)$/.test(String(base.tax || ''))) ov.tax = String(d.taxFix);
       if (!Object.keys(ov).length) ov = null;
     }
     if (ov && c.L[0]) c.L[0].ov = ov;
@@ -10037,7 +10049,7 @@
     if (!(Number(l.amount) > 0)) return '金額が読めません';
     const memo = l.desc ? ((k.memo ? k.memo + '　' : '') + l.desc).slice(0, 60) : null;
     const n0 = it.entries.length;
-    C[it.id] = { date: dd.s, no: String(k.no), q: '', L: amts ? amts.map(function (a) { return { amount: String(a), ov: {}, memo: null }; }) : [{ amount: String(l.amount), ov: {}, memo: memo }], aiLn: i, aiDone: true };
+    C[it.id] = { date: dd.s, no: String(k.no), q: '', L: amts ? amts.map(function (a) { return { amount: String(a), ov: {}, memo: null }; }) : [{ amount: String(l.amount), ov: (l.party && !k.party ? (aiParty(l.party) ? { party: aiParty(l.party).code, partyName: aiParty(l.party).name } : { partyName: l.party }) : {}), memo: memo }], aiLn: i, aiDone: true };
     S.aiQuiet = true;
     try { confirmEntry(it, true); } finally { S.aiQuiet = false; }
     return it.entries.length > n0 ? '' : '入れられませんでした（伝票で直してください）';
