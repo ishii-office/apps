@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794115319;</script>
+<script>window.__PAGE_VER=1794116777;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1307,6 +1307,15 @@
   .obtbl th { position: sticky; top: 0; background: #F3F6F5; text-align: left; padding: 6px; font-size: 12px; }
   .obtbl td { padding: 6px; border-top: 1px solid #eef1f0; } .obtbl .n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .obtbl tr.cy td { background: #FAFAFA; color: #555; } .obtbl .neg { color: #B3261E; }
+  .obtbl tr.r, .obtbl tr.cyed { cursor: pointer; } .obtbl tr.r:hover td, .obtbl tr.cyed:hover td { background: #F6FAF8; } .obtbl tr.on td { background: #FFF6D6; }
+  .obtbl tr.off td { background: #FDECEA; } .obtbl tr.off td.pp { color: #B3261E; font-weight: 700; } .obtbl td.pp { color: #777; }
+  .obed { border-top: 1px solid #e3e8e6; margin-top: 8px; padding-top: 8px; }
+  .obedt { font-weight: 800; font-size: 13.5px; margin-bottom: 4px; }
+  .obedr { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 6px; }
+  .obedr input { font: inherit; font-size: 14px; padding: 5px 7px; border: 1px solid #c9d3cf; border-radius: 7px; }
+  .obedr #obM { flex: 1 1 200px; } .obedr #obIn, .obedr #obOut, .obedr #obCv { width: 110px; text-align: right; }
+  .obedr small { color: #555; } .obdel { color: #B3261E; }
+  .oboff { color: #B3261E; font-weight: 700; }
   .arrpop .arr-push { padding: 6px 4px 8px; border-bottom: 1px solid #eef1f0; margin-bottom: 4px; }
   .arrpop .arr-push .btn { width: 100%; }
   .arrpop .arr-boxes { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 4px 8px 12px; }
@@ -1401,6 +1410,13 @@
     <div class="obnav"><button type="button" class="btn ghost sm" id="obPrev">‹ 前の月</button><b id="obYm"></b><button type="button" class="btn ghost sm" id="obNext">次の月 ›</button><button type="button" class="btn ghost sm" id="obCsv" title="この月の出納帳を CSV（エクセルで開ける）で保存">CSV で保存</button><button type="button" class="btn sm" id="obToWork" title="この月の出納帳を CSV にして この箱へ入れる。仕訳化では 1行ずつ仕訳の下書きになり（背骨）、領収書は 証憑として当たる">🤖 この月を仕訳化に回す</button></div>
     <div class="obwrap"><table class="obtbl"><thead id="obHead"><tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th></tr></thead><tbody id="obBody"></tbody></table></div>
     <p class="note" id="obMsg"></p>
+    <!-- ★ 事務所も直せる（2026-11-08）。紙の出納帳から起こした行を 紙と照らして直す -->
+    <div class="obed" id="obEd" hidden>
+      <div class="obedt" id="obEdT">行を足す</div>
+      <div class="obedr"><input type="date" id="obD" aria-label="日付"><input id="obM" placeholder="摘要" aria-label="摘要"><input id="obIn" inputmode="numeric" placeholder="入金" aria-label="入金"><input id="obOut" inputmode="numeric" placeholder="出金" aria-label="出金">
+        <button type="button" class="btn sm" id="obSave">足す</button><button type="button" class="btn ghost sm" id="obNew" hidden>やめる</button><button type="button" class="btn ghost sm obdel" id="obDel" hidden>この行を消す</button></div>
+      <div class="obedr" id="obCyRow" hidden><b>前月からの繰越</b><input id="obCv" inputmode="numeric" placeholder="0" aria-label="前月からの繰越"><button type="button" class="btn sm" id="obCok">この額にする</button><button type="button" class="btn ghost sm" id="obCauto">前の月から 自動にする</button><button type="button" class="btn ghost sm" id="obCno">やめる</button><small id="obCh"></small></div>
+    </div>
   </div>
 </div>
 <div class="kzann" id="kzAnn" hidden><button type="button" class="kzann-x" id="kzAnnX" aria-label="このお知らせを消す" title="このお知らせを消す（改善要望タブには残ります）">×</button><button type="button" class="kzann-t" id="kzAnnT"></button></div>
@@ -2197,7 +2213,7 @@
 <!-- ===== 回収資料を大きく見る ===== -->
 <div class="dview dpz" id="dview" hidden role="dialog" aria-modal="true" aria-label="資料を大きく見る">
   <div class="dvbar"><b id="dvName"></b><span class="dvtools">
-    <button type="button" class="btn sm" id="dvGo">仕訳化する</button>
+    <button type="button" class="btn sm" id="dvGo">仕訳化する</button><button type="button" class="btn ghost sm" id="dvBook" title="手書き（印刷）の現金出納帳の写真を AI で1行ずつ読み、この箱・この月分の アプリの出納帳に起こします。紙の残高と照らして直してから［この月を仕訳化に回す］。この写真は 対象外（出納帳の原本）になり、1枚の領収書としては下書きしません">📒 出納帳として読む</button>
     <button type="button" class="btn ghost sm" id="dvRot" title="90度ずつ回す">↻ 回す</button>
     <button type="button" class="btn ghost sm" id="dvZout" title="縮小（－・Ctrl＋ホイール）" aria-label="縮小">🔍－</button><button type="button" class="btn ghost sm" id="dvZin" title="拡大（＋・Ctrl＋ホイール）" aria-label="拡大">🔍＋</button>
     <span class="dvpos" id="dvPos" title="この箱の中で 左上から何番目か"></span>
@@ -4685,23 +4701,37 @@
   /* ★ 出納帳（顧問先が書いたもの。見るだけ。2026-11-07） */
   const OB = { box: '', ym: '', data: null, kind: '' };
   function obYmNow() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
-  function obOpen(box, ym, kind) {
-    OB.box = box; OB.ym = ym || obYmNow(); OB.kind = kind || '';
+  function obOpen(box, ym, kind, msg) {
+    OB.box = box; OB.ym = ym || obYmNow(); OB.kind = kind || ''; OB.edit = ''; OB.msg = msg || '';
     $('obT').textContent = (OB.kind === 'kake' ? '📘 掛帳［' : '📒 出納帳［') + boxLabel(box) + '］';
-    $('obHead').innerHTML = OB.kind === 'kake' ? '<tr><th>締日</th><th class="n">発生額</th><th>入金日</th><th class="n">入金額</th><th>入金口座</th><th class="n">残高</th></tr>' : '<tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th></tr>';
     $('obToWork').hidden = OB.kind === 'kake';
+    $('obEd').hidden = OB.kind === 'kake';
     $('obv').hidden = false; obLoad();
+  }
+  function obHead() {
+    const pp = OB.data && OB.data.rows && OB.data.rows.some(function (x) { return x.paper != null; });
+    $('obHead').innerHTML = OB.kind === 'kake' ? '<tr><th>締日</th><th class="n">発生額</th><th>入金日</th><th class="n">入金額</th><th>入金口座</th><th class="n">残高</th></tr>' : '<tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th>' + (pp ? '<th class="n">紙の残高</th>' : '') + '</tr>';
+    return pp;
   }
   function obLoad() {
     const m = OB.ym.split('-'); $('obYm').textContent = m[0] + '年' + Number(m[1]) + '月分'; OB.data = null; obDraw(); $('obMsg').textContent = '読み込んでいます…';
     const want = OB.box + '|' + OB.ym;
-    gs(OB.kind === 'kake' ? 'officeKake' : 'officeBook', S.code, OB.box, OB.ym).then(function (r) { if (OB.box + '|' + OB.ym !== want) return; OB.data = r; obDraw(); $('obMsg').textContent = r.rows.length ? '' : 'この月は まだ書かれていません。'; },
+    gs(OB.kind === 'kake' ? 'officeKake' : 'officeBook', S.code, OB.box, OB.ym).then(function (r) { if (OB.box + '|' + OB.ym !== want) return; OB.data = r; obEdReset(); obDraw(); obNote(); },
       function (e) { $('obMsg').textContent = '読み込めませんでした。' + e.message; });
+  }
+  function obNote(extra) {
+    const d = OB.data; if (!d) return;
+    const t = [];
+    if (extra || OB.msg) t.push(extra || OB.msg);
+    if (!d.rows.length) t.push('この月は まだ書かれていません。');
+    if (d.off) t.push('⚠ 紙の残高と 合わない行が ' + d.off + ' 行あります（赤い行）。行を押して 直してください。');
+    else if (d.rows.some(function (x) { return x.paper != null; })) t.push('✓ 紙の残高と ぜんぶ合っています。よければ［🤖 この月を仕訳化に回す］。');
+    $('obMsg').textContent = t.join('　'); $('obMsg').className = 'note' + (d.off ? ' oboff' : '');
   }
   function obYen(n) { return n ? Number(n).toLocaleString('ja-JP') : ''; }
   function obDraw() {
-    const tb = $('obBody'); tb.textContent = ''; const d = OB.data; if (!d) return;
-    const tr = function (cls, cells) { const r = el('tr', cls); cells.forEach(function (c) { r.appendChild(el('td', c[1] || '', c[0])); }); tb.appendChild(r); };
+    const tb = $('obBody'); tb.textContent = ''; const d = OB.data; const pp = obHead(); if (!d) return;
+    const tr = function (cls, cells) { const r = el('tr', cls); cells.forEach(function (c) { r.appendChild(el('td', c[1] || '', c[0])); }); tb.appendChild(r); return r; };
     if (OB.kind === 'kake') {
       const md = function (v) { return v ? v.slice(5).replace('-', '/') : ''; }, yy = function (n) { return Number(n).toLocaleString('ja-JP'); };
       tr('cy', [['前月からの繰越'], ['', 'n'], [''], ['', 'n'], [''], [yy(d.carry), 'n' + (d.carry < 0 ? ' neg' : '')]]);
@@ -4709,9 +4739,78 @@
       tr('cy', [['この月の計'], [yy(d.amtSum), 'n'], [''], [yy(d.paySum), 'n'], [''], [yy(d.end), 'n' + (d.end < 0 ? ' neg' : '')]]);
       return;
     }
-    tr('cy', [[''], ['前月からの繰越'], ['', 'n'], ['', 'n'], [Number(d.carry).toLocaleString('ja-JP'), 'n' + (d.carry < 0 ? ' neg' : '')]]);
-    d.rows.forEach(function (x) { tr('', [[x.date.slice(5).replace('-', '/')], [x.memo], [obYen(x.in), 'n'], [obYen(x.out), 'n'], [Number(x.bal).toLocaleString('ja-JP'), 'n' + (x.bal < 0 ? ' neg' : '')]]); });
-    tr('cy', [[''], ['この月の計'], [obYen(d.inSum) || '0', 'n'], [obYen(d.outSum) || '0', 'n'], [Number(d.end).toLocaleString('ja-JP'), 'n' + (d.end < 0 ? ' neg' : '')]]);
+    const yy = function (n) { return Number(n).toLocaleString('ja-JP'); };
+    const cy = tr('cy cyed', [[''], ['前月からの繰越' + (d.carrySet ? '（手入力）' : '') + ' ✎'], ['', 'n'], ['', 'n'], [yy(d.carry), 'n' + (d.carry < 0 ? ' neg' : '')]].concat(pp ? [['', 'n']] : []));
+    cy.title = '押すと 前月からの繰越を 入れる・直す'; cy.addEventListener('click', obCarryOpen);
+    d.rows.forEach(function (x) {
+      const r = tr('r' + (x.off ? ' off' : '') + (OB.edit === x.id ? ' on' : ''), [[x.date.slice(5).replace('-', '/')], [x.memo], [obYen(x.in), 'n'], [obYen(x.out), 'n'], [yy(x.bal), 'n' + (x.bal < 0 ? ' neg' : '')]].concat(pp ? [[x.paper == null ? '' : (x.off ? '⚠ ' : '') + yy(x.paper), 'n pp']] : []));
+      r.title = x.off ? '紙の残高（' + yy(x.paper) + '）と 積んだ残高（' + yy(x.bal) + '）が ちがいます。押して直す' : '押して直す';
+      r.addEventListener('click', function () { obEdit(x); });
+    });
+    tr('cy', [[''], ['この月の計'], [obYen(d.inSum) || '0', 'n'], [obYen(d.outSum) || '0', 'n'], [yy(d.end), 'n' + (d.end < 0 ? ' neg' : '')]].concat(pp ? [['', 'n']] : []));
+  }
+  /* ★ 事務所が直す（2026-11-08）：行を押すと 下の欄に入る。［この内容で直す］［この行を消す］（1回）［やめる］。何も選んでいなければ［足す］ */
+  function obNum(v) { return Number(String(v || '').replace(/[,，円¥\s]/g, '').replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })) || 0; }
+  function obEdReset() {
+    OB.edit = ''; const ym = OB.ym;
+    $('obD').min = ym + '-01'; $('obD').max = ym + '-' + String(new Date(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)), 0).getDate()).padStart(2, '0');
+    if (!$('obD').value || $('obD').value.slice(0, 7) !== ym) $('obD').value = ym + '-01';
+    $('obM').value = ''; $('obIn').value = ''; $('obOut').value = '';
+    $('obEdT').textContent = '行を足す'; $('obSave').textContent = '足す'; $('obNew').hidden = true; $('obDel').hidden = true; $('obCyRow').hidden = true;
+  }
+  function obEdit(x) {
+    OB.edit = x.id; $('obCyRow').hidden = true;
+    $('obD').value = x.date; $('obM').value = x.memo; $('obIn').value = x.in ? String(x.in) : ''; $('obOut').value = x.out ? String(x.out) : '';
+    $('obEdT').textContent = '直す（' + x.date.slice(5).replace('-', '/') + '　' + x.memo + '）' + (x.off ? '　紙の残高 ' + Number(x.paper).toLocaleString('ja-JP') + ' 円' : '');
+    $('obSave').textContent = 'この内容で直す'; $('obNew').hidden = false; $('obDel').hidden = false;
+    obDraw(); $('obM').focus();
+  }
+  function obSend(fn, args, ok) {
+    const want = OB.box + '|' + OB.ym;
+    $('obMsg').textContent = '記録しています…'; $('obMsg').className = 'note';
+    return gs(fn, S.code, OB.box, ...args).then(function (r) { if (OB.box + '|' + OB.ym !== want) return; OB.data = r; obEdReset(); obDraw(); obNote(ok); },
+      function (e) { $('obMsg').textContent = '記録できませんでした。' + e.message; $('obMsg').className = 'note oboff'; });
+  }
+  function obSave() {
+    if (!OB.data) return;
+    const rec = { id: OB.edit || ('o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)), date: $('obD').value, memo: $('obM').value.trim(), in: obNum($('obIn').value), out: obNum($('obOut').value) };
+    if (!rec.in && !rec.out) { $('obMsg').textContent = '入金か出金の 金額を入れてください。'; return; }
+    if (rec.in && rec.out) { $('obMsg').textContent = '入金と出金は どちらか一方に入れてください。'; return; }
+    obSend('officeBookPut', [OB.ym, rec], OB.edit ? '✓ 直しました' : '✓ 足しました');
+  }
+  function obCarryOpen() {
+    const d = OB.data; if (!d) return;
+    OB.edit = ''; obDraw(); $('obCyRow').hidden = false;
+    $('obCv').value = d.carrySet ? String(d.carry) : '';
+    $('obCh').textContent = '前の月から積むと ' + Number(d.carryAuto || 0).toLocaleString('ja-JP') + ' 円';
+    $('obCauto').hidden = !d.carrySet; $('obCv').focus();
+  }
+  $('obSave').addEventListener('click', obSave);
+  $('obNew').addEventListener('click', function () { obEdReset(); obDraw(); });
+  $('obDel').addEventListener('click', function () { if (OB.edit) obSend('officeBookDel', [OB.edit], '✓ 消しました'); });
+  ['obM', 'obIn', 'obOut'].forEach(function (id) { $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); obSave(); } }); });
+  $('obCok').addEventListener('click', function () {
+    const t = String($('obCv').value || '').replace(/[０-９－]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/[,，円¥\s]/g, '').replace(/^[▲△]/, '-');
+    if (!/^-?\d+$/.test(t)) { $('obMsg').textContent = '繰越の金額を 数字で入れてください（マイナスは 頭に -）。'; return; }
+    obSend('officeBookCarry', [OB.ym, t], '✓ 繰越を入れました');
+  });
+  $('obCauto').addEventListener('click', function () { obSend('officeBookCarry', [OB.ym, ''], '✓ 前の月から 自動にしました'); });
+  $('obCno').addEventListener('click', function () { $('obCyRow').hidden = true; });
+  /* ★★ 紙の出納帳の写真 → アプリの出納帳（2026-11-08）。大きく見る画面の［📒 出納帳として読む］ */
+  function dvBookRead(it) {
+    const b = $('dvBook'); if (b.disabled) return;
+    if (!it.period) { alert('この資料は 何年何月分かが ありません。先に 月分へ移してください。'); return; }
+    const ids = (it.set && it.setOf > 1) ? dMembers(it.set) : [it.id];
+    b.disabled = true; const was = b.textContent; b.textContent = '📒 AI で読んでいます…（1分ほど）';
+    const code = S.code, box = it.box, ym = String(it.period).slice(0, 7);
+    gs('officeBookFromPhoto', code, box, ym, ids).then(function (r) {
+      b.disabled = false; b.textContent = was;
+      if (code !== S.code) return;
+      if (r.skipped) { it.skip = 1; try { docsLoad(true); } catch (e) {} try { load(); } catch (e) {} }
+      docsClose();
+      const msg = '✓ 写真から ' + r.n + ' 行を起こしました' + (r.carrySet ? '（紙の繰越 ' + Number(r.carryRead).toLocaleString('ja-JP') + ' 円を入れました）' : '') + (r.turnedOn ? '。この箱に 出納帳を付けました' : '') + (r.skipped ? '。元の写真は 対象外（出納帳の原本）にしました' : '') + '。' + (r.note ? '　AI のメモ：' + r.note : '');
+      obOpen(box, ym, '', msg);
+    }, function (e) { b.disabled = false; b.textContent = was; alert('出納帳として読めませんでした。' + e.message); });
   }
   function obMove(dir) { const m = OB.ym.split('-'), d = new Date(Number(m[0]), Number(m[1]) - 1 + dir, 1); OB.ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); obLoad(); }
   /* ★ アプリに書いた出納帳を 背骨として仕訳化へ（2026-11-07）。その月の CSV にして この箱へ入れる（前に作ったものは 入れ替え） */
@@ -6984,6 +7083,7 @@
     $('dvMemo').textContent = it.memo ? '💬 顧問先から：' + it.memo : ''; $('dvMemo').hidden = !it.memo;
     $('dvMove').onclick = function () { docsClose(); dMoveOpen([it]); };
     $('dvGmail').onclick = function () { dGmail([it]); };
+    $('dvBook').hidden = !!fileKind(it.name) || !S.code; $('dvBook').onclick = function () { dvBookRead(it); };
     const dvChkPaint = function () { $('dvChk').textContent = it.chk ? '✓ 確認済（外す）' : '✓ 確認済にする'; $('dvChk').classList.toggle('ghost', !!it.chk); };
     dvChkPaint();
     $('dvChk').onclick = function () { docsCheck([it], !it.chk); dvChkPaint(); };
