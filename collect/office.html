@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794111592;</script>
+<script>window.__PAGE_VER=1794112823;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -514,6 +514,7 @@
   .arow .ask { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .arow .ask.on { background: #EEF6F1; border-color: #9CCBA8; color: var(--ok); font-weight: 700; }
   .arow .book.on { background: #FFF6D6; border-color: #E0C25A; color: #7A5A00; font-weight: 700; }
+  .arow .book.on.kake { background: #E8F0FB; border-color: #8FB0DE; color: #1F4E8C; }
   .arow .sptd { font: inherit; font-size: 12px; padding: 2px 4px; border: 1px solid #E2B65A; border-radius: 6px; width: 132px; }
   .arow .nm { flex: 1; min-width: 0; text-align: left; font: inherit; font-weight: 700; background: none; border: 0; padding: 6px 4px; cursor: pointer; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .arow .nm::before { content: '▢ '; color: var(--accent); }
@@ -1385,7 +1386,7 @@
   <div class="obbox">
     <div class="obh"><h3 id="obT">📒 出納帳</h3><button type="button" class="btn ghost sm" id="obClose">閉じる</button></div>
     <div class="obnav"><button type="button" class="btn ghost sm" id="obPrev">‹ 前の月</button><b id="obYm"></b><button type="button" class="btn ghost sm" id="obNext">次の月 ›</button><button type="button" class="btn ghost sm" id="obCsv" title="この月の出納帳を CSV（エクセルで開ける）で保存">CSV で保存</button><button type="button" class="btn sm" id="obToWork" title="この月の出納帳を CSV にして この箱へ入れる。仕訳化では 1行ずつ仕訳の下書きになり（背骨）、領収書は 証憑として当たる">🤖 この月を仕訳化に回す</button></div>
-    <div class="obwrap"><table class="obtbl"><thead><tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th></tr></thead><tbody id="obBody"></tbody></table></div>
+    <div class="obwrap"><table class="obtbl"><thead id="obHead"><tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th></tr></thead><tbody id="obBody"></tbody></table></div>
     <p class="note" id="obMsg"></p>
   </div>
 </div>
@@ -2360,7 +2361,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, boxDoneList: 1,
+  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, boxDoneList: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, lineNews: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -3801,11 +3802,14 @@
     body.classList.toggle('dpicking', !!S.dcpick);
     docsTools();
     /* ★ 出納帳（2026-11-07）：顧問先が 出納帳を付けた箱で書いたもの。資料が届いていなくても いつも上に出す（見るだけ） */
-    const books = (S.clients.find(function (c) { return c.code === S.code; }) || {}).books || [];
-    if (books.length) {
-      const st = el('div', 'obstrip'); st.appendChild(el('span', null, '📒 出納帳'));
-      books.forEach(function (k) { const kb = el('button', 'dmon-b obgo', boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 出納帳（日付・摘要・入金・出金・残高）を見る';
+    const cc0 = S.clients.find(function (c) { return c.code === S.code; }) || {};
+    const books = cc0.books || [], kakes = cc0.kakes || [];
+    if (books.length || kakes.length) {
+      const st = el('div', 'obstrip'); st.appendChild(el('span', null, '補助簿'));
+      books.forEach(function (k) { const kb = el('button', 'dmon-b obgo', '📒 ' + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 出納帳（日付・摘要・入金・出金・残高）を見る';
         kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : ''); }); st.appendChild(kb); });
+      kakes.forEach(function (k) { const kb = el('button', 'dmon-b obgo kake', '📘 ' + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 掛帳（締日・発生額・入金日・入金額・入金口座・残高）を見る';
+        kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'kake'); }); st.appendChild(kb); });
       body.appendChild(st);
     }
     if (!both.length) { body.appendChild(el('div', 'cbox muted', 'まだ資料は届いていません。')); return; }
@@ -4666,19 +4670,32 @@
   const ARR_OPEN = (function () { try { const u = new URL(location.href), c = u.searchParams.get('arr'); if (c == null) return null; const b = u.searchParams.get('box') || ''; u.searchParams.delete('arr'); u.searchParams.delete('box'); history.replaceState(null, '', u.pathname + (u.search || '') + u.hash); return { code: c, box: b }; } catch (e) { return null; } })();
   (function pushFirst() { if (S.started && S.booted) { pushCheck(); if (ARR_OPEN) arGo(ARR_OPEN.code, ARR_OPEN.box); return; } setTimeout(pushFirst, 1500); })();
   /* ★ 出納帳（顧問先が書いたもの。見るだけ。2026-11-07） */
-  const OB = { box: '', ym: '', data: null };
+  const OB = { box: '', ym: '', data: null, kind: '' };
   function obYmNow() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
-  function obOpen(box, ym) { OB.box = box; OB.ym = ym || obYmNow(); $('obT').textContent = '📒 出納帳［' + boxLabel(box) + '］'; $('obv').hidden = false; obLoad(); }
+  function obOpen(box, ym, kind) {
+    OB.box = box; OB.ym = ym || obYmNow(); OB.kind = kind || '';
+    $('obT').textContent = (OB.kind === 'kake' ? '📘 掛帳［' : '📒 出納帳［') + boxLabel(box) + '］';
+    $('obHead').innerHTML = OB.kind === 'kake' ? '<tr><th>締日</th><th class="n">発生額</th><th>入金日</th><th class="n">入金額</th><th>入金口座</th><th class="n">残高</th></tr>' : '<tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th></tr>';
+    $('obToWork').hidden = OB.kind === 'kake';
+    $('obv').hidden = false; obLoad();
+  }
   function obLoad() {
     const m = OB.ym.split('-'); $('obYm').textContent = m[0] + '年' + Number(m[1]) + '月分'; OB.data = null; obDraw(); $('obMsg').textContent = '読み込んでいます…';
     const want = OB.box + '|' + OB.ym;
-    gs('officeBook', S.code, OB.box, OB.ym).then(function (r) { if (OB.box + '|' + OB.ym !== want) return; OB.data = r; obDraw(); $('obMsg').textContent = r.rows.length ? '' : 'この月は まだ書かれていません。'; },
+    gs(OB.kind === 'kake' ? 'officeKake' : 'officeBook', S.code, OB.box, OB.ym).then(function (r) { if (OB.box + '|' + OB.ym !== want) return; OB.data = r; obDraw(); $('obMsg').textContent = r.rows.length ? '' : 'この月は まだ書かれていません。'; },
       function (e) { $('obMsg').textContent = '読み込めませんでした。' + e.message; });
   }
   function obYen(n) { return n ? Number(n).toLocaleString('ja-JP') : ''; }
   function obDraw() {
     const tb = $('obBody'); tb.textContent = ''; const d = OB.data; if (!d) return;
     const tr = function (cls, cells) { const r = el('tr', cls); cells.forEach(function (c) { r.appendChild(el('td', c[1] || '', c[0])); }); tb.appendChild(r); };
+    if (OB.kind === 'kake') {
+      const md = function (v) { return v ? v.slice(5).replace('-', '/') : ''; }, yy = function (n) { return Number(n).toLocaleString('ja-JP'); };
+      tr('cy', [['前月からの繰越'], ['', 'n'], [''], ['', 'n'], [''], [yy(d.carry), 'n' + (d.carry < 0 ? ' neg' : '')]]);
+      d.rows.forEach(function (x) { tr('', [[md(x.close)], [obYen(x.amt), 'n'], [md(x.payDate)], [obYen(x.pay), 'n'], [x.pay ? x.acct + (x.acctName ? '（' + x.acctName + '）' : '') : ''], [yy(x.bal), 'n' + (x.bal < 0 ? ' neg' : '')]]); });
+      tr('cy', [['この月の計'], [yy(d.amtSum), 'n'], [''], [yy(d.paySum), 'n'], [''], [yy(d.end), 'n' + (d.end < 0 ? ' neg' : '')]]);
+      return;
+    }
     tr('cy', [[''], ['前月からの繰越'], ['', 'n'], ['', 'n'], [Number(d.carry).toLocaleString('ja-JP'), 'n' + (d.carry < 0 ? ' neg' : '')]]);
     d.rows.forEach(function (x) { tr('', [[x.date.slice(5).replace('-', '/')], [x.memo], [obYen(x.in), 'n'], [obYen(x.out), 'n'], [Number(x.bal).toLocaleString('ja-JP'), 'n' + (x.bal < 0 ? ' neg' : '')]]); });
     tr('cy', [[''], ['この月の計'], [obYen(d.inSum) || '0', 'n'], [obYen(d.outSum) || '0', 'n'], [Number(d.end).toLocaleString('ja-JP'), 'n' + (d.end < 0 ? ' neg' : '')]]);
@@ -4701,9 +4718,11 @@
   $('obCsv').addEventListener('click', function () {
     const d = OB.data; if (!d) return;
     const q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    const lines = [['日付', '摘要', '入金', '出金', '残高'], ['', '前月からの繰越', '', '', d.carry]].concat(d.rows.map(function (x) { return [x.date, x.memo, x.in || '', x.out || '', x.bal]; })).concat([['', 'この月の計', d.inSum, d.outSum, d.end]]);
+    const lines = OB.kind === 'kake'
+      ? [['締日', '発生額', '入金日', '入金額', '入金口座', '口座名', '残高'], ['前月からの繰越', '', '', '', '', '', d.carry]].concat(d.rows.map(function (x) { return [x.close, x.amt || '', x.payDate, x.pay || '', x.pay ? x.acct : '', x.acctName || '', x.bal]; })).concat([['この月の計', d.amtSum, '', d.paySum, '', '', d.end]])
+      : [['日付', '摘要', '入金', '出金', '残高'], ['', '前月からの繰越', '', '', d.carry]].concat(d.rows.map(function (x) { return [x.date, x.memo, x.in || '', x.out || '', x.bal]; })).concat([['', 'この月の計', d.inSum, d.outSum, d.end]]);
     const c = S.clients.find(function (x) { return x.code === S.code; }) || { name: '' };
-    saveBlob(new Blob(['\ufeff' + lines.map(function (l) { return l.map(q).join(','); }).join('\r\n')], { type: 'text/csv' }), [S.code, c.name, boxLabel(OB.box), OB.ym, '出納帳'].join('_').replace(/[\\\/:*?"<>|\s]+/g, '_') + '.csv');
+    saveBlob(new Blob(['\ufeff' + lines.map(function (l) { return l.map(q).join(','); }).join('\r\n')], { type: 'text/csv' }), [S.code, c.name, boxLabel(OB.box), OB.ym, OB.kind === 'kake' ? '掛帳' : '出納帳'].join('_').replace(/[\\\/:*?"<>|\s]+/g, '_') + '.csv');
   });
   /* ================= ★★ 処理済ボックス（2026-11-07）── 月分 × 箱 =================
        ・仕訳化の区切り（2026年9月分 現金の領収書）と 回収資料の月分の見出しに「✓ 処理済」の色と［処理済にする］［処理済を外す］
@@ -11566,11 +11585,13 @@
           });
           row.appendChild(ab);
           /* ★ 出納帳（2026-11-07）：入れると 顧問先の画面の 何年何月分の右に［📒 出納帳］が出る（日付・摘要・入金・出金・残高） */
-          const bk = el('button', 'sm2 book' + (bc.book ? ' on' : ''), bc.book ? '📒 出納帳あり' : '出納帳なし'); bk.type = 'button';
-          bk.title = bc.book ? '顧問先が この箱で 出納帳（日付・摘要・入金・出金・残高）を書けます。押すと やめます' : '押すと この箱に 出納帳を付けます（顧問先が 日付・摘要・入金・出金 を書けて 残高が出る。科目は選ばない）';
+          /* ★ 補助簿（2026-11-08）：押すたびに 補助簿なし → 📒 出納帳あり → 📘 掛帳あり → 補助簿なし */
+          const kk = bc.book === 'kake';
+          const bk = el('button', 'sm2 book' + (bc.book ? ' on' : '') + (kk ? ' kake' : ''), kk ? '📘 掛帳あり' : bc.book ? '📒 出納帳あり' : '補助簿なし'); bk.type = 'button';
+          bk.title = kk ? '顧問先が この箱で 掛帳（締日・発生額・入金日・入金額・入金口座・残高）を書けます。押すと 補助簿なし に戻します' : bc.book ? '顧問先が この箱で 出納帳（日付・摘要・入金・出金・残高）を書けます。押すと 掛帳 にします' : '押すと この箱に 補助簿を付けます（1回目＝出納帳、2回目＝掛帳（売掛帳・買掛帳））。科目は選ばない簡易なもの';
           bk.addEventListener('click', function () {
             const cur = A.bconf[path] || {};
-            if (cur.book) delete cur.book; else cur.book = 1;
+            if (cur.book === 'kake') delete cur.book; else if (cur.book) cur.book = 'kake'; else cur.book = 1;
             if (cur.day || cur.ask || cur.book) A.bconf[path] = cur; else delete A.bconf[path];
             aTreeDraw();
           });
