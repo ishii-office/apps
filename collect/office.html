@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794126905;</script>
+<script>window.__PAGE_VER=1794129028;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -156,6 +156,7 @@
   .acct-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) 56px minmax(0, 1fr) 36px; gap: 4px; }
   .acct-row input { min-width: 0; width: 100%; }
   .acct-row input.code { font-family: ui-monospace, Menlo, monospace; }
+  .acct-row.prow { grid-template-columns: 64px minmax(0, 1fr) 70px minmax(0, 1.4fr) 128px 30px; }
   .acct-row.head { font-size: 12.5px; color: var(--sub); font-weight: 700; }
   .acct-row .anm { align-self: center; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
   .acct-row input.bad { border-color: #c0392b; background: #fdecea; }
@@ -472,7 +473,9 @@
   .preview span.auto { color: var(--sub); border-style: dashed; }
   .atree { border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 4px 0; }
   .atree:empty::before { content: '（まだ箱がありません。下で足してください。空のままなら 顧問先の画面には 箱は出ません）'; display: block; padding: 8px 12px; color: var(--sub); font-size: 13px; }
-  .arow { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-bottom: 1px solid #F0F2F1; }
+  .arow { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding: 4px 8px; border-bottom: 1px solid #F0F2F1; }
+  /* ★ 2026-11-08：補助簿のボタンが増えて 名前が押しつぶされていた。名前は いつも8字ぶん見せ、入りきらないボタンは 次の行へ回す。ボタンは縮めない */
+  .arow > button:not(.nm), .arow > input { flex-shrink: 0; }
   .arow:last-child { border-bottom: 0; }
   /* ★ お願いメール（2026-10-18） */
   .mdlg { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.35); display: flex; align-items: flex-start; justify-content: center; overflow: auto; padding: 24px 12px; }
@@ -516,7 +519,7 @@
   .arow .book.on { background: #FFF6D6; border-color: #E0C25A; color: #7A5A00; font-weight: 700; }
   .arow .book.on.kake { background: #E8F0FB; border-color: #8FB0DE; color: #1F4E8C; }
   .arow .sptd { font: inherit; font-size: 12px; padding: 2px 4px; border: 1px solid #E2B65A; border-radius: 6px; width: 132px; }
-  .arow .nm { flex: 1; min-width: 0; text-align: left; font: inherit; font-weight: 700; background: none; border: 0; padding: 6px 4px; cursor: pointer; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .arow .nm { flex: 1 1 9em; min-width: 8em; text-align: left; font: inherit; font-weight: 700; background: none; border: 0; padding: 6px 4px; cursor: pointer; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .arow .nm::before { content: '▢ '; color: var(--accent); }
   .arow.d1 .nm { padding-left: 22px; font-weight: 600; } .arow.d2 .nm { padding-left: 40px; font-weight: 500; } .arow.d3 .nm { padding-left: 58px; font-weight: 500; }
   .arow.d1 .nm::before, .arow.d2 .nm::before, .arow.d3 .nm::before { content: '└ ▢ '; }
@@ -4904,7 +4907,7 @@
       if (code !== S.code) return;
       if (r.skipped) { it.skip = 1; try { docsLoad(true); } catch (e) {} try { load(); } catch (e) {} }
       docsClose();
-      const msg = '✓ 写真から ' + r.n + ' 行を起こしました' + (r.carrySet ? '（紙の繰越 ' + Number(r.carryRead).toLocaleString('ja-JP') + ' 円を入れました）' : '') + (r.turnedOn ? '。この箱に 出納帳を付けました' : '') + (r.skipped ? '。元の写真は 対象外（出納帳の原本）にしました' : '') + '。' + (r.note ? '　AI のメモ：' + r.note : '');
+      const msg = '✓ 写真から ' + r.n + ' 行を起こしました' + (r.carrySet ? '（繰越 ' + Number(r.carryRead).toLocaleString('ja-JP') + ' 円を入れました）' : '') + ((r.pre || r.post) ? '。' + perLabel(ym) + '以外の行（前の月 ' + (r.pre || 0) + '・次の月 ' + (r.post || 0) + '）は 入れていません' : '') + (r.alias ? '。摘要の書き方がちがう取引 ' + r.alias + '件を ルールにしました' : '') + (r.turnedOn ? '。この箱に 出納帳を付けました' : '') + (r.skipped ? '。元の写真は 対象外（出納帳の原本）にしました' : '') + '。' + (r.note ? '　AI のメモ：' + r.note : '');
       obOpen(box, ym, '', msg);
     }, function (e) { b.disabled = false; b.textContent = was; alert('出納帳として読めませんでした。' + e.message); });
   }
@@ -9251,15 +9254,16 @@
     const box = $('pRows'); box.textContent = '';
     const ro = !canAcct();
     $('pRo').hidden = !ro; $('pBar').hidden = ro;
-    const head = el('div', 'acct-row head'); ['科目', '科目名', '取引先', '取引先名', ''].forEach(function (t) { head.appendChild(el('span', null, t)); }); box.appendChild(head);
+    const head = el('div', 'acct-row prow head'); ['科目', '科目名', '取引先', '取引先名', '登録番号', ''].forEach(function (t) { head.appendChild(el('span', null, t)); }); box.appendChild(head);
     (rows || S.party).forEach(function (x) { partyRow(x, ro); });
     if (!ro && !(rows || S.party).length) partyRow({}, false);
     partyFilter();
   }
   function partyRow(x, ro) {
-    const r = el('div', 'acct-row');
+    const r = el('div', 'acct-row prow');
     const mk = function (k, cls, ph) { const i = el('input', cls || null); i.dataset.k = k; i.value = x[k] || ''; i.readOnly = ro; if (ph) i.placeholder = ph; return i; };
-    const a = mk('acct', 'code', '2112'), nm = el('span', 'anm'), c = mk('code', 'code', '000001'), n = mk('name', null);
+    const a = mk('acct', 'code', '2112'), nm = el('span', 'anm'), c = mk('code', 'code', '000001'), n = mk('name', null), iv = mk('inv', 'code', 'T＋13桁');
+    iv.title = '適格請求書発行事業者の登録番号。領収書に書いていないとき、AI 下書きが これで補います（事務所共通。ほかの顧問先の同じ取引先にも効きます）';
     a.inputMode = 'numeric'; c.inputMode = 'numeric';
     const showName = function () {
       const v = half(a.value), hit = S.acctMap[v];
@@ -9267,7 +9271,7 @@
     };
     a.addEventListener('input', showName); showName();
     c.addEventListener('blur', function () { const v = half(c.value); if (/^\d{1,5}$/.test(v)) c.value = ('000000' + v).slice(-6); c.classList.toggle('bad', !!v && !/^\d{6}$/.test(half(c.value))); });
-    r.appendChild(a); r.appendChild(nm); r.appendChild(c); r.appendChild(n);
+    r.appendChild(a); r.appendChild(nm); r.appendChild(c); r.appendChild(n); r.appendChild(iv);
     const del = el('button', 'danger', '×'); del.type = 'button'; del.hidden = ro; del.setAttribute('aria-label', '行を消す');
     del.addEventListener('click', function () { r.remove(); });
     r.appendChild(del);
@@ -9329,7 +9333,7 @@
     const h = rows[0].map(function (x) { return x.trim(); }), at = function (n) { return h.indexOf(n); };
     if (at('口座別管理') >= 0 && at('勘定科目コード') >= 0) return { kind: 'acct', h: at, rows: rows.slice(1) };
     if (at('補助コード') >= 0 && at('口座名') >= 0) return { kind: 'sub', h: at, rows: rows.slice(1) };
-    if (at('取引先コード') >= 0 && at('取引先名') >= 0) return { kind: 'party', h: at, rows: rows.slice(1) };
+    if (at('取引先コード') >= 0 && at('取引先名') >= 0) return { kind: 'party', h: at, hd: h, rows: rows.slice(1) };
     return null;
   }
   /* 勘定科目一覧から、仕訳に使う科目だけ（小計・合計の行、名前の無いコードは外す。小計の行はフリガナが全角） */
@@ -9516,7 +9520,8 @@
   }
   function fxMergeParty(fx) {
     const k = function (x) { return x.acct + '|' + x.code; }, seen = {};
-    fx.forEach(function (x) { seen[k(x)] = 1; });
+    const was = {}; (S.party || []).forEach(function (x) { if (x.inv) was[k(x)] = x.inv; });
+    fx.forEach(function (x) { seen[k(x)] = 1; if (!x.inv && was[k(x)]) x.inv = was[k(x)]; });
     return fx.concat((S.party || []).filter(function (x) { return !seen[k(x)]; }));
   }
   function fxImport(files) {
@@ -9544,7 +9549,9 @@
         const H = got.party.h, rows = [];
         got.party.rows.forEach(function (r) {
           const a = half(r[H('勘定科目コード')] || ''), c = half(r[H('取引先コード')] || ''), n = (r[H('取引先名')] || '').trim();
-          if (/^\d{4}$/.test(a) && /^\d{6}$/.test(c)) rows.push({ acct: a, code: c, name: /^[-‐ー－―]$/.test(n) ? '' : n });
+          /* ★ 登録番号の列があれば 一緒に（見出しに「登録番号」を含む列。FX の「事業者登録番号」など） */
+          const ih = got.party.hd ? got.party.hd.findIndex(function (x) { return /登録番号/.test(x); }) : -1, inv = ih >= 0 ? half(r[ih] || '').trim() : '';
+          if (/^\d{4}$/.test(a) && /^\d{6}$/.test(c)) rows.push({ acct: a, code: c, name: /^[-‐ー－―]$/.test(n) ? '' : n, inv: inv });
         });
         return gs('partySave', code, fxMergeParty(rows)).then(function (pp) { if (code !== S.code) return; partySet(pp); done.push('取引先 ' + pp.length + '件'); });
       });
@@ -9756,7 +9763,7 @@
     t.dataset.a = 'aifeat';
     b.appendChild(t);
     const tx = (d.taxes || []).filter(function (x) { return x.gross; });
-    if (d.invoiceNo || tx.length) b.appendChild(el('span', 'aiinv', [d.invoiceNo ? '登録番号 ' + d.invoiceNo : '登録番号 なし', tx.map(function (x) { return (x.rate ? x.rate + '%対象 ' : '非課税等 ') + yen(x.gross) + '円' + (x.tax ? '（税 ' + yen(x.tax) + '）' : ''); }).join('・')].filter(Boolean).join('　')));
+    if (d.invoiceNo || tx.length) b.appendChild(el('span', 'aiinv', [d.invoiceNo ? '登録番号 ' + d.invoiceNo + (d.invFrom ? '（' + d.invFrom + 'から補完）' : '') : '登録番号 なし', tx.map(function (x) { return (x.rate ? x.rate + '%対象 ' : '非課税等 ') + yen(x.gross) + '円' + (x.tax ? '（税 ' + yen(x.tax) + '）' : ''); }).join('・')].filter(Boolean).join('　')));
     if (d.cost && d.cost.yen != null) { const c = el('span', 'aiyen', '約' + yenS(d.cost.yen) + '円'); c.title = 'この下書きにかかった およその費用\n' + (d.cost.steps || []).map(function (x) { return '　' + x.k + '　約' + yenS(x.yen) + '円'; }).join('\n') + (d.ex ? '\n（似た前例 ' + d.ex.n + '件を ' + (d.ex.how === 'photo' ? '写真つき' : '文字') + 'で見せました' + (d.ex.low != null ? '。文字だけでは ' + d.ex.low + '% だったので 写真つきを かぶせました' : '') + '）' : ''); b.appendChild(c); }
     /* ★ 新しいやり方：決め手・AI の仕訳・別の案（押すと その案に入れ替わる） */
     if (d.way === 'v2') {
@@ -11881,7 +11888,7 @@
           /* ★ 出納帳の 摘要の選択肢（2026-11-08）。決めていなければ 仕訳辞書から出す */
           if (bc.book && !kk) {
             const on = bc.opts && ((bc.opts.in || []).length || (bc.opts.out || []).length);
-            const ob = el('button', 'sm2 bopts' + (on ? ' on' : ''), on ? '摘要の選択肢（入金' + (bc.opts.in || []).length + '・出金' + (bc.opts.out || []).length + '）' : '摘要の選択肢：仕訳辞書から'); ob.type = 'button';
+            const ob = el('button', 'sm2 bopts' + (on ? ' on' : ''), on ? '摘要（入' + (bc.opts.in || []).length + '・出' + (bc.opts.out || []).length + '）' : '摘要：辞書から'); ob.type = 'button';
             ob.title = '顧問先が 出納帳で押して選ぶ摘要（入金・出金に分ける）。決めていなければ この箱の仕訳辞書（取引の種類）から出します';
             ob.addEventListener('click', function () { boptOpen(path); });
             row.appendChild(ob);
