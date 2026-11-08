@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794142866;</script>
+<script>window.__PAGE_VER=1794149439;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -944,6 +944,16 @@
   .jai .feat { flex-basis: 100%; white-space: pre-line; font-size: 12.5px; color: var(--sub); line-height: 1.55; }
   .jai .pct { cursor: pointer; }
   .jzero { align-items: center; } .jzero .jdok { margin-left: auto; }
+  /* ★★ 複数行を 仕訳伝票の形で（2026-11-09） */
+  .jailt tr.jasl > td { border-top: 0; padding: 0 4px 8px 22px; }
+  .jalv { width: 100%; border-collapse: collapse; font-size: 12.5px; background: #fff; border: 1px solid #9DBFB3; }
+  .jalv th { background: #E6F1EC; color: #0F6E56; font-weight: 600; font-size: 11.5px; padding: 1px 4px; border: 1px solid #C9DDD5; white-space: nowrap; }
+  .jalv td { padding: 2px 4px !important; border: 1px solid #DCE7E2 !important; word-break: break-all; }
+  .jalv td.r { text-align: right; white-space: nowrap; }
+  .jalv.draft { border-style: dashed; } .jalv.draft th { background: #FFF6E0; color: #8a5a00; }
+  .jailt tr.jasl.put .jalv { opacity: .55; }
+  .jledg tr.draft td { color: #6b5a2e; font-style: italic; background: #FFFBF0; }
+  .jledg .glmk { font-size: 11px; color: #8a5a00; font-style: normal; border: 1px solid #E3C77A; border-radius: 3px; padding: 0 3px; margin-left: 3px; }
   .jailt tr.done { opacity: .5; } .jailt tr.none td { background: #FFF6E0; } .jailt tr.lo .pc { color: #B3261E; font-weight: 700; }
   .jpgok { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 2px solid #0F6E56; background: #0F6E56; color: #fff; font: inherit; font-weight: 700; cursor: pointer; margin-left: 8px; }
   .jpgok .m { font-size: 18px; }
@@ -7794,10 +7804,22 @@
   function lgCands(it) {
     const cnt = {};
     const add = function (c, sb, w) { if (!bsAcct(c)) return; const k = c + (sb ? '-' + sb : ''); cnt[k] = (cnt[k] || 0) + w; };
-    it.entries.forEach(function (e) { add(e.drCode, e.drSub, 3); add(e.crCode, e.crSub, 3); });
+    glRows(it).forEach(function (r) { const w = r.draft ? 2 : 3; add(r.e.drCode, r.e.drSub, w); add(r.e.crCode, r.e.crSub, w); });
     boxDict(it.box).forEach(function (d) { const w = dictBox(d) ? 2 : 1; dictLinesOf(d).forEach(function (l) { add(l.drCode, l.drSub, w); add(l.crCode, l.crSub, w); }); });
     const ab = S.ai && S.ai[it.id] && S.ai[it.id].bank; if (ab) cnt[ab] = (cnt[ab] || 0) + 1000;   /* ★ AI 下書きが 型から決めた口座を いちばん上に */
     return Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a] || (a < b ? -1 : 1); });
+  }
+  /* ★★ 総勘定元帳の行（2026-11-09）：確定した仕訳 ＋ まだの AI 下書き（通帳などの明細の順に） */
+  function glRows(it) {
+    const d = S.ai && S.ai[it.id];
+    if (!(d && d.multi && (d.lines || []).length)) return it.entries.map(function (e) { return { e: e, draft: false }; });
+    const done = aiLinesDone(it), out = [];
+    d.lines.forEach(function (l, i) {
+      if (done[i]) (done.m[i] || []).forEach(function (e) { out.push({ e: e, draft: false }); });
+      else aiDraftJ(it, i).forEach(function (e) { out.push({ e: e, draft: true, ln: i }); });
+    });
+    (done.rest || []).forEach(function (e) { out.push({ e: e, draft: false }); });
+    return out;
   }
   function lgHit(key, code, sb) { const p = key.split('-'); return p[0] === String(code || '') && (!p[1] || p[1] === String(sb || '')); }
   /* 1行の 増加・減少（資産は借方が増加、負債・純資産は貸方が増加） */
@@ -7829,7 +7851,7 @@
   function lgEnd(it, o) {
     if (o.s === undefined || o.s === '' || !o.a) return null;
     let b = Number(o.s) || 0;
-    it.entries.forEach(function (e) { const mv = lgMove(o.a, e); if (mv) b += mv.inc - mv.dec; });
+    glRows(it).forEach(function (r) { const mv = lgMove(o.a, r.e); if (mv) b += mv.inc - mv.dec; });
     return b;
   }
   function lgChange(t) {
@@ -7850,7 +7872,7 @@
     /* 口座は決めたら覚える（入れるたびに 口座が入れ替わらないように） */
     if (o.a) { const m = lsJ(LS_JBAL); if (!m[it.id] || !m[it.id].a) { m[it.id] = Object.assign({}, m[it.id] || {}, { a: o.a }); lsSetJ(LS_JBAL, m, 400); } }
     const hd = el('div', 'lgh');
-    hd.appendChild(el('b', null, '出納帳'));
+    hd.appendChild(el('b', null, '総勘定元帳')).title = 'この口座（科目）の元帳。確定した仕訳と AI の下書き（斜体）を 相手科目つきで並べる';
     if (cands.length) {
       const sel = el('select'); sel.dataset.a = 'lgacct'; sel.setAttribute('aria-label', '出納帳の口座');
       cands.forEach(function (k) { const p = k.split('-'); const a = (S.acctMap || {})[p[0]] || {}; const sn = p[1] ? ((S.subMap || {})[p[0] + '|' + p[1]] || '') : '';
@@ -7863,7 +7885,7 @@
     hd.appendChild(lb('照合する残高', 'lge', o.e, '最後の残高（通帳・明細に書いてある数字）。入れると アプリの残高と合っているか出す'));
     hd.appendChild(el('span', 'lgv'));
     L.appendChild(hd);
-    const tb = el('table'); tb.innerHTML = '<thead><tr><th>日付</th><th>取引の種類</th><th>摘要</th><th class="r">増加</th><th class="r">減少</th><th class="r">残高</th><th></th></tr></thead><tbody></tbody>';
+    const tb = el('table'); tb.innerHTML = '<thead><tr><th>日付</th><th>相手科目</th><th>摘要</th><th class="r">借方</th><th class="r">貸方</th><th class="r">残高</th><th></th></tr></thead><tbody></tbody>';
     L.appendChild(tb);
     ledgerFill(L, it);
     return L;
@@ -7873,24 +7895,36 @@
     const o = lgState(it);
     const tbody = L.querySelector('tbody'); tbody.textContent = '';
     const has = o.s !== undefined && o.s !== '';
-    let bal = has ? Number(o.s) : 0, inS = 0, decS = 0;
+    const plusDr = /^1/.test(o.a || '');
+    let bal = has ? Number(o.s) : 0, drS = 0, crS = 0, n = 0, nd = 0;
     if (has) { const r0 = el('tr'); ['', '繰越残高', '', '', '', yen(bal), ''].forEach(function (v, i) { r0.appendChild(el('td', i >= 3 && i <= 5 ? 'r' : null, v)); }); tbody.appendChild(r0); }
-    it.entries.forEach(function (e) {
-      const mv = o.a ? lgMove(o.a, e) : null;
-      const tr = el('tr', mv ? null : 'out');
-      if (mv) { bal += mv.inc - mv.dec; inS += mv.inc; decS += mv.dec; }
-      const k = dictOf(String(e.no));
-      [e.date ? e.date.slice(5) : '', (k && k.title) || ('No ' + e.no), e.memo && e.memo !== (k && k.title) ? e.memo : '', mv && mv.inc ? yen(mv.inc) : '', mv && mv.dec ? yen(mv.dec) : '', mv ? (has ? yen(bal) : '') : '（口座外）']
+    glRows(it).forEach(function (r) {
+      const e = r.e;
+      const dh = o.a ? lgHit(o.a, e.drCode, e.drSub) : false, ch = o.a ? lgHit(o.a, e.crCode, e.crSub) : false;
+      const hit = o.a && dh !== ch;
+      if (r.draft && !hit) return;   /* 下書きは この口座の行だけ */
+      const tr = el('tr', (hit ? '' : 'out') + (r.draft ? ' draft' : ''));
+      const a = Number(e.amount) || 0, dr = hit && dh ? a : 0, cr = hit && ch ? a : 0;
+      if (hit) { bal += plusDr ? dr - cr : cr - dr; drS += dr; crS += cr; }
+      if (r.draft) nd++; else n++;
+      const k = e.no ? dictOf(String(e.no)) : null;
+      const opp = hit ? (dh ? glName(e.crCode, e.crSub) : glName(e.drCode, e.drSub)) : glName(e.drCode, e.drSub) + '／' + glName(e.crCode, e.crSub);
+      const memo = e.memo || (k && k.title) || '';
+      [e.date ? String(e.date).slice(5) : '', opp, memo, dr ? yen(dr) : '', cr ? yen(cr) : '', hit ? (has ? yen(bal) : '') : '（口座外）']
         .forEach(function (v, i) { tr.appendChild(el('td', i >= 3 ? 'r' : null, v)); });
       const td = el('td', 'r');
-      const fx = el('button', 'btn ghost sm', '訂正'); fx.type = 'button'; fx.dataset.a = 'fix'; fx.dataset.e = e.id; fx.disabled = !!(e.out || e.pending);
-      const cb = el('button', 'btn ghost sm danger', '取消'); cb.type = 'button'; cb.dataset.a = 'cancel'; cb.dataset.e = e.id; cb.disabled = !!(e.out || e.pending);
-      if (e.pending) td.appendChild(el('span', 'note', '保存中…'));
-      td.appendChild(fx); td.appendChild(cb); tr.appendChild(td);
+      if (r.draft) td.appendChild(el('span', 'glmk', 'AI下書き'));
+      else {
+        const fx = el('button', 'btn ghost sm', '訂正'); fx.type = 'button'; fx.dataset.a = 'fix'; fx.dataset.e = e.id; fx.disabled = !!(e.out || e.pending);
+        const cb = el('button', 'btn ghost sm danger', '取消'); cb.type = 'button'; cb.dataset.a = 'cancel'; cb.dataset.e = e.id; cb.disabled = !!(e.out || e.pending);
+        if (e.pending) td.appendChild(el('span', 'note', '保存中…'));
+        td.appendChild(fx); td.appendChild(cb);
+      }
+      tr.appendChild(td);
       tbody.appendChild(tr);
     });
-    if (!it.entries.length) { const r = el('tr'); const c = el('td', 'note', 'まだ入れていません。辞書を選んで、上の行から順に入れてください。'); c.colSpan = 7; r.appendChild(c); tbody.appendChild(r); }
-    const sm = el('tr', 'sum'); ['計', it.entries.length + '件', '', yen(inS), yen(decS), has ? yen(bal) : '', ''].forEach(function (v, i) { sm.appendChild(el('td', i >= 3 && i <= 5 ? 'r' : null, v)); });
+    if (!n && !nd) { const r = el('tr'); const c = el('td', 'note', 'まだ入れていません。辞書を選んで、上の行から順に入れてください。'); c.colSpan = 7; r.appendChild(c); tbody.appendChild(r); }
+    const sm = el('tr', 'sum'); ['計', n + '件' + (nd ? '＋下書き' + nd : ''), '', yen(drS), yen(crS), has ? yen(bal) : '', ''].forEach(function (v, i) { sm.appendChild(el('td', i >= 3 && i <= 5 ? 'r' : null, v)); });
     tbody.appendChild(sm);
     const vd = L.querySelector('.lgv');
     const e0 = o.e;
@@ -9958,6 +9992,7 @@
   /* どの行が もう入っているか（日付と金額で 確定した仕訳と 1つずつ突き合わせる） */
   function aiLinesDone(it) {
     const d = S.ai[it.id], left = it.entries.slice(), out = [];
+    out.m = [];
     (d.lines || []).forEach(function (l0, i) {
       const l = aiLineOf(it, i), dt = String(l.date || '').replace(/-/g, '/');
       /* ★ 通帳の型で 元金＋利息 に分けて入れた行は 分けた額が そろっていれば 入っている */
@@ -9965,12 +10000,13 @@
       if (pa && pa.length > 1) {
         const take = [], tmp = left.slice();
         const ok = pa.every(function (a) { const q = tmp.findIndex(function (e) { return Number(e.amount) === a && (!dt || e.date === dt); }); if (q < 0) return false; take.push(tmp[q]); tmp.splice(q, 1); return true; });
-        out[i] = ok; if (ok) take.forEach(function (e) { left.splice(left.indexOf(e), 1); }); return;
+        out[i] = ok; if (ok) { out.m[i] = take; take.forEach(function (e) { left.splice(left.indexOf(e), 1); }); } return;
       }
       let j = left.findIndex(function (e) { return Number(e.amount) === Number(l.amount) && e.date === dt; });
       if (j < 0) j = left.findIndex(function (e) { return Number(e.amount) === Number(l.amount); });
-      out[i] = j >= 0; if (j >= 0) left.splice(j, 1);
+      out[i] = j >= 0; if (j >= 0) { out.m[i] = [left[j]]; left.splice(j, 1); }
     });
+    out.rest = left;   /* ★ どの行にも当たらない 確定した仕訳（手で入れたもの） */
     return out;
   }
   /* ★ 通帳の型（2026-10-14）：その行の 分けた額（元金＋利息など）。金額を直したら 残りを付け直す */
@@ -9990,6 +10026,39 @@
     if (ks.length !== a.length) return null;
     const out = ks.map(function (x) { const j = l.pat.lines.findIndex(function (y, q) { return !used[q] && patKey(y) === patKey(x); }); if (j < 0) return null; used[j] = 1; return a[j]; });
     return out.indexOf(null) >= 0 ? null : out;
+  }
+  /* ★★ AI 下書きの行 → 仕訳の行（まだ確定していなくても 伝票・元帳に出す。2026-11-09） */
+  function aiDraftJ(it, i) {
+    const l = aiLineOf(it, i), dt = String(l.date || '').replace(/-/g, '/');
+    const k = Number(l.no) ? dictOf(String(l.no)) : null;
+    let base = null, amts = null;
+    if (k) { base = dictLinesOf(k); amts = l.pat ? patFor(k, l) : null; }
+    else if (l.pat && (l.pat.lines || []).length && l.usePat !== false) { base = l.pat.lines; const a = patAmts(l); amts = a && a.length === base.length ? a : null; }
+    if (!base || !base.length) return [];
+    if (base.length > 1 && !amts) amts = base.map(function (x, q) { return q === 0 ? Number(l.amount) || 0 : 0; });
+    return base.map(function (x, q) {
+      const memo = q === 0 && l.desc ? ((x.memo ? x.memo + '　' : '') + l.desc).slice(0, 60) : (x.memo || '');
+      return Object.assign({}, x, { date: dt, amount: amts ? amts[q] : Number(l.amount) || 0, memo: memo, no: k ? k.no : '', draft: true, partyName: x.partyName || l.party || '' });
+    });
+  }
+  function glName(code, sb) {
+    const a = (S.acctMap || {})[String(code || '')] || {}, sn = sb ? ((S.subMap || {})[code + '|' + sb] || '') : '';
+    return String(code || '') + (sb ? '-' + sb : '') + ' ' + (a.name || '') + (sn ? '・' + sn : '');
+  }
+  /* 仕訳の行の 伝票（見るだけ）。1行ずつ 借方・貸方・金額・税・摘要 */
+  function jSlipView(js, draft) {
+    const t = el('table', 'jalv' + (draft ? ' draft' : ''));
+    t.innerHTML = '<thead><tr><th>年月日</th><th>借 方 科 目</th><th>貸 方 科 目</th><th class="r">取引金額</th><th>課税・税率</th><th>取引先</th><th>元帳摘要</th></tr></thead>';
+    const tb = el('tbody');
+    js.forEach(function (x, q) {
+      const tr = el('tr');
+      [q === 0 ? (x.date || '') : '', glName(x.drCode, x.drSub), glName(x.crCode, x.crSub), x.amount ? yen(x.amount) : '',
+        [x.tax, x.rate ? (x.red ? '軽' : '') + x.rate + '%' : ''].filter(function (v) { return v !== undefined && v !== null && v !== ''; }).join('・'), x.partyName || x.party || '', x.memo || '']
+        .forEach(function (v, c) { tr.appendChild(el('td', c === 3 ? 'r' : null, String(v))); });
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    return t;
   }
   function aiLinesEl(it) {
     const d = S.ai[it.id], L = d.lines || [], done = aiLinesDone(it);
@@ -10040,6 +10109,9 @@
       const td = el('td');
       if (!done[i]) { const bt = el('button', 'btn ghost sm', '入れる'); bt.type = 'button'; bt.dataset.a = 'ailine'; bt.dataset.ln = String(i); td.appendChild(bt); }
       tr.appendChild(td); tb.appendChild(tr);
+      /* ★★ 仕訳伝票の形で（確定したものは 入った仕訳・まだのものは AI 下書き） */
+      const js = done[i] ? (done.m[i] || []) : aiDraftJ(it, i);
+      if (js.length) { const sr = el('tr', 'jasl' + (done[i] ? ' put' : '')); const sc = el('td'); sc.colSpan = 7; sc.appendChild(jSlipView(js, !done[i])); sr.appendChild(sc); tb.appendChild(sr); }
     });
     w.appendChild(tb);
     return w;
