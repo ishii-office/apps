@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794122190;</script>
+<script>window.__PAGE_VER=1794122859;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1798,8 +1798,8 @@
       <b>過去の仕訳を入れる口（いちばん効く材料）</b>
       <div class="fxdrop" id="hDrop">会計システムから書き出した 仕訳（CSV・Excel）を ここへドラッグ＆ドロップ。FX の仕訳データ（借方・貸方の科目コードと 金額・摘要の列があるもの）・FX の一括読込 Excel・会計王の仕訳データ（SIWAKE）が読めます。<b>12か月以上</b>（決算をまたぐと なおよい）
         <label class="btn sm">ファイルを選ぶ<input type="file" id="hIn" multiple accept=".csv,.txt,.xls,.xlsx" hidden></label></div>
-      <div class="bar"><button type="button" class="btn ghost sm danger" id="hClear">この顧問先の過去仕訳を消す</button>
-        <span class="note">同じ仕訳（日付・科目・金額・摘要）は 何度入れても1つです。</span></div>
+      <div class="bar"><button type="button" class="btn ghost sm danger" id="hClear">この顧問先の過去仕訳を消す</button><button type="button" class="btn ghost sm" id="hSync" title="過去仕訳の いちばん新しい12か月から、表に無い科目・補助を足し、科目名を新しい名前に直します（消すことはしません）。過去仕訳を入れたときは ひとりでに合わせます">過去仕訳から 勘定科目と補助の表を更新</button>
+        <span class="note">同じ仕訳（日付・科目・金額・摘要）は 何度入れても1つです。科目体系・口座が変わったら［消す］→ 新しい過去仕訳を入れ直すと、表も 新しいほうに合わせます。</span></div>
     </div>
     <span class="pagemsg" id="mtMsg" role="status"></span>
   </details>
@@ -10610,6 +10610,16 @@
     rMsg('全顧問先から 事務所共通のルールを作っています…');
     gs('ruleLearnOffice').then(function (x) { rMsg(x.clients + '社の仕訳から 事務所共通のルールを ' + x.rules + '件 作りました（2社以上が 同じ取引先を 同じ科目にしているもの）。', 'ok'); rLoad(); }, function (e) { rMsg(e.message, 'err'); });
   });
+  function acctSyncTxt(y) {
+    if (!y || (!y.added.length && !y.renamed.length)) return '';
+    return '　勘定科目と補助の表を 過去仕訳（' + y.from + '〜' + y.to + '）に合わせました：' + (y.added.length ? '足した ' + y.added.length + '行（' + y.added.slice(0, 6).join('・') + (y.added.length > 6 ? ' ほか' : '') + '）' : '') +
+      (y.renamed.length ? (y.added.length ? '／' : '') + '名前を直した ' + y.renamed.length + '科目（' + y.renamed.slice(0, 4).map(function (r) { return r.code + ' ' + r.from + '→' + r.to; }).join('・') + '）' : '') + '。';
+  }
+  $('hSync').addEventListener('click', function () {
+    if (!S.code) return; const code = S.code;
+    rMsg('過去仕訳から 勘定科目と補助の表を 合わせています…');
+    gs('acctSyncHist', code).then(function (y) { if (code !== S.code) return; const t = acctSyncTxt(y); rMsg(t ? t.trim() : '勘定科目と補助の表は もう過去仕訳（' + (y.from || '') + '〜' + (y.to || '') + '）と合っています。', 'ok'); rLoad(); }, function (e) { rMsg(e.message, 'err'); });
+  });
   $('hClear').addEventListener('click', function () {
     if (!S.code || !confirm('この顧問先の過去仕訳を ぜんぶ消します（ルールは残ります）。')) return;
     const code = S.code;
@@ -10694,7 +10704,9 @@
       R.busy = false;
       if (code !== S.code) return;
       const head = '過去仕訳を ' + added + '件 入れました' + (skipped ? '（同じもの・日付の無い行 ' + skipped + '件は 入れず）' : '') + (bad.length ? '。読めなかったもの：' + bad.join('、') : '') + '。';
-      if (added) rLearn(head); else { rMsg(head + (bad.length ? ' 借方・貸方の科目と 日付の列がある CSV／Excel にしてください。' : ''), bad.length ? 'err' : 'ok'); rLoad(); }
+      /* ★ 過去仕訳から 勘定科目と補助の表を 新しいほうに合わせる（2026-11-08） */
+      const sync = added ? gs('acctSyncHist', code).then(function (y) { if (code === S.code && (y.added.length || y.renamed.length)) { try { loadAcct(); } catch (e) {} } return acctSyncTxt(y); }, function () { return ''; }) : Promise.resolve('');
+      sync.then(function (st) { const h2 = head + st; if (added) rLearn(h2); else { rMsg(h2 + (bad.length ? ' 借方・貸方の科目と 日付の列がある CSV／Excel にしてください。' : ''), bad.length ? 'err' : 'ok'); rLoad(); } });
     }, function (e) { R.busy = false; rMsg(e.message, 'err'); });
   }
 
