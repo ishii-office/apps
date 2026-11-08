@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794112823;</script>
+<script>window.__PAGE_VER=1794115319;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1296,6 +1296,9 @@
   .obstrip { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; padding: 6px 10px; background: #FFF8E1; border: 1px solid #F0D98A; border-radius: 10px; font-weight: 700; }
   .obv { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; padding: 16px; }
   .obv[hidden] { display: none; }
+  .bopt { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0; }
+  .bopt label { display: flex; flex-direction: column; gap: 4px; font-weight: 700; font-size: 13.5px; }
+  .bopt textarea { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid #c9d3cf; border-radius: 8px; resize: vertical; }
   .obbox { background: #fff; border-radius: 12px; width: min(760px, 100%); max-height: 90vh; display: flex; flex-direction: column; padding: 14px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
   .obh { display: flex; align-items: center; justify-content: space-between; gap: 8px; } .obh h3 { margin: 0; font-size: 17px; }
   .obnav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0; } .obnav b { min-width: 8em; text-align: center; }
@@ -1379,6 +1382,16 @@
     <p class="note">選んだ箱（中の箱も）だけが 仕訳化・回収資料に並びます。AI で下書きも この箱だけ。</p>
     <div class="bxlist" id="bxList"></div>
     <div class="obnav"><button type="button" class="btn sm" id="bxOk">この箱で絞る</button><button type="button" class="btn ghost sm" id="bxNo">やめる</button></div>
+  </div>
+</div>
+<!-- ★ 出納帳の 摘要の選択肢（2026-11-08）：顧問先タブの箱で決める。入金と出金に分ける。1行に1つ -->
+<div class="obv" id="boptv" hidden role="dialog" aria-modal="true" aria-labelledby="boptT">
+  <div class="obbox" style="width:min(560px,100%)">
+    <div class="obh"><h3 id="boptT">摘要の選択肢</h3></div>
+    <p class="note">顧問先が 出納帳で押して選ぶ摘要です（1行に1つ）。選ぶと 入金か出金かも決まり、そのまま金額を書けます。<br>空のままなら この箱の仕訳辞書（取引の種類）から出します。</p>
+    <div class="bopt"><label>入金の摘要<textarea id="boptIn" rows="7" placeholder="例：売上&#10;社長から"></textarea></label><label>出金の摘要<textarea id="boptOut" rows="7" placeholder="例：仕入&#10;交通費&#10;消耗品"></textarea></label></div>
+    <p class="note" id="boptMsg"></p>
+    <div class="obnav"><button type="button" class="btn ghost sm" id="boptDict" title="この箱の仕訳辞書の 取引の種類の名前を 入金・出金に分けて入れる（いま書いてあるものは 入れ替わります）">仕訳辞書から入れる</button><button type="button" class="btn sm" id="boptOk">これにする</button><button type="button" class="btn ghost sm" id="boptNo">やめる</button></div>
   </div>
 </div>
 <!-- ★ 出納帳（顧問先が書いたもの。見るだけ。2026-11-07） -->
@@ -2361,7 +2374,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, boxDoneList: 1,
+  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeBookOpts: 1, boxDoneList: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, lineNews: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -11596,6 +11609,14 @@
             aTreeDraw();
           });
           row.appendChild(bk);
+          /* ★ 出納帳の 摘要の選択肢（2026-11-08）。決めていなければ 仕訳辞書から出す */
+          if (bc.book && !kk) {
+            const on = bc.opts && ((bc.opts.in || []).length || (bc.opts.out || []).length);
+            const ob = el('button', 'sm2 bopts' + (on ? ' on' : ''), on ? '摘要の選択肢（入金' + (bc.opts.in || []).length + '・出金' + (bc.opts.out || []).length + '）' : '摘要の選択肢：仕訳辞書から'); ob.type = 'button';
+            ob.title = '顧問先が 出納帳で押して選ぶ摘要（入金・出金に分ける）。決めていなければ この箱の仕訳辞書（取引の種類）から出します';
+            ob.addEventListener('click', function () { boptOpen(path); });
+            row.appendChild(ob);
+          }
         }
         if (isS) { const dd = el('input', 'sptd'); dd.type = 'date'; dd.value = A.spot[path] || ''; dd.title = '提出期限（空なら 期限なし）'; dd.setAttribute('aria-label', segs[d] + 'の提出期限');
           dd.addEventListener('change', function () { A.spot[path] = dd.value || ''; }); row.appendChild(dd); }
@@ -11662,6 +11683,34 @@
     aIconDraw();
   }
   aIconSet('');
+  /* ★ 出納帳の 摘要の選択肢（2026-11-08）。［これにする］で A.bconf に入り、顧問先の［保存］で 決まる */
+  let BOPT = '';
+  function boptOpen(path) {
+    BOPT = path; const bc = (A.bconf || {})[path] || {}, o = bc.opts || {};
+    $('boptT').textContent = '摘要の選択肢［' + path + '］';
+    $('boptIn').value = (o.in || []).join('\n'); $('boptOut').value = (o.out || []).join('\n');
+    $('boptMsg').textContent = (o.in || []).length || (o.out || []).length ? '' : 'いまは 仕訳辞書から出しています。［仕訳辞書から入れる］で 中身を見て 直せます。';
+    $('boptv').hidden = false; $('boptIn').focus();
+  }
+  function boptLines(v) { const seen = {}; return String(v || '').split(/\r?\n/).map(function (t) { return t.replace(/[<>]/g, '').trim().slice(0, 30); }).filter(function (t) { if (!t || seen[t]) return false; seen[t] = 1; return true; }).slice(0, 60); }
+  $('boptNo').addEventListener('click', function () { $('boptv').hidden = true; });
+  $('boptv').addEventListener('click', function (e) { if (e.target === $('boptv')) $('boptv').hidden = true; });
+  $('boptOk').addEventListener('click', function () {
+    const i = boptLines($('boptIn').value), o = boptLines($('boptOut').value);
+    A.bconf = A.bconf || {}; const cur = A.bconf[BOPT] || {};
+    if (i.length || o.length) cur.opts = { in: i, out: o }; else delete cur.opts;
+    if (cur.day || cur.ask || cur.book) A.bconf[BOPT] = cur;
+    $('boptv').hidden = true; aTreeDraw();
+    amsg('摘要の選択肢を入れました。下の［保存］で 顧問先の画面に出ます。');
+  });
+  $('boptDict').addEventListener('click', function () {
+    const code = ccode($('aCode').value); if (!code || A.isNew) { $('boptMsg').textContent = '顧問先を保存してから 使えます。'; return; }
+    $('boptMsg').textContent = '仕訳辞書を読んでいます…';
+    gs('officeBookOpts', code, BOPT).then(function (r) {
+      $('boptIn').value = (r.in || []).join('\n'); $('boptOut').value = (r.out || []).join('\n');
+      $('boptMsg').textContent = (r.in || []).length + (r.out || []).length ? '仕訳辞書から 入金 ' + r.in.length + '件・出金 ' + r.out.length + '件を入れました。分かりやすい言葉に 直してください。' : 'この箱の仕訳辞書に 取引の種類がありません。';
+    }, function (e) { $('boptMsg').textContent = '読めませんでした。' + e.message; });
+  });
   $('aNewBox').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('aAddBox').click(); } });
   $('aBoxes').addEventListener('input', aPreview);
   $('aForm').addEventListener('submit', function (e) {
