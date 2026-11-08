@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794118187;</script>
+<script>window.__PAGE_VER=1794122190;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1306,6 +1306,7 @@
   .obtbl { width: 100%; border-collapse: collapse; font-size: 14px; }
   .obtbl th { position: sticky; top: 0; background: #F3F6F5; text-align: left; padding: 6px; font-size: 12px; }
   .obtbl td { padding: 6px; border-top: 1px solid #eef1f0; } .obtbl .n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .jzwhy { display: block; flex-basis: 100%; color: #8C2A22; font-size: 12.5px; margin-top: 2px; }
   .obtbl tr.cy td { background: #FAFAFA; color: #555; } .obtbl .neg { color: #B3261E; }
   .obtbl tr.r, .obtbl tr.cyed { cursor: pointer; } .obtbl tr.r:hover td, .obtbl tr.cyed:hover td { background: #F6FAF8; } .obtbl tr.on td { background: #FFF6D6; }
   .obtbl tr.off td { background: #FDECEA; } .obtbl tr.off td.pp { color: #B3261E; font-weight: 700; } .obtbl td.pp { color: #777; }
@@ -9759,6 +9760,8 @@
     const d = (S.ai || {})[it.id], b = el('div', 'jai jzero');
     b.appendChild(el('b', 'pct lo', '🤖 予測合致率 0%'));
     b.appendChild(el('span', null, d ? 'AI が仕訳を決められませんでした' + (d.date || d.amount ? '（' + [d.date ? d.date.replace(/-/g, '/') : '', d.amount ? yen(d.amount) + '円' : ''].filter(Boolean).join('　') + ' は読めています）' : '') : 'まだ AI の下書きがありません'));
+    /* ★ 2026-11-08：なぜ決められなかったか（表に無い科目 など）を そのまま出す。黙って 0% にしない */
+    if (d && d.note) b.appendChild(el('small', 'jzwhy', '理由：' + d.note));
     const k = el('button', 'jdok go'); k.type = 'button'; k.dataset.a = 'aipick';
     k.appendChild(el('span', 'm', '▼')); k.appendChild(el('span', null, '辞書から選ぶ（Enter／0）'));
     b.appendChild(k);
