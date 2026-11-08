@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794123353;</script>
+<script>window.__PAGE_VER=1794126905;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1012,6 +1012,12 @@
   .tq .fr { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; }
   .tq .fr input { flex: 1 1 260px; min-width: 0; }
   @media (max-width: 640px) { .tq { grid-template-columns: 1fr; } .tq img, .tq .ph { width: 100%; max-height: 220px; } }
+  .rbbox { border: 2px solid #3a6ea5; }
+  .rbt { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 6px; } .rbt th, .rbt td { border-bottom: 1px solid var(--line, #ddd); padding: 5px 6px; text-align: left; vertical-align: top; }
+  .rbt th { font-size: 12.5px; color: #555; white-space: nowrap; } .rbt td.ops { white-space: nowrap; } .rbt tr.off td { opacity: .5; }
+  .rbsc { display: inline-block; padding: 1px 7px; border-radius: 9px; font-size: 12px; font-weight: 700; white-space: nowrap; } .rbsc.mine { background: #e3f0ff; color: #1d4e89; } .rbsc.of { background: #fff1d6; color: #7a4b00; }
+  .rbform { display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center; margin-top: 8px; } .rbform input, .rbform select { font-size: 15px; padding: 5px 7px; }
+  @media (max-width: 700px) { .rbform { grid-template-columns: 1fr; } .rbt { font-size: 13px; } }
   .tqexp { margin-top: 8px; } .tqexp summary { font-size: 14px; color: var(--accent); }
   .tqe { border-bottom: 1px solid var(--line); padding: 6px 2px; font-size: 13px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
   .tqe .sc { font-size: 11.5px; font-weight: 700; padding: 0 7px; border-radius: 999px; background: #E9EEF7; color: #2A4A7F; margin-right: 4px; }
@@ -1828,6 +1834,20 @@
     <details class="tqexp"><summary id="tqExpH">積んだ経験</summary><div id="tqExp"></div></details>
     <span class="pagemsg" id="tqMsg" role="status"></span>
   </details>
+  <details open class="rbox rbbox" id="rbBox"><summary>★ ルールの一覧（もし A ならば B）</summary>
+    <p class="note">「<b>もし A ならば B</b>」「もし A ならば <b>B か C</b>」の形で、仕訳の考え方を1行ずつ並べます。AI 下書きに毎回渡ります。
+      範囲は <span class="rbsc mine">この顧問先</span> と <span class="rbsc of">顧問先一般（事務所の憲法）</span>。<b>食いちがったら この顧問先のルールが優先</b>です。
+      人が AI の下書きの <b>片側（現金・預金・未払 など）</b>を直して確定すると、その箱のルールが <b>ひとりでに</b> できます（出どころ「直しから」。例：現金の箱で 未払費用 → 現金）。気づいたことは 下の欄から足せます。</p>
+    <div id="rbList"></div>
+    <div class="rbform">
+      <label for="rbScope">範囲</label><select id="rbScope"><option value="mine">この顧問先</option><option value="*">顧問先一般（事務所の憲法）</option></select>
+      <label for="rbA">もし（A）</label><input id="rbA" maxlength="300" placeholder="例：回収ボックス「現金」の証憑（支払い）">
+      <label for="rbB">ならば（B）</label><input id="rbB" maxlength="300" placeholder="例：貸方は 1111 現金（「B か C」でもよい）">
+      <label for="rbW">なぜ（任意）</label><input id="rbW" maxlength="600" placeholder="例：未払費用はカード払いのときだけ">
+    </div>
+    <div class="bar"><button type="button" class="btn sm" id="rbGo">足す</button><button type="button" class="btn ghost sm" id="rbNo" hidden>やめる</button><span class="note" id="rbEd"></span></div>
+    <span class="pagemsg" id="rbMsg" role="status"></span>
+  </details>
   <details open class="rbox" id="memoBox"><summary>3. 引き継ぎメモ（この顧問先。前任者の頭の中）</summary>
     <p class="note">AI が 証憑を読むたびに いちばん先に読むメモです。<b>［AI に書かせる］</b>で 過去の仕訳から下書きを作り、人が直して<b>［保存］</b>。保存するたびに 版を積みます（上書きしません）。
       口座ごとの毎月の引落し・借入金の返済の分け方・よく出る相手と科目の使い分け・迷いやすいところ を 具体的に。</p>
@@ -2391,7 +2411,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeBookOpts: 1, boxDoneList: 1,
+  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, lineNews: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -8777,6 +8797,14 @@
       if (sale && String(v.tax || '').trim() === '') { fmsg(w + '売上の行に 課税区分が入っていません', 'err'); go1(row, 'tax', ln); return; }
       if (sale && !taxFree(v.tax) && !(Number(v.rate) > 0)) { fmsg(w + '売上の行に 税率が入っていません（課税区分 ' + v.tax + '）', 'err'); go1(row, 'rate', ln); return; }
     }
+    /* ★★ 二重に入れない（2026-11-08）：出納帳・カード明細（背骨）の行に当たった領収書は、仕訳をその行で入れる。
+       ここで確定すると 同じ支払いが2つの仕訳になる。同じ金額の別の取引のこともあるので、もう一度押せば入れられる */
+    const spl = !isMulti(it) && S.spm && S.spm.rcpt && S.spm.rcpt[it.id];
+    if (spl && !c.spOk) {
+      c.spOk = 1;
+      fmsg('🧾 この領収書は「' + spl.box + '」の ' + (spl.ln + 1) + '行目（' + (spl.date ? spl.date.replace(/-/g, '/') + ' ' : '') + yen(spl.amount) + '円' + (spl.desc ? '・' + spl.desc : '') + '）で仕訳します。ここで確定すると二重になります。別の取引なら もう一度［確定］を押してください。', 'err');
+      return;
+    }
     /* ★ 総点検（2026-10-26）：1回の確定に 合図（op）を1つ。しくじって打ち直したときも 同じ合図を使うので、
        じつはサーバに届いていたときに 仕訳が2組できない */
     if (!c.op) c.op = 'wc_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -10174,7 +10202,7 @@
     const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' };
     $('rClient').textContent = '— ' + code + ' ' + c.name;
     gs('ruleList', code).then(function (r) { if (code !== S.code) return; R.data = r; rDraw(); }, function (e) { rMsg(e.message, 'err'); });
-    thLoad(); aiStatusLoad(); aiPaint(); mtLoad(); tqLoad();
+    thLoad(); aiStatusLoad(); aiPaint(); mtLoad(); tqLoad(); rbLoad();
   }
   /* ================= ★★★ 新しいやり方（総合判断。2026-10-15）：材料をそろえる・引き継ぎメモ・答え合わせ ================= */
   const MT = { data: null, memo: null, busy: false };
@@ -10306,6 +10334,56 @@
       });
     });
     q.then(function () { MT.busy = false; $('ckGo').disabled = false; mtMsg('ckMsg', '答え合わせが済みました（' + x.date.slice(0, 7) + ' より前の材料だけで読ませました）。ちがった行は 引き継ぎメモに書き足すと 次から当たります。', 'ok'); });
+  });
+  /* ================= ★★ ルールの一覧（もし A ならば B。2026-11-08） ================= */
+  const RB = { data: null, ed: null };
+  function rbLoad() { const code = S.code; if (!code) return; gs('rbList', code).then(function (r) { if (code !== S.code) return; RB.data = r; rbDraw(); }, function (e) { mtMsg('rbMsg', e.message, 'err'); }); }
+  function rbDraw() {
+    const box = $('rbList'); if (!box) return; box.textContent = '';
+    const r = RB.data || { mine: [], office: [] }, all = (r.mine || []).concat(r.office || []);
+    if (!all.length) { box.appendChild(el('div', 'note', 'まだありません。下の欄から足すか、AI の下書きを直して確定すると ひとりでにできます。')); return; }
+    const t = el('table', 'rbt'), hd = el('tr');
+    ['範囲', 'もし（A）', 'ならば（B）', 'なぜ', '出どころ', ''].forEach(function (h) { hd.appendChild(el('th', null, h)); });
+    t.appendChild(hd);
+    all.forEach(function (x) {
+      const tr = el('tr', x.st === '止め' ? 'off' : null), of = x.scope === '*';
+      const sc = el('td'); sc.appendChild(el('span', 'rbsc ' + (of ? 'of' : 'mine'), of ? '顧問先一般（事務所の憲法）' : 'この顧問先'));
+      if (x.st !== '有効') sc.appendChild(el('div', 'note', x.st));
+      tr.appendChild(sc); tr.appendChild(el('td', null, x.a)); tr.appendChild(el('td', null, x.b)); tr.appendChild(el('td', null, x.why || ''));
+      tr.appendChild(el('td', null, (x.auto ? '直しから' : '人が書いた') + (x.at ? '・' + x.at.slice(0, 10) : '')));
+      const ops = el('td', 'ops'), canOf = r.master || (x.st === '提案' && x.from === S.code);
+      const btn = function (t2, a) { const b = el('button', 'btn ghost sm', t2); b.type = 'button'; b.dataset.rb = a; b.dataset.id = x.id; ops.appendChild(b); };
+      if (!of || canOf) btn('直す', 'ed');
+      if (!of || r.master) btn(x.st === '止め' ? '使う' : '止める', x.st === '止め' ? '有効' : '止め');
+      if (of && r.master && x.st === '提案') btn('採用', '有効');
+      if (!of) btn('事務所の憲法へ', 'up');
+      if (!of || canOf) btn('消す', '消す');
+      tr.appendChild(ops); t.appendChild(tr);
+    });
+    box.appendChild(t);
+  }
+  function rbEdit(x) {
+    RB.ed = x ? x.id : null;
+    $('rbScope').value = x && x.scope === '*' ? '*' : 'mine'; $('rbA').value = x ? x.a : ''; $('rbB').value = x ? x.b : ''; $('rbW').value = x ? (x.auto ? '' : x.why || '') : '';
+    $('rbGo').textContent = x ? '直す' : '足す'; $('rbNo').hidden = !x; $('rbEd').textContent = x ? '直しています：' + x.a : '';
+    if (x) $('rbA').focus();
+  }
+  $('rbGo').addEventListener('click', function () {
+    const code = S.code; if (!code) return;
+    const o = { id: RB.ed, scope: $('rbScope').value, a: $('rbA').value.trim(), b: $('rbB').value.trim(), why: $('rbW').value.trim() };
+    if (!o.a || !o.b) { mtMsg('rbMsg', '「もし（A）」と「ならば（B）」を書いてください。', 'err'); return; }
+    gs('rbSave', code, o).then(function (r) { if (code !== S.code) return; RB.data = r; rbDraw(); rbEdit(null); mtMsg('rbMsg', o.scope === '*' && !r.master ? '事務所の憲法への提案にしました（マスターが採用すると 有効）。' : '入れました。次の AI 下書きから効きます。', 'ok'); },
+      function (e) { mtMsg('rbMsg', e.message, 'err'); });
+  });
+  $('rbNo').addEventListener('click', function () { rbEdit(null); });
+  $('rbList').addEventListener('click', function (ev) {
+    const b = ev.target.closest('[data-rb]'); if (!b) return;
+    const code = S.code, r = RB.data || {}, x = (r.mine || []).concat(r.office || []).find(function (y) { return y.id === b.dataset.id; }); if (!x) return;
+    const a = b.dataset.rb;
+    if (a === 'ed') { rbEdit(x); return; }
+    if (a === '消す' && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'もう一度で消す'; return; }
+    (a === 'up' ? gs('rbPromote', code, x.id) : gs('rbState', code, x.id, a)).then(function (r2) { if (code !== S.code) return; RB.data = r2; rbDraw(); mtMsg('rbMsg', a === 'up' ? (r2.master ? '事務所の憲法に入れました（科目は名前で言い直しています）。' : '事務所の憲法への提案にしました。') : '変えました。', 'ok'); },
+      function (e) { mtMsg('rbMsg', e.message, 'err'); });
   });
   /* ================= ★★★ AI に教える（経験を積む。2026-10-15） ================= */
   const TQ = { data: null, txt: {}, busy: false };
