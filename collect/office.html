@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794132237;</script>
+<script>window.__PAGE_VER=1794133157;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1851,6 +1851,13 @@
     <div class="bar"><button type="button" class="btn sm" id="rbGo">足す</button><button type="button" class="btn ghost sm" id="rbNo" hidden>やめる</button><span class="note" id="rbEd"></span></div>
     <span class="pagemsg" id="rbMsg" role="status"></span>
   </details>
+  <details class="rbox rbbox" id="opBox"><summary>★ 事務所共通の取引先（すべての顧問先の AI に渡す）</summary>
+    <p class="note">ここに入れた取引先は、<b>どの顧問先の AI 下書きにも</b> 材料として渡ります（事務所共通のルール）。領収書に登録番号が無いときは ここの登録番号を いちばん先に使います。
+      1行に1つ：<b>取引先名, 登録番号（T＋13桁・無ければ空）, いつもの科目, メモ</b>（カンマかタブで区切る。エクセルから貼ってもよい）。入れられるのは マスターだけです。</p>
+    <textarea id="opText" rows="8" aria-label="事務所共通の取引先" placeholder="株式会社NTTドコモ, T1010001067912, 通信費, 携帯・光回線&#10;中小企業基盤整備機構, , 保険料, 倒産防止共済（掛金は 保険料 か 長期前払費用）"></textarea>
+    <div class="bar"><button type="button" class="btn sm" id="opSave">保存</button><span class="note" id="opN"></span></div>
+    <span class="pagemsg" id="opMsg" role="status"></span>
+  </details>
   <details open class="rbox" id="memoBox"><summary>3. 引き継ぎメモ（この顧問先。前任者の頭の中）</summary>
     <p class="note">AI が 証憑を読むたびに いちばん先に読むメモです。<b>［AI に書かせる］</b>で 過去の仕訳から下書きを作り、人が直して<b>［保存］</b>。保存するたびに 版を積みます（上書きしません）。
       口座ごとの毎月の引落し・借入金の返済の分け方・よく出る相手と科目の使い分け・迷いやすいところ を 具体的に。</p>
@@ -2414,11 +2421,12 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1,
+  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, lineNews: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
-  const LONG_FN = { tehonAnalyze: 370000, kaizenShot: 120000 };
+  /* ★ 2026-11-08：AI の下書き（通帳2枚を明細で読む など）は 1分を超える。60秒で切ると サーバは読み終えたのに「返事がありません」になっていた */
+  const LONG_FN = { tehonAnalyze: 370000, kaizenShot: 120000, aiRead: 370000, aiCheck: 370000, officeBookFromPhoto: 370000, memoWrite: 370000 };
   /* ★ 総点検（2026-10-26）：読むだけのものは 通信がこけたら 1回だけ自動でやり直す（打ち直させない）。
      書き込みは やり直さない（二度入るので）。GAS の中（LIVE）でも 返事が来なければ時間切れにする（固まらない） */
   const NETERR = /サーバの返事がありませんでした|サーバにつながりませんでした|Failed to fetch|NetworkError|Load failed|network/i;
@@ -4913,7 +4921,7 @@
       if (code !== S.code) return;
       if (r.skipped) { it.skip = 1; try { docsLoad(true); } catch (e) {} try { load(); } catch (e) {} }
       docsClose();
-      const msg = '✓ 写真から ' + r.n + ' 行を起こしました' + (r.carrySet ? '（繰越 ' + Number(r.carryRead).toLocaleString('ja-JP') + ' 円を入れました）' : '') + ((r.pre || r.post) ? '。' + perLabel(ym) + '以外の行（前の月 ' + (r.pre || 0) + '・次の月 ' + (r.post || 0) + '）は 入れていません' : '') + (r.alias ? '。摘要の書き方がちがう取引 ' + r.alias + '件を ルールにしました' : '') + (r.turnedOn ? '。この箱に 出納帳を付けました' : '') + (r.skipped ? '。元の写真は 対象外（出納帳の原本）にしました' : '') + '。' + (r.note ? '　AI のメモ：' + r.note : '');
+      const msg = '✓ 写真から ' + r.n + ' 行を起こしました' + (r.merged ? '（2つの資料に重なった取引 ' + r.merged + '件は 1つに）' : '') + (r.carrySet ? '（繰越 ' + Number(r.carryRead).toLocaleString('ja-JP') + ' 円を入れました）' : '') + ((r.pre || r.post) ? '。' + perLabel(ym) + '以外の行（前の月 ' + (r.pre || 0) + '・次の月 ' + (r.post || 0) + '）は 入れていません' : '') + (r.alias ? '。摘要の書き方がちがう取引 ' + r.alias + '件を ルールにしました' : '') + (r.turnedOn ? '。この箱に 出納帳を付けました' : '') + (r.skipped ? '。元の写真は 対象外（出納帳の原本）にしました' : '') + '。' + (r.note ? '　AI のメモ：' + r.note : '');
       obOpen(box, ym, '', msg);
     }, function (e) { b.disabled = false; b.textContent = was; alert('出納帳として読めませんでした。' + e.message); });
   }
@@ -10002,7 +10010,7 @@
       if (l.balNG && !done[i]) tr.classList.add('balng');
       const dt = el('input', 'dpin'); dt.dataset.ai = 'date'; dt.value = String(l.date || '').replace(/-/g, '/'); dt.disabled = done[i]; dt.setAttribute('aria-label', (i + 1) + '行目の日付');
       tr.appendChild(el('td')).appendChild(dt);
-      const dsc = tr.appendChild(el('td', 'ds', l.desc || ''));
+      const dsc = tr.appendChild(el('td', 'ds', (l.desc || '') + (l.desc2 ? '（別の書き方：' + l.desc2 + '）' : '')));
       if (l.pat && l.pat.kind !== 'ai') { const pa = patAmts(l); dsc.appendChild(el('div', 'jpat', '型：' + l.pat.title + (pa && pa.length > 1 ? '（' + pa.map(yen).join('＋') + '）' : ''))).title = (l.pat.why || []).join('・') + '（過去 ' + (l.pat.n || 0) + '回）'; }
       /* ★ 新しいやり方：AI の仕訳と決め手・残高のつながり */
       if (l.j || l.reason) { const pa = l.pat ? patAmts(l) : null; dsc.appendChild(el('div', 'jpat', 'AI：' + (l.j || '') + (pa && pa.length > 1 ? '（' + pa.map(yen).join('＋') + '）' : ''))); if (l.reason) dsc.appendChild(el('div', 'jwhy', '決め手：' + l.reason)); }
@@ -10241,7 +10249,7 @@
     const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' };
     $('rClient').textContent = '— ' + code + ' ' + c.name;
     gs('ruleList', code).then(function (r) { if (code !== S.code) return; R.data = r; rDraw(); }, function (e) { rMsg(e.message, 'err'); });
-    thLoad(); aiStatusLoad(); aiPaint(); mtLoad(); tqLoad(); rbLoad();
+    thLoad(); aiStatusLoad(); aiPaint(); mtLoad(); tqLoad(); rbLoad(); opLoad();
   }
   /* ================= ★★★ 新しいやり方（総合判断。2026-10-15）：材料をそろえる・引き継ぎメモ・答え合わせ ================= */
   const MT = { data: null, memo: null, busy: false };
@@ -10373,6 +10381,12 @@
       });
     });
     q.then(function () { MT.busy = false; $('ckGo').disabled = false; mtMsg('ckMsg', '答え合わせが済みました（' + x.date.slice(0, 7) + ' より前の材料だけで読ませました）。ちがった行は 引き継ぎメモに書き足すと 次から当たります。', 'ok'); });
+  });
+  /* ================= ★★ 事務所共通の取引先（2026-11-08） ================= */
+  function opSet(r) { $('opText').value = r.text || ''; $('opText').readOnly = !r.master; $('opSave').hidden = !r.master; $('opN').textContent = (r.list || []).length + '件' + (r.master ? '' : '（入れられるのは マスターだけ）'); }
+  function opLoad() { gs('officePartyGet').then(opSet, function (e) { mtMsg('opMsg', e.message, 'err'); }); }
+  $('opSave').addEventListener('click', function () {
+    gs('officePartySave', $('opText').value).then(function (r) { opSet(r); mtMsg('opMsg', '保存しました（' + r.list.length + '件）。どの顧問先の AI 下書きにも 次から効きます。', 'ok'); }, function (e) { mtMsg('opMsg', e.message, 'err'); });
   });
   /* ================= ★★ ルールの一覧（もし A ならば B。2026-11-08） ================= */
   const RB = { data: null, ed: null };
