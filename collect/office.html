@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794149439;</script>
+<script>window.__PAGE_VER=1794150739;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -954,6 +954,11 @@
   .jailt tr.jasl.put .jalv { opacity: .55; }
   .jledg tr.draft td { color: #6b5a2e; font-style: italic; background: #FFFBF0; }
   .jledg .glmk { font-size: 11px; color: #8a5a00; font-style: normal; border: 1px solid #E3C77A; border-radius: 3px; padding: 0 3px; margin-left: 3px; }
+  .jfingl { margin-top: 8px; }
+  .jailt tr.jawho td { background: #0F6E56; color: #fff; font-weight: 700; padding: 3px 8px; }
+  .jailt tr.jawsub td { background: #E6F1EC; color: #0F6E56; font-weight: 700; text-align: right; padding: 3px 8px; }
+  .jailt tr.rc td { background: #F3F7FF; }
+  .jledg tr.gsub td { background: #E6F1EC; color: #0F6E56; font-weight: 700; }
   .jailt tr.done { opacity: .5; } .jailt tr.none td { background: #FFF6E0; } .jailt tr.lo .pc { color: #B3261E; font-weight: 700; }
   .jpgok { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 2px solid #0F6E56; background: #0F6E56; color: #fff; font: inherit; font-weight: 700; cursor: pointer; margin-left: 8px; }
   .jpgok .m { font-size: 18px; }
@@ -3721,7 +3726,7 @@
       s.left.forEach(function (r) { const b = el('button', 'aialt', (r.date ? r.date.slice(5).replace('-', '/') + ' ' : '') + yen(r.amount) + '円' + (r.party ? ' ' + r.party : '')); b.type = 'button'; b.dataset.a = 'spgo'; b.dataset.id = r.id; d.appendChild(b); });
       w.appendChild(d);
     }
-    if (s.bare.length) w.appendChild(el('div', 'nt', '領収書のない行は 取引先と過去の仕訳で決めます（AI の下書きがそうしています）。'));
+    w.appendChild(el('div', 'nt', '流れ：① 領収書が当たった行は 領収書の写真で仕訳（明細の行からは入れない）　② 領収書のない行は 明細（出納帳）の行から仕訳　③ 最後に 明細の画像・伝票・元帳を見くらべる'));
     /* ★ 入金の行（領収書が無い）は 背骨の行から 1件ずつ仕訳にする。押すと その出納帳・通帳へ（2026-11-08） */
     if ((s.inc || []).length) {
       const d2 = el('div', 'spl'); d2.appendChild(el('span', 'nt', '入金の行（領収書なし。出納帳・通帳の行で仕訳）：'));
@@ -3737,7 +3742,7 @@
   }
   function spineNoteEl(it) {
     const l = S.spm && S.spm.rcpt[it.id]; if (!l) return null;
-    return el('div', 'spnote', '🧾 この領収書は「' + l.box + '」の ' + (l.date ? l.date.replace(/-/g, '/') + ' ' : '') + yen(l.amount) + '円 の行（' + (l.ln + 1) + '行目' + (l.desc ? '・' + l.desc : '') + '）に当たります。仕訳はその行で入れるので、ここは証憑として見るだけ（二重に入れない）。');
+    return el('div', 'spnote', '🧾 この領収書は「' + l.box + '」の ' + (l.date ? l.date.replace(/-/g, '/') + ' ' : '') + yen(l.amount) + '円 の行（' + (l.ln + 1) + '行目' + (l.desc ? '・' + l.desc : '') + '）の取引です。仕訳は この領収書で入れます（税率の内訳・登録番号まで分かるので）。明細の その行からは入れません（二重にしない）。');
   }
 
   /* 一覧を組む。届いた日ごとに区切りを入れる */
@@ -4865,12 +4870,17 @@
     const yy = function (n) { return Number(n).toLocaleString('ja-JP'); };
     const cy = tr('cy cyed', [[''], ['前月からの繰越' + (d.carrySet ? '（手入力）' : '') + ' ✎'], ['', 'n'], ['', 'n'], [yy(d.carry), 'n' + (d.carry < 0 ? ' neg' : '')]].concat(pp ? [['', 'n']] : []));
     cy.title = '押すと 前月からの繰越を 入れる・直す'; cy.addEventListener('click', obCarryOpen);
-    d.rows.forEach(function (x) {
+    const parts = d.parts || [], wOf = function (m) { const q = String(m || '').match(/^【([^】]{1,20})】/); return q ? q[1] : ''; };
+    const sub = function (w) { const pt = parts.filter(function (z) { return z.who === w; })[0]; if (pt) tr('cy sub', [[''], ['【' + w + '】の小計（' + pt.n + '件）'], [obYen(pt.in) || '0', 'n'], [obYen(pt.out) || '0', 'n'], ['', 'n']].concat(pp ? [['', 'n']] : [])); };
+    let curW = null;
+    d.rows.forEach(function (x, ix) {
+      if (parts.length > 1) { const w = wOf(x.memo); if (curW !== null && w !== curW) sub(curW); curW = w; }
       const r = tr('r' + (x.off ? ' off' : '') + (OB.edit === x.id ? ' on' : ''), [[x.date.slice(5).replace('-', '/')], [x.memo], [obYen(x.in), 'n'], [obYen(x.out), 'n'], [yy(x.bal), 'n' + (x.bal < 0 ? ' neg' : '')]].concat(pp ? [[x.paper == null ? '' : (x.off ? '⚠ ' : '') + yy(x.paper), 'n pp']] : []));
       r.title = x.off ? '紙の残高（' + yy(x.paper) + '）と 積んだ残高（' + yy(x.bal) + '）が ちがいます。押して直す' : '押して直す';
       r.addEventListener('click', function () { obEdit(x); });
     });
-    tr('cy', [[''], ['この月の計'], [obYen(d.inSum) || '0', 'n'], [obYen(d.outSum) || '0', 'n'], [yy(d.end), 'n' + (d.end < 0 ? ' neg' : '')]].concat(pp ? [['', 'n']] : []));
+    if (parts.length > 1 && curW !== null) sub(curW);
+    tr('cy', [[''], [parts.length > 1 ? 'この月の計（' + parts.length + '人分）' : 'この月の計'], [obYen(d.inSum) || '0', 'n'], [obYen(d.outSum) || '0', 'n'], [yy(d.end), 'n' + (d.end < 0 ? ' neg' : '')]].concat(pp ? [['', 'n']] : []));
   }
   /* ★ 事務所が直す（2026-11-08）：行を押すと 下の欄に入る。［この内容で直す］［この行を消す］（1回）［やめる］。何も選んでいなければ［足す］ */
   function obNum(v) { return Number(String(v || '').replace(/[,，円¥\s]/g, '').replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })) || 0; }
@@ -7815,8 +7825,9 @@
     if (!(d && d.multi && (d.lines || []).length)) return it.entries.map(function (e) { return { e: e, draft: false }; });
     const done = aiLinesDone(it), out = [];
     d.lines.forEach(function (l, i) {
-      if (done[i]) (done.m[i] || []).forEach(function (e) { out.push({ e: e, draft: false }); });
-      else aiDraftJ(it, i).forEach(function (e) { out.push({ e: e, draft: true, ln: i }); });
+      const w = (String(l.desc || '').match(/^【([^】]{1,20})】/) || [])[1] || '';
+      if (done[i]) (done.m[i] || []).forEach(function (e) { out.push({ e: e, draft: false, who: w, rc: lineRc(it, i) }); });
+      else (done.rc[i] ? rcDraftJ(done.rc[i], l.date) : aiDraftJ(it, i)).forEach(function (e) { out.push({ e: e, draft: true, ln: i, rc: done.rc[i] || '', who: w }); });
     });
     (done.rest || []).forEach(function (e) { out.push({ e: e, draft: false }); });
     return out;
@@ -7898,14 +7909,19 @@
     const plusDr = /^1/.test(o.a || '');
     let bal = has ? Number(o.s) : 0, drS = 0, crS = 0, n = 0, nd = 0;
     if (has) { const r0 = el('tr'); ['', '繰越残高', '', '', '', yen(bal), ''].forEach(function (v, i) { r0.appendChild(el('td', i >= 3 && i <= 5 ? 'r' : null, v)); }); tbody.appendChild(r0); }
-    glRows(it).forEach(function (r) {
+    const gr = glRows(it), whos = [];
+    gr.forEach(function (r) { if (r.who && whos.indexOf(r.who) < 0) whos.push(r.who); });
+    let curW = null, wDr = 0, wCr = 0, wN = 0;
+    const wSub = function () { const r = el('tr', 'gsub'); ['', '【' + (curW || '不明') + '】の小計', wN + '件', yen(wDr), yen(wCr), '', ''].forEach(function (v, i) { r.appendChild(el('td', i >= 3 && i <= 5 ? 'r' : null, v)); }); tbody.appendChild(r); };
+    gr.forEach(function (r) {
       const e = r.e;
+      if (whos.length > 1 && (r.who || '') !== curW) { if (curW !== null) wSub(); curW = r.who || ''; wDr = 0; wCr = 0; wN = 0; }
       const dh = o.a ? lgHit(o.a, e.drCode, e.drSub) : false, ch = o.a ? lgHit(o.a, e.crCode, e.crSub) : false;
       const hit = o.a && dh !== ch;
       if (r.draft && !hit) return;   /* 下書きは この口座の行だけ */
       const tr = el('tr', (hit ? '' : 'out') + (r.draft ? ' draft' : ''));
       const a = Number(e.amount) || 0, dr = hit && dh ? a : 0, cr = hit && ch ? a : 0;
-      if (hit) { bal += plusDr ? dr - cr : cr - dr; drS += dr; crS += cr; }
+      if (hit) { bal += plusDr ? dr - cr : cr - dr; drS += dr; crS += cr; wDr += dr; wCr += cr; wN++; }
       if (r.draft) nd++; else n++;
       const k = e.no ? dictOf(String(e.no)) : null;
       const opp = hit ? (dh ? glName(e.crCode, e.crSub) : glName(e.drCode, e.drSub)) : glName(e.drCode, e.drSub) + '／' + glName(e.crCode, e.crSub);
@@ -7913,6 +7929,7 @@
       [e.date ? String(e.date).slice(5) : '', opp, memo, dr ? yen(dr) : '', cr ? yen(cr) : '', hit ? (has ? yen(bal) : '') : '（口座外）']
         .forEach(function (v, i) { tr.appendChild(el('td', i >= 3 ? 'r' : null, v)); });
       const td = el('td', 'r');
+      if (r.rc) td.appendChild(el('span', 'glmk', '🧾領収書'));
       if (r.draft) td.appendChild(el('span', 'glmk', 'AI下書き'));
       else {
         const fx = el('button', 'btn ghost sm', '訂正'); fx.type = 'button'; fx.dataset.a = 'fix'; fx.dataset.e = e.id; fx.disabled = !!(e.out || e.pending);
@@ -7923,6 +7940,7 @@
       tr.appendChild(td);
       tbody.appendChild(tr);
     });
+    if (whos.length > 1 && curW !== null) wSub();
     if (!n && !nd) { const r = el('tr'); const c = el('td', 'note', 'まだ入れていません。辞書を選んで、上の行から順に入れてください。'); c.colSpan = 7; r.appendChild(c); tbody.appendChild(r); }
     const sm = el('tr', 'sum'); ['計', n + '件' + (nd ? '＋下書き' + nd : ''), '', yen(drS), yen(crS), has ? yen(bal) : '', ''].forEach(function (v, i) { sm.appendChild(el('td', i >= 3 && i <= 5 ? 'r' : null, v)); });
     tbody.appendChild(sm);
@@ -7949,7 +7967,7 @@
       if (!all) return;
       const bar = el('div', 'jfinbar');
       bar.appendChild(el('b', null, '✓ この箱は 全部 仕訳化しました（' + items.length + '件）'));
-      const ob = el('button', 'btn', S.jfin[g] ? '最終チェックを閉じる' : '📋 画像と伝票を並べて 最終チェック'); ob.type = 'button'; ob.dataset.a = 'finopen'; ob.dataset.g = g;
+      const ob = el('button', 'btn', S.jfin[g] ? '最終チェックを閉じる' : '📋 画像・伝票・元帳を並べて 最終チェック'); ob.type = 'button'; ob.dataset.a = 'finopen'; ob.dataset.g = g;
       bar.appendChild(ob); fp.appendChild(bar);
       if (!S.jfin[g]) return;
       items.forEach(function (it, n) {
@@ -7977,6 +7995,10 @@
         const rb = el('button', 'btn ghost sm', '✎ 辞書を当て直す'); rb.type = 'button'; rb.dataset.a = 'finre'; rb.dataset.id = it.id;
         if (it.entries.some(function (e) { return e.out; })) { rb.disabled = true; rb.title = '取込ファイルに変換済み。会計ソフト側で直してください'; }
         sl.appendChild(rb);
+        /* ★★ 明細（画像）・伝票・元帳の3つを見くらべる（2026-11-09）：明細の写真・CSV は その元帳も並べる */
+        if (isMulti(it)) { const gw = el('div', 'jfingl'); gw.appendChild(el('div', 'jfinhd', '元帳（この明細の口座）')); gw.appendChild(ledgerEl(it)); sl.appendChild(gw); }
+        const sp = S.spm && S.spm.rcpt && S.spm.rcpt[it.id];
+        if (sp) sl.appendChild(el('div', 'spnote', '🧾 明細「' + sp.box + '」の ' + (sp.ln + 1) + '行目（' + (sp.date ? sp.date.replace(/-/g, '/') + ' ' : '') + yen(sp.amount) + '円）の取引'));
         r.appendChild(sl);
         fp.appendChild(r);
       });
@@ -8432,6 +8454,7 @@
     if (a === 'fold') { if (e.target.closest('button, a, input, select')) return; delete S.open[it.id]; drawCard(it); return; }
     if (a === 'pick') { pickNo(it, Number(t.dataset.no)); return; }
     if (a === 'aiall') { aiLinesAll(it); return; }
+    if (a === 'rcoff') { const ln = Number(t.dataset.ln); S.aiEd[it.id] = S.aiEd[it.id] || {}; const o = S.aiEd[it.id][ln] = S.aiEd[it.id][ln] || {}; o.noRc = true; drawCard(it); ledSync(); fmsg('この行は 領収書とは別の取引として 明細から仕訳できます', 'ok'); return; }
     if (a === 'sprno') { const ln = Number(t.dataset.ln); S.aiEd[it.id] = S.aiEd[it.id] || {}; const o = S.aiEd[it.id][ln] = S.aiEd[it.id][ln] || {}; o.no = Number(t.dataset.no); o.alt = null; o.usePat = false; drawCard(it); return; }
     if (a === 'aialt') { aiAltSwap(it, Number(t.dataset.k)); return; }
     if (a === 'aiteach') { S.teach = S.teach || {}; if (S.teach[it.id]) delete S.teach[it.id]; else S.teach[it.id] = { think: '', scope: 'mine' }; drawCard(it); const ta = rowOf(it.id) && rowOf(it.id).querySelector('.jai .teach textarea'); if (ta) ta.focus(); return; }
@@ -8853,13 +8876,18 @@
       if (sale && String(v.tax || '').trim() === '') { fmsg(w + '売上の行に 課税区分が入っていません', 'err'); go1(row, 'tax', ln); return; }
       if (sale && !taxFree(v.tax) && !(Number(v.rate) > 0)) { fmsg(w + '売上の行に 税率が入っていません（課税区分 ' + v.tax + '）', 'err'); go1(row, 'rate', ln); return; }
     }
-    /* ★★ 二重に入れない（2026-11-08）：出納帳・カード明細（背骨）の行に当たった領収書は、仕訳をその行で入れる。
-       ここで確定すると 同じ支払いが2つの仕訳になる。同じ金額の別の取引のこともあるので、もう一度押せば入れられる */
+    /* ★★ 二重に入れない（2026-11-09 に向きを変えた）：明細（カード・通帳・出納帳）の行に当たった領収書は【領収書で】仕訳する
+       （税率の内訳・登録番号が分かるので）。明細の その行は 領収書を確定すると入ったことになり、明細からは入れない。
+       ただし その行を もう明細から入れてしまっていたら ここで確定すると二重。別の取引なら もう一度押せば入れられる */
     const spl = !isMulti(it) && S.spm && S.spm.rcpt && S.spm.rcpt[it.id];
     if (spl && !c.spOk) {
-      c.spOk = 1;
-      fmsg('🧾 この領収書は「' + spl.box + '」の ' + (spl.ln + 1) + '行目（' + (spl.date ? spl.date.replace(/-/g, '/') + ' ' : '') + yen(spl.amount) + '円' + (spl.desc ? '・' + spl.desc : '') + '）で仕訳します。ここで確定すると二重になります。別の取引なら もう一度［確定］を押してください。', 'err');
-      return;
+      const li = (S.items || []).find(function (x) { return x.id === spl.sid; });
+      const dn = li && S.ai[li.id] ? aiLinesDone(li) : null;
+      if (dn && dn[spl.ln] && !dn.rc[spl.ln]) {
+        c.spOk = 1;
+        fmsg('🧾 この領収書の取引（「' + spl.box + '」の ' + (spl.ln + 1) + '行目・' + (spl.date ? spl.date.replace(/-/g, '/') + ' ' : '') + yen(spl.amount) + '円）は もう明細の行から仕訳しています。ここで確定すると二重になります。明細の行を取り消すか、別の取引なら もう一度［確定］を押してください。', 'err');
+        return;
+      }
     }
     /* ★ 総点検（2026-10-26）：1回の確定に 合図（op）を1つ。しくじって打ち直したときも 同じ合図を使うので、
        じつはサーバに届いていたときに 仕訳が2組できない */
@@ -9992,7 +10020,7 @@
   /* どの行が もう入っているか（日付と金額で 確定した仕訳と 1つずつ突き合わせる） */
   function aiLinesDone(it) {
     const d = S.ai[it.id], left = it.entries.slice(), out = [];
-    out.m = [];
+    out.m = []; out.rc = [];
     (d.lines || []).forEach(function (l0, i) {
       const l = aiLineOf(it, i), dt = String(l.date || '').replace(/-/g, '/');
       /* ★ 通帳の型で 元金＋利息 に分けて入れた行は 分けた額が そろっていれば 入っている */
@@ -10004,6 +10032,11 @@
       }
       let j = left.findIndex(function (e) { return Number(e.amount) === Number(l.amount) && e.date === dt; });
       if (j < 0) j = left.findIndex(function (e) { return Number(e.amount) === Number(l.amount); });
+      if (j < 0) {
+        /* ★★ 領収書が当たった行は 領収書で仕訳する（2026-11-09）。領収書を確定したら この行も入ったことにする（明細からは入れない＝二重にしない） */
+        const rid = lineRc(it, i);
+        if (rid) { out.rc[i] = rid; const ri = (S.items || []).find(function (x) { return x.id === rid; }); const re = ri ? ri.entries.filter(function (e) { return !e.out; }) : []; if (re.length) { out[i] = true; out.m[i] = re; return; } }
+      }
       out[i] = j >= 0; if (j >= 0) { out.m[i] = [left[j]]; left.splice(j, 1); }
     });
     out.rest = left;   /* ★ どの行にも当たらない 確定した仕訳（手で入れたもの） */
@@ -10026,6 +10059,22 @@
     if (ks.length !== a.length) return null;
     const out = ks.map(function (x) { const j = l.pat.lines.findIndex(function (y, q) { return !used[q] && patKey(y) === patKey(x); }); if (j < 0) return null; used[j] = 1; return a[j]; });
     return out.indexOf(null) >= 0 ? null : out;
+  }
+  /* ★★ その明細の行に当たった領収書（「別の取引」と人が外したものは除く） */
+  function lineRc(it, i) {
+    const e = (S.aiEd[it.id] || {})[i]; if (e && e.noRc) return '';
+    return (S.spm && S.spm.line[it.id + '|' + i]) || '';
+  }
+  /* 領収書の AI 下書き → 仕訳の行（税率ごとに分けた型があれば それ） */
+  function rcDraftJ(rid, date) {
+    const d = (S.ai || {})[rid]; if (!d) return [];
+    const amt = Number(d.amount) || 0, dt = String(date || d.date || '').replace(/-/g, '/');
+    let base = null, amts = null;
+    if (d.pat && (d.pat.lines || []).length && !Number(d.no)) { base = d.pat.lines; amts = d.pat.amts && d.pat.amts.length === base.length ? d.pat.amts : null; }
+    else if (Number(d.no) && dictOf(String(d.no))) base = dictLinesOf(dictOf(String(d.no)));
+    else if (d.proposal) base = [d.proposal];
+    if (!base || !base.length) return [];
+    return base.map(function (x, q) { return Object.assign({}, x, { date: dt, amount: amts ? amts[q] : q === 0 ? amt : 0, memo: x.memo || d.party || '', partyName: d.party || x.partyName || '', no: d.no || '', draft: true, rc: rid }); });
   }
   /* ★★ AI 下書きの行 → 仕訳の行（まだ確定していなくても 伝票・元帳に出す。2026-11-09） */
   function aiDraftJ(it, i) {
@@ -10072,10 +10121,20 @@
     w.appendChild(h);
     const list = boxDict(it.box);
     const tb = el('table', 'jailt');
+    const descWho = function (t) { const q = String(t || '').match(/^【([^】]{1,20})】/); return q ? q[1] : ''; };
+    const whos = []; L.forEach(function (x) { const w = descWho(x.desc); if (w && whos.indexOf(w) < 0) whos.push(w); });
+    let curW = null;
+    const whoSub = function (w) {
+      let n = 0, o = 0, inn = 0; L.forEach(function (x, q) { if (descWho(x.desc) !== w) return; const a = Number(aiLineOf(it, q).amount) || 0; n++; if (x.dir === '入') inn += a; else o += a; });
+      const r = el('tr', 'jawsub'); const c = el('td', null, '【' + (w || '不明') + '】の小計　' + n + '行　出 ' + yen(o) + '円' + (inn ? '　入 ' + yen(inn) + '円' : '')); c.colSpan = 7; r.appendChild(c); return r;
+    };
     L.forEach(function (l0, i) {
       const l = aiLineOf(it, i);
       const usePat = !!l.pat && !Number(l.no) && l.usePat !== false;
-      const tr = el('tr', done[i] ? 'done' : !Number(l.no) && !usePat ? 'none' : aiPctOf(l) < 60 ? 'lo' : null); tr.dataset.ln = String(i);
+      const rcId = !done[i] ? done.rc[i] : '';
+      /* ★★ 使う人（カード）ごとの見出しと小計（2026-11-09） */
+      if (whos.length > 1) { const w = descWho(l.desc); if (w !== curW) { if (curW !== null) tb.appendChild(whoSub(curW)); curW = w; const hr = el('tr', 'jawho'); const hc = el('td', null, '💳 ' + (w || '使う人 不明') + ' の明細'); hc.colSpan = 7; hr.appendChild(hc); tb.appendChild(hr); } }
+      const tr = el('tr', done[i] ? 'done' : rcId ? 'rc' : !Number(l.no) && !usePat ? 'none' : aiPctOf(l) < 60 ? 'lo' : null); tr.dataset.ln = String(i);
       if (l.balNG && !done[i]) tr.classList.add('balng');
       const dt = el('input', 'dpin'); dt.dataset.ai = 'date'; dt.value = String(l.date || '').replace(/-/g, '/'); dt.disabled = done[i]; dt.setAttribute('aria-label', (i + 1) + '行目の日付');
       tr.appendChild(el('td')).appendChild(dt);
@@ -10085,7 +10144,7 @@
       if (l.j || l.reason) { const pa = l.pat ? patAmts(l) : null; dsc.appendChild(el('div', 'jpat', 'AI：' + (l.j || '') + (pa && pa.length > 1 ? '（' + pa.map(yen).join('＋') + '）' : ''))); if (l.reason) dsc.appendChild(el('div', 'jwhy', '決め手：' + l.reason)); }
       const spr = S.spm && S.spm.line[it.id + '|' + i], rd = spr ? (S.ai[spr] || {}) : null;
       if (spr) {
-        const sb = dsc.appendChild(el('button', 'jsprc', '🧾 領収書あり' + (rd.party ? '（' + rd.party + '）' : ''))); sb.type = 'button'; sb.dataset.a = 'spgo'; sb.dataset.id = spr; sb.title = '押すと その領収書へ（証憑として見るだけ。仕訳はこの行で）';
+        const sb = dsc.appendChild(el('button', 'jsprc', (done.rc[i] || (done[i] && lineRc(it, i)) ? '🧾 領収書で仕訳' : '🧾 領収書あり（別の取引にした）') + (rd.party ? '（' + rd.party + '）' : ''))); sb.type = 'button'; sb.dataset.a = 'spgo'; sb.dataset.id = spr; sb.title = '押すと その領収書へ。この取引は 領収書の写真で仕訳します（明細の行からは入れない＝二重にしない）';
         /* ★ ③ 領収書の読み（税率の内訳・品目）を この行に添える。辞書が決まっていなければ 領収書の下書きの辞書を入れられる */
         const tx = (rd.taxes || []).filter(function (x) { return x.gross; });
         const info = [tx.map(function (x) { return (x.rate ? x.rate + '%対象 ' : '非課税等 ') + yen(x.gross); }).join('・'), (rd.items || []).slice(0, 4).join('・')].filter(Boolean).join('　');
@@ -10105,14 +10164,16 @@
       list.forEach(function (k) { const o = el('option', null, (seqOf(it.box, k.no) || k.no) + ' ' + (k.title || dictLine(k)) + (dictLinesOf(k).length > 1 ? '（' + dictLinesOf(k).length + '行）' : '')); o.value = String(k.no); sel.appendChild(o); });
       sel.value = l.alt != null ? 'alt' + l.alt : usePat ? 'pat' : String(Number(l.no) || 0);
       tr.appendChild(el('td')).appendChild(sel);
-      const pc = el('td', 'pc', done[i] ? '✓' : aiPctOf(l) + '%'); if (!done[i]) pc.title = aiFeatText(l); tr.appendChild(pc);
+      const pc = el('td', 'pc', done[i] ? (done.rc[i] || lineRc(it, i) ? '✓🧾' : '✓') : rcId ? '🧾' : aiPctOf(l) + '%'); if (!done[i]) pc.title = rcId ? '領収書の写真で 仕訳します' : aiFeatText(l); tr.appendChild(pc);
       const td = el('td');
-      if (!done[i]) { const bt = el('button', 'btn ghost sm', '入れる'); bt.type = 'button'; bt.dataset.a = 'ailine'; bt.dataset.ln = String(i); td.appendChild(bt); }
+      if (!done[i] && rcId) { const bt = el('button', 'btn ghost sm', '別の取引'); bt.type = 'button'; bt.dataset.a = 'rcoff'; bt.dataset.ln = String(i); bt.title = '当たった領収書とは 別の取引のとき（同じ金額の別の買い物など）。押すと この行を明細から仕訳できる'; td.appendChild(bt); }
+      else if (!done[i]) { const bt = el('button', 'btn ghost sm', '入れる'); bt.type = 'button'; bt.dataset.a = 'ailine'; bt.dataset.ln = String(i); td.appendChild(bt); }
       tr.appendChild(td); tb.appendChild(tr);
       /* ★★ 仕訳伝票の形で（確定したものは 入った仕訳・まだのものは AI 下書き） */
-      const js = done[i] ? (done.m[i] || []) : aiDraftJ(it, i);
+      const js = done[i] ? (done.m[i] || []) : rcId ? rcDraftJ(rcId, l.date) : aiDraftJ(it, i);
       if (js.length) { const sr = el('tr', 'jasl' + (done[i] ? ' put' : '')); const sc = el('td'); sc.colSpan = 7; sc.appendChild(jSlipView(js, !done[i])); sr.appendChild(sc); tb.appendChild(sr); }
     });
+    if (whos.length > 1 && curW !== null) tb.appendChild(whoSub(curW));
     w.appendChild(tb);
     return w;
   }
@@ -10132,6 +10193,7 @@
   /* 1行を 出納帳に入れる（その写真の伝票にして 確定。辞書を人が替えていたら サーバが【直し】のルールにする） */
   function aiLinePut(it, i) {
     const l = aiLineOf(it, i), k = Number(l.no) ? dictOf(String(l.no)) : null;
+    if (lineRc(it, i)) return '領収書が当たっています（領収書の写真で仕訳します。別の取引なら［別の取引］）';
     if (!k) return '辞書が決まっていません';
     const amts = l.pat ? patFor(k, l) : null;
     if (dictLinesOf(k).length > 1 && !amts) return '複数仕訳の辞書は 伝票で入れてください';
@@ -10166,15 +10228,16 @@
   }
   function aiLinesAll(it) {
     if (!it._patOk) { const ix = (S.ai[it.id].lines || []).map(function (x, i) { return i; }); aiPatDicts(it, ix).then(function () { it._patOk = 1; try { aiLinesAll(it); } finally { delete it._patOk; } }, function (err) { fmsg('型を辞書に足せませんでした：' + err.message, 'err'); }); return; }
-    const done = aiLinesDone(it); let n = 0, skip = 0, why = '';
+    const done = aiLinesDone(it); let n = 0, skip = 0, why = '', rcN = 0;
     (S.ai[it.id].lines || []).forEach(function (l, i) {
       if (done[i]) return;
+      if (done.rc[i]) { rcN++; return; }   /* 領収書で仕訳する行は 明細から入れない */
       if (!Number(aiLineOf(it, i).no)) { skip++; return; }   /* 型の行は aiPatDicts で 辞書が決まっている */
       const m = aiLinePut(it, i); if (m) { skip++; why = why || (i + 1) + '行目：' + m; } else n++;
     });
     C[it.id] = { date: '', no: '', q: '', L: [blankLine()], aiDone: true };
     openOnly(it.id); drawCard(it); markAct(); ledSync();
-    fmsg(n + '行を 出納帳に入れました' + (skip ? '。残り ' + skip + '行は 辞書を選んで［入れる］（' + (S.patErr || why || '辞書が決まっていない行') + '）' : '。出納帳の残高を 通帳と見くらべてください。'), skip ? 'err' : 'ok'); S.patErr = '';
+    fmsg(n + '行を 出納帳に入れました' + (rcN ? '（領収書が当たった ' + rcN + '行は 領収書の写真で仕訳します）' : '') + (skip ? '。残り ' + skip + '行は 辞書を選んで［入れる］（' + (S.patErr || why || '辞書が決まっていない行') + '）' : '。出納帳の残高を 通帳と見くらべてください。'), skip ? 'err' : 'ok'); S.patErr = '';
     const r = rowOf(it.id), f = r && r.querySelector('.jailt tr:not(.done) select');
     if (f) f.focus();
   }
@@ -10306,7 +10369,7 @@
         btn.textContent = '📒 出納帳に起こしています…（' + grp[k][0].box + '・' + perLabel(String(grp[k][0].period).slice(0, 7)) + '）';
         return aiBookFirst(code, grp[k]).then(function (o) {
           if (o.csv) csvs.push(o.csv);
-          said.push('［' + grp[k][0].box + '］' + o.r.n + '行を出納帳に起こしました' + (o.r.merged ? '（重なり ' + o.r.merged + '件を1つに）' : '') + ((o.r.pre || o.r.post) ? '（月分以外 ' + ((o.r.pre || 0) + (o.r.post || 0)) + '行は 入れていません）' : '') + (o.r.book && o.r.book.off ? '・紙の残高と合わない行 ' + o.r.book.off : ''));
+          said.push('［' + grp[k][0].box + '］' + o.r.n + '行を出納帳に起こしました' + (o.r.merged ? '（重なり ' + o.r.merged + '件を1つに）' : '') + ((o.r.pre || o.r.post) ? '（月分以外 ' + ((o.r.pre || 0) + (o.r.post || 0)) + '行は 入れていません）' : '') + (o.r.book && o.r.book.off ? '・紙の残高と合わない行 ' + o.r.book.off : '') + ((o.r.parts || []).length > 1 ? '・使う人ごと ' + o.r.parts.map(function (pt) { return pt.who + ' ' + yen(pt.sum) + '円' + (pt.ok ? '（請求額と一致）' : '（⚠ 請求額 ' + yen(pt.total) + '円とちがう）'); }).join('／') : ''));
         }, function (e) { said.push('［' + grp[k][0].box + '］出納帳に起こせませんでした：' + e.message); });
       });
     });
