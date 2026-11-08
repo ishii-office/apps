@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794117358;</script>
+<script>window.__PAGE_VER=1794118187;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -11384,7 +11384,7 @@
       const kd = corpKindOf(c), kb = el('span', 'kind ' + (kd === '法人' ? 'corp' : 'ind'), kd); if (!c.kindSet) kb.title = '名前から当てています（設定で決められます）'; b.appendChild(kb);
       b.appendChild(el('span', 'nm', c.name)).title = c.name;
       const tg = el('span', 'tg');
-      const cs = c.consent || {}; if (c.issued && !(cs.type === '同意' && !cs.need)) { const wd = cs.type === '撤回', wait = cs.need; const t = el('span', 'cns ' + (wd ? 'wd' : 'need')); t.dataset.t = wd ? 'AI撤回' : wait ? '同意待ち' : '同意まだ'; t.title = wd ? 'AI 等の利用への同意を撤回しています（AI 下書きは使えません）' : wait ? '同意の画面を出しています。顧問先が同意するまで 送れません・AI 下書きも使えません' : 'まだ 同意の画面を出していません（AI 下書きは使えません）'; tg.appendChild(t); }
+      const cs = c.consent || {}; if (c.issued && !(cs.type === '同意' && !cs.need)) { const wd = cs.type === '撤回', wait = cs.need; const t = el('span', 'cns ' + (wd ? 'wd' : 'need')); t.dataset.t = wd ? 'AI撤回' : wait ? '同意待ち' : '同意まだ'; t.title = wd ? 'AI 等の利用を撤回しています（オプトアウト。AI 下書きは使えません）' : wait ? '同意の画面を出しています。顧問先が同意するまで 送れません（AI 下書きは 同意が無くても使えます）' : 'まだ 同意の画面を出していません（AI 下書きは 同意が無くても使えます）'; tg.appendChild(t); }
       if (!c.active) tg.appendChild(el('span', 'off', c.issued ? '止めています' : 'URL未発行'));
       else if (c.fy) { const f = el('span', 'fy', c.fy + '月決算'); fyStyle(f, c.fy); tg.appendChild(f); }
       if (tg.childNodes.length) b.appendChild(tg);
@@ -11602,11 +11602,11 @@
     $('aCnsOut').hidden = true; $('aCnsBtns').hidden = !c;
     if (!c) { st.className = 'st'; st.textContent = '登録したあと、代表者の役職・氏名・説明担当者を入れて［保存］→［同意の画面を出す］'; return; }
     const at = String((cs && cs.at) || '').replace('T', ' ').replace(/\+09:00$/, '');
-    if (cs && cs.type === '撤回') { st.className = 'st wd'; st.textContent = 'AI 等の利用への同意を 撤回しています（' + at + '）。AI 下書きは使えません。'; }
+    if (cs && cs.type === '撤回') { st.className = 'st wd'; st.textContent = 'AI 等の利用を 撤回しています（オプトアウト・' + at + '）。AI 下書きは使えません。'; }
     else if (cs && cs.type === '同意' && !cs.need) { st.className = 'st ok'; st.textContent = '✓ 同意済み（第' + cs.ver + '版・' + at + '・' + (cs.rep || '') + '）'; }
     else if (cs && cs.type === '同意') { st.className = 'st need'; st.textContent = '前の版（第' + cs.ver + '版）に同意済み。新しい版（第' + cs.cur + '版）への同意が まだです（次に開いたとき 同意の画面が出ます）'; }
-    else if (cs && cs.type === '同意依頼') { st.className = 'st need'; st.textContent = '同意の画面を出しています（' + at + '）。顧問先が開くと出ます。同意するまで 送れません・AI 下書きも使えません'; }
-    else { st.className = 'st need'; st.textContent = 'まだ 同意の画面を出していません（顧問先は今までどおり使えます。AI 下書きは使えません）'; }
+    else if (cs && cs.type === '同意依頼') { st.className = 'st need'; st.textContent = '同意の画面を出しています（' + at + '）。顧問先が開くと出ます。同意するまで 送れません（AI 下書きは 同意が無くても使えます）'; }
+    else { st.className = 'st need'; st.textContent = 'まだ 同意の画面を出していません（顧問先は今までどおり使えます。AI 下書きも使えます）'; }
     $('aCnsWd').hidden = !(cs && cs.type === '同意'); $('aCnsRe').hidden = !(!cs || cs.type === '' || cs.type === '撤回');
     $('aCnsRe').textContent = cs && cs.type === '撤回' ? 'もう一度 同意の画面を出す' : '同意の画面を出す';
   }
