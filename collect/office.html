@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794122859;</script>
+<script>window.__PAGE_VER=1794123353;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1468,7 +1468,7 @@
     <div class="jlhead">
       <span class="jlsum" id="jlsum"></span>
       <span class="seg" id="jLay" role="group" aria-label="並べ方"><button type="button" data-l="v" aria-pressed="true">縦1列</button><button type="button" data-l="h" aria-pressed="false">横2列</button><button type="button" data-l="w" aria-pressed="false">画像を別ウィンドウ表示</button></span>
-      <button type="button" class="jpop" id="jPopGo" hidden>📎 画像を別ウィンドウ表示</button><button type="button" class="jwin" id="jLedGo" title="複数仕訳辞書の写真の 出納帳を 別ウィンドウに">📒 出納帳を別ウィンドウ</button><button type="button" class="jwin" id="jAi" hidden title="この画面の未処理の写真を AI に読ませて、日付・金額・辞書の下書きを付ける（もう一度押すと 読み直して上書き）">🤖 AI で下書き</button><button type="button" class="jwin" id="jArrange" title="写真・辞書の一覧（この画面）・出納帳の3つを 重ならないように並べる。モニターが何枚あっても使える">🪟 3つに並べる</button>
+      <button type="button" class="jpop" id="jPopGo" hidden>📎 画像を別ウィンドウ表示</button><button type="button" class="jwin" id="jLedGo" title="複数仕訳辞書の写真の 出納帳を 別ウィンドウに">📒 出納帳を別ウィンドウ</button><button type="button" class="jwin" id="jAi" hidden title="この画面の未処理の写真を AI に読ませて、日付・金額・辞書の下書きを付ける（もう一度押すと 読み直して上書き）">🤖 AI で下書き</button><button type="button" class="jwin" id="jAiRep" hidden title="この画面に並んでいる写真について、AI が何を読み・どう考えて・どの仕訳にしたか（決め手・確からしさの内訳・別の案・決められなかった理由・背骨との当たり・人が確定した仕訳との違い）を まとめて書き出す。Claude に渡して 改善に使う">🧾 AI の判断を書き出す</button><button type="button" class="jwin" id="jArrange" title="写真・辞書の一覧（この画面）・出納帳の3つを 重ならないように並べる。モニターが何枚あっても使える">🪟 3つに並べる</button>
       <span class="jlsave" id="saving" role="status"></span>
     </div>
     <div class="bdask" id="bdAsk" hidden role="status" aria-live="polite"></div>
@@ -3582,6 +3582,81 @@
     });
     return out;
   }
+  /* ★★ AI の判断を書き出す（2026-11-08）。何がダメだったかを Claude と一緒に見るため、この画面の写真ごとに
+       読んだもの・仕訳・決め手・確からしさの内訳・別の案・決められなかった理由・背骨との当たり・人が確定した仕訳との違い を Markdown にする。
+       マイナンバー記載の資料は そもそも AI に渡していないので 載らない（下書きが無い） */
+  function aiReport() {
+    const c = (S.clients || []).find(function (x) { return x.code === S.code; }) || { name: '' };
+    const conf = S.fxConf || {}, list = S.view || [], spm = S.spm || { rcpt: {}, line: {}, sum: {} };
+    const L = [], j2 = function (e) { return (e.dr || e.drCode) + (e.drSubName ? '(' + e.drSubName + ')' : '') + '／' + (e.cr || e.crCode) + (e.crSubName ? '(' + e.crSubName + ')' : ''); };
+    const sigE = function (e) { return [e.drCode, e.drSub || '', e.crCode, e.crSub || ''].join('/'); };
+    const sigP = function (p) { return p ? [p.drCode, p.drSub || '', p.crCode, p.crSub || ''].join('/') : ''; };
+    const nm = function (id) { const it = S.items.find(function (x) { return x.id === id; }); return it ? it.name.replace(/^\d{8}_\d{6}_/, '') : id; };
+    L.push('# AI 下書きの判断（' + S.code + ' ' + c.name + '）', '');
+    L.push('- 書き出した日時：' + new Date().toLocaleString('ja-JP'));
+    L.push('- 消費税：' + (conf.taxm || '（未設定）') + '／AI 下書き：' + (conf.ai ? '使う' : '使わない'));
+    L.push('- 写真：' + list.length + '件（この画面に並んでいるもの。月分・箱・未処理/確定の絞りのまま）', '');
+    let n = 0, hit = 0, cmp = 0, zero = 0;
+    Object.keys(spm.sum || {}).forEach(function (pk) {
+      const sm = spm.sum[pk];
+      L.push('## 背骨と領収書（' + perLabel(pk) + '）', '- 背骨の行 ' + sm.lines + '・領収書が当たった行 ' + sm.hit + '・領収書のない行 ' + (sm.bare || []).length + '・どの行にも当たらない領収書 ' + (sm.left || []).length);
+      (sm.left || []).forEach(function (r) { L.push('  - 当たらない領収書：' + nm(r.id) + '（' + (r.date || '日付なし') + '・' + yen(r.amount) + '円・' + (r.party || '') + '）'); });
+      L.push('');
+    });
+    list.forEach(function (it, i) {
+      const d = (S.ai || {})[it.id], en = it.entries || [];
+      L.push('## ' + (i + 1) + '. ［' + it.box + '］' + it.name.replace(/^\d{8}_\d{6}_/, '') + '（' + perLabel(it.period) + '）');
+      L.push('- 状態：' + (it.status === 'done' ? '確定' : it.status === 'back' ? '差し戻し' : '未確定') + (isMulti(it) ? '・複数仕訳（明細・背骨）' : '・1仕訳'));
+      if (en.length) L.push('- 人が確定した仕訳：' + en.map(function (e) { return e.date + ' ' + yen(e.amount) + '円 ' + j2(e) + (e.tax ? ' 税' + e.tax + (e.rate ? '/' + e.rate + '%' : '') : '') + (e.memo ? '「' + e.memo + '」' : ''); }).join('／'));
+      if (!d) { L.push('- AI の下書き：なし（まだ読ませていない・読めない形・対象外 など）', ''); return; }
+      n++;
+      if (d.err) { L.push('- AI の下書き：エラー「' + d.err + '」', ''); return; }
+      const feat = function (f) { return (f || []).map(function (x) { return x.k + ' ' + (x.v >= 0 && x !== f[0] ? '+' : '') + x.v; }).join('、'); };
+      if (d.multi) {
+        L.push('- AI が読んだ：' + (d.kind || '明細') + (d.party ? '（' + d.party + '）' : '') + '・' + (d.lines || []).length + '行' + (d.bankName ? '・口座 ' + d.bankName : '') + (d.note ? '・メモ「' + d.note + '」' : ''));
+        L.push('', '| # | 日付 | 摘要 | 入/出 | 金額 | AI の仕訳 | 確からしさ | 決め手 | 注意・理由 | 当たった領収書 | 人の確定 |', '|---|---|---|---|---|---|---|---|---|---|---|');
+        (d.lines || []).forEach(function (l, k) {
+          const rid = spm.line[it.id + '|' + k], e = en[k];
+          if (!l.j) zero++;
+          const same = e && l.j ? (sigE(e) === sigP(l.pat && l.pat.lines && l.pat.lines.length === 1 ? l.pat.lines[0] : null) || (l.no && Number(e.no) === Number(l.no)) ? '一致' : '違う：' + j2(e)) : e ? j2(e) : '';
+          if (e && l.j) { cmp++; if (/^一致/.test(same)) hit++; }
+          L.push('| ' + (k + 1) + ' | ' + (l.date || '') + ' | ' + String(l.desc || '').replace(/\|/g, '／') + ' | ' + l.dir + ' | ' + yen(l.amount) + ' | ' + (l.j || '（決められなかった）') + (l.no ? '（辞書 No ' + l.no + '）' : '') + ' | ' + (l.confidence || 0) + '% | ' + String(l.reason || '').replace(/\|/g, '／') + ' | ' + String(l.note || '').replace(/\|/g, '／') + ' | ' + (rid ? nm(rid) : '') + ' | ' + same + ' |');
+        });
+        L.push('');
+        return;
+      }
+      L.push('- AI が読んだ：' + [d.date, d.amount ? yen(d.amount) + '円' : '', d.party, d.invoiceNo ? '登録番号 ' + d.invoiceNo : '', d.category].filter(Boolean).join('・'));
+      if ((d.items || []).length) L.push('- 品目：' + d.items.map(function (x) { return typeof x === 'string' ? x : [x.name, x.amount].filter(Boolean).join(' '); }).join('、'));
+      if ((d.taxes || []).length) L.push('- 税率ごと：' + d.taxes.map(function (x) { return (x.rate || '') + '% ' + (x.amount || x.base || ''); }).join('、'));
+      L.push('- AI の仕訳：' + (d.j || '（決められなかった）') + (Number(d.no) ? '（辞書 No ' + d.no + '）' : ''));
+      if (!d.j) zero++;
+      L.push('- 確からしさ：' + (d.confidence || 0) + '%' + (d.feat ? '（' + feat(d.feat) + '）' : ''));
+      if (d.reason) L.push('- 決め手：' + d.reason);
+      (d.alts || []).forEach(function (a, k) { L.push('- 別の案' + (k + 1) + '：' + a.text + '（' + (a.confidence || 0) + '%）' + (a.reason ? ' ' + a.reason : '')); });
+      if (d.note) L.push('- 注意・決められなかった理由：' + d.note);
+      const sp = spm.rcpt[it.id];
+      if (sp) L.push('- 背骨：' + nm(sp.sid) + ' の ' + (sp.ln + 1) + '行目（' + (sp.date || '') + '・' + yen(sp.amount) + '円・' + (sp.desc || '') + '）に当たる＝証憑として見るだけ');
+      else if (Object.keys(spm.sum || {}).length && !spineBox(it.box) && !isSheetFile(it)) L.push('- 背骨：どの行にも当たらない');
+      if (en.length && d.j) {
+        cmp++;
+        const ok = en.length === 1 && (sigE(en[0]) === sigP(d.proposal) || (Number(d.no) && Number(en[0].no) === Number(d.no)));
+        if (ok) hit++;
+        L.push('- 人の確定と比べて：' + (ok ? '一致' : '違う'));
+      }
+      L.push('');
+    });
+    L.splice(4, 0, '- まとめ：下書き ' + n + '件・決められなかった ' + zero + '件・人が確定したものと比べられた ' + cmp + '件のうち 一致 ' + hit + '件', '');
+    return L.join('\n');
+  }
+  $('jAiRep').addEventListener('click', function () {
+    if (!S.code) return;
+    const t = aiReport();
+    const c = (S.clients || []).find(function (x) { return x.code === S.code; }) || { name: '' };
+    const fn = ('AI判断_' + S.code + '_' + c.name + '_' + (S.per || '') + (S.box ? '_' + S.box : '') + '.md').replace(/[\\\/:*?"<>|\s]+/g, '_');
+    try { navigator.clipboard.writeText(t).catch(function () {}); } catch (e) {}
+    saveBlob(new Blob(['﻿' + t], { type: 'text/markdown' }), fn);
+    fmsg('AI の判断を書き出しました（' + fn + '）。クリップボードにも写したので、そのまま Claude に貼れます。', 'ok');
+  });
   /* ★★ ④ インボイスの印（2026-10-20）。本則課税の顧問先だけ。背骨の【出】の行ごとに
        ・領収書が当たった … 登録番号があれば ✓ ／ 無ければ ⚠（経過措置）
        ・領収書が無い … 公共交通機関・自動販売機（3万円未満）なら「帳簿のみ保存の特例の候補」／ほかは ⚠ インボイスを確かめる */
@@ -9600,6 +9675,7 @@
     $('aiState').textContent = S.aiOn ? (c.ai ? '使います。仕訳化の上の［🤖 AI で下書き］から。' : 'キーは入っています。') : 'まだキーが入っていません' + (ms ? '（下で入れてください）。' : '（マスターが入れます）。');
     $('aiKeyBar').hidden = !ms;
     $('jAi').hidden = !(S.aiOn && c.ai);
+    $('jAiRep').hidden = !(S.aiOn && c.ai);
   }
   $('aiUse').addEventListener('change', function () {
     if (!S.code) return;
