@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794088974;</script>
+<script>window.__PAGE_VER=1794111592;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -11566,7 +11566,7 @@
           });
           row.appendChild(ab);
           /* ★ 出納帳（2026-11-07）：入れると 顧問先の画面の 何年何月分の右に［📒 出納帳］が出る（日付・摘要・入金・出金・残高） */
-          const bk = el('button', 'sm2 book' + (bc.book ? ' on' : ''), bc.book ? '📒 出納帳あり' : '出納帳'); bk.type = 'button';
+          const bk = el('button', 'sm2 book' + (bc.book ? ' on' : ''), bc.book ? '📒 出納帳あり' : '出納帳なし'); bk.type = 'button';
           bk.title = bc.book ? '顧問先が この箱で 出納帳（日付・摘要・入金・出金・残高）を書けます。押すと やめます' : '押すと この箱に 出納帳を付けます（顧問先が 日付・摘要・入金・出金 を書けて 残高が出る。科目は選ばない）';
           bk.addEventListener('click', function () {
             const cur = A.bconf[path] || {};
