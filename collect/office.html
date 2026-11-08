@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794133157;</script>
+<script>window.__PAGE_VER=1794142866;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -9818,7 +9818,7 @@
       /* ★ 通帳・明細を 1取引として読んだ（2026-11-08）。押すか Enter で 複数仕訳辞書にして 読み直す */
       const w2 = el('div', 'spnote');
       w2.appendChild(el('span', null, d.looksMulti ? '🧾 これは' + d.looksMulti + 'のようです。複数取引ではないですか？ ' : '1件の領収書として読みました。明細として読むなら '));
-      const rb = el('button', 'btn sm', '複数仕訳辞書で読み直す（Enter）'); rb.type = 'button'; rb.dataset.a = 'aimulti'; w2.appendChild(rb);
+      const rb = el('button', 'btn sm', '出納帳に起こして 1行ずつ仕訳にする（Enter）'); rb.type = 'button'; rb.dataset.a = 'aimulti'; w2.appendChild(rb);
       b.appendChild(w2);
     }
     return b;
@@ -10185,7 +10185,7 @@
     if (spineBox(it.box)) { setMulti(it, true); const m = lsJ(LS_JMULTI); delete m[S.code + '|@' + it.id]; lsSetJ(LS_JMULTI, m); } else setMultiOne(it, true);
     delete card(it.id).oneOk;
     drawCard(it);
-    fmsg('複数仕訳辞書にして 読み直しています（' + perLabel(it.period) + 'の行だけ 仕訳にします）…', 'ok');
+    fmsg('出納帳に起こしてから 1行ずつ仕訳にします（' + perLabel(it.period) + 'の行だけ）…', 'ok');
     aiGo(S.code, $('jAi'), [it], false);
   }
   $('jAi').addEventListener('click', function () {
@@ -10201,7 +10201,53 @@
       aiGo(code, btn, todo, m === 'batch');
     });
   });
+  /* ★★ 一本化（2026-11-08）：通帳・カード明細・出納帳の写真は、まず その月の出納帳に起こし（残高で確かめる・重なりを1つに・月分の行だけ）、
+       その出納帳（CSV）を 1行ずつ AI で仕訳にする。写真を そのまま明細として下書きはしない。
+       同じ箱・同じ月分の写真は まとめて1回で起こす（別々に起こすと あとのものが 前の行を入れ替えてしまう） */
+  function needBook(it) {
+    if (!it || isSheetFile(it) || !it.period) return false;
+    const d = (S.ai || {})[it.id];
+    return isMulti(it) || !!(d && !d.multi && d.looksMulti);
+  }
+  function aiBookFirst(code, list) {
+    const it = list[0], ym = String(it.period).slice(0, 7), ids = [];
+    list.forEach(function (x) { [x.id].concat(subsOf(x.id).map(function (y) { return y.id; })).forEach(function (id) { if (ids.indexOf(id) < 0) ids.push(id); }); });
+    return gs('officeBookFromPhoto', code, it.box, ym, ids.slice(0, 8)).then(function (r) {
+      return gs('officeBookDoc', code, it.box, ym).then(function () { return load(); }).then(function () {
+        const csv = (S.items || []).find(function (x) { return x.box === it.box && String(x.period).slice(0, 7) === ym && String(x.name || '').indexOf('出納帳（アプリ）_' + ym) >= 0 && x.status !== 'done'; });
+        return { csv: csv || null, r: r };
+      });
+    });
+  }
   function aiGo(code, btn, todo, batch) {
+    /* 前のやり方（ルール・型）は 写真を そのまま明細で読む（型で 元金＋利息を当てるため）。一本化は 総合判断のやり方だけ */
+    if (S.aiWay == null) return gs('aiStatus').then(function (r) { S.aiWay = r.way || 'v2'; }, function () { S.aiWay = 'v2'; }).then(function () { return aiGo(code, btn, todo, batch); });
+    const bk = S.aiWay === 'v1' ? [] : todo.filter(needBook);
+    if (!bk.length) return aiGo2(code, btn, todo, batch);
+    const grp = {}; bk.forEach(function (it) { const k = it.box + '|' + String(it.period).slice(0, 7); (grp[k] = grp[k] || []).push(it); });
+    AI_BUSY = true; btn.classList.add('busy');
+    const csvs = [], said = [];
+    let q = Promise.resolve();
+    Object.keys(grp).forEach(function (k) {
+      q = q.then(function () {
+        if (code !== S.code) return;
+        btn.textContent = '📒 出納帳に起こしています…（' + grp[k][0].box + '・' + perLabel(String(grp[k][0].period).slice(0, 7)) + '）';
+        return aiBookFirst(code, grp[k]).then(function (o) {
+          if (o.csv) csvs.push(o.csv);
+          said.push('［' + grp[k][0].box + '］' + o.r.n + '行を出納帳に起こしました' + (o.r.merged ? '（重なり ' + o.r.merged + '件を1つに）' : '') + ((o.r.pre || o.r.post) ? '（月分以外 ' + ((o.r.pre || 0) + (o.r.post || 0)) + '行は 入れていません）' : '') + (o.r.book && o.r.book.off ? '・紙の残高と合わない行 ' + o.r.book.off : ''));
+        }, function (e) { said.push('［' + grp[k][0].box + '］出納帳に起こせませんでした：' + e.message); });
+      });
+    });
+    return q.then(function () {
+      AI_BUSY = false; btn.classList.remove('busy'); btn.textContent = '🤖 AI で下書き';
+      if (code !== S.code) return;
+      const rest = todo.filter(function (x) { return bk.indexOf(x) < 0; });
+      csvs.forEach(function (x) { if (!rest.some(function (y) { return y.id === x.id; })) rest.push(x); });
+      fmsg(said.join('　') + (rest.length ? '。続けて 1行ずつ仕訳の下書きをします…' : ''), 'ok');
+      if (rest.length) return aiGo2(code, btn, rest, batch);
+    });
+  }
+  function aiGo2(code, btn, todo, batch) {
     const ai = S.ai || (S.ai = {});
     const req = function (it) { return { id: it.id, ids: subsOf(it.id).map(function (x) { return x.id; }), box: it.box, period: it.period, multi: isMulti(it) }; };
     AI_BUSY = true; btn.classList.add('busy');
@@ -10334,7 +10380,7 @@
   });
   $('rWaySel').addEventListener('change', function () {
     const v = this.value;
-    gs('aiWaySet', v).then(function (w) { $('rWaySel').value = w; if (MT.data) { MT.data.way = w; mtDraw(); } rMsg(w === 'v1' ? '前のやり方に戻しました（ルール・型で答えを上書き）。' : '新しいやり方（総合判断）にしました。', 'ok'); }, function (e) { rMsg(e.message, 'err'); });
+    gs('aiWaySet', v).then(function (w) { $('rWaySel').value = w; S.aiWay = w; if (MT.data) { MT.data.way = w; mtDraw(); } rMsg(w === 'v1' ? '前のやり方に戻しました（ルール・型で答えを上書き）。' : '新しいやり方（総合判断）にしました。', 'ok'); }, function (e) { rMsg(e.message, 'err'); });
   });
   /* ---- 答え合わせ ---- */
   function ckFill(list) {
