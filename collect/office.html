@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794153329;</script>
+<script>window.__PAGE_VER=1794200428;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -8265,8 +8265,14 @@
   function pickNo(it, no) {
     const c = card(it.id);
     const k = dictOf(String(no));
+    /* ★ K-0087：選び直しても 取引先（AI が読んだもの・打ったもの）は消さない。新しい辞書に取引先が決まっていなければ そのまま持っていく */
+    const o0 = (c.L && c.L[0] && c.L[0].ov) || {}, d0 = (S.ai || {})[it.id];
+    let pty = o0.party || o0.partyName ? { party: o0.party || '', partyName: o0.partyName || '' } : null;
+    if (!pty && d0 && !d0.err && !d0.multi && String(d0.party || '').trim()) { const pm = aiParty(d0.party); pty = pm ? { party: pm.code, partyName: pm.name } : { party: '', partyName: String(d0.party).trim().slice(0, 60) }; }
     c.no = String(no); c.q = '';
     c.L = dictLinesOf(k).map(function () { return blankLine(); });
+    const b0 = dictLinesOf(k)[0] || {};
+    if (pty && c.L[0] && !b0.party && !b0.partyName) { if (pty.party) c.L[0].ov.party = pty.party; if (pty.partyName) c.L[0].ov.partyName = pty.partyName; }
     S.act = it.id; drawCard(it); markAct(); fmsg('');
     const row = rowOf(it.id); const f = row && row.querySelector('[data-k="date"]');
     if (f) { f.focus({ preventScroll: true }); if (f.select) f.select(); }
@@ -8275,7 +8281,9 @@
   function repick(it) {
     delete S.rep[it.id];
     const c = card(it.id);
-    c.no = ''; c.q = ''; c.L = [blankLine()]; c.aiList = true;
+    const ov0 = (c.L && c.L[0] && c.L[0].ov) || {}, keep = blankLine();
+    if (ov0.party) keep.ov.party = ov0.party; if (ov0.partyName) keep.ov.partyName = ov0.partyName;   /* ★ K-0087：取引先は 選び直しても残す */
+    c.no = ''; c.q = ''; c.L = [keep]; c.aiList = true;
     drawCard(it); markAct();
     const row = rowOf(it.id); const f = row && row.querySelector('[data-k="q"]');
     if (f && !NARROW.matches) f.focus({ preventScroll: true });
@@ -9405,7 +9413,11 @@
     if (cur !== '' || row.length) { row.push(cur); out.push(row); }
     return out;
   }
-  function readText(f) { return new Promise(function (ok, ng) { const r = new FileReader(); r.onload = function () { ok(String(r.result || '')); }; r.onerror = function () { ng(new Error(f.name + ' が読めませんでした。')); }; r.readAsText(f, 'UTF-8'); }); }
+  function readText(f) {
+    const rd = function (enc) { return new Promise(function (ok, ng) { const r = new FileReader(); r.onload = function () { ok(String(r.result || '')); }; r.onerror = function () { ng(new Error(f.name + ' が読めませんでした。')); }; r.readAsText(f, enc); }); };
+    /* ★ エクセルで保存した CSV は Shift_JIS のことが多い（K-0089）。UTF-8 で化けたら Shift_JIS で読み直す */
+    return rd('UTF-8').then(function (t) { return /\ufffd/.test(t) ? rd('Shift_JIS').then(function (t2) { return /\ufffd/.test(t2) ? t : t2; }, function () { return t; }) : t; });
+  }
   /* 中身で見分ける */
   function fxKind(text) {
     const t = text.replace(/^\ufeff/, '').trim();
@@ -9599,6 +9611,12 @@
     return fx.filter(function (x) { return x.sub || !kept[x.code]; }).concat(keep)
       .sort(function (a, b) { return a.code === b.code ? String(a.sub || '').localeCompare(String(b.sub || '')) : a.code.localeCompare(b.code); });
   }
+  /* 取引先の一覧に 科目が無いとき 付ける科目：勘定科目の表の「取引先別管理」→ いまの取引先の表にある科目 */
+  function fxPartyAccts() {
+    const a = []; (S.acct || []).forEach(function (x) { if (x.partyMgmt && a.indexOf(x.code) < 0) a.push(x.code); });
+    if (!a.length) (S.party || []).forEach(function (x) { if (/^\d{4}$/.test(x.acct) && a.indexOf(x.acct) < 0) a.push(x.acct); });
+    return a;
+  }
   function fxMergeParty(fx) {
     const k = function (x) { return x.acct + '|' + x.code; }, seen = {};
     const was = {}; (S.party || []).forEach(function (x) { if (x.inv) was[k(x)] = x.inv; });
@@ -9623,16 +9641,28 @@
       if (got.acct || got.sub) p = p.then(function () { return gs('acctGet', code).then(function (a) { if (code === S.code) acctSet(a); }); }).then(function () {
         stay();
         const rows = got.acct ? fxMergeAcct(fxBuildAcct(got.acct, got.sub)) : fxBuildAcct(got.acct, got.sub);
-        return gs('acctSave', code, rows).then(function (a) { if (code !== S.code) return; acctSet(a); drawAcct(); done.push('勘定科目・口座 ' + a.length + '行'); });
+        return gs('acctSave', code, rows).then(function (a) { if (code !== S.code) return; acctSet(a); drawAcct(); done.push('勘定科目・口座 ' + a.length + '行'); })
+          .then(function () { return heldRetry(code).then(function (n) { if (n) done.push('★ よけた辞書のうち ' + n + '件が 新しい勘定科目の表で通ったので 辞書に入れました'); }); });
       });
       if (got.party) p = p.then(function () { return gs('partyGet', code).then(function (pp) { if (code === S.code) partySet(pp); }); }).then(function () {
         stay();
         const H = got.party.h, rows = [];
+        /* ★★ K-0089：FX の「取引先の登録」の一覧（勘定科目コードの列が無い形）も読む。
+             どの科目の取引先かは 勘定科目の表の「取引先別管理」の科目（無ければ いまの取引先の表にある科目）に付ける */
+        const noAcct = H('勘定科目コード') < 0;
+        const pAccts = noAcct ? fxPartyAccts() : [];
+        if (noAcct && !pAccts.length) throw new Error('取引先一覧に 勘定科目コードの列がありません。先に 勘定科目一覧（取引先別管理つき）を取り込んでください（どの科目の取引先かを そこから決めます）。');
         got.party.rows.forEach(function (r) {
-          const a = half(r[H('勘定科目コード')] || ''), c = half(r[H('取引先コード')] || ''), n = (r[H('取引先名')] || '').trim();
+          let c = half(r[H('取引先コード')] || '').trim(); const n = (r[H('取引先名')] || '').trim();
+          if (/^\d{1,5}$/.test(c)) c = ('000000' + c).slice(-6);   /* FX の一覧は 頭の0が落ちて 4054 のように出る */
           /* ★ 登録番号の列があれば 一緒に（見出しに「登録番号」を含む列。FX の「事業者登録番号」など） */
-          const ih = got.party.hd ? got.party.hd.findIndex(function (x) { return /登録番号/.test(x); }) : -1, inv = ih >= 0 ? half(r[ih] || '').trim() : '';
-          if (/^\d{4}$/.test(a) && /^\d{6}$/.test(c)) rows.push({ acct: a, code: c, name: /^[-‐ー－―]$/.test(n) ? '' : n, inv: inv });
+          const ih = got.party.hd ? got.party.hd.findIndex(function (x) { return /登録番号/.test(x); }) : -1;
+          let inv = ih >= 0 ? half(r[ih] || '').trim() : '';
+          if (inv && !/^T\d{13}$/.test(inv)) inv = '';   /* 表示が切れた・形のちがう番号は 入れない（あとで直せる） */
+          const nm = /^[-‐ー－―]$/.test(n) ? '' : n;
+          if (!/^\d{6}$/.test(c)) return;
+          if (noAcct) pAccts.forEach(function (a) { rows.push({ acct: a, code: c, name: nm, inv: inv }); });
+          else { const a = half(r[H('勘定科目コード')] || ''); if (/^\d{4}$/.test(a)) rows.push({ acct: a, code: c, name: nm, inv: inv }); }
         });
         return gs('partySave', code, fxMergeParty(rows)).then(function (pp) { if (code !== S.code) return; partySet(pp); done.push('取引先 ' + pp.length + '件'); });
       });
@@ -11287,13 +11317,22 @@
      よけたものは ここに溜まる。［編集］で伝票に出して 直して保存すると 辞書に入り、ここから消える */
   S.held = []; S.heldEdit = '';
   function heldLoad() { const code = S.code; if (!code) return; gs('dictHeldGet', code).then(function (h) { if (code !== S.code) return; S.held = h || []; heldDraw(); }, function () {}); }
+  /* ★★ K-0088：勘定科目の表を入れた・直したら、よけた辞書を いまの表で確かめ直す。通るものは 辞書に入れる */
+  function heldRetry(code) {
+    return gs('dictHeldRetry', code).then(function (r) {
+      if (code !== S.code) return 0;
+      S.dict = r.list; S.held = r.held || []; if (!S.dirty) { drawDict(); drawIndex(); } heldDraw();
+      return r.moved || 0;
+    }, function () { return 0; });
+  }
   function heldDraw() {
     if (!S.held) S.held = [];
     const box = $('dHeld'); box.textContent = '';
     box.hidden = !S.held.length;
     if (!S.held.length) return;
     box.appendChild(el('h4', null, 'よけた辞書（直して入れる）' + S.held.length + '件'));
-    box.appendChild(el('p', 'note', '勘定科目の表に無いコードなどで 入れられなかったものです。［編集］で直して保存すると 辞書に入ります。'));
+    box.appendChild(el('p', 'note', '勘定科目の表に無いコードなどで 入れられなかったものです。［編集］で直して保存すると 辞書に入ります。勘定科目の表を あとから入れたときは［いまの表で 確かめ直す］'));
+    const rb = el('button', 'btn ghost sm', 'いまの表で 確かめ直す'); rb.type = 'button'; rb.id = 'dHeldRetry'; rb.title = '勘定科目の表を入れた・直したあとに押すと、通るようになった辞書を まとめて辞書に入れます'; box.appendChild(rb);
     const ul = el('ul');
     S.held.forEach(function (h) {
       const li = el('li' + '', S.heldEdit === h.id ? 'on' : null);
@@ -11307,6 +11346,11 @@
     box.appendChild(ul);
   }
   $('dHeld').addEventListener('click', function (e) {
+    if (e.target.closest('#dHeldRetry')) {
+      const code = S.code; dmsg('いまの勘定科目の表で 確かめ直しています…');
+      heldRetry(code).then(function (n) { if (code !== S.code) return; dmsg(n ? 'よけた辞書 ' + n + '件が 通ったので 辞書に入れました。' + (S.held.length ? '残り ' + S.held.length + '件は 理由を見て直してください。' : '') : 'まだ通るものはありませんでした（理由を見て直してください）。', n ? 'ok' : 'err'); });
+      return;
+    }
     const b = e.target.closest('button[data-held]'); if (!b) return;
     const h = S.held.find(function (x) { return x.id === b.dataset.held; }); if (!h) return;
     if (b.dataset.a === 'drop') {
@@ -11456,25 +11500,57 @@
     const n = ins[i + 1]; if (n) { n.focus(); if (n.select) n.select(); }
   });
   function dmsg(t, kind) { $('dMsg').textContent = t || ''; $('dMsg').className = 'pagemsg' + (kind ? ' ' + kind : ''); }
+  /* ★★ 保存を待たずに 次を直せる（K-0090・2026-11-09）：押したら この画面の辞書には すぐ入れて（楽観的に）、
+       サーバへは 順番に1つずつ送る。送るときの辞書は その時点の画面の辞書（前の保存も入っている）。
+       こけたら その1件を外し、よけた辞書を取り直し、終わったら サーバの辞書で そろえ直す */
+  const DSQ = { q: Promise.resolve(), n: 0, bad: [] };
   function saveDict(list, okMsg, selNo, only) {
-    dmsg('保存しています…');
-    const code = S.code;
-    const hid = S.heldEdit;
-    /* ★ 確かめるのは いま直している1件だけ（ほかの辞書の 表に無いコードで止めない。2026-10-12） */
-    return gs('dictSave', code, list, only == null ? undefined : { only: only }).then(function (d) {
+    const code = S.code, hid = S.heldEdit;
+    const before = S.dict;
+    S.dict = list.slice(); S.dirty = false; drawDict();
+    if (hid) { S.held = (S.held || []).filter(function (h) { return h.id !== hid; }); }
+    openSlip(selNo != null && S.dict.some(function (x) { return x.no === selNo; }) ? selNo : null);
+    DSQ.n++;
+    dmsg('保存しています…（' + DSQ.n + '件。待たずに 次を直せます）');
+    const run = function () {
       if (code !== S.code) return false;
-      if (hid) gs('dictHeldDrop', code, hid).then(function (l) { if (code !== S.code) return; S.held = l || []; heldDraw(); }, function () {});
-      S.dict = d; S.dirty = false; drawDict();
-      openSlip(selNo != null && d.some(function (x) { return x.no === selNo; }) ? selNo : null);
-      dmsg(okMsg, 'ok');
-      (S.view || []).forEach(function (it) { if (rowOf(it.id) && !rowOf(it.id).classList.contains('fold')) drawCard(it); });
-      return true;
-    }, function (e) { if (code === S.code) dmsg(e.message, 'err'); return false; });
+      return gs('dictSave', code, S.dict, only == null ? undefined : { only: only }).then(function (d) {
+        if (code !== S.code) return false;
+        if (hid) gs('dictHeldDrop', code, hid).then(function (l) { if (code !== S.code) return; if (!DSQ.n) { S.held = l || []; heldDraw(); } }, function () {});
+        if (DSQ.n === 1) { S.dict = d; if (!S.dirty) drawDict(); }   /* ほかに送るものが無いときだけ サーバの形に */
+        return true;
+      }, function (e) {
+        if (code !== S.code) return false;
+        DSQ.bad.push((only > 0 ? 'No ' + only + '：' : '') + e.message);
+        if (only > 0) S.dict = S.dict.filter(function (x) { return x.no !== only; });
+        else if (only === -1) S.dict = before;
+        return false;
+      });
+    };
+    const p = DSQ.q.then(run, run);
+    DSQ.q = p.then(function (ok) {
+      DSQ.n--;
+      if (code !== S.code) return ok;
+      if (DSQ.n) { dmsg('保存しています…（あと ' + DSQ.n + '件）'); return ok; }
+      if (DSQ.bad.length) {
+        const m = DSQ.bad.join('　'); DSQ.bad = [];
+        dmsg('保存できなかったもの：' + m + '（よけた辞書に戻しました）', 'err');
+        gs('dictGet', code).then(function (d) { if (code !== S.code) return; S.dict = d; if (!S.dirty) drawDict(); drawIndex(); }, function () {});
+        heldLoad();
+      } else {
+        dmsg(okMsg, 'ok');
+        (S.view || []).forEach(function (it) { if (rowOf(it.id) && !rowOf(it.id).classList.contains('fold')) drawCard(it); });
+      }
+      return ok;
+    });
+    return p;
   }
   function saveSlip() {
     const o = readSlip();
     if (!(o.no >= 1 && o.no <= 999)) { dmsg('No は 1〜999 の数で入れてください。', 'err'); $('sNo').focus(); return; }
     if (o.no !== S.dsel && S.dict.some(function (x) { return x.no === o.no; })) { dmsg('No ' + o.no + ' はもう使っています。', 'err'); $('sNo').focus(); return; }
+    /* ★ 保存は うしろで進むので、表に無いコードは ここで止める（サーバで断られて 打った中身が消えないように） */
+    const bad = $('dslip').querySelector('.dpin.bad'); if (bad) { dmsg('勘定科目の表にないコードがあります（赤い欄）。直してから保存してください。', 'err'); bad.focus(); return; }
     /* 並び（ord）は 直しても そのまま残す */
     const prev = S.dict.find(function (x) { return x.no === S.dsel; }); if (prev && prev.ord) o.ord = prev.ord;
     const list = S.dict.filter(function (x) { return x.no !== S.dsel; }).concat([o]);
@@ -11566,6 +11642,7 @@
     gs('acctSave', code, readAcct()).then(function (a) {
       if (code !== S.code) return;
       acctSet(a); drawAcct(); amsg2('保存しました（' + a.length + '行）。', 'ok');
+      heldRetry(code).then(function (n) { if (n && code === S.code) amsg2('保存しました（' + a.length + '行）。よけた辞書のうち ' + n + '件が 通ったので 辞書に入れました。', 'ok'); });
     }, function (e) { amsg2(e.message, 'err'); });
   });
   $('aPasteGo').addEventListener('click', function () {
