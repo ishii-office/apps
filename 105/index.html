@@ -11897,7 +11897,9 @@ function arOpenParse(v){
 function arOpenLabel(key){
   if(key==='old') return '前期繰越（それ以前）';
   var m=String(key).match(/^(\d{4})-(\d{2})$/);
-  return m? ((+m[2])+'月分（前期）') : '前期繰越';
+  /* ★ 12月は【12月以前分】の累積（2026-10-28・丸京）。
+     期首の繰越は 12月以前分 ＋ 1月分 の2つにまとめてある */
+  return m? (m[2]==='12' ? '12月以前分（前期）' : (+m[2])+'月分（前期）') : '前期繰越';
 }
 function arOpenRowKey(key){ return key==='old'? 'prev' : ('prev:'+key); }
 /** 期首の月の並び（前の期の12か月。新しい月が先） */
@@ -12055,7 +12057,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-10-30a 端末の暗証番号：関所の断り（入れてください／入れ直してください）のときだけ合図を捨てる（ほかの「暗証番号」の字では捨てない）';
+var APP_BUILD='2026-11-09b 売掛帳を【7月締めの残高】から再スタート（丸京の確認ずみ 252店・11,932,198円。繰越＝12月以前分＋1月分、2月分〜7月分は発生の行として残る。その店の7月の締め日までの回収は消える。8月以降と小口現金は1円も動かない）／売掛帳に 00- の先（都度売上）を出さない／領収書の写真を丸京の端末からもリクエストなしで見られるようにした／端末の暗証番号：関所の断りのときだけ合図を捨てる';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -12473,8 +12475,27 @@ function arSumHtml_(rows){
     '<div class="ar-box"><div class="k">貸倒れ</div><div class="v num" style="color:#7A2E3F">'+yen(tBad)+'</div></div>'+
     '<div class="ar-box zan"><div class="k">残高（未回収）'+nBal+'店</div><div class="v num">'+yen(tBal)+'</div></div>';
 }
+/** ★★★ 00- で始まる先は【売掛帳に出さない】（2026-11-09・丸京）
+
+    丸京から ──「00-002 とかの てきとう、00-003 とかの BAR LAND などの、
+    売掛処理しない現金主義売上の取引先については、売掛帳不要なので表示しないでいい」。
+
+    00-xxx は 締めナシ（都度売上）の番号です（`SHIME_PREFIX[99] = 0`）。
+    入金のつど「店売り（現金売上）」で立てる先なので、売掛を持ちません。
+    締めナシ（`shime === 99`）の先は `cashOnly` で前から外していますが、
+    **コードが 00- なのに締めが入ったままの先**が残っていて、
+    売掛帳に全部ゼロの行として並んでいました。だからコードでも外します。
+
+    ★ 外すのは売掛帳の一覧だけ。現金売上で取引先としてさがすほう（`cashPickClients`）は
+      そのまま。あちらでは選べないと困ります。
+    ★ 上のまとめ（前期繰越・発生・回収・残高）も、ここで絞ったあとの店で出ます。 */
+function arNoKake_(c){
+  if(cashOnly(c)) return true;
+  return /^00/.test(String((c && c.code) || '').replace(/[^0-9]/g,''));
+}
 function arListRows_(fy){
   return arSummary(fy).filter(function(x){
+    if(arNoKake_(x.c)) return false;
     if(S.arShime && x.c.shime!==S.arShime) return false;
     if(S.arOnly && x.bal<=0) return false;
     return true;
