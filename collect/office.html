@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794293250;</script>
+<script>window.__PAGE_VER=1794295520;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1296,6 +1296,20 @@
   /* ★★ 顧問先から届いた知らせ・未処理の数（2026-11-04） */
   .arrbtn { font: inherit; font-size: 13px; font-weight: 800; border: 1.5px solid var(--accent, #0F6E56); color: var(--accent, #0F6E56); background: #fff; border-radius: 999px; padding: 3px 10px; margin-right: 8px; cursor: pointer; white-space: nowrap; }
   .arrbtn.has { background: #B3261E; border-color: #B3261E; color: #fff; }
+  /* ★ K-0092：担当者ごとのマイページ・お知らせ（未読の赤い丸） */
+  .minesel { font: inherit; font-size: 13px; font-weight: 700; border: 1.5px solid var(--accent, #0F6E56); color: var(--accent, #0F6E56); background: #fff; border-radius: 999px; padding: 3px 8px; margin-right: 8px; max-width: 220px; }
+  .minesel.on { background: var(--accent, #0F6E56); color: #fff; }
+  .bellbtn { position: relative; }
+  .bellbtn .belln { position: absolute; top: -7px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: #D0201A; color: #fff; font-size: 12px; line-height: 20px; text-align: center; box-shadow: 0 0 0 2px #fff; }
+  .arrpop .bell-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .arrpop .bell-top h4 { flex: 1; margin: 0; }
+  .arrpop .arr-row.unread { font-weight: 800; background: #FFF6F5; }
+  .arrpop .arr-row .dot { flex: 0 0 10px; width: 10px; height: 10px; border-radius: 50%; background: transparent; }
+  .arrpop .arr-row.unread .dot { background: #D0201A; }
+  .arrpop .arr-row small { color: #667; white-space: nowrap; }
+  /* ★ スマホの幅では 小さく（横にはみ出さない） */
+  @media (max-width: 700px) { .bellbtn .bt, .arrbtn .bt { display: none; } .top .arrbtn { padding: 3px 7px; margin-right: 4px; } .minesel { max-width: 92px; font-size: 12px; padding: 3px 4px; margin-right: 4px; } }
+  #alist li.minehd { font-size: 12.5px; color: #555; padding: 4px 8px; background: #F3F8F6; border-radius: 8px; }
   .arrpop { position: fixed; z-index: 80; top: 56px; right: 12px; width: min(420px, calc(100vw - 24px)); max-height: 70vh; overflow: auto; background: #fff; border: 1.5px solid #c9d3d0; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.18); padding: 10px 12px; }
   .arrpop h4 { margin: 2px 0 6px; font-size: 15px; }
   .arrpop .arr-note { font-size: 12px; color: #667; margin: 0 0 8px; line-height: 1.5; }
@@ -1408,9 +1422,10 @@
     <button type="button" role="tab" data-tab="Kaizen" aria-pressed="false" id="tabKaizen">改善要望<b class="kzbadge" id="kzBadge" hidden></b></button>
     <button type="button" role="tab" data-tab="Send" aria-pressed="false" id="tabSend">送付物</button>
   </span>
-  <span class="who"><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥 未処理 <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
+  <span class="who"><select class="minesel" id="mineSel" hidden aria-label="どの担当者の顧問先を出すか" title="担当者ごとのマイページ：自分（または選んだ担当者）の担当・補助担当の顧問先だけを 一覧と 上の顧問先の欄に出す"></select><button type="button" class="arrbtn bellbtn" id="bellBtn" hidden aria-expanded="false" title="顧問先から届いた知らせ（直近30日）。赤い数字は まだ見ていない数">🔔<span class="bt"> お知らせ</span><b class="belln" id="bellN" hidden></b></button><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥<span class="bt"> 未処理</span> <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
 <div class="arrpop" id="arrPop" hidden role="dialog" aria-label="未処理の資料（顧問先ごと）"></div>
+<div class="arrpop" id="bellPop" hidden role="dialog" aria-label="お知らせ（届いた知らせ）"></div>
 <!-- ★ 箱を複数えらぶ（2026-11-07） -->
 <div class="obv" id="bxPop" hidden role="dialog" aria-modal="true" aria-labelledby="bxT">
   <div class="obbox" style="width:min(420px,100%)">
@@ -2499,7 +2514,7 @@
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
   }
-  function signOut(msg) { try { $('arrBtn').hidden = true; $('arrPop').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
+  function signOut(msg) { try { $('arrBtn').hidden = true; $('arrPop').hidden = true; $('bellBtn').hidden = true; $('bellPop').hidden = true; $('mineSel').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
   $('signOut').addEventListener('click', function () { signOut('ログアウトしました。'); });
   $('gate').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -2577,23 +2592,88 @@
 
   function fillClients(sel, force) {
     const c0 = $('client');
-    const sig = aMode() + '|' + S.clients.map(function (c) { return c.code + '\t' + c.name + '\t' + (c.fy || '') + '\t' + (c.boxes || []).join('/'); }).join('\n');
+    /* ★ K-0092：マイページ（担当者を選んでいる）なら その人の担当・補助担当の顧問先だけ。1件も無いときは 全部を出す */
+    let L = S.clients.filter(mineOk); if (!L.length) L = S.clients;
+    const sig = aMode() + '|' + mineWho() + '|' + L.map(function (c) { return c.code + '\t' + c.name + '\t' + (c.fy || '') + '\t' + (c.boxes || []).join('/'); }).join('\n');
     const same = !force && sig === S.clientsSig; S.clientsSig = sig;
     if (!same) {
       const was = c0.value; c0.textContent = '';
       const opt = function (p, c) { const o = el('option', null, c.code + '　' + c.name); o.value = c.code; p.appendChild(o); };
       /* 決算月ごとに見ているときは 決算月の群に分けて出す */
-      if (aMode() === 'fy') fyGroups(S.clients).forEach(function (g) { const og = el('optgroup'); og.label = g[0]; g[1].forEach(function (c) { opt(og, c); }); c0.appendChild(og); });
-      else S.clients.forEach(function (c) { opt(c0, c); });
+      if (aMode() === 'fy') fyGroups(L).forEach(function (g) { const og = el('optgroup'); og.label = g[0]; g[1].forEach(function (c) { opt(og, c); }); c0.appendChild(og); });
+      else L.forEach(function (c) { opt(c0, c); });
       if (was) c0.value = was;
     }
-    if (!S.clients.length) { S.code = ''; listMsg('顧問先がありません。「顧問先」で足してください。'); return; }
-    const keep = S.clients.some(function (c) { return c.code === S.code; }) ? S.code : '';
-    S.code = keep || (S.clients.some(function (c) { return c.code === sel; }) ? sel : S.clients[0].code);
+    if (!L.length) { S.code = ''; listMsg('顧問先がありません。「顧問先」で足してください。'); return; }
+    const keep = L.some(function (c) { return c.code === S.code; }) ? S.code : '';
+    S.code = keep || (L.some(function (c) { return c.code === sel; }) ? sel : L[0].code);
     c0.value = S.code;
     clientTheme();
     if (!keep || !same) switchClient(!same && keep);
   }
+  /* ================= ★★ K-0092：担当者ごとのマイページ（2026-11-10） =================
+     右上の［👤 担当］で「全員の顧問先／自分の担当／ほかの担当者」を選ぶ。選ぶと 顧問先タブの一覧と 上の顧問先の欄が その人の担当・補助担当の顧問先だけになる。端末が覚える */
+  const LS_MINE = 'collect_office_mine';
+  function mineWho() { const v = lsGet(LS_MINE) || ''; return v === '@me' ? String((S.me && S.me.name) || '') : v; }
+  function mineOk(c) { const w = mineWho(); return !w || (c && (c.tanto === w || c.sub === w)); }
+  function mineFill() {
+    const sl = $('mineSel'); if (!sl) return;
+    const me = String((S.me && S.me.name) || ''), cur = lsGet(LS_MINE) || '';
+    const names = {}; (S.clients || []).concat(A.list || []).forEach(function (c) { if (c.tanto) names[c.tanto] = 1; if (c.sub) names[c.sub] = 1; });
+    (STAFF_NAMES || []).forEach(function (n) { if (n) names[n] = 1; });
+    sl.textContent = '';
+    const op = function (v, t) { const o = el('option', null, t); o.value = v; sl.appendChild(o); };
+    op('', '👥 全員の顧問先');
+    if (me) op('@me', '👤 自分の担当（' + me + '）');
+    Object.keys(names).sort().forEach(function (n) { if (n !== me) op(n, '👤 ' + n + ' の担当'); });
+    if (cur && !Array.prototype.some.call(sl.options, function (o) { return o.value === cur; })) op(cur, '👤 ' + cur + ' の担当');
+    sl.value = cur; sl.classList.toggle('on', !!cur);
+    sl.hidden = !S.started;
+  }
+  $('mineSel').addEventListener('change', function () {
+    lsSet(LS_MINE, this.value); this.classList.toggle('on', !!this.value);
+    S.clientsSig = ''; fillClients(S.code, true);
+    try { aDraw(); } catch (e) {}
+  });
+  /* ---- 🔔 お知らせ：届いた知らせを ためる（直近30日・顧問先 × 日 × 箱）。まだ見ていないものに 赤い丸と数 ---- */
+  const BELL = { items: [], unread: 0, busy: false, at: 0 };
+  function bellLoad() {
+    if (!S.started || LIVE || BELL.busy) return;
+    BELL.busy = true;
+    gs('arriveLog', 30).then(function (r) { BELL.busy = false; BELL.items = (r && r.items) || []; BELL.unread = (r && r.unread) || 0; BELL.at = Date.now(); bellDraw(); }, function () { BELL.busy = false; });
+  }
+  function bellDraw() {
+    const n = BELL.unread, b = $('bellBtn');
+    b.hidden = !S.started || LIVE; $('bellN').hidden = !n; $('bellN').textContent = n > 99 ? '99+' : String(n);
+    b.title = n ? 'まだ見ていない知らせが ' + n + '件あります' : '顧問先から届いた知らせ（直近30日）';
+    const pop = $('bellPop'); if (pop.hidden) return;
+    pop.textContent = '';
+    const top = el('div', 'bell-top'); top.appendChild(el('h4', null, '🔔 お知らせ（直近30日）'));
+    if (n) { const ab = el('button', 'btn ghost sm', 'すべて既読にする'); ab.type = 'button'; ab.addEventListener('click', function () { BELL.items.forEach(function (x) { x.unread = false; }); BELL.unread = 0; bellDraw(); gs('arriveRead', '*').then(bellLoad, function () { bellLoad(); }); }); top.appendChild(ab); }
+    pop.appendChild(top);
+    pop.appendChild(el('p', 'arr-note', '担当・補助担当の顧問先（担当者が空の顧問先も）から届いたもの。赤い丸は まだ見ていないもの。押すと 回収資料タブで その箱を開きます（見たことになります）。'));
+    if (!BELL.items.length) { pop.appendChild(el('p', 'arr-note', 'お知らせは ありません。')); return; }
+    BELL.items.forEach(function (x) {
+      const b2 = el('button', 'arr-row' + (x.unread ? ' unread' : '')); b2.type = 'button';
+      b2.appendChild(el('span', 'dot'));
+      b2.appendChild(el('span', 'nm', (x.line ? '💬 ' : '📷 ') + x.code + '　' + x.name + ' 様　' + x.n + '件（' + x.box + '）')).title = x.name + ' 様から ' + x.n + '件（' + x.box + '）';
+      b2.appendChild(el('small', null, x.when));
+      b2.addEventListener('click', function () {
+        if (x.unread) { x.unread = false; BELL.unread = Math.max(0, BELL.unread - 1); gs('arriveRead', [x.key]).catch(function () {}); }
+        $('bellPop').hidden = true; $('bellBtn').setAttribute('aria-expanded', 'false'); bellDraw();
+        arGo(x.code, x.line ? '' : x.box);
+      });
+      pop.appendChild(b2);
+    });
+  }
+  $('bellBtn').addEventListener('click', function (e) {
+    e.stopPropagation();
+    const p = $('bellPop'); p.hidden = !p.hidden; $('bellBtn').setAttribute('aria-expanded', String(!p.hidden));
+    if (!p.hidden) { $('arrPop').hidden = true; bellDraw(); bellLoad(); }
+  });
+  document.addEventListener('click', function (e) { const p = $('bellPop'); if (!p.hidden && !e.target.closest('#bellPop, #bellBtn')) { p.hidden = true; $('bellBtn').setAttribute('aria-expanded', 'false'); } });
+  (function bellFirst() { if (S.started && S.booted) { mineFill(); bellLoad(); if (!STAFF_NAMES) gs('staffNames').then(function (r) { STAFF_NAMES = r || []; mineFill(); }, function () {}); return; } setTimeout(bellFirst, 1500); })();
+  setInterval(function () { if (S.started && !document.hidden && Date.now() - BELL.at > 120000) bellLoad(); }, 30000);
 
   /* ================= タブ ================= */
   function selectTab(k) {
@@ -4661,7 +4741,7 @@
     pdfjs().then(function (lib) { return lib.getDocument(Object.assign({ data: b64bytes(v.b64) }, PDF_OPT)).promise; }).then(function (doc) {
       const out = [], n = Math.min(doc.numPages, 30); let p = Promise.resolve();
       for (let i = 1; i <= n; i++) p = p.then(function () { return doc.getPage(i).then(function (page) {
-        const vp0 = page.getViewport({ scale: 1 }), vp = page.getViewport({ scale: Math.min(3, 1800 / Math.max(vp0.width, vp0.height)) });
+        const vp0 = page.getViewport({ scale: 1 }), vp = page.getViewport({ scale: Math.min(6, 3200 / Math.max(vp0.width, vp0.height)) });   /* ★ K-0093：拡大しても 小さい文字が読めるように 1800 → 3200px */
         const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
         const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
         return page.render({ canvasContext: g, viewport: vp }).promise.then(function () { out.push(c.toDataURL('image/jpeg', 0.88)); });
@@ -5154,6 +5234,7 @@
       });
       AR.pend = r.pend || [];
       arDraw(); lnBadge();
+      if ((r.items || []).length) bellLoad();   /* ★ K-0092：届いたら お知らせにも */
     }, function () { AR.busy = false; });
   }
   $('arrBtn').addEventListener('click', function (e) {
@@ -8764,7 +8845,7 @@
           if (!live()) return;
           return doc.getPage(n).then(function (page) {
             if (!live()) return;
-            const w = Math.min(1800, Math.max(600, (st.clientWidth || 600) * (window.devicePixelRatio || 1)));
+            const w = Math.min(3200, Math.max(1200, (st.clientWidth || 600) * (window.devicePixelRatio || 1) * 2));   /* ★ K-0093：拡大しても ぼやけないように 画面の2倍で描く（上限 3200px） */
             const vp0 = page.getViewport({ scale: 1 });
             const vp = page.getViewport({ scale: w / vp0.width });
             const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
@@ -11919,7 +12000,9 @@
     document.querySelectorAll('#aMode button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.m === mode)); });
     const ul = $('alist'); ul.textContent = '';
     if (A_ERR) ul.appendChild(aErrLi());
-    const list = A.list.filter(function (c) { return !q || (c.code + ' ' + c.name).toLowerCase().indexOf(q) >= 0; });
+    const who = mineWho();
+    const list = A.list.filter(function (c) { return (!q || (c.code + ' ' + c.name).toLowerCase().indexOf(q) >= 0) && mineOk(c); });
+    if (who) ul.appendChild(el('li', 'minehd', '👤 ' + who + ' さんの担当・補助担当の顧問先 ' + list.length + '件（右上の［担当］で 全員に戻せます）'));
     const row = function (c) {
       const li = el('li'); li.dataset.code = c.code; if (!q && mode === 'ord') li.draggable = true;
       const b = el('button'); b.type = 'button';
@@ -11939,7 +12022,7 @@
     };
     if (mode === 'fy') fyGroups(list).forEach(function (g) { const h = el('li', 'grp' + (g[3] ? ' ind' : ''), g[0] + '（' + g[1].length + '）'); fyStyle(h, g[2]); ul.appendChild(h); g[1].forEach(row); });
     else list.forEach(row);
-    if (!list.length) ul.appendChild(el('li', 'empty', q ? '当てはまる顧問先はありません' : '顧問先がありません'));
+    if (!list.length) ul.appendChild(el('li', 'empty', q ? '当てはまる顧問先はありません' : who ? who + ' さんの担当の顧問先はありません（顧問先の「担当者（事務所）」「補助担当者」で決めます）' : '顧問先がありません'));
   }
   document.querySelectorAll('#aMode button').forEach(function (b) { b.addEventListener('click', function () { lsSet('collect_office_amode', b.dataset.m); aDraw(); fillClients(S.code, true); }); });
   /* つかんで動かす（探しているあいだは動かさない） */
