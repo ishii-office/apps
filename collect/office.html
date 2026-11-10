@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794200428;</script>
+<script>window.__PAGE_VER=1794275065;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -955,6 +955,8 @@
   .jledg tr.draft td { color: #6b5a2e; font-style: italic; background: #FFFBF0; }
   .jledg .glmk { font-size: 11px; color: #8a5a00; font-style: normal; border: 1px solid #E3C77A; border-radius: 3px; padding: 0 3px; margin-left: 3px; }
   .jfingl { margin-top: 8px; }
+  #dDup { margin: 8px 10px; padding: 8px 10px; border: 1px solid #E3C77A; background: #FFF6E0; border-radius: 6px; font-size: 13px; }
+  #dDup b { color: #8a5a00; display: block; } #dDup .note { margin: 4px 0; }
   .jailt tr.jawho td { background: #0F6E56; color: #fff; font-weight: 700; padding: 3px 8px; }
   .jailt tr.jawsub td { background: #E6F1EC; color: #0F6E56; font-weight: 700; text-align: right; padding: 3px 8px; }
   .jailt tr.rc td { background: #F3F7FF; }
@@ -1514,6 +1516,7 @@
     <div id="dvSide">
       <div class="dk-top"><label class="dbox">回収ボックス <select id="dBox" aria-label="どの回収ボックスの辞書か"></select></label></div>
       <div class="dk-top"><input id="dSearch" type="search" placeholder="No・取引の種類・科目・コード" aria-label="辞書を探す"><button type="button" class="primary" id="dNew">＋ 辞書を登録</button></div>
+      <div id="dDup" hidden></div>
       <div id="dHeld" hidden></div>
       <ul id="dIndex"></ul>
     </div>
@@ -9674,6 +9677,7 @@
           S.dict = res.list; S.held = res.held || []; S.dirty = false; drawDict(); drawIndex(); openSlip(null);
           done.push('仕訳辞書 ' + r.add + '件を足し・' + r.upd + '件を置き換え' + (r.skip ? '（見出しなど ' + r.skip + '件は入れず）' : ''));
           if (res.moved) done.push('★ ' + res.moved + '件は 勘定科目の表に無いコードなどで よけました（左の「よけた辞書」で直してください）');
+          if (res.dup) done.push(res.dup + '件は もう同じ仕訳が入っているので 入れませんでした');
           const m = (S.fxConf && S.fxConf.tags) || {};
           const fresh = fxTagList().filter(function (x) { return !(x.tag in m); });
           fxTagsDraw();
@@ -11246,7 +11250,30 @@
   }
 
   /* 辞書の目次（左）。選んでいる回収ボックスのぶんを 群ごとに */
+  /* ★★ K-0091：同じ仕訳（回収ボックス・取引の種類・仕訳の行が同じ／FX の辞書ID が同じ）が いくつあるか。サーバの dictSameKey_ と同じ決め方 */
+  function dictDupNos() {
+    const sb = function (v) { v = String(v == null ? '' : v).trim(); return /^\d$/.test(v) ? '0' + v : v; };
+    const pc = function (v) { v = String(v == null ? '' : v).trim(); return /^\d{1,6}$/.test(v) ? ('000000' + v).slice(-6) : v; };
+    const key = function (d) { const ls = d.lines && d.lines.length ? d.lines : [d];
+      return [String(d.box || '').trim(), String(d.title || '').trim(), ls.map(function (l) { return [String(l.drCode || l.dr || '').trim(), sb(l.drSub), String(l.crCode || l.cr || '').trim(), sb(l.crSub), String(l.tax || '').trim(), Number(l.rate) || 0, pc(l.party), String(l.memo || '').trim()].join('/'); }).join('+'), String(d.memo || '').trim()].join('|'); };
+    const seen = {}, out = [];
+    (S.dict || []).slice().sort(function (a, b) { return a.no - b.no; }).forEach(function (d) {
+      const ks = [key(d), d.fxId ? 'fx:' + d.fxId : ''].filter(Boolean);
+      const hit = ks.map(function (k) { return seen[k]; }).filter(function (n) { return n != null; })[0];
+      if (hit != null) { out.push({ no: d.no, keep: hit, title: d.title }); return; }
+      ks.forEach(function (k) { seen[k] = d.no; });
+    });
+    return out;
+  }
+  function dupDraw() {
+    const box = $('dDup'); if (!box) return;
+    const dp = dictDupNos(); box.textContent = ''; box.hidden = !dp.length; if (!dp.length) return;
+    box.appendChild(el('b', null, '同じ仕訳が ' + dp.length + '件 二重に入っています'));
+    box.appendChild(el('p', 'note', dp.slice(0, 6).map(function (x) { return 'No ' + x.no + '（' + (x.title || '') + '）＝ No ' + x.keep; }).join('・') + (dp.length > 6 ? ' ほか' : '')));
+    const b = el('button', 'btn sm', '同じものを まとめる（小さい No を残す）'); b.type = 'button'; b.id = 'dDupGo'; box.appendChild(b);
+  }
   function drawIndex() {
+    try { dupDraw(); } catch (e) {}
     const q = $('dSearch').value.trim().toLowerCase();
     const ul = $('dIndex'); ul.textContent = '';
     const mine = S.dict.filter(function (d) { return dictBox(d) === (S.dbox || ''); });
@@ -11345,6 +11372,18 @@
     });
     box.appendChild(ul);
   }
+  $('dDup').addEventListener('click', function (e) {
+    if (!e.target.closest('#dDupGo')) return;
+    const dp = dictDupNos(); if (!dp.length) return;
+    if (!confirm('同じ仕訳 ' + dp.length + '件を消して、いちばん小さい No を残します。確定した仕訳は そのままです。よろしいですか？')) return;
+    if (!slipDirtyOk()) return;
+    const code = S.code; dmsg('まとめています…');
+    gs('dictDedupe', code, false).then(function (r) {
+      if (code !== S.code) return;
+      if (r.list) { S.dict = r.list; S.dirty = false; drawDict(); drawIndex(); openSlip(null); }
+      dmsg('同じ仕訳 ' + r.n + '件を まとめました。', 'ok');
+    }, function (er) { dmsg(er.message, 'err'); });
+  });
   $('dHeld').addEventListener('click', function (e) {
     if (e.target.closest('#dHeldRetry')) {
       const code = S.code; dmsg('いまの勘定科目の表で 確かめ直しています…');
