@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794299977;</script>
+<script>window.__PAGE_VER=1794303103;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -518,6 +518,7 @@
   .arow .ask.on { background: #EEF6F1; border-color: #9CCBA8; color: var(--ok); font-weight: 700; }
   .arow .book.on { background: #FFF6D6; border-color: #E0C25A; color: #7A5A00; font-weight: 700; }
   .arow .book.on.kake { background: #E8F0FB; border-color: #8FB0DE; color: #1F4E8C; }
+  .arow .book.on.nippo { background: #EAF6EC; border-color: #8CC49A; color: #1E6B34; }
   .arow .sptd { font: inherit; font-size: 12px; padding: 2px 4px; border: 1px solid #E2B65A; border-radius: 6px; width: 132px; }
   .arow .nm { flex: 1 1 9em; min-width: 8em; text-align: left; font: inherit; font-weight: 700; background: none; border: 0; padding: 6px 4px; cursor: pointer; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .arow .nm::before { content: '▢ '; color: var(--accent); }
@@ -4056,7 +4057,7 @@
     const books = cc0.books || [], kakes = cc0.kakes || [];
     if (books.length || kakes.length) {
       const st = el('div', 'obstrip'); st.appendChild(el('span', null, '補助簿'));
-      books.forEach(function (k) { const kb = el('button', 'dmon-b obgo', '📒 ' + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 出納帳（日付・摘要・入金・出金・残高）を見る';
+      const nps = cc0.nippos || []; books.forEach(function (k) { const kb = el('button', 'dmon-b obgo', (nps.indexOf(k) >= 0 ? '📋 ' : '📒 ') + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 出納帳（日付・摘要・入金・出金・残高）を見る';
         kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : ''); }); st.appendChild(kb); });
       kakes.forEach(function (k) { const kb = el('button', 'dmon-b obgo kake', '📘 ' + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 掛帳（締日・発生額・入金日・入金額・入金口座・残高）を見る';
         kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'kake'); }); st.appendChild(kb); });
@@ -12409,18 +12410,19 @@
           row.appendChild(ab);
           /* ★ 出納帳（2026-11-07）：入れると 顧問先の画面の 何年何月分の右に［📒 出納帳］が出る（日付・摘要・入金・出金・残高） */
           /* ★ 補助簿（2026-11-08）：押すたびに 補助簿なし → 📒 出納帳あり → 📘 掛帳あり → 補助簿なし */
-          const kk = bc.book === 'kake';
-          const bk = el('button', 'sm2 book' + (bc.book ? ' on' : '') + (kk ? ' kake' : ''), kk ? '📘 掛帳あり' : bc.book ? '📒 出納帳あり' : '補助簿なし'); bk.type = 'button';
-          bk.title = kk ? '顧問先が この箱で 掛帳（締日・発生額・入金日・入金額・入金口座・残高）を書けます。押すと 補助簿なし に戻します' : bc.book ? '顧問先が この箱で 出納帳（日付・摘要・入金・出金・残高）を書けます。押すと 掛帳 にします' : '押すと この箱に 補助簿を付けます（1回目＝出納帳、2回目＝掛帳（売掛帳・買掛帳））。科目は選ばない簡易なもの';
+          const kk = bc.book === 'kake', np = bc.book === 'nippo';
+          /* ★ 業務日報（2026-11-10）：補助簿なし → 📒 出納帳 → 📘 掛帳 → 📋 業務日報 → 補助簿なし。業務日報を毎日つけると 出納帳が ひとりでにできる */
+          const bk = el('button', 'sm2 book' + (bc.book ? ' on' : '') + (kk ? ' kake' : '') + (np ? ' nippo' : ''), np ? '📋 業務日報あり' : kk ? '📘 掛帳あり' : bc.book ? '📒 出納帳あり' : '補助簿なし'); bk.type = 'button';
+          bk.title = np ? '顧問先が この箱で 業務日報（売上・仕入・現金の数え・天気）を毎日書けます。書くと 出納帳が ひとりでにできます。押すと 補助簿なし に戻します' : kk ? '顧問先が この箱で 掛帳（締日・発生額・入金日・入金額・入金口座・残高）を書けます。押すと 業務日報 にします' : bc.book ? '顧問先が この箱で 出納帳（日付・摘要・入金・出金・残高）を書けます。押すと 掛帳 にします' : '押すと この箱に 補助簿を付けます（1回目＝出納帳、2回目＝掛帳（売掛帳・買掛帳）、3回目＝業務日報）。科目は選ばない簡易なもの';
           bk.addEventListener('click', function () {
             const cur = A.bconf[path] || {};
-            if (cur.book === 'kake') delete cur.book; else if (cur.book) cur.book = 'kake'; else cur.book = 1;
+            if (cur.book === 'nippo') delete cur.book; else if (cur.book === 'kake') cur.book = 'nippo'; else if (cur.book) cur.book = 'kake'; else cur.book = 1;
             if (cur.day || cur.ask || cur.book) A.bconf[path] = cur; else delete A.bconf[path];
             aTreeDraw();
           });
           row.appendChild(bk);
           /* ★ 出納帳の 摘要の選択肢（2026-11-08）。決めていなければ 仕訳辞書から出す */
-          if (bc.book && !kk) {
+          if (bc.book && !kk && !np) {
             const on = bc.opts && ((bc.opts.in || []).length || (bc.opts.out || []).length);
             const ob = el('button', 'sm2 bopts' + (on ? ' on' : ''), on ? '摘要（入' + (bc.opts.in || []).length + '・出' + (bc.opts.out || []).length + '）' : '摘要：辞書から'); ob.type = 'button';
             ob.title = '顧問先が 出納帳で押して選ぶ摘要（入金・出金に分ける）。決めていなければ この箱の仕訳辞書（取引の種類）から出します';
