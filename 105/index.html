@@ -121,7 +121,7 @@
    ─────────────────────────────────────────────────────────────
     ・【新】締め日ナシ の取引先（その都度・現金でもらう先）
         口座はあるけれど締め日がなく、行くたびに現金でもらう先
-        （てきとう・bar Land・CBA・ノスタルジア・凛ト・SMOOTH・SHUKURA・PASS・FISH BOWL）。
+        （00- で始まる9店）。
         取引先情報 → 取引条件 → 締め日 に「締め日ナシ（00-000番台）」を足しました。
         いまの先を締め日ナシに変えるだけで切り替わります。
         ★ 内部の値は shime=99（「全部」の絞り込みが 0 を使っているため）。
@@ -1591,20 +1591,41 @@ var LIVE = (function(){
 })();
 var API_KEY_LS='mk_api_url';
 var API_URL='';
+/* ★★★ 口の決め方（2026-11-10 の総点検で締めた）
+
+   もとは「?u= が https://script.google.com/ で始まっていれば、ページに書いてある口より
+   そちらを使い、端末にも覚える」だった。**script.google.com にはだれでも自分の
+   ウェブアプリを置ける**ので、`…/apps/105/?u=https://script.google.com/macros/s/（よその人の）/exec`
+   というリンクを1回押させれば、
+     ・端末が覚えている合図（暗証番号を通った印）が、毎回そのサーバへ送られる
+     ・暗証番号を打てば、それもそのサーバへ行く
+     ・以後の画面の中身は、ぜんぶそのサーバが出す
+   になっていた。
+
+   ・**ページに口が書いてあるときは、それだけを使う。** ?u= も、端末が覚えた口も見ない
+     （前に覚えさせられた口が残っていたら、ここで捨てる）
+   ・ページに口が無いとき（予備の道）だけ ?u= と覚えた口を使う。
+     形は `https://script.google.com/macros/s/<ID>/exec` ちょうどのものだけ */
+var API_URL_RE=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
+function apiUrlPick_(baked, u, stored){
+  baked=String(baked||''); u=String(u||''); stored=String(stored||'');
+  if(baked) return {url:baked, store:null, drop:!!stored};
+  if(u && API_URL_RE.test(u)) return {url:u, store:u, drop:false};
+  if(stored && API_URL_RE.test(stored)) return {url:stored, store:null, drop:false};
+  return {url:'', store:null, drop:!!stored};
+}
 (function(){
   var get=function(k){
     try{ return new URLSearchParams(location.search).get(k)||''; }catch(e){ return ''; }
   };
-  try{ if(window.__API_URL) API_URL=String(window.__API_URL); }catch(e){}
-  var u=get('u');
-  if(u && /^https:\/\/script\.google\.com\//.test(u)){
-    API_URL=u;
-    try{ localStorage.setItem(API_KEY_LS, u); }catch(e){}
-    try{ history.replaceState(null,'',location.pathname); }catch(e){}
-  }
-  if(!API_URL){
-    try{ API_URL=String(localStorage.getItem(API_KEY_LS)||''); }catch(e){}
-  }
+  var baked=''; try{ if(window.__API_URL) baked=String(window.__API_URL); }catch(e){}
+  var u=get('u'), stored='';
+  try{ stored=String(localStorage.getItem(API_KEY_LS)||''); }catch(e){}
+  var r=apiUrlPick_(baked, u, stored);
+  API_URL=r.url;
+  try{ if(r.store) localStorage.setItem(API_KEY_LS, r.store);
+       else if(r.drop) localStorage.removeItem(API_KEY_LS); }catch(e){}
+  if(u){ try{ history.replaceState(null,'',location.pathname); }catch(e){} }
 })();
 /* Pages から開いている（Googleの中ではないが、口は分かっている） */
 var WEB2 = !LIVE && !!API_URL;
@@ -1977,7 +1998,7 @@ function authGate(){
 
    ★ データ本体は「history.html」という別ファイルに移しました。
      　ここには入れものと登録用の関数だけを置いています。
-     　年を足すときは history.html に addHistYear({...}) を書き足すだけです。
+     　（2026-11-10〜 数字は KV の hist:years から受け取る。画面には書かない）
 
    ★ 金額はすべて「税込」です。
      　売上台帳・請求書・仕訳も税込なので、全部そろっています。
@@ -2006,53 +2027,31 @@ window.addHistYear = function(o){
 };
 
 /* ==========================================================
-   ★ 過去実績のデータは【この index.html に直接】持たせています。
+   ★★★ 過去実績の【数字】は、この画面に書かない（2026-11-10 の総点検）
 
-     もともとは history.html という別ファイルに置き、Code.js が
-     <!--HISTORY--> に差し込む形にしていましたが、
-     反映（デプロイ）で index.html だけが届いて Code.js が届かない、
-     ということが起きて 令和7年度が2回とも出ませんでした。
+     2026-09-06 に「反映で届かないことがあるので index.html に直接持たせる」と決めて、
+     前期の月別売上をここに書いていた。ところが 2026-09-10 から、この画面は
+     **GitHub Pages（公開の棚）から配っている。だれでもソースを読める。**
+     顧問先の売上を、暗証番号の外に置いていたことになる。
 
-     版（APP_BUILD）は index.html にあるので、版が新しくなっている＝
-     index.html は確実に届いている、ということです。
-     だからデータもここに置けば、必ず出ます。
+     いまは KV の `hist:years` に入っていて（Code.js の HISTORY_YEARS が種。
+     自動の直し 2026-11-10a が入れる）、起動のときの1往復で一緒に受け取り、
+     `histYearsApply_` が addHistYear に渡す。往復は増えない。
 
-     ★ 年を足すときは、下に addHistYear({...}) を1本書き足すだけ。
-     ★ 金額はすべて税込。1期＝2月1日〜翌1月31日。
-       startMonth:2 … 配列の先頭が「2月」（手書き元帳・売掛帳の並び）
+     ★ 年を足すときは Code.js の HISTORY_YEARS に足して、MIGRATIONS に新しい id を1本。
+     ★ ここ（index.html）に 金額・店名・人の名前を書かない。見張りは tools/pages.mjs の 0。
    ========================================================== */
-
-/* ---------- 令和7年度（第70期・令和7年2月1日〜令和8年1月31日）----------
-   ■ 年計 38,706,305円 は【決算書のとおり・確定】
-   ■ 月別は【概算】。前の関与税理士は期中を現金主義（入金のつど売上）で
-     記帳していたので、元帳からは「売った月」の月別が作れない。
-     R7の手書き売掛帳（末締の冊）から 33店・通年ぶんを読んで季節指数を出し、
-     年計を按分した。各月 ±5%程度。頭3桁は合う。
-     裏取り … 令和8年度の実績（2〜8月）の形とくらべて
-     2月 0.86／4月 1.05／5月 1.13／6月 1.05 でほぼ重なる。
-   ■ 1円単位の突き合わせには使わない（FXとは照合しない）。
-   ■ 締め別（20締／25締／末締）の内訳は作れないので overall だけ。
-   ---------------------------------------------------------------- */
-window.addHistYear({
-  year: 2025, label: '令和7年度',
-  src:  '決算書（年計）＋ R7手書き売掛帳から按分',
-  note: '年計は決算書どおり・確定。月別は売掛帳33店の季節指数で按分した概算（各月 ±5%程度）',
-  startMonth: 2,
-  total: { overall: [
-    2776733,  /*  2月 */  3242895,  /*  3月 */  3407689,  /*  4月 */
-    3667143,  /*  5月 */  3499491,  /*  6月 */  3634725,  /*  7月 */
-    3396974,  /*  8月 */  3305592,  /*  9月 */  3277478,  /* 10月 */
-    2852639,  /* 11月 */  3122067,  /* 12月 */  2522879   /*  1月 */
-  ] },
-  stores: []
-});
-
-/* 年計だけ分かっている年度（月別は未作成）
-     第69期 39,155,540／第68期 38,157,944／第67期 32,260,680
-   月別が要るときは、その年度の手書き売掛帳から同じやり方で按分する。 */
+/** KV から来た過去実績（年ごとの配列）を当てる */
+function histYearsApply_(v){
+  var list=null;
+  try{ list = (typeof v==='string') ? JSON.parse(v) : v; }catch(e){ list=null; }
+  if(!Array.isArray(list)) return 0;
+  list.forEach(function(o){ try{ window.addHistYear(o); }catch(e){} });
+  return list.length;
+}
 </script>
 
-<!-- 過去実績は index.html が直接持っている（差し込み不要） -->
+<!-- 過去実績は KV（hist:years）から受け取る（画面には書かない） -->
 
 <script>
 /* ============ ストレージ（GAS / ローカル両対応） ============
@@ -2201,7 +2200,7 @@ var TAX_NOTE = '※ 氷・かち割り氷は軽減税率8%の対象です（全�
 var SHIMES = [20,25,31];                /* 掛売上（締めのある先）だけ。ここに 99 は入れない */
 
 /* ---- 締めナシ（その都度・現金で売る先）------------------------
-   口座はあるが締め日がなく、行くたびに現金でもらう先（てきとう・bar Land など）。
+   口座はあるが締め日がなく、行くたびに現金でもらう先（コードが 00- の先）。
    請求書も売掛も立ちません。売上は「小口現金 → ① 現金売上」で入れます。
    コードは 00-001 から（00-000番台）。
    ★ 「全部」の絞り込みは 0 を使っているので、締めナシは 99 にしてあります。
@@ -2263,9 +2262,7 @@ function jpDate(d){ return (d.getMonth()+1)+'月'+d.getDate()+'日'; }
 var WD = ['日','月','火','水','木','金','土'];
 function parseYmd(s){ var p=String(s).split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
 function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
-function addDays(d,n){ var x=new Date(d); x.setDate(x.getDate()+n); return x; }
 function eachDay(a,b){ var out=[],d=new Date(a); while(d<=b){ out.push(new Date(d)); d.setDate(d.getDate()+1);} return out; }
-function todayJst(){ return new Date(); }
 
 /* ---- 締め期間 ---- */
 function period(refDate, shime){
@@ -2421,19 +2418,38 @@ async function shrinkToFit(f){
   }
   return last;
 }
+/* ★★★ 記録に入っている住所は、そのまま開かない・そのまま埋めない（2026-11-10 の総点検）
+
+   領収書の住所（imgUrl・pics[].url）と 古い写真の中身（img）は、KV に入っている【文字】。
+   そのまま window.open / href / <img src> に入れていたので、`javascript:…` や
+   `data:text/html…` を書きこめば、ほかの人が「領収書」を押したときに
+   このアプリの画面の中で動かせた。開くのは http(s) だけ、中身は画像と PDF だけにする。 */
+function safeUrl_(u){ u=String(u==null?'':u).trim(); return /^https?:\/\//i.test(u) ? u : ''; }
+function safeOpen_(u){ var v=safeUrl_(u); if(v) window.open(v,'_blank','noopener'); return !!v; }
+/** <img src> に入れてよい中身か（画像の data: か、http(s)・blob: の住所） */
+function safeImgSrc_(u){
+  u=String(u==null?'':u);
+  if(/^data:image\/(png|jpe?g|gif|webp|heic|heif|bmp);base64,[A-Za-z0-9+\/=\s]+$/i.test(u)) return u;
+  if(/^blob:/i.test(u)) return u;
+  return safeUrl_(u);
+}
 function openDataUrl(u){
-  if(/^https?:/.test(u)){ window.open(u,'_blank'); return; }
+  u=String(u==null?'':u);
+  if(/^https?:/i.test(u)){ safeOpen_(u); return; }
   try{
-    var p=u.split(','), mime=(p[0].match(/:(.*?);/)||[])[1]||'application/octet-stream';
+    var p=u.split(','), mime=((p[0].match(/^data:(.*?);/i)||[])[1]||'').toLowerCase();
+    /* 画像と PDF だけ。HTML などを別の窓でひらくと、このアプリの画面として動いてしまう */
+    if(!/^(image\/(png|jpe?g|gif|webp|heic|heif|bmp)|application\/pdf)$/.test(mime)) return;
     var bin=atob(p[1]), arr=new Uint8Array(bin.length);
     for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
     window.open(URL.createObjectURL(new Blob([arr],{type:mime})),'_blank');
-  }catch(e){ window.open(u,'_blank'); }
+  }catch(e){}
 }
 function lightbox(src){
+  src=safeImgSrc_(src); if(!src) return;
   var d=document.createElement('div');
   d.style.cssText='position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:60;padding:20px';
-  d.innerHTML='<img src="'+src+'" style="max-width:100%;max-height:100%;border-radius:8px">';
+  d.innerHTML='<img src="'+esc(src)+'" style="max-width:100%;max-height:100%;border-radius:8px">';
   d.onclick=function(){ d.remove(); };
   document.body.appendChild(d);
 }
@@ -2621,15 +2637,6 @@ function delivMap(d){ return (DB.deliv[dkey(d)]||{})[ymd(d)]||{}; }
 /** この日は配達完了チェックを見るか（DELIV_FROM より前は見ない＝全部配達済み扱い） */
 function delivEnabled(d){ return ym(d) >= DELIV_FROM; }
 function isDelivered(d,id){ return delivEnabled(d) ? !!delivMap(d)[id] : true; }
-async function toggleDeliv(d,id){
-  var k=dkey(d), ds=ymd(d);
-  var m=DB.deliv[k]=DB.deliv[k]||{}, day=m[ds]=m[ds]||{};
-  if(day[id]) delete day[id]; else day[id]=true;
-  if(!Object.keys(day).length) delete m[ds];
-  /* ★ 触った1マスだけ送る。月まるごと上書きしない（2026-09-20） */
-  var one={}; one[ds]={}; one[ds][id]=day[id]?true:null;
-  patchSave(k,'map2',one);
-}
 
 /* ---- 取引先の正規化（旧形式からの移行を含む） ---- */
 function normalizeClient(c,i){
@@ -3548,28 +3555,32 @@ DB.cost = normalizeCost(DB.cost);
        必要売上高 ＝（固定費 ＋ 目標税引前利益）÷ 限界利益率
 
      第70期（令和7年2月〜令和8年1月）の決算書で検算すると
-       限界利益 38,706,305 −（6,516,670 ＋ 654,500）＝ 31,535,135（率 81.47%）
-       31,535,135 − 固定費 30,554,241 ＝ 980,894 ＝ 営業利益　ぴったり合います。
+       限界利益 ＝ 売上高 −（仕入 ＋ 運賃）（第70期の決算書で1円まで検算ずみ。数字は CLAUDE.md）
+       限界利益 − 固定費 ＝ 営業利益　が決算書とぴったり合います。
 
      お金が残るかは別に見ます（利益とお金はちがう）。
        ざっくりCF ＝ 税引後利益 ＋ 減価償却費 − 借入金の元本返済 ± その他
    ============================================================ */
 
 /* 第70期の決算書からの初期値（年額・円）。変えたらここは上書きされます */
+/* ★★★ 初期値に【顧問先の数字】を書かない（2026-11-10 の総点検）。
+     ここには第70期の販売管理費19項目と、役員借入（お名前と残高）が書いてあった。
+     この画面は公開の棚から配っているので、だれでも読めた。
+     数字は KV の plan:setting に入っている（Code.js の PLAN_SEED が種。自動の直し 2026-11-10b）。 */
 var PLAN_DEFAULT = {
-  fy0: '第70期（令和7年2月〜令和8年1月）',
+  fy0: '',
   fixed: {
-    yakuin:4092000, kyuryo:17558508, hotei:1804162, fukuri:624700,
-    ryohi:108000, tsushin:398013, kounetsu:950636, sozei:6040,
-    syomo:1923550, chidai:600000, shuzen:176370, hoken:142990,
-    tesuryo:32330, genka:198472, kaihi:24000, lease:708620,
-    zappi:915950, shohi:289900, other:0
+    yakuin:0, kyuryo:0, hotei:0, fukuri:0,
+    ryohi:0, tsushin:0, kounetsu:0, sozei:0,
+    syomo:0, chidai:0, shuzen:0, hoken:0,
+    tesuryo:0, genka:0, kaihi:0, lease:0,
+    zappi:0, shohi:0, other:0
   },
   taxRate: 25,        /* 法人税等の実効税率（%） */
   targetYakuin: 0,    /* 目標役員報酬（年額）。0 なら固定費の役員報酬をそのまま使う */
   targetPre: 0,       /* 目標 税引前利益（年額） */
   cmRate: 0,          /* 限界利益率（%）。0 なら原価設定と実績から出す */
-  loans: [{ name:'平山幸三（役員借入）', bal:8936000, monthly:0, rate:0, until:'' }],
+  loans: [],
   otherCf: 0          /* その他の資金の出入り（設備投資など・年額。出ていくならマイナス） */
 };
 var PLAN_LABEL = {
@@ -4198,7 +4209,6 @@ function ordNeedMonths(ref){
   });
   return out;
 }
-function ordMonthLabel(ref){ return jpYear(ref.getFullYear())+(ref.getMonth()+1)+'月分'; }
 
 function viewOrder(el){
   if(!S.ordRef) S.ordRef = new Date(S.date);
@@ -4325,7 +4335,7 @@ function orderPick(el){
   '<div class="card" style="padding:11px 13px">'+
     '<div class="row" style="gap:8px">'+
       '<span class="lbl" style="margin:0;white-space:nowrap;font-size:15px">取引先をさがす</span>'+
-      '<input id="oq" lang="ja" value="'+esc(S.q)+'" placeholder="コード・店名・よみ（例 20-001／ばーみなもと）" '+
+      '<input id="oq" lang="ja" value="'+esc(S.q)+'" placeholder="コード・店名・よみ（例 20-001／まるまるさかば）" '+
         'style="flex:1;min-width:220px;font-size:19px;padding:12px 13px" autocomplete="off">'+
     '</div>'+
     '<div class="row" style="margin-top:9px">'+
@@ -4709,7 +4719,7 @@ function viewMaster(el){
   '<p class="muted" style="margin-top:8px">行をタップで編集。左の「⠿」をドラッグすると好きな並び順にできます（検索中は並び替え不可）。'+
     'コードは 20締＝20-001〜、25締＝25-001〜、末締＝30-001〜、締めナシ＝00-001〜 で自動採番されます。</p>'+
   '<div class="kgnote" style="margin-top:10px"><b>締めナシ</b>＝口座はあるけれど締め日がなく、'+
-    '行くたびに現金でもらう先（てきとう・bar Land など）。'+
+    '行くたびに現金でもらう先（コードが 00- の先）。'+
     '<b>請求書・売掛帳・配達伝票・注文入力には出ません。</b>'+
     '売上は<b>小口現金タブの「① 現金売上」</b>で、その都度入れてください。'+
     '<span class="muted">　口座を作っていない先の店売上は、①の取引先で <b>その他（店売上）00-001</b> を選びます'+
@@ -4809,11 +4819,11 @@ function renderEditForm(box){
         '<div class="muted" style="font-size:10.5px;margin-top:3px">'+
           (f.shime===SHIME_NONE?'00-000番台（締めナシ）':(SHIME_PREFIX[f.shime]/1000+'000番台'))+'</div></div>'+
       '<div><label class="lbl">請求書宛先名（必須）<span style="font-weight:400">― 請求書・伝票の「◯◯ 様」にそのまま印字されます</span></label>'+
-        '<input id="f_name" lang="ja" value="'+esc(f.name)+'" placeholder="例：祇をん三上" style="'+IN+'"></div>'+
+        '<input id="f_name" lang="ja" value="'+esc(f.name)+'" placeholder="例：〇〇酒場" style="'+IN+'"></div>'+
       '<div style="grid-column:1/-1"><label class="lbl">よみ（かな）― 検索用。ひらがな・カタカナどちらでも検索でヒットします</label>'+
-        '<input id="f_yomi" lang="ja" value="'+esc(f.yomi)+'" placeholder="例：ばーみなもと" style="'+IN+'"></div>'+
+        '<input id="f_yomi" lang="ja" value="'+esc(f.yomi)+'" placeholder="例：まるまるさかば" style="'+IN+'"></div>'+
       '<div style="grid-column:1/-1"><label class="lbl">振込名義 <span style="font-weight:400">― 通帳・当座勘定照合表に出る名前。屋号とちがうことがあります</span></label>'+
-        '<input id="f_alias" lang="ja" value="'+esc(f.alias||'')+'" placeholder="例：パクスゴン（バッカス・OWL・alchemist のまとめ払い）" style="'+IN+'">'+
+        '<input id="f_alias" lang="ja" value="'+esc(f.alias||'')+'" placeholder="例：ヤマダ タロウ（通帳に出る名前。まとめ払いの名義でもよい）" style="'+IN+'">'+
         '<div class="muted" style="font-size:10.5px;margin-top:3px">'+
           '個人事業主は屋号と個人名が別です。まとめ払いの名義もここに書いておくと、'+
           '通帳の名前で検索したときにこの店が出ます。売掛は店ごとのままです。</div></div>'+
@@ -5018,7 +5028,7 @@ function printMasterList(shime){
       '<td class="c">'+(usesOther(c)?'○':'')+'</td>'+
       '<td class="c">'+(c.taxIncl?'税込':'税別')+'</td>'+
       '<td class="c">'+(c.slip?'要':'')+'</td>'+
-      '<td class="c">'+(c.pay||'')+'</td>'+
+      '<td class="c">'+esc(c.pay||'')+'</td>'+
       '<td style="font-size:9.5px">'+esc(c.note)+'</td>'+
       '<td style="width:58mm"></td>'+
     '</tr>';
@@ -6314,7 +6324,7 @@ function attachChip(){
     var inner = pp.url
       ? '<span class="pc-ok">✓</span>'
       : (pp.type==='pdf' ? '<span class="pc-pdf">PDF</span>'
-                         : '<img src="'+pp.data+'" alt="">');
+                         : '<img src="'+esc(safeImgSrc_(pp.data))+'" alt="">');
     return '<span class="pchip'+(pp.url?' done':'')+(pp.busy?' busy':'')+'" data-pi="'+i+'">'+
       inner+
       '<button class="pcx tap" data-pdel="'+i+'" title="この1枚を外す">✕</button>'+
@@ -6332,7 +6342,7 @@ function bindChip(el){
     c.onclick=function(ev){
       if(ev.target && ev.target.hasAttribute && ev.target.hasAttribute('data-pdel')) return;
       var pp=cashPics()[+c.dataset.pi]; if(!pp) return;
-      if(pp.url){ window.open(pp.url,'_blank'); return; }
+      if(pp.url){ safeOpen_(pp.url); return; }
       if(pp.type==='pdf') openDataUrl(pp.data); else lightbox(pp.data);
     };
   });
@@ -6733,10 +6743,6 @@ var JTAX=[
   {v:'7', t:'非課税仕入'},
   {v:'3', t:'非課税売上'}
 ];
-function jtaxText(v){
-  for(var i=0;i<JTAX.length;i++) if(JTAX[i].v===String(v)) return JTAX[i].t;
-  return String(v||'');
-}
 /** 辞書の1件を、欠けているところを埋めて返す（サーバの jdicNorm_ と同じ形） */
 function jdNorm(d){
   d=d||{};
@@ -6759,11 +6765,6 @@ var CASH_JOURNAL_C={ slipNo:999, voucherNo:'999',
   cashCode:'1111', cashName:'現金', cashSubName:'小口現金' };
 function jdUid(){ return 'jd'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function jdicList(){ return (DB.jdic||[]).map(jdNorm); }
-function jdicOf(id){
-  var l=jdicList();
-  for(var i=0;i<l.length;i++) if(l[i].id===String(id)) return l[i];
-  return null;
-}
 /** 型（CASH_KINDS）1つを、辞書の1件の形にする */
 function jdFromKind(k, id){
   return jdNorm({id:id||jdUid(), grp:(k.dir==='in'?'入金':'出金'),
@@ -6844,30 +6845,10 @@ function jRows(m){
 }
 function jMap(m){ return DB.jmap[jkey(m)] || (DB.jmap[jkey(m)]={}); }
 function jkey(m){ return 'jmap:'+ym(m); }
-/** まだ【確定していない】もの（「済んだぶんも出す」なら全部）
-
-    ★ 辞書を押しただけでは一覧から外さない（2026-09-21）。
-      外すと、押した瞬間にその1件が消えて［これで確定］を押せなくなる。
-      押す＝下書き（e.d）、確定＝e.ok。人の手が最後に要る。 */
-function jTodo(m){
-  var mp=jMap(m);
-  return jRows(m).filter(function(x){
-    if(S.jDone) return true;
-    var e=mp[String(x.id)];
-    return !(e && (e.ok || e.skip));
-  });
-}
-/** 仕訳ができた件数（下書きでも数える。エクセルにはこれが出る） */
-function jDoneN(m){
-  var mp=jMap(m);
-  return jRows(m).filter(function(x){
-    var e=mp[String(x.id)]; return !!(e && (e.d || e.skip)); }).length;
-}
 function jSaveMap(m){
   var k=jkey(m);
   mapSave(k, DB.jmap[k]||{});
 }
-function jSaveDic(){ listSave('jdic:master', DB.jdic||[], 'id'); }
 
 /* ---- 画面 ---- */
 /* ============================================================
@@ -6890,23 +6871,10 @@ function driveId_(u){
 /* ★ w1600 は重い。読むだけなら w1000 で足りるので、出るまでが速い（2026-09-22）。
      細かく見たいときは「大きく見る ↗」で原寸をひらく */
 function driveThumb_(id, w){ return 'https://drive.google.com/thumbnail?id='+id+'&sz=w'+(w||1000); }
-/** ★ 次の1件の写真を、裏で先に読んでおく。押した瞬間に出るようにするため */
-function jShotPrefetch(m){
-  try{
-    var todo=jTodo(m), nx=todo[S.jIdx+1]; if(!nx) return;
-    var us=(Array.isArray(nx.pics)&&nx.pics.length)
-      ? nx.pics.map(function(pp){return pp.url||'';}).filter(Boolean)
-      : (nx.imgUrl?[nx.imgUrl]:[]);
-    us.slice(0,2).forEach(function(u){
-      var id=driveId_(u); if(!id||jShotCache[id]) return;
-      var im=new Image(); im.referrerPolicy='no-referrer'; im.src=driveThumb_(id);
-    });
-  }catch(e){}
-}
 
 function jShotHtml(u, i, n){
   var id = driveId_(u);
-  if(!id) return '<a class="jshot link" href="'+esc(u)+'" target="_blank" rel="noopener">領収書をひらく</a>';
+  if(!id) return '<a class="jshot link" href="'+esc(safeUrl_(u)||'#')+'" target="_blank" rel="noopener">領収書をひらく</a>';
   var cached = jShotCache[id];
   var src = cached || driveThumb_(id);
   return '<div class="jshot" data-jfid="'+esc(id)+'">'+
@@ -6915,7 +6883,7 @@ function jShotHtml(u, i, n){
       ' fetchpriority="high" decoding="async"'+
       (cached?'':' data-jthumb="1"')+'>'+
     '<button class="jretry tap" data-jretry="'+esc(id)+'">もう一度読む</button>'+
-    '<a class="jopen" href="'+esc(u)+'" target="_blank" rel="noopener">大きく見る ↗</a>'+
+    '<a class="jopen" href="'+esc(safeUrl_(u)||'#')+'" target="_blank" rel="noopener">大きく見る ↗</a>'+
   '</div>';
 }
 
@@ -7887,17 +7855,6 @@ function jMakeBoxHtml(m, done, total){
 var JD_DIRECT='__direct';
 /** 取引先コードの桁。**Code.js の JOURNAL.codeDigits と同じ値。片方だけ直さない。** */
 var JRN_CODE_DIGITS=6;
-/** ★★★ 伝票直接入力の土台（2026-09-22）
-    辞書を使わずに、伝票のマスへ直に打つときの「空の1件」。
-    向きだけは記録から取る（出金なら借方が相手・貸方が現金）。
-    ここに ov を重ねたものが、そのまま伝票になり、エクセルの1行になる。
-    **サーバ（cashJournalSource_）も同じ土台を作る。片方だけ直さない。** */
-function jDirectBase(x){
-  var b=jdNorm({id:JD_DIRECT, name:'（直接入力）', dir:(x&&x.dir==='in'?'in':'out'), tax:'0'});
-  b.memo=String((x&&x.memo)||'');
-  b.direct=1;
-  return b;
-}
 /** その1件だけの直し（ov）を辞書に重ねた「いま効いている値」
     ★ 画面（伝票）と、サーバが書き出す44列は、**同じものから作る**。
       だから Code.js の cashJournalSource_ も同じ重ね方をする。片方だけ直さない */
@@ -7920,132 +7877,7 @@ function jEff(d, ov, x){
   if(ov && ov.rate!==undefined && ov.rate!=='') o.red = (o.rate===8?1:0);
   return o;
 }
-/** 伝票に出す値を1か所で作る（表と、電話の1枚ものが食いちがわないように） */
-function jDenpyoVals(x, d){
-  var J=CASH_JOURNAL_C;
-  var g=Math.round(Number(x.amount)||0);
-  var taxable = !!(d && taxOn_(d.tax, d.rate));
-  var tax = taxable ? Math.floor(g*d.rate/(100+d.rate)) : 0;
-  var cash={code:J.cashCode, name:J.cashName, sub:'', subName:J.cashSubName, tax:'0', biz:''};
-  var side=d?{code:d.acct, name:d.acctName||'', sub:d.sub||'', subName:d.subName||'',
-              tax:d.tax, biz:d.biz}:{code:'',name:'',sub:'',subName:'',tax:'',biz:''};
-  return { J:J, g:g, taxable:taxable, tax:tax, net:g-tax,
-           dr:(d&&d.dir==='in')?cash:side, cr:(d&&d.dir==='in')?side:cash,
-           drIsCash:!!(d&&d.dir==='in'),
-           day:String(x.date).replace(/-/g,'/'),
-           rateTxt: !d ? '' : (taxable ? ('判定('+(d.red?'軽':'標')+')') : '—'),
-           /* ★ 取引先は【コード】と【名前】を別々に持つ（2026-09-23）。
-                コードがそのままエクセルの33列目になるので、画面でも別のマスで見せる */
-           partyCode: d?String(d.party||''):'',
-           party: d?String(d.partyName||''):'',
-           memo: (x.__note!=null ? x.__note : (x.memo||(d?d.memo:''))) };
-}
 
-/** ★★★ 伝票の様式（2026-09-21／2026-09-22 に作り直した）
-
-    市成商会の仕訳辞書［修正］と同じ並び。事務所の職員がいちばん見なれている形で、
-    一括読み込みエクセルを取り込んだあとも FX の中でこの形で見える。
-
-    ★★ 電話では【横スクロールさせない】（2026-09-22）。
-      11列は 390px には入らないので、電話だけ**同じ値を縦に組み直した1枚もの**を出す。
-      値は jDenpyoVals で1か所から作るので、表と食いちがわない。
-
-    ★★ マスは【その場で直せる】（2026-09-22）。
-      辞書どおりでない1件（科目を変える・補助を変える・取引先を足す）が必ず出る。
-      直したぶんは その1件だけ に効く（`jmap[id].ov`）。辞書そのものは動かさない。 */
-/** ★ opt.list … 仕訳伝票一覧の中に出すとき。1画面に何十枚も並ぶので
-      id（#jnote / #jnotesp）は付けない（同じ id が重なると直しが1件めに飛ぶ）。
-      どの記録の伝票かは、外枠の data-jrow で分かるようにしてある */
-function jDenpyoHtml(x, d, opt){
-  var inList=!!(opt&&opt.list);
-  var v=jDenpyoVals(x,d);
-  var e_=function(q){ return esc(q==null?'':String(q)); };
-  var blank = d ? '' : ' jempty';
-  /* 直せるマス。data-ov がそのまま ov のキーになる */
-  var inp=function(key,val,cls){
-    return '<input class="dpin '+(cls||'')+'" data-ov="'+key+'" value="'+esc(val==null?'':String(val))+'">'; };
-  var sideKey=function(base){ return base; };   /* 直せるのは「現金でないほう」だけ */
-  var dcell=function(which,what){
-    /* 借方・貸方のうち、現金でないほうだけ直せる（相手はいつも 1111 現金） */
-    var isSide = (which==='dr') ? !v.drIsCash : v.drIsCash;
-    var o = (which==='dr')?v.dr:v.cr;
-    if(!d || !isSide) return e_(o[what]);
-    var map={code:'acct', sub:'sub', name:'acctName', subName:'subName'};
-    return inp(map[what], o[what], what==='code'||what==='sub'?'c':'');
-  };
-
-  return '<div class="dp'+blank+'" data-jrow="'+esc(x.id)+'">'+
-    '<div class="dpname"><span>仕訳の種類名</span><b>'+(d?esc(d.name):'（辞書を選んでください）')+'</b>'+
-      (d?'<span class="dpedit">マスは直せます（この1件だけ）</span>':'')+'</div>'+
-    '<div class="dpwrap"><table class="dptbl">'+
-      /* ★ 列幅は決め打ち。決めないと11列が均等になって、
-           見出しが重なり、日付も金額も「…」で切れる */
-      '<colgroup>'+
-        '<col style="width:104px"><col style="width:46px">'+
-        '<col style="width:60px"><col style="width:40px">'+
-        '<col style="width:60px"><col style="width:40px">'+
-        '<col style="width:112px"><col style="width:70px">'+
-        '<col style="width:72px"><col style="width:116px"><col style="width:44px">'+
-      '</colgroup>'+
-      '<thead>'+
-        '<tr><th>年月日</th><th></th><th colspan="2">借 方 科 目</th><th colspan="2">貸 方 科 目</th>'+
-          '<th>取 引 金 額</th><th>税 率</th><th>小切手番号</th><th>実際の仕入れ年月日</th><th>収支</th></tr>'+
-        '<tr><th>伝番</th><th>課税</th><th colspan="2">科 目 名</th><th colspan="2">科 目 名</th>'+
-          '<th>（内、消費税等）</th><th colspan="4">取引先名（仕入先の氏名又は名称）</th></tr>'+
-        '<tr><th>証番</th><th>事業</th><th colspan="2">口 座 名</th><th colspan="2">口 座 名</th>'+
-          '<th>税 抜 き 金 額</th><th colspan="4">元帳摘要（仕入れ資産等の総称）</th></tr>'+
-      '</thead>'+
-      '<tbody>'+
-        '<tr class="r1"><td class="k">'+e_(v.day)+'</td><td></td>'+
-          '<td class="c">'+dcell('dr','code')+'</td><td class="c">'+dcell('dr','sub')+'</td>'+
-          '<td class="c">'+dcell('cr','code')+'</td><td class="c">'+dcell('cr','sub')+'</td>'+
-          '<td class="r num">'+(v.g?yen(v.g):'0')+'</td>'+
-          '<td class="c">'+(d?inp('rate', d.rate||0,'c')+
-            '<span class="dprt">'+e_(v.rateTxt)+'</span>':e_(v.rateTxt))+'</td>'+
-          '<td></td><td class="c">'+(v.taxable?e_(v.day):'')+'</td><td></td></tr>'+
-        '<tr class="r2"><td class="c">'+e_(d?v.J.slipNo:'')+'</td><td class="c">'+
-          (d?inp('tax',v.dr.tax===''?v.cr.tax:v.dr.tax,'c'):'')+'</td>'+
-          '<td colspan="2">'+dcell('dr','name')+'</td><td colspan="2">'+dcell('cr','name')+'</td>'+
-          '<td class="r num">'+(v.taxable?yen(v.tax):'')+'</td>'+
-          '<td colspan="4">'+(d?'<span class="dpparty">'+
-            inp('party',v.partyCode,'c pcode')+inp('partyName',v.party)+'</span>':'')+'</td></tr>'+
-        '<tr class="r3"><td class="c">'+e_(d?v.J.voucherNo:'')+'</td><td class="c">'+e_(v.dr.biz)+'</td>'+
-          '<td colspan="2">'+dcell('dr','subName')+'</td><td colspan="2">'+dcell('cr','subName')+'</td>'+
-          '<td class="r num">'+(d?yen(v.net):'')+'</td>'+
-          '<td colspan="4">'+(d?'<input '+(inList?'':'id="jnote" ')+
-            'class="dpin dpnote" value="'+esc(v.memo)+'">':'')+'</td></tr>'+
-      '</tbody>'+
-    '</table></div>'+
-    /* ★★ 電話だけの1枚もの。同じ値を縦に組み直す（横スクロールさせない） */
-    '<div class="dpsp">'+
-      '<div class="spr"><span class="spl">年月日</span><b>'+e_(v.day)+'</b>'+
-        (d?'':'<span class="spt">'+e_(v.rateTxt)+'</span>')+'</div>'+
-      '<div class="spr"><span class="spl">借方</span>'+
-        '<span class="spv">'+dcell('dr','code')+' '+dcell('dr','name')+'</span></div>'+
-      (String(v.dr.sub||'')||(!v.drIsCash&&d)
-        ? '<div class="spr sub"><span class="spl">補助</span>'+
-          '<span class="spv">'+dcell('dr','sub')+' '+dcell('dr','subName')+'</span></div>' : '')+
-      '<div class="spr"><span class="spl">貸方</span>'+
-        '<span class="spv">'+dcell('cr','code')+' '+dcell('cr','name')+'</span></div>'+
-      (String(v.cr.sub||'')||(v.drIsCash&&d)
-        ? '<div class="spr sub"><span class="spl">補助</span>'+
-          '<span class="spv">'+dcell('cr','sub')+' '+dcell('cr','subName')+'</span></div>' : '')+
-      '<div class="spr big"><span class="spl">取引金額</span><b class="num">'+(v.g?yen(v.g):'0')+'</b>'+
-        (v.taxable?'<span class="spt">内 消費税 '+yen(v.tax)+'／税抜 '+yen(v.net)+'</span>':'')+'</div>'+
-      (d?'<div class="spr"><span class="spl">課税</span>'+
-        '<span class="spv">'+inp('tax',v.dr.tax===''?v.cr.tax:v.dr.tax,'c')+'</span></div>':'')+
-      (d?'<div class="spr"><span class="spl">税率</span>'+
-        '<span class="spv">'+inp('rate',d.rate||0,'c')+
-        '<span class="spt">'+e_(v.rateTxt)+'</span></span></div>':'')+
-      (d?'<div class="spr"><span class="spl">取引先</span>'+
-        '<span class="spv dpparty">'+inp('party',v.partyCode,'c pcode')+
-        inp('partyName',v.party)+'</span></div>':'')+
-      (d?'<div class="spr"><span class="spl">元帳摘要</span>'+
-        '<span class="spv"><input '+(inList?'':'id="jnotesp" ')+
-        'class="dpin dpnote" value="'+esc(v.memo)+'"></span></div>':'')+
-    '</div>'+
-  '</div>';
-}
 
 /** ★★★ その1件の【取引先】（2026-09-23）
 
@@ -8067,7 +7899,7 @@ function jPartyOf(x){
 
     **顧問先が入力のときに選んだ取引先を、そのまま伝票へ追認する。**
     事務所は写真と伝票を見て仕訳を当てるだけで、その1件が
-    ほんとうに辰之助への回収だったかまでは確かめられない。
+    ほんとうにその店への回収だったかまでは確かめられない。
     だから **初期に入力されている情報を追認して進む** ── それが決まりごと。
 
     コードは アプリ `20-021` → FX `020021`（数字だけにして6桁へ左0詰め）。
@@ -8096,517 +7928,12 @@ function jKindLabel(x){
   return String((x&&x.memo)||'') || '（取引の種類が入っていません）';
 }
 
-/** ★★★ その1件に、いま効いている仕訳（辞書 ＋ その1件だけの直し ov）。
-    **サーバ（cashJournalSource_）と同じ決め方。片方だけ直さない。**
-    ・辞書を当てていれば、それに ov を重ねたもの
-    ・辞書を使わず伝票へ直に打ったものは、科目が入っていれば直接入力の1件
-    ・どちらでもなければ null（エクセルに入らない） */
-function jEffOf(x, e){
-  e=e||{};
-  var d0=(e.d && e.d!==JD_DIRECT) ? jdicOf(e.d) : null;
-  if(d0) return jEff(d0, e.ov, x);
-  if(e.d===JD_DIRECT || (e.ov && String(e.ov.acct||''))){
-    var dd=jEff(jDirectBase(x), e.ov, x);
-    return String(dd.acct||'') ? dd : null;
-  }
-  return null;
-}
 
-/** ★★★ 一括読み込みエクセルで【エラーにならないか】を先に見る（2026-09-22）
 
-    FXクラウドは、行の形が合っていないとその場で弾く。弾かれてから直すと
-    どの行かを探すことになるので、**当てた時点でここに出す**。
-    出ているうちは、その1件はエクセルに入らない。 */
-function jIssues(x, d){
-  var out=[];
-  if(!d) return ['まだ仕訳を当てていません'];
-  if(!/^\d{4}$/.test(String(d.acct||''))) out.push('勘定科目コードが4桁の数字ではありません');
-  if(!String(d.acctName||'')) out.push('勘定科目名が空です');
-  if(String(d.sub||'')!=='' && !/^\d{1,3}$/.test(String(d.sub))) out.push('補助コードは数字だけです');
-  var hasTax=(String(d.tax)!=='0' && String(d.tax)!=='');
-  var rate=Number(d.rate)||0;
-  if(hasTax && !rate) out.push('課税区分が入っているのに税率が 0 です');
-  if(!hasTax && rate) out.push('税率が入っているのに課税区分が「対象外」です');
-  if(rate && rate!==8 && rate!==10) out.push('税率は 8% か 10% です');
-  /* ★ 取引先コードは【数字だけの6桁】。FX は形がちがうとその場で弾く（2026-09-23）。
-       空はよい（簡易課税なので取引先は必須ではない） */
-  if(String(d.party||'')!=='' && !/^\d{6}$/.test(String(d.party)))
-    out.push('取引先コードは数字6桁です（アプリの 20-021 なら 020021）');
-  if(!(Math.round(Number(x.amount)||0)>0)) out.push('金額が 0 です');
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(x.date||''))) out.push('日付の形がちがいます');
-  return out;
-}
 
-/** その月の1件ずつを見て、状態（ok／bad／todo／skip）と伝票を組み立てる */
-function jScan(m){
-  var mp=jMap(m);
-  return jRows(m).map(function(x){
-    var e=mp[String(x.id)]||{};
-    var d=jEffOf(x,e);
-    var iss=jIssues(x,d);
-    var st = e.skip ? 'skip' : (!e.ok ? 'todo' : (iss.length ? 'bad' : 'ok'));
-    return {x:x, e:e, d:d, iss:iss, st:st};
-  });
-}
-/** エクセルに実際に入る件数（確定していて、伝票として通るもの） */
-function jExcelN(m){
-  return jScan(m).filter(function(r){ return r.st==='ok'; }).length;
-}
 
-/** ★★★ 仕訳伝票一覧（2026-09-22）
 
-    **辞書を上から貼り付けたあと、伝票の形で下にずらっと並べて最終確認するところ。**
-    事務所がここで責任を持って、一括読み込みエクセルに入る形まで仕上げる。
 
-    ・並ぶのは、そのままエクセルの1行になる値（伝票は jDenpyoHtml で同じものを使う）
-    ・**マスはその場で直せる**（その1件だけに効く。辞書は動かさない）
-    ・**証憑の写真をもう一度ひらける**（押すと、その行の下に出る）
-    ・エクセルに入らないものは赤く出して、何が足りないかを書く */
-function jListHtml(m){
-  var dic=jdicList();
-  var info=jScan(m);
-  var n={ok:0,bad:0,todo:0,skip:0}, sum=0;
-  info.forEach(function(r){
-    n[r.st]++;
-    if(r.st==='ok') sum+=Math.round(Number(r.x.amount)||0);
-  });
-  var f=S.jlFilter||'all';
-  var fbtn=[['all','ぜんぶ '+info.length],['ok','✓ 通る '+n.ok],
-            ['todo','まだ '+n.todo],['bad','！ エラー '+n.bad]]
-    .map(function(q){
-      return '<button class="jfb tap'+(f===q[0]?' on':'')+'" data-jlf="'+q[0]+'">'+
-        esc(q[1])+'</button>'; }).join('');
-
-  var head='<div class="cbox jlhead">'+
-    '<div class="cbox-h"><span class="ti">仕訳伝票一覧</span>'+
-      '<span class="hint">ここで最終確認します。マスはその場で直せます</span></div>'+
-    '<div class="jlsum">'+
-      '<span>エクセルに入るのは <b class="jbig">'+n.ok+'</b> 件　'+yen(sum)+'</span>'+
-      (n.bad?'<span class="ng">！ エラー '+n.bad+' 件</span>':'')+
-      (n.todo?'<span class="warn">まだ確定していない '+n.todo+' 件</span>':'')+
-      (n.skip?'<span class="muted">とばした '+n.skip+' 件</span>':'')+
-    '</div>'+
-    '<div class="jlbar">'+fbtn+
-      '<label class="jchk"><input type="checkbox" id="jlshots"'+(S.jlShots?' checked':'')+'>'+
-        '領収書をぜんぶ出す</label>'+
-      (n.todo?'<button class="btn ghost tap sm" id="jlallok">'+
-        'エラーの無いものをまとめて確定する</button>':'')+
-    '</div></div>';
-
-  var show=info.filter(function(r){
-    if(f==='all') return true;
-    if(f==='ok') return r.st==='ok';
-    if(f==='bad') return r.st==='bad';
-    return r.st==='todo';
-  });
-  if(!show.length){
-    return head+'<div class="cbox"><p class="muted">ここに出すものはありません。</p></div>';
-  }
-  var body=show.map(function(r,i){
-    var x=r.x, e=r.e, d=r.d;
-    var urls=(Array.isArray(x.pics)&&x.pics.length)
-      ? x.pics.map(function(pp){ return pp.url||''; }).filter(Boolean)
-      : (x.imgUrl?[x.imgUrl]:[]);
-    var open=!!(S.jlShots || (S.jlOpen||{})[x.id]);
-    var side=dic.filter(function(q){ return q.dir===x.dir; });
-    var opts='<option value="">— 当てていません —</option>'+
-      '<option value="'+JD_DIRECT+'"'+(e.d===JD_DIRECT?' selected':'')+'>（伝票に直接入れる）</option>'+
-      side.map(function(q,k){
-        return '<option value="'+esc(q.id)+'"'+(String(e.d)===String(q.id)?' selected':'')+'>'+
-          (k+1)+'. '+esc(q.name)+'</option>'; }).join('');
-    return '<div class="jrow '+r.st+'" data-jr="'+esc(x.id)+'">'+
-      '<div class="jrh">'+
-        '<span class="jrno">'+(i+1)+'</span>'+
-        '<b class="jrd">'+esc(String(x.date).slice(5).replace('-','/'))+'</b>'+
-        '<span class="jra num">'+yen(x.amount)+'</span>'+
-        '<span class="jrdir '+(x.dir==='in'?'in':'out')+'">'+(x.dir==='in'?'入金':'出金')+'</span>'+
-        '<select class="jrsel" data-jrd="'+esc(x.id)+'">'+opts+'</select>'+
-        (urls.length
-          ? '<button class="btn ghost tap sm" data-jrshot="'+esc(x.id)+'">'+
-              '領収書'+(urls.length>1?' ×'+urls.length:'')+(open?' を閉じる':'')+'</button>'
-          : '<span class="muted jrnone">領収書なし</span>')+
-        '<label class="jrok"><input type="checkbox" data-jrok="'+esc(x.id)+'"'+
-          (e.ok?' checked':'')+'>確定</label>'+
-        '<button class="btn ghost tap sm" data-jfix="'+esc(x.id)+'">出納帳を直す</button>'+
-      '</div>'+
-      /* ★★★ 顧問先が選んだ【取引の種類】と【取引先】（2026-09-23）。
-           1件ずつ確かめるところなので、ここに無いと何の取引か分からない */
-      '<div class="jrh2">'+
-        '<span class="jl">取引の種類</span><b class="jkind">'+esc(jKindLabel(x))+'</b>'+
-        (jPartyOf(x)?'<span class="jl">取引先</span>'+jPartyHtml(x):'')+
-        (String(x.memo||'')!==String(jKindLabel(x))
-          ? '<span class="jl">摘要</span><span class="jmemo">'+esc(x.memo||'')+'</span>' : '')+
-      '</div>'+
-      (open&&urls.length
-        ? '<div class="jshots jrsh">'+urls.map(function(u,i3){
-            return jShotHtml(u,i3,urls.length); }).join('')+'</div>'
-        : '')+
-      jDenpyoHtml(x, d, {list:1})+
-      (r.iss.length?'<div class="jiss">！ '+r.iss.map(esc).join('／')+'</div>':'')+
-    '</div>';
-  }).join('');
-  return head+'<div class="jlist">'+body+'</div>';
-}
-
-/** 仕訳伝票一覧の配線。マスの直しは jBind が（行ごとに）受け持つ */
-function jListBind(el, m){
-  var mp=jMap(m);
-  el.querySelectorAll('[data-jlf]').forEach(function(b){ b.onclick=function(){
-    S.jlFilter=b.dataset.jlf; render(); }; });
-  var sh=el.querySelector('#jlshots');
-  if(sh) sh.onchange=function(){ S.jlShots=sh.checked; render(); };
-  el.querySelectorAll('[data-jrshot]').forEach(function(b){ b.onclick=function(){
-    S.jlOpen=S.jlOpen||{};
-    var id=b.dataset.jrshot;
-    if(S.jlOpen[id]) delete S.jlOpen[id]; else S.jlOpen[id]=1;
-    render(); }; });
-  /* 辞書のえらび直し。★ 変えたら、その1件だけの直し（ov）は捨てる */
-  el.querySelectorAll('[data-jrd]').forEach(function(q){ q.onchange=function(){
-    var id=q.dataset.jrd, e=mp[String(id)]||{};
-    if(String(e.d||'')!==String(q.value)){ delete e.ov; delete e.note; }
-    if(q.value) e.d=q.value; else delete e.d;
-    delete e.skip;
-    mp[String(id)]=e; jSaveMap(m); render(); }; });
-  el.querySelectorAll('[data-jrok]').forEach(function(c){ c.onchange=function(){
-    var id=c.dataset.jrok, e=mp[String(id)]||{};
-    if(c.checked){ e.ok=1; delete e.skip; e.at=ymd(new Date()); } else delete e.ok;
-    mp[String(id)]=e; jSaveMap(m); render(); }; });
-  var ao=el.querySelector('#jlallok');
-  if(ao) ao.onclick=function(){
-    var n2=0;
-    jScan(m).forEach(function(r){
-      if(r.st!=='todo') return;
-      if(!r.d || r.iss.length) return;
-      var e=mp[String(r.x.id)]||{}; e.ok=1; e.at=ymd(new Date());
-      mp[String(r.x.id)]=e; n2++;
-    });
-    if(!n2){ toast('まとめて確定できるものはありませんでした'); return; }
-    jSaveMap(m); render(); toast(n2+'件を確定しました');
-  };
-}
-
-function jdicBoxHtml(dic){
-  if(!S.jOpen){
-    return '<div class="cbox jdicbox"><button class="jopen tap" id="jopen">'+
-      '＋ 仕訳辞書を登録する・直す（いま '+dic.length+'件）</button></div>';
-  }
-  var e=S.jEditId?(jdicOf(S.jEditId)||jdNorm({})):jdNorm({});
-  var opt=function(list,cur){ return list.map(function(o){
-    return '<option value="'+esc(o.v)+'"'+(String(cur)===String(o.v)?' selected':'')+'>'+esc(o.t)+'</option>';
-  }).join(''); };
-  return '<div class="cbox jdicbox open">'+
-    '<div class="cbox-h"><span class="ti">仕訳辞書</span>'+
-      '<span class="hint">ここで決めた中身が、そのまま伝票になります</span>'+
-      '<button class="btn ghost tap sm" id="jclose" style="margin-left:auto">たたむ</button></div>'+
-    '<div class="jform">'+
-      '<div class="r2"><label class="lbl">見出し（☆のまとまり）</label>'+
-        '<input id="jf_grp" value="'+esc(e.grp)+'" placeholder="消耗品／旅費／給与 など"></div>'+
-      /* ★★★ 仕訳の種類名 ＝ 元帳摘要 ＝ 取引の種類（2026-09-22）。
-           3つを分けて登録させない。ここで打った言葉が、そのまま
-           顧問先が押す取引の種類の名前になり、元帳の摘要になり、伝票に出る */
-      '<div class="r2"><label class="lbl">仕訳の種類名 '+
-        '<em>※これを押して選びます。そのまま元帳摘要になります</em></label>'+
-        '<input id="jf_name" value="'+esc(e.name)+'" placeholder="消耗品（証明写真・置き薬含）"></div>'+
-      '<div><label class="lbl">向き</label><select id="jf_dir">'+
-        opt([{v:'out',t:'出金（払った）'},{v:'in',t:'入金（入った）'}], e.dir)+'</select></div>'+
-      '<div><label class="lbl">勘定科目コード</label><input id="jf_acct" value="'+esc(e.acct)+'" placeholder="6225"></div>'+
-      '<div><label class="lbl">勘定科目名</label><input id="jf_acctName" value="'+esc(e.acctName)+'" placeholder="備品消耗品費"></div>'+
-      '<div><label class="lbl">補助コード</label><input id="jf_sub" value="'+esc(e.sub)+'" placeholder="01"></div>'+
-      '<div><label class="lbl">補助（口座）名</label><input id="jf_subName" value="'+esc(e.subName)+'" placeholder="京信 河原町支店"></div>'+
-      '<div><label class="lbl">課税区分</label><select id="jf_tax">'+opt(JTAX, e.tax)+'</select></div>'+
-      '<div><label class="lbl">税率</label><select id="jf_rate">'+
-        opt([{v:'0',t:'—'},{v:'8',t:'8%'},{v:'10',t:'10%'}], e.rate)+'</select></div>'+
-      '<div><label class="lbl">軽減税率</label><select id="jf_red">'+
-        opt([{v:'0',t:'ちがう'},{v:'1',t:'軽減8%'}], e.red)+'</select></div>'+
-      '<div><label class="lbl">事業区分</label><input id="jf_biz" value="'+esc(e.biz)+'" placeholder="（空でよい）"></div>'+
-      '<div><label class="lbl">取引先コード</label><input id="jf_party" value="'+esc(e.party)+'" placeholder="004001"></div>'+
-      '<div><label class="lbl">取引先名 <em>※簡易課税なら空でよい</em></label>'+
-        '<input id="jf_partyName" value="'+esc(e.partyName)+'" placeholder="鳥居冷蔵"></div>'+
-    '</div>'+
-    '<div class="row" style="gap:8px;margin-top:10px">'+
-      '<button class="btn tap" id="jsave">'+(S.jEditId?'この辞書を直す':'辞書に足す')+'</button>'+
-      (S.jEditId?'<button class="btn ghost tap" id="jnew">＋ 新しく作る</button>':'')+
-      (S.jEditId?'<button class="btn ghost tap" id="jdel" style="color:var(--pink)">この辞書を消す</button>':'')+
-      '<button class="btn ghost tap" id="jresync" style="margin-left:auto">'+
-        '取引の種類に合わせて作り直す</button>'+
-    '</div>'+
-    '<div class="jdlist all">'+
-      dic.map(function(d){
-        return '<button class="jd tap'+(S.jEditId===d.id?' on':'')+'" data-jedit="'+d.id+'">'+
-          '<span class="jn '+(d.dir==='in'?'in':'out')+'">'+(d.dir==='in'?'入':'出')+'</span>'+
-          '<b>'+esc(d.name)+'</b>'+
-          '<span class="jsub">'+esc(d.grp)+'　'+esc(d.acctName||d.acct)+
-            (d.subName?'／'+esc(d.subName):'')+'　'+esc(jtaxText(d.tax))+
-            (d.rate?' '+d.rate+'%':'')+'</span></button>';
-      }).join('')+
-    '</div>'+
-  '</div>';
-}
-
-/** 辞書を当てて確定し、つぎの領収書へ。行番号→Enter も［これで確定］もここを通る */
-function jApply(m, x, d, el){
-  var mp=jMap(m);
-  var e=mp[String(x.id)]||{};
-  e.d=d.id; delete e.skip; e.ok=1; e.at=ymd(new Date());
-  var nt=el&&(el.querySelector('#jnote')||el.querySelector('#jnotesp'));
-  if(nt) e.note=nt.value;
-  mp[String(x.id)]=e; jSaveMap(m);
-  S.jLast={ id:x.id, d:String(x.date).slice(5).replace('-','/'), a:x.amount, n:d.name };
-  if(!S.jDone) S.jIdx=Math.min(S.jIdx, Math.max(0, jTodo(m).length-1));
-  else S.jIdx++;
-  S.jQ='';
-  if(S.jDirect) S.jFocus=0;   /* ★ つぎの1件も、いちばん上のマスから打てる */
-  render();
-}
-function jBind(el,m){
-  var mp=jMap(m), todo=jTodo(m), x=todo[S.jIdx]||null;
-  var chk=el.querySelector('#jdone');
-  if(chk) chk.onchange=function(){ S.jDone=chk.checked; S.jIdx=0; render(); };
-  /* ★ ［辞書を当てる］⇄［仕訳伝票一覧］ */
-  el.querySelectorAll('[data-jpane]').forEach(function(b){ b.onclick=function(){
-    S.jPane=b.dataset.jpane; S.jFocus=null; render(); }; });
-
-  /* --- 辞書を選ぶ（押す＝下書き。確定は［これで確定］か 空の Enter）---
-       ★ 辞書を選び直したら、その1件だけの直し（ov）は捨てる。
-         前の科目に当てた直しが、別の科目に残ると事故になる */
-  el.querySelectorAll('[data-jd]').forEach(function(b){ b.onclick=function(){
-    if(!x) return;
-    var e=mp[String(x.id)]||{};
-    if(e.d!==b.dataset.jd){ delete e.ov; delete e.note; }
-    e.d=b.dataset.jd; delete e.skip;
-    mp[String(x.id)]=e; jSaveMap(m); render();
-  }; });
-
-  /* ★ マスを直したら、その1件だけに効かせる（辞書は動かさない）。
-       data-ov のキーが、そのまま重ねる値の名前になる */
-  /* ★ どの記録の伝票かは、外枠の data-jrow で分かる（一覧では何枚も並ぶため）。
-       無ければ、いま見ている1件（辞書を当てる画面） */
-  var rowOf=function(inp){
-    var box=inp&&inp.closest?inp.closest('.dp'):null;
-    var id=box&&box.dataset?box.dataset.jrow:'';
-    return id || (x?String(x.id):'');
-  };
-  var saveOv=function(id,k,val){
-    if(!id) return;
-    var e=mp[String(id)]||{}; e.ov=e.ov||{};
-    if(String(val).trim()==='') delete e.ov[k]; else e.ov[k]=String(val).trim();
-    if(!Object.keys(e.ov).length) delete e.ov;
-    mp[String(id)]=e; jSaveMap(m);
-  };
-  var saveNote=function(id,val){
-    if(!id) return;
-    var e=mp[String(id)]||{}; e.note=String(val); mp[String(id)]=e; jSaveMap(m);
-  };
-  /* ★ いま打てるマスを、画面に出ている順に並べる。
-       表（パソコン）と1枚もの（電話）は両方 DOM にあって片方が display:none なので、
-       出ているほうだけを拾う（offsetParent が null なら出ていない） */
-  var jCells=function(){
-    var out=[];
-    el.querySelectorAll('.jright .dp input.dpin').forEach(function(q){
-      if(q.offsetParent!==null) out.push(q);
-    });
-    return out;
-  };
-  var commitCell=function(inp){
-    var id=rowOf(inp);
-    if(inp.dataset && inp.dataset.ov) saveOv(id, inp.dataset.ov, inp.value);
-    else saveNote(id, inp.value);
-  };
-  /* ★★★ 伝票直接入力のとき … Enter で次のマス、F1 で1つ戻る、
-       最後のマスから Enter で［これで確定］へ（2026-09-22）。
-       打った値は描き直して税率・消費税に効かせるので、
-       描き直したあとに戻る先を S.jFocus に覚えておく */
-  var cellKey=function(inp){
-    return function(ev){
-      if(ev.key==='F1'){
-        ev.preventDefault();
-        if(!S.jDirect) return;
-        var cs=jCells(), i5=cs.indexOf(inp);
-        S.jFocus=Math.max(0, i5-1);
-        commitCell(inp); render();
-        return;
-      }
-      if(ev.key!=='Enter') return;
-      ev.preventDefault();
-      if(!S.jDirect){ inp.blur(); return; }
-      var cs2=jCells(), i6=cs2.indexOf(inp);
-      S.jFocus=(i6+1>=cs2.length) ? 'ok' : (i6+1);
-      commitCell(inp); render();
-    };
-  };
-  el.querySelectorAll('.dp input.dpin').forEach(function(i2){
-    /* ★ 一覧では描き直さない。何十枚も並んでいるので、1マス打つたびに
-         全部を組み直すと、打っている場所が飛ぶ（値はもう入っている） */
-    i2.onchange=function(){ commitCell(i2); if(!S.jDirect && S.jPane!=='list') render(); };
-    i2.onkeydown=cellKey(i2);
-  });
-  /* ★ 行番号 ⇄ 伝票直接入力 の切り替え。既定は行番号 */
-  var md=el.querySelector('#jmode');
-  if(md) md.onclick=function(){
-    S.jDirect=!S.jDirect;
-    S.jFocus=S.jDirect?0:null;
-    render();
-  };
-
-  /* ★★★ 行番号 → Enter（2026-09-21）
-       これ1つで「辞書がセットされる → 伝票ができる → 次の領収書が出る」。
-       市成商会の仕訳辞書と同じ打ち方。番号を打ちまちがえても、
-       上の「✓ …　戻して直す」で1つ戻せる。 */
-  var cmd=el.querySelector('#jcmd');
-  if(cmd){
-    cmd.onkeydown=function(ev){
-      if(ev.key!=='Enter') return;
-      ev.preventDefault();
-      var v=String(cmd.value).replace(/[^0-9]/g,'');
-      if(!v){ if(ok) ok.click(); return; }   /* 空の Enter は［これで確定］と同じ */
-      var n=parseInt(v,10);
-      var side=jdicList().filter(function(d){ return d.dir===x.dir; });
-      var d=side[n-1];
-      if(!d){ toast(n+' 番の辞書はありません'); cmd.value=''; return; }
-      jApply(m, x, d, el);
-    };
-    setTimeout(function(){ try{ cmd.focus(); }catch(e2){} },40);
-  }
-  var bk=el.querySelector('#jback');
-  if(bk) bk.onclick=function(){
-    var id=S.jLast&&S.jLast.id;
-    S.jLast=null;
-    if(id){
-      var e2=mp[String(id)]||{}; delete e2.ok; mp[String(id)]=e2; jSaveMap(m);
-      S.jDone=false; S.jIdx=0;
-    }
-    render();
-  };
-
-  /* --- 進む・もどる・とばす --- */
-  var ok=el.querySelector('#jok');
-  if(ok){
-    ok.onclick=function(){
-      if(!x) return;
-      var e=mp[String(x.id)]||{};
-      var d=e.d?jdicOf(e.d):null;
-      /* ★ 伝票直接入力 … 辞書を選んでいなくても、科目が入っていれば確定できる */
-      if(!d && S.jDirect){
-        if(!(e.ov && String(e.ov.acct||''))){ toast('科目を入れてください'); return; }
-        d=jEff(jDirectBase(x), e.ov, x);
-      }
-      if(!d){ toast('辞書を選んでください'); return; }
-      jApply(m, x, d, el);
-    };
-    /* ★ 最後のマスから Enter で来たら、ここで Enter を押せば確定 */
-    ok.onkeydown=function(ev){
-      if(ev.key!=='Enter') return;
-      ev.preventDefault();
-      ok.click();
-    };
-  }
-  var sk=el.querySelector('#jskip');
-  if(sk) sk.onclick=function(){
-    if(!x) return;
-    var e=mp[String(x.id)]||{}; e.skip=1; delete e.d; delete e.ok;
-    mp[String(x.id)]=e; jSaveMap(m); S.jQ=''; render();
-  };
-  var pv=el.querySelector('#jprev');
-  if(pv) pv.onclick=function(){ S.jIdx=Math.max(0,S.jIdx-1); S.jQ=''; render(); };
-
-  /* --- 出納帳を直す（入力タブへ） --- */
-  el.querySelectorAll('[data-jfix]').forEach(function(b){ b.onclick=function(){
-    var id=b.dataset.jfix;
-    var y=(DB.cash[bkey(m)]||[]).filter(function(z){ return String(z.id)===id; })[0];
-    if(!y) return;
-    S.cashEdit=y; S.cashDir=y.dir; S.cashSide=y.dir; S.cashKind=y.kind||null;
-    S.cashPane='in'; S.cashJust=null; S.cashJustShow=false;
-    cashImgNewGen(); S.cashPics=cashPicsLoad(y);
-    render();
-  }; });
-  el.querySelectorAll('[data-jpdf]').forEach(function(b){ b.onclick=function(){
-    var y=(DB.cash[bkey(m)]||[]).filter(function(z){ return String(z.id)===b.dataset.jpdf; })[0];
-    if(!y) return;
-    var st=y.imgPend?rcptOf(y.id):null;
-    var raw=y.img||(st&&st.data)||null;
-    if(raw) openDataUrl(raw);
-  }; });
-
-  /* --- エクセルを作る --- */
-  var mk=el.querySelector('#jmake');
-  if(mk) mk.onclick=function(){
-    var out=el.querySelector('#jmakeout');
-    mk.disabled=true; if(out) out.textContent='作っています…';
-    srv('makeCashJournalFile',[ym(m)]).then(function(r){
-      mk.disabled=false;
-      if(!r||!r.ok){ if(out) out.textContent=(r&&r.msg)||'作れませんでした'; return; }
-      if(out) out.innerHTML='<b>'+r.count+'件・'+yen(r.total)+'</b> を '+r.files+'本 に分けて置きました。<br>'+
-        'Google ドライブ ＞ 顧問先アプリ ＞ 105_(有)丸京 ＞ '+esc(r.folder)+
-        (r.skip?'<br>（とばした '+r.skip+'件 は入っていません）':'');
-      toast('エクセルを置きました');
-    }).catch(function(e){ mk.disabled=false; if(out) out.textContent=String(e&&e.message||e); });
-  };
-
-  /* --- 辞書の登録・直し --- */
-  var op=el.querySelector('#jopen');
-  if(op) op.onclick=function(){ S.jOpen=true; render(); };
-  var cl=el.querySelector('#jclose');
-  if(cl) cl.onclick=function(){ S.jOpen=false; S.jEditId=null; render(); };
-  el.querySelectorAll('[data-jedit]').forEach(function(b){ b.onclick=function(){
-    S.jEditId=b.dataset.jedit; S.jOpen=true; render(); }; });
-  var nw=el.querySelector('#jnew');
-  if(nw) nw.onclick=function(){ S.jEditId=null; render(); };
-
-  var sv=el.querySelector('#jsave');
-  if(sv) sv.onclick=function(){
-    var g=function(id){ var e2=el.querySelector('#'+id); return e2?e2.value:''; };
-    /* ★ 摘要は名前と同じ（jdNorm が name から埋める）。分けて登録させない */
-    var d=jdNorm({id:S.jEditId||(jdUid()), grp:g('jf_grp'), name:g('jf_name'),
-      dir:g('jf_dir'), acct:g('jf_acct'), acctName:g('jf_acctName'),
-      sub:g('jf_sub'), subName:g('jf_subName'), tax:g('jf_tax'), biz:g('jf_biz'),
-      rate:g('jf_rate'), red:g('jf_red'), party:g('jf_party'), partyName:g('jf_partyName')});
-    if(!d.name){ toast('仕訳の種類名を入れてください'); return; }
-    if(!d.acct){ toast('勘定科目コードを入れてください'); return; }
-    DB.jdic=DB.jdic||[];
-    var i=-1;
-    DB.jdic.forEach(function(y,k){ if(String(y.id)===d.id) i=k; });
-    if(i>=0) DB.jdic[i]=d; else DB.jdic.push(d);
-    jSaveDic(); S.jEditId=d.id; render(); toast(i>=0?'直しました':'辞書に足しました');
-  };
-  var dl=el.querySelector('#jdel');
-  if(dl) dl.onclick=function(){
-    var d=jdicOf(S.jEditId); if(!d) return;
-    if(!confirm('この辞書を消します。\n\n'+d.name+'\n\nもう当ててある伝票はそのままです。よろしいですか？')) return;
-    DB.jdic=(DB.jdic||[]).filter(function(y){ return String(y.id)!==String(S.jEditId); });
-    jSaveDic(); S.jEditId=null; render(); toast('消しました');
-  };
-  /* ★ 取引入力の「取引の種類」に合わせて作り直す。
-       事務所が入れた科目は消さず、名前と並びだけ型にそろえる */
-  var sd=el.querySelector('#jresync');
-  if(sd) sd.onclick=function(){
-    var r=jdicResync();
-    DB.jdic=r.list;
-    jSaveDic(); S.jEditId=null; render();
-    toast('取引の種類に合わせました（足した '+r.add+'／直した '+r.upd+'）');
-  };
-  /* 前の名前のボタンが残っていても動くようにしておく */
-  var sd2=el.querySelector('#jseed');
-  if(sd2) sd2.onclick=function(){
-    var add=jdicSeed();
-    if(!add.length){ toast('足すものはありませんでした'); return; }
-    DB.jdic=(DB.jdic||[]).concat(add);
-    jSaveDic(); render(); toast(add.length+'件を辞書に足しました');
-  };
-
-  /* ★★★ 直接入力 … 描き直したあと、打っていたマスへ戻る（2026-09-22）。
-       マスを打つたびに描き直すのは、税率・消費税・税抜をその場で効かせるため。
-       戻り先を覚えておかないと、1マス打つごとにカーソルが飛ぶ */
-  if(S.jDirect && S.jFocus!=null){
-    var want=S.jFocus; S.jFocus=null;
-    setTimeout(function(){
-      try{
-        if(want==='ok'){ var b2=el.querySelector('#jok'); if(b2) b2.focus(); return; }
-        var cs3=jCells(), t2=cs3[want]||cs3[cs3.length-1];
-        if(t2){ t2.focus(); if(t2.select) t2.select(); }
-      }catch(e9){}
-    },0);
-  }
-}
 
 /** ★★ 現金出納帳を CSV にする（2026-09-22）
     **帳面と突き合わせるために、月ぶんをまるごと外へ出す。**
@@ -9059,7 +8386,7 @@ function viewCash(el){
           : (raw
               ? (rtype==='pdf'
                   ? '<button class="tap" data-pdf="'+x.id+'" style="margin-left:6px;border:1px solid var(--pink);background:#fff;color:var(--pink);border-radius:5px;font-size:11px;font-weight:700;padding:2px 7px">PDF'+(x.imgPend?'（送信待ち）':'')+'</button>'
-                  : '<img src="'+raw+'" data-img="'+x.id+'" class="tap cash-thumb"'+(x.imgPend?' title="Drive へ送信待ち"':'')+'>')
+                  : '<img src="'+esc(safeImgSrc_(raw))+'" data-img="'+esc(x.id)+'" class="tap cash-thumb"'+(x.imgPend?' title="Drive へ送信待ち"':'')+'>')
               : (x.imgPend
                   ? ' <span class="pill tag-hide">写真（送信待ち）</span>'
                   : ' <span class="pill tag-hide">写真なし</span>'));
@@ -9717,8 +9044,8 @@ function viewCash(el){
 
   el.querySelectorAll('[data-url]').forEach(function(b){ b.onclick=function(){
     var many=null; try{ many=b.dataset.urls?JSON.parse(b.dataset.urls):null; }catch(e){}
-    if(many && many.length>1){ many.forEach(function(u){ window.open(u,'_blank'); }); return; }
-    window.open(b.dataset.url,'_blank'); }; });
+    if(many && many.length>1){ many.forEach(function(u){ safeOpen_(u); }); return; }
+    safeOpen_(b.dataset.url); }; });
   el.querySelectorAll('[data-pdf]').forEach(function(b){ b.onclick=function(){
     var x=(DB.cash[bk]||[]).filter(function(y){return String(y.id)===b.dataset.pdf;})[0];
     if(!x) return;
@@ -11438,7 +10765,7 @@ var BOOT_CACHE_MAX = 900000;       /* 1つ 90万文字まで。これを超え�
 
 function bootKeys_(){
   return ['migrate:kgunit','clients:master','clients:order','clients:migrated',
-          'printed','hist:alias','cost:setting','plan:setting',
+          'printed','hist:alias','hist:years','cost:setting','plan:setting',
           okey(S.date), ckey(S.date), dkey(S.date)];
 }
 /** ★ boot 自身は使わないが、**最初の画面を出すのに要る**もの。
@@ -11513,6 +10840,7 @@ async function bootApply_(g, stale){
   await loadClients(g);
   DB.printed=jparse(g['printed'],{})||{};
   DB.alias=jparse(g['hist:alias'],{})||{};
+  histYearsApply_(g['hist:years']);          /* ★ 過去実績（前期比のもと）。数字は画面に書かない */
   DB.cost=normalizeCost(jparse(g['cost:setting'],null));
   DB.plan=normalizePlan(jparse(g['plan:setting'],null));
   DB.orders[okey(S.date)]=jparse(g[okey(S.date)],{})||{};
@@ -11818,6 +11146,60 @@ boot();
 /* ---- 領収証 ---- */
 .rc-amt-in{width:130px;text-align:right;font-size:18px;font-weight:700;padding:7px 9px}
 .rc-row{font-size:17px}
+
+/* ============================================================
+   ★★★ 総点検（2026-11-10）で見つけた、画面のはみ出し・見切れ
+   見張りは tools/screen.mjs（全部のタブを スマホ390px／パソコン1280px で開いて測る）
+   ============================================================ */
+/* 領収証 … 1店ぶんの枠の下限が 400px だったので、電話（390px）で必ず右へはみ出していた。
+   そのうえ店名が「B…」まで縮んで読めなかった。電話では2段に折る（上＝コードと店名／下＝金額と1枚） */
+.rc-list{grid-template-columns:repeat(auto-fill,minmax(min(400px,100%),1fr))}
+@media(max-width:560px){
+  .rc-row{flex-wrap:wrap;padding:10px 11px}
+  .rc-row .nm{flex:1 1 calc(100% - 100px);white-space:normal;overflow:visible}
+  .rc-amt-in{flex:1 1 104px;min-width:0;width:auto}
+}
+/* 請求書の「載せる分」 … 列の幅を決め打ちにしていたので、電話では「何月分」が1文字幅まで
+   つぶれて縦書きになり、表も右へはみ出していた。電話では幅と字をつめる（列は減らさない） */
+@media(max-width:560px){
+  .iq-box{padding:11px 9px}
+  .iq-t th,.iq-t td{padding:6px 4px}
+  .iq-t td{font-size:14px}
+  .iq-t th:nth-child(1){width:34px !important}
+  .iq-t th:nth-child(3){width:104px !important}
+  .iq-t th:nth-child(4){width:70px !important}
+  .iq-t th:nth-child(5){width:24px !important}
+  .iq-t td:nth-child(4){font-size:12px}
+  .iq-t input.amt{width:96px;font-size:16px;padding:6px 6px}
+  .iq-t .pill{display:inline-block;margin-top:2px}
+}
+/* 点検 … このタブの class（ck-*）に CSS が1つも無かった。
+   説明には「緑＝入っている／桃＝入っていない／灰＝まだ先」と書いてあるのに色が付かず、
+   表は罫線なしで、電話では表ごと右へ 170px はみ出していた。ここで付ける */
+.ck-card{background:#fff;border:1px solid var(--line);border-left:5px solid var(--line);border-radius:12px;
+  padding:13px 15px;margin-top:12px}
+.ck-card.warn{border-left-color:var(--gold);background:#FFFBF0}
+.ck-card.bad{border-left-color:var(--pink);background:#FDF6F8}
+.ck-h{font-size:17px;font-weight:700;color:var(--ai);margin:0 0 8px}
+.ck-ok{color:var(--green);font-weight:700}
+.ck-ng{color:#B23A55;font-weight:700}
+.ck-fill{background:#DDEFE3;color:#2F6B47;text-align:center}
+.ck-hole{background:#FBE3E8;color:#B23A55;text-align:center}
+.ck-fut{background:#F1EEE7;color:#B5AE9E;text-align:center}
+.ck-scroll{overflow:auto;max-height:62vh;border:1px solid var(--line);border-radius:8px;-webkit-overflow-scrolling:touch}
+.ck-t{border-collapse:collapse;width:100%;font-size:14px;background:#fff}
+.ck-t th{position:sticky;top:0;z-index:1;background:var(--ai);color:#fff;font-size:12px;font-weight:700;
+  padding:7px 6px;white-space:nowrap}
+.ck-t td{border-bottom:1px solid #E7E1D5;padding:6px 7px;vertical-align:middle}
+.ck-t td.num,.ck-t td.muted{white-space:nowrap}
+.ck-pill{display:inline-block;font-size:12px;font-weight:700;color:#7A2E3F;background:#FBE3E8;
+  border-radius:999px;padding:2px 9px;margin:1px 4px 1px 0;white-space:nowrap}
+/* 見出しの「版」… 直した中身を書くので長い。電話では7行ぶん画面を押し下げていたので2行で切る
+   （頭に版の番号があるので、反映できたかは2行で分かる。全部は押すと出る） */
+@media(max-width:560px){
+  .brand .sub.ver{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  .brand .sub.ver.open{display:block}
+}
 </style>
 
 <script>
@@ -12057,7 +11439,7 @@ function discFyAgg(fy){
 }
 /** ★ 画面の左上にこの文字が出ます。貼り替えが入ったかどうかは、ここを見れば一目で分かります。
     コードを直したら、この日付・見出しも必ず変えてください。 */
-var APP_BUILD='2026-11-09b 売掛帳を【7月締めの残高】から再スタート（丸京の確認ずみ 252店・11,932,198円。繰越＝12月以前分＋1月分、2月分〜7月分は発生の行として残る。その店の7月の締め日までの回収は消える。8月以降と小口現金は1円も動かない）／売掛帳に 00- の先（都度売上）を出さない／領収書の写真を丸京の端末からもリクエストなしで見られるようにした／端末の暗証番号：関所の断りのときだけ合図を捨てる';
+var APP_BUILD='2026-11-10a 総点検：関所の穴を塞ぐ（暗証番号なしで呼べた入口）／顧問先の数字を公開の画面から KV へ移す／スマホで請求書・領収証・点検がはみ出すのを直す／使っていないコードを消す';
 
 /* ---- 値引き と 貸倒れ（もう請求しないと決めた分）------------------
    お金は入っていないが、その分だけ売掛の残高が減ります。
@@ -12170,7 +11552,7 @@ async function arPaySet_(c, old, nw){
   var pk='payments:'+c.id;
   /* ★★★ 出納帳と【同じ id の対】になっている回収だけ、出納帳もいっしょに直す。
        2〜4月に帳面から起こした現金回収（fromCash なし）は、出納帳では【集金の束】の1行に
-       入っているので、対が無い。ここで出納帳に足すと 確定した月末残（472,880／448,077）が狂う。
+       入っているので、対が無い。ここで出納帳に足すと 帳面と合わせて確定した月末残が狂う。
        だから そういう回収は 売掛帳だけを直す（出納帳には触らない） */
   var link = !old || !!old.fromCash || !arIsCash(old);
   var wasCash=!!(old && arIsCash(old)) && link, isCash=!!(nw && arIsCash(nw)) && link;
@@ -12477,7 +11859,7 @@ function arSumHtml_(rows){
 }
 /** ★★★ 00- で始まる先は【売掛帳に出さない】（2026-11-09・丸京）
 
-    丸京から ──「00-002 とかの てきとう、00-003 とかの BAR LAND などの、
+    丸京から ──「00-002、00-003 などの、
     売掛処理しない現金主義売上の取引先については、売掛帳不要なので表示しないでいい」。
 
     00-xxx は 締めナシ（都度売上）の番号です（`SHIME_PREFIX[99] = 0`）。
@@ -13568,13 +12950,6 @@ function rvSave(){
   toast(c.name+'　'+yen(amt)+'（'+mth+'）'+(fee?'＋手数料 '+yen(fee):'')+'を記録しました');
   return true;
 }
-function rvRemove(entry){
-  var pk='payments:'+entry.cid;
-  DB.pay[pk]=(DB.pay[pk]||[]).filter(function(p){ return String(p.id)!==String(entry.id); });
-  S.rvLog=S.rvLog.filter(function(x){ return String(x.id)!==String(entry.id); });
-  clearCaches();
-  cashSaveAsync(pk, JSON.stringify(DB.pay[pk]));
-}
 
 /** ④ 入金帳 ── いま入力している月ぶんを、全店まとめて日付の順に出します */
 function rvMonthRows(ymk){
@@ -14016,7 +13391,7 @@ viewRecv=function(el){
 /* ============================================================
    7. 請求書 ―「当月分 ＋ 繰越（未回収）」の様式
 
-     コントロモアさんのような請求のしかたに合わせました。
+     まとめて請求する先の請求のしかたに合わせました。
        ・その締め月の請求額（当月分）
        ・まだ回収できていない過去の月分（繰越）
      を一覧に並べ、チェックを入れた分だけ請求書に載ります。
@@ -15544,7 +14919,7 @@ render=function(){
     '<header><div class="brand">'+
       '<h1 class="mincho">有限会社 丸京</h1>'+
       '<span class="sub">氷・かち割り氷／注文・請求・売掛・配達伝票</span>'+
-      '<span class="sub" style="opacity:.75">版 '+APP_BUILD+'</span>'+
+      '<span class="sub ver" style="opacity:.75" onclick="this.classList.toggle(\'open\')">版 '+APP_BUILD+'</span>'+
     '</div><nav>'+
       TABS.map(function(t){ return '<button class="tap '+(S.tab===t[0]?'on':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>'; }).join('')+
     '</nav></header><main id="main"></main>';
@@ -16053,7 +15428,7 @@ function seasonBadge(){
     <div class="ish-hlp-lead">注文の入力から、配達伝票・請求書・領収証・売掛の管理・小口現金まで、ひとつでできるアプリです。金額はすべて<b>税込</b>です。</div>
 
     <h4>画面の見かた</h4>
-    <table class="ish-hlp-t"><tbody><tr><th>注文入力</th><td>いちばん使うところ。日付と取引先を選んで数量を入れます。<b>かち割り・クラッシュは kg</b> で入れます。</td></tr><tr><th>取引先情報</th><td>取引先の単価や表示順の確認・変更。</td></tr><tr><th>配達伝票</th><td>その日の配達ぶんの伝票を出します。</td></tr><tr><th>請求書</th><td>月ぶんの請求書。<b>A4で1枚に収まります</b>（注文回数が多い月は明細が左右2段になります）。</td></tr><tr><th>領収証</th><td>受け取ったぶんの領収証を出します。</td></tr><tr><th>売掛・入金</th><td>入金の記録と消し込み。入金は<b>古い発生月から順に</b>消えます（先入先出）。</td></tr><tr><th>未回収一覧</th><td>まだ貰えていないぶんの一覧。</td></tr><tr><th>小口現金</th><td>現金の出入りと残高合わせ。</td></tr><tr><th>売上管理</th><td>月ごと・取引先ごとの売上と前期比。</td></tr><tr><th>カレンダー</th><td>日々の予定と実績の見わたし。</td></tr></tbody></table>
+    <table class="ish-hlp-t"><tbody><tr><th>注文入力（掛売上）</th><td>いちばん使うところ。日付と取引先を選んで数量を入れます。<b>かち割り・クラッシュは kg</b> で入れます。</td></tr><tr><th>取引先情報</th><td>取引先の単価・締め・集金日などの確認と変更。</td></tr><tr><th>配達伝票</th><td>その日の配達ぶんの伝票を出します。</td></tr><tr><th>請求書</th><td>月ぶんの請求書。<b>A4で1枚に収まります</b>（注文回数が多い月は明細が左右2段になります）。</td></tr><tr><th>集金（グルーピング・領収証）</th><td>回る日ごとに店をまとめて、領収証とグルーピングシートを一度に刷ります。</td></tr><tr><th>領収証</th><td>領収証を1枚ずつ、またはまとめて出します。</td></tr><tr><th>売掛帳</th><td>取引先ごとの売掛帳が上から並びます。<b>回収はここにじかに書きます</b>（古い月分から順に消えます）。</td></tr><tr><th>売掛の振込回収</th><td>通帳を見ながら、振込の入金を続けて入れます。値引き・貸倒れもここ。</td></tr><tr><th>小口現金</th><td>現金の出入り（売掛の現金回収・店売りもここ）と、出納帳・現金実査。</td></tr><tr><th>未回収一覧</th><td>まだ貰えていないぶんの一覧。</td></tr><tr><th>売上管理</th><td>月ごと・取引先ごとの売上と前期比、目標と値決め。</td></tr><tr><th>点検</th><td>入っているデータの穴や、取引先情報の不備を見わたします。</td></tr><tr><th>カレンダー</th><td>日々の予定と実績の見わたし。</td></tr></tbody></table>
 
     <h4>つまずいたら</h4>
     <ul><li>アプリを更新したあと、開いたままの画面は<b>2分以内に自分で止まって</b>「開き直してください」と出ます。打ちかけの入力は止まる直前に保存されるので消えません。</li><li>入れた数字はスプレッドシートに入ります。<b>アプリの更新でデータが消えることはありません。</b></li><li>数が合わないときは、消すのではなく履歴を残して直してください。あとで原因を追えます。</li></ul>
