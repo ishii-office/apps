@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794330722;</script>
+<script>window.__PAGE_VER=1794352519;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -6951,7 +6951,7 @@
     if (force && !$('paneKaizen').hidden) kzStatsLoad();
     if (!force && Date.now() - KZ.loaded < 30000) return Promise.resolve();
     return gs('kaizenList').then(function (r) {
-      KZ.list = r.list || []; KZ.me = r.me; KZ.master = !!r.master; KZ.gh = !!r.gh; KZ.loaded = Date.now();
+      KZ.list = r.list || []; KZ.direct = r.direct || null; KZ.me = r.me; KZ.master = !!r.master; KZ.gh = !!r.gh; KZ.loaded = Date.now();
       if (!KZ.flt) KZ.flt = 'all';
       kzBadge(); if (!$('paneKaizen').hidden) kzDraw();
       if (KZ.master && KZ.gh && !$('paneKaizen').hidden && Date.now() - KZ.synced > 600000) {
@@ -6985,7 +6985,9 @@
   function kzDraw() {
     const f = $('kzFlt'); f.textContent = '';
     ['all'].concat(KZ_ST).forEach(function (k) {
-      const n = k === 'all' ? KZ.list.length : KZ.list.filter(function (x) { return x.st === k; }).length;
+      /* ★ 全部・改善済みには Claude Code に直接頼んで直した分（一覧に1件ずつは無い）も足す。集計の数と そろえる（2026-11-11） */
+      const dadd = (KZ.direct && KZ.direct.add) || 0;
+      const n = (k === 'all' ? KZ.list.length : KZ.list.filter(function (x) { return x.st === k; }).length) + (k === 'all' || k === '改善済み' ? dadd : 0);
       const b = el('button', null, (k === 'all' ? '全部' : k) + ' ' + n); b.type = 'button'; b.setAttribute('aria-pressed', String(KZ.flt === k));
       b.addEventListener('click', function () { KZ.flt = k; kzDraw(); }); f.appendChild(b);
     });
@@ -7037,6 +7039,7 @@
       ok.addEventListener('click', function () { gs('kaizenSeen', mine.map(function (x) { return x.no; })).then(function () { kzLoad(true); }, function (e) { kzMsg('印を付けられませんでした。' + e.message, true); }); }); mw.appendChild(ok);
     }
     const w = $('kzList'); w.textContent = '';
+    if (KZ.direct && KZ.direct.add && (KZ.flt === 'all' || KZ.flt === '改善済み')) w.appendChild(el('p', 'note kzdirect', '★ 数には ' + KZ.direct.who + 'が Claude Code に直接頼んで直した ' + KZ.direct.n + '回（' + String(KZ.direct.since).replace(/-/g, '/') + '〜）のうち 下の一覧に1件ずつ入っていない ' + KZ.direct.add + '回も入っています（集計の数と同じ）。'));
     const list = KZ.list.filter(function (x) { return KZ.flt === 'all' || x.st === KZ.flt; });
     if (!list.length) { w.appendChild(el('p', 'note', KZ.flt === 'all' ? 'まだ改善要望はありません。［＋ 改善要望を書く］から どうぞ。' : '「' + KZ.flt + '」のものは ありません。')); return; }
     list.forEach(function (x) { w.appendChild(kzCard(x)); });
