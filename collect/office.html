@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794327793;</script>
+<script>window.__PAGE_VER=1794330722;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -6943,6 +6943,7 @@
         tb.appendChild(tr);
       });
       w.appendChild(tb);
+      (r.rows || []).filter(function (x) { return x.direct; }).forEach(function (x) { w.appendChild(el('div', 'note', '★ ' + x.name + ' … 改善要望の数に Claude Code に直接頼んで直した ' + x.direct + '回（' + x.directSince.replace(/-/g, '/') + '〜。アプリに入った直しの回数）を含みます。')); });
       w.appendChild(el('div', 'note', '回収アプリを入れた顧問先 … 顧問先タブの「担当者（事務所）」がその人で、提出URLを出していて 有効なもの。運用中 … そのうち 直近30日に 顧問先から資料が届いたもの。AI下書き・仕訳化 … その人の担当先で 直近30日に AIが読めた枚数・確定した仕訳の数（取り消したものは数えない）。確認済にした … その人が押した数。' + (r.master ? '' : '（マスター以外は 自分と事務所全体だけ出ます）') + '　' + r.at + ' 時点'));
     }, function (e) { $('kzStatsBody').textContent = '集計を出せませんでした。' + e.message; });
   }
