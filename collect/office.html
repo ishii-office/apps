@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794275065;</script>
+<script>window.__PAGE_VER=1794293250;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2572,7 +2572,7 @@
     S.pendBundle = b.bundle || null;
     fillClients(b.bundle ? b.bundle.code : r.sel);
     if (S.pendBundle) { const pb = S.pendBundle; S.pendBundle = null; applyBundle(pb); }
-    if (first) { S.booted = true; selectTab(S.resumeTab || { in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In'); S.resumeTab = ''; verWatch(); openFromClient(); setTimeout(lnCheck, 3000); }
+    if (first) { S.booted = true; selectTab(S.resumeTab || { in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In'); S.resumeTab = ''; verWatch(); openFromClient(); setTimeout(lnCheck, 3000); setTimeout(urlPre, 2500); }
   }
 
   function fillClients(sel, force) {
@@ -2881,6 +2881,8 @@
     const c = (S.clients || []).find(function (x) { return x.code === code; }) || (A.list || []).find(function (x) { return x.code === code; });
     return c && c.url ? c.url : '';
   }
+  /* 2026-11-10 ［顧問先の画面を表示］を押したら すぐ開く … 提出URL は 開いてすぐ うしろで聞いておく（端末には残さない・この画面の中だけ） */
+  function urlPre() { try { if (!S.started || LIVE) return; if ((A.list || []).some(function (x) { return x.url; })) return; aLoad().catch(function () {}); } catch (e) {} }
   function clientUrlOf(code) {
     const now = clientUrlNow(code);
     if (now) return Promise.resolve(now);
@@ -4466,12 +4468,18 @@
       c.appendChild(bd);
     }
     const ac = E('div', 'ac');
-    const btn = function (cls, t, ti, fn) { const b = E('button', cls, t); b.type = 'button'; b.title = ti; b.addEventListener('click', function (e) { e.stopPropagation(); fn(); }); b.addEventListener('mousedown', function (e) { e.stopPropagation(); }); ac.appendChild(b); };
+    const btn = function (cls, t, ti, fn) { const b = E('button', cls, t); b.type = 'button'; b.title = ti; b.addEventListener('click', function (e) { e.stopPropagation(); b.disabled = true; fn(); }); b.addEventListener('mousedown', function (e) { e.stopPropagation(); }); ac.appendChild(b); };
+    /* ★ 2026-11-10：印が付いたあとも ボタンで戻せる（右上の ✓ を押すと戻ることに 気づかれなかった）。
+         印なし … 確認済にする／対象外／破棄　確認済 … 確認を外す／対象外／破棄　対象外 … 対象に戻す／破棄　破棄済み … 戻す／削除 */
+    const live = !lock || m === 'trash';
     if (!m && ad.check) btn('ok', ad.checkLabel || '✓ 確認済にする', '見た・確かめたら押す（右上に緑の ✓）', function () { ad.check(mem, true); });
-    if (!m && !lock && ad.skip) btn(null, '⊘ 対象外', '仕訳化・AI下書きの対象から外す（右上に黒の ✓。印刷・PDF には入ります）', function () { ad.skip(mem, true); });
+    if (m === 'chk' && ad.check) btn(null, '↺ 確認を外す', '確認済を やめる', function () { ad.check(mem, false); });
+    if ((!m || m === 'chk') && !lock && ad.skip) btn(null, '⊘ 対象外', '仕訳化・AI下書きの対象から外す（右上に黒の ✓。印刷・PDF には入ります）', function () { ad.skip(mem, true); });
+    if (m === 'skip' && ad.skip) btn('ok', '◯ 対象に戻す', '対象外を やめて 仕訳化・AI下書きの対象に戻す', function () { ad.skip(mem, false); });
     if (m !== 'trash' && !lock && ad.trash) btn('ng', '🗑 破棄', '破棄する（右上に赤の ✓。押すと 復活）', function () { ad.trash(mem); });
+    if (m === 'trash' && live && ad.revive) btn('ok', '↺ 戻す', '破棄を やめて 元に戻す', function () { ad.revive(mem); });
     if (ad.canWrite && ad.canWrite(lead)) btn(null, '✏ 書きこむ', '文字・下線・枠を書きこむ（元の画面で開きます）', function () { ad.write(lead); });
-    if (ad.canDel && mem.every(ad.canDel)) btn('ng', '× 消す', '消す', function () { if (o.win.confirm(mem.length > 1 ? 'この書類（' + mem.length + '枚）を消しますか？' : 'この1枚を消しますか？')) ad.del(mem); });
+    if (ad.canDel && mem.every(ad.canDel)) btn('ng', ad.delLabel || '× 削除', ad.delTitle || '消す', function () { if (o.win.confirm(ad.delAsk ? ad.delAsk(mem) : mem.length > 1 ? 'この書類（' + mem.length + '枚）を消しますか？' : 'この1枚を消しますか？')) ad.del(mem); else wsDraw(o.key); });
     if (ac.childNodes.length) c.appendChild(ac);
     return m;
   }
@@ -4613,6 +4621,9 @@
       skip: function (mem, on) { docsSkip(mem, on); },
       trash: function (mem) { discard(mem); },
       revive: function (mem) { restore(mem.map(function (x) { return x.id; })); },
+      /* ★ 2026-11-10：破棄済みは 別ウィンドウからも 削除（ドライブから完全に消す） */
+      canDel: function (it) { return isT(it); }, del: function (mem) { purge(mem.map(function (x) { return x.id; })); },
+      delTitle: 'ドライブから 完全に消す（ゴミ箱にも残りません。戻せません）', delAsk: function (mem) { return (mem.length > 1 ? 'この' + mem.length + '枚' : 'この1枚') + 'を ドライブから完全に消しますか？（戻せません）'; },
       canWrite: function (it) { return !isT(it) && !fileKind(it.name); },
       write: function (it) { docsOpen(it); mkStart(); try { window.focus(); } catch (e) {} },
       big: function (it, cb) {
@@ -4825,6 +4836,10 @@
       authIdb('readwrite', function (x) { x.put(API_URL, 'api'); return x.put({ tok: TOK, name: lsGet(LS_NAME), at: Date.now() }, 'tok'); });
       if (!st.here && Notification.permission === 'granted') gs('pushSub', { endpoint: sub.endpoint, ua: navigator.userAgent }).catch(function () {});
     } catch (e) {}
+  }
+  /* 2026-11-10 開くのを待たせない … 画面（office.html）を 端末に置いておき、次に開いたときは 通信を待たずに出す（sw.js）。知らせを使わない人にも 入れる */
+  if (WEB2 && 'serviceWorker' in navigator && (!navigator.webdriver || window.__swTest)) {
+    window.addEventListener('load', function () { try { navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function () {}); } catch (e) {} });
   }
   try { if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', function (e) { const d = e.data || {}; if (d && 'arr' in d) arGo(String(d.arr || ''), String(d.box || '')); }); } catch (e) {}
   const ARR_OPEN = (function () { try { const u = new URL(location.href), c = u.searchParams.get('arr'); if (c == null) return null; const b = u.searchParams.get('box') || ''; u.searchParams.delete('arr'); u.searchParams.delete('box'); history.replaceState(null, '', u.pathname + (u.search || '') + u.hash); return { code: c, box: b }; } catch (e) { return null; } })();

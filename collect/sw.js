@@ -1,5 +1,5 @@
 /* 資料回収（顧問先の画面）：画面を 端末に置いておき、開いたら 通信を待たずに すぐ出す（2026-11-04）
-   ・扱うのは 顧問先の画面（/apps/collect/ と index.html を開くとき）だけ。事務所の画面・LINE の入口・サーバ（script.google.com）・version.txt には 手を出さない
+   ・扱うのは 顧問先の画面（/apps/collect/ と index.html）と 事務所の画面（office.html。2026-11-10〜）だけ。LINE の入口・サーバ（script.google.com）・version.txt には 手を出さない
    ・ふだん … 置いてある画面を すぐ出し、うしろで 新しいものを取って 置き換える（次に開いたときは 新しい画面）
    ・?v= が付いているとき（［↻ 開き直す］・「新しくなりました」から開き直したとき） … 必ず 取りに行く（古い画面に戻らない）
    ・取りに行けないとき（電波なし）は 置いてある画面を出す
@@ -15,10 +15,17 @@ self.addEventListener('activate', function (e) {
   }).then(function () { return self.clients.claim(); }));
 });
 
-function isPage(u) { return u.origin === SCOPE.origin && (u.pathname === SCOPE.pathname || u.pathname === SCOPE.pathname + 'index.html'); }
-function fresh() {
-  return fetch(PAGE, { cache: 'no-cache', credentials: 'same-origin' }).then(function (r) {
-    if (r && r.ok && r.type === 'basic') { const c = r.clone(); caches.open(CACHE).then(function (ca) { return ca.put(PAGE, c); }).catch(function () {}); }
+/* 2026-11-10 事務所の画面（office.html）も 同じやり方で すぐ出す（顧問先の画面とは 別の札で置く） */
+const OFFICE = new URL('office.html', SCOPE).href;
+function pageOf(u) {
+  if (u.origin !== SCOPE.origin) return '';
+  if (u.pathname === SCOPE.pathname || u.pathname === SCOPE.pathname + 'index.html') return PAGE;
+  if (u.pathname === SCOPE.pathname + 'office.html') return OFFICE;
+  return '';
+}
+function fresh(page) {
+  return fetch(page, { cache: 'no-cache', credentials: 'same-origin' }).then(function (r) {
+    if (r && r.ok && r.type === 'basic') { const c = r.clone(); caches.open(CACHE).then(function (ca) { return ca.put(page, c); }).catch(function () {}); }
     return r;
   });
 }
@@ -26,13 +33,14 @@ self.addEventListener('fetch', function (e) {
   const req = e.request;
   if (req.method !== 'GET' || req.mode !== 'navigate') return;
   const u = new URL(req.url);
-  if (!isPage(u)) return;
+  const page = pageOf(u);
+  if (!page) return;
   if (u.searchParams.has('v')) {
-    e.respondWith(fresh().then(function (r) { return r && r.ok ? r : caches.match(PAGE).then(function (h) { return h || r; }); }, function () { return caches.match(PAGE).then(function (h) { return h || fetch(req); }); }));
+    e.respondWith(fresh(page).then(function (r) { return r && r.ok ? r : caches.match(page).then(function (h) { return h || r; }); }, function () { return caches.match(page).then(function (h) { return h || fetch(req); }); }));
     return;
   }
-  e.respondWith(caches.match(PAGE).then(function (hit) {
-    const up = fresh().catch(function () { return null; });
+  e.respondWith(caches.match(page).then(function (hit) {
+    const up = fresh(page).catch(function () { return null; });
     if (hit) { e.waitUntil(up); return hit; }
     return up.then(function (r) { return r || fetch(req); });
   }));
