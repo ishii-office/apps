@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794310182;</script>
+<script>window.__PAGE_VER=1794312469;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -440,6 +440,7 @@
   #alist .kind.ind { background: #fff; color: #8A6A3D; border: 1px solid #C9A877; }
   /* ★ 名前が見えるように（2026-10-20）：名前は いちばん広く取り 2行まで折り返す。札（同意・決算月）は右にまとめて 縮めない */
   #alist .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; word-break: break-all; line-height: 1.35; }
+  #alist .nchk { flex: none; min-width: 28px; height: 28px; padding: 0 7px; border-radius: 999px; background: #E5352B; color: #fff; font-size: 16px; font-weight: 800; line-height: 28px; text-align: center; font-variant-numeric: tabular-nums; box-shadow: 0 1px 3px rgba(0,0,0,.25); margin: 0 2px 0 6px; }   /* ★ K-0095：未確認の枚数 */
   #alist .tg { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto; }
   #alist .tg .fy { margin-left: 0; }
   .cl-main { padding: 16px 20px; overflow: auto; }
@@ -4034,6 +4035,7 @@
     return (a.t - b.t) || ((a.rn || 0) - (b.rn || 0));
   }
   function docsDraw() {
+    try { aNchkSync(); } catch (e) {}
     try { wsRefresh(); } catch (e) {}
     const body = $('dBody'); body.textContent = '';
     if (dObs) dObs.disconnect();
@@ -5505,6 +5507,7 @@
       });
     });
     if (miss) { docsDraw(); return; }
+    try { aNchkSync(); } catch (e) {}
     /* 月分の見出しの「未確認 N」も その場で数え直す */
     mons.forEach(function (mo) {
       const c = mo.querySelector('.dmon-h .dmon-c'); if (!c) return;
@@ -12041,6 +12044,21 @@
     A_ERR = String(msg || '');
     if (A.list.length) aDraw(); else { const ul = $('alist'); ul.textContent = ''; ul.appendChild(aErrLi()); }
   }
+  /* ★ K-0095（2026-11-10）：顧問先から届いて まだ確認済にしていない資料の枚数を 会社名の横に 丸い数字で（LINE の通知のように） */
+  function aNchkBadge(b, c) {
+    const n = Number(c.nchk) || 0, old = b.querySelector('.nchk'); if (old) old.remove();
+    if (!n) return;
+    const s = el('span', 'nchk', n > 99 ? '99+' : String(n)); s.title = '届いて まだ確認済にしていない資料 ' + n + '枚'; s.setAttribute('aria-label', '未確認 ' + n + '枚');
+    const nm = b.querySelector('.nm'); if (nm && nm.nextSibling) b.insertBefore(s, nm.nextSibling); else b.appendChild(s);
+  }
+  /* 回収資料を読んだとき・確認済を付けたときに その顧問先の数を 数え直す（届いた資料のうち 確認済でない・確定していない・対象外でない・顧問先が消していない） */
+  function aNchkSync() {
+    if (!S.code || !S.docs || !A.list) return;
+    const n = S.docs.filter(function (x) { return !x.chk && x.status !== 'done' && !x.gone && !x.skip; }).length;
+    const c = A.list.find(function (x) { return x.code === S.code; }); if (!c || (Number(c.nchk) || 0) === n) return;
+    c.nchk = n; try { aCacheSave(A.list); } catch (e) {}
+    document.querySelectorAll('#alist li[data-code="' + S.code + '"] > button').forEach(function (b) { aNchkBadge(b, c); });
+  }
   function aLoad() {
     if (A_LOADING) return A_LOADING;
     if (!A.list.length) {
@@ -12094,6 +12112,7 @@
       b.appendChild(el('span', 'code', c.code));
       const kd = corpKindOf(c), kb = el('span', 'kind ' + (kd === '法人' ? 'corp' : 'ind'), kd); if (!c.kindSet) kb.title = '名前から当てています（設定で決められます）'; b.appendChild(kb);
       b.appendChild(el('span', 'nm', c.name)).title = c.name;
+      aNchkBadge(b, c);
       const tg = el('span', 'tg');
       const cs = c.consent || {}; if (c.issued && !(cs.type === '同意' && !cs.need)) { const wd = cs.type === '撤回', wait = cs.need; const t = el('span', 'cns ' + (wd ? 'wd' : 'need')); t.dataset.t = wd ? 'AI撤回' : wait ? '同意待ち' : '同意まだ'; t.title = wd ? 'AI 等の利用を撤回しています（オプトアウト。AI 下書きは使えません）' : wait ? '同意の画面を出しています。顧問先が同意するまで 送れません（AI 下書きは 同意が無くても使えます）' : 'まだ 同意の画面を出していません（AI 下書きは 同意が無くても使えます）'; tg.appendChild(t); }
       if (!c.active) tg.appendChild(el('span', 'off', c.issued ? '止めています' : 'URL未発行'));
