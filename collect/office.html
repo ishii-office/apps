@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794318053;</script>
+<script>window.__PAGE_VER=1794327793;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2276,6 +2276,7 @@
   <div class="dvbar"><b id="dvName"></b><span class="dvtools">
     <button type="button" class="btn sm" id="dvGo">仕訳化する</button><button type="button" class="btn ghost sm" id="dvBook" title="手書き（印刷）の現金出納帳の写真を AI で1行ずつ読み、この箱・この月分の アプリの出納帳に起こします。紙の残高と照らして直してから［この月を仕訳化に回す］。この写真は 対象外（出納帳の原本）になり、1枚の領収書としては下書きしません">📒 出納帳として読む</button>
     <button type="button" class="btn ghost sm" id="dvRot" title="90度ずつ回す">↻ 回す</button>
+    <button type="button" class="btn ghost sm" id="dvOrig" hidden title="顧問先が［かざすだけ］で撮ったとき、書類の形に整える前の 元の写真（Drive で開く）">📷 元の写真</button>
     <button type="button" class="btn ghost sm" id="dvZout" title="縮小（－・Ctrl＋ホイール）" aria-label="縮小">🔍－</button><button type="button" class="btn ghost sm" id="dvZin" title="拡大（＋・Ctrl＋ホイール）" aria-label="拡大">🔍＋</button>
     <span class="dvpos" id="dvPos" title="この箱の中で 左上から何番目か"></span>
     <span class="dvpos dvpg" id="dvPg" hidden title="この書類（まとめた書類）の 何ページ目か"></span>
@@ -7323,6 +7324,7 @@
     if (DOUT_NAT && !fileKind(it.name)) dOutPrep(it);
     $('dvName').textContent = perLabel(it.period) + '　［' + it.box + '］　' + it.name.replace(/^\d{8}_\d{6}_/, '');
     $('dvDrive').href = it.url;
+    $('dvOrig').hidden = !it.orig; $('dvOrig').onclick = function () { if (it.orig) window.open('https://drive.google.com/file/d/' + encodeURIComponent(it.orig) + '/view', '_blank', 'noopener'); };
     $('dvMemo').textContent = it.memo ? '💬 顧問先から：' + it.memo : ''; $('dvMemo').hidden = !it.memo;
     $('dvMove').onclick = function () { docsClose(); dMoveOpen([it]); };
     $('dvGmail').onclick = function () { dGmail([it]); };
