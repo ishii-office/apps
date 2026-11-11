@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794373314;</script>
+<script>window.__PAGE_VER=1794383764;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2280,7 +2280,7 @@
     <button type="button" class="btn sm" id="dvGo">仕訳化する</button><button type="button" class="btn ghost sm" id="dvBook" title="手書き（印刷）の現金出納帳の写真を AI で1行ずつ読み、この箱・この月分の アプリの出納帳に起こします。紙の残高と照らして直してから［この月を仕訳化に回す］。この写真は 対象外（出納帳の原本）になり、1枚の領収書としては下書きしません">📒 出納帳として読む</button>
     <button type="button" class="btn ghost sm" id="dvRot" title="90度ずつ回す">↻ 回す</button>
     <button type="button" class="btn ghost sm" id="dvOrig" hidden title="顧問先が［かざすだけ］で撮ったとき、書類の形に整える前の 元の写真（Drive で開く）">📷 元の写真</button>
-    <button type="button" class="btn ghost sm" id="dvZout" title="縮小（－・Ctrl＋ホイール）" aria-label="縮小">🔍－</button><button type="button" class="btn ghost sm" id="dvZin" title="拡大（＋・Ctrl＋ホイール）" aria-label="拡大">🔍＋</button>
+    <button type="button" class="btn ghost sm" id="dvZout" title="縮小（－・Ctrl＋ホイール）" aria-label="縮小">🔍－</button><button type="button" class="btn ghost sm" id="dvZin" title="拡大（＋・Ctrl＋ホイール）" aria-label="拡大">🔍＋</button><button type="button" class="btn ghost sm dvgrip" id="dvGrip" draggable="true" title="つかんで パソコンのフォルダ・DocuWorks へ落とす（拡大していても つかめます）">⇲ つかむ</button>
     <span class="dvpos" id="dvPos" title="この箱の中で 左上から何番目か"></span>
     <span class="dvpos dvpg" id="dvPg" hidden title="この書類（まとめた書類）の 何ページ目か"></span>
     <button type="button" class="btn ghost sm" id="dvSplit" hidden aria-pressed="false" title="左に この書類のページの一覧・右に 選んだページを大きく（DocuWorks と同じ見え方）">▥ 並べて見る</button>
@@ -4355,9 +4355,10 @@
       '.wc.sel{border-color:#b07d00;box-shadow:0 0 0 3px #b07d00}.wsmq{position:fixed;z-index:40;border:2px dashed #b07d00;background:rgba(176,125,0,.12);pointer-events:none}' +
       '</style></head><body><div id="ws"></div>' +
       '<div class="wzv" id="wzv" hidden role="dialog" aria-label="大きく見る"><button type="button" class="wzx" id="wzx" title="閉じる（Esc）">✕</button><div class="zstage" id="wzs"><img id="wzi" alt="" draggable="false"></div>' +
-      '<div class="zbar" id="wzb"><button type="button" data-z="out" title="縮小（－）" aria-label="縮小">🔍－</button><span class="zpct" data-z="pct">100%</span><button type="button" data-z="in" title="拡大（＋）" aria-label="拡大">🔍＋</button><button type="button" data-z="fit" title="元の大きさ">元の大きさ</button></div>' +
+      '<div class="zbar" id="wzb"><button type="button" data-z="out" title="縮小（－）" aria-label="縮小">🔍－</button><span class="zpct" data-z="pct">100%</span><button type="button" data-z="in" title="拡大（＋）" aria-label="拡大">🔍＋</button><button type="button" data-z="fit" title="元の大きさ">元の大きさ</button><button type="button" id="wzg" draggable="true" style="cursor:grab" title="つかんで パソコンのフォルダ・DocuWorks へ落とす（拡大していても つかめます）">⇲ つかむ</button></div>' +
       '<div class="wzr" id="wzr"></div><div class="wzc" id="wzc"></div><div class="wzl" id="wzl" hidden>くっきりした写真を読み込み中…</div><div class="zhint" id="wzh"></div></div></body></html>');
     d.close();
+    dwInstall(d.defaultView);   /* ★ 2026-11-11 DocuWorks へ の受け口 */
     /* ★ 別ウィンドウでも 押すと大きく（2026-10-29。サムネイルの「大きく見る」と同じキー） */
     const zclose = function () { d.getElementById('wzv').hidden = true; d.getElementById('wzi').removeAttribute('src'); o.zkey = ''; o.ztok = null; };
     o.zp = zpan(d.getElementById('wzs'), d.getElementById('wzi'), d.getElementById('wzb'), d.getElementById('wzh'), zclose);
@@ -4368,6 +4369,13 @@
     /* ★ K-0020：別ウィンドウで 大きく見ている写真も（元の大きさのとき）つかんで アプリの外へ */
     const zit = function () { const m = o.zkey ? wsMemOf(o, o.zkey) : null; return m ? (m.find(function (x) { return o.ad.key(x) === o.zkey; }) || m[0]) : null; };
     d.getElementById('wzi').addEventListener('mouseenter', function () { const it = zit(); if (it && o.ad.out) o.ad.out(it); });
+    d.getElementById('wzg').addEventListener('mouseenter', function () { const it = zit(); if (it && o.ad.out) o.ad.out(it); });
+    /* ★ 2026-11-11：拡大していても［⇲ つかむ］からなら 外へ（DocuWorks へも）。写真をつかむと 拡大中は 動かすほうになるため */
+    d.getElementById('wzg').addEventListener('dragstart', function (e) {
+      const it = zit(), ox = it && o.ad.out ? o.ad.out(it) : null;
+      if (!ox || !ox.url) { e.preventDefault(); const hh = d.getElementById('wzh'); if (hh) hh.textContent = (ox && ox.err) || 'ファイルを用意しています。少ししてから もう一度つかんでください。'; return; }
+      try { e.dataTransfer.setData('DownloadURL', ox.mime + ':' + ox.name + ':' + ox.url); dtPutFile(e, ox); e.dataTransfer.effectAllowed = 'copy'; const im = d.getElementById('wzi'); if (im && im.complete && im.naturalWidth) e.dataTransfer.setDragImage(im, 40, 40); } catch (q) {}
+    });
     d.getElementById('wzi').addEventListener('dragstart', function (e) {
       const it = zit(), ox = it && o.ad.out ? o.ad.out(it) : null;
       if (!ox || !ox.url) { e.preventDefault(); if (ox) { const hh = d.getElementById('wzh'); if (hh) hh.textContent = ox.err || 'ファイルを用意しています。少ししてから もう一度つかんでください。'; } return; }
@@ -5598,6 +5606,114 @@
        返す：ファイル（DownloadURL）を渡せたか。渡せないとき（Chrome 以外）だけ 呼ぶ側が 文字を入れる */
   const DT_CHROME = /Chrome\//.test(navigator.userAgent);
   function dtPutFile(e, o) { return DT_CHROME || !!(o && o.url); }
+  /* ★★ 2026-11-11：DocuWorks の机へ（アプリの外へ）。
+       Chrome・Edge の DownloadURL は エクスプローラー（デスクトップ・フォルダ）なら ファイルになるが、DocuWorks の机は 受け取らない
+       （ブラウザは 落とすまで ファイルを渡さないしくみで、DocuWorks は 落とす前に中身を確かめに来るため。ページの側からは 変えられない）。
+       そこで ファイルをつかんでいるあいだ 画面の右下に［📂 DocuWorks へ］の受け口を出し、そこへ落とすと
+       はじめに選んだ DocuWorks のフォルダ（机のフォルダ）へ そのまま書きこむ（File System Access。この端末が覚える）。
+       どの つかみ方（札・別ウィンドウ・作業デスク・大きく見る・取っ手）でも、DownloadURL を入れたドラッグなら 同じ受け口が出る */
+  const DW_OK = typeof window.showDirectoryPicker === 'function' && !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const DW_MEM = { dir: null };   /* 選んだフォルダ（ほかの窓とも分け合う） */
+  function dwParse(s) {
+    s = String(s || ''); const i = s.indexOf(':'); if (i < 0) return null;
+    const rest = s.slice(i + 1), j = rest.search(/:(data|blob|https?):/); if (j < 0) return null;
+    return { mime: s.slice(0, i), name: rest.slice(0, j), url: rest.slice(j + 1) };
+  }
+  function dwDb(w, fn) {
+    return new Promise(function (ok) {
+      try {
+        const rq = w.indexedDB.open('collect_dw', 1);
+        rq.onupgradeneeded = function () { rq.result.createObjectStore('h'); };
+        rq.onerror = function () { ok(null); };
+        rq.onsuccess = function () { try { const tx = rq.result.transaction('h', 'readwrite'); const r = fn(tx.objectStore('h')); tx.oncomplete = function () { ok(r && 'result' in r ? r.result : null); }; tx.onerror = function () { ok(null); }; } catch (e) { ok(null); } };
+      } catch (e) { ok(null); }
+    });
+  }
+  function dwDir(w) { return DW_MEM.dir ? Promise.resolve(DW_MEM.dir) : dwDb(w, function (s) { return s.get('dir'); }).then(function (h) { if (h) DW_MEM.dir = h; return h || null; }); }
+  function dwPick(w) {
+    return w.showDirectoryPicker({ id: 'collect_dw', mode: 'readwrite' }).then(function (h) {
+      DW_MEM.dir = h; return dwDb(w, function (s) { return s.put(h, 'dir'); }).then(function () { return h; });
+    });
+  }
+  function dwFree(dir, name) {
+    const m = String(name || 'file').replace(/[\\/:*?"<>|]+/g, '_').match(/^(.*?)(\.[^.]*)?$/), base = m[1] || 'file', ext = m[2] || '';
+    const tryN = function (n) {
+      const nm = n ? base + ' (' + n + ')' + ext : base + ext;
+      return dir.getFileHandle(nm).then(function () { return n > 50 ? nm : tryN(n + 1); }, function () { return nm; });
+    };
+    return tryN(0);
+  }
+  function dwWrite(dir, f) {
+    return fetch(f.url).then(function (r) { return r.blob(); }).then(function (bl) {
+      return dwFree(dir, f.name).then(function (nm) {
+        return dir.getFileHandle(nm, { create: true }).then(function (fh) { return fh.createWritable(); }).then(function (ws) { return ws.write(bl).then(function () { return ws.close(); }); }).then(function () { return nm; });
+      });
+    });
+  }
+  function dwInstall(w) {
+    if (!DW_OK || !w || !w.document || !w.document.body || w.document.__dw) return;
+    const d = w.document; d.__dw = 1;   /* 窓ではなく 書類（document）ごと（作業デスクは 同じ窓に書き直す） */
+    const st = d.createElement('style');
+    st.textContent = '.dwz{position:fixed;right:18px;bottom:18px;z-index:2147483000;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:200px;max-width:320px;padding:16px 18px;border:3px dashed #2B5DA8;border-radius:16px;background:rgba(232,240,252,.97);color:#1B3D73;font:700 15px/1.45 system-ui,sans-serif;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}' +
+      '.dwz[hidden]{display:none}.dwz.on{background:#2B5DA8;color:#fff}.dwz small{font-weight:500;font-size:12px}.dwz button{font:inherit;font-size:14px;padding:6px 12px;border-radius:9px;border:1.5px solid #2B5DA8;background:#fff;color:#1B3D73;cursor:pointer}.dwz .dwx{position:absolute;top:2px;right:8px;border:0;background:none;padding:2px;font-size:16px}';
+    d.head.appendChild(st);
+    const z = d.createElement('div'); z.className = 'dwz'; z.id = 'dwZone'; z.hidden = true; z.setAttribute('role', 'region'); z.setAttribute('aria-label', 'DocuWorks へ落とす');
+    d.body.appendChild(z);
+    const S1 = { cur: null, pend: null, hideT: 0 };
+    const say = function (html, btn) {
+      z.innerHTML = '<button type="button" class="dwx" title="閉じる" aria-label="閉じる">✕</button><div>' + html + '</div>' + (btn ? '<button type="button" class="dwb">' + btn + '</button>' : '');
+      z.hidden = false;
+    };
+    const idle = function () { DW_MEM.dir ? say('📂 DocuWorks へ<br><small>ここへ落とすと「' + DW_MEM.dir.name + '」に入ります</small>') : say('📂 DocuWorks へ<br><small>ここへ落とします（はじめに 入れるフォルダを選びます）</small>'); };
+    const done = function (msg, err) { say((err ? '⚠ ' : '✓ ') + msg + '<br><small><a href="#" class="dwc">入れるフォルダを変える</a></small>'); clearTimeout(S1.hideT); S1.hideT = setTimeout(function () { if (!S1.cur && !S1.pend) z.hidden = true; }, err ? 12000 : 5000); };
+    const save = function (f) {
+      S1.pend = f;
+      return dwDir(w).then(function (dir) {
+        if (!dir) { say('入れるフォルダが まだ決まっていません。<br><small>DocuWorks の机のフォルダを 選んでください（はじめの1回だけ）</small>', '📂 フォルダを選んで 入れる'); return; }
+        const q = dir.queryPermission ? dir.queryPermission({ mode: 'readwrite' }) : Promise.resolve('granted');
+        return q.then(function (p) {
+          if (p !== 'granted') { say('「' + dir.name + '」へ 書きこむ許可が要ります。<br><small>押すと ブラウザが 確かめます</small>', '✓ 許可して 入れる'); return; }
+          return dwWrite(dir, f).then(function (nm) { S1.pend = null; done('「' + nm + '」を DocuWorks の「' + dir.name + '」に 入れました'); });
+        });
+      }).catch(function (e) { S1.pend = null; done('入れられませんでした（' + (e && e.message || e) + '）', true); });
+    };
+    z.addEventListener('click', function (e) {
+      const x = e.target.closest('.dwx, .dwb, .dwc'); if (!x) return;
+      e.preventDefault(); e.stopPropagation();
+      if (x.classList.contains('dwx')) { S1.pend = null; z.hidden = true; return; }
+      if (x.classList.contains('dwc')) { dwPick(w).then(function (h) { done('これから「' + h.name + '」に 入れます'); }, function () {}); return; }
+      const f = S1.pend; if (!f) return;
+      if (DW_MEM.dir && DW_MEM.dir.requestPermission) {
+        DW_MEM.dir.requestPermission({ mode: 'readwrite' }).then(function (p) { if (p === 'granted') save(f); else done('許可されなかったので 入れていません', true); }, function () { done('許可されなかったので 入れていません', true); });
+        return;
+      }
+      dwPick(w).then(function () { save(f); }, function () { done('フォルダを選ばなかったので 入れていません', true); });
+    });
+    w.addEventListener('dragstart', function (e) {
+      if (e.defaultPrevented || !e.dataTransfer) return;
+      let f = null; try { f = dwParse(e.dataTransfer.getData('DownloadURL')); } catch (x) {}
+      if (!f) return;
+      S1.cur = f; clearTimeout(S1.hideT);
+      dwDir(w).then(function () { if (S1.cur === f) { idle(); z.classList.remove('on'); } });
+      idle();
+    });
+    w.addEventListener('dragend', function () { S1.cur = null; z.classList.remove('on'); clearTimeout(S1.hideT); S1.hideT = setTimeout(function () { if (!S1.cur && !S1.pend) z.hidden = true; }, 600); });
+    const inZ = function (e) { return !z.hidden && e.target && e.target.nodeType === 1 && (e.target === z || z.contains(e.target)); };
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      w.addEventListener(ev, function (e) {
+        if (!S1.cur) return;
+        if (inZ(e)) { e.preventDefault(); e.stopImmediatePropagation(); try { e.dataTransfer.dropEffect = 'copy'; } catch (x) {} z.classList.add('on'); }
+        else z.classList.remove('on');
+      }, true);
+    });
+    w.addEventListener('drop', function (e) {
+      if (!S1.cur || !inZ(e)) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      const f = S1.cur; S1.cur = null; z.classList.remove('on');
+      say('入れています…'); save(f);
+    }, true);
+  }
+  dwInstall(window);
   function dOutUrl(b) { return new Promise(function (ok, ng) { const r = new FileReader(); r.onload = function () { ok(String(r.result)); }; r.onerror = function () { ng(new Error('ファイルを用意できませんでした')); }; r.readAsDataURL(b); }); }
   function dOutFmtPaint() {
     const w = $('dOutFmt'); if (!w) return;
@@ -7399,6 +7515,16 @@
     const u = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1;
     dvZoom(Math.exp(-e.deltaY * u * 0.0018), e.clientX, e.clientY);
   }, { passive: false });
+  /* ★ 2026-11-11：拡大していても・PDF でも［⇲ つかむ］からなら 外へ（パソコンのフォルダ・DocuWorks へ） */
+  $('dvGrip').addEventListener('mouseenter', function () { const it = S.dvIt; if (DOUT_NAT && it && !fileKind(it.name)) dOutPrep(it); });
+  $('dvGrip').addEventListener('click', function () { dcMsg('［⇲ つかむ］を そのまま つかんで、パソコンのフォルダや DocuWorks（右下に出る受け口）へ 落としてください。'); });
+  $('dvGrip').addEventListener('dragstart', function (e) {
+    const it = S.dvIt;
+    if (!DOUT_NAT || !it || fileKind(it.name)) { e.preventDefault(); if (it && fileKind(it.name)) dcMsg('エクセルなどは 外へ出せません（開いてから保存してください）。', true); return; }
+    const o = dOutPrep(it);
+    if (!o.url) { e.preventDefault(); dcMsg(o.err || 'ファイルを用意しています。少ししてから もう一度つかんでください。', !!o.err); return; }
+    try { e.dataTransfer.setData('DownloadURL', o.mime + ':' + o.name + ':' + o.url); dtPutFile(e, o); e.dataTransfer.effectAllowed = 'copy'; const im = $('dvBody').querySelector('img'); if (im && im.complete && im.naturalWidth) e.dataTransfer.setDragImage(im, 40, 40); } catch (x) {}
+  });
   /* ★ K-0010：大きく見ている写真（元の大きさのとき）も つかんで パソコンへ落とすと ファイルになる */
   $('dvBody').addEventListener('dragstart', function (e) {
     const it = S.dvIt, im = e.target;
