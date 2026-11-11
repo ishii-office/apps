@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794357418;</script>
+<script>window.__PAGE_VER=1794368763;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -12373,6 +12373,12 @@
   function aTreeGet() { return boxesOf($('aBoxes').value); }
   function aTreeSet(list, hid) { hid = hid || hiddenOf($('aBoxes').value); $('aBoxes').value = list.map(function (x) { return (hid[x] ? '~' : '') + x; }).join('\n'); aPreview(); }
   function subOf(list, path) { return list.filter(function (x) { return x === path || x.indexOf(path + '/') === 0; }); }
+  /* ★★ 補助簿の様式（Code.js の BOOK_FORMS と同じ。片方だけ直さない。tools/admin.mjs が突き合わせる） */
+  const BOOK_FORMS = [
+    { v: 1, icon: '📒', name: '出納帳', kind: '汎用', what: '日付・摘要・入金・出金・残高' },
+    { v: 'kake', icon: '📘', name: '掛帳（売掛帳・買掛帳）', kind: '汎用', what: '締日・発生額・入金日・入金額・入金口座・残高' },
+    { v: 'nippo', icon: '📋', name: '業務日報', kind: '専用', from: 'ビーメイツ（ANCHOVY）', what: '売上・仕入（領収書1枚＝1行）・レジの現金・天気・売上の見込み。保存すると 現金出納帳が ひとりでにでき 現金の箱に入る' }
+  ];
   function aTreeDraw() {
     const t = $('aTree'); t.textContent = '';
     const list = aTreeGet();
@@ -12425,14 +12431,21 @@
           });
           row.appendChild(ab);
           /* ★ 出納帳（2026-11-07）：入れると 顧問先の画面の 何年何月分の右に［📒 出納帳］が出る（日付・摘要・入金・出金・残高） */
-          /* ★ 補助簿（2026-11-08）：押すたびに 補助簿なし → 📒 出納帳あり → 📘 掛帳あり → 補助簿なし */
+          /* ★★ 補助簿（2026-11-11）：押して回すのをやめて えらぶ形に。汎用（出納帳・掛帳）と 専用様式（業務日報 ほか。顧問先の紙に合わせて作ったもの） */
           const kk = bc.book === 'kake', np = bc.book === 'nippo';
-          /* ★ 業務日報（2026-11-10）：補助簿なし → 📒 出納帳 → 📘 掛帳 → 📋 業務日報 → 補助簿なし。業務日報を毎日つけると 出納帳が ひとりでにできる */
-          const bk = el('button', 'sm2 book' + (bc.book ? ' on' : '') + (kk ? ' kake' : '') + (np ? ' nippo' : ''), np ? '📋 業務日報あり' : kk ? '📘 掛帳あり' : bc.book ? '📒 出納帳あり' : '補助簿なし'); bk.type = 'button';
-          bk.title = np ? '顧問先が この箱で 業務日報（売上・仕入・現金の数え・天気）を毎日書けます。書くと 出納帳が ひとりでにできます。押すと 補助簿なし に戻します' : kk ? '顧問先が この箱で 掛帳（締日・発生額・入金日・入金額・入金口座・残高）を書けます。押すと 業務日報 にします' : bc.book ? '顧問先が この箱で 出納帳（日付・摘要・入金・出金・残高）を書けます。押すと 掛帳 にします' : '押すと この箱に 補助簿を付けます（1回目＝出納帳、2回目＝掛帳（売掛帳・買掛帳）、3回目＝業務日報）。科目は選ばない簡易なもの';
-          bk.addEventListener('click', function () {
+          const bk = el('select', 'sm2 book' + (bc.book ? ' on' : '') + (kk ? ' kake' : '') + (np ? ' nippo' : '')); bk.setAttribute('aria-label', '補助簿');
+          { const o0 = el('option', null, '補助簿なし'); o0.value = ''; bk.appendChild(o0);
+            [['汎用', '汎用（どの顧問先でも）'], ['専用', '専用様式（顧問先の紙に合わせたもの）']].forEach(function (g) {
+              const og = document.createElement('optgroup'); og.label = g[1];
+              BOOK_FORMS.filter(function (f) { return f.kind === g[0]; }).forEach(function (f) { const o = el('option', null, f.icon + ' ' + f.name + (f.from ? '（' + f.from + '様式）' : '') + 'あり'); o.value = String(f.v); o.title = f.what; og.appendChild(o); });
+              bk.appendChild(og);
+            }); }
+          bk.value = bc.book ? String(bc.book) : '';
+          const bf = BOOK_FORMS.filter(function (f) { return f.v === bc.book; })[0];
+          bk.title = bf ? '顧問先が この箱で ' + bf.name + '（' + bf.what + '）を書けます' + (bf.kind === '専用' ? '。' + (bf.from || '') + 'の紙の様式に合わせて作った 専用の補助簿です（ほかの顧問先でも 合えば使えます）' : '') : 'この箱に 補助簿（顧問先が アプリで書く帳面）を付けます。汎用（出納帳・掛帳）か、顧問先の紙に合わせた 専用様式を選びます';
+          bk.addEventListener('change', function () {
             const cur = A.bconf[path] || {};
-            if (cur.book === 'nippo') delete cur.book; else if (cur.book === 'kake') cur.book = 'nippo'; else if (cur.book) cur.book = 'kake'; else cur.book = 1;
+            if (!bk.value) delete cur.book; else cur.book = bk.value === '1' ? 1 : bk.value;
             if (cur.day || cur.ask || cur.book) A.bconf[path] = cur; else delete A.bconf[path];
             aTreeDraw();
           });
