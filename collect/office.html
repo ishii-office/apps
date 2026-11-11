@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794383764;</script>
+<script>window.__PAGE_VER=1794384951;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3023,14 +3023,51 @@
     b.dataset.ct = ct || '';
   }
   function pairClose() { if (CWIN && !CWIN.closed) { try { CWIN.close(); } catch (e) {} } CWIN = null; CWIN_CODE = ''; }
+  /* ★★ 2026-11-11：［顧問先の画面を表示］を 速く。顧問先を選んだら うしろで その顧問先の画面が はじめに聞くもの
+       （clientInfo・clientHistory の返事そのまま）を取って、同じ場所（ishii-office.github.io）の端末に置く（collect_pre・10分・8件まで）。
+       顧問先の画面は 開いた瞬間に それで描き、そのあと いつもどおり聞き直す。鍵のある顧問先は 一覧を置かない */
+  const PRE_GO = {};
+  function cpPre(code) {
+    if (LIVE || !WEB2 || !API_URL || !code) return Promise.resolve();
+    let tk = ''; try { tk = new URL(clientUrlNow(code)).searchParams.get('t') || ''; } catch (e) {}
+    if (!tk) return Promise.resolve();
+    let m = {}; try { m = JSON.parse(localStorage.getItem('collect_pre') || '{}') || {}; } catch (e) { m = {}; }
+    if (m[tk] && Date.now() - (m[tk].at || 0) < 180000) return Promise.resolve();
+    if (PRE_GO[tk]) return PRE_GO[tk];
+    const raw = function (fn) {
+      return fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: [tk] }) })
+        .then(function (r) { return r.json(); }).then(function (o) { if (!o || !o.ok) throw new Error((o && o.msg) || 'ng'); return o.r; });
+    };
+    PRE_GO[tk] = raw('clientInfo').then(function (info) {
+      return (info && info.lock ? Promise.resolve(null) : raw('clientHistory').catch(function () { return null; })).then(function (hist) {
+        let mm = {}; try { mm = JSON.parse(localStorage.getItem('collect_pre') || '{}') || {}; } catch (e) { mm = {}; }
+        mm[tk] = { at: Date.now(), info: info, hist: info && info.lock ? null : hist };
+        const ks = Object.keys(mm).sort(function (a, b) { return (mm[b].at || 0) - (mm[a].at || 0); });
+        ks.slice(8).forEach(function (k) { delete mm[k]; });
+        try { localStorage.setItem('collect_pre', JSON.stringify(mm)); } catch (e) { try { localStorage.removeItem('collect_pre'); } catch (x) {} }
+      });
+    }).catch(function () {}).then(function () { delete PRE_GO[tk]; });
+    return PRE_GO[tk];
+  }
+  let PRE_T = 0;
+  function cpPreSoon() { clearTimeout(PRE_T); if (PANE || isNarrow()) return; PRE_T = setTimeout(function () { if (S.code) cpPre(S.code); }, 700); }
   function pairSync() {
     if (PANE) {
       if (!S.code || !PANE_READY) return; const code = S.code;
       clientUrlOf(code).then(function (u) { if (code !== S.code) return; if (u) try { window.parent.postMessage({ k: 'collect-pair', t: 'client', url: u }, location.origin); } catch (e) {} }, function () {});
       return;
     }
-    if (CWIN && (CWIN.closed || CWIN_CODE !== S.code)) pairClose();
+    if (!CWIN) return;
+    if (CWIN.closed) { CWIN = null; CWIN_CODE = ''; return; }
+    if (CWIN_CODE === S.code) return;
+    /* ★★ 2026-11-11：開いている顧問先の画面も その顧問先へ 切り替える（前は 閉じていた） */
+    const code = S.code, w = CWIN; CWIN_CODE = code;
+    const go = function (u) { if (CWIN !== w || CWIN_CODE !== code || w.closed) return; if (!u) { pairClose(); return; } try { w.location.href = u; } catch (e) { pairClose(); } };
+    const quick = clientUrlNow(code);
+    if (quick) { go(quick); return; }   /* すぐ移る（前の顧問先を出したままにしない）。先取りが間に合えば すぐ描ける */
+    clientUrlOf(code).then(go, function () { pairClose(); });
   }
+  $('toClient').addEventListener('mouseenter', function () { if (S.code) cpPre(S.code); });
   $('toClient').addEventListener('click', function () {
     const code = S.code; if (!code) { alert('先に 顧問先を選んでください。'); return; }
     if (CWIN && !CWIN.closed && CWIN_CODE === code) { CWIN.focus(); return; }
@@ -3067,7 +3104,7 @@
   }
   function switchClient(soft) {
     /* soft … 同じ顧問先のまま 顧問先の並びだけ変わったとき（箱の選び肢だけ作り直す） */
-    if (!soft) { try { pairSync(); } catch (e) {} }
+    if (!soft) { try { pairSync(); } catch (e) {} try { cpPreSoon(); } catch (e) {} }
     if (!soft && S.tab === 'Send') { try { sdLoad(); } catch (e) {} }   /* ★ 送付物：中の顧問先の画面も その顧問先に入れ替える */
     if (!soft) { S.dirty = false; S.rot = {}; S.dsel = null; S.open = {}; S.rep = {}; S.act = ''; }
     if (!soft) {
