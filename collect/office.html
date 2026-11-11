@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794368763;</script>
+<script>window.__PAGE_VER=1794370358;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -804,6 +804,8 @@
   .dvmk .mk-m, .dvmk .mk-c { display: inline-flex; gap: 4px; }
   .dvmk .mk-m button { font: inherit; font-size: 13px; font-weight: 700; border: 1.5px solid var(--line); background: #fff; border-radius: 8px; padding: 3px 10px; cursor: pointer; }
   .dvmk .mk-m button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .dvmk .mk-m button.keep { box-shadow: 0 0 0 3px #F2B800; background: #0A4F42; }   /* 続けて置ける（K-0103）。幅を変えない（押している最中に 位置がずれないように） */
+  .dvmk .mk-z input { width: 64px; font: inherit; font-size: 14px; text-align: right; padding: 2px 4px; border: 1.5px solid var(--line); border-radius: 6px; margin: 0 2px; }
   .dvmk .mk-c button { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; background: var(--c); box-shadow: 0 0 0 1.5px var(--line); cursor: pointer; }
   .dvmk .mk-c button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--c); }
   .dvmk .mk-msg { font-size: 12px; color: var(--sub); }
@@ -2291,9 +2293,9 @@
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
     <button type="button" class="btn ghost sm" id="dvClose">閉じる</button></span></div>
   <div class="dvmk" id="dvMkBar" hidden>
-    <span class="mk-m" role="group" aria-label="書き方"><button type="button" data-m="text" aria-pressed="true">文字</button><button type="button" data-m="line" aria-pressed="false">下線</button><button type="button" data-m="box" aria-pressed="false">枠で囲む</button><button type="button" data-m="check" aria-pressed="false" title="押した所に ✔ を置く（K-0094）">✔ チェック</button><button type="button" data-m="note" aria-pressed="false" title="押した所に 付箋を貼って メモを書く（K-0094）">🗒 付箋</button><button type="button" data-m="stamp" aria-pressed="false" title="事務所のハンコを押す（押した所に置く。日付印は 今日の日付）">🔴 ハンコ</button></span>
+    <span class="mk-m" role="group" aria-label="書き方"><button type="button" data-m="text" aria-pressed="false" title="押した所に 文字を書く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">文字</button><button type="button" data-m="line" aria-pressed="false" title="なぞって 下線を引く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">下線</button><button type="button" data-m="box" aria-pressed="false" title="なぞって 枠で囲む（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">枠で囲む</button><button type="button" data-m="check" aria-pressed="false" title="押した所に ✔ を置く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">✔ チェック</button><button type="button" data-m="note" aria-pressed="false" title="押した所に 付箋を貼って メモを書く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">🗒 付箋</button><button type="button" data-m="stamp" aria-pressed="false" title="事務所のハンコを押す（押した所に置く。日付印は 今日の日付）（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">🔴 ハンコ</button></span>
     <span class="mk-c" role="group" aria-label="色"><button type="button" data-c="#D0201A" aria-pressed="true" title="赤" style="--c:#D0201A"></button><button type="button" data-c="#111111" aria-pressed="false" title="黒" style="--c:#111111"></button><button type="button" data-c="#1A4FD0" aria-pressed="false" title="青" style="--c:#1A4FD0"></button><button type="button" data-c="#1E8E3E" aria-pressed="false" title="緑" style="--c:#1E8E3E"></button><button type="button" data-c="#F2B800" aria-pressed="false" title="黄" style="--c:#F2B800"></button><button type="button" data-c="#FFE680" aria-pressed="false" title="付箋の黄" style="--c:#FFE680"></button><button type="button" data-c="#FFC2D6" aria-pressed="false" title="付箋の桃" style="--c:#FFC2D6"></button><button type="button" data-c="#BFE6FF" aria-pressed="false" title="付箋の水色" style="--c:#BFE6FF"></button><label class="mk-pick" title="好みの色を選ぶ"><input type="color" id="mkColor" value="#D0201A" aria-label="好みの色">🎨</label></span>
-    <label class="mk-z">文字の大きさ <select id="mkSize" aria-label="文字の大きさ"><option value="0.7">小</option><option value="1" selected>中</option><option value="1.5">大</option><option value="2.2">特大</option></select></label>
+    <label class="mk-z">文字の大きさ <input id="mkSize" type="text" inputmode="decimal" list="mkSizeList" value="18" autocomplete="off" aria-label="文字の大きさ（ポイント。一覧から選ぶか 数字を打つ）" title="一覧から選ぶか、数字を打って Enter（4〜200）">pt<datalist id="mkSizeList"><option value="8"></option><option value="9"></option><option value="10"></option><option value="10.5"></option><option value="11"></option><option value="12"></option><option value="14"></option><option value="16"></option><option value="18"></option><option value="20"></option><option value="22"></option><option value="24"></option><option value="26"></option><option value="28"></option><option value="36"></option><option value="48"></option><option value="72"></option></datalist></label>
     <span class="mk-st" id="mkStBar" hidden></span>
     <span class="mk-sel" id="mkSelBar" hidden><b id="mkSelL">選んだ文字：</b><button type="button" class="btn ghost sm" id="mkFix">文字を直す</button><button type="button" class="btn ghost sm" id="mkSmall" title="少し小さく">A－</button><button type="button" class="btn ghost sm" id="mkBig" title="少し大きく">A＋</button><button type="button" class="btn ghost sm" id="mkDel">🗑 消す</button></span>
     <button type="button" class="btn ghost sm" id="mkUndo">↶ 1つ戻す</button>
@@ -7640,7 +7642,11 @@
 
   /* ================= ★★ 書きこむ（文字・下線・枠。2026-10-26） =================
      元の写真・PDF は書き換えない。形だけを 別の列に持ち（workMark）、大きく見るときに 上に重ねる */
-  const MK = { on: false, m: 'text', c: '#D0201A', z: 1, list: [], was: '', drag: null, sel: -1, mv: null, st: 'auto' };
+  /* ★ K-0102：文字の大きさは ポイント（Word と同じ 8〜72 の一覧・自由に打てる）。ページの幅を A4（595pt）とみて 大きさを決める。
+       書いたものには これまでどおり 倍率 z（文字：3%＝約18pt が 1・付箋：2%＝約12pt が 1）で持つ（前に書いたものは そのまま） */
+  const MK_PT_TEXT = 595 * 0.03, MK_PT_NOTE = 595 * 0.02;
+  function mkPtOf(m) { return Math.round(((m.z || 1) * (m.t === 'note' ? MK_PT_NOTE : MK_PT_TEXT)) * 2) / 2; }
+  const MK = { on: false, m: '', keep: false, c: '#D0201A', z: 1, list: [], was: '', drag: null, sel: -1, mv: null, st: 'auto' };
   /* ★★ 事務所のハンコ（2026-11-01）：日付印（はじめから使える）と 登録したハンコの画像。押すと 書きこみの1つとして重ねる（元の資料は書き換えない） */
   let STAMPS = null, STAMPS_P = null;
   function stampsLoad() {
@@ -7819,7 +7825,7 @@
     MK.sel = i;
     const m = MK.list[i], on = !!(m && MK_SEL_T[m.t]); if (!on) MK.sel = -1;
     $('mkSelBar').hidden = !on;
-    if (on) { $('mkSelL').textContent = { stamp: '選んだハンコ：', check: '選んだ ✔：', note: '選んだ付箋：' }[m.t] || '選んだ文字：'; $('mkFix').hidden = !(m.t === 'text' || m.t === 'note'); $('mkFix').textContent = m.t === 'note' ? '付箋を直す' : '文字を直す'; if (m.z && (m.t === 'text' || m.t === 'note')) $('mkSize').value = String([0.7, 1, 1.5, 2.2].reduce(function (a, b) { return Math.abs(b - m.z) < Math.abs(a - m.z) ? b : a; }, 1)); }
+    if (on) { $('mkSelL').textContent = { stamp: '選んだハンコ：', check: '選んだ ✔：', note: '選んだ付箋：' }[m.t] || '選んだ文字：'; $('mkFix').hidden = !(m.t === 'text' || m.t === 'note'); $('mkFix').textContent = m.t === 'note' ? '付箋を直す' : '文字を直す'; if (m.t === 'text' || m.t === 'note') $('mkSize').value = String(mkPtOf(m)); }
     if (on) document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.c === m.c)); });
     mkPaint();
   }
@@ -7840,11 +7846,12 @@
         return;
       }
       if (MK.sel >= 0) { MK.sel = -1; $('mkSelBar').hidden = true; const sb = sv.querySelector('.mksel'); if (sb) sb.remove(); }   /* 何もない所＝選ぶのをやめて ふつうに書く */
-      if (MK.m === 'text') { mkText(e.clientX, e.clientY, p, a); return; }
-      if (MK.m === 'stamp') { const vb = sv.viewBox.baseVal; stampPut(p, a, vb.width, vb.height); return; }
-      if (MK.m === 'check') { const vb = sv.viewBox.baseVal, w = 0.05 * (MK.z || 1), h = w * vb.width / Math.max(1, vb.height); MK.list.push({ p: p, t: 'check', x: Math.max(0, Math.min(1 - w, a.x - w * 0.35)), y: Math.max(0, Math.min(1 - h, a.y - h * 0.8)), w: w, h: h, c: MK.c }); mkDirty(); mkPaint(); return; }
-      if (MK.m === 'note') { mkText(e.clientX, e.clientY, p, a, null, 'note'); return; }
-      MK.drag = { p: p, a: a, cur: null };
+      if (!MK.m) return;   /* K-0103：道具を選んでいなければ 何も置かない */
+      if (MK.m === 'text') { mkText(e.clientX, e.clientY, p, a); mkToolUsed(); return; }
+      if (MK.m === 'stamp') { const vb = sv.viewBox.baseVal; stampPut(p, a, vb.width, vb.height); mkToolUsed(); return; }
+      if (MK.m === 'check') { const vb = sv.viewBox.baseVal, w = 0.05 * (MK.pt ? MK.pt / MK_PT_TEXT : 1), h = w * vb.width / Math.max(1, vb.height); MK.list.push({ p: p, t: 'check', x: Math.max(0, Math.min(1 - w, a.x - w * 0.35)), y: Math.max(0, Math.min(1 - h, a.y - h * 0.8)), w: w, h: h, c: MK.c }); mkDirty(); mkPaint(); mkToolUsed(); return; }
+      if (MK.m === 'note') { mkText(e.clientX, e.clientY, p, a, null, 'note'); mkToolUsed(); return; }
+      MK.drag = { p: p, a: a, cur: null, m: MK.m };
       try { sv.setPointerCapture(e.pointerId); } catch (x) {}
     });
     sv.addEventListener('pointermove', function (e) {
@@ -7867,7 +7874,7 @@
       if (MK.mv) { const mv = MK.mv; MK.mv = null; if (mv.moved) { mkDirty(); mkPaint(); } return; }
       if (!MK.drag || MK.drag.p !== p) return;
       const m = MK.drag.cur; MK.drag = null;
-      if (m && (Math.abs(m.w) > 0.01 || Math.abs(m.h) > 0.01)) { MK.list.push(m); mkDirty(); }
+      if (m && (Math.abs(m.w) > 0.01 || Math.abs(m.h) > 0.01)) { MK.list.push(m); mkDirty(); mkToolUsed(); }
       mkPaint();
     });
     sv.addEventListener('click', function (e) { e.stopPropagation(); });
@@ -7895,11 +7902,11 @@
     const em = edit != null ? MK.list[edit] : null; if (em) { inp.value = em.s; inp.placeholder = '直す文字（外を押すと 決める）'; }
     inp.style.left = Math.min(cx, innerWidth - 260) + 'px'; inp.style.top = Math.max(4, Math.min(cy - 16, innerHeight - 90)) + 'px';
     const col = em ? em.c : MK.c; inp.style.color = kind === 'note' ? mkInk(col) : col; if (kind === 'note') inp.style.background = col;
-    document.body.appendChild(inp); setTimeout(function () { inp.focus(); }, 0);
+    document.body.appendChild(inp); try { inp.focus(); } catch (x) {} setTimeout(function () { inp.focus(); }, 0);   /* すぐ打てるように その場でも（K-0103 で 道具のボタンに 手元が残るため） */
     let fin = false; const done = function (keep) { if (fin) return; fin = true; const v = inp.value.replace(/\s+$/, '').replace(/^\n+/, ''); if (inp.isConnected) inp.remove();
       if (em) { if (keep && v.trim() && v !== em.s) { em.s = v; if (em.t === 'note') { const wh = mkPageWH(em.p); noteFit(em, wh[0], wh[1]); } mkDirty(); } mkPaint(); return; }
       if (keep && v.trim()) {
-        const m = { p: p, t: kind, x: a.x, y: a.y, w: 0, h: 0, s: v, c: MK.c }; if ((MK.z || 1) !== 1) m.z = MK.z;
+        const m = { p: p, t: kind, x: a.x, y: a.y, w: 0, h: 0, s: v, c: MK.c }; if (MK.pt) { const z = Math.round(MK.pt / (kind === 'note' ? MK_PT_NOTE : MK_PT_TEXT) * 1000) / 1000; if (z !== 1) m.z = z; }
         if (kind === 'note') { const wh = mkPageWH(p); noteFit(m, wh[0], wh[1]); }
         MK.list.push(m); mkDirty(); mkPaint();
       } };
@@ -7910,9 +7917,9 @@
   function mkStart() {
     const it = S.dvIt; if (!it) return;
     if (fileKind(it.name)) { dcMsg('この形（エクセルなど）には 書きこめません。', true); return; }
-    MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true;
+    MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true; MK.m = ''; MK.keep = false; mkToolPaint();
     $('dvMark').setAttribute('aria-pressed', 'true'); $('dvMkBar').hidden = false; $('dview').classList.add('dv-mk'); stampsLoad().then(stampBar);
-    $('mkMsg').textContent = '押して書く（文字・✔・付箋は 押した所に／下線・枠は なぞる）。文字と付箋は Enter で改行・外を押すか Ctrl＋Enter で置く。書いたものは 押すと選べて、つかんで動かす・直す・大きさや色を変える・消す ができます。元の写真・PDF は書き換えず、重ねて残します。';
+    $('mkMsg').textContent = '書くものを選んで 押して書く（1回押す＝1つだけ・2回続けて押す＝続けて置ける。文字・✔・付箋は 押した所に／下線・枠は なぞる）。文字と付箋は Enter で改行・外を押すか Ctrl＋Enter で置く。書いたものは 押すと選べて、つかんで動かす・直す・大きさや色を変える・消す ができます。元の写真・PDF は書き換えず、重ねて残します。';
     mkPaint();
   }
   /* save … 保存する（変わっていなければ 何もしない） */
@@ -7935,14 +7942,21 @@
   $('mkClear').addEventListener('click', function () { MK.list = []; MK.sel = -1; $('mkSelBar').hidden = true; mkDirty(); mkPaint(); });
   $('mkFix').addEventListener('click', function () { if (MK.sel >= 0) mkFixText(MK.sel); });
   function stampZoom(m, k) { const w = Math.max(0.04, Math.min(0.6, m.w * k)), h = m.h * w / m.w; m.x = Math.max(0, Math.min(1 - w, m.x + (m.w - w) / 2)); m.y = Math.max(0, Math.min(1 - h, m.y + (m.h - h) / 2)); m.w = w; m.h = h; }
-  const mkZoomOne = function (m, k) { if (m.t === 'stamp' || m.t === 'check') { stampZoom(m, k); return; } m.z = Math.max(0.4, Math.min(5, Math.round((m.z || 1) * k * 100) / 100)); if (m.t === 'note') { const wh = mkPageWH(m.p); noteFit(m, wh[0], wh[1]); } };
+  const mkZoomOne = function (m, k) { if (m.t === 'stamp' || m.t === 'check') { stampZoom(m, k); return; } m.z = Math.max(0.2, Math.min(12, Math.round((m.z || 1) * k * 100) / 100)); if (m.t === 'note') { const wh = mkPageWH(m.p); noteFit(m, wh[0], wh[1]); } };
   $('mkSmall').addEventListener('click', function () { mkSelEdit(function (m) { mkZoomOne(m, 1 / 1.18); }); });
   $('mkBig').addEventListener('click', function () { mkSelEdit(function (m) { mkZoomOne(m, 1.18); }); });
   /* ★ K-0094：文字の大きさ（これから書く文字・付箋・✔。選んでいる文字・付箋にも効く） */
-  $('mkSize').addEventListener('change', function () {
-    MK.z = Number(this.value) || 1;
-    if (MK.sel >= 0) mkSelEdit(function (m) { if (m.t === 'text' || m.t === 'note') { if (MK.z === 1) delete m.z; else m.z = MK.z; if (m.t === 'note') { const wh = mkPageWH(m.p); noteFit(m, wh[0], wh[1]); } } });
-  });
+  function mkSizeSet(fromList) {
+    const e = $('mkSize'); let v = Number(String(e.value).replace(/[０-９．]/g, function (c) { return c === '．' ? '.' : String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/[^\d.]/g, ''));
+    if (!(v > 0)) { e.value = String(MK.pt || 18); return; }
+    v = Math.max(4, Math.min(200, Math.round(v * 2) / 2)); if (!fromList) e.value = String(v);
+    MK.pt = v;
+    if (MK.sel >= 0) mkSelEdit(function (m) { if (m.t === 'text' || m.t === 'note') { const z = Math.round(v / (m.t === 'note' ? MK_PT_NOTE : MK_PT_TEXT) * 1000) / 1000; if (z === 1) delete m.z; else m.z = z; if (m.t === 'note') { const wh = mkPageWH(m.p); noteFit(m, wh[0], wh[1]); } } });
+  }
+  $('mkSize').addEventListener('change', function () { mkSizeSet(false); });
+  $('mkSize').addEventListener('input', function () { if ([].some.call($('mkSizeList').options, function (o) { return o.value === $('mkSize').value; })) mkSizeSet(true); });   /* 一覧から選んだら すぐ */
+  $('mkSize').addEventListener('keydown', function (e) { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); mkSizeSet(false); this.blur(); } });
+  $('mkSize').addEventListener('focus', function () { const t = this; setTimeout(function () { try { t.select(); } catch (x) {} }, 0); });
   /* ★ K-0094：好みの色 */
   function mkColorSet(c) {
     MK.c = String(c || '#D0201A').toUpperCase();
@@ -7956,13 +7970,25 @@
     if (!MK.on || MK.sel < 0) return; const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA') return;
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); $('mkDel').click(); }
   }, true);
-  document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('click', function () {
-    const was = MK.m; MK.m = b.dataset.m; document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+  /* ★★ K-0103：道具は 1回押す＝1つだけ置く（置いたら 道具が外れる）・2回続けて押す（ダブルクリック）＝続けて置ける（🔁）。
+       続けて置いているときは もう一度押すか Esc で外れる */
+  function mkToolPaint() {
+    document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (x) { const on = x.dataset.m === MK.m; x.setAttribute('aria-pressed', String(on)); x.classList.toggle('keep', on && MK.keep); });
+  }
+  function mkToolUsed() { if (MK.keep) return; MK.m = ''; mkToolPaint(); stampBar(); }
+  document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('dblclick', function () { MK.m = b.dataset.m; MK.keep = true; mkToolPaint(); }); });
+  document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('click', function (e) {
+    const was = MK.m;
+    if (e.detail >= 2) return;   /* ダブルクリックの2回目（dblclick で 続けて にする） */
+    if (MK.keep && was === b.dataset.m) { MK.m = ''; MK.keep = false; mkToolPaint(); stampBar(); return; }   /* 続けて の道具を もう一度押す＝やめる */
+    MK.m = b.dataset.m; MK.keep = false; mkToolPaint();
     /* 付箋は 淡い色から（濃い色のままだと 字が読みにくい）。付箋をやめたら 赤に戻す */
     if (MK.m === 'note' && mkInk(MK.c) === '#fff') mkColorSet('#FFE680'); else if (was === 'note' && MK.m !== 'note' && mkInk(MK.c) === '#111' && /^#(FFE680|FFC2D6|BFE6FF)$/.test(MK.c)) mkColorSet('#D0201A');
     if (MK.m === 'stamp') stampsLoad().then(stampBar); else stampBar(); }); });
   document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (b) { b.addEventListener('click', function () { mkColorSet(b.dataset.c); }); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dview').hidden) docsClose(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && MK.on && MK.m && !document.querySelector('.mkin')) { MK.m = ''; MK.keep = false; mkToolPaint(); stampBar(); return; }   /* K-0103：まず 道具を外す */
+    if (e.key === 'Escape' && !$('dview').hidden) docsClose(); });
 
   function rowOf(id) { return $('jlist').querySelector('.jdrow[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'); }
   function itemOf(id) { return S.view.find(function (it) { return it.id === id; }); }
