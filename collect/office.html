@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794452812;</script>
+<script>window.__PAGE_VER=1794452986;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -5908,7 +5908,7 @@
       const W = 1000, H = Math.round(1000 * nh / nw); sv.setAttribute('viewBox', '0 0 ' + W + ' ' + H); sv.textContent = '';
       ms.forEach(function (m) { try { sv.appendChild(mkShape(m, W, H)); } catch (e) {} });
     };
-    im.addEventListener('load', draw); draw();
+    im.addEventListener('load', draw); setTimeout(draw, 0);   /* 画面を組み立てている途中でも 描く道具が そろってから */
     if (STAMPS === null && ms.some(function (m) { return m.t === 'stamp'; })) stampsLoad().then(draw, function () {});
     b.appendChild(sv);
   }
@@ -6860,7 +6860,7 @@
        元の写真・PDF（Drive のファイル）は書き換えない。出すときだけ 重ねる */
   const STAMP_IMG = {};
   async function marksReady(items) {
-    if (!items.some(function (it) { return (it.mark || []).some(function (m) { return m.t === 'stamp' && m.s !== 'auto'; }); })) { if (items.some(function (it) { return (it.mark || []).length; })) await stampsLoad(); return; }
+    if (!items.some(function (it) { return (it.mark || []).some(function (m) { return m.t === 'stamp' && m.s !== 'auto' && m.s !== 'sumi'; }); })) { if (items.some(function (it) { return (it.mark || []).length; })) await stampsLoad(); return; }
     await stampsLoad();
     await Promise.all(((STAMPS && STAMPS.list) || []).map(function (st) {
       if (STAMP_IMG[st.id]) return null;
@@ -6888,8 +6888,12 @@
       } else if (m.t === 'stamp') {
         const bx = m.x * W, by = m.y * H, bw = m.w * W, bh = m.h * H;
         const txt = function (t, cy, fs) { x.font = '700 ' + fs + 'px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(t, bx + bw / 2, cy); };
-        const im = m.s !== 'auto' ? STAMP_IMG[m.s] : null;
-        if (im) {
+        const im = m.s !== 'auto' && m.s !== 'sumi' ? STAMP_IMG[m.s] : null;
+        if (m.s === 'sumi') {   /* 「済」のハンコ（画面と同じ形） */
+          const r = Math.min(bw, bh) / 2, cx = bx + bw / 2, cy = by + bh / 2, lw = Math.max(1.5, r * 0.08);
+          x.lineWidth = lw; x.beginPath(); x.arc(cx, cy, r - lw, 0, Math.PI * 2); x.stroke();
+          x.font = '700 ' + (r * 1.15) + 'px ' + NOTE_FAM; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('済', cx, cy + r * 0.04);
+        } else if (im) {
           const k = Math.min(bw / im.naturalWidth, bh / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
           x.drawImage(im, bx + (bw - iw) / 2, by + (bh - ih) / 2, iw, ih);
           if (m.d) txt(m.d, by + bh / 2, Math.max(9 * W / 1000, Math.min(bw, bh) * 0.13));
@@ -7880,6 +7884,7 @@
       bar.appendChild(b); return b;
     };
     mkb('auto', '日付印（' + ((STAMPS && STAMPS.office) || '事務所') + '）');
+    mkb('sumi', '済');   /* ★ 2026-11-12（細谷）：丸に「済」 */
     ((STAMPS && STAMPS.list) || []).forEach(function (st) {
       mkb(st.id, st.name + (st.date ? '（日付）' : ''), st.data);
       const x = el('button', 'stx', '✕'); x.type = 'button'; x.title = '「' + st.name + '」を 消す（押したハンコは消えません）';
@@ -7913,7 +7918,8 @@
   function stampPut(p, a, W, H) {
     const st = stampOf(MK.st), w = 0.16, asp = st ? stampAspect(st) : 1;
     const h = w * asp * W / Math.max(1, H);
-    MK.list.push({ p: p, t: 'stamp', s: st ? st.id : 'auto', d: (!st || st.date) ? stampToday() : '', x: Math.max(0, Math.min(1 - w, a.x - w / 2)), y: Math.max(0, Math.min(1 - h, a.y - h / 2)), w: w, h: h, c: MK.c });
+    const sumi = MK.st === 'sumi';
+    MK.list.push({ p: p, t: 'stamp', s: sumi ? 'sumi' : st ? st.id : 'auto', d: sumi ? '' : (!st || st.date) ? stampToday() : '', x: Math.max(0, Math.min(1 - w, a.x - w / 2)), y: Math.max(0, Math.min(1 - h, a.y - h / 2)), w: w, h: h, c: MK.c });
     MK.sel = MK.list.length - 1; mkSelect(MK.sel); mkDirty();
   }
   /* ★ K-0006（2026-10-29）：書いた文字を 押して選ぶ → つかんで動かす・［文字を直す］（ダブルクリックでも）・［A－］［A＋］・色・［消す］（Delete キーでも）。
@@ -8031,7 +8037,11 @@
     const mk = function (t, at) { const e = document.createElementNS(SVGNS, t); Object.keys(at).forEach(function (k) { e.setAttribute(k, at[k]); }); g.appendChild(e); return e; };
     const tx = function (s, cy, fs) { const e = mk('text', { x: x + w / 2, y: cy, fill: c, 'font-size': fs, 'font-weight': '700', 'text-anchor': 'middle', 'dominant-baseline': 'middle' }); e.textContent = s; return e; };
     const st = stampOf(m.s);
-    if (m.s === 'auto' || !st) {
+    if (m.s === 'sumi') {   /* ★ 2026-11-12（細谷）：「済」のハンコ（丸に 済） */
+      const r = Math.min(w, h) / 2, cx = x + w / 2, cy = y + h / 2, lw = Math.max(1.5, r * 0.08);
+      mk('circle', { cx: cx, cy: cy, r: r - lw, fill: 'rgba(255,255,255,.05)', stroke: c, 'stroke-width': lw });
+      tx('済', cy + r * 0.04, r * 1.15).setAttribute('font-family', NOTE_FAM);
+    } else if (m.s === 'auto' || !st) {
       if (m.s !== 'auto' && STAMPS === null) stampsLoad().then(mkPaint);
       const r = Math.min(w, h) / 2, cx = x + w / 2, cy = y + h / 2, lw = Math.max(1.5, r * 0.06);
       mk('circle', { cx: cx, cy: cy, r: r - lw, fill: 'rgba(255,255,255,.05)', stroke: c, 'stroke-width': lw });
