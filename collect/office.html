@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794450775;</script>
+<script>window.__PAGE_VER=1794452067;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2301,9 +2301,9 @@
     <span class="mk-sel" id="mkSelBar" hidden><b id="mkSelL">選んだ文字：</b><button type="button" class="btn ghost sm" id="mkFix">文字を直す</button><button type="button" class="btn ghost sm" id="mkSmall" title="少し小さく">A－</button><button type="button" class="btn ghost sm" id="mkBig" title="少し大きく">A＋</button><button type="button" class="btn ghost sm" id="mkDel">🗑 消す</button></span>
     <button type="button" class="btn ghost sm" id="mkUndo">↶ 1つ戻す</button>
     <button type="button" class="btn ghost sm" id="mkClear">全部消す</button>
-    <button type="button" class="btn sm primary" id="mkSave">保存して終わる</button>
+    <button type="button" class="btn sm primary" id="mkSave" title="Ctrl＋S でも">保存して終わる</button>
     <button type="button" class="btn ghost sm" id="mkCancel">やめる</button>
-    <span class="mk-msg" id="mkMsg">押して書く（文字・✔・付箋は 押した所に／下線・枠は なぞる）。文字と付箋は Enter で改行・外を押すか Ctrl＋Enter で置く。付箋は 押すと 書き直せる。選んで Ctrl＋C → Ctrl＋V で 同じものを貼れる。元の写真・PDF は書き換えず、重ねて残します。</span>
+    <span class="mk-msg" id="mkMsg">押して書く（文字・✔・付箋は 押した所に／下線・枠は なぞる）。文字と付箋は Enter で改行・外を押すか Ctrl＋Enter で置く。付箋は 押すと 書き直せる。選んで Ctrl＋C → Ctrl＋V で 同じものを貼れる。Ctrl＋S で 保存して終わる。元の写真・PDF は書き換えず、重ねて残します。</span>
   </div>
   <div class="dvmemo" id="dvMemo" hidden></div>
   <div class="dvmain" id="dvwMain">
@@ -8144,7 +8144,7 @@
   }
   /* save … 保存する（変わっていなければ 何もしない） */
   function mkEnd(save) {
-    const pend = document.querySelector('.mkin'); if (pend && save) pend.blur(); else if (pend) pend.remove();   /* 打ちかけの文字は 置いてから */
+    const pend = document.querySelector('.mkin'); if (pend && save) { if (pend._done) pend._done(true); else pend.blur(); } else if (pend) pend.remove();   /* 打ちかけの文字は 置いてから */
     const it = S.dvIt, list = MK.list, changed = JSON.stringify(list) !== MK.was;
     MK.on = false; MK.drag = null; MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true;
     $('dvMark').setAttribute('aria-pressed', 'false'); $('dvMkBar').hidden = true; $('dview').classList.remove('dv-mk'); $('mkStBar').hidden = true;
@@ -8218,6 +8218,7 @@
   }
   document.addEventListener('keydown', function (e) {
     if (!MK.on || !(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+    if (String(e.key || '').toLowerCase() === 's') { e.preventDefault(); e.stopPropagation(); mkEnd(true); return; }   /* ★ 2026-11-12（細谷）：Ctrl＋S＝［保存して終わる］（書きかけの文字・付箋も 置いてから） */
     const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA' || document.querySelector('.mkin')) return;
     const k = String(e.key || '').toLowerCase();
     if ((k === 'c' && mkCopy()) || (k === 'v' && mkPaste())) { e.preventDefault(); e.stopPropagation(); }
