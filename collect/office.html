@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794468084;</script>
+<script>window.__PAGE_VER=1794470283;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3529,7 +3529,7 @@
   function geoDefault(name) {
     const sc = window.screen || {}, aw = sc.availWidth || 1600, ah = sc.availHeight || 1000, ax = sc.availLeft || 0, ay = sc.availTop || 0;
     const w = Math.floor(aw / 3);
-    return name === 'photo' ? { x: ax, y: ay, w: w, h: ah } : { x: ax + w * 2, y: ay, w: aw - w * 2, h: ah };
+    return name === 'photo' ? { x: ax, y: ay, w: w, h: ah } : { x: ax + w, y: ay, w: w, h: ah };
   }
   function geoFeat(name) {
     const g = geoAll()[name] || geoDefault(name);
@@ -3552,13 +3552,14 @@
     const r = { x: cur.availLeft || 0, y: cur.availTop || 0, w: cur.availWidth, h: cur.availHeight };
     const w3 = Math.floor(r.w / 3);
     const box = function (x, w) { return { x: x, y: r.y, w: w, h: r.h }; };
-    if (!main) return { gp: box(r.x, w3), gm: box(r.x + w3, w3), gl: box(r.x + w3 * 2, r.w - w3 * 2), fit: true };
+    /* ★★ 2026-11-12：並びは 左から 写真｜元帳｜この画面（仕訳化）。最終チェックで 写真と元帳を 隣どうしで 見くらべるため（前は 写真｜この画面｜元帳） */
+    if (!main) return { gp: box(r.x, w3), gl: box(r.x + w3, w3), gm: box(r.x + w3 * 2, r.w - w3 * 2), fit: true };
     const MIN = 320, mL = Math.max(r.x, main.x), mR = Math.min(r.x + r.w, main.x + main.w);
     const L = mL - r.x, R = r.x + r.w - mR;
-    if (L >= MIN && R >= MIN) return { gp: box(r.x, L), gm: null, gl: box(mR, R), fit: true };
+    if (L >= MIN * 2) { const h = Math.floor(L / 2); return { gp: box(r.x, h), gm: null, gl: box(r.x + h, L - h), fit: true, side: R < 40 ? '' : 'l' }; }
     if (R >= MIN * 2) { const h = Math.floor(R / 2); return { gp: box(mR, h), gm: null, gl: box(mR + h, R - h), fit: true, side: 'r' }; }
-    if (L >= MIN * 2) { const h = Math.floor(L / 2); return { gp: box(r.x, h), gm: null, gl: box(r.x + h, L - h), fit: true, side: 'l' }; }
-    return { gp: box(r.x, w3), gm: null, gl: box(r.x + w3 * 2, r.w - w3 * 2), fit: false };
+    if (L >= MIN && R >= MIN) return { gp: box(r.x, L), gm: null, gl: box(mR, R), fit: true, side: 'lr' };
+    return { gp: box(r.x, w3), gm: null, gl: box(r.x + w3, w3), fit: false };
   }
   /* ★ 3つに並べる（2026-10-13 作り直し）
        ・前は 押すたびに 2つの窓を閉じて 開き直していた。ブラウザは【1回押すごとに 新しい窓は1つ】しか開かせないので、
@@ -3584,7 +3585,7 @@
     const f = ARR_NEXT; ARR_NEXT = null;
     ['pointerdown', 'keydown'].forEach(function (k) { window.removeEventListener(k, f, true); try { if (POP && !POP.closed) POP.removeEventListener(k, f, true); } catch (x) {} });
   }
-  function arrange3() {
+  function arrange3(ledFirst) {
     arrangeOff();
     if (jlay() !== 'w') { lsSet(LS_JLAY, 'w'); render(); }
     const cur = window.screen;
@@ -3596,8 +3597,8 @@
     if (LPOP && !LPOP.closed && !onScreen(LPOP, cur)) { try { LPOP.close(); } catch (e) {} LPOP = null; LEDID = ''; moved = true; }
     if (moved) WSUF = '_' + Date.now().toString(36);
     const needP = !POP || POP.closed, needL = !LPOP || LPOP.closed;
-    if (needP) popOpen();
-    if (needL) ledOpen();
+    /* ★ ブラウザは 1回押すごとに 新しい窓を1つしか開かせない。［元帳を別ウィンドウ］から来たときは 元帳を先に開く（前は 写真だけ開いて 元帳が出なかった） */
+    if (ledFirst) { if (needL) ledOpen(); if (needP) popOpen(); } else { if (needP) popOpen(); if (needL) ledOpen(); }
     const okP = POP && !POP.closed, okL = LPOP && !LPOP.closed;
     popSync(true); ledSync(true);
     const place = function (B) {
@@ -3618,11 +3619,11 @@
     setTimeout(function () {
       const mv = Math.abs(window.screenX - A.gm.x) < 40 && Math.abs(window.outerWidth - A.gm.w) < 80;
       const B = arrangeRects(cur, { x: window.screenX, y: window.screenY, w: window.outerWidth, h: window.outerHeight });
-      if (mv) { if (B.fit && !B.side) place(B); fmsg('左から 写真｜この画面（辞書）｜元帳 に 3等分で並べました。', 'ok'); return; }
+      if (mv) { fmsg('左から 写真｜元帳｜この画面（仕訳化）に 3等分で並べました。', 'ok'); return; }
       place(B);
-      fmsg(!B.fit ? '写真を左・元帳を右に並べました。この画面は ブラウザが動かせないので、真ん中へ動かしてから もう一度［3つに並べる］を押すと 3等分になります。'
-        : B.side ? '空いているところに 写真・元帳を並べました。この画面を真ん中へ寄せてから もう一度押すと 3等分になります。'
-        : '左から 写真｜この画面（辞書）｜元帳 に並べました（この画面は ブラウザが動かせないので、その左右に すき間なく付けました）。', B.fit ? 'ok' : '');
+      fmsg(!B.fit ? '写真と元帳を 左に並べました。この画面は ブラウザが動かせないので、右はしへ寄せてから もう一度［3つに並べる］を押すと 3等分になります。'
+        : B.side ? '空いているところに 写真・元帳を並べました。この画面を 右はしへ寄せてから もう一度押すと 左から 写真｜元帳｜この画面 に そろいます。'
+        : '左から 写真｜元帳｜この画面（仕訳化）に並べました（この画面は ブラウザが動かせないので、その左に すき間なく付けました）。', B.fit ? 'ok' : '');
     }, 450);
   }
   function ledOpen() {
@@ -3641,8 +3642,20 @@
       'td{border-bottom:1px solid ' + mixHex(THEME_A, '#FFFFFF', 0.88) + ';padding:3px 6px;vertical-align:middle;overflow-wrap:anywhere}.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}' +
       'tr.sum td{font-weight:700;border-top:2px solid ' + mixHex(THEME_A, '#FFFFFF', 0.5) + '}tr.out td{color:#8A9A95}.lgv{font-weight:700}.lgv.ok{color:#0F6E56}.lgv.ng{color:#B3261E}.note{color:#6B7A75;font-size:12px}' +
       '.btn{font:inherit;font-size:12px;border:1px solid ' + mixHex(THEME_A, '#FFFFFF', 0.5) + ';background:#fff;border-radius:6px;padding:2px 8px;margin-left:3px;cursor:pointer}.btn.danger{color:#B3261E;border-color:#E2B4B0}.btn:disabled{opacity:.4}' +
-      '.msg{padding:30px 10px;color:#6B7A75}</style></head><body><div id="h"></div><div id="b"></div></body></html>');
+      '.msg{padding:30px 10px;color:#6B7A75}' +
+      '.bxl{border:2px solid ' + mixHex(THEME_A, '#FFFFFF', 0.5) + ';border-radius:10px;padding:8px 10px;background:#fff;margin-bottom:10px}.bxh{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:4px}.bxh b{font-size:15px}.bxh .note{font-size:12px}' +
+      '.bxl tbody tr{cursor:pointer}.bxl tbody tr:hover td{background:#F4F8F6}.bxl tr.cur td{background:#FFF4C8!important;font-weight:700}.bxl tr.cur td:first-child{box-shadow:inset 4px 0 0 #E8A400}.bxl tr.draft td{font-style:italic;color:#555}.bxl tr.none td{color:#B3261E}' +
+      '.bxl .st{font-size:11px;font-weight:700;border-radius:4px;padding:0 5px;white-space:nowrap;font-style:normal}.bxl .st.ok{background:#E2F2EA;color:#0F6E56}.bxl .st.dr{background:#FFF0C2;color:#7A5B00}.bxl .st.no{background:#FBE4E2;color:#B3261E}.bxl .seen{color:#0F6E56;font-weight:900;font-style:normal}' +
+      '.bxl .ac{white-space:nowrap}.bxl .ac small{color:#6B7A75;font-size:11px;margin-left:3px}</style></head><body><div id="h"></div><div id="b"></div></body></html>');
     d.close();
+    /* ★★ 箱ごとの仕訳の一覧（2026-11-12）：行を押す・↑↓・Enter で 行を送る。写真の窓と この画面が その取引に そろう */
+    d.addEventListener('click', function (e) { const tr = e.target.closest && e.target.closest('.bxl tbody tr[data-i]'); if (tr) ledBoxGo(Number(tr.dataset.i)); });
+    d.addEventListener('keydown', function (e) {
+      const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'SELECT' || tn === 'TEXTAREA' || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); ledBoxStep(1, true); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); ledBoxStep(1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); ledBoxStep(-1); }
+    });
     d.addEventListener('change', function (e) { if (/^lg/.test(e.target.dataset.a || '')) lgChange(e.target); });
     d.addEventListener('click', function (e) {
       const t = e.target.closest('[data-a]'); if (!t) return;
@@ -3662,23 +3675,109 @@
     const d = LPOP.document, h = d.getElementById('h'), b = d.getElementById('b'); if (!h || !b) return;
     const it = itemOf(S.act);
     const ae = d.activeElement;
-    if (!force && it && it.id === LEDID && ae && ae.tagName === 'INPUT') { ledgerFill(b.querySelector('.jledg'), it); return; }
+    if (!force && it && it.id === LEDID && ae && ae.tagName === 'INPUT') { ledgerFill(b.querySelector('.jledg'), it); ledBoxFill(); return; }
     LEDID = it ? it.id : '';
     h.textContent = ''; b.textContent = '';
     const mk = function (tag, txt) { const x = d.createElement(tag); if (txt != null) x.textContent = txt; return x; };
     h.appendChild(mk('b', '総勘定元帳'));
-    if (!it) { b.appendChild(mk('div', '写真を選ぶと ここに出ます。')).className = 'msg'; return; }
+    /* ★★ 2026-11-12：いちばん上に 箱ごとの 仕訳の一覧（この箱・この月分で できた仕訳を 上から）。行と 写真が 1対1 */
+    const bx = mk('div'); bx.className = 'bxl'; bx.id = 'bxl'; b.appendChild(bx);
+    ledBoxFill();
+    if (!it) { if (!(S.view || []).length) b.appendChild(mk('div', '写真を選ぶと ここに出ます。')).className = 'msg'; return; }
     h.appendChild(mk('span', (S.view.indexOf(it) + 1) + '件目　' + perLabel(it.period) + '［' + it.box + '］'));
     d.title = '元帳 ' + (S.view.indexOf(it) + 1) + '件目';
-    if (!isMulti(it)) { b.appendChild(mk('div', 'この写真は 1仕訳辞書です。複数仕訳辞書に切り替えると 元帳が出ます。')).className = 'msg'; return; }
+    if (!isMulti(it)) return;   /* 1仕訳辞書の写真は 上の一覧だけ（口座ごとの 残高の元帳は 通帳・出納帳などの 複数仕訳辞書のとき） */
     b.appendChild(d.importNode(ledgerEl(it), true));
     ledgerFill(b.querySelector('.jledg'), it);
+  }
+  /* ================= ★★ 箱ごとの 仕訳の一覧（元帳の窓の いちばん上。2026-11-12） =================
+       ・いま出している一覧（顧問先 × 月分 × 箱）で できた仕訳を 日付の順に 上から並べる。確定した仕訳 ＋ まだの AI 下書き（斜体）
+       ・出納帳・通帳・カード明細（複数仕訳辞書）と 領収書は 補い合う：明細の行に 領収書が当たっていれば その行の写真は 領収書、
+         当たっていなければ 明細そのもの。どの行にも当たらない領収書は 領収書の仕訳として 並べる（同じ取引を 二重に並べない）
+       ・行と 写真は 1対1。行を送る（Enter・↑↓・押す）と 写真の窓と この画面が その取引に そろう。Enter だけで 上から 最終チェックできる */
+  let LEDROW = -1, LEDROWS = [], LEDSEEN = {}, LEDKEY = '';
+  function ledBoxRows() {
+    const view = S.view || [], used = {}, rows = [];
+    view.forEach(function (it) {
+      const dd = S.ai && S.ai[it.id];
+      if (!(isMulti(it) && dd && dd.multi && (dd.lines || []).length)) return;
+      used[it.id] = 1;
+      glRows(it).forEach(function (r) { const rc = r.rc && itemOf(r.rc) ? r.rc : ''; if (rc) used[rc] = 1; rows.push({ e: r.e, draft: !!r.draft, img: rc || it.id, src: it.id }); });
+    });
+    view.forEach(function (it) {
+      if (used[it.id]) return;
+      if (it.entries.length) { it.entries.forEach(function (e) { rows.push({ e: e, draft: false, img: it.id, src: it.id }); }); return; }
+      let dj = []; try { dj = rcDraftJ(it.id) || []; } catch (x) { dj = []; }
+      if (dj.length) dj.forEach(function (e) { rows.push({ e: e, draft: true, img: it.id, src: it.id }); });
+      else rows.push({ e: null, draft: false, img: it.id, src: it.id });
+    });
+    const dk = function (r) { const t = r.e ? String(r.e.date || '').replace(/-/g, '/') : ''; const m = t.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/); return m ? m[1] + ('0' + m[2]).slice(-2) + ('0' + m[3]).slice(-2) : '99999999'; };
+    return rows.map(function (r, i) { return { r: r, i: i, k: dk(r) }; }).sort(function (a, b) { return a.k < b.k ? -1 : a.k > b.k ? 1 : a.i - b.i; }).map(function (x) { return x.r; });
+  }
+  function ledAcct(code, sb) { if (!code) return ''; const a = (S.acctMap || {})[code] || {}, sn = sb ? ((S.subMap || {})[code + '|' + sb] || '') : ''; return { c: code + (sb ? '-' + sb : ''), n: (a.name || '') + (sn ? '・' + sn : '') }; }
+  function ledBoxFill() {
+    if (!LPOP || LPOP.closed) return;
+    const d = LPOP.document, host = d.getElementById('bxl'); if (!host) return;
+    const mk = function (tag, cls, txt) { const x = d.createElement(tag); if (cls) x.className = cls; if (txt != null) x.textContent = txt; return x; };
+    const rows = LEDROWS = ledBoxRows(), view = S.view || [];
+    const key = (S.code || '') + '|' + view.map(function (x) { return x.id; }).join(',');
+    if (key !== LEDKEY) { LEDKEY = key; LEDSEEN = {}; LEDROW = -1; }
+    /* いまの写真（S.act）の行へ。もう その写真の行に居るなら 動かさない（1つの写真に 仕訳が何行か あるとき） */
+    if (!(rows[LEDROW] && rows[LEDROW].img === S.act)) { const j = rows.findIndex(function (r) { return r.img === S.act; }); if (j >= 0) LEDROW = j; }
+    host.textContent = '';
+    const hd = mk('div', 'bxh'); const f0 = view[0];
+    hd.appendChild(mk('b', null, '箱の仕訳（元帳）'));
+    hd.appendChild(mk('span', null, f0 ? perLabel(f0.period) + '［' + (view.every(function (x) { return x.box === f0.box; }) ? f0.box : 'いくつかの箱') + '］' : ''));
+    const nOk = rows.filter(function (r) { return r.e && !r.draft; }).length, nDr = rows.filter(function (r) { return r.e && r.draft; }).length, nNo = rows.filter(function (r) { return !r.e; }).length;
+    hd.appendChild(mk('span', 'note', rows.length + '行（確定 ' + nOk + '・下書き ' + nDr + (nNo ? '・まだ ' + nNo : '') + '）　Enter・↑↓ で 行を送ると 写真も 変わります'));
+    host.appendChild(hd);
+    if (!rows.length) { host.appendChild(mk('div', 'msg', 'この箱には まだ 写真がありません。')); return; }
+    const tb = mk('table'); const th = mk('thead'), trh = mk('tr');
+    ['', '日付', '借方', '貸方', '金額', '摘要', ''].forEach(function (t, i) { const c = mk('th', i === 4 ? 'r' : null, t); trh.appendChild(c); }); th.appendChild(trh); tb.appendChild(th);
+    const body = mk('tbody');
+    rows.forEach(function (r, i) {
+      const tr = mk('tr', (i === LEDROW ? 'cur ' : '') + (!r.e ? 'none' : r.draft ? 'draft' : '')); tr.dataset.i = String(i); tr.dataset.img = r.img;
+      const img = itemOf(r.img), no = img ? view.indexOf(img) + 1 : 0;
+      const c0 = mk('td', 'r'); if (LEDSEEN[i]) c0.appendChild(mk('span', 'seen', '✓ ')); c0.appendChild(d.createTextNode(String(i + 1))); tr.appendChild(c0);
+      if (!r.e) {
+        const c = mk('td', null, 'まだ 仕訳がありません（' + no + '件目の写真）'); c.colSpan = 5; tr.appendChild(c);
+        tr.appendChild(mk('td')).appendChild(mk('span', 'st no', 'まだ'));
+      } else {
+        const e = r.e, ac = function (code, sb) { const a = ledAcct(code, sb), c = mk('td', 'ac'); if (a) { c.appendChild(d.createTextNode(a.n || a.c)); c.appendChild(mk('small', null, a.c)); } return c; };
+        tr.appendChild(mk('td', null, String(e.date || '').replace(/^\d{4}\//, '')));
+        tr.appendChild(ac(e.drCode, e.drSub)); tr.appendChild(ac(e.crCode, e.crSub));
+        tr.appendChild(mk('td', 'r', yen(Number(e.amount) || 0)));
+        tr.appendChild(mk('td', null, String(e.memo || e.partyName || '')));
+        const st = mk('td'); st.appendChild(mk('span', 'st ' + (r.draft ? 'dr' : 'ok'), r.draft ? '下書き' : '確定')); if (no) st.appendChild(mk('small', null, ' ' + no + '件目')); tr.appendChild(st);
+      }
+      body.appendChild(tr);
+    });
+    tb.appendChild(body); host.appendChild(tb);
+  }
+  function ledBoxGo(i, seen) {
+    const r = LEDROWS[i]; if (!r) return;
+    if (seen && LEDROWS[LEDROW]) LEDSEEN[LEDROW] = 1;
+    LEDROW = i;
+    if (r.img !== S.act && itemOf(r.img)) {
+      S.act = r.img; markAct(); try { prioritize(); } catch (x) {}
+      const row = rowOf(r.img); if (row) { try { row.scrollIntoView({ block: 'start' }); } catch (x) {} }
+    }
+    ledSync(true);
+    try { const tr = LPOP.document.querySelector('.bxl tr.cur'); if (tr) tr.scrollIntoView({ block: 'nearest' }); } catch (x) {}
+  }
+  function ledBoxStep(dir, seen) {
+    if (!LEDROWS.length) return;
+    const i = LEDROW < 0 ? 0 : LEDROW + dir;
+    if (i < 0) return;
+    if (i >= LEDROWS.length) { if (seen && LEDROWS[LEDROW]) { LEDSEEN[LEDROW] = 1; ledBoxFill(); } fmsg('元帳の いちばん下まで 見ました。', 'ok'); return; }
+    ledBoxGo(i, seen);
   }
   /* ★ 元帳を別ウィンドウにしたら 窓は3つになるので、その場で 3等分に並べる（2026-10-13） */
   /* 画像も別ウィンドウなら 3等分に並べる。縦1列・横2列なら 出納帳だけ別ウィンドウ（右の1/3）に */
   $('jLedGo').addEventListener('click', function () {
-    if (jlay() === 'w') { arrange3(); return; }
+    if (jlay() === 'w') { arrange3(true); return; }
     if (!ledOpen()) return;
+    /* 写真は この画面の中のまま。元帳だけ 別の窓（この画面の 左どなりに） */
     const A = arrangeRects(window.screen); const g = geoAll(); g.ledger = A.gl; lsSet(LS_GEO, JSON.stringify(g)); geoPut(LPOP, A.gl);
     ledSync(true); jlayPaint();
   });
@@ -4283,7 +4382,7 @@
             if (g.length < 2) { grid.appendChild(dTile(g[0])); return; }
             const w = el('div', 'dset'); w.dataset.set = g[0].set;
             const gnm = (g.filter(function (x) { return x.setName; })[0] || {}).setName || '';   /* ★ K-0127：顧問先が付けた 書類の名前 */
-            const cl = el('button', 'dclip', '📎 ' + (gnm ? gnm + '（' + g.length + '枚）' : g.length + '枚で1つの書類')); cl.type = 'button'; cl.title = 'ダブルクリックで バラす（右クリック・スマホは長押しでも）';
+            const cl = el('button', 'dclip', (/^SW/.test(g[0].set || '') ? '📜 なぞりスキャン ' : '📎 ') + (gnm ? gnm + '（' + g.length + '枚）' : g.length + '枚で1つの書類'));   /* ★ SW…＝なぞりスキャンで撮った書類 */ cl.type = 'button'; cl.title = 'ダブルクリックで バラす（右クリック・スマホは長押しでも）';
             cl.addEventListener('dblclick', function (e) { e.preventDefault(); dSplit(g[0]); });
             cl.addEventListener('contextmenu', function (e) { e.preventDefault(); dCtx(e, g[0]); });
             /* スマホ：クリップを長押し → 選びもの（バラす） */
