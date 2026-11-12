@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794461089;</script>
+<script>window.__PAGE_VER=1794462542;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -816,6 +816,8 @@
   .dvmk .mk-pick { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-size: 14px; overflow: hidden; }
   .dvmk .mk-pick input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
   .dvmk .mk-pick.on { box-shadow: 0 0 0 3px var(--c, #D0201A); }
+  .dvmk .mk-alpha { font: inherit; font-size: 13px; font-weight: 700; border: 1.5px solid var(--line); background: #fff; border-radius: 8px; padding: 3px 10px; cursor: pointer; }   /* K-0126 */
+  .dvmk .mk-alpha[aria-pressed="true"] { background: #FFF3A6; border-color: #F2B800; box-shadow: 0 0 0 2px #F2B800; }
   .dvmk .mk-z { font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
   .dvmk .mk-z select { font: inherit; font-size: 13px; padding: 2px 4px; border-radius: 6px; }
   textarea.mkin { resize: both; min-height: 2.2em; line-height: 1.35; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; box-sizing: border-box; max-height: calc(100vh - 8px); }
@@ -2300,6 +2302,7 @@
   <div class="dvmk" id="dvMkBar" hidden>
     <span class="mk-m" role="group" aria-label="書き方"><button type="button" data-m="text" aria-pressed="false" title="押した所に 文字を書く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">文字</button><button type="button" data-m="line" aria-pressed="false" title="なぞって 下線を引く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">下線</button><button type="button" data-m="box" aria-pressed="false" title="なぞって 枠で囲む（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">枠で囲む</button><button type="button" data-m="check" aria-pressed="false" title="押した所に ✔ を置く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">✔ チェック</button><button type="button" data-m="note" aria-pressed="false" title="押した所に 付箋を貼って メモを書く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">🗒 付箋</button><button type="button" data-m="stamp" aria-pressed="false" title="事務所のハンコを押す（押した所に置く。日付印は 今日の日付）（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">🔴 ハンコ</button></span>
     <span class="mk-c" role="group" aria-label="色"><button type="button" data-c="#D0201A" aria-pressed="true" title="赤" style="--c:#D0201A"></button><button type="button" data-c="#111111" aria-pressed="false" title="黒" style="--c:#111111"></button><button type="button" data-c="#1A4FD0" aria-pressed="false" title="青" style="--c:#1A4FD0"></button><button type="button" data-c="#1E8E3E" aria-pressed="false" title="緑" style="--c:#1E8E3E"></button><button type="button" data-c="#F2B800" aria-pressed="false" title="黄" style="--c:#F2B800"></button><button type="button" data-c="#FFE680" aria-pressed="false" title="付箋の黄" style="--c:#FFE680"></button><button type="button" data-c="#FFC2D6" aria-pressed="false" title="付箋の桃" style="--c:#FFC2D6"></button><button type="button" data-c="#BFE6FF" aria-pressed="false" title="付箋の水色" style="--c:#BFE6FF"></button><label class="mk-pick" title="好みの色を選ぶ"><input type="color" id="mkColor" value="#D0201A" aria-label="好みの色">🎨</label></span>
+    <button type="button" class="mk-alpha" id="mkAlpha" aria-pressed="false" title="下線・枠を 透ける色（マーカー）で引く。下線は 太い蛍光ペン、枠は 中を うすく塗る。もう一度押すと ふつうの線に戻る">🖍 透過（マーカー）</button>
     <label class="mk-z">文字の大きさ <input id="mkSize" type="text" inputmode="decimal" list="mkSizeList" value="18" autocomplete="off" aria-label="文字の大きさ（ポイント。一覧から選ぶか 数字を打つ）" title="一覧から選ぶか、数字を打って Enter（4〜200）">pt<datalist id="mkSizeList"><option value="8"></option><option value="9"></option><option value="10"></option><option value="10.5"></option><option value="11"></option><option value="12"></option><option value="14"></option><option value="16"></option><option value="18"></option><option value="20"></option><option value="22"></option><option value="24"></option><option value="26"></option><option value="28"></option><option value="36"></option><option value="48"></option><option value="72"></option></datalist></label>
     <span class="mk-st" id="mkStBar" hidden></span>
     <span class="mk-sel" id="mkSelBar" hidden><b id="mkSelL">選んだ文字：</b><button type="button" class="btn ghost sm" id="mkFix">文字を直す</button><button type="button" class="btn ghost sm" id="mkSmall" title="少し小さく">A－</button><button type="button" class="btn ghost sm" id="mkBig" title="少し大きく">A＋</button><button type="button" class="btn ghost sm" id="mkDel">🗑 消す</button></span>
@@ -6925,9 +6928,10 @@
         x.globalAlpha = 0.93; x.fillRect(L.x, L.y, L.w, L.h); x.globalAlpha = 1; x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = 1; x.strokeRect(L.x, L.y, L.w, L.h);
         x.fillStyle = mkInk(c); x.font = '600 ' + L.fs + 'px ' + NOTE_FAM; x.textBaseline = 'middle'; L.ls.forEach(function (ln, i) { x.fillText(ln, L.x + L.pad, L.y + L.pad + L.fs * 0.5 + i * L.fs * 1.3); });
       } else if (m.t === 'line') {
-        x.lineWidth = sw; x.beginPath(); x.moveTo(m.x * W, m.y * H); x.lineTo((m.x + m.w) * W, (m.y + m.h) * H); x.stroke();
+        if (m.a) { x.globalAlpha = MK_ALPHA; x.lineWidth = mkMarkerW(W); } else x.lineWidth = sw;   /* ★ K-0126：透過（マーカー） */
+        x.beginPath(); x.moveTo(m.x * W, m.y * H); x.lineTo((m.x + m.w) * W, (m.y + m.h) * H); x.stroke();
       } else if (m.t === 'box') {
-        x.lineWidth = sw; x.strokeRect(m.x * W, m.y * H, m.w * W, m.h * H);
+        if (m.a) { x.globalAlpha = MK_ALPHA; x.fillRect(m.x * W, m.y * H, m.w * W, m.h * H); } else { x.lineWidth = sw; x.strokeRect(m.x * W, m.y * H, m.w * W, m.h * H); }
       } else if (m.t === 'stamp') {
         const bx = m.x * W, by = m.y * H, bw = m.w * W, bh = m.h * H;
         const txt = function (t, cy, fs) { x.font = '700 ' + fs + 'px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(t, bx + bw / 2, cy); };
@@ -7907,7 +7911,7 @@
        書いたものには これまでどおり 倍率 z（文字：3%＝約18pt が 1・付箋：2%＝約12pt が 1）で持つ（前に書いたものは そのまま） */
   const MK_PT_TEXT = 595 * 0.03, MK_PT_NOTE = 595 * 0.02;
   function mkPtOf(m) { return Math.round(((m.z || 1) * (m.t === 'note' ? MK_PT_NOTE : MK_PT_TEXT)) * 2) / 2; }
-  const MK = { on: false, m: '', keep: false, c: '#D0201A', z: 1, list: [], was: '', drag: null, sel: -1, mv: null, st: 'auto' };
+  const MK = { on: false, m: '', keep: false, c: '#D0201A', a: false, z: 1, list: [], was: '', drag: null, sel: -1, mv: null, st: 'auto' };
   /* ★★ 事務所のハンコ（2026-11-01）：日付印（はじめから使える）と 登録したハンコの画像。押すと 書きこみの1つとして重ねる（元の資料は書き換えない） */
   let STAMPS = null, STAMPS_P = null;
   function stampsLoad() {
@@ -8003,6 +8007,9 @@
       if (MK.on) mkBind(sv, p);
     });
   }
+  /* ★ K-0126（2026-11-12 林）：透過（マーカー）。下線は 太い蛍光ペン、枠は 中を うすく塗る。下の字が 透けて読める */
+  const MK_ALPHA = 0.38;
+  function mkMarkerW(W) { return Math.max(8, W * 0.022); }
   function mkShape(m, W, H) {
     const sw = Math.max(2, W * 0.004);
     if (m.t === 'stamp') return stampShape(m, W, H);
@@ -8019,9 +8026,12 @@
     if (m.t === 'note') return noteShape(m, W, H);
     if (m.t === 'line') {
       const l = document.createElementNS(SVGNS, 'line'); l.setAttribute('x1', m.x * W); l.setAttribute('y1', m.y * H); l.setAttribute('x2', (m.x + m.w) * W); l.setAttribute('y2', (m.y + m.h) * H);
-      l.setAttribute('stroke', m.c); l.setAttribute('stroke-width', sw); l.setAttribute('stroke-linecap', 'round'); return l;
+      l.setAttribute('stroke', m.c); l.setAttribute('stroke-width', m.a ? mkMarkerW(W) : sw); l.setAttribute('stroke-linecap', 'round');
+      if (m.a) l.setAttribute('stroke-opacity', MK_ALPHA);   /* ★ K-0126：透過（マーカー）＝太く 透ける線 */
+      return l;
     }
     const r = document.createElementNS(SVGNS, 'rect'); r.setAttribute('x', m.x * W); r.setAttribute('y', m.y * H); r.setAttribute('width', m.w * W); r.setAttribute('height', m.h * H);
+    if (m.a) { r.setAttribute('fill', m.c); r.setAttribute('fill-opacity', MK_ALPHA); r.setAttribute('stroke', 'none'); return r; }   /* ★ K-0126：透過の枠＝中を うすく塗る */
     r.setAttribute('fill', 'none'); r.setAttribute('stroke', m.c); r.setAttribute('stroke-width', sw); r.setAttribute('rx', sw); return r;
   }
   /* ★★ K-0094：✔（チェック）と 付箋 */
@@ -8189,9 +8199,9 @@
   function mkFrom(a, b) {
     if (MK.m === 'line') {
       let dy = b.y - a.y; if (Math.abs(dy) < 0.03) dy = 0;   /* ほぼ横なら まっすぐ横に（下線） */
-      return { p: 0, t: 'line', x: a.x, y: a.y, w: b.x - a.x, h: dy, c: MK.c };
+      const ln = { p: 0, t: 'line', x: a.x, y: a.y, w: b.x - a.x, h: dy, c: MK.c }; if (MK.a) ln.a = 1; return ln;   /* K-0126 */
     }
-    return { p: 0, t: 'box', x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y), c: MK.c };
+    const bx = { p: 0, t: 'box', x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y), c: MK.c }; if (MK.a) bx.a = 1; return bx;
   }
   /* ★ K-0094：文字・付箋は 複数行（Enter＝改行・Ctrl＋Enter か 外を押すと 置く・Esc＝やめる）。大きさは［文字の大きさ］ */
   function mkText(cx, cy, p, a, edit, kind) {
@@ -8277,6 +8287,8 @@
     if (MK.sel >= 0) mkSelEdit(function (m) { m.c = MK.c; });
   }
   $('mkColor').addEventListener('input', function () { mkColorSet(this.value); });
+  /* ★ K-0126：［🖍 透過（マーカー）］押すたびに 入る／切れる。これから引く 下線・枠に効く（色は そのまま選べる） */
+  $('mkAlpha').addEventListener('click', function () { MK.a = !MK.a; this.setAttribute('aria-pressed', String(MK.a)); });
   $('mkDel').addEventListener('click', function () { if (MK.sel < 0) return; MK.list.splice(MK.sel, 1); mkSelect(-1); mkDirty(); });
   document.addEventListener('keydown', function (e) {
     if (!MK.on || MK.sel < 0) return; const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA') return;
