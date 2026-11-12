@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794458325;</script>
+<script>window.__PAGE_VER=1794459712;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -640,6 +640,7 @@
   /* 回収資料 */
   .dhead { margin: 0 0 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
   .dtools { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ctl:not([data-tab="Docs"]) .dtools { display: none; }   /* 上の帯に置いた 回収資料の道具は 回収資料のときだけ */
   .dtools button { font: inherit; font-size: 13.5px; font-weight: 700; padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
   .dtools button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
   .dtools button.danger { color: #B3261E; border-color: #E7B4AF; }
@@ -1477,20 +1478,21 @@
   <label>年 <select id="perY"><option value="">すべて</option></select></label>
   <label>月分 <select id="perM" disabled><option value="">すべて</option></select></label>
   <label>箱 <select id="box"><option value="">すべて</option></select></label>
+  <!-- ★ 2026-11-12（細谷）：回収資料の道具（横に・外へ出すとき・選ぶ・一括PDF・印刷・顧問先へ送る）は 上の帯に。下へ送っても 消えない -->
+  <span class="dtools">
+    <span class="dcols" id="dCols" role="group" aria-label="横に何枚ならべるか"><span>横に</span><button type="button" data-c="0" aria-pressed="false">小</button><button type="button" data-c="2" aria-pressed="false">2</button><button type="button" data-c="3" aria-pressed="false">3</button><button type="button" data-c="4" aria-pressed="false">4</button><button type="button" data-c="5" aria-pressed="false">5</button><button type="button" data-c="6" aria-pressed="false">6</button><button type="button" data-c="7" aria-pressed="false">7</button><button type="button" data-c="8" aria-pressed="false">8</button><button type="button" data-c="9" aria-pressed="false">9</button><button type="button" data-c="10" aria-pressed="false">10</button></span>
+    <span class="dcols doutfmt" id="dOutFmt" role="group" aria-label="外へドラッグして出すときの形" title="札・大きく見ている写真を つかんで デスクトップなどへ落とすときの形（この端末が覚えます）"><span>外へ出すとき</span><button type="button" data-f="img" aria-pressed="true">写真のまま</button><button type="button" data-f="pdf" aria-pressed="false">PDFにする</button></span>
+    <button type="button" id="dPick" aria-pressed="false">選ぶ</button>
+    <button type="button" id="dPdfAll" title="まとめた書類は その束で1つのPDF、ほかは1枚ずつのPDF（2つ以上なら ZIP 1つ）">一括PDF切り出し</button>
+    <button type="button" id="dPrintAll" title="いま見えているものを 並んでいる順に印刷">🖨 印刷</button>
+    <button type="button" id="dTrash" hidden>破棄したもの</button>
+    <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button>
+  </span>
 </div>
 
 <!-- ===== 回収資料（送ってもらった資料を ただ並べる。仕訳化しないで 会計ソフトの仕訳辞書で入れるときにも使う） ===== -->
 <div class="pane page dpz" id="paneDocs" hidden>
   <div class="dhead"><span class="jlsum" id="dsum"></span>
-    <span class="dtools">
-      <span class="dcols" id="dCols" role="group" aria-label="横に何枚ならべるか"><span>横に</span><button type="button" data-c="0" aria-pressed="false">小</button><button type="button" data-c="2" aria-pressed="false">2</button><button type="button" data-c="3" aria-pressed="false">3</button><button type="button" data-c="4" aria-pressed="false">4</button><button type="button" data-c="5" aria-pressed="false">5</button><button type="button" data-c="6" aria-pressed="false">6</button><button type="button" data-c="7" aria-pressed="false">7</button><button type="button" data-c="8" aria-pressed="false">8</button><button type="button" data-c="9" aria-pressed="false">9</button><button type="button" data-c="10" aria-pressed="false">10</button></span>
-      <span class="dcols doutfmt" id="dOutFmt" role="group" aria-label="外へドラッグして出すときの形" title="札・大きく見ている写真を つかんで デスクトップなどへ落とすときの形（この端末が覚えます）"><span>外へ出すとき</span><button type="button" data-f="img" aria-pressed="true">写真のまま</button><button type="button" data-f="pdf" aria-pressed="false">PDFにする</button></span>
-      <button type="button" id="dPick" aria-pressed="false">選ぶ</button>
-      <button type="button" id="dPdfAll" title="まとめた書類は その束で1つのPDF、ほかは1枚ずつのPDF（2つ以上なら ZIP 1つ）">一括PDF切り出し</button>
-      <button type="button" id="dPrintAll" title="いま見えているものを 並んでいる順に印刷">🖨 印刷</button>
-      <button type="button" id="dTrash" hidden>破棄したもの</button>
-      <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button>
-    </span>
     <div class="dmsg" id="dcMsg" role="status"></div>
   </div>
   <details class="dsearch" id="dSrch"><summary>電子帳簿保存法の検索（取引年月日・金額・取引先）</summary>
