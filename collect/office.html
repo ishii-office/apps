@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794454811;</script>
+<script>window.__PAGE_VER=1794455787;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2469,9 +2469,29 @@
   /* ★ 総点検（2026-10-26）：読むだけのものは 通信がこけたら 1回だけ自動でやり直す（打ち直させない）。
      書き込みは やり直さない（二度入るので）。GAS の中（LIVE）でも 返事が来なければ時間切れにする（固まらない） */
   const NETERR = /サーバの返事がありませんでした|サーバにつながりませんでした|Failed to fetch|NetworkError|Load failed|network/i;
+  /* ★ 2026-11-12（細谷）：覚えた向き（it.rot）を 画面の向き（S.rot）へ。一覧が届くたびに */
+  function rotSeed(r) {
+    try { if (r && typeof r === 'object' && S && S.rot) [r.items, r.changed].forEach(function (a) { if (Array.isArray(a)) a.forEach(function (x) { if (x && x.id && typeof x.rot === 'number' && !ROT_PEND[x.id]) { if (x.rot) S.rot[x.id] = x.rot; else delete S.rot[x.id]; } }); }); } catch (e) {}
+    return r;
+  }
+  const ROT_PEND = {};
+  /* ［回す］で変えた向きを 覚える（すぐ画面に・少し待ってから 保存。続けて押しても 最後の向きだけ） */
+  function rotSet(id, deg) {
+    deg = ((deg || 0) % 360 + 360) % 360; if (deg) S.rot[id] = deg; else delete S.rot[id];
+    $('dBody').querySelectorAll('.dtile[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"] .dimg').forEach(function (b) { if (b._rot) b._rot(); });
+    const code = S.code; clearTimeout(ROT_PEND[id]);
+    ROT_PEND[id] = setTimeout(function () {
+      gs('workRotate', code, id, deg).then(function (r) { delete ROT_PEND[id]; const d = (S.docs || []).concat(S.items || []).filter(function (x) { return x.id === id; }); d.forEach(function (x) { x.rot = r.rot; }); },
+        function (e) { delete ROT_PEND[id]; dcMsg('向きを 覚えられませんでした。' + e.message, true); });
+    }, 700);
+  }
   function gs(fn) {
+    if (fn === 'workList') return gs0.apply(null, arguments).then(rotSeed);
+    return gs0.apply(null, arguments);
+  }
+  function gs0(fn) {
     const args = Array.prototype.slice.call(arguments, 1);
-    if (BOOT_WAIT && !READ_FN[fn]) return BOOT_WAIT.then(function () { return gs.apply(null, [fn].concat(args)); });
+    if (BOOT_WAIT && !READ_FN[fn]) return BOOT_WAIT.then(function () { return gs0.apply(null, [fn].concat(args)); });
     if (!READ_FN[fn]) return gs1(fn, args);
     return gs1(fn, args).catch(function (e) {
       if (!NETERR.test(e.message)) throw e;
@@ -3686,7 +3706,7 @@
       let rot = S.rot[id] || 0; const setR = function () { popFit(); };
       im.addEventListener('load', function () { popFit(); });
       im.addEventListener('click', function () { b.classList.toggle('zoom'); if (b.classList.contains('zoom')) { fitClear(im); im.style.transform = rot ? 'rotate(' + rot + 'deg)' : ''; } else popFit(); });
-      const rb = mk('button', '回す'); rb.type = 'button'; rb.addEventListener('click', function () { rot = (rot + 90) % 360; S.rot[id] = rot; setR(); });
+      const rb = mk('button', '回す'); rb.type = 'button'; rb.addEventListener('click', function () { rot = (rot + 90) % 360; rotSet(id, rot); setR(); });
       h.appendChild(rb); b.appendChild(im);
     } else if (v && v.t === 'pdf') {
       POPURL = URL.createObjectURL(new Blob([b64bytes(v.b64)], { type: 'application/pdf' }));
@@ -5912,6 +5932,25 @@
     if (STAMPS === null && ms.some(function (m) { return m.t === 'stamp'; })) stampsLoad().then(draw, function () {});
     b.appendChild(sv);
   }
+  /* ★ 2026-11-12（細谷）：覚えた向き（［回す］）で 小さい絵も 正面に。書きこみの絵も いっしょに回す。
+     90・270 は 絵の縦横を入れかえて 枠いっぱいに（ふつう＝3:4 の枠・大きく並べる＝その写真の形の枠） */
+  function dThumbRot(b, im) {
+    const id = im.dataset.id;
+    b._rot = function () {
+      const rot = (S.rot && S.rot[id]) || 0, big = !!b.closest('#dBody.dbig'), els = [im].concat(Array.prototype.slice.call(b.querySelectorAll('.dthmk')));
+      b.classList.toggle('drot', !!rot);
+      if (!rot) { b.style.aspectRatio = ''; els.forEach(function (e) { e.style.position = e.style.left = e.style.top = e.style.width = e.style.height = e.style.transform = e.style.maxWidth = ''; }); return; }
+      let R = 3 / 4;   /* 枠の 幅÷高さ */
+      if (big) { const nw = im.naturalWidth, nh = im.naturalHeight; if (nw && nh) { R = rot % 180 ? nh / nw : nw / nh; b.style.aspectRatio = (rot % 180 ? nh + ' / ' + nw : nw + ' / ' + nh); } }
+      els.forEach(function (e) {
+        e.style.position = 'absolute'; e.style.left = '50%'; e.style.top = '50%'; e.style.maxWidth = 'none';
+        e.style.width = (rot % 180 ? 100 / R : 100) + '%'; e.style.height = (rot % 180 ? 100 * R : 100) + '%';
+        e.style.transform = 'translate(-50%, -50%) rotate(' + rot + 'deg)';
+      });
+    };
+    im.addEventListener('load', function () { b._rot(); });
+    setTimeout(b._rot, 0);
+  }
   function dTile(it) {
     const tile = el('div', 'dtile'); tile.dataset.id = it.id;
     const b = el('button', 'dimg'); b.type = 'button'; b.title = '押すと大きく';
@@ -5920,7 +5959,7 @@
     im.onerror = function () { im.removeAttribute('src'); };
     im.draggable = false;
     const fic = fileIcon(it);
-    if (fic) b.appendChild(fic); else { b.appendChild(im); dThumbMarks(b, im, it); }
+    if (fic) b.appendChild(fic); else { b.appendChild(im); dThumbMarks(b, im, it); dThumbRot(b, im); }
     if (it.pdf) b.appendChild(el('span', 'pdf', 'PDF'));
     const tg = stTag(it);
     const at = (String(it.at).match(/\d+\/\d+ \d\d:\d\d$/) || [''])[0];
@@ -6909,7 +6948,7 @@
     });
   }
   /* 写真に焼きこむ（長い辺 2400px まで）→ JPEG のバイト */
-  function marksOnImage(src, ms) {
+  function marksOnImage(src, ms, rot) {
     return new Promise(function (ok, ng) {
       const im = new Image();
       im.onload = function () {
@@ -6917,7 +6956,12 @@
         const c = document.createElement('canvas'); c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
         const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
         marksDraw(x, ms, c.width, c.height);
-        ok(b64bytes(c.toDataURL('image/jpeg', 0.9).split(',')[1]));
+        let o = c; rot = ((rot || 0) % 360 + 360) % 360;
+        if (rot) {   /* ★ 2026-11-12（細谷）：覚えた向きで 正面に（書きこみも いっしょに） */
+          o = document.createElement('canvas'); o.width = rot % 180 ? c.height : c.width; o.height = rot % 180 ? c.width : c.height;
+          const y = o.getContext('2d'); y.translate(o.width / 2, o.height / 2); y.rotate(rot * Math.PI / 180); y.drawImage(c, -c.width / 2, -c.height / 2);
+        }
+        ok(b64bytes(o.toDataURL('image/jpeg', 0.9).split(',')[1]));
       };
       im.onerror = function () { ng(new Error('写真が読めません')); };
       im.src = src;
@@ -6960,8 +7004,8 @@
           }
         } else if (v && v.t === 'img') {
           const m = v.src.match(/^data:image\/(jpeg|png);base64,(.*)$/);
-          const ms = mk.filter(function (q) { return (q.p || 0) === 0; });
-          const img = ms.length ? await doc.embedJpg(await marksOnImage(v.src, ms))
+          const ms = mk.filter(function (q) { return (q.p || 0) === 0; }), rot = (S.rot && S.rot[it.id]) || 0;
+          const img = ms.length || rot ? await doc.embedJpg(await marksOnImage(v.src, ms, rot))
             : m ? (m[1] === 'png' ? await doc.embedPng(b64bytes(m[2])) : await doc.embedJpg(b64bytes(m[2]))) : await doc.embedJpg(await toJpeg(v.src));
           const land = img.width > img.height;
           const W = land ? 842 : 595, H = land ? 595 : 842, M = 18;
@@ -7687,7 +7731,7 @@
       peekDraw();
     }, true);
   });
-  $('dvRot').addEventListener('click', function () { if (!S.dvId) return; S.rot[S.dvId] = ((S.rot[S.dvId] || 0) + 90) % 360; dvFit(); });
+  $('dvRot').addEventListener('click', function () { if (!S.dvId) return; rotSet(S.dvId, (S.rot[S.dvId] || 0) + 90); dvFit(); });   /* ★ 2026-11-12：向きは 覚える */
   function docsClose() { if (MK.on) mkEnd(true); S.dvId = ''; S.dvIt = null; S.dvSeq = null; S.dvMemo = null; $('dvwSide').textContent = ''; $('dvwSide').dataset.set = ''; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
   $('dvClose').addEventListener('click', docsClose);
 
@@ -9005,8 +9049,8 @@
     if (a === 'cancel') { const en = it.entries.find(function (x) { return x.id === t.dataset.e; }); if (en) cancel(it, en, null, t); return; }
     if (a === 'fix') { const en = it.entries.find(function (x) { return x.id === t.dataset.e; }); if (en) fixEntry(it, en); return; }
     if (a === 'rot') {
-      S.rot[it.id] = ((S.rot[it.id] || 0) + 90) % 360;
-      const g = row.querySelector('.jshot img:not(.thumb), .jshot .pdfpages'); if (g) g.style.transform = 'rotate(' + S.rot[it.id] + 'deg)';
+      rotSet(it.id, (S.rot[it.id] || 0) + 90);
+      const g = row.querySelector('.jshot img:not(.thumb), .jshot .pdfpages'); if (g) g.style.transform = S.rot[it.id] ? 'rotate(' + S.rot[it.id] + 'deg)' : '';
       return;
     }
     if (a === 'gview') { if (S.gview[it.id]) delete S.gview[it.id]; else S.gview[it.id] = 1; t.textContent = S.gview[it.id] ? 'アプリの表示' : 'Googleの表示'; paint(it.id); return; }
