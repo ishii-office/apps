@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794452067;</script>
+<script>window.__PAGE_VER=1794452812;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -598,6 +598,7 @@
   .kzc .shots, .kzf .shots { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
   .kzshot { position: relative; width: 150px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #F4F6F8; font-size: 11.5px; }
   .kzshot img { display: block; width: 100%; height: 100px; object-fit: contain; background: #fff; cursor: zoom-in; }
+  .kzshot .pdfb { display: block; width: 100%; height: 100px; border: 0; background: #fff; color: #B3261E; font-size: 18px; font-weight: 700; cursor: pointer; }
   .kzshot .n { padding: 2px 5px; } .kzshot .x { position: absolute; top: 2px; right: 2px; border: 0; border-radius: 50%; width: 22px; height: 22px; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; line-height: 1; }
   .kzc .act { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .kzc .done { margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: #E5F2E8; white-space: pre-wrap; font-size: 14px; }
@@ -2107,8 +2108,8 @@
         <textarea id="kzWant" maxlength="3000" placeholder="例：押したら すぐ字が打てるようにしてほしい。送ったあとからでも ひとことを足せると助かる。"></textarea>
         <label class="f" for="kzSteps">起きるまでの手順 <small>わかれば。番号を付けて</small></label>
         <textarea id="kzSteps" maxlength="3000" placeholder="1. 箱「現金の領収書」を押す&#10;2. 写真を2枚撮る&#10;3. 送る前の確認で ひとことの欄を押す"></textarea>
-        <label class="f">スクショ <small>どの画面のどこか。Ctrl+V で貼れる・落とせる・選べる（何枚でも）</small></label>
-        <div class="paste" id="kzPaste" tabindex="0">ここを押してから Ctrl+V（Mac は ⌘+V）で 貼り付け ／ 画像を ここへ落とす ／ <label style="text-decoration:underline;cursor:pointer">ファイルを選ぶ<input type="file" id="kzFile" accept="image/*" multiple hidden></label></div>
+        <label class="f">スクショ・PDF <small>どの画面のどこか。Ctrl+V で貼れる・落とせる・選べる（何枚でも）。PDF も入れられます（6MB まで）</small></label>
+        <div class="paste" id="kzPaste" tabindex="0">ここを押してから Ctrl+V（Mac は ⌘+V）で 貼り付け ／ 画像・PDF を ここへ落とす ／ <label style="text-decoration:underline;cursor:pointer">ファイルを選ぶ<input type="file" id="kzFile" accept="image/*,application/pdf,.pdf" multiple hidden></label></div>
         <div class="shots" id="kzShots"></div>
         <label class="f" style="font-weight:400"><input type="checkbox" id="kzUrgent"> 急ぎ（顧問先が困っている・仕事が止まっている）</label>
         <!-- 直ったら アプリで知らせる（メールは出さない。2026-10-26）。欄は 前に入れた値を壊さないよう 隠して残す -->
@@ -2215,7 +2216,7 @@
             <li><b>どこ</b>　この説明書の名前で書く</li>
             <li><b>いま起きていること</b></li>
             <li><b>こうしてほしい</b></li>
-            <li><b>スクショの枠</b>　Ctrl+V で貼る・落とす・選ぶ</li>
+            <li><b>スクショの枠</b>　Ctrl+V で貼る・落とす・選ぶ（PDF も）</li>
             <li><b>「AI にそのまま渡せるか」の点検</b>　足りないところに「？」</li>
           </ol>
           <h4>共通の言葉</h4><dl>
@@ -7273,14 +7274,33 @@
   function kzShotsEl(shots, onDel) {
     const w = el('div', 'shots');
     shots.forEach(function (sh) {
-      const b = el('div', 'kzshot'); const im = el('img'); im.alt = sh.note || sh.name || 'スクショ';
+      const b = el('div', 'kzshot');
+      if (kzIsPdf(sh)) {
+        /* ★ K-0113：PDF は 絵の代わりに「PDF」の札。押すと 別のタブで開く（この表に載っているものだけ サーバから中身をもらう） */
+        b.classList.add('pdf');
+        const pd = el('button', 'pdfb', '📄 PDF'); pd.type = 'button'; pd.title = '別のタブで開く';
+        pd.addEventListener('click', function () {
+          const wn = window.open('', '_blank');
+          (sh.src ? Promise.resolve(sh.src) : KZ.img[sh.id] ? Promise.resolve(KZ.img[sh.id]) : gs('kaizenImage', sh.id).then(function (src) { KZ.img[sh.id] = src; return src; }))
+            .then(function (src) { const u = kzBlobUrl(src); if (wn) wn.location.href = u; else window.open(u, '_blank'); }, function (e) { if (wn) wn.close(); alert(e.message || '開けませんでした。'); });
+        });
+        b.appendChild(pd); b.appendChild(el('div', 'n', sh.note || sh.name || 'PDF'));
+      } else {
+      const im = el('img'); im.alt = sh.note || sh.name || 'スクショ';
       if (sh.src) im.src = sh.src; else if (KZ.img[sh.id]) im.src = KZ.img[sh.id]; else kzImg(sh.id, im);
       im.addEventListener('click', function () { const src = im.src; if (!src) return; const wn = window.open('', '_blank'); if (wn) { wn.document.title = sh.name || 'スクショ'; const i2 = wn.document.createElement('img'); i2.src = src; i2.style.maxWidth = '100%'; wn.document.body.appendChild(i2); } });
       b.appendChild(im); b.appendChild(el('div', 'n', sh.note || sh.name || ''));
+      }
       if (onDel) { const x = el('button', 'x', '×'); x.type = 'button'; x.title = '外す'; x.addEventListener('click', function () { onDel(sh); }); b.appendChild(x); }
       w.appendChild(b);
     });
     return w;
+  }
+  function kzIsPdf(sh) { return sh.mime === 'application/pdf' || /\.pdf$/i.test(sh.name || ''); }
+  function kzBlobUrl(src) {
+    const m = /^data:([^;,]+);base64,(.*)$/.exec(src || ''); if (!m) return src;
+    const bin = atob(m[2]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return URL.createObjectURL(new Blob([u8], { type: m[1] }));
   }
   function kzImg(id, im) {
     (KZ.imgWant[id] || (KZ.imgWant[id] = gs('kaizenImage', id).then(function (src) { KZ.img[id] = src; return src; }, function () { delete KZ.imgWant[id]; return ''; })))
@@ -7443,9 +7463,17 @@
     if (have.length) w.appendChild(kzShotsEl(have, function (sh) { gs('kaizenShotDel', KZ.edit.no, sh.id).then(function (y) { KZ.edit = y; kzPut(y); kzShotsDraw(); kzChk(); }, function (e) { $('kzFMsg').textContent = e.message; }); }));
     if (KZ.shots.length) w.appendChild(kzShotsEl(KZ.shots, function (sh) { KZ.shots = KZ.shots.filter(function (y) { return y !== sh; }); kzShotsDraw(); kzChk(); }));
   }
-  /* 貼る・落とす・選ぶ。大きい写真は 長い辺 2000px・JPEG にして軽くする（スクショは そのまま PNG） */
+  /* 貼る・落とす・選ぶ。大きい写真は 長い辺 2000px・JPEG にして軽くする（スクショは そのまま PNG）
+     ★ K-0113：PDF も そのまま（6MB まで） */
   function kzAddFiles(files) {
     Array.prototype.forEach.call(files || [], function (f) {
+      if (f.type === 'application/pdf' || (!f.type && /\.pdf$/i.test(f.name || ''))) {
+        if (f.size > 6 * 1024 * 1024) { $('kzFMsg').textContent = (f.name || 'PDF') + ' は 6MB をこえています。分けるか 軽くしてください。'; return; }
+        const rp = new FileReader();
+        rp.onload = function () { KZ.shots.push({ src: String(rp.result).replace(/^data:[^;,]*;/, 'data:application/pdf;'), mime: 'application/pdf', name: f.name || 'PDF', note: '' }); kzShotsDraw(); kzChk(); };
+        rp.readAsDataURL(f);
+        return;
+      }
       if (!/^image\//.test(f.type || '')) return;
       const r = new FileReader();
       r.onload = function () {
