@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794462542;</script>
+<script>window.__PAGE_VER=1794465016;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -552,6 +552,9 @@
   .kzflt { display: flex; flex-wrap: wrap; max-width: 100%; gap: 1px; background: var(--line); }
   .kzflt button { flex: 1 1 auto; border: 0 !important; margin: 0; white-space: nowrap; }
   .kzflt button:not([aria-pressed="true"]) { background: #fff; }
+  /* ★ K-0122：キーワードでさがす（2026-11-12） */
+  .kzq { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; max-width: 100%; }
+  .kzq input { width: 340px; max-width: 100%; box-sizing: border-box; }
   .kzmine { margin: 8px 0 12px; padding: 10px 14px; border-radius: 10px; background: #E5F2E8; border: 1px solid #9CCBA8; }
   .kzmine h3 { margin: 0 0 6px; font-size: 15px; color: var(--ok); }
   .kzmine li { margin: 4px 0; }
@@ -2056,6 +2059,7 @@
     <div class="kzhead"><h2>改善要望</h2>
       <button type="button" class="primary" id="kzNew">＋ 改善要望を書く</button>
       <span class="seg kzflt" id="kzFlt" role="group" aria-label="しぼる"></span>
+      <span class="kzq"><input type="search" id="kzQ" placeholder="🔍 キーワードでさがす（番号・言葉・書いた人・顧問先）" aria-label="改善要望を キーワードでさがす" title="空白で区切ると 全部の言葉をふくむものだけ。全角・半角、大文字・小文字は 区別しません"><span class="note" id="kzQN" role="status"></span></span>
       <span class="sp"></span>
       <label class="kzall" id="kzAllW" hidden title="いま出ている要望（改善済み・見送りは除く）を まとめて選ぶ／外す"><input type="checkbox" id="kzAll"> すべて選ぶ</label>
       <button type="button" id="kzCopySel" hidden title="選んだものを まとめて Claude Code に貼る文にする">選んだものを まとめてコピー</button>
@@ -7131,7 +7135,7 @@
      担当者が書く → マスターが確かめて直す →［AI に送る］（GitHub の Issue か、コピーして Claude Code に貼る）→ 直ったら［改善済み］
      → 書いた人に知らせる・顧問先の画面に「新しくなったこと」。履歴は全部残る */
   const LS_KZMAIL = 'collect_office_kzmail';
-  const KZ = { list: [], me: '', master: false, gh: false, flt: '', sel: {}, edit: null, shots: [], img: {}, imgWant: {}, loaded: 0, cp: null, synced: 0 };
+  const KZ = { list: [], me: '', master: false, gh: false, flt: '', q: '', sel: {}, edit: null, shots: [], img: {}, imgWant: {}, loaded: 0, cp: null, synced: 0 };
   const KZ_ST = ['確認待ち', '確認済み', 'AIへ送った', '改善済み', '見送り'];
   function kzMsg(t, err) { const m = $('kzMsg'); m.textContent = t || ''; m.className = 'pagemsg' + (err ? ' err' : t ? ' ok' : ''); }
   /* ★★ 改善と効率化の集計（2026-10-26）。マスターは全員、ほかの人は 自分と事務所全体 */
@@ -7210,12 +7214,27 @@
     try { localStorage.setItem('collect_kzann_x', JSON.stringify(kzAnnGone().concat(nos).filter(function (v, i, a) { return a.indexOf(v) === i; }).slice(-300))); } catch (e2) {}
     $('kzAnn').hidden = true;
   });
+  /* ★ K-0122：キーワードでさがす（2026-11-12）。空白で区切った言葉を 全部ふくむもの（全角・半角、大文字・小文字は区別しない）。
+       番号・状態・書いた人・確かめた人・顧問先・画面・どこ・いま・こうしてほしい・手順・改善内容・お知らせ・履歴・Issue の番号 を見る */
+  function kzNorm(s) { return String(s == null ? '' : s).normalize('NFKC').toLowerCase(); }
+  function kzWords() { return kzNorm(KZ.q).split(/\s+/).filter(Boolean); }
+  function kzHit(x, ws) {
+    if (!ws.length) return true;
+    const hay = kzNorm([x.no, x.st, x.who, x.chk, x.code, x.cname, x.code ? '' : '事務所から', x.screen, x.where, x.now, x.want, x.steps, x.done, x.news, x.issue ? '#' + x.issue : '',
+      (x.log || []).map(function (l) { return l.who + ' ' + l.what; }).join('\n')].join('\n'));
+    return ws.every(function (w) { return hay.indexOf(w) >= 0; });
+  }
+  function kzShown() { const ws = kzWords(); return KZ.list.filter(function (x) { return (KZ.flt === 'all' || x.st === KZ.flt) && kzHit(x, ws); }); }
+  let kzQT = 0;
+  $('kzQ').addEventListener('input', function () { clearTimeout(kzQT); const v = this.value; kzQT = setTimeout(function () { KZ.q = v; kzDraw(); }, 150); });
   function kzDraw() {
     const f = $('kzFlt'); f.textContent = '';
+    const ws = kzWords(), hits = ws.length ? KZ.list.filter(function (x) { return kzHit(x, ws); }) : KZ.list;
     ['all'].concat(KZ_ST).forEach(function (k) {
-      /* ★ 全部・改善済みには Claude Code に直接頼んで直した分（一覧に1件ずつは無い）も足す。集計の数と そろえる（2026-11-11） */
-      const dadd = (KZ.direct && KZ.direct.add) || 0;
-      const n = (k === 'all' ? KZ.list.length : KZ.list.filter(function (x) { return x.st === k; }).length) + (k === 'all' || k === '改善済み' ? dadd : 0);
+      /* ★ 全部・改善済みには Claude Code に直接頼んで直した分（一覧に1件ずつは無い）も足す。集計の数と そろえる（2026-11-11）
+         ★ K-0122：さがしているときは 合ったものだけ数える（直接頼んだ分は 1件ずつ無いので足さない） */
+      const dadd = ws.length ? 0 : ((KZ.direct && KZ.direct.add) || 0);
+      const n = (k === 'all' ? hits.length : hits.filter(function (x) { return x.st === k; }).length) + (k === 'all' || k === '改善済み' ? dadd : 0);
       const b = el('button', null, (k === 'all' ? '全部' : k) + ' ' + n); b.type = 'button'; b.setAttribute('aria-pressed', String(KZ.flt === k));
       b.addEventListener('click', function () { KZ.flt = k; kzDraw(); }); f.appendChild(b);
     });
@@ -7267,13 +7286,14 @@
       ok.addEventListener('click', function () { gs('kaizenSeen', mine.map(function (x) { return x.no; })).then(function () { kzLoad(true); }, function (e) { kzMsg('印を付けられませんでした。' + e.message, true); }); }); mw.appendChild(ok);
     }
     const w = $('kzList'); w.textContent = '';
-    if (KZ.direct && KZ.direct.add && (KZ.flt === 'all' || KZ.flt === '改善済み')) w.appendChild(el('p', 'note kzdirect', '★ 数には ' + KZ.direct.who + 'が Claude Code に直接頼んで直した ' + KZ.direct.n + '回（' + String(KZ.direct.since).replace(/-/g, '/') + '〜）のうち 下の一覧に1件ずつ入っていない ' + KZ.direct.add + '回も入っています（集計の数と同じ）。'));
-    const list = KZ.list.filter(function (x) { return KZ.flt === 'all' || x.st === KZ.flt; });
-    if (!list.length) { w.appendChild(el('p', 'note', KZ.flt === 'all' ? 'まだ改善要望はありません。［＋ 改善要望を書く］から どうぞ。' : '「' + KZ.flt + '」のものは ありません。')); return; }
+    if (!ws.length && KZ.direct && KZ.direct.add && (KZ.flt === 'all' || KZ.flt === '改善済み')) w.appendChild(el('p', 'note kzdirect', '★ 数には ' + KZ.direct.who + 'が Claude Code に直接頼んで直した ' + KZ.direct.n + '回（' + String(KZ.direct.since).replace(/-/g, '/') + '〜）のうち 下の一覧に1件ずつ入っていない ' + KZ.direct.add + '回も入っています（集計の数と同じ）。'));
+    const list = kzShown();
+    $('kzQN').textContent = ws.length ? '「' + KZ.q.trim() + '」に合うもの ' + list.length + '件' + (KZ.flt === 'all' ? '' : '（' + KZ.flt + 'のうち）') : '';
+    if (!list.length) { w.appendChild(el('p', 'note', ws.length ? '「' + KZ.q.trim() + '」に合う要望は ありません' + (KZ.flt === 'all' ? '' : '（' + KZ.flt + 'のうち。［全部］にすると ほかの状態からも さがします）') + '。' : KZ.flt === 'all' ? 'まだ改善要望はありません。［＋ 改善要望を書く］から どうぞ。' : '「' + KZ.flt + '」のものは ありません。')); return; }
     list.forEach(function (x) { w.appendChild(kzCard(x)); });
   }
   function kzSelOk(x) { return x.st !== '改善済み' && x.st !== '見送り'; }
-  function kzSelectable() { return KZ.list.filter(function (x) { return (KZ.flt === 'all' || x.st === KZ.flt) && kzSelOk(x); }); }
+  function kzSelectable() { return kzShown().filter(kzSelOk); }
   $('kzAll').addEventListener('change', function () {
     const can = kzSelectable(), on = this.checked;
     can.forEach(function (x) { if (on) KZ.sel[x.no] = 1; else delete KZ.sel[x.no]; });
