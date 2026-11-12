@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794449850;</script>
+<script>window.__PAGE_VER=1794450775;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -830,6 +830,7 @@
   .mksel { fill: none; stroke: #1A4FD0; stroke-dasharray: 6 4; pointer-events: none; }
   .mkin { position: fixed; z-index: 90; font: inherit; font-size: 16px; padding: 3px 6px; border: 2px solid #D0201A; border-radius: 6px; min-width: 200px; }
   /* ★ 確認済にしても 小さい絵は変えない（下のチェックだけ。2026-10-26） */
+  .dimg .dthmk { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
   .dmk { position: absolute; right: 4px; bottom: 4px; background: #fff; border: 1px solid #D0201A; color: #D0201A; border-radius: 6px; font-size: 11px; font-weight: 700; padding: 0 4px; pointer-events: none; }
   .dtile.lifted { opacity: .35; }
   .dkids:empty { display: none; }
@@ -5896,6 +5897,20 @@
     gs('workRename', code, it.id, v).then(function (r) { if (S.code !== code) return; put(pre + ((r && r.name) || (v + ext))); docsDraw(); dcMsg('名前を「' + dNameShow((r && r.name) || v) + '」にしました。'); },
       function (e) { if (S.code !== code) return; put(was); docsDraw(); dcMsg('名前を変えられませんでした。' + e.message, true); });
   }
+  /* ★ 2026-11-12（細谷）：回収資料の小さい絵にも 事務所の書きこみ（文字・付箋・ハンコ・✔・下線・枠）を重ねて出す（1枚目・1ページ目の分）。
+     絵は 枠いっぱいに切り取って出す（object-fit: cover）ので、重ねる絵も 同じ切り取り方（slice）。大きさは 大きく見たときと同じ割合 */
+  function dThumbMarks(b, im, it) {
+    const ms = (it.mark || []).filter(function (m) { return !(m.p > 0); }); if (!ms.length) return;
+    const sv = document.createElementNS(SVGNS, 'svg'); sv.setAttribute('class', 'dthmk'); sv.setAttribute('preserveAspectRatio', 'xMidYMid slice'); sv.setAttribute('aria-hidden', 'true');
+    const draw = function () {
+      const nw = im.naturalWidth || 3, nh = im.naturalHeight || 4;   /* 絵が まだ来ていなければ 枠の形（3:4）で。来たら 描き直す */
+      const W = 1000, H = Math.round(1000 * nh / nw); sv.setAttribute('viewBox', '0 0 ' + W + ' ' + H); sv.textContent = '';
+      ms.forEach(function (m) { try { sv.appendChild(mkShape(m, W, H)); } catch (e) {} });
+    };
+    im.addEventListener('load', draw); draw();
+    if (STAMPS === null && ms.some(function (m) { return m.t === 'stamp'; })) stampsLoad().then(draw, function () {});
+    b.appendChild(sv);
+  }
   function dTile(it) {
     const tile = el('div', 'dtile'); tile.dataset.id = it.id;
     const b = el('button', 'dimg'); b.type = 'button'; b.title = '押すと大きく';
@@ -5904,7 +5919,7 @@
     im.onerror = function () { im.removeAttribute('src'); };
     im.draggable = false;
     const fic = fileIcon(it);
-    if (fic) b.appendChild(fic); else b.appendChild(im);
+    if (fic) b.appendChild(fic); else { b.appendChild(im); dThumbMarks(b, im, it); }
     if (it.pdf) b.appendChild(el('span', 'pdf', 'PDF'));
     const tg = stTag(it);
     const at = (String(it.at).match(/\d+\/\d+ \d\d:\d\d$/) || [''])[0];
