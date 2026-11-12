@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794453720;</script>
+<script>window.__PAGE_VER=1794454811;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -12693,8 +12693,18 @@
   });
   $('aCnsRe').addEventListener('click', function () {
     if (!A.cur) return;
-    gs('consentRequest', A.cur).then(function (l) { A.list = l; aOpen(A.cur); aDraw(); amsg('同意の画面を出しました。顧問先が開く（開き直す）と出ます。', 'ok'); }, function (e) { amsg(e.message, 'err'); });
+    const code = A.cur;
+    gs('consentRequest', code).then(function (l) { A.list = l; cnPoke(code); aOpen(A.cur); aDraw(); amsg('同意の画面を出しました。このパソコンで開いている顧問先の画面には すぐ出ます。ほかの端末（顧問先のスマホなど）では 開いていれば 15秒ほどで出ます。', 'ok'); }, function (e) { amsg(e.message, 'err'); });
   });
+  /* ★ K-0115（2026-11-12）：同じパソコンで開いている 顧問先の画面（［📷 顧問先の画面を表示］の窓など）に すぐ知らせる。
+       collect_cn に その顧問先の合図（t）を書く → 顧問先の画面に storage の知らせが届き すぐ同意の画面を出す。
+       先取りした中身（collect_pre）は「同意の画面なし」のままなので 捨てる */
+  function cnPoke(code) {
+    let tk = ''; try { tk = new URL(clientUrlNow(code)).searchParams.get('t') || ''; } catch (e) {}
+    if (!tk) return;
+    try { const m = JSON.parse(localStorage.getItem('collect_pre') || '{}') || {}; if (m[tk]) { delete m[tk]; localStorage.setItem('collect_pre', JSON.stringify(m)); } } catch (e) {}
+    lsSet('collect_cn', JSON.stringify({ t: tk, at: Date.now() }));
+  }
   $('aCnsVerify').addEventListener('click', function () {
     const out = $('aCnsOut'); out.hidden = false; out.textContent = '確かめています…';
     gs('consentVerify').then(function (r) {
