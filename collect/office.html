@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794448576;</script>
+<script>window.__PAGE_VER=1794449850;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2302,7 +2302,7 @@
     <button type="button" class="btn ghost sm" id="mkClear">全部消す</button>
     <button type="button" class="btn sm primary" id="mkSave">保存して終わる</button>
     <button type="button" class="btn ghost sm" id="mkCancel">やめる</button>
-    <span class="mk-msg" id="mkMsg">押して書く（文字・✔・付箋は 押した所に／下線・枠は なぞる）。文字と付箋は Enter で改行・外を押すか Ctrl＋Enter で置く。付箋は 押すと 書き直せる。元の写真・PDF は書き換えず、重ねて残します。</span>
+    <span class="mk-msg" id="mkMsg">押して書く（文字・✔・付箋は 押した所に／下線・枠は なぞる）。文字と付箋は Enter で改行・外を押すか Ctrl＋Enter で置く。付箋は 押すと 書き直せる。選んで Ctrl＋C → Ctrl＋V で 同じものを貼れる。元の写真・PDF は書き換えず、重ねて残します。</span>
   </div>
   <div class="dvmemo" id="dvMemo" hidden></div>
   <div class="dvmain" id="dvwMain">
@@ -8049,6 +8049,7 @@
       try { sv.setPointerCapture(e.pointerId); } catch (x) {}
     });
     sv.addEventListener('pointermove', function (e) {
+      MK_HOVER = { p: p, a: mkPt(sv, e) };   /* Ctrl＋V で貼る所 */
       if (MK.mv && MK.mv.p === p) {
         const b = mkPt(sv, e), m = MK.list[MK.mv.i]; if (!m) return;
         m.x = Math.max(0, Math.min(1, b.x + MK.mv.dx)); m.y = Math.max(0, Math.min(1, b.y + MK.mv.dy)); MK.mv.moved = true;
@@ -8071,6 +8072,7 @@
       if (m && (Math.abs(m.w) > 0.01 || Math.abs(m.h) > 0.01)) { MK.list.push(m); mkDirty(); mkToolUsed(); }
       mkPaint();
     });
+    sv.addEventListener('pointerleave', function () { if (MK_HOVER && MK_HOVER.p === p) MK_HOVER = null; });
     sv.addEventListener('click', function (e) { e.stopPropagation(); });
     sv.addEventListener('dblclick', function (e) { e.stopPropagation(); const h = e.target && e.target.closest ? e.target.closest('[data-i]') : null; const ti = h ? Number(h.dataset.i) : -1; if (ti >= 0 && MK.list[ti] && MK.list[ti].t === 'text') mkFixText(ti); });   /* 付箋は 1回押すだけで直せる（上の pointerup） */
   }
@@ -8172,6 +8174,38 @@
   document.addEventListener('keydown', function (e) {
     if (!MK.on || MK.sel < 0) return; const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA') return;
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); $('mkDel').click(); }
+  }, true);
+  /* ★ 2026-11-12（細谷）：選んだ書きこみ（ハンコ・✔・文字・付箋）を Ctrl＋C で写し、Ctrl＋V で貼る。
+     貼る所は マウスのある所（ハンコ・✔ は まん中、文字・付箋は 左上）。マウスが写真の外なら 前のものから 少しずらして。
+     ほかの写真・ページにも貼れる。貼ったものは 選んだままになるので そのまま つかんで動かせる */
+  let MK_CLIP = null, MK_HOVER = null;
+  function mkCopy() {
+    const m = MK.list[MK.sel]; if (!m || !MK_SEL_T[m.t]) return false;
+    const wh = mkPageWH(m.p || 0); MK_CLIP = { m: JSON.parse(JSON.stringify(m)), W: wh[0], H: wh[1], last: null, hv: null };
+    $('mkMsg').textContent = '写しました。貼りたい所に マウスを置いて Ctrl＋V（何回でも）'; return true;
+  }
+  function mkPaste() {
+    if (!MK_CLIP) return false;
+    const m = JSON.parse(JSON.stringify(MK_CLIP.m)), hv = MK_HOVER;
+    if (!hv && !document.querySelector('#dvBody .mksvg[data-p="' + (m.p || 0) + '"]')) m.p = 0;
+    if (hv) m.p = hv.p;
+    const wh = mkPageWH(m.p || 0), W = wh[0], H = wh[1];
+    if (m.t === 'stamp' || m.t === 'check') m.h = m.h * (MK_CLIP.H / MK_CLIP.W) * (W / H);   /* ページの形が ちがっても 形をくずさない */
+    if (hv && hv !== MK_CLIP.hv) {
+      if (m.t === 'stamp' || m.t === 'check') { m.x = hv.a.x - m.w / 2; m.y = hv.a.y - m.h / 2; } else { m.x = hv.a.x; m.y = hv.a.y; }
+    } else {
+      const b = MK_CLIP.last || m; m.x = b.x + 0.03; m.y = b.y + 0.03;   /* 同じ所に 重ねない */
+    }
+    if (m.t === 'note') noteFit(m, W, H);
+    if (m.t !== 'text') { m.x = Math.max(0, Math.min(1 - m.w, m.x)); m.y = Math.max(0, Math.min(1 - m.h, m.y)); } else { m.x = Math.max(0, Math.min(0.98, m.x)); m.y = Math.max(0, Math.min(0.98, m.y)); }
+    MK_CLIP.last = { x: m.x, y: m.y }; MK_CLIP.hv = hv;
+    MK.list.push(m); mkSelect(MK.list.length - 1); mkDirty(); return true;
+  }
+  document.addEventListener('keydown', function (e) {
+    if (!MK.on || !(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+    const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA' || document.querySelector('.mkin')) return;
+    const k = String(e.key || '').toLowerCase();
+    if ((k === 'c' && mkCopy()) || (k === 'v' && mkPaste())) { e.preventDefault(); e.stopPropagation(); }
   }, true);
   /* ★★ K-0103：道具は 1回押す＝1つだけ置く（置いたら 道具が外れる）・2回続けて押す（ダブルクリック）＝続けて置ける（🔁）。
        続けて置いているときは もう一度押すか Esc で外れる */
