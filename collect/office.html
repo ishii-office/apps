@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794441819;</script>
+<script>window.__PAGE_VER=1794445702;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -12260,8 +12260,8 @@
       });
     };
     A_LOADING = once(0).then(function (l) {
-      A_LOADING = null; A_ERR = ''; A.list = l; aCacheSave(l); aDraw();
-    }, function (e) { A_LOADING = null; aLoadErr(e.message); });
+      A_LOADING = null; A_ERR = ''; A.list = l; aCacheSave(l); aDraw(); aUrlFill();
+    }, function (e) { A_LOADING = null; aLoadErr(e.message); aUrlFail(); });
     return A_LOADING;
   }
   /* ★ 顧問先の並び（2026-10-13）：ふだんは番号順。つかんで動かすと その順（全部の担当者で同じ）。決算月ごとに分けて見ることもできる */
@@ -12438,6 +12438,31 @@
     $('aTheme').value = id;
     document.querySelectorAll('#aThemes button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.theme === id)); });
   }
+  /* ★ K-0110（2026-11-12）：スマホで 顧問先を開くと 提出URLとQRコードが出なかった。
+       端末に覚えた一覧には URL を入れない（トークンを残さない）ので、新しい一覧が届く前に開くと URL が空だった。
+       URL が無ければ その場で サーバに聞き直して 出す（端末には残さない・この画面の中だけ） */
+  function aUrlShow(c) {
+    const u = (c && c.url) || '';
+    $('aUrlRow').hidden = !u; $('aUrl').value = u; $('aUrl').placeholder = ''; aQrShow(u, c ? c.name : '');
+    $('aStop').hidden = !u || $('aActive').checked;
+  }
+  const A_URL_NG = '提出URLを読めませんでした（顧問先の一覧の［もう一度読む］か、開き直してください）';
+  function aUrlFetch(code) {
+    $('aUrlRow').hidden = false; $('aUrl').value = ''; $('aStop').hidden = true;
+    qrCur = { url: '', name: '', src: '' }; $('aQr').textContent = 'QRコード';
+    if (A_ERR) { $('aUrl').placeholder = A_URL_NG; return; }   /* 一覧が読めなかったあと：勝手に読み直さない（［もう一度読む］で） */
+    $('aUrl').placeholder = '提出URLを読んでいます…'; $('aQr').textContent = '読んでいます…';
+    aLoad();
+  }
+  /* 一覧が届いたら（［もう一度読む］でも）、開いている顧問先の URL が空なら 入れる */
+  function aUrlFill() {
+    if (!A.cur || A.isNew || $('aForm').hidden || $('aUrl').value) return;
+    aUrlShow(A.list.find(function (x) { return x.code === A.cur; }));
+  }
+  function aUrlFail() {
+    if (!A.cur || A.isNew || $('aForm').hidden || $('aUrlRow').hidden || $('aUrl').value) return;
+    $('aUrl').placeholder = A_URL_NG; $('aQr').textContent = 'QRコード';
+  }
   function aOpen(code) {
     const c = A.list.find(function (x) { return x.code === code; }); if (!c) return;
     if (!setCode(code)) return;
@@ -12451,8 +12476,7 @@
     aThemeSet(c.theme || 'green');
     aLogoShow(c);
     aLockLoad(c.code);
-    $('aUrlRow').hidden = !c.url; $('aUrl').value = c.url; aQrShow(c.url, c.name);
-    $('aStop').hidden = !c.url || !!c.active;
+    aUrlShow(c); if (!c.url) aUrlFetch(c.code);
     $('aSave').textContent = '保存';
     amsg(''); aPreview(); aDraw();
   }
