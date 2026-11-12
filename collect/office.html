@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794470283;</script>
+<script>window.__PAGE_VER=1794471865;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -7751,12 +7751,28 @@
   /* 写真を押すと戻る（顧問先の画面と同じ） */
   /* ★ 写真のまわりの 余白を押しても閉じる（2026-10-13）
      ★ PDF（ページの絵）を押しても戻る（2026-10-26）。書きこみのあいだは 戻らない */
+  /* ★ 2026-11-12（細谷）：写真の枠の外（まわりの 灰色のところ）を押す＝閉じて 回収資料に戻る。写真の上＝前のページ */
+  let DV_DOWN_BUSY = false;   /* 押したとき 書きかけの欄・選んだ書きこみが あったか（あれば 置く・選ぶのをやめる だけで 閉じない） */
+  $('dvBody').addEventListener('pointerdown', function () { DV_DOWN_BUSY = !!document.querySelector('.mkin') || (MK.on && MK.sel >= 0); }, true);
+  function dvOnPic(e) { return !!(e.target.closest && e.target.closest('#dvBody > img, #dvBody canvas, #dvBody .mksvg')); }
   $('dvBody').addEventListener('click', function (e) {
-    if (MK.on) return;
+    if (MK.on) { if (!dvOnPic(e) && !MK.m && !DV_DOWN_BUSY && dvMouse(e) && !(e.target.closest && e.target.closest('button, a, input, select, textarea, label'))) docsClose(); return; }   /* 書きこみは 保存してから 閉じる */
     if (e.target.closest && e.target.closest('button, a, input, select, textarea, label')) return;
     if (DVZ.moved) { DVZ.moved = false; return; }   /* 動かしただけ。閉じない */
     if (DVZ.s > 1) { dvZReset(); return; }         /* 拡大中に押す＝元の大きさへ */
+    if (Date.now() - DV_PG_AT < 600) return;       /* 書きこむ帯の上で めくったばかり（同じ押しで 二度めくらない） */
+    if (dvMouse(e)) { if (dvOnPic(e)) dvPage(-1); else docsClose(); return; }   /* ★ 2026-11-12（細谷）：マウスの左クリック＝写真の上は 前のページ・枠の外は 閉じる */
     docsClose();
+  });
+  /* ★ 2026-11-12（細谷）：マウスの右クリック＝次のページ（書きこむ帯が出ていても 道具を選んでいなければ） */
+  let DV_PG_AT = 0;
+  function dvMouse(e) { return !e.pointerType || e.pointerType === 'mouse'; }
+  $('dvBody').addEventListener('contextmenu', function (e) {
+    if (e.target.closest && e.target.closest('button, a, input, select, textarea, label, .mkin')) return;
+    e.preventDefault();
+    if (MK.on && (MK.m || document.querySelector('.mkin'))) return;
+    if (DVZ.moved) { DVZ.moved = false; return; }
+    dvPage(1);
   });
   /* ★ 大きく見る：ホイールで 写真を拡大・縮小（2026-10-28。顧問先の画面と同じ）。PDF は ページの幅を変える */
   const DVZ = { s: 1, x: 0, y: 0, moved: false, drag: null };
@@ -8293,8 +8309,10 @@
         try { sv.setPointerCapture(e.pointerId); } catch (x) {}
         return;
       }
+      if (e.button === 2) return;   /* 右クリックは 次のページ（contextmenu） */
+      const wasSel = MK.sel >= 0;
       if (MK.sel >= 0) { MK.sel = -1; $('mkSelBar').hidden = true; const sb = sv.querySelector('.mksel'); if (sb) sb.remove(); }   /* 何もない所＝選ぶのをやめて ふつうに書く */
-      if (!MK.m) return;   /* K-0103：道具を選んでいなければ 何も置かない */
+      if (!MK.m) { if (!wasSel && !pend && e.button === 0 && e.pointerType === 'mouse') { DV_PG_AT = Date.now(); dvPage(-1); } return; }   /* K-0103：道具を選んでいなければ 何も置かない。★ 2026-11-12：マウスの左クリック＝前のページ */
       if (MK.m === 'text') { mkText(e.clientX, e.clientY, p, a); mkToolUsed(); return; }
       if (MK.m === 'stamp') { const vb = sv.viewBox.baseVal; stampPut(p, a, vb.width, vb.height); mkToolUsed(); return; }
       if (MK.m === 'check') { const vb = sv.viewBox.baseVal, w = 0.05 * (MK.pt ? MK.pt / MK_PT_TEXT : 1), h = w * vb.width / Math.max(1, vb.height); MK.list.push({ p: p, t: 'check', x: Math.max(0, Math.min(1 - w, a.x - w * 0.35)), y: Math.max(0, Math.min(1 - h, a.y - h * 0.8)), w: w, h: h, c: MK.c }); mkDirty(); mkPaint(); mkToolUsed(); return; }
