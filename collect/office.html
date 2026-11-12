@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794456567;</script>
+<script>window.__PAGE_VER=1794458325;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -810,6 +810,7 @@
   .dvmk .mk-c button { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; background: var(--c); box-shadow: 0 0 0 1.5px var(--line); cursor: pointer; }
   .dvmk .mk-c button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--c); }
   .dvmk .mk-msg { font-size: 12px; color: var(--sub); }
+  .dvmk .mk-auto { font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
   /* ★ K-0094：好みの色・文字の大きさ・付箋 */
   .dvmk .mk-pick { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-size: 14px; overflow: hidden; }
   .dvmk .mk-pick input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
@@ -2304,6 +2305,7 @@
     <button type="button" class="btn ghost sm" id="mkClear">全部消す</button>
     <button type="button" class="btn sm primary" id="mkSave" title="Ctrl＋S でも">保存して終わる</button>
     <button type="button" class="btn ghost sm" id="mkCancel">やめる</button>
+    <label class="mk-auto" title="この端末で 写真を開くたびに 書きこむ帯を はじめから出す（［✏ 書きこむ］を押さなくてよい）。Enter・1・2・0・← → も そのまま使える"><input type="checkbox" id="mkAuto"> 開いたら いつも書きこむ</label>
     <span class="mk-msg" id="mkMsg">押して書く（文字・✔・付箋は 押した所に／下線・枠は なぞる）。文字と付箋は Enter で改行・外を押すか Ctrl＋Enter で置く。付箋は 押すと 書き直せる。選んで Ctrl＋C → Ctrl＋V で 同じものを貼れる。Ctrl＋S で 保存して終わる。元の写真・PDF は書き換えず、重ねて残します。</span>
   </div>
   <div class="dvmemo" id="dvMemo" hidden></div>
@@ -7573,6 +7575,8 @@
     if (!S.dvIt || S.dvIt.id !== it.id) { DVZ.s = 1; DVZ.x = 0; DVZ.y = 0; $('dvBody').classList.remove('zin'); }
     S.dvIt = it; dvPosDraw(it); dvChrome(it);
     if (DOUT_NAT && !fileKind(it.name)) dOutPrep(it);
+    /* ★ 2026-11-12（細谷）：［開いたら いつも書きこむ］なら 書きこむ帯を はじめから出す */
+    if (mkAutoOn() && !MK.on && !fileKind(it.name)) setTimeout(function () { if (S.dvIt === it && !MK.on && !$('dview').hidden) mkStart(); }, 0);
     $('dvName').textContent = perLabel(it.period) + '　［' + it.box + '］　' + it.name.replace(/^\d{8}_\d{6}_/, '');
     $('dvDrive').href = it.url;
     $('dvOrig').hidden = !it.orig; $('dvOrig').onclick = function () { if (it.orig) window.open('https://drive.google.com/file/d/' + encodeURIComponent(it.orig) + '/view', '_blank', 'noopener'); };
@@ -7877,7 +7881,8 @@
     $('dvChk').textContent = '✓ 確認済にする'; $('dvChk').classList.remove('ghost');
   }
   document.addEventListener('keydown', function (e) {
-    if ($('dview').hidden || !S.dvIt || MK.on || e.ctrlKey || e.metaKey || e.altKey) return;
+    if ($('dview').hidden || !S.dvIt || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (MK.on && (MK.m || MK.sel >= 0 || document.querySelector('.mkin'))) return;   /* ★ 2026-11-12：書きこむ帯が出ていても 何も選んでいなければ テンキー・← → が効く */
     const tg = e.target, tn = tg && tg.tagName;
     if (tn === 'INPUT' || tn === 'TEXTAREA' || tn === 'SELECT' || (tg && tg.isContentEditable)) return;
     if (e.key === '0' || e.code === 'Numpad0') {
@@ -8216,7 +8221,10 @@
     inp.addEventListener('blur', function () { done(true); });
   }
   function mkDirty() { $('mkMsg').textContent = '書きこみ ' + MK.list.length + 'つ（まだ保存していません）'; }
+  function mkAutoOn() { return lsGet('collect_mkauto') === '1'; }
+  $('mkAuto').addEventListener('change', function () { try { localStorage.setItem('collect_mkauto', this.checked ? '1' : '0'); } catch (e) {} });
   function mkStart() {
+    $('mkAuto').checked = mkAutoOn();
     const it = S.dvIt; if (!it) return;
     if (fileKind(it.name)) { dcMsg('この形（エクセルなど）には 書きこめません。', true); return; }
     MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true; MK.m = ''; MK.keep = false; mkToolPaint();
