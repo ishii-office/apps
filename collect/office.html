@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794471865;</script>
+<script>window.__PAGE_VER=1794475786;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -727,6 +727,22 @@
   .dtile.sel { outline: 3px solid var(--accent); outline-offset: -1px; }
   /* ★ 選ぶとき、まとめた書類は 1つのチェックで まるごと（2026-10-13） */
   .dset .dtile.sel { outline: 0; }
+  /* ★★ なぞりスキャンの書類（2026-11-12）：1枚ぶんの札を 枚数ぶんに割る */
+  .dset.sweep { grid-column: auto; display: block; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: #fff; min-width: 0; }
+  .dset.sweep.sel { border-color: var(--accent); }
+  .dset.sweep .dseth { position: static; margin: 0 0 4px; flex-wrap: wrap; gap: 4px; }
+  .dset.sweep .dclip { font-size: 11.5px; padding: 0 6px; background: #E2F2EA; border-color: #9CCBB8; color: #0F6E56; }
+  .dswrow { display: flex; aspect-ratio: 3 / 4; border-radius: 6px; overflow: hidden; background: #F4F2EC; }
+  .dswrow .dtile { flex: 1 1 0; min-width: 0; padding: 0; border: 0; border-radius: 0; background: none; outline: 0 !important; box-shadow: none !important; }
+  .dswrow .dtile + .dtile { border-left: 2px solid #fff; }
+  .dswrow .dtile > :not(.dimg) { display: none !important; }
+  .dswrow .dimg { aspect-ratio: auto; height: 100%; border-radius: 0; }
+  .dswfoot .dswst { font-size: 11.5px; font-weight: 700; color: var(--sub); margin-top: 3px; }
+  .dswrow .dimg .stt, .dswrow .dimg .dscan, .dswrow .dimg .dmemo, .dswrow .dimg .dmk { display: none; }
+  .dswrow .dimg .dsetn { right: 2px; bottom: auto; top: 2px; font-size: 10px; padding: 0 4px; }
+  .dset.sweep.chk .dswck { border: 1.5px solid var(--ok); background: var(--ok); color: #fff; }
+  .dset.sweep.chk .dswsk, .dset.sweep.skip .dswck { display: none; }
+  .dset.sweep.skip .dswsk { border-color: #8A6100; color: #8A6100; }
   .dset.sel { border-style: solid; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
   .dsetck { position: relative; width: 24px; height: 24px; border-radius: 6px; border: 2px solid #3A6EA8; background: #fff; cursor: pointer; padding: 0; }
   .dset.sel .dsetck { background: var(--accent); border-color: var(--accent); }
@@ -4382,7 +4398,7 @@
             if (g.length < 2) { grid.appendChild(dTile(g[0])); return; }
             const w = el('div', 'dset'); w.dataset.set = g[0].set;
             const gnm = (g.filter(function (x) { return x.setName; })[0] || {}).setName || '';   /* ★ K-0127：顧問先が付けた 書類の名前 */
-            const cl = el('button', 'dclip', (/^SW/.test(g[0].set || '') ? '📜 なぞりスキャン ' : '📎 ') + (gnm ? gnm + '（' + g.length + '枚）' : g.length + '枚で1つの書類'));   /* ★ SW…＝なぞりスキャンで撮った書類 */ cl.type = 'button'; cl.title = 'ダブルクリックで バラす（右クリック・スマホは長押しでも）';
+            const cl = el('button', 'dclip', (/^SW/.test(g[0].set || '') ? '📜 ' : '📎 ') + (gnm ? gnm + '（' + g.length + '枚）' : /^SW/.test(g[0].set || '') ? 'なぞり ' + g.length + '枚' : g.length + '枚で1つの書類'));   /* ★ SW…＝なぞりスキャンで撮った書類 */ cl.type = 'button'; cl.title = 'ダブルクリックで バラす（右クリック・スマホは長押しでも）';
             cl.addEventListener('dblclick', function (e) { e.preventDefault(); dSplit(g[0]); });
             cl.addEventListener('contextmenu', function (e) { e.preventDefault(); dCtx(e, g[0]); });
             /* スマホ：クリップを長押し → 選びもの（バラす） */
@@ -4409,7 +4425,28 @@
             /* ★ 2026-11-01：選んでいなくても 点線の枠のどこを つかんでも（写真のあいだ・見出し・余白）この書類まるごと。
                  選んでいる書類なら 選んだもの全部（ほかに選んだ写真・書類も いっしょに） */
             if (DOUT_NAT) DDX.bindWrap(w, g.find(function (x) { return S.dcsel[x.id]; }) || g[0], g);
-            dStack(w, g);
+            /* ★★ なぞりスキャンの書類（まとめの印が SW…。2026-11-12）：1枚ぶんの札を 枚数ぶんに割って出す（顧問先の画面と同じ）。
+                 割った所を押すと その写真を 大きく見る。名前・確認済・対象外は 書類に 1組（全ページに効く） */
+            if (/^SW/.test(g[0].set || '')) {
+              w.classList.add('sweep');
+              const row = el('div', 'dswrow'); row.title = 'なぞりスキャン（' + g.length + '枚で 1つの書類）。押すと その写真を 大きく見る';
+              g.forEach(function (x) { row.appendChild(dTile(x)); });
+              w.appendChild(row);
+              const ft = el('div', 'dswfoot');
+              { const s0 = row.querySelector('.dimg .stt'); if (s0) ft.appendChild(el('div', 'dswst', s0.textContent)); }   /* 届いた日時・確定 などは 札の下に 1つ */
+              if (stTag(g[0])[0] !== 'gone') ft.appendChild(dNameTag(g[0]));
+              const allC = g.every(function (x) { return x.chk; }), allS = g.every(function (x) { return x.skip; });
+              if (allC) w.classList.add('chk'); if (allS) w.classList.add('skip');
+              const ck2 = el('button', 'dchk dswck', allC ? '✓ 確認済 ' + chkShort(g[0].chk) : '□ 確認済にする'); ck2.type = 'button'; ck2.title = allC ? '押すと外す（この書類の ' + g.length + '枚とも）' : 'この書類（' + g.length + '枚）を 確認済にする';
+              ck2.addEventListener('click', function (e) { e.stopPropagation(); docsCheck(g, !allC); setTimeout(docsDraw, 0); });
+              ft.appendChild(ck2);
+              if (g.every(function (x) { return x.status !== 'done'; })) {
+                const sk2 = el('button', 'dskip dswsk', allS ? '↩ 対象に戻す' : '⊘ 対象外にする'); sk2.type = 'button'; sk2.title = 'この書類（' + g.length + '枚）を 仕訳化・AI下書きの対象から外す／戻す';
+                sk2.addEventListener('click', function (e) { e.stopPropagation(); docsSkip(g, !allS); setTimeout(docsDraw, 0); });
+                ft.appendChild(sk2);
+              }
+              w.appendChild(ft);
+            } else dStack(w, g);
             grid.appendChild(w);
           });
           titems.forEach(function (x) { grid.appendChild(tTile(x)); });
