@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794466215;</script>
+<script>window.__PAGE_VER=1794467756;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1106,11 +1106,18 @@
   .dimg .dmemo { position: absolute; right: 4px; top: 4px; font-size: 13px; line-height: 1; padding: 3px 5px; border-radius: 6px; background: #FFF3C4; border: 1px solid #E0B43A; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
   .dview .dvmemo { padding: 8px 14px; background: #FFF3C4; color: #4A3700; font-weight: 700; font-size: 15px; white-space: pre-wrap; border-bottom: 1px solid #E0B43A; }
   .dview .dvmemo[hidden] { display: none; }
+  .dview .dvbigchk { position: absolute; right: 24px; bottom: 24px; z-index: 6; font: inherit; font-size: 20px; font-weight: 800; padding: 12px 22px; border-radius: 14px; border: 2px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+  .dview .dvbigchk.on { background: #fff; color: var(--accent); }
+  .dview .dvbigchk:hover { filter: brightness(1.08); }
   .dview { position: fixed; inset: 0; z-index: 50; background: rgba(20,30,28,.92); display: flex; flex-direction: column; }
   .dview .dvbar { display: flex; align-items: center; gap: 8px; padding: 8px calc(var(--toprw, 248px) + 16px) 8px 10px; background: #fff; flex-wrap: wrap; }   /* 右は［📷 顧問先の画面］［↻ 開き直す］の場所をあける */
   .dview .dvbar .sp { flex: 1; }
   /* ★★ 上の帯は 詰める（2026-10-28）。名前は1行（はみ出しは …）、ボタンは右へ並べて、写真・明細の場所を広く */
   .dview .dvbar { flex-wrap: nowrap; gap: 6px; padding: 5px 290px 5px 10px; }
+  @media (min-width: 701px) {   /* パソコン：大きな［確認済］は 右上の［顧問先の画面を表示］［開き直す］の下（上の帯の 右の空き） */
+    .dview .dvbar { min-height: 104px; }
+    .dview .dvbigchk { top: 46px; bottom: auto; right: 10px; width: max(220px, var(--toprw, 248px)); padding: 10px 14px; font-size: 19px; }
+  }
   .dview #dvName { flex: 0 0 auto; min-width: 0; max-width: 40%;   /* ★ 総点検：道具の列に押されて 30%より ずっと細く切れていた */ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
   .dview .dvtools { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
   .dview .dvtools > * { white-space: nowrap; }
@@ -2317,6 +2324,8 @@
     <label class="mk-auto" title="この端末で 写真を開くたびに 書きこむ帯を はじめから出す（［✏ 書きこむ］を押さなくてよい）。Enter・1・2・0・← → も そのまま使える"><input type="checkbox" id="mkAuto"> 開いたら いつも書きこむ</label>
     <span class="mk-msg" id="mkMsg">押して書く（文字・✔・付箋は 押した所に／下線・枠は なぞる）。文字と付箋は Enter で改行・外を押すか Ctrl＋Enter で置く。付箋は 押すと 書き直せる。選んで Ctrl＋C → Ctrl＋V で 同じものを貼れる。Ctrl＋S で 保存して終わる。元の写真・PDF は書き換えず、重ねて残します。</span>
   </div>
+  <!-- ★ 2026-11-12（細谷）：大きな［確認済］（上の帯のボタンと同じ働き）。パソコン＝右上の［顧問先の画面を表示］［開き直す］の下・スマホ＝右下 -->
+  <button type="button" class="dvbigchk" id="dvChk2" title="押すと 確認済にする・もう一度押すと 外す（Enter＝確認済にして 次へ）">✓ 確認済にする</button>
   <div class="dvmemo" id="dvMemo" hidden></div>
   <div class="dvmain" id="dvwMain">
     <div class="dvside" id="dvwSide" hidden aria-label="この書類のページ"></div>
@@ -7611,9 +7620,9 @@
     $('dvMove').onclick = function () { docsClose(); dMoveOpen([it]); };
     $('dvGmail').onclick = function () { dGmail([it]); };
     $('dvBook').hidden = !!fileKind(it.name) || !S.code; $('dvBook').onclick = function () { dvBookRead(it); };
-    const dvChkPaint = function () { $('dvChk').textContent = it.chk ? '✓ 確認済（外す）' : '✓ 確認済にする'; $('dvChk').classList.toggle('ghost', !!it.chk); };
+    const dvChkPaint = function () { $('dvChk').textContent = $('dvChk2').textContent = it.chk ? '✓ 確認済（外す）' : '✓ 確認済にする'; $('dvChk').classList.toggle('ghost', !!it.chk); $('dvChk2').classList.toggle('on', !!it.chk); };
     dvChkPaint();
-    $('dvChk').onclick = function () { docsCheck([it], !it.chk); dvChkPaint(); };
+    $('dvChk').onclick = $('dvChk2').onclick = function (e) { if (e) e.stopPropagation(); docsCheck([it], !it.chk); dvChkPaint(); };
     dvBackDraw(it);
     $('dvGo').onclick = function () { docsClose(); perPick(it.period); S.box = ''; S.bsel = []; boxSelPaint();
       selectTab('In'); const go = function () { if (rowOf(it.id)) focusCard(it.id); }; if (S.items.some(function (x) { return x.id === it.id; })) { render(); go(); } else { S.st = 'all'; document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.st === 'all')); }); load().then(go); } };
@@ -7905,7 +7914,7 @@
     if (!docOf(id)) { restore([id]); return; }   /* 破棄していた → 復活 */
     if (d.skip) docsSkip([d], false);
     if (d.chk) docsCheck([d], false);
-    $('dvChk').textContent = '✓ 確認済にする'; $('dvChk').classList.remove('ghost');
+    $('dvChk').textContent = $('dvChk2').textContent = '✓ 確認済にする'; $('dvChk').classList.remove('ghost'); $('dvChk2').classList.remove('on');
   }
   document.addEventListener('keydown', function (e) {
     if ($('dview').hidden || !S.dvIt || e.ctrlKey || e.metaKey || e.altKey) return;
