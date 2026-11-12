@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794465016;</script>
+<script>window.__PAGE_VER=1794466215;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -4273,7 +4273,8 @@
             if (dayed && (g[0].day || '') !== lastDay) { lastDay = g[0].day || ''; grid.appendChild(el('div', 'dday', lastDay ? dDayLabel(lastDay) : '日の指定なし')); }
             if (g.length < 2) { grid.appendChild(dTile(g[0])); return; }
             const w = el('div', 'dset'); w.dataset.set = g[0].set;
-            const cl = el('button', 'dclip', '📎 ' + g.length + '枚で1つの書類'); cl.type = 'button'; cl.title = 'ダブルクリックで バラす（右クリック・スマホは長押しでも）';
+            const gnm = (g.filter(function (x) { return x.setName; })[0] || {}).setName || '';   /* ★ K-0127：顧問先が付けた 書類の名前 */
+            const cl = el('button', 'dclip', '📎 ' + (gnm ? gnm + '（' + g.length + '枚）' : g.length + '枚で1つの書類')); cl.type = 'button'; cl.title = 'ダブルクリックで バラす（右クリック・スマホは長押しでも）';
             cl.addEventListener('dblclick', function (e) { e.preventDefault(); dSplit(g[0]); });
             cl.addEventListener('contextmenu', function (e) { e.preventDefault(); dCtx(e, g[0]); });
             /* スマホ：クリップを長押し → 選びもの（バラす） */
