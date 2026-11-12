@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794467756;</script>
+<script>window.__PAGE_VER=1794468084;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -4579,6 +4579,7 @@
             pp.addEventListener('dragend', function () { o.drag = null; if (o.wait) wsDraw(key); });
             pp.addEventListener('dragover', function (e) { const dg = o.drag; if (!dg || !dg.page || dg.mem !== mem || dg.page === x) return; e.preventDefault(); e.stopPropagation(); const r = pp.getBoundingClientRect(), before = e.clientX < r.left + r.width / 2; pp.classList.toggle('zl', before); pp.classList.toggle('zr', !before); });
             pp.addEventListener('dragleave', function () { pp.classList.remove('zl', 'zr'); });
+            pp.addEventListener('click', function (e) { e.stopPropagation(); wsZoom(key, x); }); pp.style.cursor = 'zoom-in'; pp.title = (i + 1) + '枚目を 大きく見る（つかむと ページの順番）';   /* ★ K-0129：小さいページを押すと その写真を 大きく見る */
             pp.addEventListener('drop', function (e) { const dg = o.drag; pp.classList.remove('zl', 'zr'); if (!dg || !dg.page || dg.mem !== mem || dg.page === x) return; e.preventDefault(); e.stopPropagation(); const r = pp.getBoundingClientRect(); o.drag = null; ad.pageOrder(dg.page, x, e.clientX < r.left + r.width / 2); });
             pg.appendChild(pp);
           });
@@ -4703,6 +4704,13 @@
     const m = wsMark(ad, mem[0]), lock = mem.some(ad.locked);
     r.appendChild(E('span', 'pos', (i + 1) + ' / ' + o.zseq.length));
     const b = function (cls, t, ti, fn) { const x = E('button', cls, t); x.type = 'button'; x.title = ti; x.addEventListener('click', function (e) { e.stopPropagation(); fn(); }); r.appendChild(x); return x; };
+    /* ★ K-0129（2026-11-12）：まとめた書類は 中の写真を 1枚ずつ送れる（前は 1枚目しか 見られなかった）。← → でも 中の写真を順に見てから 次の書類へ */
+    if (mem.length > 1) {
+      const mi = Math.max(0, mem.indexOf(it));
+      b('setpg', '◀', 'この書類の 前の写真（←）', function () { wsZoom(key, mem[mi - 1]); }).disabled = mi <= 0;
+      r.appendChild(E('span', 'pos setpos', '📎 ' + (mi + 1) + '/' + mem.length + '枚目'));
+      b('setpg', '▶', 'この書類の 次の写真（→）', function () { wsZoom(key, mem[mi + 1]); }).disabled = mi >= mem.length - 1;
+    }
     if (o.zpages && o.zpages.length > 1) {
       b(null, '◀', '前のページ（PageUp）', function () { wsZPage(key, -1); }).disabled = o.zpg <= 0;
       r.appendChild(E('span', 'pos', (o.zpg + 1) + '/' + o.zpages.length + 'ページ'));
@@ -4715,7 +4723,7 @@
       if (ad.trash && !lock) b('ng', '🗑 破棄', '2 で 破棄して次へ', function () { wsZAct(key, 'trash'); });
       if (ad.canWrite && ad.canWrite(mem[0])) b(null, '✏ 書きこむ', '元の画面で 書きこむ', function () { o.zclose(); ad.write(mem[0]); });
     }
-    r.appendChild(E('span', 'key', ad.skip ? 'Enter 確認済→次／1 対象外→次／2 破棄→次／0 戻して元通り／← → 前後' : 'Enter 確認→次／0 戻して確認を外す／← → 前後'));
+    r.appendChild(E('span', 'key', ad.skip ? 'Enter 確認済→次／1 対象外→次／2 破棄→次／0 戻して元通り／← → 前後（まとめた書類は 中の写真を順に）' : 'Enter 確認→次／0 戻して確認を外す／← → 前後（まとめた書類は 中の写真を順に）'));
   }
   function wsZGo(key, k) {
     const o = WS[key]; if (!o) return;
@@ -4723,10 +4731,13 @@
   }
   function wsZStep(key, dir, closeAtEnd) {
     const o = WS[key], i = wsZIdx(o); if (i < 0) return;
+    /* ★ K-0129：まとめた書類の中は 1枚ずつ送る。端まで来たら 次（前）の書類へ（戻るときは その書類の 最後の写真から） */
+    const cur = wsMemOf(o, o.zkey);
+    if (cur && cur.length > 1) { const ci = cur.findIndex(function (x) { return o.ad.key(x) === o.zkey; }), cn = ci + dir; if (ci >= 0 && cn >= 0 && cn < cur.length) { wsZoom(key, cur[cn]); return; } }
     let j = i + dir, n = wsZMem(o, j);
     while (!n && j >= 0 && j < o.zseq.length) { j += dir; n = wsZMem(o, j); }
     if (!n) { if (dir > 0 && closeAtEnd) { o.zclose(); wsMsg(key, 'この箱の 最後まで 見ました。'); } else wsMsg(key, dir > 0 ? 'この箱の 最後です。' : 'この箱の 最初です。'); return; }
-    wsZoom(key, n[0]);
+    wsZoom(key, dir < 0 ? n[n.length - 1] : n[0]);
   }
   function wsZAct(key, act) {
     const o = WS[key]; if (!o) return; const ad = o.ad, i = wsZIdx(o); if (i < 0) return;
