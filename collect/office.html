@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794532560;</script>
+<script>window.__PAGE_VER=1794533699;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -824,6 +824,9 @@
   .drevive { display: block; width: 100%; margin-top: 3px; padding: 4px 6px; border: 1.5px solid #1f3a5f; border-radius: 8px; background: #fff; color: #1f3a5f; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
   .dvpos { font-weight: 700; color: var(--accent); background: #fff; border: 1.5px solid var(--accent); border-radius: 999px; padding: 2px 10px; font-size: 13px; white-space: nowrap; }
   .dvkey { font-size: 12px; color: var(--sub); white-space: nowrap; }
+  .dview .dvtools .dvbr { flex-basis: 100%; height: 0; padding: 0; margin: 0; }   /* ★ 2026-11-13（細谷）：ここで 次の行へ（1行目＝見る道具・2行目＝書きこむ〜Drive） */
+  @media (max-width: 700px) { .dview .dvtools .dvbr { display: none; } }
+  .dview .dvtools .dvkey { white-space: normal; font-size: 11px; line-height: 1.25; max-width: 13em; }   /* ★ 2026-11-13（細谷）：2行にして［差し戻す］［Drive］を［書きこむ］の行に */
   #dvMark[aria-pressed="true"] { background: #D0201A; border-color: #D0201A; color: #fff; }
   .dvmk { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 10px; background: #FFF4F2; border-bottom: 1px solid #E8B4AE; }
   .dvmk .mk-m, .dvmk .mk-c { display: inline-flex; gap: 4px; }
@@ -1134,7 +1137,7 @@
   .dview .dvbigchk { position: absolute; right: 24px; bottom: 24px; z-index: 6; font: inherit; font-size: 20px; font-weight: 800; padding: 12px 22px; border-radius: 14px; border: 2px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
   .dview .dvbigchk.on { background: #fff; color: var(--accent); }
   .dview .dvbigchk:hover { filter: brightness(1.08); }
-  .dview .dvbigclose { display: none; }
+  .dview .dvbigclose { position: absolute; left: 24px; bottom: 24px; z-index: 6; font: inherit; font-size: 18px; font-weight: 800; padding: 12px 18px; border-radius: 14px; border: 2px solid #8A9A95; background: #fff; color: #33403C; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25); }   /* スマホ：左下（確認済は 右下） */
   .dview { position: fixed; inset: 0; z-index: 50; background: rgba(20,30,28,.92); display: flex; flex-direction: column; }
   .dview .dvbar { display: flex; align-items: center; gap: 8px; padding: 8px calc(var(--toprw, 248px) + 16px) 8px 10px; background: #fff; flex-wrap: wrap; }   /* 右は［📷 顧問先の画面］［↻ 開き直す］の場所をあける */
   .dview .dvbar .sp { flex: 1; }
@@ -1145,7 +1148,7 @@
     .dview .dvbigchk { top: 46px; bottom: auto; right: 10px; width: max(220px, var(--toprw, 248px)); padding: 10px 14px; font-size: 19px; }
     /* ★ 2026-11-13（細谷）：大きな［閉じる］は 大きな［確認済］の左（上の帯の 右の空きを その分 広げる） */
     .dview .dvbar { padding-right: calc(max(220px, var(--toprw, 248px)) + 150px); }
-    .dview .dvbigclose { display: block; position: absolute; z-index: 6; top: 46px; right: calc(max(220px, var(--toprw, 248px)) + 20px); width: 120px; padding: 10px 8px; font: inherit; font-size: 18px; font-weight: 800; border-radius: 14px; border: 2px solid #8A9A95; background: #fff; color: #33403C; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+    .dview .dvbigclose { display: block; position: absolute; z-index: 6; top: 46px; left: auto; bottom: auto; right: calc(max(220px, var(--toprw, 248px)) + 20px); width: 120px; padding: 10px 8px; font: inherit; font-size: 18px; font-weight: 800; border-radius: 14px; border: 2px solid #8A9A95; background: #fff; color: #33403C; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
     .dview .dvbigclose:hover { background: #F2F4F3; }
   }
   .dview #dvName { flex: 0 0 auto; min-width: 0; max-width: 40%;   /* ★ 総点検：道具の列に押されて 30%より ずっと細く切れていた */ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
@@ -2334,19 +2337,19 @@
     <span class="dvpos" id="dvPos" title="この箱の中で 左上から何番目か"></span>
     <span class="dvpos dvpg" id="dvPg" hidden title="この書類（まとめた書類）の 何ページ目か"></span>
     <button type="button" class="btn ghost sm" id="dvSplit" hidden aria-pressed="false" title="左に この書類のページの一覧・右に 選んだページを大きく（DocuWorks と同じ見え方）">▥ 並べて見る</button>
-    <button type="button" class="btn sm" id="dvChk">✓ 確認済にする</button>
+    <span class="dvbr" aria-hidden="true"></span>
     <span class="dvkey" title="テンキーで サクサク確認（最後の1枚のあとは 一覧に戻る）">Enter 確認済→次／1 対象外→次／2 破棄→次／0 戻して元通り</span>
     <button type="button" class="btn ghost sm" id="dvMark" title="文字・下線・枠を 重ねて書く（元の写真・PDF は書き換えません）">✏ 書きこむ</button>
     <button type="button" class="btn ghost sm" id="dvMove">別の月分へ移す</button>
     <button type="button" class="btn ghost sm" id="dvGmail" title="この書類を Gmail の下書きに 添付する">✉ Gmailに添付</button>
     <span class="dvback" id="dvBack"></span>
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
-    <button type="button" class="btn ghost sm" id="dvClose">閉じる</button></span></div>
+    </span></div>
   <div class="dvmk" id="dvMkBar" hidden>
     <span class="mk-m" role="group" aria-label="書き方"><button type="button" data-m="text" aria-pressed="false" title="押した所に 文字を書く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">文字</button><button type="button" data-m="line" aria-pressed="false" title="なぞって 下線を引く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">下線</button><button type="button" data-m="box" aria-pressed="false" title="なぞって 枠で囲む（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">枠で囲む</button><button type="button" data-m="check" aria-pressed="false" title="押した所に ✔ を置く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">✔ チェック</button><button type="button" data-m="note" aria-pressed="false" title="押した所に 付箋を貼って メモを書く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">🗒 付箋</button><button type="button" data-m="stamp" aria-pressed="false" title="事務所のハンコを押す（押した所に置く。日付印は 今日の日付）（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">🔴 ハンコ</button></span>
     <span class="mk-c" role="group" aria-label="色"><button type="button" data-c="#D0201A" aria-pressed="true" title="赤" style="--c:#D0201A"></button><button type="button" data-c="#111111" aria-pressed="false" title="黒" style="--c:#111111"></button><button type="button" data-c="#1A4FD0" aria-pressed="false" title="青" style="--c:#1A4FD0"></button><button type="button" data-c="#1E8E3E" aria-pressed="false" title="緑" style="--c:#1E8E3E"></button><button type="button" data-c="#F2B800" aria-pressed="false" title="黄" style="--c:#F2B800"></button><button type="button" data-c="#FFE680" aria-pressed="false" title="付箋の黄" style="--c:#FFE680"></button><button type="button" data-c="#FFC2D6" aria-pressed="false" title="付箋の桃" style="--c:#FFC2D6"></button><button type="button" data-c="#BFE6FF" aria-pressed="false" title="付箋の水色" style="--c:#BFE6FF"></button><label class="mk-pick" title="好みの色を選ぶ"><input type="color" id="mkColor" value="#D0201A" aria-label="好みの色">🎨</label></span>
     <button type="button" class="mk-alpha" id="mkAlpha" aria-pressed="false" title="下線・枠を 透ける色（マーカー）で引く。下線は 太い蛍光ペン、枠は 中を うすく塗る。もう一度押すと ふつうの線に戻る">🖍 透過（マーカー）</button>
-    <label class="mk-z">文字の大きさ <input id="mkSize" type="text" inputmode="decimal" list="mkSizeList" value="18" autocomplete="off" aria-label="文字の大きさ（ポイント。一覧から選ぶか 数字を打つ）" title="一覧から選ぶか、数字を打って Enter（4〜200）">pt<datalist id="mkSizeList"><option value="8"></option><option value="9"></option><option value="10"></option><option value="10.5"></option><option value="11"></option><option value="12"></option><option value="14"></option><option value="16"></option><option value="18"></option><option value="20"></option><option value="22"></option><option value="24"></option><option value="26"></option><option value="28"></option><option value="36"></option><option value="48"></option><option value="72"></option></datalist></label>
+    <label class="mk-z">文字の大きさ <input id="mkSize" type="text" inputmode="decimal" list="mkSizeList" value="18" autocomplete="off" aria-label="文字の大きさ（ポイント。一覧から選ぶか 数字を打つ）" title="マウスのホイールを回すと 10・11・12・14・16・18・20・22・24・26・28・36・48・72・90 の順に変わる。一覧から選ぶか、数字を打って Enter でも（4〜200）">pt<datalist id="mkSizeList"><option value="10"></option><option value="11"></option><option value="12"></option><option value="14"></option><option value="16"></option><option value="18"></option><option value="20"></option><option value="22"></option><option value="24"></option><option value="26"></option><option value="28"></option><option value="36"></option><option value="48"></option><option value="72"></option><option value="90"></option></datalist></label>
     <span class="mk-st" id="mkStBar" hidden></span>
     <span class="mk-sel" id="mkSelBar" hidden><b id="mkSelL">選んだ文字：</b><button type="button" class="btn ghost sm" id="mkFix">文字を直す</button><button type="button" class="btn ghost sm" id="mkSmall" title="少し小さく">A－</button><button type="button" class="btn ghost sm" id="mkBig" title="少し大きく">A＋</button><button type="button" class="btn ghost sm" id="mkDel">🗑 消す</button></span>
     <button type="button" class="btn ghost sm" id="mkUndo">↶ 1つ戻す</button>
@@ -2354,12 +2357,12 @@
     <button type="button" class="btn sm primary" id="mkSave" title="Ctrl＋S でも">保存して終わる</button>
     <button type="button" class="btn ghost sm" id="mkCancel">やめる</button>
     <label class="mk-auto" title="この端末で 写真を開くたびに 書きこむ帯を はじめから出す（［✏ 書きこむ］を押さなくてよい）。Enter・1・2・0・← → も そのまま使える"><input type="checkbox" id="mkAuto"> 開いたら いつも書きこむ</label>
-    <span class="mk-msg" id="mkMsg">押して書く（文字・✔・付箋は 押した所に／下線・枠は なぞる）。文字と付箋は Enter で改行・外を押すか Ctrl＋Enter で置く。付箋は 押すと 書き直せる。選んで Ctrl＋C → Ctrl＋V で 同じものを貼れる。Ctrl＋S で 保存して終わる。元の写真・PDF は書き換えず、重ねて残します。</span>
+    <span class="mk-msg" id="mkMsg"></span>
   </div>
   <!-- ★ 2026-11-12（細谷）：大きな［確認済］（上の帯のボタンと同じ働き）。パソコン＝右上の［顧問先の画面を表示］［開き直す］の下・スマホ＝右下 -->
   <!-- ★ 2026-11-13（細谷）：大きな［閉じる］（大きな［確認済］の左。パソコンだけ） -->
-  <button type="button" class="dvbigclose" id="dvClose2" title="閉じて 回収資料に戻る（Esc でも）">✕ 閉じる</button>
-  <button type="button" class="dvbigchk" id="dvChk2" title="押すと 確認済にする・もう一度押すと 外す（Enter＝確認済にして 次へ）">✓ 確認済にする</button>
+  <button type="button" class="dvbigclose" id="dvClose" title="閉じて 回収資料に戻る（Esc でも）">✕ 閉じる</button>
+  <button type="button" class="dvbigchk" id="dvChk" title="押すと 確認済にする・もう一度押すと 外す（Enter＝確認済にして 次へ）">✓ 確認済にする</button>
   <div class="dvmemo" id="dvMemo" hidden></div>
   <div class="dvmain" id="dvwMain">
     <div class="dvside" id="dvwSide" hidden aria-label="この書類のページ"></div>
@@ -7849,9 +7852,9 @@
     $('dvMove').onclick = function () { docsClose(); dMoveOpen([it]); };
     $('dvGmail').onclick = function () { dGmail([it]); };
     $('dvBook').hidden = !!fileKind(it.name) || !S.code; $('dvBook').onclick = function () { dvBookRead(it); };
-    const dvChkPaint = function () { $('dvChk').textContent = $('dvChk2').textContent = it.chk ? '✓ 確認済（外す）' : '✓ 確認済にする'; $('dvChk').classList.toggle('ghost', !!it.chk); $('dvChk2').classList.toggle('on', !!it.chk); };
+    const dvChkPaint = function () { $('dvChk').textContent = it.chk ? '✓ 確認済（外す）' : '✓ 確認済にする'; $('dvChk').classList.toggle('on', !!it.chk); };
     dvChkPaint();
-    $('dvChk').onclick = $('dvChk2').onclick = function (e) { if (e) e.stopPropagation(); docsCheck([it], !it.chk); dvChkPaint(); };
+    $('dvChk').onclick = function (e) { if (e) e.stopPropagation(); docsCheck([it], !it.chk); dvChkPaint(); };
     dvBackDraw(it);
     $('dvGo').onclick = function () { docsClose(); perPick(it.period); S.box = ''; S.bsel = []; boxSelPaint();
       selectTab('In'); const go = function () { if (rowOf(it.id)) focusCard(it.id); }; if (S.items.some(function (x) { return x.id === it.id; })) { render(); go(); } else { S.st = 'all'; document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.st === 'all')); }); load().then(go); } };
@@ -8018,8 +8021,7 @@
   });
   $('dvRot').addEventListener('click', function () { if (!S.dvId) return; rotSet(S.dvId, (S.rot[S.dvId] || 0) + 90); dvFit(); });   /* ★ 2026-11-12：向きは 覚える */
   function docsClose() { if (MK.on) mkEnd(true); S.dvId = ''; S.dvIt = null; S.dvSeq = null; S.dvMemo = null; $('dvwSide').textContent = ''; $('dvwSide').dataset.set = ''; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
-  $('dvClose').addEventListener('click', docsClose);
-  $('dvClose2').addEventListener('click', function (e) { e.stopPropagation(); docsClose(); });   /* ★ 2026-11-13（細谷）：大きな［閉じる］ */
+  $('dvClose').addEventListener('click', function (e) { e.stopPropagation(); docsClose(); });   /* ★ 2026-11-13（細谷）：大きな［閉じる］（上の帯の小さい［閉じる］［確認済］は なくした） */
 
   /* ================= ★★ 大きく見て サクサク確認（2026-10-26） =================
      ・この箱の中で 左上から何番目か（3 / 12）
@@ -8160,7 +8162,7 @@
     if (!docOf(id)) { restore([id]); return; }   /* 破棄していた → 復活 */
     if (d.skip) docsSkip([d], false);
     if (d.chk) docsCheck([d], false);
-    $('dvChk').textContent = $('dvChk2').textContent = '✓ 確認済にする'; $('dvChk').classList.remove('ghost'); $('dvChk2').classList.remove('on');
+    $('dvChk').textContent = '✓ 確認済にする'; $('dvChk').classList.remove('on');
   }
   document.addEventListener('keydown', function (e) {
     if ($('dview').hidden || !S.dvIt || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -8585,7 +8587,7 @@
     if (fileKind(it.name)) { dcMsg('この形（エクセルなど）には 書きこめません。', true); return; }
     MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true; MK.m = ''; MK.keep = false; mkToolPaint();
     $('dvMark').setAttribute('aria-pressed', 'true'); $('dvMkBar').hidden = false; $('dview').classList.add('dv-mk'); stampBar(); stampsLoad().then(stampBar);   /* ハンコの帯は すぐ出す（写真が あとで ずれないように） */
-    $('mkMsg').textContent = '書くものを選んで 押して書く（1回押す＝1つだけ・2回続けて押す＝続けて置ける。文字・✔・付箋は 押した所に／下線・枠は なぞる）。文字と付箋は Enter で改行・外を押すか Ctrl＋Enter で置く。書いたものは 押すと選べて、つかんで動かす・直す・大きさや色を変える・消す ができます。元の写真・PDF は書き換えず、重ねて残します。';
+    $('mkMsg').textContent = '';   /* ★ 2026-11-13（細谷）：長い説明は 出さない（使ううちに 覚える。ボタンに マウスを乗せると 説明が出る） */
     mkPaint();
   }
   /* save … 保存する（変わっていなければ 何もしない） */
@@ -8620,6 +8622,16 @@
     if (MK.sel >= 0) mkSelEdit(function (m) { if (m.t === 'text' || m.t === 'note') { const z = Math.round(v / (m.t === 'note' ? MK_PT_NOTE : MK_PT_TEXT) * 1000) / 1000; if (z === 1) delete m.z; else m.z = z; if (m.t === 'note') { const wh = mkPageWH(m.p); noteFit(m, wh[0], wh[1]); } } });
   }
   $('mkSize').addEventListener('change', function () { mkSizeSet(false); });
+  /* ★ 2026-11-13（細谷）：欄の上で ホイールを回す（↑↓ キーでも）＝ 10・11・12・14・16・18・20・22・24・26・28・36・48・72・90 の順に 1つずつ */
+  const MK_PTS = [10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72, 90];
+  function mkSizeStep(d) {
+    const cur = Number($('mkSize').value) || MK.pt || 18;
+    let i = d > 0 ? MK_PTS.findIndex(function (v) { return v > cur; }) : (function () { for (let k = MK_PTS.length - 1; k >= 0; k--) if (MK_PTS[k] < cur) return k; return -1; })();
+    if (i < 0) i = d > 0 ? MK_PTS.length - 1 : 0;
+    $('mkSize').value = String(MK_PTS[i]); mkSizeSet(false);
+  }
+  $('mkSize').addEventListener('wheel', function (e) { e.preventDefault(); e.stopPropagation(); mkSizeStep(e.deltaY < 0 ? 1 : -1); }, { passive: false });
+  $('mkSize').addEventListener('keydown', function (e) { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); mkSizeStep(e.key === 'ArrowUp' ? 1 : -1); } });
   $('mkSize').addEventListener('input', function () { if ([].some.call($('mkSizeList').options, function (o) { return o.value === $('mkSize').value; })) mkSizeSet(true); });   /* 一覧から選んだら すぐ */
   $('mkSize').addEventListener('keydown', function (e) { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); mkSizeSet(false); this.blur(); } });
   $('mkSize').addEventListener('focus', function () { const t = this; setTimeout(function () { try { t.select(); } catch (x) {} }, 0); });
