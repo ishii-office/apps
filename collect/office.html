@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794538002;</script>
+<script>window.__PAGE_VER=1794540688;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2591,7 +2591,9 @@
     });
   }
 
-  const $ = function (id) { return document.getElementById(id); };
+  /* ★ K-0145：書きこむ道具の帯（#dvMkBar）を 別ウィンドウへ 貸しているあいだ（MKW）は、この画面に無い id を 別ウィンドウから引く */
+  let MKW = null;
+  const $ = function (id) { const e = document.getElementById(id); if (e || !MKW) return e; return MKW.doc.getElementById(id); };
   const el = function (tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const yen = function (n) { return Number(n).toLocaleString('ja-JP'); };
   /* 全角の数字・記号を半角に（IME が入ったままでも打てるように） */
@@ -4827,7 +4829,7 @@
     if (m === 'skip' && ad.skip) btn('ok', '◯ 対象に戻す', '対象外を やめて 仕訳化・AI下書きの対象に戻す', function () { ad.skip(mem, false); });
     if (m !== 'trash' && !lock && ad.trash) btn('ng', '🗑 破棄', '破棄する（右上に赤の ✓。押すと 復活）', function () { ad.trash(mem); });
     if (m === 'trash' && live && ad.revive) btn('ok', '↺ 戻す', '破棄を やめて 元に戻す', function () { ad.revive(mem); });
-    if (ad.canWrite && ad.canWrite(lead)) btn(null, '✏ 書きこむ', '文字・下線・枠を書きこむ（元の画面で開きます）', function () { ad.write(lead); });
+    if (ad.canWrite && ad.canWrite(lead)) btn(null, '✏ 書きこむ', '文字・下線・枠を書きこむ（この別ウィンドウの中で。元の写真・PDF は書き換えません）', function () { const wk = mkwKeyOf(o); wsZoom(wk, lead); ad.write(lead, wk); c.querySelectorAll('.ac button').forEach(function (x) { x.disabled = false; }); });   /* ★ K-0145 */
     if (ad.canDel && mem.every(ad.canDel)) btn('ng', ad.delLabel || '× 削除', ad.delTitle || '消す', function () { if (o.win.confirm(ad.delAsk ? ad.delAsk(mem) : mem.length > 1 ? 'この書類（' + mem.length + '枚）を消しますか？' : 'この1枚を消しますか？')) ad.del(mem); else wsDraw(o.key); });
     if (ac.childNodes.length) c.appendChild(ac);
     return m;
@@ -4875,6 +4877,7 @@
     const ad = o.ad, i = wsZIdx(o), mem = i >= 0 ? (wsMemOf(o, o.zkey) || wsZMem(o, i)) : null;
     const it = mem ? (mem.find(function (x) { return ad.key(x) === o.zkey; }) || mem[0]) : null;
     r.textContent = '';
+    mkwWatch(key); mkwShow(key);   /* K-0145：書きこみを 重ねて見せる */
     d.getElementById('wzc').textContent = it ? ad.name(it) + (ad.stat && ad.stat(it) ? '　［' + ad.stat(it) + '］' : '') : '';
     if (!mem) return;
     const m = wsSetMark(ad, mem), lock = mem.some(ad.locked);
@@ -4903,7 +4906,7 @@
       } else if (ad.check) b(m === 'chk' ? 'on' : null, m === 'chk' ? '✓ 確認済（外す）' : (ad.checkLabel || '✓ 確認済にする'), 'Enter で 確認済にして次へ', function () { ad.check(mem, m !== 'chk'); });
       if (ad.skip && !lock) b(m === 'skip' ? 'blk' : null, m === 'skip' ? '↩ 対象に戻す' : '⊘ 対象外', '1 で 対象外にして次へ', function () { ad.skip(mem, m !== 'skip'); });
       if (ad.trash && !lock) b('ng', '🗑 破棄', '2 で 破棄して次へ', function () { wsZAct(key, 'trash'); });
-      if (ad.canWrite && ad.canWrite(mem[0])) b(null, '✏ 書きこむ', '元の画面で 書きこむ', function () { o.zclose(); ad.write(mem[0]); });
+      if (ad.canWrite && ad.canWrite(it)) b(null, '✏ 書きこむ', 'いま見ている写真に 文字・下線・枠を書きこむ（この別ウィンドウの中で）', function () { ad.write(it, key); });   /* ★ K-0145：前は 元の画面へ戻っていた。まとめた書類は いま見ている1枚に */
     }
     r.appendChild(E('span', 'key', ad.skip ? 'Enter 確認済→次／1 対象外→次／2 破棄→次／0 戻して元通り／← → 前後（まとめた書類は 中の写真を順に）' : 'Enter 確認→次／0 戻して確認を外す／← → 前後（まとめた書類は 中の写真を順に）'));
   }
@@ -4953,7 +4956,7 @@
   function wsZKeys(key, d) {
     const o = WS[key];
     d.addEventListener('keydown', function (e) {
-      if (d.getElementById('wzv').hidden || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (MKW || d.getElementById('wzv').hidden || e.ctrlKey || e.metaKey || e.altKey) return;   /* K-0145：書きこみ中は 効かせない */
       const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA' || tn === 'SELECT') return;
       if (e.key === 'Escape') { e.preventDefault(); o.zclose(); }
       else if (e.key === '+' || e.key === '=' || e.key === ';') { e.preventDefault(); o.zp.zoom(1.4); }
@@ -5002,7 +5005,7 @@
       canDel: function (it) { return isT(it); }, del: function (mem) { purge(mem.map(function (x) { return x.id; })); },
       delTitle: 'ドライブから 完全に消す（ゴミ箱にも残りません。戻せません）', delAsk: function (mem) { return (mem.length > 1 ? 'この' + mem.length + '枚' : 'この1枚') + 'を ドライブから完全に消しますか？（戻せません）'; },
       canWrite: function (it) { return !isT(it) && !fileKind(it.name); },
-      write: function (it) { docsOpen(it); mkStart(); try { window.focus(); } catch (e) {} },
+      write: function (it, wk) { if (wk && WS[wk]) { mkwOpen(wk, it); return; } docsOpen(it); mkStart(); try { window.focus(); } catch (e) {} },
       big: function (it, cb) {
         if (isT(it)) return cb('');
         const go = function () { const v = IMG[it.id]; if (v && v.t === 'img') cb(v.src); else if (v && v.t === 'pdf') wsPdfPages(it.id, v, cb); else cb(''); };
@@ -8403,15 +8406,15 @@
   /* ★ K-0006（2026-10-29）：書いた文字を 押して選ぶ → つかんで動かす・［文字を直す］（ダブルクリックでも）・［A－］［A＋］・色・［消す］（Delete キーでも）。
        何もない所を押すと 選ぶのをやめる。大きさは 形の z（1＝ふつう）で持つ */
   function mkTargets() {
-    const b = $('dvBody'); const im = b.querySelector(':scope > img');
+    const b = mkEl('dvBody'); const im = b.querySelector(':scope > img');
     if (im) return [im];
-    return Array.prototype.slice.call(b.querySelectorAll('.pdfpages > canvas'));
+    return Array.prototype.slice.call(b.querySelectorAll('.pdfpages > canvas, .pdfpages > img'));
   }
   const SVGNS = 'http://www.w3.org/2000/svg';
-  function mkMarks() { return MK.on ? MK.list : ((S.dvIt && S.dvIt.mark) || []); }
+  function mkMarks() { return MK.on ? MK.list : ((mkIt() && mkIt().mark) || []); }
   function mkPaint() {
-    if ($('dview').hidden || !S.dvIt) return;
-    const b = $('dvBody');
+    if (!mkEl('dview') || mkEl('dview').hidden || !mkIt()) return;
+    const b = mkEl('dvBody');
     b.querySelectorAll('.mksvg').forEach(function (x) { x.remove(); });
     const tg = mkTargets(), ms = mkMarks();
     if (!MK.on && !ms.length) return;
@@ -8515,7 +8518,7 @@
     m.w = Math.max(0.1, Math.min(1, (tw + pad * 2) / W)); m.h = Math.max(0.03, Math.min(1, (ls.length * fs * 1.3 + pad * 2) / H));
     m.x = Math.max(0, Math.min(1 - m.w, m.x)); m.y = Math.max(0, Math.min(1 - m.h, m.y));
   }
-  function mkPageWH(p) { const sv = document.querySelector('#dvBody .mksvg[data-p="' + (p || 0) + '"]'); const vb = sv && sv.viewBox && sv.viewBox.baseVal; return vb && vb.width ? [vb.width, vb.height] : [1000, 1400]; }
+  function mkPageWH(p) { const sv = mkD().querySelector('#dvBody .mksvg[data-p="' + (p || 0) + '"]'); const vb = sv && sv.viewBox && sv.viewBox.baseVal; return vb && vb.width ? [vb.width, vb.height] : [1000, 1400]; }
   function stampShape(m, W, H) {
     const g = document.createElementNS(SVGNS, 'g'), x = m.x * W, y = m.y * H, w = m.w * W, h = m.h * H, c = m.c || '#D0201A';
     const mk = function (t, at) { const e = document.createElementNS(SVGNS, t); Object.keys(at).forEach(function (k) { e.setAttribute(k, at[k]); }); g.appendChild(e); return e; };
@@ -8559,7 +8562,7 @@
     const m = MK.list[i], on = !!(m && MK_SEL_T[m.t]); if (!on) MK.sel = -1;
     $('mkSelBar').hidden = !on;
     if (on) { $('mkSelL').textContent = { stamp: '選んだハンコ：', check: '選んだ ✔：', note: '選んだ付箋：' }[m.t] || '選んだ文字：'; $('mkFix').hidden = !(m.t === 'text' || m.t === 'note'); $('mkFix').textContent = m.t === 'note' ? '付箋を直す' : '文字を直す'; if (m.t === 'text' || m.t === 'note') $('mkSize').value = String(mkPtOf(m)); }
-    if (on) document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.c === m.c)); });
+    if (on) mkD().querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.c === m.c)); });
     mkPaint();
   }
   const MK_SEL_T = { text: 1, stamp: 1, check: 1, note: 1 };
@@ -8572,7 +8575,7 @@
       const hit = e.target && e.target.closest ? e.target.closest('[data-i]') : null;
       const ti = hit ? Number(hit.dataset.i) : -1;
       /* ★ 2026-11-12（細谷）：書きかけの欄があれば まず置く（外を押すと 置く）。続けて書く道具なら そのまま次を置く */
-      const pend = document.querySelector('.mkin');
+      const pend = mkD().querySelector('.mkin');
       if (pend) { if (pend._done) pend._done(true); else pend.remove(); if (ti >= 0 || ['text', 'note', 'stamp', 'check'].indexOf(MK.m) < 0) return; }
       if (ti >= 0 && MK.list[ti] && MK_SEL_T[MK.list[ti].t]) {
         if (MK.sel !== ti) mkSelect(ti);
@@ -8584,7 +8587,7 @@
       if (e.button === 2) return;   /* 右クリックは 次のページ（contextmenu） */
       const wasSel = MK.sel >= 0;
       if (MK.sel >= 0) { MK.sel = -1; $('mkSelBar').hidden = true; const sb = sv.querySelector('.mksel'); if (sb) sb.remove(); }   /* 何もない所＝選ぶのをやめて ふつうに書く */
-      if (!MK.m) { if (!wasSel && !pend && e.button === 0 && e.pointerType === 'mouse') { DV_PG_AT = Date.now(); dvPage(-1); } return; }   /* K-0103：道具を選んでいなければ 何も置かない。★ 2026-11-12：マウスの左クリック＝前のページ */
+      if (!MK.m) { if (!MKW && !wasSel && !pend && e.button === 0 && e.pointerType === 'mouse') { DV_PG_AT = Date.now(); dvPage(-1); } return; }   /* K-0103：道具を選んでいなければ 何も置かない。★ 2026-11-12：マウスの左クリック＝前のページ */
       if (MK.m === 'text') { mkText(e.clientX, e.clientY, p, a); mkToolUsed(); return; }
       if (MK.m === 'stamp') { const vb = sv.viewBox.baseVal; stampPut(p, a, vb.width, vb.height); mkToolUsed(); return; }
       if (MK.m === 'check') { const vb = sv.viewBox.baseVal, w = 0.05 * (MK.pt ? MK.pt / MK_PT_TEXT : 1), h = w * vb.width / Math.max(1, vb.height); MK.list.push({ p: p, t: 'check', x: Math.max(0, Math.min(1 - w, a.x - w * 0.35)), y: Math.max(0, Math.min(1 - h, a.y - h * 0.8)), w: w, h: h, c: MK.c }); mkDirty(); mkPaint(); mkToolUsed(); return; }
@@ -8623,7 +8626,7 @@
   /* 選んだ文字を 打ち直す（その場に 欄を出す） */
   function mkFixText(i) {
     const m = MK.list[i]; if (!m || (m.t !== 'text' && m.t !== 'note')) return;
-    const te = document.querySelector('#dvBody .mksvg [data-i="' + i + '"]'), r = te ? te.getBoundingClientRect() : { left: innerWidth / 2, top: innerHeight / 2, height: 20 };
+    const te = mkD().querySelector('#dvBody .mksvg [data-i="' + i + '"]'), r = te ? te.getBoundingClientRect() : { left: mkWin().innerWidth / 2, top: mkWin().innerHeight / 2, height: 20 };
     mkText(r.left, m.t === 'note' ? r.top + 16 : r.top + 16, m.p || 0, { x: m.x, y: m.y }, i, m.t);
   }
   function mkFrom(a, b) {
@@ -8636,21 +8639,21 @@
   /* ★ K-0094：文字・付箋は 複数行（Enter＝改行・Ctrl＋Enter か 外を押すと 置く・Esc＝やめる）。大きさは［文字の大きさ］ */
   function mkText(cx, cy, p, a, edit, kind) {
     kind = kind || 'text';
-    const old = document.querySelector('.mkin'); if (old) { if (old._done) old._done(true); else old.remove(); }   /* 書きかけは 置いてから */
+    const old = mkD().querySelector('.mkin'); if (old) { if (old._done) old._done(true); else old.remove(); }   /* 書きかけは 置いてから */
     const inp = el('textarea', 'mkin'); inp.rows = 3; inp.maxLength = 500;
     inp.placeholder = kind === 'note' ? '付箋に書くメモ（Enter で改行・外を押すと 貼る）' : '書く文字（Enter で改行・外を押すと 置く）';
     const em = edit != null ? MK.list[edit] : null; if (em) { inp.value = em.s; inp.placeholder = '直す文字（外を押すと 決める）'; }
     /* ★ 2026-11-12（細谷）：欄は 書いた文字が ぜんぶ見える大きさに（打つたびに 下へ伸びる・幅の中で折り返す）。付箋を直すときは 付箋の上に その幅で */
-    const ne = em ? document.querySelector('#dvBody .mksvg [data-i="' + edit + '"]') : null, nr = ne ? ne.getBoundingClientRect() : null;
-    const iw = Math.min(innerWidth - 16, Math.max(kind === 'note' ? 300 : 260, nr ? nr.width + 16 : 0, 0), 560);
-    inp.style.width = iw + 'px'; inp.style.left = Math.max(8, Math.min(cx, innerWidth - iw - 8)) + 'px'; inp.style.top = Math.max(4, Math.min(cy - 16, innerHeight - 90)) + 'px';
+    const ne = em ? mkD().querySelector('#dvBody .mksvg [data-i="' + edit + '"]') : null, nr = ne ? ne.getBoundingClientRect() : null;
+    const iw = Math.min(mkWin().innerWidth - 16, Math.max(kind === 'note' ? 300 : 260, nr ? nr.width + 16 : 0, 0), 560);
+    inp.style.width = iw + 'px'; inp.style.left = Math.max(8, Math.min(cx, mkWin().innerWidth - iw - 8)) + 'px'; inp.style.top = Math.max(4, Math.min(cy - 16, mkWin().innerHeight - 90)) + 'px';
     const col = em ? em.c : MK.c; inp.style.color = kind === 'note' ? mkInk(col) : col; if (kind === 'note') inp.style.background = col;
     const grow = function () {
-      inp.style.height = 'auto'; const h = Math.min(inp.scrollHeight + 4, innerHeight - 8); inp.style.height = h + 'px';
-      const t = parseFloat(inp.style.top) || 0; if (t + h > innerHeight - 4) inp.style.top = Math.max(4, innerHeight - 4 - h) + 'px';
+      inp.style.height = 'auto'; const h = Math.min(inp.scrollHeight + 4, mkWin().innerHeight - 8); inp.style.height = h + 'px';
+      const t = parseFloat(inp.style.top) || 0; if (t + h > mkWin().innerHeight - 4) inp.style.top = Math.max(4, mkWin().innerHeight - 4 - h) + 'px';
     };
     inp.addEventListener('input', grow);
-    document.body.appendChild(inp); grow(); try { inp.focus(); } catch (x) {} setTimeout(function () { inp.focus(); }, 0);   /* すぐ打てるように その場でも（K-0103 で 道具のボタンに 手元が残るため） */
+    mkD().body.appendChild(inp); grow(); try { inp.focus(); } catch (x) {} setTimeout(function () { inp.focus(); }, 0);   /* すぐ打てるように その場でも（K-0103 で 道具のボタンに 手元が残るため） */
     let fin = false; const done = function (keep) { if (fin) return; fin = true; const v = inp.value.replace(/\s+$/, '').replace(/^\n+/, ''); if (inp.isConnected) inp.remove();
       if (em) { if (keep && v.trim() && v !== em.s) { em.s = v; if (em.t === 'note') { const wh = mkPageWH(em.p); noteFit(em, wh[0], wh[1]); } mkDirty(); } mkPaint(); return; }
       if (keep && v.trim()) {
@@ -8666,28 +8669,30 @@
   function mkAutoOn() { return lsGet('collect_mkauto') === '1'; }
   $('mkAuto').addEventListener('change', function () { try { localStorage.setItem('collect_mkauto', this.checked ? '1' : '0'); } catch (e) {} });
   function mkStart() {
+    if (MKW && !MKW.go) { dcMsg('別ウィンドウで 書きこみの途中です（そちらで［保存して終わる］か［やめる］を押してから）。', true); return; }
     $('mkAuto').checked = mkAutoOn();
-    const it = S.dvIt; if (!it) return;
+    const it = mkIt(); if (!it) return;
     if (fileKind(it.name)) { dcMsg('この形（エクセルなど）には 書きこめません。', true); return; }
     MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true; MK.m = ''; MK.keep = false; mkToolPaint();
-    $('dvMark').setAttribute('aria-pressed', 'true'); $('dvMkBar').hidden = false; $('dview').classList.add('dv-mk'); stampBar(); stampsLoad().then(stampBar);   /* ハンコの帯は すぐ出す（写真が あとで ずれないように） */
+    mkEl('dvMark').setAttribute('aria-pressed', 'true'); $('dvMkBar').hidden = false; mkEl('dview').classList.add('dv-mk'); stampBar(); stampsLoad().then(stampBar);   /* ハンコの帯は すぐ出す（写真が あとで ずれないように） */
     $('mkMsg').textContent = '';   /* ★ 2026-11-13（細谷）：長い説明は 出さない（使ううちに 覚える。ボタンに マウスを乗せると 説明が出る） */
     mkPaint();
   }
   /* save … 保存する（変わっていなければ 何もしない） */
   function mkEnd(save) {
-    const pend = document.querySelector('.mkin'); if (pend && save) { if (pend._done) pend._done(true); else pend.blur(); } else if (pend) pend.remove();   /* 打ちかけの文字は 置いてから */
-    const it = S.dvIt, list = MK.list, changed = JSON.stringify(list) !== MK.was;
+    const pend = mkD().querySelector('.mkin'); if (pend && save) { if (pend._done) pend._done(true); else pend.blur(); } else if (pend) pend.remove();   /* 打ちかけの文字は 置いてから */
+    const it = mkIt(), list = MK.list, changed = JSON.stringify(list) !== MK.was, wk = MKW ? MKW.key : '';
     MK.on = false; MK.drag = null; MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true;
-    $('dvMark').setAttribute('aria-pressed', 'false'); $('dvMkBar').hidden = true; $('dview').classList.remove('dv-mk'); $('mkStBar').hidden = true;
+    mkEl('dvMark').setAttribute('aria-pressed', 'false'); $('dvMkBar').hidden = true; mkEl('dview').classList.remove('dv-mk'); $('mkStBar').hidden = true;
     if (save && changed && it) {
       const code = S.code, prev = it.mark; it.mark = list;
-      gs('workMark', code, it.id, list).then(function (r) { it.mark = r.mark; if (S.dvIt === it) mkPaint(); docsDraw(); dcMsg('書きこみを 保存しました（元の資料は そのまま）。'); },
-        function (e) { it.mark = prev; if (S.dvIt === it) mkPaint(); dcMsg('書きこみを 保存できませんでした。' + e.message, true); });
+      gs('workMark', code, it.id, list).then(function (r) { it.mark = r.mark; if (mkIt() === it) mkPaint(); docsDraw(); dcMsg('書きこみを 保存しました（元の資料は そのまま）。'); if (wk) { wsMsg(wk, '書きこみを 保存しました（元の資料は そのまま）。'); mkwShow(wk); } },
+        function (e) { it.mark = prev; if (mkIt() === it) mkPaint(); dcMsg('書きこみを 保存できませんでした。' + e.message, true); if (wk) { wsMsg(wk, '書きこみを 保存できませんでした。' + e.message, true); mkwShow(wk); } });
     }
+    if (wk) { mkwBack(); return; }   /* ★ K-0145：別ウィンドウで書いたときは 道具の帯を この画面へ戻して 終わり */
     mkPaint();
   }
-  $('dvMark').addEventListener('click', function () { if (MK.on) mkEnd(true); else mkStart(); });
+  mkEl('dvMark').addEventListener('click', function () { if (MK.on) mkEnd(true); else mkStart(); });
   $('mkSave').addEventListener('click', function () { mkEnd(true); });
   $('mkCancel').addEventListener('click', function () { MK.list = JSON.parse(MK.was || '[]'); mkEnd(false); });
   $('mkUndo').addEventListener('click', function () { MK.list.pop(); MK.sel = -1; $('mkSelBar').hidden = true; mkDirty(); mkPaint(); });
@@ -8722,18 +8727,19 @@
   /* ★ K-0094：好みの色 */
   function mkColorSet(c) {
     MK.c = String(c || '#D0201A').toUpperCase();
-    let hit = false; document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { const on = x.dataset.c.toUpperCase() === MK.c; if (on) hit = true; x.setAttribute('aria-pressed', String(on)); });
-    const pk = document.querySelector('#dvMkBar .mk-pick'); if (pk) { pk.classList.toggle('on', !hit); pk.style.setProperty('--c', MK.c); }
+    let hit = false; mkD().querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { const on = x.dataset.c.toUpperCase() === MK.c; if (on) hit = true; x.setAttribute('aria-pressed', String(on)); });
+    const pk = mkD().querySelector('#dvMkBar .mk-pick'); if (pk) { pk.classList.toggle('on', !hit); pk.style.setProperty('--c', MK.c); }
     if (MK.sel >= 0) mkSelEdit(function (m) { m.c = MK.c; });
   }
   $('mkColor').addEventListener('input', function () { mkColorSet(this.value); });
   /* ★ K-0126：［🖍 透過（マーカー）］押すたびに 入る／切れる。これから引く 下線・枠に効く（色は そのまま選べる） */
   $('mkAlpha').addEventListener('click', function () { MK.a = !MK.a; this.setAttribute('aria-pressed', String(MK.a)); });
   $('mkDel').addEventListener('click', function () { if (MK.sel < 0) return; MK.list.splice(MK.sel, 1); mkSelect(-1); mkDirty(); });
-  document.addEventListener('keydown', function (e) {
+  function mkKeyDel(e) {
     if (!MK.on || MK.sel < 0) return; const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA') return;
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); $('mkDel').click(); }
-  }, true);
+  }
+  document.addEventListener('keydown', mkKeyDel, true);
   /* ★ 2026-11-12（細谷）：選んだ書きこみ（ハンコ・✔・文字・付箋）を Ctrl＋C で写し、Ctrl＋V で貼る。
      貼る所は マウスのある所（ハンコ・✔ は まん中、文字・付箋は 左上）。マウスが写真の外なら 前のものから 少しずらして。
      ほかの写真・ページにも貼れる。貼ったものは 選んだままになるので そのまま つかんで動かせる */
@@ -8746,7 +8752,7 @@
   function mkPaste() {
     if (!MK_CLIP) return false;
     const m = JSON.parse(JSON.stringify(MK_CLIP.m)), hv = MK_HOVER;
-    if (!hv && !document.querySelector('#dvBody .mksvg[data-p="' + (m.p || 0) + '"]')) m.p = 0;
+    if (!hv && !mkD().querySelector('#dvBody .mksvg[data-p="' + (m.p || 0) + '"]')) m.p = 0;
     if (hv) m.p = hv.p;
     const wh = mkPageWH(m.p || 0), W = wh[0], H = wh[1];
     if (m.t === 'stamp' || m.t === 'check') m.h = m.h * (MK_CLIP.H / MK_CLIP.W) * (W / H);   /* ページの形が ちがっても 形をくずさない */
@@ -8760,21 +8766,22 @@
     MK_CLIP.last = { x: m.x, y: m.y }; MK_CLIP.hv = hv;
     MK.list.push(m); mkSelect(MK.list.length - 1); mkDirty(); return true;
   }
-  document.addEventListener('keydown', function (e) {
+  function mkKeyCtrl(e) {
     if (!MK.on || !(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
     if (String(e.key || '').toLowerCase() === 's') { e.preventDefault(); e.stopPropagation(); mkEnd(true); return; }   /* ★ 2026-11-12（細谷）：Ctrl＋S＝［保存して終わる］（書きかけの文字・付箋も 置いてから） */
-    const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA' || document.querySelector('.mkin')) return;
+    const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA' || mkD().querySelector('.mkin')) return;
     const k = String(e.key || '').toLowerCase();
     if ((k === 'c' && mkCopy()) || (k === 'v' && mkPaste())) { e.preventDefault(); e.stopPropagation(); }
-  }, true);
+  }
+  document.addEventListener('keydown', mkKeyCtrl, true);
   /* ★★ K-0103：道具は 1回押す＝1つだけ置く（置いたら 道具が外れる）・2回続けて押す（ダブルクリック）＝続けて置ける（🔁）。
        続けて置いているときは もう一度押すか Esc で外れる */
   function mkToolPaint() {
-    document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (x) { const on = x.dataset.m === MK.m; x.setAttribute('aria-pressed', String(on)); x.classList.toggle('keep', on && MK.keep); });
+    mkD().querySelectorAll('#dvMkBar .mk-m button').forEach(function (x) { const on = x.dataset.m === MK.m; x.setAttribute('aria-pressed', String(on)); x.classList.toggle('keep', on && MK.keep); });
   }
   function mkToolUsed() { if (MK.keep) return; MK.m = ''; mkToolPaint(); stampBar(); }
-  document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('dblclick', function () { MK.m = b.dataset.m; MK.keep = true; mkToolPaint(); }); });
-  document.querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('click', function (e) {
+  mkD().querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('dblclick', function () { MK.m = b.dataset.m; MK.keep = true; mkToolPaint(); }); });
+  mkD().querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('click', function (e) {
     const was = MK.m;
     if (e.detail >= 2) return;   /* ダブルクリックの2回目（dblclick で 続けて にする） */
     if (MK.keep && was === b.dataset.m) { MK.m = ''; MK.keep = false; mkToolPaint(); stampBar(); return; }   /* 続けて の道具を もう一度押す＝やめる */
@@ -8782,10 +8789,133 @@
     /* 付箋は 淡い色から（濃い色のままだと 字が読みにくい）。付箋をやめたら 赤に戻す */
     if (MK.m === 'note' && mkInk(MK.c) === '#fff') mkColorSet('#FFE680'); else if (was === 'note' && MK.m !== 'note' && mkInk(MK.c) === '#111' && /^#(FFE680|FFC2D6|BFE6FF)$/.test(MK.c)) mkColorSet('#D0201A');
     if (MK.m === 'stamp') stampsLoad().then(stampBar); else stampBar(); }); });
-  document.querySelectorAll('#dvMkBar .mk-c button').forEach(function (b) { b.addEventListener('click', function () { mkColorSet(b.dataset.c); }); });
+  mkD().querySelectorAll('#dvMkBar .mk-c button').forEach(function (b) { b.addEventListener('click', function () { mkColorSet(b.dataset.c); }); });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && MK.on && MK.m && !document.querySelector('.mkin')) { MK.m = ''; MK.keep = false; mkToolPaint(); stampBar(); return; }   /* K-0103：まず 道具を外す */
-    if (e.key === 'Escape' && !$('dview').hidden) docsClose(); });
+    if (e.key === 'Escape' && MK.on && MK.m && !mkD().querySelector('.mkin')) { MK.m = ''; MK.keep = false; mkToolPaint(); stampBar(); return; }   /* K-0103：まず 道具を外す */
+    if (e.key === 'Escape' && !mkEl('dview').hidden) docsClose(); });
+
+  /* ================= ★★ K-0145（2026-11-13）：別ウィンドウの中で そのまま 書きこむ =================
+     前は 別ウィンドウの［✏ 書きこむ］を押すと 元の画面（回収資料の 大きく見る）へ 戻っていた。
+     道具は 1つだけ（文字・下線・枠・✔・付箋・ハンコ・色・大きさ… 元の画面と まったく同じもの）。
+     道具の帯（#dvMkBar）そのものを 別ウィンドウへ 貸して、終わったら この画面へ 戻す（押したときの働きは 付いたまま 動く）。
+     書く相手（写真）と 帯を どちらの窓から引くかは mkEl／mkD／mkWin／mkIt と、上の $ が 決める。
+     別ウィンドウを 途中で閉じたら その時点の書きこみを 保存して 帯を戻す。 */
+  function mkD() { return MKW ? MKW.doc : document; }
+  function mkWin() { return MKW ? MKW.win : window; }
+  function mkEl(id) { return MKW ? MKW.doc.getElementById(id) : document.getElementById(id); }
+  function mkIt() { return MKW ? MKW.it : S.dvIt; }
+  function mkwCss(d) {
+    if (d.getElementById('mkwCss')) return;
+    let css = '.dvmk button{font:inherit;font-size:13px;border:1px solid #c8c2b4;border-radius:7px;padding:5px 12px;background:#fff;color:#1d2733;cursor:pointer;white-space:nowrap}.dvmk button.primary{background:#0F6E56;border-color:#0F6E56;color:#fff;font-weight:700}.dvmk{font-size:14px}\n';
+    try {
+      Array.prototype.forEach.call(document.styleSheets, function (sh) {
+        let rs = null; try { rs = sh.cssRules; } catch (e) {} if (!rs) return;
+        Array.prototype.forEach.call(rs, function (r) { const t = r.selectorText || ''; if (t === ':root' || /\.dvmk|\.mk-|\.mksvg|\.mksel|\.mkin|\.dv-mk|(^|[\s,])\.btn\b/.test(t)) css += r.cssText + '\n'; });
+      });
+    } catch (e) {}
+    css += '.mkwv{position:fixed;inset:0;z-index:60;background:#3a3f45;display:flex;flex-direction:column;color:#1d2733}.mkwv[hidden]{display:none}' +
+      '.mkwv .mkwh{display:flex;align-items:center;gap:10px;padding:6px 12px;background:#1f3a5f;color:#fff;font-size:14px;font-weight:700}.mkwv .mkwh small{font-weight:400;opacity:.85}' +
+      '.mkwv .mkwb{flex:1 1 auto;min-height:0;position:relative;overflow:auto;text-align:center;padding:10px}' +
+      '.mkwv .mkwb>img{max-width:100%;max-height:100%;background:#fff;vertical-align:top;user-select:none}' +
+      '.mkwv .mkwb .pdfpages{display:flex;flex-direction:column;align-items:center;gap:12px}.mkwv .mkwb .pdfpages>img{max-width:100%;background:#fff;user-select:none}' +
+      '.wzv .mksvg{pointer-events:none}';
+    const st = d.createElement('style'); st.id = 'mkwCss'; st.textContent = css; d.head.appendChild(st);
+  }
+  function mkwKeyOf(o) { return Object.keys(WS).find(function (k) { return WS[k] === o; }) || ''; }
+  function mkwPages(d, body, srcs) {
+    body.textContent = '';
+    const wait = [];
+    const one = function (src, par) { const im = d.createElement('img'); im.alt = ''; im.draggable = false; wait.push(new Promise(function (ok) { im.onload = im.onerror = function () { ok(); }; })); im.src = src; par.appendChild(im); };
+    if (srcs.length > 1) { const pp = d.createElement('div'); pp.className = 'pdfpages'; srcs.forEach(function (x) { one(x, pp); }); body.appendChild(pp); } else one(srcs[0], body);
+    return Promise.all(wait);
+  }
+  function mkwOpen(key, it) {
+    const o = WS[key]; if (!o || !o.win || o.win.closed || !it) return;
+    if (MKW) { if (MKW.key !== key) wsMsg(key, 'ほかの別ウィンドウで 書きこみの途中です（そちらを 終わらせてから）。', true); return; }
+    if (MK.on) { wsMsg(key, '元の画面で 書きこみの途中です。元の画面で［保存して終わる］か［やめる］を押してから。', true); return; }
+    const d = o.win.document, bar = document.getElementById('dvMkBar'); if (!bar) return;
+    mkwCss(d);
+    const old = d.getElementById('dview'); if (old) old.remove();
+    const v = d.createElement('div'); v.id = 'dview'; v.className = 'mkwv';
+    const h = d.createElement('div'); h.className = 'mkwh'; h.appendChild(d.createTextNode('✏ 書きこむ　')); const nm = d.createElement('small'); nm.textContent = o.ad.name(it) + '　（元の写真・PDF は 書き換えません）'; h.appendChild(nm);
+    const mb = d.createElement('button'); mb.type = 'button'; mb.id = 'dvMark'; mb.hidden = true; h.appendChild(mb);
+    const body = d.createElement('div'); body.id = 'dvBody'; body.className = 'mkwb';
+    v.appendChild(h);
+    MKW = { key: key, win: o.win, doc: d, it: it, bar: bar, par: bar.parentNode, next: bar.nextSibling, go: false, bye: null, rs: null };
+    v.appendChild(bar);   /* 道具の帯を 貸す */
+    v.appendChild(body); d.body.appendChild(v);
+    d.addEventListener('keydown', mkKeyDel, true); d.addEventListener('keydown', mkKeyCtrl, true); d.addEventListener('keydown', mkwKey, true);
+    MKW.bye = function () {
+      if (!MKW || MKW.key !== key) return;
+      if (!o.win.closed) { try { mkEnd(true); } catch (e) {} if (MKW) mkwBack(); return; }
+      /* もう閉じられている … 窓の中は 触れないので、手元の書きこみだけ 保存して 帯を戻す */
+      const list = MK.list, changed = JSON.stringify(list) !== MK.was, code = S.code, prev = it.mark;
+      mkwBack();
+      if (changed) { it.mark = list; gs('workMark', code, it.id, list).then(function (r) { it.mark = r.mark; docsDraw(); dcMsg('別ウィンドウで 書いていた分を 保存しました。'); }, function (e) { it.mark = prev; dcMsg('書きこみを 保存できませんでした。' + e.message, true); }); }
+    };
+    o.win.addEventListener('pagehide', MKW.bye);
+    /* 閉じた合図が 来ないこともあるので 見張る（閉じられていたら 保存して 帯を戻す） */
+    const me0 = MKW; me0.tm = setInterval(function () { if (MKW !== me0) { clearInterval(me0.tm); return; } if (me0.win.closed) { clearInterval(me0.tm); me0.bye(); } }, 400);
+    MKW.rs = function () { if (MKW) mkPaint(); }; o.win.addEventListener('resize', MKW.rs);
+    /* いま 大きく見ている写真（PDF は 全ページ）。まだなら 小さい絵で始めて、くっきりしたものが届いたら 差し替える（書いたものは 写真の中の割合で持つので ずれない） */
+    const zi = d.getElementById('wzi'), same = o.zkey === o.ad.key(it);
+    const first = same && o.zpages && o.zpages.length ? o.zpages.slice() : [(same && zi && zi.getAttribute('src')) || o.ad.thumb(it) || ''];
+    const me = MKW;
+    mkwPages(d, body, first).then(function () { if (MKW !== me) return; me.go = true; mkStart(); me.go = false; });
+    if (o.ad.big && !(same && o.zpages)) o.ad.big(it, function (x) {
+      if (MKW !== me || o.win.closed) return; const srcs = Array.isArray(x) ? x : (x ? [x] : []); if (!srcs.length || (srcs.length === 1 && srcs[0] === first[0])) return;
+      mkwPages(d, body, srcs).then(function () { if (MKW === me) mkPaint(); });
+    });
+    try { o.win.focus(); } catch (e) {}
+  }
+  /* 別ウィンドウで：Esc＝道具を外す（道具が無ければ 何もしない。終わるのは［保存して終わる］［やめる］）。ほかのキーは 別ウィンドウの 確認済・送り に渡さない */
+  function mkwKey(e) {
+    if (!MKW) return;
+    const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA' || tn === 'SELECT') return;   /* 欄の中のキーは 欄に渡す（Ctrl＋Enter・Esc） */
+    if (e.key === 'Escape' && MK.on && MK.m && !mkD().querySelector('.mkin')) { MK.m = ''; MK.keep = false; mkToolPaint(); stampBar(); }
+    if (!(e.ctrlKey || e.metaKey)) e.preventDefault();
+    e.stopPropagation();
+  }
+  /* 道具の帯を この画面へ戻す（別ウィンドウが 閉じられていても 帯は 手元に持っているので 戻せる） */
+  function mkwBack() {
+    const w = MKW; if (!w) return; MKW = null; try { clearInterval(w.tm); } catch (e) {}
+    try { w.bar.hidden = true; if (w.next && w.next.parentNode === w.par) w.par.insertBefore(w.bar, w.next); else w.par.appendChild(w.bar); } catch (e) {}
+    MK.on = false; MK.drag = null; MK.sel = -1; MK.mv = null;
+    try { $('dvMark').setAttribute('aria-pressed', 'false'); $('dview').classList.remove('dv-mk'); } catch (e) {}
+    try {
+      if (!w.win.closed) {
+        w.doc.removeEventListener('keydown', mkKeyDel, true); w.doc.removeEventListener('keydown', mkKeyCtrl, true); w.doc.removeEventListener('keydown', mkwKey, true);
+        w.win.removeEventListener('pagehide', w.bye); w.win.removeEventListener('resize', w.rs);
+        const pend = w.doc.querySelector('.mkin'); if (pend) pend.remove();
+        const v = w.doc.getElementById('dview'); if (v) v.remove();
+        mkwShow(w.key); wsZBar(w.key);
+      }
+    } catch (e) {}
+    if (S.dvIt && !document.getElementById('dview').hidden) mkPaint();
+  }
+  /* 写真が 読み込まれた・拡大や移動で 形が変わった とき、重ねた書きこみも 合わせる */
+  function mkwWatch(key) {
+    const o = WS[key]; if (!o || !o.win || o.win.closed) return; const zi = o.win.document.getElementById('wzi'); if (!zi || zi._mkw) return; zi._mkw = 1;
+    zi.addEventListener('load', function () { mkwShow(key); });
+    try { new MutationObserver(function () { const sv = o.win.document.querySelector('#wzs .mksvg'); if (sv) sv.style.transform = zi.style.transform || ''; }).observe(zi, { attributes: true, attributeFilter: ['style'] }); } catch (e) {}
+  }
+  /* 別ウィンドウの「大きく見る」に 書きこみを 重ねて見せる（見るだけ） */
+  function mkwShow(key) {
+    const o = WS[key]; if (!o || !o.win || o.win.closed) return;
+    const d = o.win.document, zi = d.getElementById('wzi'), st = d.getElementById('wzs'); if (!zi || !st) return;
+    st.querySelectorAll('.mksvg').forEach(function (x) { x.remove(); });
+    if (d.getElementById('wzv').hidden || MKW) return;
+    const mem = wsMemOf(o, o.zkey), it = mem ? mem.find(function (x) { return o.ad.key(x) === o.zkey; }) : null, ms = (it && it.mark) || [];
+    const p = o.zpg || 0, mine = ms.filter(function (m) { return (m.p || 0) === p; }); if (!mine.length) return;
+    const W = zi.offsetWidth, H = zi.offsetHeight; if (!W || !H) return;
+    mkwCss(d);
+    if (STAMPS === null && mine.some(function (m) { return m.t === 'stamp'; })) { stampsLoad().then(function () { mkwShow(key); }); }
+    if (getComputedStyle(st).position === 'static') st.style.position = 'relative';
+    const sv = document.createElementNS(SVGNS, 'svg'); sv.setAttribute('class', 'mksvg'); sv.setAttribute('viewBox', '0 0 ' + W + ' ' + H); sv.setAttribute('width', W); sv.setAttribute('height', H);
+    sv.style.left = zi.offsetLeft + 'px'; sv.style.top = zi.offsetTop + 'px'; sv.style.width = W + 'px'; sv.style.height = H + 'px'; sv.style.transform = zi.style.transform || '';
+    mine.forEach(function (m) { try { sv.appendChild(mkShape(m, W, H)); } catch (e) {} });
+    st.appendChild(sv);
+  }
 
   function rowOf(id) { return $('jlist').querySelector('.jdrow[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'); }
   function itemOf(id) { return S.view.find(function (it) { return it.id === id; }); }
