@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794555859;</script>
+<script>window.__PAGE_VER=1794558409;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -5269,7 +5269,7 @@
   }
   function obHead() {
     const pp = OB.data && OB.data.rows && OB.data.rows.some(function (x) { return x.paper != null; });
-    if (OB.kind === 'kaikake') { $('obHead').innerHTML = '<tr><th>仕入先</th><th class="n">8%</th><th class="n">10%</th><th class="n">合計</th><th class="n">先方負担手数料</th><th class="n">振込手数料</th><th class="n">振込金額</th><th class="n">自動振替</th><th class="ck">✓</th></tr>'; return false; }
+    if (OB.kind === 'kaikake') { $('obHead').innerHTML = '<tr><th>仕入先</th><th class="n">8%</th><th class="n">10%</th><th class="n">合計</th><th class="n">振込手数料</th><th class="n">振込金額</th><th class="n">自動振替</th><th class="ck">✓</th></tr>'; return false; }
     if (OB.kind === 'kyuyo') { $('obHead').innerHTML = '<tr>' + OB_KY.map(function (c) { return '<th' + (c[2] ? ' class="' + c[2] + '"' : '') + '>' + c[1] + '</th>'; }).join('') + '</tr>'; return false; }
     $('obHead').innerHTML = OB.kind === 'kake' ? '<tr><th>締日</th><th class="n">発生額</th><th>入金日</th><th class="n">入金額</th><th>入金口座</th><th class="n">残高</th></tr>' : '<tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th>' + (pp ? '<th class="n">紙の残高</th>' : '') + '</tr>';
     return pp;
@@ -5298,7 +5298,7 @@
   /* ★ 給与台帳の列（2026-11-12）。[持ち物, 見出し, 形]。表と CSV で 同じ並び */
   const OB_KY = [['n', '氏名'], ['k', '区分'], ['wr', '平日時給', 'n'], ['wh', '平日時間', 'n'], ['wp', '平日給与', 'n'], ['hr', '土日祝時給', 'n'], ['hh', '土日祝時間', 'n'], ['hp', '土日祝給与', 'n'], ['days', '出勤数', 'n'], ['tr', '交通費', 'n'], ['trt', '交通費合計', 'n'],
     ['base', '基本給', 'n'], ['ot', '残業代', 'n'], ['com', '通勤手当', 'n'], ['tot', '合計', 'n'], ['tax', '源泉徴収', 'n'], ['res', '住民税', 'n'], ['net', '差引支給額', 'n'], ['ok', '✓', 'ck']];
-  const OB_KA = ['r8', 'r10', 'tot', 'fee1', 'fee2', 'pay', 'auto'];
+  const OB_KA = ['r8', 'r10', 'tot', 'fee2', 'pay', 'auto'];   /* ★ 2026-11-13（細谷）：先方負担手数料の欄は なし */
   function obDraw() {
     const tb = $('obBody'); tb.textContent = ''; const d = OB.data; const pp = obHead(); if (!d) return;
     const tr = function (cls, cells) { const r = el('tr', cls); cells.forEach(function (c) { r.appendChild(el('td', c[1] || '', c[0])); }); tb.appendChild(r); return r; };
@@ -5418,7 +5418,7 @@
     const q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
     const vv = function (v) { return v == null ? '' : v; };
     const lines = OB.kind === 'kaikake'
-      ? [['仕入先', '8%', '10%', '合計', '先方負担手数料', '振込手数料', '振込金額', '自動振替', '✓']].concat(d.rows.map(function (x) { return [x.n].concat(OB_KA.map(function (k) { return vv(x[k]); })).concat([x.ok ? '✓' : '']); })).concat([['合計'].concat(OB_KA.map(function (k) { return d.sum[k]; })).concat([''])])
+      ? [['仕入先', '8%', '10%', '合計', '振込手数料', '振込金額', '自動振替', '✓']].concat(d.rows.map(function (x) { return [x.n].concat(OB_KA.map(function (k) { return vv(x[k]); })).concat([x.ok ? '✓' : '']); })).concat([['合計'].concat(OB_KA.map(function (k) { return d.sum[k]; })).concat([''])])
       : OB.kind === 'kyuyo'
       ? [['期間', d.from + '〜' + d.to], OB_KY.map(function (c) { return c[1]; })].concat(d.rows.map(function (x) { return OB_KY.map(function (c) { return c[0] === 'ok' ? (x.ok ? '✓' : '') : vv(x[c[0]]); }); })).concat([OB_KY.map(function (c) { return c[0] === 'n' ? '合計' : c[0] in d.sum ? d.sum[c[0]] : ''; })])
       : OB.kind === 'kake'
@@ -13415,7 +13415,7 @@
     { v: 1, icon: '📒', name: '出納帳', kind: '汎用', what: '日付・摘要・入金・出金・残高' },
     { v: 'kake', icon: '📘', name: '掛帳（売掛帳・買掛帳）', kind: '汎用', what: '締日・発生額・入金日・入金額・入金口座・残高' },
     { v: 'nippo', icon: '📋', name: '業務日報', kind: '専用', from: 'ビーメイツ（ANCHOVY）', what: '売上・仕入（領収書1枚＝1行）・レジの現金・天気・売上の見込み。保存すると 現金出納帳が ひとりでにでき 現金の箱に入る' },
-    { v: 'kaikake', icon: '📕', name: '仕入等買掛金帳', kind: '専用', from: 'ビーメイツ', what: '仕入先ごとに 8%・10%・合計・先方負担手数料・振込手数料・振込金額・自動振替・✓。その月分を 翌月に払う。仕入先は 次の月へ写る' },
+    { v: 'kaikake', icon: '📕', name: '仕入等買掛金帳', kind: '専用', from: 'ビーメイツ', what: '仕入先ごとに 8%・10%・合計・振込手数料・振込金額・自動振替・✓。その月分を 翌月に払う。仕入先は 次の月へ写る' },
     { v: 'kyuyo', icon: '👛', name: '給与台帳', kind: '専用', from: 'ビーメイツ', what: '従業員・アルバイトの 時給×時間・交通費（基本給・残業代・通勤手当）・源泉徴収・住民税・差引支給額・✓。人は 次の月へ写る' }
   ];
   function aTreeDraw() {
