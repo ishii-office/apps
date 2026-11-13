@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794533699;</script>
+<script>window.__PAGE_VER=1794535668;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -5947,6 +5947,16 @@
       z.hidden = false;
     };
     const idle = function () { DW_MEM.dir ? say('📂 DocuWorks へ<br><small>ここへ落とすと「' + DW_MEM.dir.name + '」に入ります</small>') : say('📂 DocuWorks へ<br><small>ここへ落とします（はじめに 入れるフォルダを選びます）</small>'); };
+    /* ★ K-0140（2026-11-13）：フォルダを選んだのに「選ばなかった」と出ていた。選び窓が 断られた・取りやめになった わけを出し、
+         その場で もう一度 選べるようにする（ブラウザは デスクトップ・ドキュメント・ダウンロード そのもの や システムのフォルダを 使わせない） */
+    const pickNg = function (er) {
+      const nm = (er && er.name) || '', ms = (er && er.message) || String(er || '');
+      const why = nm === 'AbortError' ? 'ブラウザが このフォルダを 使わせなかったか、選ぶ途中で 取りやめになりました。<br>デスクトップ・ドキュメント・ダウンロード の<b>そのもの</b>は 選べません。<b>その中のフォルダ</b>（DocuWorks の机のフォルダ など）を選んでください。<br>選んだあと「ファイルの編集を許可しますか」と聞かれたら［編集を許可］を押してください。'
+        : nm === 'SecurityError' || nm === 'NotAllowedError' ? 'この画面からは フォルダを選べませんでした。もう一度 ボタンを押してください（だめなら 元の事務所の画面で ドラッグしてください）。'
+        : 'フォルダを選べませんでした。';
+      say('⚠ 入れられませんでした（フォルダを使えませんでした）<br><small>' + why + '<br>（' + (nm || 'エラー') + (ms ? '：' + ms.replace(/[<>&]/g, '') : '') + '）</small>', S1.pend ? '📂 もう一度 フォルダを選んで 入れる' : '');
+      clearTimeout(S1.hideT);
+    };
     const done = function (msg, err) { say((err ? '⚠ ' : '✓ ') + msg + '<br><small><a href="#" class="dwc">入れるフォルダを変える</a></small>'); clearTimeout(S1.hideT); S1.hideT = setTimeout(function () { if (!S1.cur && !S1.pend) z.hidden = true; }, err ? 12000 : 5000); };
     const save = function (f) {
       S1.pend = f;
@@ -5963,13 +5973,13 @@
       const x = e.target.closest('.dwx, .dwb, .dwc'); if (!x) return;
       e.preventDefault(); e.stopPropagation();
       if (x.classList.contains('dwx')) { S1.pend = null; z.hidden = true; return; }
-      if (x.classList.contains('dwc')) { dwPick(w).then(function (h) { done('これから「' + h.name + '」に 入れます'); }, function () {}); return; }
+      if (x.classList.contains('dwc')) { dwPick(w).then(function (h) { done('これから「' + h.name + '」に 入れます'); }, pickNg); return; }
       const f = S1.pend; if (!f) return;
       if (DW_MEM.dir && DW_MEM.dir.requestPermission) {
         DW_MEM.dir.requestPermission({ mode: 'readwrite' }).then(function (p) { if (p === 'granted') save(f); else done('許可されなかったので 入れていません', true); }, function () { done('許可されなかったので 入れていません', true); });
         return;
       }
-      dwPick(w).then(function () { save(f); }, function () { done('フォルダを選ばなかったので 入れていません', true); });
+      dwPick(w).then(function () { save(f); }, pickNg);
     });
     w.addEventListener('dragstart', function (e) {
       if (e.defaultPrevented || !e.dataTransfer) return;
