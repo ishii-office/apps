@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794548048;</script>
+<script>window.__PAGE_VER=1794549706;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2556,6 +2556,7 @@
   function rotSet(id, deg) {
     deg = ((deg || 0) % 360 + 360) % 360; if (deg) S.rot[id] = deg; else delete S.rot[id];
     $('dBody').querySelectorAll('.dtile[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"] .dimg').forEach(function (b) { if (b._rot) b._rot(); });
+    if (typeof wsRefresh === 'function') try { wsRefresh(); } catch (e) {}   /* ★ 2026-11-13（柳田）：開いている別ウィンドウにも すぐ映す */
     const code = S.code; clearTimeout(ROT_PEND[id]);
     ROT_PEND[id] = setTimeout(function () {
       gs('workRotate', code, id, deg).then(function (r) { delete ROT_PEND[id]; const d = (S.docs || []).concat(S.items || []).filter(function (x) { return x.id === id; }); d.forEach(function (x) { x.rot = r.rot; }); },
@@ -4527,7 +4528,10 @@
     };
     const apply = function () {
       if (st.s <= 1.001) { st.s = 1; st.x = 0; st.y = 0; } else clamp();
-      img.style.transform = st.s === 1 ? '' : 'translate(' + st.x + 'px,' + st.y + 'px) scale(' + st.s + ')';
+      /* ★ 2026-11-13（柳田）：回した向き（img.dataset.rot）でも出す。縦横が入れ替わる向きは 収まる大きさも 入れ替える */
+      const rr = Number(img.dataset.rot) || 0, side = rr % 180 !== 0;
+      img.style.maxWidth = side && stage.clientHeight ? stage.clientHeight + 'px' : ''; img.style.maxHeight = side && stage.clientWidth ? stage.clientWidth + 'px' : '';
+      img.style.transform = (st.s === 1 ? '' : 'translate(' + st.x + 'px,' + st.y + 'px) scale(' + st.s + ')') + (rr ? ' rotate(' + rr + 'deg)' : '');
       stage.classList.toggle('zin', st.s > 1);
       if (pct) pct.textContent = Math.round(st.s * 100) + '%';
       if (bar) { const bo = bar.querySelector('[data-z="out"]'), bi = bar.querySelector('[data-z="in"]'), bf = bar.querySelector('[data-z="fit"]'); if (bo) bo.disabled = st.s <= 1; if (bi) bi.disabled = st.s >= ZMAX; if (bf) bf.disabled = st.s <= 1; }
@@ -4739,7 +4743,7 @@
         const c = E('div', 'wc' + (lock ? ' lock' : '') + (o.sel && o.sel[ad.key(lead)] ? ' sel' : '')); c.draggable = !lock || !!ad.out; c.dataset.k = ad.key(lead);
         o.mems = o.mems || {}; o.mems[ad.key(lead)] = mem;
         const im = E('div', 'im'), src = ad.thumb(lead);
-        if (src) { const i = E('img'); i.src = src; i.alt = ''; i.draggable = false; im.appendChild(i); } else { im.appendChild(E('div', 'k', ad.name(lead))); if (src === undefined) need.push(ad.key(lead)); }
+        if (src) { const i = E('img'); i.src = src; i.alt = ''; i.draggable = false; im.appendChild(i); wsRotImg(ad, lead, i, im); } else { im.appendChild(E('div', 'k', ad.name(lead))); if (src === undefined) need.push(ad.key(lead)); }
         c.appendChild(im);
         /* ★ 押すと 大きく（写真が まだ届いていなくても）。並び（o.seq）は キーで前後するため */
         o.seq.push(mem); im.style.cursor = 'zoom-in';
@@ -4757,7 +4761,7 @@
           const pg = E('div', 'pg');
           mem.forEach(function (x, i) {
             const pp = E('div', 'p', String(i + 1)); pp.draggable = !lock; pp.dataset.k = ad.key(x);
-            const ps = ad.thumb(x); if (ps) pp.style.backgroundImage = 'url("' + ps + '")'; else if (ps === undefined) need.push(ad.key(x));
+            const ps = ad.thumb(x); if (ps) wsRotBg(ad, x, pp, ps, E); else if (ps === undefined) need.push(ad.key(x));
             pp.addEventListener('dragstart', function (e) { e.stopPropagation(); o.drag = { page: x, mem: mem }; try { if (!dtPutFile(e, null)) e.dataTransfer.setData('text/plain', 'p'); e.dataTransfer.effectAllowed = 'move'; } catch (q) {} });
             pp.addEventListener('dragend', function () { o.drag = null; if (o.wait) wsDraw(key); });
             pp.addEventListener('dragover', function (e) { const dg = o.drag; if (!dg || !dg.page || dg.mem !== mem || dg.page === x) return; e.preventDefault(); e.stopPropagation(); const r = pp.getBoundingClientRect(), before = e.clientX < r.left + r.width / 2; pp.classList.toggle('zl', before); pp.classList.toggle('zr', !before); });
@@ -4811,6 +4815,20 @@
      ・右上の ✓（確認済＝緑／対象外＝黒／破棄＝赤。押すと 元に戻す）と、下の［確認済にする］［対象外］［破棄］［書きこむ］
      ・写真を押すと 大きく見る。キーも サムネイルの「大きく見る」と同じ（Enter／1／2／0／← →）。最後の1枚のあとは 一覧に戻る
      ad の足し：mark(it)→'chk'|'skip'|'trash'|'' ／ check(mem,on) ／ skip(mem,on) ／ trash(mem) ／ revive(mem) ／ canWrite・write ／ canDel・del ／ checkLabel */
+  /* ★ 2026-11-13（柳田）：別ウィンドウでも［↻ 回す］で決めた向きで出す（札の絵・小さいページ・大きく見る・書きこむ） */
+  function wsRotImg(ad, it, i, box) {
+    const r = ad.rot ? ad.rot(it) || 0 : 0; if (!r) return;
+    const fit = function () { fitImg(i, r, box.clientWidth || 200, box.clientHeight || 230); };
+    setTimeout(fit, 0); i.addEventListener('load', fit);   /* すぐ向きを付け、届いたら 大きさを合わせ直す */
+  }
+  function wsRotBg(ad, it, pp, src, E) {
+    const r = ad.rot ? ad.rot(it) || 0 : 0;
+    if (!r) { pp.style.backgroundImage = 'url("' + src + '")'; return; }
+    const side = r % 180 !== 0, n = pp.textContent; pp.textContent = ''; pp.style.position = 'relative'; pp.style.overflow = 'hidden';
+    const bg = E('div', 'prot'); bg.style.cssText = 'position:absolute;left:50%;top:50%;pointer-events:none;background:#f4f6f8 center/cover no-repeat;width:' + (side ? '56px' : '100%') + ';height:' + (side ? '44px' : '100%') + ';transform:translate(-50%,-50%) rotate(' + r + 'deg)';
+    bg.style.backgroundImage = 'url("' + src + '")'; pp.appendChild(bg);
+    const t = E('span', null, n); t.style.position = 'relative'; pp.appendChild(t);
+  }
   const WS_MK = { chk: '確認済（押すと外す）', skip: '対象外（押すと 対象に戻す）', trash: '破棄済み（押すと 復活）' };
   function wsMark(ad, it) { return ad.mark ? ad.mark(it) || '' : ''; }
   function wsUnmark(ad, mem, m) { if (m === 'chk' && ad.check) ad.check(mem, false); else if (m === 'skip' && ad.skip) ad.skip(mem, false); else if (m === 'trash' && ad.revive) ad.revive(mem); }
@@ -4858,18 +4876,20 @@
     const o = WS[key]; if (!o || !o.win || o.win.closed || !o.zp) return;
     const d = o.win.document, img = d.getElementById('wzi'), tok = {};
     if (d.getElementById('wzv').hidden || !o.zseq) o.zseq = o.seq.map(function (m) { return o.ad.key(m[0]); });
+    img.dataset.rot = String(o.ad.rot ? o.ad.rot(it) || 0 : 0);   /* ★ 回した向きで（元の画面と同じ） */
     o.zkey = o.ad.key(it); o.ztok = tok; o.zpages = null; o.zpg = 0; o.zp.reset();
     img.draggable = !!(o.ad.out && o.ad.out(it));
     const t = o.ad.thumb(it); if (t) img.src = t; else img.removeAttribute('src');
     const ld = d.getElementById('wzl'); ld.hidden = true;
     d.getElementById('wzv').hidden = false;
+    if (img.dataset.rot !== '0') o.zp.reset();   /* 出してから 収まる大きさを 合わせ直す（回した向き） */
     wsZBar(key);
     if (o.ad.big) {
       ld.hidden = false;
       o.ad.big(it, function (v) {
         if (o.ztok !== tok || o.win.closed) return;
         ld.hidden = true;
-        if (Array.isArray(v)) { if (v.length) { o.zpages = v; o.zpg = 0; img.src = v[0]; wsZBar(key); } }
+        if (Array.isArray(v)) { if (v.length) { o.zpages = v; o.zpg = 0; img.dataset.rot = '0'; o.zp.reset(); img.src = v[0]; wsZBar(key); } }
         else if (v) img.src = v;
       });
     }
@@ -5008,6 +5028,7 @@
       /* ★ サムネイルと同じ：確認済（緑）・対象外（黒）・破棄（赤）・書きこむ（2026-10-29） */
       mark: function (it) { return isT(it) ? 'trash' : it.skip ? 'skip' : it.chk ? 'chk' : ''; },
       check: function (mem, on) { docsCheck(mem, on); },
+      rot: function (it) { return (S.rot && S.rot[it.id]) || 0; },
       skip: function (mem, on) { docsSkip(mem, on); },
       trash: function (mem) { discard(mem); },
       revive: function (mem) { restore(mem.map(function (x) { return x.id; })); },
@@ -7210,6 +7231,7 @@
     ms.forEach(function (m) {
       const c = m.c || '#D0201A', sw = Math.max(1.5, W * 0.004);
       x.save(); x.strokeStyle = c; x.fillStyle = c; x.lineCap = 'round';
+      if (m.r && MK_UPR[m.t]) { const pv = mkPivot(m, W, H); x.translate(pv[0], pv[1]); x.rotate(-m.r * Math.PI / 180); x.translate(-pv[0], -pv[1]); }   /* ★ 回して書いたものは その向きで（画面と同じ） */
       if (m.t === 'text') {
         const fs = Math.max(12 * W / 1000, W * 0.03) * (m.z || 1);
         x.font = '700 ' + fs + 'px sans-serif'; x.textBaseline = 'middle'; String(m.s || '').split('\n').forEach(function (ln, i) { x.fillText(ln, m.x * W, m.y * H + i * fs * 1.3); });
@@ -8407,13 +8429,13 @@
     if (pre) {   /* ★ 2026-11-12（細谷）：よく使うハンコ・自由入力 */
       const tx = pre.k === 'free' ? (MK.free || '') : pre.tx; if (!tx) return;
       const k = pre.k === 'circ' ? 'circ' : 'rect', sz = stampPreSize(k, tx, pre.date, W, H), w = sz[0], h = sz[1];
-      MK.list.push({ p: p, t: 'stamp', s: k, tx: tx, d: pre.date ? stampToday() : '', x: Math.max(0, Math.min(1 - w, a.x - w / 2)), y: Math.max(0, Math.min(1 - h, a.y - h / 2)), w: w, h: h, c: STAMP_RED });
+      MK.list.push(mkWithR({ p: p, t: 'stamp', s: k, tx: tx, d: pre.date ? stampToday() : '', x: Math.max(0, Math.min(1 - w, a.x - w / 2)), y: Math.max(0, Math.min(1 - h, a.y - h / 2)), w: w, h: h, c: STAMP_RED }));
       MK.sel = MK.list.length - 1; mkSelect(MK.sel); mkDirty(); return;
     }
     const st = stampOf(MK.st), w = 0.16, asp = st ? stampAspect(st) : 1;
     const h = w * asp * W / Math.max(1, H);
     const sumi = MK.st === 'sumi';
-    MK.list.push({ p: p, t: 'stamp', s: sumi ? 'sumi' : st ? st.id : 'auto', d: sumi ? '' : (!st || st.date) ? stampToday() : '', x: Math.max(0, Math.min(1 - w, a.x - w / 2)), y: Math.max(0, Math.min(1 - h, a.y - h / 2)), w: w, h: h, c: MK.c });
+    MK.list.push(mkWithR({ p: p, t: 'stamp', s: sumi ? 'sumi' : st ? st.id : 'auto', d: sumi ? '' : (!st || st.date) ? stampToday() : '', x: Math.max(0, Math.min(1 - w, a.x - w / 2)), y: Math.max(0, Math.min(1 - h, a.y - h / 2)), w: w, h: h, c: MK.c }));
     MK.sel = MK.list.length - 1; mkSelect(MK.sel); mkDirty();
   }
   /* ★ K-0006（2026-10-29）：書いた文字を 押して選ぶ → つかんで動かす・［文字を直す］（ダブルクリックでも）・［A－］［A＋］・色・［消す］（Delete キーでも）。
@@ -8449,7 +8471,19 @@
   /* ★ K-0126（2026-11-12 林）：透過（マーカー）。下線は 太い蛍光ペン、枠は 中を うすく塗る。下の字が 透けて読める */
   const MK_ALPHA = 0.38;
   function mkMarkerW(W) { return Math.max(8, W * 0.022); }
+  /* ★ 2026-11-13（柳田）：［↻ 回す］で向きを変えて 書いた 文字・付箋・ハンコ・✔ は、書いたときの向き（m.r）で まっすぐ立てて描く。
+       回すのは 文字・付箋は 置いた所（左上）、ハンコ・✔ は まん中を 軸に。線・枠は 形だけなので 回さない */
+  const MK_UPR = { text: 1, note: 1, stamp: 1, check: 1 };
+  function mkPivot(m, W, H) { return m.t === 'text' || m.t === 'note' ? [m.x * W, m.y * H] : [(m.x + (m.w || 0) / 2) * W, (m.y + (m.h || 0) / 2) * H]; }
   function mkShape(m, W, H) {
+    const sh = mkShape0(m, W, H); if (!m.r || !MK_UPR[m.t]) return sh;
+    const c = mkPivot(m, W, H), g = document.createElementNS(SVGNS, 'g');
+    sh.setAttribute('transform', 'rotate(' + (-m.r) + ' ' + c[0] + ' ' + c[1] + ')'); g.appendChild(sh); return g;
+  }
+  /* いま 書く向き（回した写真なら その角度。PDF のページは 回さない） */
+  function mkRotNow(p) { const t = mkTargets()[p || 0]; if (!t || t.tagName !== 'IMG') return 0; const m = /rotate\((-?\d+(?:\.\d+)?)deg\)/.exec(t.style.transform || ''); const r = m ? Math.round(Number(m[1]) / 90) * 90 : 0; return ((r % 360) + 360) % 360; }   /* 画面に出している向き（別ウィンドウは 回していない） */
+  function mkWithR(m) { const r = mkRotNow(m.p); if (r) m.r = r; return m; }
+  function mkShape0(m, W, H) {
     const sw = Math.max(2, W * 0.004);
     if (m.t === 'stamp') return stampShape(m, W, H);
     if (m.t === 'text') {
@@ -8603,7 +8637,7 @@
       if (!MK.m) { if (!MKW && !wasSel && !pend && e.button === 0 && e.pointerType === 'mouse') { DV_PG_AT = Date.now(); dvPage(-1); } return; }   /* K-0103：道具を選んでいなければ 何も置かない。★ 2026-11-12：マウスの左クリック＝前のページ */
       if (MK.m === 'text') { mkText(e.clientX, e.clientY, p, a); mkToolUsed(); return; }
       if (MK.m === 'stamp') { const vb = sv.viewBox.baseVal; stampPut(p, a, vb.width, vb.height); mkToolUsed(); return; }
-      if (MK.m === 'check') { const vb = sv.viewBox.baseVal, w = 0.05 * (MK.pt ? MK.pt / MK_PT_TEXT : 1), h = w * vb.width / Math.max(1, vb.height); MK.list.push({ p: p, t: 'check', x: Math.max(0, Math.min(1 - w, a.x - w * 0.35)), y: Math.max(0, Math.min(1 - h, a.y - h * 0.8)), w: w, h: h, c: MK.c }); mkDirty(); mkPaint(); mkToolUsed(); return; }
+      if (MK.m === 'check') { const vb = sv.viewBox.baseVal, w = 0.05 * (MK.pt ? MK.pt / MK_PT_TEXT : 1), h = w * vb.width / Math.max(1, vb.height); MK.list.push(mkWithR({ p: p, t: 'check', x: Math.max(0, Math.min(1 - w, a.x - w * 0.35)), y: Math.max(0, Math.min(1 - h, a.y - h * 0.8)), w: w, h: h, c: MK.c })); mkDirty(); mkPaint(); mkToolUsed(); return; }
       if (MK.m === 'note') { mkText(e.clientX, e.clientY, p, a, null, 'note'); mkToolUsed(); return; }
       MK.drag = { p: p, a: a, cur: null, m: MK.m };
       try { sv.setPointerCapture(e.pointerId); } catch (x) {}
@@ -8670,7 +8704,7 @@
     let fin = false; const done = function (keep) { if (fin) return; fin = true; const v = inp.value.replace(/\s+$/, '').replace(/^\n+/, ''); if (inp.isConnected) inp.remove();
       if (em) { if (keep && v.trim() && v !== em.s) { em.s = v; if (em.t === 'note') { const wh = mkPageWH(em.p); noteFit(em, wh[0], wh[1]); } mkDirty(); } mkPaint(); return; }
       if (keep && v.trim()) {
-        const m = { p: p, t: kind, x: a.x, y: a.y, w: 0, h: 0, s: v, c: MK.c }; if (MK.pt) { const z = Math.round(MK.pt / (kind === 'note' ? MK_PT_NOTE : MK_PT_TEXT) * 1000) / 1000; if (z !== 1) m.z = z; }
+        const m = { p: p, t: kind, x: a.x, y: a.y, w: 0, h: 0, s: v, c: MK.c }; { const r = mkRotNow(p); if (r) m.r = r; } if (MK.pt) { const z = Math.round(MK.pt / (kind === 'note' ? MK_PT_NOTE : MK_PT_TEXT) * 1000) / 1000; if (z !== 1) m.z = z; }
         if (kind === 'note') { const wh = mkPageWH(p); noteFit(m, wh[0], wh[1]); }
         MK.list.push(m); mkDirty(); mkPaint();
       } };
@@ -8777,6 +8811,7 @@
     if (m.t === 'note') noteFit(m, W, H);
     if (m.t !== 'text') { m.x = Math.max(0, Math.min(1 - m.w, m.x)); m.y = Math.max(0, Math.min(1 - m.h, m.y)); } else { m.x = Math.max(0, Math.min(0.98, m.x)); m.y = Math.max(0, Math.min(0.98, m.y)); }
     MK_CLIP.last = { x: m.x, y: m.y }; MK_CLIP.hv = hv;
+    if (MK_UPR[m.t]) { delete m.r; mkWithR(m); }   /* 貼る写真の いまの向きで まっすぐ */
     MK.list.push(m); mkSelect(MK.list.length - 1); mkDirty(); return true;
   }
   function mkKeyCtrl(e) {
@@ -8835,6 +8870,8 @@
     const st = d.createElement('style'); st.id = 'mkwCss'; st.textContent = css; d.head.appendChild(st);
   }
   function mkwKeyOf(o) { return Object.keys(WS).find(function (k) { return WS[k] === o; }) || ''; }
+  /* ★ 2026-11-13（柳田）：別ウィンドウで書きこむときも 回した向きで（写真1枚のときだけ。PDF のページは 回さない） */
+  function mkwRot(body, it) { const im = body.querySelector(':scope > img'), r = (S.rot && S.rot[it.id]) || 0; if (im && r) fitImg(im, r, body.clientWidth - 16, body.clientHeight - 16); }
   function mkwPages(d, body, srcs) {
     body.textContent = '';
     const wait = [];
@@ -8869,15 +8906,15 @@
     o.win.addEventListener('pagehide', MKW.bye);
     /* 閉じた合図が 来ないこともあるので 見張る（閉じられていたら 保存して 帯を戻す） */
     const me0 = MKW; me0.tm = setInterval(function () { if (MKW !== me0) { clearInterval(me0.tm); return; } if (me0.win.closed) { clearInterval(me0.tm); me0.bye(); } }, 400);
-    MKW.rs = function () { if (MKW) mkPaint(); }; o.win.addEventListener('resize', MKW.rs);
+    MKW.rs = function () { if (MKW) { mkwRot(body, it); mkPaint(); } }; o.win.addEventListener('resize', MKW.rs);
     /* いま 大きく見ている写真（PDF は 全ページ）。まだなら 小さい絵で始めて、くっきりしたものが届いたら 差し替える（書いたものは 写真の中の割合で持つので ずれない） */
     const zi = d.getElementById('wzi'), same = o.zkey === o.ad.key(it);
     const first = same && o.zpages && o.zpages.length ? o.zpages.slice() : [(same && zi && zi.getAttribute('src')) || o.ad.thumb(it) || ''];
     const me = MKW;
-    mkwPages(d, body, first).then(function () { if (MKW !== me) return; me.go = true; mkStart(); me.go = false; });
+    mkwPages(d, body, first).then(function () { if (MKW !== me) return; mkwRot(body, it); me.go = true; mkStart(); me.go = false; });
     if (o.ad.big && !(same && o.zpages)) o.ad.big(it, function (x) {
       if (MKW !== me || o.win.closed) return; const srcs = Array.isArray(x) ? x : (x ? [x] : []); if (!srcs.length || (srcs.length === 1 && srcs[0] === first[0])) return;
-      mkwPages(d, body, srcs).then(function () { if (MKW === me) mkPaint(); });
+      mkwPages(d, body, srcs).then(function () { if (MKW === me) { mkwRot(body, it); mkPaint(); } });
     });
     try { o.win.focus(); } catch (e) {}
   }
