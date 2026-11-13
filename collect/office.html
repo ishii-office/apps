@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794535668;</script>
+<script>window.__PAGE_VER=1794538002;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -693,6 +693,9 @@
   .dset { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; position: relative; border: 2px dashed #3A6EA8; border-radius: 12px; padding: 30px 6px 6px; background: #EEF4FB; }
   @supports not (grid-template-columns: subgrid) { .dset { grid-template-columns: inherit; gap: inherit; } }
   .dseth { position: absolute; left: 8px; top: 4px; display: flex; gap: 6px; align-items: center; }
+  /* ★ K-0144：まとめた書類の［まとめて確認済］（1枚ずつの確認済とは別） */
+  .dseth .dsetchk { font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ok); background: #fff; border: 1px solid var(--ok); border-radius: 6px; padding: 1px 9px; cursor: pointer; }
+  .dseth .dsetchk.on { background: var(--ok); color: #fff; }
   .dsplit { font: inherit; font-size: 12.5px; font-weight: 700; color: #8A2B23; background: #fff; border: 1px solid #E2B4B0; border-radius: 6px; padding: 1px 9px; cursor: pointer; }
   .dclip { position: static; left: 8px; top: 4px; font: inherit; font-size: 12.5px; font-weight: 700; color: #1F4E8C; background: #fff; border: 1px solid #9DB7D8; border-radius: 6px; padding: 1px 9px; cursor: pointer; }
   .dsetn { position: absolute; right: 6px; bottom: 6px; font-size: 11px; font-weight: 800; padding: 1px 6px; border-radius: 4px; background: #1F4E8C; color: #fff; }
@@ -1136,6 +1139,9 @@
   .dview .dvmemo[hidden] { display: none; }
   .dview .dvbigchk { position: absolute; right: 24px; bottom: 24px; z-index: 6; font: inherit; font-size: 20px; font-weight: 800; padding: 12px 22px; border-radius: 14px; border: 2px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
   .dview .dvbigchk.on { background: #fff; color: var(--accent); }
+  .dview .dvbigchk.all { bottom: 86px; font-size: 15px; padding: 8px 14px; background: #fff; color: var(--accent); }
+  .dview .dvbigchk.all.on { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .dview .dvbigchk[hidden] { display: none; }
   .dview .dvbigchk:hover { filter: brightness(1.08); }
   .dview .dvbigclose { position: absolute; left: 24px; bottom: 24px; z-index: 6; font: inherit; font-size: 18px; font-weight: 800; padding: 12px 18px; border-radius: 14px; border: 2px solid #8A9A95; background: #fff; color: #33403C; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25); }   /* スマホ：左下（確認済は 右下） */
   .dview { position: fixed; inset: 0; z-index: 50; background: rgba(20,30,28,.92); display: flex; flex-direction: column; }
@@ -1146,6 +1152,8 @@
   @media (min-width: 701px) {   /* パソコン：大きな［確認済］は 右上の［顧問先の画面を表示］［開き直す］の下（上の帯の 右の空き） */
     .dview .dvbar { min-height: 104px; }
     .dview .dvbigchk { top: 46px; bottom: auto; right: 10px; width: max(220px, var(--toprw, 248px)); padding: 10px 14px; font-size: 19px; }
+    .dview .dvbigchk.all { top: 100px; bottom: auto; padding: 4px 10px; font-size: 14px; border-radius: 10px; box-shadow: none; }
+    .dview.dvset .dvbar { min-height: 132px; }   /* ★ K-0144：［まとめて確認済］の分 */
     /* ★ 2026-11-13（細谷）：大きな［閉じる］は 大きな［確認済］の左（上の帯の 右の空きを その分 広げる） */
     .dview .dvbar { padding-right: calc(max(220px, var(--toprw, 248px)) + 150px); }
     .dview .dvbigclose { display: block; position: absolute; z-index: 6; top: 46px; left: auto; bottom: auto; right: calc(max(220px, var(--toprw, 248px)) + 20px); width: 120px; padding: 10px 8px; font: inherit; font-size: 18px; font-weight: 800; border-radius: 14px; border: 2px solid #8A9A95; background: #fff; color: #33403C; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
@@ -2363,6 +2371,8 @@
   <!-- ★ 2026-11-13（細谷）：大きな［閉じる］（大きな［確認済］の左。パソコンだけ） -->
   <button type="button" class="dvbigclose" id="dvClose" title="閉じて 回収資料に戻る（Esc でも）">✕ 閉じる</button>
   <button type="button" class="dvbigchk" id="dvChk" title="押すと 確認済にする・もう一度押すと 外す（Enter＝確認済にして 次へ）">✓ 確認済にする</button>
+  <!-- ★ K-0144（2026-11-13）：まとめた書類は［この1枚を確認済］（上）と［まとめて確認済］（書類ぜんぶ）を分ける -->
+  <button type="button" class="dvbigchk all" id="dvChkAll" hidden title="この書類の 全部の写真を 確認済にする（もう一度で 全部 外す）">□ まとめて確認済にする</button>
   <div class="dvmemo" id="dvMemo" hidden></div>
   <div class="dvmain" id="dvwMain">
     <div class="dvside" id="dvwSide" hidden aria-label="この書類のページ"></div>
@@ -4445,6 +4455,7 @@
               if (g.every(function (x) { return S.dcsel[x.id]; })) w.classList.add('sel');
             }
             hd.appendChild(cl); if (!S.dcpick && g.every(function (x) { return x.status !== 'done'; })) hd.appendChild(sp);
+            if (!S.dcpick && !/^SW/.test(g[0].set || '')) hd.appendChild(dSetChkBtn(g));   /* ★ K-0144：まとめて確認済（写真の下の［□ 確認済にする］は 1枚ずつ） */
             w.appendChild(hd);
             if (!S.dcpick && g.every(function (x) { return x.status !== 'done'; })) { DDX.bindSet(cl, w, g); cl.title += '／つかんで ほかの書類の真ん中へ落とすと 2つの書類を1つにまとめる'; }
             /* ★ K-0021 続き：選んでいる書類（束）は 枠のどこを つかんでも（写真のあいだ・見出しでも）選んだもの全部を つかむ */
@@ -4463,9 +4474,7 @@
               if (stTag(g[0])[0] !== 'gone') ft.appendChild(dNameTag(g[0]));
               const allC = g.every(function (x) { return x.chk; }), allS = g.every(function (x) { return x.skip; });
               if (allC) w.classList.add('chk'); if (allS) w.classList.add('skip');
-              const ck2 = el('button', 'dchk dswck', allC ? '✓ 確認済 ' + chkShort(g[0].chk) : '□ 確認済にする'); ck2.type = 'button'; ck2.title = allC ? '押すと外す（この書類の ' + g.length + '枚とも）' : 'この書類（' + g.length + '枚）を 確認済にする';
-              ck2.addEventListener('click', function (e) { e.stopPropagation(); docsCheck(g, !allC); setTimeout(docsDraw, 0); });
-              ft.appendChild(ck2);
+              ft.appendChild(dSetChkBtn(g, 'dchk dswck'));   /* ★ K-0144：まとめて確認済（1枚ずつは 大きく見る で） */
               if (g.every(function (x) { return x.status !== 'done'; })) {
                 const sk2 = el('button', 'dskip dswsk', allS ? '↩ 対象に戻す' : '⊘ 対象外にする'); sk2.type = 'button'; sk2.title = 'この書類（' + g.length + '枚）を 仕訳化・AI下書きの対象から外す／戻す';
                 sk2.addEventListener('click', function (e) { e.stopPropagation(); docsSkip(g, !allS); setTimeout(docsDraw, 0); });
@@ -4588,7 +4597,7 @@
       '.wc .hpdf{font:inherit;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid #1f3a5f;background:#fff;color:#1f3a5f;cursor:pointer}.empty{padding:40px;text-align:center;color:#778}' +
       '.wc .st{top:206px;left:12px;right:auto}.wc .wbd{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;border:2px solid #fff;background:#1E8E3E;color:#fff;font:900 17px/1 sans-serif;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.35);z-index:2;padding:0}.wc.m-skip .wbd{background:#111}.wc.m-trash .wbd{background:#D0201A}' +
       '.wc.m-trash{border-style:dashed}.wc.m-trash .im img{filter:grayscale(1);opacity:.45}.wc.m-chk{border-color:#1E8E3E}' +
-      '.wc .ac{display:flex;flex-wrap:wrap;gap:4px}.wc .ac button{font:inherit;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid #9aa6b2;background:#fff;color:#1d2733;cursor:pointer}.wc .ac .ok{border-color:#1E8E3E;color:#1E8E3E;font-weight:700}.wc .ac .ng{border-color:#D0201A;color:#D0201A}' +
+      '.wc .ac .wpart,#wzr .wpart{align-self:center;color:#1E8E3E;font-weight:700;font-size:12px}.wc .ac{display:flex;flex-wrap:wrap;gap:4px}.wc .ac button{font:inherit;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid #9aa6b2;background:#fff;color:#1d2733;cursor:pointer}.wc .ac .ok{border-color:#1E8E3E;color:#1E8E3E;font-weight:700}.wc .ac .ng{border-color:#D0201A;color:#D0201A}' +
       '.wzr{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:8px 10px 0;cursor:default}.wzr button{font:inherit;font-size:14px;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.5);border-radius:10px;padding:5px 12px;cursor:pointer}.wzr button:disabled{opacity:.35;cursor:default}.wzr .on{background:#1E8E3E;border-color:#1E8E3E}.wzr .blk{background:#111;border-color:#fff}.wzr .ng{border-color:#ff9a90}.wzr .pos{color:#fff;font-weight:800;font-size:14px}.wzr .key{color:#aaa;font-size:12px;width:100%;text-align:center}' +
       '.wzv{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:zoom-out}.wzv[hidden]{display:none}' +
       '.zstage{flex:1 1 auto;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}.zstage img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:50% 50%;user-select:none;background:#fff}.zstage.zin{cursor:grab}.zstage.zgrab{cursor:grabbing}' +
@@ -4793,8 +4802,12 @@
   const WS_MK = { chk: '確認済（押すと外す）', skip: '対象外（押すと 対象に戻す）', trash: '破棄済み（押すと 復活）' };
   function wsMark(ad, it) { return ad.mark ? ad.mark(it) || '' : ''; }
   function wsUnmark(ad, mem, m) { if (m === 'chk' && ad.check) ad.check(mem, false); else if (m === 'skip' && ad.skip) ad.skip(mem, false); else if (m === 'trash' && ad.revive) ad.revive(mem); }
+  /* ★ K-0144（2026-11-13）：まとめた書類の 確認済は 1枚ずつ付く。書類として「確認済」なのは 全部の写真に付いたとき */
+  function wsChkN(ad, mem) { return mem.filter(function (x) { return wsMark(ad, x) === 'chk'; }).length; }
+  function wsSetMark(ad, mem) { const m = wsMark(ad, mem[0]); if (mem.length < 2 || (m && m !== 'chk')) return m; return wsChkN(ad, mem) === mem.length ? 'chk' : ''; }
   function wsActs(o, c, mem, E) {
-    const ad = o.ad, lead = mem[0], m = wsMark(ad, lead), lock = mem.some(ad.locked);
+    const ad = o.ad, lead = mem[0], m = wsSetMark(ad, mem), lock = mem.some(ad.locked);
+    const nC = mem.length > 1 && !m ? wsChkN(ad, mem) : 0;
     if (m) {
       c.classList.add('m-' + m);
       const bd = E('button', 'wbd', '✓'); bd.type = 'button'; bd.title = WS_MK[m]; bd.setAttribute('aria-label', WS_MK[m]);
@@ -4807,8 +4820,9 @@
     /* ★ 2026-11-10：印が付いたあとも ボタンで戻せる（右上の ✓ を押すと戻ることに 気づかれなかった）。
          印なし … 確認済にする／対象外／破棄　確認済 … 確認を外す／対象外／破棄　対象外 … 対象に戻す／破棄　破棄済み … 戻す／削除 */
     const live = !lock || m === 'trash';
-    if (!m && ad.check) btn('ok', ad.checkLabel || '✓ 確認済にする', '見た・確かめたら押す（右上に緑の ✓）', function () { ad.check(mem, true); });
-    if (m === 'chk' && ad.check) btn(null, '↺ 確認を外す', '確認済を やめる', function () { ad.check(mem, false); });
+    if (nC) ac.appendChild(E('span', 'wpart', '確認済 ' + nC + '/' + mem.length + '枚'));
+    if (!m && ad.check) btn('ok', mem.length > 1 ? '✓ まとめて確認済に（' + mem.length + '枚）' : (ad.checkLabel || '✓ 確認済にする'), mem.length > 1 ? 'この書類の ' + mem.length + '枚とも 確認済にする（1枚ずつは 写真を押して 大きく見る で）' : '見た・確かめたら押す（右上に緑の ✓）', function () { ad.check(mem, true); });
+    if (m === 'chk' && ad.check) btn(null, mem.length > 1 ? '↺ まとめて確認を外す' : '↺ 確認を外す', '確認済を やめる', function () { ad.check(mem, false); });
     if ((!m || m === 'chk') && !lock && ad.skip) btn(null, '⊘ 対象外', '仕訳化・AI下書きの対象から外す（右上に黒の ✓。印刷・PDF には入ります）', function () { ad.skip(mem, true); });
     if (m === 'skip' && ad.skip) btn('ok', '◯ 対象に戻す', '対象外を やめて 仕訳化・AI下書きの対象に戻す', function () { ad.skip(mem, false); });
     if (m !== 'trash' && !lock && ad.trash) btn('ng', '🗑 破棄', '破棄する（右上に赤の ✓。押すと 復活）', function () { ad.trash(mem); });
@@ -4863,7 +4877,7 @@
     r.textContent = '';
     d.getElementById('wzc').textContent = it ? ad.name(it) + (ad.stat && ad.stat(it) ? '　［' + ad.stat(it) + '］' : '') : '';
     if (!mem) return;
-    const m = wsMark(ad, mem[0]), lock = mem.some(ad.locked);
+    const m = wsSetMark(ad, mem), lock = mem.some(ad.locked);
     r.appendChild(E('span', 'pos', (i + 1) + ' / ' + o.zseq.length));
     const b = function (cls, t, ti, fn) { const x = E('button', cls, t); x.type = 'button'; x.title = ti; x.addEventListener('click', function (e) { e.stopPropagation(); fn(); }); r.appendChild(x); return x; };
     /* ★ K-0129（2026-11-12）：まとめた書類は 中の写真を 1枚ずつ送れる（前は 1枚目しか 見られなかった）。← → でも 中の写真を順に見てから 次の書類へ */
@@ -4880,7 +4894,13 @@
     }
     if (m === 'trash') { if (ad.revive) b(null, '↩ 復活', '元の箱・月分に戻す', function () { ad.revive(mem); }); }
     else {
-      if (ad.check) b(m === 'chk' ? 'on' : null, m === 'chk' ? '✓ 確認済（外す）' : (ad.checkLabel || '✓ 確認済にする'), 'Enter で 確認済にして次へ', function () { ad.check(mem, m !== 'chk'); });
+      if (ad.check && mem.length > 1) {
+        /* ★ K-0144：まとめた書類は［この1枚］と［書類ぜんぶ］を 分ける。Enter は この1枚 */
+        const one = wsMark(ad, it) === 'chk', nC = wsChkN(ad, mem);
+        b(one ? 'on' : null, one ? '✓ この1枚 確認済（外す）' : '✓ この1枚を確認済', 'Enter で この1枚だけ 確認済にして 次の写真へ', function () { ad.check([it], !one); });
+        b(m === 'chk' ? 'on' : null, m === 'chk' ? '✓ まとめて確認済（外す）' : '✓ まとめて確認済（' + mem.length + '枚）', 'この書類の ' + mem.length + '枚とも', function () { ad.check(mem, m !== 'chk'); });
+        r.appendChild(E('span', 'pos wpart', '確認済 ' + nC + '/' + mem.length + '枚'));
+      } else if (ad.check) b(m === 'chk' ? 'on' : null, m === 'chk' ? '✓ 確認済（外す）' : (ad.checkLabel || '✓ 確認済にする'), 'Enter で 確認済にして次へ', function () { ad.check(mem, m !== 'chk'); });
       if (ad.skip && !lock) b(m === 'skip' ? 'blk' : null, m === 'skip' ? '↩ 対象に戻す' : '⊘ 対象外', '1 で 対象外にして次へ', function () { ad.skip(mem, m !== 'skip'); });
       if (ad.trash && !lock) b('ng', '🗑 破棄', '2 で 破棄して次へ', function () { wsZAct(key, 'trash'); });
       if (ad.canWrite && ad.canWrite(mem[0])) b(null, '✏ 書きこむ', '元の画面で 書きこむ', function () { o.zclose(); ad.write(mem[0]); });
@@ -4906,6 +4926,13 @@
     const mem = wsMemOf(o, o.zkey) || wsZMem(o, i); if (!mem) return;
     const m = wsMark(ad, mem[0]), lock = mem.some(ad.locked);
     const nx = o.zseq[i + 1] || '';
+    /* ★ K-0144：まとめた書類の Enter は いま見ている1枚だけ 確認済にして 次の写真へ（最後の写真なら 次の書類へ） */
+    if (act === 'chk' && mem.length > 1 && m !== 'trash') {
+      if (!ad.check) return;
+      const it = mem.find(function (x) { return ad.key(x) === o.zkey; }) || mem[0];
+      if (wsMark(ad, it) !== 'chk') ad.check([it], true);
+      wsZStep(key, 1, true); return;
+    }
     if (m !== 'trash') {
       if (act === 'chk') { if (!ad.check) return; if (m !== 'chk') ad.check(mem, true); }
       else { if (!ad[act]) return; if (lock) { wsMsg(key, '確定済みは ' + (act === 'skip' ? '対象外' : '破棄') + 'にできません（仕訳を取り消してから）。', true); return; } if (act === 'trash') ad.trash(mem); else if (m !== 'skip') ad.skip(mem, true); }
@@ -4914,6 +4941,11 @@
   }
   function wsZBack(key) {
     const o = WS[key], i = wsZIdx(o); if (i < 0) return;
+    /* ★ K-0144：まとめた書類の中では 1枚前の写真へ戻って その1枚の確認済だけ外す。前の書類が まとめた書類なら その最後の写真へ */
+    const cur = wsMemOf(o, o.zkey), ci = cur ? cur.findIndex(function (x) { return o.ad.key(x) === o.zkey; }) : -1;
+    if (cur && cur.length > 1 && ci > 0) { const pv = cur[ci - 1]; wsZoom(key, pv); if (wsMark(o.ad, pv) === 'chk' && o.ad.check) o.ad.check([pv], false); return; }
+    const pm = wsZMem(o, i - 1);
+    if (pm && pm.length > 1) { const pv = pm[pm.length - 1]; wsZoom(key, pv); if (wsMark(o.ad, pv) === 'chk' && o.ad.check) o.ad.check([pv], false); return; }
     const p = wsZMem(o, i - 1); if (!p) { wsMsg(key, 'この箱の 最初です。'); return; }
     wsZGo(key, o.zseq[i - 1]);
     const m = wsMark(o.ad, p[0]); if (m) wsUnmark(o.ad, p, m);
@@ -5790,6 +5822,10 @@
       });
     });
     if (miss) { docsDraw(); return; }
+    /* ★ K-0144：まとめた書類の［まとめて確認済］も 描き直す */
+    const sets = {}; keys.forEach(function (id) { const d = docOf(id); if (d && d.set && d.setOf > 1) sets[d.set] = 1; });
+    Object.keys(sets).forEach(function (st) { document.querySelectorAll('.dset[data-set="' + st + '"]').forEach(function (w) { const b = w.querySelector('.dsetchk'); if (b) dSetChkPaint(b, dMembers(st).map(docOf).filter(Boolean), w); }); });
+    if (S.dvIt && $('dvChkAll') && !$('dview').hidden) dvChkAllPaint(S.dvIt);
     try { aNchkSync(); } catch (e) {}
     /* 月分の見出しの「未確認 N」も その場で数え直す */
     mons.forEach(function (mo) {
@@ -5798,9 +5834,27 @@
     });
     try { dcBar(); } catch (e) {} if (typeof wsRefresh === 'function') wsRefresh();
   }
-  function docsCheck(list, on) {
+  /* ★ K-0144（2026-11-13）：確認済は 1枚ずつ付く（まとめた書類でも その写真だけ）。all … まとめた書類は 書類ぜんぶに（［まとめて確認済］） */
+  /* ★ K-0144：まとめた書類の［まとめて確認済］（書類ぜんぶ）。1枚ずつの確認済とは別。全部に付くと「✓ まとめて確認済」 */
+  function dSetChkPaint(b, mem, w) {
+    const n = mem.filter(function (x) { return x.chk; }).length, all = !!mem.length && n === mem.length;
+    b.textContent = all ? '✓ まとめて確認済' + (mem[0].chk && mem[0].chk !== '…' ? ' ' + chkShort(mem[0].chk) : '') : '□ まとめて確認済にする' + (n ? '（' + n + '/' + mem.length + '枚 済）' : '');
+    b.title = all ? 'この書類の ' + mem.length + '枚とも 確認済（押すと 全部 外す）' : 'この書類の ' + mem.length + '枚とも 確認済にする（1枚ずつは 写真の下の［□ 確認済にする］で）';
+    b.classList.toggle('on', all);
+    if (w && w.classList.contains('sweep')) w.classList.toggle('chk', all);
+  }
+  function dSetChkBtn(g, cls) {
+    const b = el('button', 'dsetchk' + (cls ? ' ' + cls : '')); b.type = 'button'; dSetChkPaint(b, g, null);
+    b.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      const mem = dMembers(g[0].set).map(docOf).filter(Boolean); if (!mem.length) return;
+      docsCheck(mem, !mem.every(function (x) { return x.chk; }), true);
+    });
+    return b;
+  }
+  function docsCheck(list, on, all) {
     const ids = {}; list.forEach(function (x) {
-      if (x.set && x.setOf > 1) (S.docs || []).forEach(function (y) { if (y.set === x.set) ids[y.id] = 1; });
+      if (all && x.set && x.setOf > 1) (S.docs || []).forEach(function (y) { if (y.set === x.set) ids[y.id] = 1; });
       ids[x.id] = 1;
     });
     const keys = Object.keys(ids); if (!keys.length) return;
@@ -7847,6 +7901,13 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('kzcp').hidden) $('kzcp').hidden = true; else if (!$('kzv').hidden) $('kzv').hidden = true; } });
 
   /* 大きく見る（画面いっぱい）。仕訳化へも ここから */
+  function dvChkAllPaint(it) {
+    const b = $('dvChkAll'); if (!b || !it || !(it.set && it.setOf > 1)) return;
+    const mem = dMembers(it.set).map(docOf).filter(Boolean), n = mem.filter(function (x) { return x.chk; }).length, all = !!mem.length && n === mem.length;
+    b.textContent = all ? '✓ まとめて確認済（' + mem.length + '枚・外す）' : '□ まとめて確認済にする（' + n + '/' + mem.length + '枚 済）';
+    b.classList.toggle('on', all);
+    if (S.dvIt === it) { $('dvChk').textContent = it.chk ? '✓ この1枚 確認済（外す）' : '✓ この1枚を確認済'; $('dvChk').classList.toggle('on', !!it.chk); }
+  }
   function docsOpen(it) {
     if (MK.on && S.dvIt && S.dvIt.id !== it.id) mkEnd(true);
     const v = $('dview'); v.hidden = false; document.body.classList.add('dv-on');
@@ -7862,9 +7923,16 @@
     $('dvMove').onclick = function () { docsClose(); dMoveOpen([it]); };
     $('dvGmail').onclick = function () { dGmail([it]); };
     $('dvBook').hidden = !!fileKind(it.name) || !S.code; $('dvBook').onclick = function () { dvBookRead(it); };
-    const dvChkPaint = function () { $('dvChk').textContent = it.chk ? '✓ 確認済（外す）' : '✓ 確認済にする'; $('dvChk').classList.toggle('on', !!it.chk); };
+    const multi = !!(it.set && it.setOf > 1);
+    const dvChkPaint = function () { $('dvChk').textContent = it.chk ? (multi ? '✓ この1枚 確認済（外す）' : '✓ 確認済（外す）') : (multi ? '✓ この1枚を確認済' : '✓ 確認済にする'); $('dvChk').classList.toggle('on', !!it.chk); };
     dvChkPaint();
     $('dvChk').onclick = function (e) { if (e) e.stopPropagation(); docsCheck([it], !it.chk); dvChkPaint(); };
+    /* ★ K-0144：まとめた書類は［まとめて確認済］（書類ぜんぶ）も */
+    $('dvChkAll').hidden = !multi; $('dview').classList.toggle('dvset', multi); dvChkAllPaint(it);
+    $('dvChkAll').onclick = function (e) {
+      if (e) e.stopPropagation(); const mem = dMembers(it.set).map(docOf).filter(Boolean); if (!mem.length) return;
+      docsCheck(mem, !mem.every(function (x) { return x.chk; }), true); dvChkPaint();
+    };
     dvBackDraw(it);
     $('dvGo').onclick = function () { docsClose(); perPick(it.period); S.box = ''; S.bsel = []; boxSelPaint();
       selectTab('In'); const go = function () { if (rowOf(it.id)) focusCard(it.id); }; if (S.items.some(function (x) { return x.id === it.id; })) { render(); go(); } else { S.st = 'all'; document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.st === 'all')); }); load().then(go); } };
@@ -8150,7 +8218,13 @@
      0＝1枚戻って その資料を 元通り（確認済・対象外・破棄を どれも外した ただの状態）に */
   function dvAct(k) {
     const it = S.dvIt; if (!it) return;
-    if (k === 'chk') { if (!it.chk) docsCheck([it], true); }
+    if (k === 'chk') {
+      if (!it.chk) docsCheck([it], true);
+      /* ★ K-0144：確認済は 1枚ずつなので まとめた書類は 中の次の写真へ（最後の写真なら 次の書類へ） */
+      const nx = dvPageTo(it, 1);
+      if (!nx) { docsClose(); dcMsg('この箱の 最後まで 見ました。'); return; }
+      const d = dvDoc(nx); if (d) docsOpen(d); return;
+    }
     else if (it.status === 'done') { dcMsg('確定済みは ' + (k === 'skip' ? '対象外' : '破棄') + 'にできません（仕訳を取り消してから）。', true); return; }
     else if (k === 'skip') { if (!it.skip) docsSkip([it], true); }
     else if (k === 'trash') {
@@ -8165,14 +8239,14 @@
   let DV_ZERO = 0;
   function dvUndoPrev() {
     const it = S.dvIt; if (!it) return;
-    const id = dvNextId(it, -1);
+    const id = dvPageTo(it, -1);   /* ★ K-0144：まとめた書類の中では 1枚前の写真へ（確認済は 1枚ずつ） */
     if (!id) { dcMsg('この箱の 最初です。'); return; }
     const d = dvDoc(id); if (!d) return;
     docsOpen(d);
     if (!docOf(id)) { restore([id]); return; }   /* 破棄していた → 復活 */
     if (d.skip) docsSkip([d], false);
     if (d.chk) docsCheck([d], false);
-    $('dvChk').textContent = '✓ 確認済にする'; $('dvChk').classList.remove('on');
+    if (d.set && d.setOf > 1) dvChkAllPaint(d); else { $('dvChk').textContent = '✓ 確認済にする'; $('dvChk').classList.remove('on'); }
   }
   document.addEventListener('keydown', function (e) {
     if ($('dview').hidden || !S.dvIt || e.ctrlKey || e.metaKey || e.altKey) return;
