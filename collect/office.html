@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794567089;</script>
+<script>window.__PAGE_VER=1794569060;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3578,7 +3578,7 @@
       '.ficon{display:flex;flex-direction:column;align-items:center;gap:4px}.ficon .fi{width:84px;height:100px;border-radius:7px;color:#fff;font:900 48px/100px system-ui,sans-serif;box-shadow:0 2px 5px rgba(0,0,0,.2)}.ficon .fl{font-size:12px;font-weight:800;color:#444}.ficon .fn{font-size:15px;font-weight:700;color:#1F2A27;word-break:break-all}.fcard{display:flex;flex-direction:column;align-items:center;gap:12px;padding:28px 16px;background:#fff;border-radius:12px;margin:12px auto;max-width:520px;color:#1F2A27}.fbtns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}#h .fbtns button,.fbtns button,.fbtns a{font:inherit;font-size:14px;font-weight:700;padding:8px 14px;border-radius:9px;border:1.5px solid #0F6E56;background:#fff;color:#0F6E56;cursor:pointer;text-decoration:none}.fbtns button.main{background:#0F6E56;color:#fff}.fnote{font-size:12.5px;color:#6B7A75}.fmsg{font-size:13px}.fmsg.err{color:#B3261E}' +
       '#b iframe{width:100%;height:calc(100vh - 70px);border:0;background:#fff}#b .msg{padding:40px 10px;color:#ddd}#b .msg.pg{padding:12px 0 4px;font-weight:700;color:#fff}</style></head>' +
       '<body><div id="h"></div><div id="b"></div></body></html>');
-    d.close();
+    d.close(); ismWm(d, true);
     POPID = ''; POPK = '';
     POP.addEventListener('beforeunload', function () { setTimeout(jlayPaint, 300); });
     POP.addEventListener('resize', function () { popFit(); });
@@ -3713,7 +3713,7 @@
       '.bxl tbody tr{cursor:pointer}.bxl tbody tr:hover td{background:#F4F8F6}.bxl tr.cur td{background:#FFF4C8!important;font-weight:700}.bxl tr.cur td:first-child{box-shadow:inset 4px 0 0 #E8A400}.bxl tr.draft td{font-style:italic;color:#555}.bxl tr.none td{color:#B3261E}' +
       '.bxl .st{font-size:11px;font-weight:700;border-radius:4px;padding:0 5px;white-space:nowrap;font-style:normal}.bxl .st.ok{background:#E2F2EA;color:#0F6E56}.bxl .st.dr{background:#FFF0C2;color:#7A5B00}.bxl .st.no{background:#FBE4E2;color:#B3261E}.bxl .seen{color:#0F6E56;font-weight:900;font-style:normal}' +
       '.bxl .ac{white-space:nowrap}.bxl .ac small{color:#6B7A75;font-size:11px;margin-left:3px}</style></head><body><div id="h"></div><div id="b"></div></body></html>');
-    d.close();
+    d.close(); ismWm(d);
     /* ★★ 箱ごとの仕訳の一覧（2026-11-12）：行を押す・↑↓・Enter で 行を送る。写真の窓と この画面が その取引に そろう */
     d.addEventListener('click', function (e) { const tr = e.target.closest && e.target.closest('.bxl tbody tr[data-i]'); if (tr) ledBoxGo(Number(tr.dataset.i)); });
     d.addEventListener('keydown', function (e) {
@@ -4596,6 +4596,19 @@
   function wsName(key) { let h = 0; for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0; return 'collect_ws_' + (h >>> 0).toString(36); }
   /* ★ スマホでも出す（2026-10-29）。スマホでは 新しいタブで開く（並べ替えは押して選ぶ・バラす・PDF・印刷はそのまま使える） */
   function wsOk() { return true; }
+  /* ★ 2026-11-14：別ウィンドウにも アプリの名前（仮称）「Ism cloud」を 右下に うすく（押せない）。dark … 黒っぽい窓（写真）では 明るい色で */
+  function ismWm(d, dark) {
+    try {
+      if (!d || !d.body || d.getElementById('ismwm')) return;
+      const st = d.createElement('style');
+      st.textContent = '.ismwm{position:fixed;right:14px;bottom:10px;z-index:45;pointer-events:none;user-select:none;-webkit-user-select:none;font-family:"Avenir Next","Futura","Helvetica Neue","Segoe UI",Arial,sans-serif;font-style:italic;font-weight:800;font-size:clamp(30px,5vw,54px);line-height:1;letter-spacing:-.02em;white-space:nowrap;' + (dark ? 'color:#9FF0D2;opacity:.3' : 'color:#0F6E56;opacity:.26;mix-blend-mode:multiply') + '}' +
+        '.ismwm b{font-size:1.28em;font-weight:900;' + (dark ? '' : 'background:linear-gradient(135deg,#0F6E56 0%,#19B88A 55%,#7BE3C0 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;') + 'padding-right:.04em}.ismwm i{font-style:italic;font-weight:300;letter-spacing:.06em;margin-left:.18em}@media print{.ismwm{display:none}}';
+      d.head.appendChild(st);
+      const e = d.createElement('div'); e.id = 'ismwm'; e.className = 'ismwm'; e.setAttribute('aria-hidden', 'true');
+      const b = d.createElement('b'); b.textContent = 'I'; const i = d.createElement('i'); i.textContent = 'cloud';
+      e.appendChild(b); e.appendChild(d.createTextNode('sm')); e.appendChild(i); d.body.appendChild(e);
+    } catch (x) {}
+  }
   function wsOpen(key, ad) {
     let o = WS[key];
     if (o && o.win && !o.win.closed) { o.ad = ad; o.win.focus(); wsDraw(key); return true; }
@@ -4630,7 +4643,7 @@
       '<div class="wzv" id="wzv" hidden role="dialog" aria-label="大きく見る"><button type="button" class="wzx" id="wzx" title="閉じる（Esc）">✕</button><div class="zstage" id="wzs"><img id="wzi" alt="" draggable="false"></div>' +
       '<div class="zbar" id="wzb"><button type="button" data-z="out" title="縮小（－）" aria-label="縮小">🔍－</button><span class="zpct" data-z="pct">100%</span><button type="button" data-z="in" title="拡大（＋）" aria-label="拡大">🔍＋</button><button type="button" data-z="fit" title="元の大きさ">元の大きさ</button><button type="button" id="wzg" draggable="true" style="cursor:grab" title="つかんで パソコンのフォルダ・DocuWorks へ落とす（拡大していても つかめます）">⇲ つかむ</button></div>' +
       '<div class="wzr" id="wzr"></div><div class="wzc" id="wzc"></div><div class="wzl" id="wzl" hidden>くっきりした写真を読み込み中…</div><div class="zhint" id="wzh"></div></div></body></html>');
-    d.close();
+    d.close(); ismWm(d);
     dwInstall(d.defaultView);   /* ★ 2026-11-11 DocuWorks へ の受け口 */
     /* ★ 別ウィンドウでも 押すと大きく（2026-10-29。サムネイルの「大きく見る」と同じキー） */
     const zclose = function () { d.getElementById('wzv').hidden = true; d.getElementById('wzi').removeAttribute('src'); o.zkey = ''; o.ztok = null; };
