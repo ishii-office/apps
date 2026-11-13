@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794542526;</script>
+<script>window.__PAGE_VER=1794544892;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -7946,7 +7946,8 @@
     if (fileKind(it.name)) { box.textContent = ''; box.classList.remove('loading'); box.appendChild(fileCard(it)); return; }
     if (IMG[it.id]) { oBig(it, box); return; }
     box.textContent = '';
-    if (THUMB[it.id]) { const im = el('img'); im.src = THUMB[it.id]; im.alt = it.name; box.appendChild(im); }
+    /* ★ K-0147（2026-11-13）：小さい絵も 回した向きで出す（前は 回していない向きで出し、くっきりした絵が届くと くるっと回っていた） */
+    if (THUMB[it.id]) { const im = el('img'); im.src = THUMB[it.id]; im.alt = it.name; im.style.transition = 'none'; box.appendChild(im); dvFit(); dvNoSpin(im); }
     else box.classList.add('loading');
     S.dvId = it.id;
     dWant(it.id, true, function () { if (S.dvId === it.id && !$('dview').hidden) oBig(it, box); });
@@ -8051,6 +8052,8 @@
     pp.style.setProperty('--pgH', Math.max(200, box.clientHeight - 32) + 'px');
     pp.style.setProperty('--pgW', Math.max(200, box.clientWidth - 32) + 'px');
   }
+  /* ★ K-0147：出した瞬間の向き合わせは 動きなし。そのあと（拡大・回す）は いつもの動きに戻す */
+  function dvNoSpin(im) { const back = function () { requestAnimationFrame(function () { requestAnimationFrame(function () { im.style.transition = ''; }); }); }; if (im.complete) back(); else im.addEventListener('load', back, { once: true }); }
   function dvFit() {
     if ($('dview').hidden) return;
     dvPdfFit();
@@ -12940,7 +12943,7 @@
     const show = function () {
       box.classList.remove('loading'); box.textContent = '';
       const v = IMG[it.id];
-      if (v && v.t === 'img') { const im = el('img'); im.src = v.src; im.alt = it.name; box.appendChild(im); if (box.id === 'dvBody') dvFit(); return; }
+      if (v && v.t === 'img') { const im = el('img'); im.src = v.src; im.alt = it.name; if (box.id === 'dvBody') im.style.transition = 'none'; box.appendChild(im); if (box.id === 'dvBody') { dvFit(); dvNoSpin(im); } return; }   /* ★ K-0147：出した瞬間は 回る動きを付けない */
       if (v && v.t === 'pdf') { renderPdf(it.id, v, box); return; }
       box.appendChild(el('div', 'msg', 'ここでは出せない形です。'));
     };
