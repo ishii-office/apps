@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794531029;</script>
+<script>window.__PAGE_VER=1794532560;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -557,6 +557,8 @@
   /* ★ K-0122：キーワードでさがす（2026-11-12） */
   .kzq { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; max-width: 100%; }
   .kzq input { width: 340px; max-width: 100%; box-sizing: border-box; }
+  /* ★ 合った言葉を 黄色に（2026-11-13 柳田） */
+  mark.kzhl { background: #FFE24D; color: #000; padding: 0 1px; border-radius: 2px; }
   .kzmine { margin: 8px 0 12px; padding: 10px 14px; border-radius: 10px; background: #E5F2E8; border: 1px solid #9CCBA8; }
   .kzmine h3 { margin: 0 0 6px; font-size: 15px; color: var(--ok); }
   .kzmine li { margin: 4px 0; }
@@ -7436,6 +7438,30 @@
       (x.log || []).map(function (l) { return l.who + ' ' + l.what; }).join('\n')].join('\n'));
     return ws.every(function (w) { return hay.indexOf(w) >= 0; });
   }
+  /* ★ 合った言葉を 黄色に（2026-11-13 柳田）。1字ずつ NFKC・小文字にして 元の字の位置と結ぶ（全角で さがしても 半角の字が黄色になる） */
+  function kzMarkTo(node, text, ws) {
+    text = String(text == null ? '' : text);
+    if (!ws || !ws.length || !text) { node.appendChild(document.createTextNode(text)); return 0; }
+    let norm = ''; const map = [], ends = [];
+    for (let i = 0; i < text.length;) {
+      const cp = text.codePointAt(i), len = cp > 0xffff ? 2 : 1, n = text.substr(i, len).normalize('NFKC').toLowerCase();
+      for (let k = 0; k < n.length; k++) { map.push(i); ends.push(i + len); }
+      norm += n; i += len;
+    }
+    const hit = new Array(text.length + 1).fill(false); let any = 0;
+    ws.forEach(function (w) {
+      for (let k = norm.indexOf(w); k >= 0; k = norm.indexOf(w, k + 1)) { any++; for (let j = map[k]; j < ends[k + w.length - 1]; j++) hit[j] = true; }
+    });
+    if (!any) { node.appendChild(document.createTextNode(text)); return 0; }
+    let i = 0;
+    while (i < text.length) {
+      let j = i; while (j < text.length && hit[j] === hit[i]) j++;
+      node.appendChild(hit[i] ? el('mark', 'kzhl', text.slice(i, j)) : document.createTextNode(text.slice(i, j)));
+      i = j;
+    }
+    return any;
+  }
+  function kzElM(tag, cls, text, ws) { const e = el(tag, cls); kzMarkTo(e, text, ws); return e; }
   function kzShown() { const ws = kzWords(); return KZ.list.filter(function (x) { return (KZ.flt === 'all' || x.st === KZ.flt) && kzHit(x, ws); }); }
   let kzQT = 0;
   $('kzQ').addEventListener('input', function () { clearTimeout(kzQT); const v = this.value; kzQT = setTimeout(function () { KZ.q = v; kzDraw(); }, 150); });
@@ -7528,21 +7554,22 @@
   function kzCanEdit(x) { return KZ.master || (x.who === KZ.me && x.st === '確認待ち'); }
   function kzCard(x) {
     const c = el('div', 'kzc st-' + x.st); c.dataset.no = x.no;
+    const ws = kzWords();
     const h = el('div', 'h');
     if (KZ.master && x.st !== '改善済み' && x.st !== '見送り') { const ck = el('input'); ck.type = 'checkbox'; ck.checked = !!KZ.sel[x.no]; ck.title = 'まとめてコピーに入れる'; ck.addEventListener('change', function () { if (ck.checked) KZ.sel[x.no] = 1; else delete KZ.sel[x.no]; kzDraw(); }); h.appendChild(ck); }
-    h.appendChild(el('span', 'no', x.no));
-    h.appendChild(el('span', 'chip', x.st));
+    h.appendChild(kzElM('span', 'no', x.no, ws));
+    h.appendChild(kzElM('span', 'chip', x.st, ws));
     if (x.urgent) h.appendChild(el('span', 'chip u', '急ぎ'));
-    h.appendChild(el('span', 'chip', x.code ? x.code + ' ' + x.cname : '事務所から'));
-    h.appendChild(el('span', 'meta', x.at + '　' + x.who + ' さん' + (x.chk ? '　／　確かめた人：' + x.chk : '') + (x.issue ? '　／　' : '')));
-    if (x.iurl) { const a = el('a', 'meta', 'GitHub #' + x.issue); a.href = x.iurl; a.target = '_blank'; a.rel = 'noopener'; h.appendChild(a); }
+    h.appendChild(kzElM('span', 'chip', x.code ? x.code + ' ' + x.cname : '事務所から', ws));
+    h.appendChild(kzElM('span', 'meta', x.at + '　' + x.who + ' さん' + (x.chk ? '　／　確かめた人：' + x.chk : '') + (x.issue ? '　／　' : ''), ws));
+    if (x.iurl) { const a = kzElM('a', 'meta', 'GitHub #' + x.issue, ws); a.href = x.iurl; a.target = '_blank'; a.rel = 'noopener'; h.appendChild(a); }
     c.appendChild(h);
     const dl = el('dl');
-    [['画面', x.screen], ['どこ', x.where], ['いま起きていること', x.now], ['こうしてほしい', x.want], ['手順', x.steps]].forEach(function (p) { if (!p[1]) return; dl.appendChild(el('dt', null, p[0])); dl.appendChild(el('dd', null, p[1])); });
+    [['画面', x.screen], ['どこ', x.where], ['いま起きていること', x.now], ['こうしてほしい', x.want], ['手順', x.steps]].forEach(function (p) { if (!p[1]) return; dl.appendChild(el('dt', null, p[0])); dl.appendChild(kzElM('dd', null, p[1], ws)); });
     c.appendChild(dl);
     if (x.shots && x.shots.length) c.appendChild(kzShotsEl(x.shots, null));
-    if (x.done) { const d = el('div', 'done'); d.appendChild(el('b', null, '改善内容' + (x.doneAt ? '（' + x.doneAt + '）' : '') + '\n')); d.appendChild(document.createTextNode(x.done)); c.appendChild(d); }
-    if (x.news) { const d = el('div', 'news'); d.appendChild(el('b', null, '顧問先へのお知らせ（' + (x.newsTo || 'まだ出していない') + '）\n')); d.appendChild(document.createTextNode(x.news)); c.appendChild(d); }
+    if (x.done) { const d = el('div', 'done'); d.appendChild(el('b', null, '改善内容' + (x.doneAt ? '（' + x.doneAt + '）' : '') + '\n')); kzMarkTo(d, x.done, ws); c.appendChild(d); }
+    if (x.news) { const d = el('div', 'news'); d.appendChild(el('b', null, '顧問先へのお知らせ（' + (x.newsTo || 'まだ出していない') + '）\n')); kzMarkTo(d, x.news, ws); c.appendChild(d); }
     const act = el('div', 'act');
     const btn = function (t, fn, cls) { const b = el('button', cls || null, t); b.type = 'button'; b.addEventListener('click', fn); act.appendChild(b); return b; };
     if (kzCanEdit(x)) btn('直す', function () { kzOpen(x); });
@@ -7555,7 +7582,7 @@
       if (x.st !== '改善済み' && x.st !== '見送り') btn('見送り…', function () { kzSkip(c, x); });
     }
     c.appendChild(act);
-    if (x.log && x.log.length) { const d = el('details'); d.appendChild(el('summary', null, '履歴（' + x.log.length + '）')); const ul = el('ul'); x.log.slice().reverse().forEach(function (l) { ul.appendChild(el('li', null, l.at + '　' + l.who + '　' + l.what)); }); d.appendChild(ul); c.appendChild(d); }
+    if (x.log && x.log.length) { const d = el('details'); d.appendChild(el('summary', null, '履歴（' + x.log.length + '）')); const ul = el('ul'); let lh = 0; x.log.slice().reverse().forEach(function (l) { const li = el('li'); lh += kzMarkTo(li, l.at + '　' + l.who + '　' + l.what, ws); ul.appendChild(li); }); d.appendChild(ul); if (lh) d.open = true; /* 履歴に合ったら 開いて見せる */ c.appendChild(d); }
     return c;
   }
   /* スクショ（この表に載っているものだけ サーバから中身をもらう） */
