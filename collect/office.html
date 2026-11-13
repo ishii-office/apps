@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794569060;</script>
+<script>window.__PAGE_VER=1794577851;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -43,10 +43,10 @@
   body { font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif; font-size: 14px; display: flex; flex-direction: column; overflow: hidden; }
   /* ★ 事務所のロゴ（3枚の葉と S）のモノグラム柄を 背景にうすく（2026-10-13）。body は透かして html の色の上に敷く */
   body { background: transparent; }
-  /* ★ 2026-11-14：アプリの名前（仮称）「Ism cloud」を いつも 画面の右下に うすく（押せない・下のボタンは そのまま押せる。箱や一覧に 隠れないよう 中身の上に 透かして重ねる） */
-  .ismwm { position: fixed; right: 14px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 30; mix-blend-mode: multiply; pointer-events: none; user-select: none; -webkit-user-select: none; font-family: "Avenir Next", "Futura", "Helvetica Neue", "Segoe UI", Arial, sans-serif; font-style: italic; font-weight: 800; font-size: clamp(30px, 6vw, 58px); line-height: 1; letter-spacing: -.02em; color: #0F6E56; opacity: .26; white-space: nowrap; }
+  /* ★ 2026-11-15：ロゴは「Ism clouD」。はじめの I と おわりの D を 大文字に、字は ぜんぶ 同じ 太い斜めの字で そろえる（前は cloud だけ 細い字で うすかった）。イズムクラウド シリーズの名前（仮称）
+     ★ 2026-11-14：アプリの名前（仮称）「Ism cloud」を いつも 画面の右下に うすく（押せない・下のボタンは そのまま押せる。箱や一覧に 隠れないよう 中身の上に 透かして重ねる） */
+  .ismwm { position: fixed; right: 14px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 30; mix-blend-mode: multiply; pointer-events: none; user-select: none; -webkit-user-select: none; font-family: "Avenir Next", "Futura", "Helvetica Neue", "Segoe UI", Arial, sans-serif; font-style: italic; font-weight: 800; font-size: clamp(30px, 6vw, 58px); line-height: 1; letter-spacing: -.02em; word-spacing: -.06em; color: #0F6E56; opacity: .3; white-space: nowrap; padding-right: .14em; }
   .ismwm b { font-size: 1.28em; font-weight: 900; background: linear-gradient(135deg, #0F6E56 0%, #19B88A 55%, #7BE3C0 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; padding-right: .04em; }
-  .ismwm i { font-style: italic; font-weight: 300; letter-spacing: .06em; margin-left: .18em; }
   @media print { .ismwm { display: none; } }
   body::before { content: ''; position: fixed; inset: 0; background: var(--mono) 0 0 / 180px 180px repeat; pointer-events: none; z-index: -1; }
   [hidden] { display: none !important; }
@@ -1432,7 +1432,7 @@
 </style>
 </head>
 <body>
-<div class="ismwm" aria-hidden="true"><b>I</b>sm<i>cloud</i></div>
+<div class="ismwm" aria-hidden="true"><b>I</b>sm clou<b>D</b></div>
 
 <!-- ===== 入口（アプリのときだけ） ===== -->
 <form class="gate" id="gate" hidden autocomplete="on">
@@ -4601,12 +4601,12 @@
     try {
       if (!d || !d.body || d.getElementById('ismwm')) return;
       const st = d.createElement('style');
-      st.textContent = '.ismwm{position:fixed;right:14px;bottom:10px;z-index:45;pointer-events:none;user-select:none;-webkit-user-select:none;font-family:"Avenir Next","Futura","Helvetica Neue","Segoe UI",Arial,sans-serif;font-style:italic;font-weight:800;font-size:clamp(30px,5vw,54px);line-height:1;letter-spacing:-.02em;white-space:nowrap;' + (dark ? 'color:#9FF0D2;opacity:.3' : 'color:#0F6E56;opacity:.26;mix-blend-mode:multiply') + '}' +
-        '.ismwm b{font-size:1.28em;font-weight:900;' + (dark ? '' : 'background:linear-gradient(135deg,#0F6E56 0%,#19B88A 55%,#7BE3C0 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;') + 'padding-right:.04em}.ismwm i{font-style:italic;font-weight:300;letter-spacing:.06em;margin-left:.18em}@media print{.ismwm{display:none}}';
+      st.textContent = '.ismwm{position:fixed;right:14px;bottom:10px;z-index:45;pointer-events:none;user-select:none;-webkit-user-select:none;font-family:"Avenir Next","Futura","Helvetica Neue","Segoe UI",Arial,sans-serif;font-style:italic;font-weight:800;font-size:clamp(30px,5vw,54px);line-height:1;letter-spacing:-.02em;word-spacing:-.06em;white-space:nowrap;padding-right:.14em;' + (dark ? 'color:#9FF0D2;opacity:.34' : 'color:#0F6E56;opacity:.3;mix-blend-mode:multiply') + '}' +
+        '.ismwm b{font-size:1.28em;font-weight:900;' + (dark ? '' : 'background:linear-gradient(135deg,#0F6E56 0%,#19B88A 55%,#7BE3C0 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;') + 'padding-right:.04em}@media print{.ismwm{display:none}}';
       d.head.appendChild(st);
       const e = d.createElement('div'); e.id = 'ismwm'; e.className = 'ismwm'; e.setAttribute('aria-hidden', 'true');
-      const b = d.createElement('b'); b.textContent = 'I'; const i = d.createElement('i'); i.textContent = 'cloud';
-      e.appendChild(b); e.appendChild(d.createTextNode('sm')); e.appendChild(i); d.body.appendChild(e);
+      const b = d.createElement('b'); b.textContent = 'I'; const b2 = d.createElement('b'); b2.textContent = 'D';
+      e.appendChild(b); e.appendChild(d.createTextNode('sm clou')); e.appendChild(b2); d.body.appendChild(e);
     } catch (x) {}
   }
   function wsOpen(key, ad) {
