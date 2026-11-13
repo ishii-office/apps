@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794546876;</script>
+<script>window.__PAGE_VER=1794548048;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1492,6 +1492,16 @@
     <p class="note">選んだ箱（中の箱も）だけが 仕訳化・回収資料に並びます。AI で下書きも この箱だけ。</p>
     <div class="bxlist" id="bxList"></div>
     <div class="obnav"><button type="button" class="btn sm" id="bxOk">この箱で絞る</button><button type="button" class="btn ghost sm" id="bxNo">やめる</button></div>
+  </div>
+</div>
+<!-- ★ 2026-11-13（細谷）：仕入等買掛金帳の 仕入先の一覧（顧問先タブの箱で決める。1行に1つ） -->
+<div class="obv" id="bsupv" hidden role="dialog" aria-modal="true" aria-labelledby="bsupT">
+  <div class="obbox" style="width:min(480px,100%)">
+    <div class="obh"><h3 id="bsupT">仕入先の一覧</h3></div>
+    <p class="note">顧問先が はじめて 仕入等買掛金帳を開いたとき、この仕入先が 並んだ表で出ます（1行に1つ・紙の順に）。2か月目からは 前の月の仕入先を写すので、足す・消すは 顧問先の画面でも できます。</p>
+    <textarea id="bsupIn" rows="14" style="width:100%;box-sizing:border-box;font:inherit" placeholder="例：〇〇商店&#10;（株）△△"></textarea>
+    <p class="note" id="bsupMsg"></p>
+    <div class="obnav"><button type="button" class="btn ghost sm" id="bsupNo">やめる</button><button type="button" class="btn sm" id="bsupOk">これにする</button></div>
   </div>
 </div>
 <!-- ★ 出納帳の 摘要の選択肢（2026-11-08）：顧問先タブの箱で決める。入金と出金に分ける。1行に1つ -->
@@ -5255,7 +5265,7 @@
     const t = [];
     if (extra || OB.msg) t.push(extra || OB.msg);
     if (OB.kind === 'kyuyo') t.push('期間 ' + obMd(d.from) + '〜' + obMd(d.to));
-    if ((OB.kind === 'kaikake' || OB.kind === 'kyuyo') && !d.saved) t.push(d.carried ? 'この月は まだ保存されていません（前の月の ' + (OB.kind === 'kyuyo' ? '人' : '仕入先') + 'だけ 出しています）。' : 'この月は まだ書かれていません。');
+    if ((OB.kind === 'kaikake' || OB.kind === 'kyuyo') && !d.saved) t.push(d.carried === 'sup' ? 'この月は まだ保存されていません（事務所が決めた 仕入先の一覧だけ 出しています）。' : d.carried ? 'この月は まだ保存されていません（前の月の ' + (OB.kind === 'kyuyo' ? '人' : '仕入先') + 'だけ 出しています）。' : 'この月は まだ書かれていません。');
     else if (OB.kind === 'kaikake' || OB.kind === 'kyuyo') t.push('保存 ' + d.at + '（' + d.who + '）');
     else if (!d.rows.length) t.push('この月は まだ書かれていません。');
     if (d.off) t.push('⚠ 紙の残高と 合わない行が ' + d.off + ' 行あります（赤い行）。行を押して 直してください。');
@@ -13442,6 +13452,14 @@
             aTreeDraw();
           });
           row.appendChild(bk);
+          /* ★ 2026-11-13（細谷）：仕入等買掛金帳の 仕入先の一覧（はじめての月に 並べておく） */
+          if (bc.book === 'kaikake') {
+            const n = (bc.sup || []).length;
+            const sb = el('button', 'sm2 bopts' + (n ? ' on' : ''), n ? '仕入先（' + n + '）' : '仕入先：なし'); sb.type = 'button';
+            sb.title = '顧問先が はじめて 仕入等買掛金帳を開いたとき 並べておく 仕入先（1行に1つ）。2か月目からは 前の月の仕入先を写します';
+            sb.addEventListener('click', function () { bsupOpen(path); });
+            row.appendChild(sb);
+          }
           /* ★ 出納帳の 摘要の選択肢（2026-11-08）。決めていなければ 仕訳辞書から出す */
           if (bc.book && !kk && !np && !nc) {
             const on = bc.opts && ((bc.opts.in || []).length || (bc.opts.out || []).length);
@@ -13516,6 +13534,24 @@
     aIconDraw();
   }
   aIconSet('');
+  /* ★ 2026-11-13（細谷）：仕入等買掛金帳の 仕入先の一覧。［これにする］で A.bconf に入り、顧問先の［保存］で 決まる */
+  let BSUP = '';
+  function bsupOpen(path) {
+    BSUP = path; const bc = (A.bconf || {})[path] || {};
+    $('bsupT').textContent = '仕入先の一覧［' + path + '］';
+    $('bsupIn').value = (bc.sup || []).join('\n'); $('bsupMsg').textContent = '';
+    $('bsupv').hidden = false; $('bsupIn').focus();
+  }
+  $('bsupNo').addEventListener('click', function () { $('bsupv').hidden = true; });
+  $('bsupv').addEventListener('click', function (e) { if (e.target === $('bsupv')) $('bsupv').hidden = true; });
+  $('bsupOk').addEventListener('click', function () {
+    const seen = {}, a = String($('bsupIn').value || '').split(/\r?\n/).map(function (t) { return t.replace(/[<>]/g, '').trim().slice(0, 40); }).filter(function (t) { if (!t || seen[t]) return false; seen[t] = 1; return true; }).slice(0, 100);
+    A.bconf = A.bconf || {}; const cur = A.bconf[BSUP] || {};
+    if (a.length) cur.sup = a; else delete cur.sup;
+    if (cur.day || cur.ask || cur.book) A.bconf[BSUP] = cur;
+    $('bsupv').hidden = true; aTreeDraw();
+    amsg('仕入先の一覧を入れました（' + a.length + '件）。下の［保存］で 顧問先の画面に出ます。');
+  });
   /* ★ 出納帳の 摘要の選択肢（2026-11-08）。［これにする］で A.bconf に入り、顧問先の［保存］で 決まる */
   let BOPT = '';
   function boptOpen(path) {
