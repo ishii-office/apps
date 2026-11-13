@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794530068;</script>
+<script>window.__PAGE_VER=1794531029;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1132,6 +1132,7 @@
   .dview .dvbigchk { position: absolute; right: 24px; bottom: 24px; z-index: 6; font: inherit; font-size: 20px; font-weight: 800; padding: 12px 22px; border-radius: 14px; border: 2px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
   .dview .dvbigchk.on { background: #fff; color: var(--accent); }
   .dview .dvbigchk:hover { filter: brightness(1.08); }
+  .dview .dvbigclose { display: none; }
   .dview { position: fixed; inset: 0; z-index: 50; background: rgba(20,30,28,.92); display: flex; flex-direction: column; }
   .dview .dvbar { display: flex; align-items: center; gap: 8px; padding: 8px calc(var(--toprw, 248px) + 16px) 8px 10px; background: #fff; flex-wrap: wrap; }   /* 右は［📷 顧問先の画面］［↻ 開き直す］の場所をあける */
   .dview .dvbar .sp { flex: 1; }
@@ -1140,6 +1141,10 @@
   @media (min-width: 701px) {   /* パソコン：大きな［確認済］は 右上の［顧問先の画面を表示］［開き直す］の下（上の帯の 右の空き） */
     .dview .dvbar { min-height: 104px; }
     .dview .dvbigchk { top: 46px; bottom: auto; right: 10px; width: max(220px, var(--toprw, 248px)); padding: 10px 14px; font-size: 19px; }
+    /* ★ 2026-11-13（細谷）：大きな［閉じる］は 大きな［確認済］の左（上の帯の 右の空きを その分 広げる） */
+    .dview .dvbar { padding-right: calc(max(220px, var(--toprw, 248px)) + 150px); }
+    .dview .dvbigclose { display: block; position: absolute; z-index: 6; top: 46px; right: calc(max(220px, var(--toprw, 248px)) + 20px); width: 120px; padding: 10px 8px; font: inherit; font-size: 18px; font-weight: 800; border-radius: 14px; border: 2px solid #8A9A95; background: #fff; color: #33403C; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+    .dview .dvbigclose:hover { background: #F2F4F3; }
   }
   .dview #dvName { flex: 0 0 auto; min-width: 0; max-width: 40%;   /* ★ 総点検：道具の列に押されて 30%より ずっと細く切れていた */ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
   .dview .dvtools { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
@@ -2350,6 +2355,8 @@
     <span class="mk-msg" id="mkMsg">押して書く（文字・✔・付箋は 押した所に／下線・枠は なぞる）。文字と付箋は Enter で改行・外を押すか Ctrl＋Enter で置く。付箋は 押すと 書き直せる。選んで Ctrl＋C → Ctrl＋V で 同じものを貼れる。Ctrl＋S で 保存して終わる。元の写真・PDF は書き換えず、重ねて残します。</span>
   </div>
   <!-- ★ 2026-11-12（細谷）：大きな［確認済］（上の帯のボタンと同じ働き）。パソコン＝右上の［顧問先の画面を表示］［開き直す］の下・スマホ＝右下 -->
+  <!-- ★ 2026-11-13（細谷）：大きな［閉じる］（大きな［確認済］の左。パソコンだけ） -->
+  <button type="button" class="dvbigclose" id="dvClose2" title="閉じて 回収資料に戻る（Esc でも）">✕ 閉じる</button>
   <button type="button" class="dvbigchk" id="dvChk2" title="押すと 確認済にする・もう一度押すと 外す（Enter＝確認済にして 次へ）">✓ 確認済にする</button>
   <div class="dvmemo" id="dvMemo" hidden></div>
   <div class="dvmain" id="dvwMain">
@@ -7985,6 +7992,7 @@
   $('dvRot').addEventListener('click', function () { if (!S.dvId) return; rotSet(S.dvId, (S.rot[S.dvId] || 0) + 90); dvFit(); });   /* ★ 2026-11-12：向きは 覚える */
   function docsClose() { if (MK.on) mkEnd(true); S.dvId = ''; S.dvIt = null; S.dvSeq = null; S.dvMemo = null; $('dvwSide').textContent = ''; $('dvwSide').dataset.set = ''; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
   $('dvClose').addEventListener('click', docsClose);
+  $('dvClose2').addEventListener('click', function (e) { e.stopPropagation(); docsClose(); });   /* ★ 2026-11-13（細谷）：大きな［閉じる］ */
 
   /* ================= ★★ 大きく見て サクサク確認（2026-10-26） =================
      ・この箱の中で 左上から何番目か（3 / 12）
