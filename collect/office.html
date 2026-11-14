@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794577851;</script>
+<script>window.__PAGE_VER=1794658693;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -94,16 +94,17 @@
   .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; font-weight: 700; }
   /* スマホ：タブは3列に並べて 全部見えるように（右が見切れていた） */
   @media (max-width: 700px) {
-    #tabs { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+    #tabs { display: grid; grid-template-columns: repeat(12, 1fr); width: 100%; }
     #tabs button { padding: 8px 2px; font-size: 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
     /* 左上から時計回り：回収資料 → 仕訳化 → 取込ファイル → 担当者 → 顧問先 → 仕訳辞書 */
-    #tabs button[data-tab="Docs"] { grid-area: 1 / 1; } #tabs button[data-tab="In"] { grid-area: 1 / 2; }
-    #tabs button[data-tab="Out"] { grid-area: 1 / 3; border-right: 0; } #tabs button[data-tab="Staff"] { grid-area: 2 / 3; border-right: 0; }
-    #tabs button[data-tab="Clients"] { grid-area: 2 / 2; } #tabs button[data-tab="Dict"] { grid-area: 2 / 1; border-right: 1px solid var(--line); }
+    #tabs button[data-tab="Docs"] { grid-area: 1 / 1 / 2 / 5; } #tabs button[data-tab="In"] { grid-area: 1 / 5 / 2 / 9; }
+    #tabs button[data-tab="Out"] { grid-area: 1 / 9 / 2 / 13; border-right: 0; } #tabs button[data-tab="Staff"] { grid-area: 2 / 9 / 3 / 13; border-right: 0; }
+    #tabs button[data-tab="Clients"] { grid-area: 2 / 5 / 3 / 9; } #tabs button[data-tab="Dict"] { grid-area: 2 / 1 / 3 / 5; border-right: 1px solid var(--line); }
     /* 3段目：AIの考え方（2つぶん）と 改善要望 を1行に（2026-10-25。別の行にしない） */
     /* ★ 送付物（2026-10-26）：3段目を AIの考え方・改善要望・送付物 の3つに */
-    #tabs button[data-tab="Rule"] { grid-area: 3 / 1; border-right: 1px solid var(--line); } #tabs button[data-tab="Kaizen"] { grid-area: 3 / 2; }
-    #tabs button[data-tab="Send"] { grid-area: 3 / 3; border-right: 0; }
+    /* ★ 事務所フォルダ（2026-11-14）：3段目を4つに（4段にはしない。タブで画面を取りすぎない） */
+    #tabs button[data-tab="Rule"] { grid-area: 3 / 1 / 4 / 4; border-right: 1px solid var(--line); } #tabs button[data-tab="Fold"] { grid-area: 3 / 4 / 4 / 8; font-size: 13px; }
+    #tabs button[data-tab="Kaizen"] { grid-area: 3 / 8 / 4 / 11; } #tabs button[data-tab="Send"] { grid-area: 3 / 11 / 4 / 13; border-right: 0; }
   }
   .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
   .ctl label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -1227,6 +1228,58 @@
   .ctl[data-tab="Out"] label:has(#month), .ctl[data-tab="Out"] #filter, .ctl[data-tab="Out"] label:has(#perY), .ctl[data-tab="Out"] label:has(#perM), .ctl[data-tab="Out"] label:has(#box) { display: none; }
   .ctl[data-tab="Clients"] > :not(label:has(#client)), .ctl[data-tab="Send"] > :not(label:has(#client)) { display: none; }
   /* ★★★ 送付物（事務所 → 顧問先。2026-10-26）。中は 顧問先の画面（index.html?m=send）をそのまま使う */
+  /* ★★★ 事務所フォルダ（2026-11-14）：左に フォルダの木、右に 作業スペース（DocuWorks Desk の形） */
+  #paneFold { display: flex; flex-direction: column; }
+  #paneFold[hidden] { display: none; }
+  .fdbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
+  .fdbar .sp { flex: 1; }
+  .fdcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-size: 15px; min-width: 0; }
+  .fdcrumb button { border: 0; background: none; padding: 3px 5px; color: var(--accent); font-weight: 700; font-size: 15px; }
+  .fdcrumb button:last-of-type { color: var(--ink); }
+  .fdcrumb i { color: var(--sub); font-style: normal; }
+  #fdQ { width: 180px; max-width: 46vw; }
+  .fdtools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--a-faint); }
+  .fdtools button[disabled] { opacity: .4; }
+  .fdtools .warn { background: var(--err); color: #fff; border-color: var(--err); }
+  .fdform { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: #FFF8E1; }
+  .fdform[hidden] { display: none; }
+  .fdform input { flex: 1; min-width: 160px; max-width: 420px; font-size: 16px; }
+  .fdmain { flex: 1; min-height: 0; display: flex; }
+  .fdtree { width: 270px; flex: none; overflow: auto; border-right: 1px solid var(--line); background: var(--paper); padding: 6px 4px 30px; }
+  .fdnode { display: flex; align-items: center; gap: 2px; border-radius: 6px; white-space: nowrap; }
+  .fdnode .tw { width: 22px; height: 26px; flex: none; border: 0; background: none; padding: 0; color: var(--sub); font-size: 11px; }
+  .fdnode .nm { flex: 1; min-width: 0; text-align: left; border: 0; background: none; padding: 5px 4px; font-size: 14px; overflow: hidden; text-overflow: ellipsis; }
+  .fdnode.on { background: var(--a-tint); } .fdnode.on .nm { font-weight: 700; color: var(--accent); }
+  .fdnode.drop, .fdit.drop { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--a-tint); }
+  .fdkids { margin-left: 14px; }
+  .fdwork { flex: 1; min-width: 0; overflow: auto; padding: 10px 12px 70px; position: relative; }
+  .fdwork.over { background: var(--a-faint); outline: 3px dashed var(--a-mid); outline-offset: -6px; }
+  .fdnote { color: var(--sub); padding: 18px 6px; line-height: 1.8; }
+  .fdgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 10px; }
+  .fdit { border: 1px solid var(--line); border-radius: 8px; background: var(--paper); padding: 6px; cursor: default; user-select: none; -webkit-user-select: none; position: relative; }
+  .fdit.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; background: var(--sel); }
+  .fdit .pic { height: 92px; display: flex; align-items: center; justify-content: center; font-size: 46px; line-height: 1; overflow: hidden; border-radius: 4px; background: var(--bg); }
+  .fdit .pic img { max-width: 100%; max-height: 100%; }
+  .fdit .ext { position: absolute; left: 10px; top: 10px; font-size: 10px; font-weight: 700; background: var(--accent); color: #fff; border-radius: 3px; padding: 1px 4px; }
+  .fdit .nm { margin-top: 5px; font-size: 13px; line-height: 1.3; word-break: break-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 34px; }
+  .fdit .sub { font-size: 11px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fdlist { display: block; }
+  .fdlist .fdit { display: grid; grid-template-columns: 30px minmax(0, 1fr) 120px 80px; align-items: center; gap: 8px; border-radius: 0; border-width: 0 0 1px; padding: 6px 8px; }
+  .fdlist .fdit .pic { height: 26px; font-size: 20px; background: none; } .fdlist .fdit .ext { display: none; }
+  .fdlist .fdit .nm { margin: 0; min-height: 0; -webkit-line-clamp: 1; font-size: 14px; }
+  .fdsec { font-size: 12px; color: var(--sub); margin: 12px 2px 6px; font-weight: 700; } .fdsec:first-child { margin-top: 0; }
+  .fdset { margin: 14px auto; max-width: 620px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 14px 16px; line-height: 1.8; }
+  .fdset input { width: 100%; font-size: 15px; margin: 6px 0; }
+  #fdTreeBtn { display: none; }
+  @media (max-width: 700px) {
+    #fdTreeBtn { display: inline-block; }
+    .fdmain { position: relative; }
+    .fdtree { position: absolute; left: 0; top: 0; bottom: 0; z-index: 5; width: min(86vw, 320px); box-shadow: 4px 0 14px rgba(0,0,0,.18); display: none; }
+    .fdmain.tree .fdtree { display: block; }
+    .fdgrid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+    .fdlist .fdit { grid-template-columns: 26px minmax(0, 1fr) 64px; } .fdlist .fdit .at { display: none; }
+    .fdnode .nm { padding: 9px 4px; font-size: 15px; } .fdnode .tw { height: 36px; width: 30px; }
+  }
   .sd { max-width: none; margin: 0 auto; padding: 10px 14px 0; }
   .sd h2 { margin: 4px 0 6px; font-size: 19px; }
   .sd .sdrow { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
@@ -1484,6 +1537,7 @@
     <button type="button" role="tab" data-tab="Clients" aria-pressed="false">顧問先</button>
     <button type="button" role="tab" data-tab="Dict" aria-pressed="false">仕訳辞書</button>
     <button type="button" role="tab" data-tab="Rule" aria-pressed="false">AIの考え方</button>
+    <button type="button" role="tab" data-tab="Fold" aria-pressed="false" id="tabFold">事務所フォルダ</button>
     <button type="button" role="tab" data-tab="Kaizen" aria-pressed="false" id="tabKaizen">改善要望<b class="kzbadge" id="kzBadge" hidden></b></button>
     <button type="button" role="tab" data-tab="Send" aria-pressed="false" id="tabSend">送付物</button>
   </span>
@@ -2141,6 +2195,32 @@
   </div>
 </div>
 
+<div class="pane" id="paneFold" hidden>
+  <div class="fdbar">
+    <button type="button" id="fdTreeBtn" title="フォルダの並びを出す・しまう">📁 フォルダ</button>
+    <nav class="fdcrumb" id="fdCrumb" aria-label="いま開いているフォルダまでの道すじ"></nav>
+    <span class="sp"></span>
+    <input id="fdQ" type="search" maxlength="60" placeholder="名前でさがす（Enter）" aria-label="事務所フォルダの中を 名前でさがす">
+    <span class="seg" id="fdMode"><button type="button" data-m="grid" aria-pressed="true" title="絵で並べる">▦</button><button type="button" data-m="list" aria-pressed="false" title="一覧で並べる">☰</button></span>
+  </div>
+  <div class="fdtools" id="fdTools">
+    <button type="button" id="fdNew">＋ 新しいフォルダ</button>
+    <button type="button" id="fdUpBtn">⬆ ファイルを入れる</button><input type="file" id="fdUpIn" multiple hidden>
+    <button type="button" id="fdOpen" disabled>開く</button>
+    <button type="button" id="fdRen" disabled>✎ 名前を変える</button>
+    <button type="button" id="fdMv" disabled>➡ 移す</button>
+    <button type="button" id="fdDel" disabled>🗑 ゴミ箱へ</button>
+    <button type="button" id="fdDrive" title="いま開いているフォルダを Google ドライブで開く">↗ Google ドライブで開く</button>
+    <button type="button" id="fdReload" title="読み直す">↻</button>
+    <span class="pagemsg" id="fdMsg" role="status"></span>
+  </div>
+  <div class="fdform" id="fdForm" hidden><b id="fdFormT"></b><input id="fdFormIn" maxlength="120"><button type="button" id="fdFormOk" class="primary">決定</button><button type="button" id="fdFormNo">やめる</button></div>
+  <div class="fdmain" id="fdMain">
+    <aside class="fdtree" id="fdTree" aria-label="フォルダの並び"></aside>
+    <section class="fdwork" id="fdWork" aria-label="作業スペース"></section>
+  </div>
+</div>
+
 <div class="pane page" id="paneSend" hidden>
   <div class="sd">
     <div class="sdrow"><h2>📮 送付物（事務所 → 顧問先）</h2><span class="sdsum" id="sdSum"></span><span class="sp"></span><button type="button" id="sdReload">↻ 読み直す</button><button type="button" id="sdOld" title="前の形（1つずつ送る）で送ったもの・取り下げ">📨 前の形で送ったもの</button></div>
@@ -2544,11 +2624,11 @@
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
   const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
-    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, lineNews: 1 };
+    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
   /* ★ 2026-11-08：AI の下書き（通帳2枚を明細で読む など）は 1分を超える。60秒で切ると サーバは読み終えたのに「返事がありません」になっていた */
-  const LONG_FN = { tehonAnalyze: 370000, kaizenShot: 120000, aiRead: 370000, aiCheck: 370000, officeBookFromPhoto: 370000, memoWrite: 370000 };
+  const LONG_FN = { foldUp: 300000, foldClients: 300000, tehonAnalyze: 370000, kaizenShot: 120000, aiRead: 370000, aiCheck: 370000, officeBookFromPhoto: 370000, memoWrite: 370000 };
   /* ★ 総点検（2026-10-26）：読むだけのものは 通信がこけたら 1回だけ自動でやり直す（打ち直させない）。
      書き込みは やり直さない（二度入るので）。GAS の中（LIVE）でも 返事が来なければ時間切れにする（固まらない） */
   const NETERR = /サーバの返事がありませんでした|サーバにつながりませんでした|Failed to fetch|NetworkError|Load failed|network/i;
@@ -2619,7 +2699,7 @@
 
   /* ================= 入口 ================= */
   function fatal(t) { ['gate', 'chg', 'top', 'ctl', 'toClient'].forEach(function (k) { $(k).hidden = true; }); hidePanes(); $('fatal').hidden = false; $('fatalMsg').textContent = t; }
-  function hidePanes() { ['Docs', 'In', 'Dict', 'Out', 'Clients', 'Staff', 'Rule', 'Kaizen', 'Send'].forEach(function (k) { $('pane' + k).hidden = true; }); }
+  function hidePanes() { ['Docs', 'In', 'Dict', 'Out', 'Clients', 'Staff', 'Rule', 'Kaizen', 'Send', 'Fold'].forEach(function (k) { $('pane' + k).hidden = true; }); }
   function showGate(msg) {
     $('top').hidden = true; $('ctl').hidden = true; $('chg').hidden = true; hidePanes(); $('toClient').hidden = true;
     $('gate').hidden = false; $('gMsg').textContent = msg || '';
@@ -2787,6 +2867,363 @@
   (function bellFirst() { if (S.started && S.booted) { mineFill(); bellLoad(); if (!STAFF_NAMES) gs('staffNames').then(function (r) { STAFF_NAMES = r || []; mineFill(); }, function () {}); return; } setTimeout(bellFirst, 1500); })();
   setInterval(function () { if (S.started && !document.hidden && Date.now() - BELL.at > 120000) bellLoad(); }, 30000);
 
+  /* ================= ★★★ 事務所フォルダ（2026-11-14） =================
+     左に フォルダの木、右に 作業スペース（DocuWorks Desk の形）。正本は Google ドライブ。この画面は その窓。
+     ・サーバは 親フォルダの内側しか さわらせない（foldIn_）。画面は 見せ方だけ
+     ・消すのは ゴミ箱へ（2回押し。confirm は使わない）
+     ・木は ひらいたときにだけ読む。小さい絵は 見えている分を 12枚ずつ */
+  const LS_FD = 'collect_office_fold';
+  const FD = { info: null, cur: '', data: null, kids: {}, kl: {}, open: {}, sel: {}, anchor: -1, items: [], mode: 'grid', thumbs: {}, thq: 0, search: null, move: null, form: null, drag: null, arm: 0, armT: 0, adm: false, loading: '', cArm: 0 };
+  function fdMsg(t, cls) { const m = $('fdMsg'); if (!m) return; m.textContent = t || ''; m.className = 'pagemsg' + (cls ? ' ' + cls : ''); }
+  function fdSave() { lsSet(LS_FD, JSON.stringify({ cur: FD.cur, mode: FD.mode, open: Object.keys(FD.open).slice(-40) })); }
+  function fdSize(n) { n = Number(n) || 0; return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? Math.round(n / 1024) + ' KB' : n ? n + ' B' : ''; }
+  function fdExt(name) { const m = String(name || '').match(/\.([A-Za-z0-9]{1,5})$/); return m ? m[1].toUpperCase() : ''; }
+  function fdIcon(it) { const m = String(it.mime || ''), x = fdExt(it.name); if (/^image\//.test(m)) return '🖼'; if (m === 'application/pdf') return '📕'; if (x === 'XDW' || x === 'XBD') return '📘'; if (/sheet|excel|csv/.test(m) || /^(XLSX?|CSV)$/.test(x)) return '📗'; if (/word|document/.test(m) || /^DOCX?$/.test(x)) return '📄'; return '📄'; }
+  function fdCanView(it) { const m = String(it.mime || ''); return (/^image\/(jpeg|png|gif|webp)$/.test(m) || m === 'application/pdf' || m === 'text/plain' || m === 'text/csv') && (Number(it.size) || 0) <= 12 * 1024 * 1024; }
+  function fdShow() {
+    if (FD.info && FD.info.set) { if (!FD.data) fdGo(FD.cur || FD.info.root.id, true); return; }
+    fdBoot();
+  }
+  function fdBoot() {
+    fdNote('読んでいます…');
+    gs('foldInfo').then(function (r) { FD.info = r || {}; fdAfterInfo(); }, function (e) { fdNote(e.message, true); });
+  }
+  function fdNote(t, err) { const w = $('fdWork'); w.textContent = ''; const n = el('div', 'fdnote', t); if (err) n.style.color = 'var(--err)'; w.appendChild(n); }
+  function fdAfterInfo() {
+    const r = FD.info, on = !!(r && r.set);
+    $('fdTools').hidden = !on; $('fdTree').hidden = !on; $('fdQ').hidden = !on; $('fdMode').hidden = !on; $('fdTreeBtn').hidden = !on;
+    if (!on) { $('fdCrumb').textContent = ''; fdSetup(); return; }
+    let sv = {}; try { sv = JSON.parse(lsGet(LS_FD) || '{}') || {}; } catch (e) {}
+    if (sv.mode === 'list' || sv.mode === 'grid') FD.mode = sv.mode;
+    (sv.open || []).forEach(function (id) { FD.open[id] = 1; });
+    fdModePaint();
+    fdGo(sv.cur || r.root.id, true);
+  }
+  /* 親フォルダが まだ決まっていない（か 変える）ときの札 */
+  function fdSetup(change) {
+    const r = FD.info || {}, w = $('fdWork'); w.textContent = '';
+    const c = el('div', 'fdset');
+    c.appendChild(el('h2', null, change ? '親フォルダを変える' : '事務所フォルダは まだ決まっていません'));
+    if (r.err) { const e = el('p', 'pagemsg err', r.err); c.appendChild(e); }
+    c.appendChild(el('p', null, 'Google ドライブ（共有ドライブ）の中の フォルダを1つ、事務所フォルダの「親」に決めます。この画面で さわれるのは その中だけです。回収資料のフォルダと マイナンバーのフォルダは 親にできません。'));
+    if (r.master) {
+      const inp = el('input'); inp.id = 'fdRootIn'; inp.placeholder = 'Google ドライブで そのフォルダを開いたときの URL（または ID）'; inp.maxLength = 300;
+      const ok = el('button', 'primary', 'このフォルダを 親にする'); ok.type = 'button'; ok.id = 'fdRootOk';
+      const m = el('span', 'pagemsg'); m.id = 'fdRootMsg'; m.style.marginLeft = '10px';
+      const go = function () {
+        if (!inp.value.trim()) { m.textContent = 'URL か ID を入れてください。'; m.className = 'pagemsg err'; return; }
+        ok.disabled = true; m.textContent = '確かめています…'; m.className = 'pagemsg';
+        gs('foldRootSet', inp.value.trim()).then(function (x) { FD.info = Object.assign({}, FD.info, x, { err: '' }); FD.kids = {}; FD.open = {}; FD.data = null; FD.cur = ''; lsSet(LS_FD, ''); fdAfterInfo(); }, function (e) { ok.disabled = false; m.textContent = e.message; m.className = 'pagemsg err'; });
+      };
+      ok.onclick = go; inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) go(); });
+      c.appendChild(inp); c.appendChild(ok); c.appendChild(m);
+      if (change) { const no = el('button', null, 'やめる'); no.type = 'button'; no.style.marginLeft = '8px'; no.onclick = function () { fdWorkDraw(); }; c.appendChild(no); }
+    } else c.appendChild(el('p', 'pagemsg', '決めるのは マスターの方です。マスターの方に お願いしてください。'));
+    w.appendChild(c);
+  }
+  function fdGo(id, soft) {
+    FD.search = null; FD.sel = {}; FD.anchor = -1; fdFormClose(); fdDisarm();
+    FD.loading = id; fdMsg('読んでいます…');
+    return gs('foldList', id).then(function (r) {
+      if (FD.loading !== id) return;
+      FD.loading = ''; FD.cur = r.id; FD.data = r; FD.kids[r.id] = r.folders;
+      (r.path || []).slice(0, -1).forEach(function (p) { FD.open[p.id] = 1; });
+      fdSave(); fdMsg(FD.move ? '移す先のフォルダを 左の並びで押してください。' : ''); fdDraw();
+    }, function (e) {
+      if (FD.loading !== id) return; FD.loading = '';
+      if (soft && FD.info && FD.info.root && id !== FD.info.root.id) return fdGo(FD.info.root.id);
+      fdMsg(e.message, 'err'); if (!FD.data) fdNote(e.message, true);
+    });
+  }
+  function fdReload() { FD.kids = {}; FD.thumbs = {}; return fdGo(FD.cur || FD.info.root.id, true); }
+  function fdDraw() { fdCrumb(); fdTreeDraw(); fdWorkDraw(); }
+  function fdCrumb() {
+    const c = $('fdCrumb'); c.textContent = '';
+    ((FD.data && FD.data.path) || []).forEach(function (p, i, a) {
+      if (i) c.appendChild(el('i', null, '›'));
+      const b = el('button', null, p.name); b.type = 'button'; b.dataset.id = p.id; b.onclick = function () { fdGo(p.id); };
+      if (i === a.length - 1 && !FD.search) b.setAttribute('aria-current', 'true');
+      c.appendChild(b);
+    });
+  }
+  /* ---- 左：フォルダの木 ---- */
+  function fdTreeDraw() {
+    const box = $('fdTree'), top = box.scrollTop; box.textContent = '';
+    if (!FD.info || !FD.info.set) return;
+    box.appendChild(fdNode(FD.info.root.id, FD.info.root.name, true));
+    if (FD.info.master) {
+      const d = el('details'); d.id = 'fdAdm'; d.open = FD.adm; d.style.margin = '16px 6px 0'; d.addEventListener('toggle', function () { FD.adm = d.open; });
+      d.appendChild(el('summary', null, '⚙ 設定（マスター）'));
+      const b1 = el('button', null, '顧問先のフォルダを作る'); b1.type = 'button'; b1.id = 'fdMkClients'; b1.style.margin = '6px 0'; b1.onclick = fdClients;
+      const b2 = el('button', null, '親フォルダを変える'); b2.type = 'button'; b2.id = 'fdRootChange'; b2.onclick = function () { fdSetup(true); fdTreeHide(); };
+      const n = el('p', 'note', '［顧問先のフォルダを作る］… 顧問先の一覧にあって まだ無いものだけ「コード 名前」で作ります。何度押しても 増えません。'); n.style.margin = '4px 0';
+      d.appendChild(b1); d.appendChild(el('br')); d.appendChild(b2); d.appendChild(n); box.appendChild(d);
+    }
+    box.scrollTop = top;
+  }
+  function fdNode(id, name, isRoot) {
+    const wrap = el('div'), open = isRoot || !!FD.open[id], kids = FD.kids[id];
+    const row = el('div', 'fdnode' + (id === FD.cur && !FD.search ? ' on' : '')); row.dataset.id = id;
+    const tw = el('button', 'tw', isRoot || (kids && !kids.length) ? '' : open ? '▼' : '▶'); tw.type = 'button'; tw.tabIndex = -1; tw.setAttribute('aria-label', open ? 'とじる' : 'ひらく');
+    tw.onclick = function () { if (isRoot) return; if (FD.open[id]) delete FD.open[id]; else FD.open[id] = 1; fdSave(); fdTreeDraw(); };
+    const nm = el('button', 'nm', '📁 ' + name); nm.type = 'button'; nm.title = name;
+    nm.onclick = function () { if (FD.move) { fdMoveTo(id); return; } fdTreeHide(); fdGo(id); };
+    row.appendChild(tw); row.appendChild(nm); fdDropBind(row, id); wrap.appendChild(row);
+    if (open) {
+      const kb = el('div', 'fdkids');
+      if (!kids) { const w = el('div', 'fdnode'); w.appendChild(el('span', 'nm', '…')); kb.appendChild(w); fdKidsLoad(id); }
+      else kids.forEach(function (k) { kb.appendChild(fdNode(k.id, k.name, false)); });
+      wrap.appendChild(kb);
+    }
+    return wrap;
+  }
+  function fdKidsLoad(id) {
+    if (FD.kl[id]) return; FD.kl[id] = 1;
+    gs('foldList', id, 1).then(function (r) { delete FD.kl[id]; FD.kids[id] = r.folders || []; fdTreeDraw(); }, function () { delete FD.kl[id]; FD.kids[id] = []; delete FD.open[id]; fdTreeDraw(); });
+  }
+  function fdTreeHide() { $('fdMain').classList.remove('tree'); }
+  /* ---- 右：作業スペース ---- */
+  function fdWorkDraw() {
+    const w = $('fdWork'); w.textContent = '';
+    const d = FD.search || FD.data; if (!d) return;
+    const its = (d.folders || []).map(function (x) { return { id: x.id, kind: 'folder', name: x.name, where: x.where || '' }; })
+      .concat((d.files || []).map(function (x) { return Object.assign({ kind: 'file' }, x); }));
+    FD.items = its;
+    if (FD.search) {
+      const h = el('div', 'fdsec'); h.id = 'fdSearchHead'; h.appendChild(document.createTextNode('「' + FD.search.q + '」でさがした結果 ' + its.length + '件' + (FD.search.more ? '（多いので 途中までです。言葉を足してください）' : '') + '　'));
+      const x = el('button', null, '✕ さがすのをやめる'); x.type = 'button'; x.id = 'fdSearchOff'; x.onclick = function () { $('fdQ').value = ''; FD.search = null; FD.sel = {}; fdDraw(); fdBtns(); };
+      h.appendChild(x); w.appendChild(h);
+    }
+    if (!its.length) { w.appendChild(el('div', 'fdnote', FD.search ? '見つかりませんでした。' : 'このフォルダは 空です。ファイルを ここへ落とすか、［⬆ ファイルを入れる］で入れられます。')); fdBtns(); return; }
+    const box = el('div', FD.mode === 'list' ? 'fdlist' : 'fdgrid'); box.id = 'fdItems';
+    its.forEach(function (it, i) { box.appendChild(fdTile(it, i)); });
+    w.appendChild(box);
+    if (d.more && !FD.search) w.appendChild(el('div', 'fdnote', '数が多いので はじめの分だけ出しています。全部は［↗ Google ドライブで開く］で見られます。'));
+    fdBtns(); fdThumbs();
+  }
+  function fdTile(it, i) {
+    const e = el('div', 'fdit' + (FD.sel[it.id] ? ' sel' : '')); e.dataset.id = it.id; e.dataset.kind = it.kind; e.dataset.i = String(i); e.tabIndex = 0; e.draggable = true;
+    e.title = it.name + (it.where ? '\n' + it.where : '');
+    const pic = el('div', 'pic');
+    if (it.kind === 'folder') pic.textContent = '📁';
+    else if (FD.thumbs[it.id]) { const im = el('img'); im.src = FD.thumbs[it.id]; im.alt = ''; im.draggable = false; pic.appendChild(im); }
+    else pic.textContent = fdIcon(it);
+    e.appendChild(pic);
+    if (it.kind === 'file' && fdExt(it.name)) e.appendChild(el('span', 'ext', fdExt(it.name)));
+    e.appendChild(el('div', 'nm', it.name));
+    e.appendChild(el('div', 'sub at', it.where || (it.kind === 'folder' ? 'フォルダ' : it.at || '')));
+    e.appendChild(el('div', 'sub sz', it.kind === 'folder' ? '' : fdSize(it.size)));
+    e.addEventListener('click', function (ev) {
+      ev.stopPropagation(); fdDisarm();
+      const only = Object.keys(FD.sel).length === 1 && FD.sel[it.id];
+      if (ev.pointerType === 'touch' && only) { fdOpenIt(it); return; }   /* スマホ：選んであるものを もう一度押すと 開く */
+      if (ev.shiftKey && FD.anchor >= 0) { FD.sel = {}; const a = Math.min(FD.anchor, i), b = Math.max(FD.anchor, i); for (let k = a; k <= b; k++) FD.sel[FD.items[k].id] = 1; }
+      else if (ev.ctrlKey || ev.metaKey) { if (FD.sel[it.id]) delete FD.sel[it.id]; else FD.sel[it.id] = 1; FD.anchor = i; }
+      else { FD.sel = {}; FD.sel[it.id] = 1; FD.anchor = i; }
+      fdSelPaint();
+    });
+    e.addEventListener('dblclick', function (ev) { ev.stopPropagation(); fdOpenIt(it); });
+    e.addEventListener('dragstart', function (ev) {
+      if (!FD.sel[it.id]) { FD.sel = {}; FD.sel[it.id] = 1; FD.anchor = i; fdSelPaint(); }
+      FD.drag = fdSelected();
+      try { ev.dataTransfer.setData('text/plain', it.name); ev.dataTransfer.effectAllowed = 'move'; } catch (x) {}
+    });
+    e.addEventListener('dragend', function () { FD.drag = null; fdDropClear(); });
+    if (it.kind === 'folder') fdDropBind(e, it.id);
+    return e;
+  }
+  function fdSelected() { return FD.items.filter(function (x) { return FD.sel[x.id]; }).map(function (x) { return { id: x.id, kind: x.kind, name: x.name }; }); }
+  function fdSelPaint() { document.querySelectorAll('#fdWork .fdit').forEach(function (e) { e.classList.toggle('sel', !!FD.sel[e.dataset.id]); }); fdBtns(); }
+  function fdBtns() {
+    const n = Object.keys(FD.sel).length, mv = !!FD.move;
+    $('fdOpen').disabled = n !== 1; $('fdRen').disabled = n !== 1 || mv; $('fdMv').disabled = !mv && n < 1; $('fdDel').disabled = n < 1 || mv;
+    $('fdMv').textContent = mv ? '✕ 移すのをやめる' : n > 1 ? '➡ 移す（' + n + '）' : '➡ 移す';
+    if (!FD.arm) $('fdDel').textContent = n > 1 ? '🗑 ゴミ箱へ（' + n + '）' : '🗑 ゴミ箱へ';
+  }
+  function fdModePaint() { document.querySelectorAll('#fdMode button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.m === FD.mode)); }); }
+  /* 小さい絵：画像と PDF だけ。12枚ずつ・1回に1往復 */
+  function fdThumbs() {
+    if (FD.thq) return;
+    const need = FD.items.filter(function (x) { return x.kind === 'file' && !(x.id in FD.thumbs) && (/^image\//.test(x.mime || '') || x.mime === 'application/pdf'); }).slice(0, 12).map(function (x) { return x.id; });
+    if (!need.length) return;
+    FD.thq = 1; const at = FD.cur, sr = FD.search;
+    gs('foldThumbs', need).then(function (r) {
+      FD.thq = 0; need.forEach(function (id) { FD.thumbs[id] = (r && r[id]) || ''; });
+      if (S.tab !== 'Fold') return;
+      need.forEach(function (id) { const t = document.querySelector('#fdWork .fdit[data-id="' + id + '"] .pic'); if (t && FD.thumbs[id]) { t.textContent = ''; const im = el('img'); im.src = FD.thumbs[id]; im.alt = ''; im.draggable = false; t.appendChild(im); } });
+      if (FD.cur === at && FD.search === sr) fdThumbs();
+    }, function () { FD.thq = 0; need.forEach(function (id) { FD.thumbs[id] = ''; }); });
+  }
+  /* ---- 開く ---- */
+  function fdOpenIt(it) {
+    if (!it) return;
+    if (it.kind === 'folder') { $('fdQ').value = ''; fdGo(it.id); return; }
+    if (!fdCanView(it)) { fdOut(it.url); fdMsg(/\.xdw$|\.xbd$/i.test(it.name) ? 'DocuWorks の文書は ブラウザでは開けません。Google ドライブ（か パソコンの DocuWorks Desk）で開きます。' : 'Google ドライブで開きます。'); return; }
+    const w = window.open('', '_blank');
+    if (!w) { fdOut(it.url); return; }
+    try { w.document.write('<!doctype html><meta charset="utf-8"><title>' + esc(it.name) + '</title><body style="margin:0;background:#2b2f33;color:#ddd;font-family:sans-serif"><p style="padding:20px">開いています…</p>'); w.document.close(); } catch (e) {}
+    gs('foldFile', it.id).then(function (r) {
+      if (!r || !r.b64) { try { w.location.replace((r && r.url) || it.url); } catch (e) {} return; }
+      const bin = atob(r.b64), u8 = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
+      const url = URL.createObjectURL(new Blob([u8], { type: r.mime + (/^text\//.test(r.mime) ? ';charset=utf-8' : '') }));
+      if (/^image\//.test(r.mime)) {
+        const d = w.document; d.open();
+        d.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(r.name) + '</title></head><body style="margin:0;background:#2b2f33;display:flex;align-items:center;justify-content:center;min-height:100vh"><img id="fdImg" alt="" style="max-width:100%;max-height:100vh"></body></html>');
+        d.close(); d.getElementById('fdImg').src = url; ismWm(d, true);
+      } else { try { w.location.replace(url); } catch (e) {} }
+    }, function (e) { try { w.close(); } catch (x) {} fdMsg(e.message, 'err'); });
+  }
+  function fdOut(url) { if (!url) return; const a = el('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); }
+  /* ---- 移す ---- */
+  function fdDropBind(node, folderId) {
+    node.addEventListener('dragover', function (ev) {
+      const files = ev.dataTransfer && Array.prototype.indexOf.call(ev.dataTransfer.types || [], 'Files') >= 0;
+      if (!FD.drag && !files) return;
+      if (FD.drag && FD.drag.some(function (x) { return x.id === folderId; })) return;
+      ev.preventDefault(); ev.stopPropagation(); try { ev.dataTransfer.dropEffect = FD.drag ? 'move' : 'copy'; } catch (x) {}
+      fdDropClear(); node.classList.add('drop');
+    });
+    node.addEventListener('dragleave', function () { node.classList.remove('drop'); });
+    node.addEventListener('drop', function (ev) {
+      ev.preventDefault(); ev.stopPropagation(); fdDropClear();
+      if (FD.drag) { const its = FD.drag; FD.drag = null; fdMove(its, folderId); return; }
+      const fs = ev.dataTransfer && ev.dataTransfer.files; if (fs && fs.length) fdUpload(fs, folderId);
+    });
+  }
+  function fdDropClear() { document.querySelectorAll('#paneFold .drop').forEach(function (e) { e.classList.remove('drop'); }); $('fdWork').classList.remove('over'); }
+  function fdMove(items, toId) {
+    if (!items || !items.length) return;
+    if (toId === FD.cur && !FD.search) { fdMsg('もう このフォルダの中にあります。'); return; }
+    fdMsg(items.length + '件を 移しています…');
+    gs('foldMove', items.map(function (x) { return { id: x.id, kind: x.kind }; }), toId).then(function (r) {
+      const k = (r.kept || []).length;
+      fdReload().then(function () { fdMsg(r.moved + '件を 移しました。' + (k ? '（' + k + '件は 移せませんでした：' + r.kept[0] + '）' : ''), k ? 'err' : 'ok'); });
+    }, function (e) { fdMsg(e.message, 'err'); });
+  }
+  function fdMoveTo(id) { const its = FD.move; FD.move = null; fdTreeHide(); fdBtns(); fdMove(its, id); }
+  /* ---- ゴミ箱へ（2回押し） ---- */
+  function fdDisarm() { if (!FD.arm) return; FD.arm = 0; clearTimeout(FD.armT); const b = $('fdDel'); b.classList.remove('warn'); fdBtns(); }
+  function fdTrash() {
+    const its = fdSelected(); if (!its.length) return;
+    if (!FD.arm) { FD.arm = 1; const b = $('fdDel'); b.classList.add('warn'); b.textContent = 'もう一度押すと ゴミ箱へ（' + its.length + '件）'; FD.armT = setTimeout(fdDisarm, 5000); return; }
+    fdDisarm(); fdMsg('ゴミ箱へ入れています…');
+    gs('foldTrash', its.map(function (x) { return { id: x.id, kind: x.kind }; })).then(function (r) {
+      const k = (r.kept || []).length;
+      fdReload().then(function () { fdMsg(r.trashed + '件を ゴミ箱へ入れました（Google ドライブのゴミ箱から 30日は戻せます）。' + (k ? '（' + k + '件は できませんでした：' + r.kept[0] + '）' : ''), k ? 'err' : 'ok'); });
+    }, function (e) { fdMsg(e.message, 'err'); });
+  }
+  /* ---- 新しいフォルダ・名前を変える（小さい欄。prompt は使わない） ---- */
+  function fdFormOpen(kind) {
+    const one = fdSelected()[0];
+    if (kind === 'ren' && !one) return;
+    FD.form = { kind: kind, it: one || null };
+    $('fdFormT').textContent = kind === 'new' ? '新しいフォルダの名前' : '新しい名前';
+    const i = $('fdFormIn'); i.value = kind === 'ren' ? one.name : ''; $('fdForm').hidden = false; i.focus();
+    if (kind === 'ren') { const dot = one.kind === 'file' ? one.name.lastIndexOf('.') : -1; try { i.setSelectionRange(0, dot > 0 ? dot : one.name.length); } catch (e) {} }
+  }
+  function fdFormClose() { FD.form = null; const f = $('fdForm'); if (f) f.hidden = true; }
+  function fdFormOk() {
+    const f = FD.form, v = $('fdFormIn').value.trim(); if (!f) return;
+    if (!v) { fdMsg('名前を入れてください。', 'err'); return; }
+    $('fdFormOk').disabled = true;
+    const done = function (t) { $('fdFormOk').disabled = false; fdFormClose(); fdReload().then(function () { fdMsg(t, 'ok'); }); };
+    const ng = function (e) { $('fdFormOk').disabled = false; fdMsg(e.message, 'err'); };
+    if (f.kind === 'new') gs('foldNew', FD.cur, v).then(function (r) { done(r.had ? '同じ名前のフォルダが もうあります。' : '「' + r.name + '」を作りました。'); }, ng);
+    else if (v === f.it.name) fdFormClose(), $('fdFormOk').disabled = false;
+    else gs('foldRename', f.it.id, f.it.kind, v).then(function () { done('名前を変えました。'); }, ng);
+  }
+  /* ---- ファイルを入れる ---- */
+  function fdUpload(list, toId) {
+    const fs = Array.prototype.slice.call(list || []), max = ((FD.info && FD.info.maxMb) || 20) * 1024 * 1024;
+    if (!fs.length) return;
+    let i = 0, ok = 0; const bad = [];
+    const next = function () {
+      if (i >= fs.length) {
+        const t = ok + '件を 入れました。' + (bad.length ? '（入れられなかったもの：' + bad.slice(0, 3).join('、') + (bad.length > 3 ? ' ほか' : '') + '）' : '');
+        if (toId === FD.cur) fdReload().then(function () { fdMsg(t, bad.length ? 'err' : 'ok'); }); else fdMsg(t, bad.length ? 'err' : 'ok');
+        return;
+      }
+      const f = fs[i++]; fdMsg(i + ' / ' + fs.length + ' 入れています… ' + f.name);
+      if (f.size > max) { bad.push(f.name + '（大きすぎます。パソコンの Google ドライブから入れてください）'); next(); return; }
+      if (!f.size) { bad.push(f.name + '（空か フォルダです）'); next(); return; }
+      const rd = new FileReader();
+      rd.onerror = function () { bad.push(f.name); next(); };
+      rd.onload = function () {
+        const s = String(rd.result || ''), b64 = s.slice(s.indexOf(',') + 1);
+        gs('foldUp', toId, f.name, f.type || 'application/octet-stream', b64).then(function () { ok++; next(); }, function (e) { bad.push(f.name + '（' + e.message + '）'); next(); });
+      };
+      rd.readAsDataURL(f);
+    };
+    next();
+  }
+  /* ---- さがす ---- */
+  function fdSearch() {
+    const q = $('fdQ').value.trim();
+    if (!q) { if (FD.search) { FD.search = null; FD.sel = {}; fdDraw(); } return; }
+    fdMsg('さがしています…');
+    gs('foldSearch', q).then(function (r) { FD.search = r; FD.sel = {}; FD.anchor = -1; fdMsg(''); fdDraw(); }, function (e) { fdMsg(e.message, 'err'); });
+  }
+  /* ---- 顧問先のフォルダを作る（マスター。数を見せてから もう一度押す） ---- */
+  function fdClients() {
+    const b = $('fdMkClients'); if (!b) return;
+    if (!FD.cArm) {
+      b.disabled = true; fdMsg('数えています…');
+      gs('foldClients', 1).then(function (r) {
+        b.disabled = false;
+        if (!r.miss) { fdMsg('どの顧問先のフォルダも もうあります。', 'ok'); return; }
+        FD.cArm = r.miss; fdMsg(r.miss + '件 作ります（' + r.names.join('、') + (r.miss > r.names.length ? ' ほか' : '') + '）。よければ もう一度［作る］を押してください。');
+        const bb = $('fdMkClients'); if (bb) { bb.textContent = r.miss + '件 作る'; bb.classList.add('primary'); }
+        setTimeout(function () { if (FD.cArm) { FD.cArm = 0; fdTreeDraw(); } }, 15000);
+      }, function (e) { b.disabled = false; fdMsg(e.message, 'err'); });
+      return;
+    }
+    FD.cArm = 0; b.disabled = true; let made = 0;
+    const step = function () {
+      gs('foldClients').then(function (r) {
+        made += r.made; fdMsg(made + '件 作りました…');
+        if (r.left > 0 && r.made > 0) { step(); return; }
+        fdGo(FD.info.root.id).then(function () { FD.kids = {}; fdMsg('顧問先のフォルダを ' + made + '件 作りました。', 'ok'); });
+      }, function (e) { fdMsg(e.message, 'err'); fdTreeDraw(); });
+    };
+    step();
+  }
+  /* ---- つなぐ ---- */
+  (function fdBind() {
+    $('fdNew').onclick = function () { fdFormOpen('new'); };
+    $('fdRen').onclick = function () { fdFormOpen('ren'); };
+    $('fdFormOk').onclick = fdFormOk; $('fdFormNo').onclick = fdFormClose;
+    $('fdFormIn').addEventListener('keydown', function (e) { if (e.isComposing) return; if (e.key === 'Enter') { e.preventDefault(); fdFormOk(); } else if (e.key === 'Escape') fdFormClose(); });
+    $('fdUpBtn').onclick = function () { $('fdUpIn').click(); };
+    $('fdUpIn').addEventListener('change', function () { const fs = Array.prototype.slice.call(this.files || []); this.value = ''; fdUpload(fs, FD.cur); });
+    $('fdOpen').onclick = function () { const s = fdSelected()[0]; if (s) fdOpenIt(FD.items.filter(function (x) { return x.id === s.id; })[0]); };
+    $('fdMv').onclick = function () {
+      if (FD.move) { FD.move = null; fdMsg(''); fdTreeHide(); fdBtns(); return; }
+      const its = fdSelected(); if (!its.length) return;
+      FD.move = its; fdDisarm(); fdFormClose(); $('fdMain').classList.add('tree'); fdBtns(); fdMsg('移す先のフォルダを 左の並びで押してください。');
+    };
+    $('fdDel').onclick = fdTrash;
+    $('fdDrive').onclick = function () { fdOut((FD.data && FD.data.url) || (FD.info && FD.info.url)); };
+    $('fdReload').onclick = function () { fdReload(); };
+    $('fdTreeBtn').onclick = function () { $('fdMain').classList.toggle('tree'); };
+    $('fdQ').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); fdSearch(); } });
+    $('fdQ').addEventListener('search', function () { if (!this.value && FD.search) fdSearch(); });
+    document.querySelectorAll('#fdMode button').forEach(function (b) { b.onclick = function () { FD.mode = b.dataset.m; fdModePaint(); fdSave(); fdWorkDraw(); }; });
+    const w = $('fdWork');
+    w.addEventListener('click', function () { if (Object.keys(FD.sel).length) { FD.sel = {}; fdSelPaint(); } fdDisarm(); fdTreeHide(); });
+    w.addEventListener('keydown', function (e) {
+      if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+      if (e.key === 'Enter') { const s = fdSelected()[0]; if (s && Object.keys(FD.sel).length === 1) { e.preventDefault(); $('fdOpen').click(); } }
+      else if (e.key === 'Delete') { if (Object.keys(FD.sel).length) { e.preventDefault(); fdTrash(); } }
+      else if (e.key === 'F2') { if (Object.keys(FD.sel).length === 1) { e.preventDefault(); fdFormOpen('ren'); } }
+      else if (e.key === 'Escape') { FD.sel = {}; fdSelPaint(); fdDisarm(); }
+      else if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) { e.preventDefault(); FD.items.forEach(function (x) { FD.sel[x.id] = 1; }); fdSelPaint(); }
+    });
+    /* パソコンから ファイルを落とす → いま開いているフォルダへ */
+    w.addEventListener('dragover', function (ev) { if (FD.drag || !FD.data || !ev.dataTransfer || Array.prototype.indexOf.call(ev.dataTransfer.types || [], 'Files') < 0) return; ev.preventDefault(); w.classList.add('over'); });
+    w.addEventListener('dragleave', function (ev) { if (ev.target === w) w.classList.remove('over'); });
+    w.addEventListener('drop', function (ev) { if (FD.drag || !FD.data) return; const fs = ev.dataTransfer && ev.dataTransfer.files; if (!fs || !fs.length) return; ev.preventDefault(); fdDropClear(); fdUpload(fs, FD.cur); });
+  })();
+
   /* ================= タブ ================= */
   function selectTab(k) {
     S.tab = k;
@@ -2813,6 +3250,7 @@
     if (k === 'Rule') rLoad();
     if (k === 'Kaizen') kzLoad(true); else { try { if (KZ.loaded) kzBadge(); } catch (e) {} }
     if (k === 'Send') sdLoad();
+    if (k === 'Fold') fdShow();
     setTimeout(resumeKeep, 0);
     if (typeof onavRec === 'function') onavRec(k);
   }
