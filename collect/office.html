@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794713385;</script>
+<script>window.__PAGE_VER=1794714978;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1280,6 +1280,8 @@
   .fdsec { font-size: 12px; color: var(--sub); margin: 12px 2px 6px; font-weight: 700; } .fdsec:first-child { margin-top: 0; }
   .fdset { margin: 14px auto; max-width: 620px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 14px 16px; line-height: 1.8; }
   .fdset input { width: 100%; font-size: 15px; margin: 6px 0; }
+  .fdset h3 { margin: 18px 0 4px; font-size: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .fdset { max-width: 760px; }
   #fdTreeBtn { display: none; }
   @media (max-width: 700px) {
     #fdTreeBtn { display: inline-block; }
@@ -2974,6 +2976,58 @@
       };
       c.appendChild(mk);
       const mp = el('p'); mp.style.margin = '8px 0 0'; mp.appendChild(m); c.appendChild(mp);
+      if (change && roots.length) {
+        /* 職員を 共有ドライブのメンバーに（パソコンの G:・DocuWorks から見られるように） */
+        c.appendChild(el('h3', null, '職員を メンバーに足す'));
+        c.appendChild(el('p', 'note', '職員が Google ドライブに入るときの メールアドレスを 1行に1つ。上の共有ドライブ ぜんぶに「コンテンツ管理者」として足します（もう入っている人は そのまま）。アプリの画面は 足さなくても見えます。足すのは パソコンの Google ドライブ（G:）や DocuWorks から見るためです。'));
+        const ta = el('textarea'); ta.id = 'fdMembers'; ta.rows = 5; ta.style.width = '100%'; ta.spellcheck = false; ta.value = r.members || '';
+        const mb = el('button', null, 'メンバーを足す'); mb.type = 'button'; mb.id = 'fdMemOk';
+        const mm = el('span', 'pagemsg'); mm.id = 'fdMemMsg'; mm.style.marginLeft = '10px';
+        mb.onclick = function () {
+          const txt = ta.value; let added = 0, nerr = 0, first = '';
+          mb.disabled = true; mm.className = 'pagemsg'; mm.textContent = '足しています…';
+          const step = function (from) {
+            gs('foldMembers', txt, from).then(function (x) {
+              added += x.added; nerr += x.nerr; if (!first && x.errs.length) first = x.errs[0];
+              mm.textContent = '足しています…（' + Math.min(x.next || x.total, x.total) + ' / ' + x.total + '）';
+              if (x.next) { step(x.next); return; }
+              mb.disabled = false; FD.info.members = txt;
+              mm.textContent = added + '組 足しました。' + (nerr ? nerr + '組は 足せませんでした（' + first + '）' : ''); mm.className = 'pagemsg ' + (nerr ? 'err' : 'ok');
+            }, function (e) { mb.disabled = false; mm.textContent = e.message; mm.className = 'pagemsg err'; });
+          };
+          step(0);
+        };
+        c.appendChild(ta); c.appendChild(mb); c.appendChild(mm);
+        /* 回収資料の置き場を 共有ドライブへ */
+        c.appendChild(el('h3', null, '回収資料の置き場を 共有ドライブへ切り替える'));
+        c.appendChild(el('p', 'note', 'これから 顧問先から届くものを、顧問先のまとまりの共有ドライブ（個人は 共有_個人、法人は 決算月）の その顧問先のフォルダの中の「回収資料」へ入れるようにします。これまでに届いたものは 前の場所のまま（アプリからは 今までどおり開けます）。顧問先の画面は 変わりません。決算月が入っていない法人は 切り替えません。'));
+        const cb = el('button', null, '切り替える（まず 数を見る）'); cb.type = 'button'; cb.id = 'fdCollect'; let cArm = 0;
+        const cm = el('span', 'pagemsg'); cm.id = 'fdCollectMsg'; cm.style.marginLeft = '10px';
+        cb.onclick = function () {
+          if (!cArm) {
+            cb.disabled = true; cm.className = 'pagemsg'; cm.textContent = '数えています…';
+            gs('foldCollect', 1).then(function (x) {
+              cb.disabled = false;
+              const tail = '（もう切り替えてある ' + x.done + '件・切り替えない ' + x.skip + '件）';
+              if (!x.todo) { cm.textContent = '切り替えるものは ありません' + tail; cm.className = 'pagemsg ok'; return; }
+              cArm = 1; cb.textContent = x.todo + '件 切り替える'; cb.classList.add('primary');
+              cm.textContent = x.todo + '件 切り替えます：' + x.names.join('、') + (x.todo > x.names.length ? ' ほか' : '') + tail + '。よければ もう一度 押してください。';
+            }, function (e) { cb.disabled = false; cm.textContent = e.message; cm.className = 'pagemsg err'; });
+            return;
+          }
+          cArm = 0; cb.disabled = true; let moved = 0;
+          const step = function () {
+            gs('foldCollect').then(function (x) {
+              moved += x.moved; cm.textContent = moved + '件 切り替えました…';
+              if (x.left > 0 && x.moved > 0) { step(); return; }
+              cb.disabled = false; cb.textContent = '切り替える（まず 数を見る）'; cb.classList.remove('primary'); FD.kids = {};
+              cm.textContent = moved + '件 切り替えました。これから届くものは 共有ドライブの「回収資料」に入ります。' + (x.skip ? '（切り替えない ' + x.skip + '件：決算月が入っていない法人など）' : ''); cm.className = 'pagemsg ok';
+            }, function (e) { cb.disabled = false; cm.textContent = e.message; cm.className = 'pagemsg err'; });
+          };
+          step();
+        };
+        c.appendChild(cb); c.appendChild(cm); c.appendChild(el('br'));
+      }
       if (change) { const no = el('button', null, 'とじる'); no.type = 'button'; no.id = 'fdSetupClose'; no.style.marginTop = '8px'; no.onclick = function () { fdWorkDraw(); }; c.appendChild(no); }
     } else c.appendChild(el('p', 'pagemsg', '決めるのは マスターの方です。マスターの方に お願いしてください。'));
     w.appendChild(c);
@@ -3044,7 +3098,7 @@
   function fdWorkDraw() {
     const w = $('fdWork'); w.textContent = '';
     const d = FD.search || FD.data; if (!d) return;
-    const its = (d.folders || []).map(function (x) { return { id: x.id, kind: 'folder', name: x.name, where: x.where || '', drive: x.drive ? 1 : 0 }; })
+    const its = (d.folders || []).map(function (x) { return { id: x.id, kind: 'folder', name: x.name, where: x.where || '', drive: x.drive ? 1 : 0, lock: x.lock ? 1 : 0 }; })
       .concat((d.files || []).map(function (x) { return Object.assign({ kind: 'file' }, x); }));
     FD.items = its;
     if (FD.search) {
@@ -3053,6 +3107,7 @@
       h.appendChild(x); w.appendChild(h);
     }
     if (d.top && !FD.search) w.appendChild(el('div', 'fdsec', '赤い印は 共有ドライブ（事務所の正本の置き場）です。開いて 中で作業します。'));
+    if (d.lock && !FD.search) { const ln = el('div', 'fdsec', '🔒 ここは 回収資料（顧問先から届いたもの）です。ここでは 見るだけ。チェック・仕訳化は［回収資料］タブ・［仕訳化］タブで。'); ln.id = 'fdLockNote'; w.appendChild(ln); }
     if (!its.length) { w.appendChild(el('div', 'fdnote', FD.search ? '見つかりませんでした。' : 'このフォルダは 空です。ファイルを ここへ落とすか、［⬆ ファイルを入れる］で入れられます。')); fdBtns(); return; }
     const box = el('div', FD.mode === 'list' ? 'fdlist' : 'fdgrid'); box.id = 'fdItems';
     its.forEach(function (it, i) { box.appendChild(fdTile(it, i)); });
@@ -3070,7 +3125,7 @@
     e.appendChild(pic);
     if (it.kind === 'file' && fdExt(it.name)) e.appendChild(el('span', 'ext', fdExt(it.name)));
     e.appendChild(el('div', 'nm', it.name));
-    e.appendChild(el('div', 'sub at', it.where || (it.drive ? '共有ドライブ' : it.kind === 'folder' ? 'フォルダ' : it.at || '')));
+    e.appendChild(el('div', 'sub at', it.where || (it.drive ? '共有ドライブ' : it.lock ? '🔒 見るだけ' : it.kind === 'folder' ? 'フォルダ' : it.at || '')));
     e.appendChild(el('div', 'sub sz', it.kind === 'folder' ? '' : fdSize(it.size)));
     e.addEventListener('click', function (ev) {
       ev.stopPropagation(); fdDisarm();
@@ -3095,8 +3150,9 @@
   function fdSelPaint() { document.querySelectorAll('#fdWork .fdit').forEach(function (e) { e.classList.toggle('sel', !!FD.sel[e.dataset.id]); }); fdBtns(); }
   function fdBtns() {
     const n = Object.keys(FD.sel).length, mv = !!FD.move, top = !!(FD.data && FD.data.top) && !FD.search;
-    const drv = FD.items.some(function (x) { return x.drive && FD.sel[x.id]; });   /* 共有ドライブそのものは 名前・移す・ゴミ箱 なし */
-    $('fdNew').disabled = top; $('fdUpBtn').disabled = top; $('fdDrive').disabled = top;
+    const lk = !!(FD.data && FD.data.lock) && !FD.search;   /* 回収資料の中は 見るだけ */
+    const drv = lk || FD.items.some(function (x) { return (x.drive || x.lock) && FD.sel[x.id]; });   /* 共有ドライブそのもの・回収資料は 名前・移す・ゴミ箱 なし */
+    $('fdNew').disabled = top || lk; $('fdUpBtn').disabled = top || lk; $('fdDrive').disabled = top;
     $('fdOpen').disabled = n !== 1; $('fdRen').disabled = n !== 1 || mv || drv; $('fdMv').disabled = !mv && (n < 1 || drv); $('fdDel').disabled = n < 1 || mv || drv;
     $('fdMv').textContent = mv ? '✕ 移すのをやめる' : n > 1 ? '➡ 移す（' + n + '）' : '➡ 移す';
     if (!FD.arm) $('fdDel').textContent = n > 1 ? '🗑 ゴミ箱へ（' + n + '）' : '🗑 ゴミ箱へ';
@@ -3284,7 +3340,7 @@
     /* パソコンから ファイルを落とす → いま開いているフォルダへ */
     w.addEventListener('dragover', function (ev) { if (FD.drag || !FD.data || !ev.dataTransfer || Array.prototype.indexOf.call(ev.dataTransfer.types || [], 'Files') < 0) return; ev.preventDefault(); w.classList.add('over'); });
     w.addEventListener('dragleave', function (ev) { if (ev.target === w) w.classList.remove('over'); });
-    w.addEventListener('drop', function (ev) { if (FD.drag || !FD.data) return; if (FD.data.top) { ev.preventDefault(); fdDropClear(); fdMsg('いちばん上には 入れられません。中のフォルダを開いてからにしてください。', 'err'); return; } const fs = ev.dataTransfer && ev.dataTransfer.files; if (!fs || !fs.length) return; ev.preventDefault(); fdDropClear(); fdUpload(fs, FD.cur); });
+    w.addEventListener('drop', function (ev) { if (FD.drag || !FD.data) return; if (FD.data.lock) { ev.preventDefault(); fdDropClear(); fdMsg('回収資料は ここでは 見るだけです。', 'err'); return; } if (FD.data.top) { ev.preventDefault(); fdDropClear(); fdMsg('いちばん上には 入れられません。中のフォルダを開いてからにしてください。', 'err'); return; } const fs = ev.dataTransfer && ev.dataTransfer.files; if (!fs || !fs.length) return; ev.preventDefault(); fdDropClear(); fdUpload(fs, FD.cur); });
   })();
 
   /* ================= タブ ================= */
