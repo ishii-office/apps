@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794722948;</script>
+<script>window.__PAGE_VER=1794726334;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2234,7 +2234,7 @@
     <button type="button" id="fdDel" disabled>🗑 ゴミ箱へ</button>
     <button type="button" id="fdMail" disabled title="選んだファイルを Gmail の下書きに 添付する（Gmail へは つかんで落としても 渡せないので ここから）">✉ Gmailに添付</button>
     <button type="button" id="fdJoin" disabled title="選んだ PDF・画像を 並んでいる順に 1つの PDF にまとめる（元のファイルは そのまま）">🧷 まとめる</button>
-    <select id="fdConv" disabled aria-label="選んだファイルを 別の形に変換する" title="選んだファイルを 別の形にして 同じフォルダに置く（元は そのまま）"><option value="">🔁 変換…</option><option value="pdf">PDF にする（画像・ワードから）</option><option value="jpg">画像（JPEG）にする（PDF・ワードから。ページごと）</option><option value="docx">ワードにする（PDF・画像から。文字を読み取る）</option></select>
+    <select id="fdConv" disabled aria-label="選んだファイルを 別の形に変換する" title="選んだファイルを 別の形にして 同じフォルダに置く（元は そのまま）"><option value="">🔁 変換…</option><option value="pdf">PDF にする（画像・ワードから）</option><option value="jpg">画像（JPEG）にする（PDF・ワードから。ページごと）</option><option value="docx">ワードにする（PDF・画像から。文字を読み取る）</option><option value="mkpdf">書きこみ入りの PDF にする（✏ のある PDF・画像から）</option></select>
     <button type="button" id="fdDrive" title="いま開いているフォルダを Google ドライブで開く">↗ Google ドライブで開く</button>
     <button type="button" id="fdReload" title="読み直す">↻</button>
     <span class="pagemsg" id="fdMsg" role="status"></span>
@@ -3520,6 +3520,20 @@
     for (let i = 0; i < its.length; i++) {
       const it = its[i], k = fdKind(it), head = (i + 1) + ' / ' + its.length + ' 「' + it.name + '」 ';
       try {
+        if (to === 'mkpdf') {
+          /* ★★ 書きこみを 焼きこんだ PDF（2026-11-16）：アプリの外（メール・印刷・ほかのソフト）でも 書きこみが見えるように。元と 書きこみは そのまま */
+          if (k !== 'pdf' && k !== 'img') throw new Error('書きこみ入りにできるのは PDF と 画像です');
+          if (!(it.mark || []).length) throw new Error('書きこみが ありません（開いて［書きこむ］で 書いてから）');
+          fdMsg(head + '書きこみ入りの PDF にしています…');
+          const b = await fdBytes(it), fulls = {};
+          fulls[it.id] = b.mime === 'application/pdf' ? { t: 'pdf', b64: b.b64 } : { t: 'img', src: 'data:' + b.mime + ';base64,' + b.b64 };
+          const made1 = await pdfDocBytes(await pdflib(), [{ id: it.id, name: it.name, mark: it.mark }], fulls, null), u8 = made1.bytes;
+          if (!u8) throw new Error('PDF にできませんでした');
+          if (u8.length > ((FD.info && FD.info.maxMb) || 20) * 1048576) throw new Error('大きすぎます（20MB まで）');
+          let nm = fdBase(it.name) + '_書きこみ入り.pdf';
+          for (let n = 2; FD.items.some(function (x) { return x.name === nm; }) && n < 100; n++) nm = fdBase(it.name) + '_書きこみ入り(' + n + ').pdf';
+          await gs('foldUp', dest, nm, 'application/pdf', fdU8b64(u8)); made++; continue;
+        }
         if (!k || (to === 'pdf' && k === 'pdf') || (to === 'jpg' && k === 'img' && it.mime === 'image/jpeg') || (to === 'docx' && k === 'word')) throw new Error(k ? 'もう その形です' : 'この形は 変換できません');
         if (to === 'docx') { fdMsg(head + 'ワードにしています（文字を読み取ります。少し かかります）…'); await gs('foldConvert', it.id, 'docx'); made++; }
         else if (to === 'pdf' && k === 'word') { fdMsg(head + 'PDF にしています…'); await gs('foldConvert', it.id, 'pdf'); made++; }
@@ -4496,7 +4510,7 @@
       '.bxl{border:2px solid ' + mixHex(THEME_A, '#FFFFFF', 0.5) + ';border-radius:10px;padding:8px 10px;background:#fff;margin-bottom:10px}.bxh{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:4px}.bxh b{font-size:15px}.bxh .note{font-size:12px}' +
       '.bxl tbody tr{cursor:pointer}.bxl tbody tr:hover td{background:#F4F8F6}.bxl tr.cur td{background:#FFF4C8!important;font-weight:700}.bxl tr.cur td:first-child{box-shadow:inset 4px 0 0 #E8A400}.bxl tr.draft td{font-style:italic;color:#555}.bxl tr.none td{color:#B3261E}' +
       '.bxl .st{font-size:11px;font-weight:700;border-radius:4px;padding:0 5px;white-space:nowrap;font-style:normal}.bxl .st.ok{background:#E2F2EA;color:#0F6E56}.bxl .st.dr{background:#FFF0C2;color:#7A5B00}.bxl .st.no{background:#FBE4E2;color:#B3261E}.bxl .seen{color:#0F6E56;font-weight:900;font-style:normal}' +
-      '.bxl .ac{white-space:nowrap}.bxl .ac small{color:#6B7A75;font-size:11px;margin-left:3px}</style></head><body><div id="h"></div><div id="b"></div></body></html>');
+      '.bxl tr.bcy td{color:#4A5A55;font-weight:700;background:#F4F8F6}.bxl tr.bsum td{font-weight:700;border-top:2px solid ' + mixHex(THEME_A, '#FFFFFF', 0.5) + '}.bxl .ac{white-space:nowrap}.bxl .ac small{color:#6B7A75;font-size:11px;margin-left:3px}</style></head><body><div id="h"></div><div id="b"></div></body></html>');
     d.close(); ismWm(d);
     /* ★★ 箱ごとの仕訳の一覧（2026-11-12）：行を押す・↑↓・Enter で 行を送る。写真の窓と この画面が その取引に そろう */
     d.addEventListener('click', function (e) { const tr = e.target.closest && e.target.closest('.bxl tbody tr[data-i]'); if (tr) ledBoxGo(Number(tr.dataset.i)); });
@@ -4529,7 +4543,7 @@
     LEDID = it ? it.id : '';
     h.textContent = ''; b.textContent = '';
     const mk = function (tag, txt) { const x = d.createElement(tag); if (txt != null) x.textContent = txt; return x; };
-    h.appendChild(mk('b', '総勘定元帳'));
+    h.appendChild(mk('b', '元帳'));
     /* ★★ 2026-11-12：いちばん上に 箱ごとの 仕訳の一覧（この箱・この月分で できた仕訳を 上から）。行と 写真が 1対1 */
     const bx = mk('div'); bx.className = 'bxl'; bx.id = 'bxl'; b.appendChild(bx);
     ledBoxFill();
@@ -4576,33 +4590,74 @@
     if (!(rows[LEDROW] && rows[LEDROW].img === S.act)) { const j = rows.findIndex(function (r) { return r.img === S.act; }); if (j >= 0) LEDROW = j; }
     host.textContent = '';
     const hd = mk('div', 'bxh'); const f0 = view[0];
-    hd.appendChild(mk('b', null, '箱の仕訳（元帳）'));
+    const LA = ledBoxAcct(rows);
+    hd.appendChild(mk('b', null, LA ? LA.name + ' の元帳' : '箱の仕訳（仕訳帳）'));
     hd.appendChild(mk('span', null, f0 ? perLabel(f0.period) + '［' + (view.every(function (x) { return x.box === f0.box; }) ? f0.box : 'いくつかの箱') + '］' : ''));
     const nOk = rows.filter(function (r) { return r.e && !r.draft; }).length, nDr = rows.filter(function (r) { return r.e && r.draft; }).length, nNo = rows.filter(function (r) { return !r.e; }).length;
     hd.appendChild(mk('span', 'note', rows.length + '行（確定 ' + nOk + '・下書き ' + nDr + (nNo ? '・まだ ' + nNo : '') + '）　Enter・↑↓ で 行を送ると 写真も 変わります'));
     host.appendChild(hd);
     if (!rows.length) { host.appendChild(mk('div', 'msg', 'この箱には まだ 写真がありません。')); return; }
     const tb = mk('table'); const th = mk('thead'), trh = mk('tr');
-    ['', '日付', '借方', '貸方', '金額', '摘要', ''].forEach(function (t, i) { const c = mk('th', i === 4 ? 'r' : null, t); trh.appendChild(c); }); th.appendChild(trh); tb.appendChild(th);
+    (LA ? ['', '日付', '相手科目', '摘要', '入金', '出金', '残高', ''] : ['', '日付', '借方', '貸方', '金額', '摘要', '']).forEach(function (t, i) { const c = mk('th', (LA ? i >= 4 && i <= 6 : i === 4) ? 'r' : null, t); trh.appendChild(c); }); th.appendChild(trh); tb.appendChild(th);
     const body = mk('tbody');
+    /* ★★ 元帳（2026-11-16）：この箱の科目（現金 など）の 入金・出金・残高。相手科目だけを出す（自分の科目は 出さない）。
+         いちばん上に 前月繰越、いちばん下に 残高と 補助簿（出納帳）の残高との突き合わせ */
+    let bal = LA && LA.start != null ? LA.start : 0;
+    if (LA) {
+      const tr0 = mk('tr', 'bcy'); tr0.appendChild(mk('td')); tr0.appendChild(mk('td')); tr0.appendChild(mk('td')); tr0.appendChild(mk('td', null, '前月繰越' + (LA.start == null ? '（分からないので 0 から。出納帳を入れると 入ります）' : '')));
+      tr0.appendChild(mk('td', 'r')); tr0.appendChild(mk('td', 'r')); tr0.appendChild(mk('td', 'r', yen(bal))); tr0.appendChild(mk('td')); th.appendChild(tr0);
+    }
     rows.forEach(function (r, i) {
       const tr = mk('tr', (i === LEDROW ? 'cur ' : '') + (!r.e ? 'none' : r.draft ? 'draft' : '')); tr.dataset.i = String(i); tr.dataset.img = r.img;
       const img = itemOf(r.img), no = img ? view.indexOf(img) + 1 : 0;
       const c0 = mk('td', 'r'); if (LEDSEEN[i]) c0.appendChild(mk('span', 'seen', '✓ ')); c0.appendChild(d.createTextNode(String(i + 1))); tr.appendChild(c0);
       if (!r.e) {
-        const c = mk('td', null, 'まだ 仕訳がありません（' + no + '件目の写真）'); c.colSpan = 5; tr.appendChild(c);
+        const c = mk('td', null, 'まだ 仕訳がありません（' + no + '件目の写真）'); c.colSpan = LA ? 6 : 5; tr.appendChild(c);
         tr.appendChild(mk('td')).appendChild(mk('span', 'st no', 'まだ'));
       } else {
         const e = r.e, ac = function (code, sb) { const a = ledAcct(code, sb), c = mk('td', 'ac'); if (a) { c.appendChild(d.createTextNode(a.n || a.c)); c.appendChild(mk('small', null, a.c)); } return c; };
         tr.appendChild(mk('td', null, String(e.date || '').replace(/^\d{4}\//, '')));
+        if (LA) {
+          const mv = lgMove(LA.key, e), drMine = lgHit(LA.key, e.drCode, e.drSub);
+          tr.appendChild(mv ? (drMine ? ac(e.crCode, e.crSub) : ac(e.drCode, e.drSub)) : mk('td', 'ac', '（' + LA.name + ' が 出てこない仕訳）'));
+          tr.appendChild(mk('td', null, String(e.memo || e.partyName || '')));
+          if (mv) bal += mv.inc - mv.dec;
+          tr.appendChild(mk('td', 'r', mv && mv.inc ? yen(mv.inc) : '')); tr.appendChild(mk('td', 'r', mv && mv.dec ? yen(mv.dec) : '')); tr.appendChild(mk('td', 'r', yen(bal)));
+        } else {
         tr.appendChild(ac(e.drCode, e.drSub)); tr.appendChild(ac(e.crCode, e.crSub));
         tr.appendChild(mk('td', 'r', yen(Number(e.amount) || 0)));
         tr.appendChild(mk('td', null, String(e.memo || e.partyName || '')));
+        }
         const st = mk('td'); st.appendChild(mk('span', 'st ' + (r.draft ? 'dr' : 'ok'), r.draft ? '下書き' : '確定')); if (no) st.appendChild(mk('small', null, ' ' + no + '件目')); tr.appendChild(st);
       }
       body.appendChild(tr);
     });
+    if (LA) {
+      const trE = mk('tr', 'bsum'); trE.appendChild(mk('td')); trE.appendChild(mk('td')); trE.appendChild(mk('td'));
+      const ok = LA.end != null && LA.end === bal;
+      trE.appendChild(mk('td', null, '残高' + (LA.end == null ? '' : ok ? '　✓ 補助簿（出納帳）の残高 ' + yen(LA.end) + '円 と 合っています' : '　⚠ 補助簿（出納帳）の残高は ' + yen(LA.end) + '円（差 ' + yen(bal - LA.end) + '円）。二重・もれ・金額を 確かめてください')));
+      trE.appendChild(mk('td', 'r')); trE.appendChild(mk('td', 'r')); const cb = trE.appendChild(mk('td', 'r lgv ' + (LA.end == null ? '' : ok ? 'ok' : 'ng'), yen(bal))); cb.id = 'bxlEnd'; trE.appendChild(mk('td'));
+      const tf = mk('tfoot'); tf.appendChild(trE); tb.appendChild(body); tb.appendChild(tf); host.appendChild(tb); return;
+    }
     tb.appendChild(body); host.appendChild(tb);
+  }
+  /* この箱の元帳の科目：補助簿（出納帳・通帳の CSV・写真＝複数仕訳辞書）があれば その口座と 繰越残高・最後の残高。
+     無ければ どの仕訳にも 出てくる科目（現金の領収書の箱なら 現金）。それも無ければ 仕訳帳の形で出す */
+  function ledBoxAcct(rows) {
+    const view = S.view || [], bk = view.filter(function (it) { const dd = S.ai && S.ai[it.id]; return isMulti(it) && dd && dd.multi && (dd.lines || []).length; });
+    const nameOf = function (key) { const p = String(key).split('-'), a = ledAcct(p[0], p[1] || ''); return a ? (a.n || a.c) : key; };
+    let st = null, end = null;
+    if (bk.length > 1) return null;
+    if (bk.length === 1) {
+      const it = bk[0], o = lgState(it), ls = S.ai[it.id].lines, last = ls[ls.length - 1], e0 = o.e;
+      end = e0 !== undefined && e0 !== '' ? Number(e0) : last && last.bal !== '' && last.bal != null && !isNaN(Number(last.bal)) ? Number(last.bal) : null;
+      st = o.s === undefined || o.s === '' ? null : Number(o.s);
+      if (o.a) return { key: o.a, name: nameOf(o.a), start: st, end: end };
+    }
+    const es = rows.filter(function (r) { return r.e; }).map(function (r) { return r.e; }); if (!es.length) return null;
+    const cnt = {}; es.forEach(function (e) { const a = e.drCode + (e.drSub ? '-' + e.drSub : ''), b = e.crCode + (e.crSub ? '-' + e.crSub : ''); cnt[a] = (cnt[a] || 0) + 1; if (b !== a) cnt[b] = (cnt[b] || 0) + 1; });
+    const key = Object.keys(cnt).filter(function (k) { return cnt[k] === es.length && /^1/.test(k); })[0];
+    return key ? { key: key, name: nameOf(key), start: st, end: end } : null;
   }
   function ledBoxGo(i, seen) {
     const r = LEDROWS[i]; if (!r) return;
@@ -4723,6 +4778,22 @@
     a = n(a); b = n(b);
     if (!a || !b) return true;
     return a.indexOf(b) >= 0 || b.indexOf(a) >= 0 || (a.length >= 3 && b.length >= 3 && a.slice(0, 3) === b.slice(0, 3));
+  }
+  /* ★★ 同じ領収書の二重は ひとりでに 対象外に（2026-11-16）：取引の数は 補助簿が正。補助簿に1行しか無いのに 同じ日・同じ金額・同じ店の
+       領収書が もう1枚あれば、その1枚は 仕訳にしない（人も そうする）。回収資料で［対象に戻す］と戻せて、戻したものは もう外さない（端末が覚える） */
+  const LS_DUPKEEP = 'collect_office_dupkeep';
+  function spDupAuto() {
+    const du = (S.spm && S.spm.dup) || {}, keep = lsJ(LS_DUPKEEP), no = S.dupNo = S.dupNo || {};
+    const ids = Object.keys(du).filter(function (id) { const it = (S.items || []).find(function (x) { return x.id === id; }); return it && it.status !== 'done' && !(it.entries || []).length && !it.skip && !keep[S.code + '|' + id] && !no[id]; });
+    if (!ids.length) return false;
+    const code = S.code, put = function (id, v) { [S.docs, S.items, S.all && S.all.items].forEach(function (L) { (L || []).forEach(function (y) { if (y.id === id) y.skip = v; }); }); };
+    ids.forEach(function (id) { put(id, '…'); });
+    gs('workSkip', code, ids, true).then(function (r) {
+      if (code !== S.code) return;
+      const m = (r && r.skip) || {}; ids.forEach(function (id) { if (id in m) put(id, m[id]); });
+      fmsg('同じ領収書の二重 ' + ids.length + '枚を 仕訳化から外しました（補助簿では 1つの取引です。回収資料で［対象に戻す］で戻せます）。', 'ok'); render();
+    }, function (e) { if (code !== S.code) return; ids.forEach(function (id) { put(id, ''); no[id] = 1; }); render(); });
+    return true;
   }
   function spineMatch(items, ai) {
     const per = {}, out = { rcpt: {}, line: {}, sum: {}, dup: {} };
@@ -4865,7 +4936,7 @@
       s.left.forEach(function (r) { const b = el('button', 'aialt', (r.date ? r.date.slice(5).replace('-', '/') + ' ' : '') + yen(r.amount) + '円' + (r.party ? ' ' + r.party : '')); b.type = 'button'; b.dataset.a = 'spgo'; b.dataset.id = r.id; d.appendChild(b); });
       w.appendChild(d);
     }
-    w.appendChild(el('div', 'nt', '流れ：① 領収書が当たった行は 領収書の写真で仕訳（明細の行からは入れない）　② 領収書のない行は 明細（出納帳）の行から仕訳　③ 最後に 明細の画像・伝票・元帳を見くらべる'));
+    w.appendChild(el('div', 'nt', '流れ：① 領収書が当たった行は 領収書の写真で仕訳（補助簿の行からは入れない）　② 領収書のない行は 補助簿（出納帳・通帳・カード明細）の行から仕訳　③ 最後に 元帳の残高が 補助簿の残高と合うかを見る'));
     /* ★ 入金の行（領収書が無い）は 背骨の行から 1件ずつ仕訳にする。押すと その出納帳・通帳へ（2026-11-08） */
     if ((s.inc || []).length) {
       const d2 = el('div', 'spl'); d2.appendChild(el('span', 'nt', '入金の行（領収書なし。出納帳・通帳の行で仕訳）：'));
@@ -4889,7 +4960,7 @@
       return w;
     }
     const l = S.spm && S.spm.rcpt[it.id]; if (!l) return null;
-    return el('div', 'spnote', '🧾 この領収書は「' + l.box + '」の ' + (l.date ? l.date.replace(/-/g, '/') + ' ' : '') + yen(l.amount) + '円 の行（' + (l.ln + 1) + '行目' + (l.desc ? '・' + l.desc : '') + '）の取引です。仕訳は この領収書で入れます（税率の内訳・登録番号まで分かるので）。明細の その行からは入れません（二重にしない）。');
+    return el('div', 'spnote', '🧾 この領収書は「' + l.box + '」の ' + (l.date ? l.date.replace(/-/g, '/') + ' ' : '') + yen(l.amount) + '円 の行（' + (l.ln + 1) + '行目' + (l.desc ? '・' + l.desc : '') + '）の取引です。仕訳は この領収書で入れます（税率の内訳・登録番号まで分かるので）。補助簿の その行からは入れません（二重にしない）。');
   }
 
   /* 一覧を組む。届いた日ごとに区切りを入れる */
@@ -4901,7 +4972,7 @@
     S.needRender = false;
     jlayPaint();
     /* 月分 → 箱 → 届いた順 に並べ、「2026年8月分 ／ 現金の領収書」で区切る */
-    try { S.spm = spineMatch(S.items, S.ai); } catch (e) { S.spm = null; }
+    try { S.spm = spineMatch(S.items, S.ai); if (spDupAuto()) S.spm = spineMatch(S.items, S.ai); } catch (e) { S.spm = null; }
     /* ★ 対象外（2026-10-28）は 仕訳化にも AI下書きにも出さない（回収資料では［対象に戻す］で戻せる） */
     S.view = S.items.filter(function (it) { return boxHit(it) && perHit(it) && stTag(it)[0] !== 'skip'; })
       .sort(function (a, b) { return a.period !== b.period ? (a.period < b.period ? -1 : 1) : a.box !== b.box ? boxIdx(a.box) - boxIdx(b.box) : a.t - b.t; });
@@ -6751,6 +6822,7 @@
     const code = S.code, was = {};
     const put = function (id, v) { [S.docs, S.items, S.all && S.all.items].forEach(function (L) { (L || []).forEach(function (y) { if (y.id === id) y.skip = v; }); }); };
     keys.forEach(function (id) { was[id] = (docOf(id) || {}).skip || ''; put(id, on ? '…' : ''); });
+    if (!on) { const kp = lsJ(LS_DUPKEEP); keys.forEach(function (id) { kp[code + '|' + id] = 1; }); lsSetJ(LS_DUPKEEP, kp, 300); }   /* 戻したものは 二重として もう外さない */
     docsDraw(); render();
     gs('workSkip', code, keys, !!on).then(function (r) {
       if (code !== S.code) return;
@@ -10033,7 +10105,7 @@
         /* ★★ 明細（画像）・伝票・元帳の3つを見くらべる（2026-11-09）：明細の写真・CSV は その元帳も並べる */
         if (isMulti(it)) { const gw = el('div', 'jfingl'); gw.appendChild(el('div', 'jfinhd', '元帳（この明細の口座）')); gw.appendChild(ledgerEl(it)); sl.appendChild(gw); }
         const sp = S.spm && S.spm.rcpt && S.spm.rcpt[it.id];
-        if (sp) sl.appendChild(el('div', 'spnote', '🧾 明細「' + sp.box + '」の ' + (sp.ln + 1) + '行目（' + (sp.date ? sp.date.replace(/-/g, '/') + ' ' : '') + yen(sp.amount) + '円）の取引'));
+        if (sp) sl.appendChild(el('div', 'spnote', '🧾 補助簿「' + sp.box + '」の ' + (sp.ln + 1) + '行目（' + (sp.date ? sp.date.replace(/-/g, '/') + ' ' : '') + yen(sp.amount) + '円）の取引'));
         r.appendChild(sl);
         fp.appendChild(r);
       });
@@ -10941,7 +11013,7 @@
       const dn = li && S.ai[li.id] ? aiLinesDone(li) : null;
       if (dn && dn[spl.ln] && !dn.rc[spl.ln]) {
         c.spOk = 1;
-        fmsg('🧾 この領収書の取引（「' + spl.box + '」の ' + (spl.ln + 1) + '行目・' + (spl.date ? spl.date.replace(/-/g, '/') + ' ' : '') + yen(spl.amount) + '円）は もう明細の行から仕訳しています。ここで確定すると二重になります。明細の行を取り消すか、別の取引なら もう一度［確定］を押してください。', 'err');
+        fmsg('🧾 この領収書の取引（「' + spl.box + '」の ' + (spl.ln + 1) + '行目・' + (spl.date ? spl.date.replace(/-/g, '/') + ' ' : '') + yen(spl.amount) + '円）は もう補助簿の行から仕訳しています。ここで確定すると二重になります。補助簿の行を取り消すか、別の取引なら もう一度［確定］を押してください。', 'err');
         return;
       }
     }
@@ -12147,7 +12219,7 @@
   /* 領収書の AI 下書き → 仕訳の行（税率ごとに分けた型があれば それ） */
   function rcDraftJ(rid, date) {
     const d = (S.ai || {})[rid]; if (!d) return [];
-    const amt = Number(d.amount) || 0, dt = String(date || d.date || '').replace(/-/g, '/');
+    const amt = Number(d.amount) || 0, dt = String(d.date || date || '').replace(/-/g, '/');   /* ★ 日付は 領収書が正（2026-11-16。読めないときだけ 補助簿の行の日付） */
     let base = null, amts = null;
     if (d.pat && (d.pat.lines || []).length && !Number(d.no)) { base = d.pat.lines; amts = d.pat.amts && d.pat.amts.length === base.length ? d.pat.amts : null; }
     else if (Number(d.no) && dictOf(String(d.no))) base = dictLinesOf(dictOf(String(d.no)));
