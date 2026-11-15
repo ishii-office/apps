@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794717694;</script>
+<script>window.__PAGE_VER=1794721098;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -248,6 +248,7 @@
   .dpz .spsum { margin: 14px 0 6px; padding: 10px 12px; border: 1.5px solid #c8b06a; border-radius: 10px; background: #fffaf0; display: flex; flex-direction: column; gap: 5px; font-size: 13px; }
   .dpz .spsum > b { font-size: 14px; }
   .dpz .spsum .spl { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .dpz .spnote.spdup { background: #fde2e1; color: #8a1c13; } .dpz .spnote.spdup .btn { margin: 0 8px; }
   .dpz .spnote { display: block; margin-top: 6px; padding: 6px 9px; border-radius: 8px; background: #fff3cd; color: #6b4d00; font-size: 13px; font-weight: 700; }
   .dpz .jsprinfo { font-size: 12px; color: #6b4d00; margin-top: 2px; }
   .dpz .jinv { font-size: 12px; font-weight: 700; margin-top: 2px; }
@@ -4649,10 +4650,18 @@
      当たった領収書は【証憑として見るだけ】。仕訳は背骨の行で入れる（二重計上にしない）。
      1回目は ±3日、2回目は ±10日（候補が1つに絞れたときだけ）。1つの行に 領収書は1枚 */
   function dayNo(s) { const m = String(s || '').match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 : null; }
+  /* 相手の名前が 同じ店とみてよいか（㈱・空白・大文字小文字を落として、どちらかが どちらかを含む。片方が空なら 同じとみる） */
+  function spPartyLike(a, b) {
+    const n = function (v) { return String(v || '').normalize('NFKC').toLowerCase().replace(/株式会社|有限会社|合同会社|\(株\)|\(有\)|[\s　・･,.，．「」()（）-]/g, ''); };
+    a = n(a); b = n(b);
+    if (!a || !b) return true;
+    return a.indexOf(b) >= 0 || b.indexOf(a) >= 0 || (a.length >= 3 && b.length >= 3 && a.slice(0, 3) === b.slice(0, 3));
+  }
   function spineMatch(items, ai) {
-    const per = {}, out = { rcpt: {}, line: {}, sum: {} };
+    const per = {}, out = { rcpt: {}, line: {}, sum: {}, dup: {} };
     (items || []).forEach(function (it) {
       const d = (ai || {})[it.id]; if (!d || d.err || !it.period) return;
+      if (it.skip && it.status !== 'done') return;   /* 対象外にした写真は 当てない（二重の片方を外したら もう片方が当たる） */
       const P = per[it.period] = per[it.period] || { lines: [], rc: [], inc: [] };
       if (d.multi) (d.lines || []).forEach(function (l, i) { const a = Math.abs(Math.round(Number(l.amount) || 0)); if (!a) return; const o = { sid: it.id, box: it.box, ln: i, day: dayNo(l.date), date: l.date || '', amount: a, desc: l.desc || '' }; if (l.dir !== '入') P.lines.push(o); else P.inc.push(o); });
       else if (!isSheetFile(it) && !d.looksMulti) {   /* ★ カードの箱の領収書も（2026-11-09） */ const a = Math.abs(Math.round(Number(d.amount) || 0)); if (a) P.rc.push({ id: it.id, box: it.box, day: dayNo(d.date), date: d.date || '', amount: a, party: d.party || '' }); }
@@ -4670,8 +4679,16 @@
           out.rcpt[r.id] = l; out.line[k] = r.id;
         });
       });
+      /* ★★ 同じ領収書が2枚（2026-11-15）：取引の数は 補助簿（出納帳・明細）が正。行に当たった領収書と 同じ金額・同じ日・同じ相手の
+         領収書が もう1枚あって、それに当たる行が 補助簿に無ければ【同じ領収書の二重】（撮り直し・控え）。仕訳にしない（人が確かめて 対象外に） */
+      P.rc.forEach(function (r) {
+        if (out.rcpt[r.id]) return;
+        const m = P.rc.filter(function (x) { return x.id !== r.id && out.rcpt[x.id] && x.amount === r.amount && (r.day == null || x.day == null || x.day === r.day) && spPartyLike(x.party, r.party); });
+        if (m.length) out.dup[r.id] = { of: m[0].id, line: out.rcpt[m[0].id], date: r.date, amount: r.amount, party: r.party };
+      });
       out.sum[pk] = { lines: P.lines.length, hit: Object.keys(used).length, all: P.lines, inc: P.inc,
-        left: P.rc.filter(function (r) { return !out.rcpt[r.id]; }),
+        dup: P.rc.filter(function (r) { return out.dup[r.id]; }),
+        left: P.rc.filter(function (r) { return !out.rcpt[r.id] && !out.dup[r.id]; }),
         bare: P.lines.filter(function (l) { return !used[l.sid + '|' + l.ln]; }) };
     });
     return out;
@@ -4694,6 +4711,7 @@
     Object.keys(spm.sum || {}).forEach(function (pk) {
       const sm = spm.sum[pk];
       L.push('## 背骨と領収書（' + perLabel(pk) + '）', '- 背骨の行 ' + sm.lines + '・領収書が当たった行 ' + sm.hit + '・領収書のない行 ' + (sm.bare || []).length + '・どの行にも当たらない領収書 ' + (sm.left || []).length);
+      (sm.dup || []).forEach(function (r) { L.push('  - 同じ領収書の二重（仕訳にしない）：' + nm(r.id) + '（' + (r.date || '日付なし') + '・' + yen(r.amount) + '円・' + (r.party || '') + '）＝ ' + nm(spm.dup[r.id].of) + ' と同じ'); });
       (sm.left || []).forEach(function (r) { L.push('  - 当たらない領収書：' + nm(r.id) + '（' + (r.date || '日付なし') + '・' + yen(r.amount) + '円・' + (r.party || '') + '）'); });
       L.push('');
     });
@@ -4730,6 +4748,7 @@
       if (d.note) L.push('- 注意・決められなかった理由：' + d.note);
       const sp = spm.rcpt[it.id];
       if (sp) L.push('- 背骨：' + nm(sp.sid) + ' の ' + (sp.ln + 1) + '行目（' + (sp.date || '') + '・' + yen(sp.amount) + '円・' + (sp.desc || '') + '）に当たる＝証憑として見るだけ');
+      else if ((spm.dup || {})[it.id]) L.push('- 背骨：' + nm(spm.dup[it.id].of) + ' と同じ領収書（二重）。補助簿では1取引なので 仕訳にしない');
       else if (Object.keys(spm.sum || {}).length && !spineBox(it.box) && !isSheetFile(it)) L.push('- 背骨：どの行にも当たらない');
       if (en.length && d.j) {
         cmp++;
@@ -4769,6 +4788,11 @@
     const w = el('div', 'spsum');
     w.appendChild(el('b', null, '🧾 背骨（出納帳・カード明細）と領収書'));
     w.appendChild(el('span', null, '出金の行 ' + s.lines + '　領収書が当たった ' + s.hit + '　領収書のない行 ' + s.bare.length + '　入金の行 ' + (s.inc || []).length + '　どの行にも当たらない領収書 ' + s.left.length));
+    if ((s.dup || []).length) {
+      const d0 = el('div', 'spl'); d0.appendChild(el('span', 'nt', '⚠ 同じ領収書の二重（補助簿では1取引。仕訳にしないで 対象外に）：'));
+      s.dup.forEach(function (r) { const b = el('button', 'aialt', (r.date ? r.date.slice(5).replace('-', '/') + ' ' : '') + yen(r.amount) + '円' + (r.party ? ' ' + r.party : '')); b.type = 'button'; b.dataset.a = 'spgo'; b.dataset.id = r.id; d0.appendChild(b); });
+      w.appendChild(d0);
+    }
     if (s.left.length) {
       const d = el('div', 'spl'); d.appendChild(el('span', 'nt', '当たらない領収書（記帳漏れ・別の払い方・別の月 のどれか）：'));
       s.left.forEach(function (r) { const b = el('button', 'aialt', (r.date ? r.date.slice(5).replace('-', '/') + ' ' : '') + yen(r.amount) + '円' + (r.party ? ' ' + r.party : '')); b.type = 'button'; b.dataset.a = 'spgo'; b.dataset.id = r.id; d.appendChild(b); });
@@ -4789,6 +4813,14 @@
     return w;
   }
   function spineNoteEl(it) {
+    const du = S.spm && S.spm.dup && S.spm.dup[it.id];
+    if (du && it.status !== 'done') {
+      const o = S.items.find(function (x) { return x.id === du.of; });
+      const w = el('div', 'spnote spdup', '⚠ 同じ領収書が もう1枚あります（' + (o ? o.name.replace(/^\d{8}_\d{6}_/, '') : '') + '）。補助簿（「' + du.line.box + '」の ' + (du.line.ln + 1) + '行目）では 1つの取引なので、こちらは 仕訳にしません。');
+      const b = el('button', 'btn sm', '⊘ 対象外にする'); b.type = 'button'; b.dataset.a = 'spdup'; b.dataset.id = it.id; w.appendChild(b);
+      w.appendChild(el('span', 'nt', '（別の取引なら そのまま確定できます）'));
+      return w;
+    }
     const l = S.spm && S.spm.rcpt[it.id]; if (!l) return null;
     return el('div', 'spnote', '🧾 この領収書は「' + l.box + '」の ' + (l.date ? l.date.replace(/-/g, '/') + ' ' : '') + yen(l.amount) + '円 の行（' + (l.ln + 1) + '行目' + (l.desc ? '・' + l.desc : '') + '）の取引です。仕訳は この領収書で入れます（税率の内訳・登録番号まで分かるので）。明細の その行からは入れません（二重にしない）。');
   }
@@ -9777,6 +9809,13 @@
       const prev = lgPrev(it, m);
       o.a = prev && prev.o.a && cands.indexOf(prev.o.a) >= 0 ? prev.o.a : (cands[0] || '');
     }
+    /* ★★ 繰越残高は 明細そのものから（2026-11-15）：1行目に残高が書いてあれば 1行目の残高 ∓ その行の金額 ＝ 前月からの繰越。
+       アプリの出納帳（CSV）は いつも残高を持つので、紙の前月繰越を 手で打たなくてよい。手で入れたら そちらが勝つ */
+    if (o.s === undefined || o.s === '') {
+      const d0 = S.ai && S.ai[it.id], l0 = d0 && d0.multi && (d0.lines || [])[0];
+      if (d0 && d0.carry !== undefined && d0.carry !== '' && d0.carry != null && !isNaN(Number(d0.carry))) { o.s = Number(d0.carry); o.auto = 2; }
+      else if (l0 && l0.bal !== '' && l0.bal != null && !isNaN(Number(l0.bal))) { const a0 = Math.abs(Math.round(Number(l0.amount) || 0)); o.s = Number(l0.bal) + (l0.dir === '入' ? -a0 : a0); o.auto = 2; }
+    }
     if (o.s === undefined || o.s === '') {
       const prev = lgPrev(it, m);
       if (prev && prev.o.a === o.a) { const pe = prev.o.e !== undefined && prev.o.e !== '' ? prev.o.e : lgEnd(prev.it, prev.o); if (pe !== null) { o.s = pe; o.auto = 1; } }
@@ -9876,7 +9915,7 @@
     const vd = L.querySelector('.lgv');
     const e0 = o.e;
     if (!has) { vd.className = 'lgv'; vd.textContent = '繰越残高を入れると 残高が出ます'; }
-    else if (e0 === undefined || e0 === '') { vd.className = 'lgv'; vd.textContent = '残高 ' + yen(bal) + '円' + (o.auto ? '（繰越残高は 前の写真から）' : ''); }
+    else if (e0 === undefined || e0 === '') { vd.className = 'lgv'; vd.textContent = '残高 ' + yen(bal) + '円' + (o.auto === 2 ? '（繰越残高は この明細の残高から）' : o.auto ? '（繰越残高は 前の写真から）' : ''); }
     else if (Number(e0) === bal) { vd.className = 'lgv ok'; vd.textContent = '✓ 照合する残高と合っています'; }
     else { vd.className = 'lgv ng'; vd.textContent = '差額 ' + yen(bal - Number(e0)) + '円（アプリ ' + yen(bal) + '円）'; }
     const si = L.querySelector('[data-a="lgs"]'); if (si && o.auto && document.activeElement !== si && si.value === '') si.placeholder = yen(o.s);
@@ -10381,6 +10420,14 @@
       if (it.status !== 'done') { repick(it); focusCard(it.id); }
       return;
     }
+    if (t.dataset.a === 'spdup') {
+      const id = t.dataset.id, code = S.code, it0 = itemOf(id); if (!it0) return;
+      const put = function (v) { [S.docs, S.items, S.all && S.all.items].forEach(function (L) { (L || []).forEach(function (y) { if (y.id === id) y.skip = v; }); }); };
+      put('…'); render();
+      gs('workSkip', code, [id], true).then(function (r) { if (code !== S.code) return; const m = (r && r.skip) || {}; if (id in m) put(m[id]); render(); fmsg('二重の領収書を 対象外にしました（回収資料で［対象に戻す］で戻せます）。'); },
+        function (e) { if (code !== S.code) return; put(''); render(); fmsg('対象外にできませんでした。' + e.message, 'err'); });
+      return;
+    }
     if (t.dataset.a === 'spgo') { const id = t.dataset.id; if (rowOf(id)) focusCard(id); else fmsg('その領収書は いまの絞り込み（箱・未処理/確定）の外です。［全部］にすると出ます。', 'err'); return; }
     const row = t.closest('.jdrow'); if (!row) return;
     const it = itemOf(row.dataset.id); if (!it) return;
@@ -10815,6 +10862,12 @@
     /* ★★ 二重に入れない（2026-11-09 に向きを変えた）：明細（カード・通帳・出納帳）の行に当たった領収書は【領収書で】仕訳する
        （税率の内訳・登録番号が分かるので）。明細の その行は 領収書を確定すると入ったことになり、明細からは入れない。
        ただし その行を もう明細から入れてしまっていたら ここで確定すると二重。別の取引なら もう一度押せば入れられる */
+    const spd = !isMulti(it) && S.spm && S.spm.dup && S.spm.dup[it.id];
+    if (spd && !c.dupOk) {
+      c.dupOk = 1;
+      fmsg('⚠ 同じ領収書が もう1枚あり、補助簿（「' + spd.line.box + '」の ' + (spd.line.ln + 1) + '行目・' + yen(spd.amount) + '円）では 1つの取引です。ここで確定すると二重になります。［⊘ 対象外にする］で外すか、別の取引なら もう一度［確定］を押してください。', 'err');
+      return;
+    }
     const spl = !isMulti(it) && S.spm && S.spm.rcpt && S.spm.rcpt[it.id];
     if (spl && !c.spOk) {
       const li = (S.items || []).find(function (x) { return x.id === spl.sid; });
