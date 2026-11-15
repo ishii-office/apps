@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794732844;</script>
+<script>window.__PAGE_VER=1794734418;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -4564,14 +4564,15 @@
        ・行と 写真は 1対1。行を送る（Enter・↑↓・押す）と 写真の窓と この画面が その取引に そろう。Enter だけで 上から 最終チェックできる */
   let LEDROW = -1, LEDROWS = [], LEDSEEN = {}, LEDKEY = '';
   function ledBoxRows() {
-    const view = S.view || [], used = {}, rows = [];
+    const view = S.view || [], used = {}, rows = []; let nBook = 0;
     view.forEach(function (it) {
       const dd = S.ai && S.ai[it.id];
       if (!(isMulti(it) && dd && dd.multi && (dd.lines || []).length)) return;
       used[it.id] = 1;
       const ph = (S.bookSrcOf || {})[it.id], pimg = ph && itemOf(ph) ? ph : '';   /* もとの写真（紙の通帳）があれば 行の写真は それ */
       if (pimg) used[pimg] = 1;
-      glRows(it).forEach(function (r) { const rc = r.rc && itemOf(r.rc) ? r.rc : ''; if (rc) used[rc] = 1; rows.push({ e: r.e, draft: !!r.draft, img: rc || pimg || it.id, src: it.id }); });
+      glRows(it).forEach(function (r) { const rc = r.rc && itemOf(r.rc) ? r.rc : ''; if (rc) used[rc] = 1; rows.push({ e: r.e, draft: !!r.draft, img: rc || pimg || it.id, src: it.id, bk: 1 }); });
+      nBook++;
     });
     view.forEach(function (it) {
       if (used[it.id] || (S.bookSrc || {})[it.id]) return;
@@ -4581,6 +4582,8 @@
       else rows.push({ e: null, draft: false, img: it.id, src: it.id });
     });
     const dk = function (r) { const t = r.e ? String(r.e.date || '').replace(/-/g, '/') : ''; const m = t.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/); return m ? m[1] + ('0' + m[2]).slice(-2) + ('0' + m[3]).slice(-2) : '99999999'; };
+    /* ★ 補助簿が1つだけの箱は 補助簿の行の順のまま（カード明細は 利用日が前後する。明細と 1行ずつ 見くらべるため）。補助簿に無いものは そのうしろに 日付の順 */
+    if (nBook === 1) return rows.filter(function (r) { return r.bk; }).concat(rows.filter(function (r) { return !r.bk; }).map(function (r, i) { return { r: r, i: i, k: dk(r) }; }).sort(function (a, b) { return a.k < b.k ? -1 : a.k > b.k ? 1 : a.i - b.i; }).map(function (x) { return x.r; }));
     return rows.map(function (r, i) { return { r: r, i: i, k: dk(r) }; }).sort(function (a, b) { return a.k < b.k ? -1 : a.k > b.k ? 1 : a.i - b.i; }).map(function (x) { return x.r; });
   }
   function ledAcct(code, sb) { if (!code) return ''; const a = (S.acctMap || {})[code] || {}, sn = sb ? ((S.subMap || {})[code + '|' + sb] || '') : ''; return { c: code + (sb ? '-' + sb : ''), n: (a.name || '') + (sn ? '・' + sn : '') }; }
@@ -4608,9 +4611,9 @@
     const body = mk('tbody');
     /* ★★ 元帳（2026-11-16）：この箱の科目（現金 など）の 入金・出金・残高。相手科目だけを出す（自分の科目は 出さない）。
          いちばん上に 前月繰越、いちばん下に 残高と 補助簿（出納帳）の残高との突き合わせ */
-    let bal = LA && LA.start != null ? LA.start : 0;
+    let bal = LA && LA.start != null ? LA.start : 0, drT = 0, crT = 0;
     if (LA) {
-      const tr0 = mk('tr', 'bcy'); tr0.appendChild(mk('td')); tr0.appendChild(mk('td')); tr0.appendChild(mk('td')); tr0.appendChild(mk('td', null, '【前残高】')); tr0.appendChild(mk('td', null, LA.start == null ? '分からないので 0 から（出納帳を入れると 入ります）' : '前月繰越'));
+      const tr0 = mk('tr', 'bcy'); tr0.appendChild(mk('td')); tr0.appendChild(mk('td')); tr0.appendChild(mk('td')); tr0.appendChild(mk('td', null, '【前残高】')); tr0.appendChild(mk('td', null, LA.start == null ? (LA.sum != null ? '残高の無い明細（合計で 確かめます）' : '分からないので 0 から（出納帳を入れると 入ります）') : '前月繰越'));
       tr0.appendChild(mk('td', 'r')); tr0.appendChild(mk('td', 'r')); tr0.appendChild(mk('td', 'r', yen(bal))); tr0.appendChild(mk('td')); th.appendChild(tr0);
     }
     rows.forEach(function (r, i) {
@@ -4631,7 +4634,7 @@
             const c = mk('td', 'ac2'); c.appendChild(mk('div', null, (a.name || o[0] || ''))).appendChild(mk('small', null, o[0] + (o[1] ? '-' + o[1] : ''))); if (sn) c.appendChild(mk('div', 'sb', sn)); tr.appendChild(c); }
           else tr.appendChild(mk('td', 'ac2', '（' + LA.name + ' が 出てこない仕訳）'));
           const pm = mk('td', 'pm'), pn = String(e.partyName || ''), mm = String(e.memo || ''); pm.appendChild(mk('div', null, pn || mm)); if (pn && mm && mm !== pn) pm.appendChild(mk('div', 'sb', mm)); tr.appendChild(pm);
-          if (mv) bal += mv.inc - mv.dec;
+          if (mv) { bal += mv.inc - mv.dec; if (drMine) drT += Number(e.amount) || 0; else crT += Number(e.amount) || 0; }
           tr.appendChild(mk('td', 'r', mv && drMine ? yen(Number(e.amount) || 0) : '')); tr.appendChild(mk('td', 'r', mv && !drMine ? yen(Number(e.amount) || 0) : '')); tr.appendChild(mk('td', 'r bl', yen(bal)));
         } else {
         tr.appendChild(ac(e.drCode, e.drSub)); tr.appendChild(ac(e.crCode, e.crSub));
@@ -4644,9 +4647,14 @@
     });
     if (LA) {
       const trE = mk('tr', 'bsum'); trE.appendChild(mk('td')); trE.appendChild(mk('td')); trE.appendChild(mk('td')); trE.appendChild(mk('td'));
-      const ok = LA.end != null && LA.end === bal;
-      trE.appendChild(mk('td', null, '残高' + (LA.end == null ? '' : ok ? '　✓ 補助簿（出納帳）の残高 ' + yen(LA.end) + '円 と 合っています' : '　⚠ 補助簿（出納帳）の残高は ' + yen(LA.end) + '円（差 ' + yen(bal - LA.end) + '円）。二重・もれ・金額を 確かめてください')));
-      trE.appendChild(mk('td', 'r')); trE.appendChild(mk('td', 'r')); const cb = trE.appendChild(mk('td', 'r lgv ' + (LA.end == null ? '' : ok ? 'ok' : 'ng'), yen(bal))); cb.id = 'bxlEnd'; trE.appendChild(mk('td'));
+      /* 残高の書いてある補助簿（出納帳・通帳）は 残高で、残高の無い補助簿（カード明細）は 合計で 突き合わせる */
+      /* 負債の口座（カードの未払金 など）の補助簿は 使った額を 出金として積んでいる（残高は マイナスへ）。元帳は 貸方で増えるので 増えた額どうしで くらべる */
+      const st0 = LA.start || 0, asset = /^1/.test(LA.key);
+      const ok = LA.end != null ? (asset ? LA.end === bal : (bal - st0) === -(LA.end - st0)) : LA.sum != null ? LA.sum === Math.abs(crT - drT) : false;
+      const how = LA.end != null ? (ok ? '　✓ 補助簿（出納帳）の残高 ' + yen(LA.end) + '円 と 合っています' : '　⚠ 補助簿（出納帳）の残高は ' + yen(LA.end) + '円（差 ' + yen(asset ? bal - LA.end : (bal - st0) + (LA.end - st0)) + '円）。二重・もれ・金額を 確かめてください')
+        : LA.sum != null ? (ok ? '　✓ 補助簿（明細）の合計 ' + yen(LA.sum) + '円 と 合っています' : '　⚠ 補助簿（明細）の合計は ' + yen(LA.sum) + '円（差 ' + yen(Math.abs(crT - drT) - LA.sum) + '円）。二重・もれ・金額を 確かめてください') : '';
+      trE.appendChild(mk('td', null, (LA.end != null || LA.start != null ? '残高' : '計') + how));
+      trE.appendChild(mk('td', 'r', yen(drT))); trE.appendChild(mk('td', 'r', yen(crT))); const cb = trE.appendChild(mk('td', 'r lgv ' + (LA.end == null && LA.sum == null ? '' : ok ? 'ok' : 'ng'), yen(bal))); cb.id = 'bxlEnd'; trE.appendChild(mk('td'));
       const tf = mk('tfoot'); tf.appendChild(trE); tb.appendChild(body); tb.appendChild(tf); host.appendChild(tb); return;
     }
     tb.appendChild(body); host.appendChild(tb);
@@ -4656,18 +4664,20 @@
   function ledBoxAcct(rows) {
     const view = S.view || [], bk = view.filter(function (it) { const dd = S.ai && S.ai[it.id]; return isMulti(it) && dd && dd.multi && (dd.lines || []).length; });
     const nameOf = function (key) { const p = String(key).split('-'), a = ledAcct(p[0], p[1] || ''); return a ? (a.n || a.c) : key; };
-    let st = null, end = null;
+    let st = null, end = null, sum = null;
     if (bk.length > 1) return null;
     if (bk.length === 1) {
       const it = bk[0], o = lgState(it), ls = S.ai[it.id].lines, last = ls[ls.length - 1], e0 = o.e;
       end = e0 !== undefined && e0 !== '' ? Number(e0) : last && last.bal !== '' && last.bal != null && !isNaN(Number(last.bal)) ? Number(last.bal) : null;
       st = o.s === undefined || o.s === '' ? null : Number(o.s);
-      if (o.a) return { key: o.a, name: nameOf(o.a), start: st, end: end };
+      /* 残高の無い明細（カード）：行の金額の合計（出 − 入）で 突き合わせる */
+      if (end == null) sum = Math.abs(ls.reduce(function (t, l) { const a = Math.abs(Math.round(Number(l.amount) || 0)); return t + (l.dir === '入' ? -a : a); }, 0));
+      if (o.a) return { key: o.a, name: nameOf(o.a), start: st, end: end, sum: sum };
     }
     const es = rows.filter(function (r) { return r.e; }).map(function (r) { return r.e; }); if (!es.length) return null;
     const cnt = {}; es.forEach(function (e) { const a = e.drCode + (e.drSub ? '-' + e.drSub : ''), b = e.crCode + (e.crSub ? '-' + e.crSub : ''); cnt[a] = (cnt[a] || 0) + 1; if (b !== a) cnt[b] = (cnt[b] || 0) + 1; });
     const key = Object.keys(cnt).filter(function (k) { return cnt[k] === es.length && /^1/.test(k); })[0];
-    return key ? { key: key, name: nameOf(key), start: st, end: end } : null;
+    return key ? { key: key, name: nameOf(key), start: st, end: end, sum: sum } : null;
   }
   function ledBoxGo(i, seen) {
     const r = LEDROWS[i]; if (!r) return;
