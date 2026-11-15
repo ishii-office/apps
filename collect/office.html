@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794737177;</script>
+<script>window.__PAGE_VER=1794746257;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1030,6 +1030,7 @@
   .jpgok { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 2px solid #0F6E56; background: #0F6E56; color: #fff; font: inherit; font-weight: 700; cursor: pointer; margin-left: 8px; }
   .jpgok .m { font-size: 18px; }
   .btn.arm { background: #B3261E !important; color: #fff !important; border-color: #B3261E !important; }
+  .mqs .mfk { margin: 8px 0 2px; font-weight: 700; color: var(--accent); } .mqs li small { color: var(--sub); } .mqs li .btn { margin-left: 8px; }
   .aiask { position: fixed; inset: 0; z-index: 3000; background: rgba(20,30,25,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
   .aiask[hidden] { display: none; }
   .aiask .box { background: #fff; border-radius: 16px; padding: 18px 18px 14px; max-width: 520px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
@@ -12733,6 +12734,25 @@
       });
     }
   }
+  /* ★★ Claude が見つけたルール（2026-11-17）：過去の仕訳から AI が見つけたものを 種類ごとに並べる。メモに入っているので 次から効く。
+       「事務所共通にできそうな決まり」は ボタンで 事務所共通メモの欄へ（保存は マスターが押す） */
+  function memoFound(m) {
+    const q = $('mQs'); q.textContent = ''; const fs = m.found || [], qs = m.questions || [];
+    q.hidden = !fs.length && !qs.length;
+    if (fs.length) {
+      const h = el('b', null, '🔎 Claude が見つけたルール（' + fs.length + '件。引き継ぎメモに入れました＝次に読ませる資料から 効きます。ちがうものは メモを直して［保存］）'); h.id = 'mFoundH'; q.appendChild(h);
+      ['毎月の決まった取引', 'この顧問先の決まり', '事務所共通とちがう処理', '事務所共通にできそうな決まり'].forEach(function (k) {
+        const list = fs.filter(function (x) { return x.kind === k; }); if (!list.length) return;
+        q.appendChild(el('div', 'mfk', k + '（' + list.length + '）'));
+        const ul = el('ul'); list.forEach(function (x) {
+          const li = el('li'); li.appendChild(el('span', null, x.rule)); if (x.basis) li.appendChild(el('small', null, '　根拠：' + x.basis));
+          if (k === '事務所共通にできそうな決まり' && $('pOffice')) { const b = el('button', 'btn ghost sm', '事務所共通メモに足す'); b.type = 'button'; b.onclick = function () { const t = $('pOffice'); t.value = (t.value ? t.value.replace(/\s+$/, '') + '\n' : '') + '・' + x.rule; b.disabled = true; b.textContent = '足しました（［事務所共通メモを保存］で 効きます）'; try { t.scrollIntoView({ block: 'center' }); } catch (e) {} }; li.appendChild(b); }
+          ul.appendChild(li);
+        }); q.appendChild(ul);
+      });
+    }
+    if (qs.length) { q.appendChild(el('b', null, 'AI が 人に聞きたいこと（分かったら メモに書き足して 保存）')); const ul = el('ul'); qs.forEach(function (x) { ul.appendChild(el('li', null, x)); }); q.appendChild(ul); }
+  }
   $('mText').addEventListener('input', function () { $('mLen').textContent = this.value.length + '字（保存していません）'; });
   $('mSave').addEventListener('click', function () {
     const code = S.code; if (!code) return;
@@ -12745,10 +12765,8 @@
     const btn = this;
     gs('memoWrite', code).then(function (m) {
       MT.busy = false; btn.disabled = false; if (code !== S.code) return;
-      $('mText').blur(); memoDraw(m);
-      const q = $('mQs'); q.textContent = ''; q.hidden = !(m.questions || []).length;
-      if ((m.questions || []).length) { q.appendChild(el('b', null, 'AI が 人に聞きたいこと（分かったら メモに書き足して 保存）')); const ul = el('ul'); m.questions.forEach(function (x) { ul.appendChild(el('li', null, x)); }); q.appendChild(ul); }
-      mtMsg('mMsg', 'AI が 版 ' + m.ver + ' を書きました（約' + yenS(m.yen) + '円）。読んで 直して［保存］してください。', 'ok'); mtLoad();
+      $('mText').blur(); memoDraw(m); memoFound(m);
+      mtMsg('mMsg', 'AI が 版 ' + m.ver + ' を書きました（約' + yenS(m.yen) + '円）。見つけたルール ' + (m.found || []).length + '件は メモに入っています。読んで 直して［保存］してください。', 'ok'); mtLoad();
     }, function (e) { MT.busy = false; btn.disabled = false; mtMsg('mMsg', e.message, 'err'); });
   });
   $('mVers').addEventListener('click', function (e) {
@@ -13240,7 +13258,19 @@
     if (!S.code) return;
     const code = S.code;
     rMsg((head ? head + '　' : '') + 'ルールを作っています…');
-    return gs('ruleLearn', code).then(function (x) { if (code !== S.code) return; rMsg((head ? head + '　' : '') + x.from + '件の仕訳から ルールを ' + x.rules + '件 作りました。', 'ok'); rLoad(); }, function (e) { rMsg(e.message, 'err'); });
+    return gs('ruleLearn', code).then(function (x) {
+      if (code !== S.code) return;
+      const base = (head ? head + '　' : '') + x.from + '件の仕訳から ルールを ' + x.rules + '件 作りました。';
+      rMsg(base, 'ok'); rLoad();
+      /* ★★ 過去仕訳を入れたら 続けて AI が ルールを見つける（2026-11-17）。引き継ぎメモの新しい版になる（前の版は残る）。AI を使わない顧問先・仕訳が少ないときは しない */
+      if (!head || MT.busy || !(S.fxConf && S.fxConf.ai)) return;
+      MT.busy = true; rMsg(base + '　続けて AI が 過去の仕訳から ルールを見つけています…（1〜2分。数十円〜百円ほど）');
+      return gs('memoWrite', code).then(function (m) {
+        MT.busy = false; if (code !== S.code) return;
+        memoDraw(m); memoFound(m); mtLoad();
+        rMsg(base + '　AI が ルールを ' + (m.found || []).length + '件 見つけて 引き継ぎメモ（版 ' + m.ver + '）に入れました（約' + yenS(m.yen) + '円）。下の「引き継ぎメモ」で 確かめてください。', 'ok');
+      }, function (e) { MT.busy = false; if (code === S.code) rMsg(base + '（AI のルール探しは できませんでした：' + e.message + '）', 'ok'); });
+    }, function (e) { rMsg(e.message, 'err'); });
   }
   $('rOffice').addEventListener('click', function () {
     rMsg('全顧問先から 事務所共通のルールを作っています…');
