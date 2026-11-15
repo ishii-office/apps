@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794714978;</script>
+<script>window.__PAGE_VER=1794717694;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1240,7 +1240,8 @@
   .fdcrumb i { color: var(--sub); font-style: normal; }
   #fdQ { width: 180px; max-width: 46vw; }
   .fdtools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--a-faint); }
-  .fdtools button[disabled] { opacity: .4; }
+  .fdtools button[disabled], .fdtools select[disabled] { opacity: .4; }
+  #fdConv { max-width: 150px; }
   .fdtools .warn { background: var(--err); color: #fff; border-color: var(--err); }
   .fdform { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: #FFF8E1; }
   .fdform[hidden] { display: none; }
@@ -1253,6 +1254,10 @@
   .fdnode.on { background: var(--a-tint); } .fdnode.on .nm { font-weight: 700; color: var(--accent); }
   .fdnode.drop, .fdit.drop { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--a-tint); }
   .fdkids { margin-left: 14px; }
+  /* 事務所フォルダのファイルを 大きく見るとき：回収資料用のボタンは 出さない */
+  .dv-fold #dvGo, .dv-fold #dvBook, .dv-fold #dvRot, .dv-fold #dvOrig, .dv-fold #dvGrip, .dv-fold #dvPos, .dv-fold #dvPg, .dv-fold #dvSplit, .dv-fold .dvkey, .dv-fold #dvMove, .dv-fold #dvGmail, .dv-fold #dvBack, .dv-fold #dvChk, .dv-fold #dvChkAll, .dv-fold #dvPrev, .dv-fold #dvNext, .dv-fold #dvwSide, .dv-fold #dvMemo { display: none !important; }
+  .dv-ro #dvMark { display: none !important; }
+  .fdit .mkd { position: absolute; right: 8px; top: 8px; font-size: 12px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 0 5px; }
   /* ★ 赤い印 ＝ 共有ドライブ（事務所の正本の置き場。2026-11-15） */
   .fdnode .ic { display: inline-block; }
   .fdnode.drv .ic, .fdit.drv .pic { filter: hue-rotate(-42deg) saturate(2.2); }
@@ -2222,6 +2227,8 @@
     <button type="button" id="fdRen" disabled>✎ 名前を変える</button>
     <button type="button" id="fdMv" disabled>➡ 移す</button>
     <button type="button" id="fdDel" disabled>🗑 ゴミ箱へ</button>
+    <button type="button" id="fdJoin" disabled title="選んだ PDF・画像を 並んでいる順に 1つの PDF にまとめる（元のファイルは そのまま）">🧷 まとめる</button>
+    <select id="fdConv" disabled aria-label="選んだファイルを 別の形に変換する" title="選んだファイルを 別の形にして 同じフォルダに置く（元は そのまま）"><option value="">🔁 変換…</option><option value="pdf">PDF にする（画像・ワードから）</option><option value="jpg">画像（JPEG）にする（PDF・ワードから。ページごと）</option><option value="docx">ワードにする（PDF・画像から。文字を読み取る）</option></select>
     <button type="button" id="fdDrive" title="いま開いているフォルダを Google ドライブで開く">↗ Google ドライブで開く</button>
     <button type="button" id="fdReload" title="読み直す">↻</button>
     <span class="pagemsg" id="fdMsg" role="status"></span>
@@ -3124,6 +3131,7 @@
     else pic.textContent = fdIcon(it);
     e.appendChild(pic);
     if (it.kind === 'file' && fdExt(it.name)) e.appendChild(el('span', 'ext', fdExt(it.name)));
+    if (it.mark && it.mark.length) { const mb = el('span', 'mkd', '✏' + it.mark.length); mb.title = '書きこみ ' + it.mark.length + 'つ'; e.appendChild(mb); }
     e.appendChild(el('div', 'nm', it.name));
     e.appendChild(el('div', 'sub at', it.where || (it.drive ? '共有ドライブ' : it.lock ? '🔒 見るだけ' : it.kind === 'folder' ? 'フォルダ' : it.at || '')));
     e.appendChild(el('div', 'sub sz', it.kind === 'folder' ? '' : fdSize(it.size)));
@@ -3135,12 +3143,18 @@
       else if (ev.ctrlKey || ev.metaKey) { if (FD.sel[it.id]) delete FD.sel[it.id]; else FD.sel[it.id] = 1; FD.anchor = i; }
       else { FD.sel = {}; FD.sel[it.id] = 1; FD.anchor = i; }
       fdSelPaint();
+      if (it.kind === 'file' && fdCanView(it) && Object.keys(FD.sel).length === 1) fdBytes(it).catch(function () {});   /* 外へ つかんで出せるように 読んでおく */
     });
     e.addEventListener('dblclick', function (ev) { ev.stopPropagation(); fdOpenIt(it); });
     e.addEventListener('dragstart', function (ev) {
       if (!FD.sel[it.id]) { FD.sel = {}; FD.sel[it.id] = 1; FD.anchor = i; fdSelPaint(); }
       FD.drag = fdSelected();
-      try { ev.dataTransfer.setData('text/plain', it.name); ev.dataTransfer.effectAllowed = 'move'; } catch (x) {}
+      try {
+        ev.dataTransfer.effectAllowed = 'copyMove';
+        const b = FDB.bytes[it.id];   /* 外（デスクトップ・フォルダ）へ落とすと ファイルになる（Chrome・Edge）。選んだときに 読んでおいたものを渡す */
+        if (b && it.kind === 'file') ev.dataTransfer.setData('DownloadURL', b.mime + ':' + b.name + ':data:' + b.mime + ';base64,' + b.b64);
+        else if (!DT_CHROME) ev.dataTransfer.setData('text/plain', it.name);
+      } catch (x) {}
     });
     e.addEventListener('dragend', function () { FD.drag = null; fdDropClear(); });
     if (it.kind === 'folder') fdDropBind(e, it.id);
@@ -3156,6 +3170,10 @@
     $('fdOpen').disabled = n !== 1; $('fdRen').disabled = n !== 1 || mv || drv; $('fdMv').disabled = !mv && (n < 1 || drv); $('fdDel').disabled = n < 1 || mv || drv;
     $('fdMv').textContent = mv ? '✕ 移すのをやめる' : n > 1 ? '➡ 移す（' + n + '）' : '➡ 移す';
     if (!FD.arm) $('fdDel').textContent = n > 1 ? '🗑 ゴミ箱へ（' + n + '）' : '🗑 ゴミ箱へ';
+    /* まとめる … PDF・画像を 2つ以上／変換 … PDF・画像・ワードを 1つ以上（回収資料の中・いちばん上では なし。できたものを 置けないので） */
+    const ks = FD.items.filter(function (x) { return FD.sel[x.id]; }).map(fdKind), okJ = ks.length >= 2 && ks.every(function (k) { return k === 'pdf' || k === 'img'; }), okC = ks.length >= 1 && ks.every(Boolean);
+    const j = $('fdJoin'), cv = $('fdConv'); j.dataset.off = okJ && !lk && !top && !mv && !FD.search ? '' : '1'; cv.dataset.off = okC && !lk && !top && !mv && !FD.search ? '' : '1';
+    j.disabled = FDB.run || j.dataset.off === '1'; cv.disabled = FDB.run || cv.dataset.off === '1'; j.textContent = okJ ? '🧷 まとめる（' + ks.length + '）' : '🧷 まとめる';
   }
   function fdModePaint() { document.querySelectorAll('#fdMode button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.m === FD.mode)); }); }
   /* 小さい絵：画像と PDF だけ。12枚ずつ・1回に1往復 */
@@ -3176,6 +3194,7 @@
     if (!it) return;
     if (it.kind === 'folder') { $('fdQ').value = ''; fdGo(it.id); return; }
     if (!fdCanView(it)) { fdOut(it.url); fdMsg(/\.xdw$|\.xbd$/i.test(it.name) ? 'DocuWorks の文書は ブラウザでは開けません。Google ドライブ（か パソコンの DocuWorks Desk）で開きます。' : 'Google ドライブで開きます。'); return; }
+    if (fdKind(it) === 'pdf' || fdKind(it) === 'img') { fdView(it); return; }   /* ★ 2026-11-15：PDF・画像は アプリの中で開く（書きこめる）。文字・CSV は 別ウィンドウ */
     const w = window.open('', '_blank');
     if (!w) { fdOut(it.url); return; }
     try { w.document.write('<!doctype html><meta charset="utf-8"><title>' + esc(it.name) + '</title><body style="margin:0;background:#2b2f33;color:#ddd;font-family:sans-serif"><p style="padding:20px">開いています…</p>'); w.document.close(); } catch (e) {}
@@ -3254,25 +3273,29 @@
   function fdUpload(list, toId) {
     const fs = Array.prototype.slice.call(list || []), max = ((FD.info && FD.info.maxMb) || 20) * 1024 * 1024;
     if (!fs.length) return;
-    let i = 0, ok = 0; const bad = [];
-    const next = function () {
-      if (i >= fs.length) {
-        const t = ok + '件を 入れました。' + (bad.length ? '（入れられなかったもの：' + bad.slice(0, 3).join('、') + (bad.length > 3 ? ' ほか' : '') + '）' : '');
-        if (toId === FD.cur) fdReload().then(function () { fdMsg(t, bad.length ? 'err' : 'ok'); }); else fdMsg(t, bad.length ? 'err' : 'ok');
-        return;
-      }
-      const f = fs[i++]; fdMsg(i + ' / ' + fs.length + ' 入れています… ' + f.name);
-      if (f.size > max) { bad.push(f.name + '（大きすぎます。パソコンの Google ドライブから入れてください）'); next(); return; }
-      if (!f.size) { bad.push(f.name + '（空か フォルダです）'); next(); return; }
+    /* ★ 2026-11-15：3つ並べて送る（前は 1つずつ 順番で 遅かった）。大きいもの・数が多いときは パソコンの Google ドライブ（G:）のほうが速い */
+    let i = 0, ok = 0, run = 0, fin = 0; const bad = [];
+    const say = function () { fdMsg('入れています… ' + fin + ' / ' + fs.length + ' 済み'); };
+    const end = function () {
+      const t = ok + '件を 入れました。' + (bad.length ? '（入れられなかったもの：' + bad.slice(0, 3).join('、') + (bad.length > 3 ? ' ほか' : '') + '）' : '');
+      if (toId === FD.cur) fdReload().then(function () { fdMsg(t, bad.length ? 'err' : 'ok'); }); else fdMsg(t, bad.length ? 'err' : 'ok');
+    };
+    const one = function (f, done) {
+      if (f.size > max) { bad.push(f.name + '（大きすぎます。パソコンの Google ドライブから入れてください）'); done(); return; }
+      if (!f.size) { bad.push(f.name + '（空か フォルダです）'); done(); return; }
       const rd = new FileReader();
-      rd.onerror = function () { bad.push(f.name); next(); };
+      rd.onerror = function () { bad.push(f.name); done(); };
       rd.onload = function () {
         const s = String(rd.result || ''), b64 = s.slice(s.indexOf(',') + 1);
-        gs('foldUp', toId, f.name, f.type || 'application/octet-stream', b64).then(function () { ok++; next(); }, function (e) { bad.push(f.name + '（' + e.message + '）'); next(); });
+        gs('foldUp', toId, f.name, f.type || 'application/octet-stream', b64).then(function () { ok++; done(); }, function (e) { bad.push(f.name + '（' + e.message + '）'); done(); });
       };
       rd.readAsDataURL(f);
     };
-    next();
+    const pump = function () {
+      if (fin >= fs.length) { end(); return; }
+      while (run < 3 && i < fs.length) { run++; one(fs[i++], function () { run--; fin++; say(); pump(); }); }
+    };
+    say(); pump();
   }
   /* ---- さがす ---- */
   function fdSearch() {
@@ -3341,6 +3364,142 @@
     w.addEventListener('dragover', function (ev) { if (FD.drag || !FD.data || !ev.dataTransfer || Array.prototype.indexOf.call(ev.dataTransfer.types || [], 'Files') < 0) return; ev.preventDefault(); w.classList.add('over'); });
     w.addEventListener('dragleave', function (ev) { if (ev.target === w) w.classList.remove('over'); });
     w.addEventListener('drop', function (ev) { if (FD.drag || !FD.data) return; if (FD.data.lock) { ev.preventDefault(); fdDropClear(); fdMsg('回収資料は ここでは 見るだけです。', 'err'); return; } if (FD.data.top) { ev.preventDefault(); fdDropClear(); fdMsg('いちばん上には 入れられません。中のフォルダを開いてからにしてください。', 'err'); return; } const fs = ev.dataTransfer && ev.dataTransfer.files; if (!fs || !fs.length) return; ev.preventDefault(); fdDropClear(); fdUpload(fs, FD.cur); });
+  })();
+
+  /* ================= ★★ 事務所フォルダ：まとめる・変換・外へ出す（2026-11-15） =================
+     ・まとめる … 選んだ PDF・画像を 並んでいる順に 1つの PDF に（本当に1つのファイルになる。元は そのまま）
+     ・変換 … PDF → 画像（ページごとの JPEG）／画像 → PDF／PDF・画像 → ワード（OCR）／ワード → PDF・画像
+     ・できたものは 同じフォルダに 別のファイルとして置く
+     ・外へ出す … 選んだときに 中身を読んでおき、つかんで デスクトップ・フォルダへ落とすと ファイルになる（Chrome・Edge） */
+  const FDB = { bytes: {}, order: [], run: false };
+  function fdKind(it) {
+    if (!it || it.kind !== 'file') return '';
+    const m = String(it.mime || ''), x = fdExt(it.name);
+    if (m === 'application/pdf') return 'pdf';
+    if (/^image\/(jpeg|png|gif|webp)$/.test(m)) return 'img';
+    if (/wordprocessingml|msword/.test(m) || x === 'DOCX' || x === 'DOC') return 'word';
+    return '';
+  }
+  function fdBytes(it) {
+    if (FDB.bytes[it.id]) return Promise.resolve(FDB.bytes[it.id]);
+    return gs('foldFile', it.id).then(function (r) {
+      if (!r || !r.b64) throw new Error('「' + it.name + '」は ここでは 読めない形か、大きすぎます（12MB まで）。');
+      const o = { id: it.id, name: r.name, mime: r.mime, b64: r.b64 };
+      FDB.bytes[it.id] = o; FDB.order.push(it.id); while (FDB.order.length > 6) delete FDB.bytes[FDB.order.shift()];   /* 覚えるのは 6つまで（端末の記憶を 使いすぎない） */
+      return o;
+    });
+  }
+  function fdBase(name) { return String(name || '').replace(/\.[A-Za-z0-9]{1,5}$/, '') || String(name || 'ファイル'); }
+  function fdU8b64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+  function fdImgSize(src) { return new Promise(function (ok, ng) { const im = new Image(); im.onload = function () { ok([im.naturalWidth, im.naturalHeight]); }; im.onerror = function () { ng(new Error('画像が読めません')); }; im.src = src; }); }
+  /* いくつかの PDF・画像 → 1つの PDF（バイト） */
+  async function fdPdfOf(items, prog) {
+    const L = await pdflib(), out = await L.PDFDocument.create();
+    for (let i = 0; i < items.length; i++) {
+      prog(i + 1, items.length);
+      const b = await fdBytes(items[i]);
+      if (b.mime === 'application/pdf') {
+        const src = await L.PDFDocument.load(b64bytes(b.b64), { ignoreEncryption: true });
+        (await out.copyPages(src, src.getPageIndices())).forEach(function (p) { out.addPage(p); });
+      } else {
+        const png = b.mime === 'image/png';
+        const u8 = b.mime === 'image/jpeg' || png ? b64bytes(b.b64) : await toJpeg('data:' + b.mime + ';base64,' + b.b64);   /* GIF・WebP は JPEG にしてから */
+        const im = png ? await out.embedPng(u8) : await out.embedJpg(u8);
+        const land = im.width > im.height, PW = land ? 841.89 : 595.28, PH = land ? 595.28 : 841.89;   /* A4。横長の画像は 横向きの紙に */
+        const k = Math.min(PW / im.width, PH / im.height), w = im.width * k, h = im.height * k;
+        out.addPage([PW, PH]).drawImage(im, { x: (PW - w) / 2, y: (PH - h) / 2, width: w, height: h });
+      }
+    }
+    return out.save();
+  }
+  /* PDF（バイト）→ ページごとの JPEG（b64 の並び） */
+  async function fdPdfPages(u8, prog) {
+    const lib = await pdfjs(), doc = await lib.getDocument(Object.assign({ data: u8 }, PDF_OPT)).promise, out = [];
+    const n = Math.min(doc.numPages, 80);
+    for (let p = 1; p <= n; p++) {
+      prog(p, n);
+      const pg = await doc.getPage(p), v0 = pg.getViewport({ scale: 1 }), sc = Math.min(2.2, 2200 / Math.max(v0.width, v0.height));
+      const vp = pg.getViewport({ scale: sc }), c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+      await pg.render({ canvasContext: x, viewport: vp }).promise;
+      const d = c.toDataURL('image/jpeg', 0.9); out.push(d.slice(d.indexOf(',') + 1)); c.width = c.height = 0;
+    }
+    return { pages: out, cut: doc.numPages > n };
+  }
+  function fdBusy(on) { FDB.run = on; ['fdJoin', 'fdConv'].forEach(function (i) { const e = $(i); if (e) e.disabled = on || e.dataset.off === '1'; }); }
+  function fdDoneReload(t, bad) { return fdReload().then(function () { fdMsg(t, bad ? 'err' : 'ok'); }); }
+  /* まとめる */
+  async function fdJoin() {
+    const its = FD.items.filter(function (x) { return FD.sel[x.id]; });
+    if (FDB.run || its.length < 2) return;
+    if (its.some(function (x) { const k = fdKind(x); return k !== 'pdf' && k !== 'img'; })) { fdMsg('まとめられるのは PDF と 画像です（DocuWorks・エクセル・ワードは 先に PDF にしてください）。', 'err'); return; }
+    const to = FD.cur; fdBusy(true);
+    try {
+      const u8 = await fdPdfOf(its, function (i, n) { fdMsg('まとめています… ' + i + ' / ' + n); });
+      if (u8.length > ((FD.info && FD.info.maxMb) || 20) * 1048576) throw new Error('まとめたものが 大きすぎます（20MB まで）。少なく選んで まとめてください。');
+      fdMsg('保存しています…');
+      const name = fdBase(its[0].name) + '_まとめ.pdf';
+      await gs('foldUp', to, name, 'application/pdf', fdU8b64(u8));
+      fdBusy(false); await fdDoneReload(its.length + 'つを 1つの PDF に まとめました（「' + name + '」。元のファイルは そのままです）。');
+    } catch (e) { fdBusy(false); fdMsg(e.message, 'err'); }
+  }
+  /* 変換。to … 'pdf'・'jpg'・'docx' */
+  async function fdConvert(to) {
+    const its = FD.items.filter(function (x) { return FD.sel[x.id]; });
+    if (FDB.run || !its.length) return;
+    const dest = FD.cur; fdBusy(true);
+    let made = 0; const bad = [];
+    for (let i = 0; i < its.length; i++) {
+      const it = its[i], k = fdKind(it), head = (i + 1) + ' / ' + its.length + ' 「' + it.name + '」 ';
+      try {
+        if (!k || (to === 'pdf' && k === 'pdf') || (to === 'jpg' && k === 'img' && it.mime === 'image/jpeg') || (to === 'docx' && k === 'word')) throw new Error(k ? 'もう その形です' : 'この形は 変換できません');
+        if (to === 'docx') { fdMsg(head + 'ワードにしています（文字を読み取ります。少し かかります）…'); await gs('foldConvert', it.id, 'docx'); made++; }
+        else if (to === 'pdf' && k === 'word') { fdMsg(head + 'PDF にしています…'); await gs('foldConvert', it.id, 'pdf'); made++; }
+        else if (to === 'pdf') {
+          const u8 = await fdPdfOf([it], function () { fdMsg(head + 'PDF にしています…'); });
+          await gs('foldUp', dest, fdBase(it.name) + '.pdf', 'application/pdf', fdU8b64(u8)); made++;
+        } else if (to === 'jpg') {
+          let u8;
+          if (k === 'word') { fdMsg(head + 'ワードを 開いています…'); const r = await gs('foldConvert', it.id, 'pdf', 0); u8 = b64bytes(r.b64); }
+          else if (k === 'pdf') u8 = b64bytes((await fdBytes(it)).b64);
+          if (u8) {
+            const r = await fdPdfPages(u8, function (p, n) { fdMsg(head + '画像にしています… ' + p + ' / ' + n + ' ページ'); });
+            for (let p = 0; p < r.pages.length; p++) {
+              fdMsg(head + '保存しています… ' + (p + 1) + ' / ' + r.pages.length);
+              await gs('foldUp', dest, fdBase(it.name) + (r.pages.length > 1 ? '_' + ('00' + (p + 1)).slice(-3) : '') + '.jpg', 'image/jpeg', r.pages[p]); made++;
+            }
+            if (r.cut) bad.push(it.name + '（80ページまでを 画像にしました）');
+          } else {   /* PNG・GIF・WebP → JPEG */
+            const b = await fdBytes(it), d = await toJpeg('data:' + b.mime + ';base64,' + b.b64);
+            await gs('foldUp', dest, fdBase(it.name) + '.jpg', 'image/jpeg', fdU8b64(d)); made++;
+          }
+        }
+      } catch (e) { bad.push(it.name + '（' + e.message + '）'); }
+    }
+    fdBusy(false);
+    await fdDoneReload(made + 'つ できました（同じフォルダに 別のファイルとして置きました。元は そのままです）。' + (bad.length ? '　できなかったもの：' + bad.slice(0, 3).join('、') + (bad.length > 3 ? ' ほか' : '') : ''), bad.length && !made);
+  }
+  /* ★★ 開いて 書きこむ（2026-11-15）：回収資料の「大きく見る」と同じ画面・同じ道具（文字・下線・枠・チェック・付箋・ハンコ・マーカー）。
+       回収資料用のボタン（確認済・仕訳化・回す・前/次 など）は 隠す（.dv-fold）。回収資料の中のもの（見るだけ）は ［書きこむ］も隠す（.dv-ro） */
+  function fdView(it) {
+    if (MK.on) mkEnd(true);
+    const ro = !!(FD.data && FD.data.lock) && !FD.search;
+    const pit = { id: it.id, name: it.name, fold: 1, url: it.url, mark: it.mark || [], period: '', box: '', src: it };
+    const v = $('dview'); v.hidden = false; document.body.classList.add('dv-on'); v.classList.add('dv-fold'); v.classList.toggle('dv-ro', ro); v.classList.remove('dvset', 'dv-split');
+    DVZ.s = 1; DVZ.x = 0; DVZ.y = 0;
+    const box = $('dvBody'); box.classList.remove('zin'); box.textContent = ''; box.classList.add('loading');
+    S.dvIt = pit; S.dvId = pit.id; S.dvSeq = null;
+    $('dvName').textContent = '事務所フォルダ　' + it.name; $('dvDrive').href = it.url || '#'; $('dvMemo').hidden = true; $('dvwSide').hidden = true;
+    fdBytes(it).then(function (b) {
+      if (S.dvIt !== pit) return;
+      IMG[pit.id] = b.mime === 'application/pdf' ? { t: 'pdf', b64: b.b64 } : { t: 'img', src: 'data:' + b.mime + ';base64,' + b.b64 };
+      oBig(pit, box);
+      if (!ro && mkAutoOn() && !MK.on) setTimeout(function () { if (S.dvIt === pit && !MK.on && !$('dview').hidden) mkStart(); }, 0);
+    }, function (e) { if (S.dvIt !== pit) return; box.classList.remove('loading'); box.appendChild(el('div', 'msg', e.message)); });
+  }
+  (function fdBind2() {
+    $('fdJoin').onclick = fdJoin;
+    $('fdConv').addEventListener('change', function () { const v = this.value; this.value = ''; if (v) fdConvert(v); });
   })();
 
   /* ================= タブ ================= */
@@ -8634,7 +8793,7 @@
   /* ★ K-0010：大きく見ている写真（元の大きさのとき）も つかんで パソコンへ落とすと ファイルになる */
   $('dvBody').addEventListener('dragstart', function (e) {
     const it = S.dvIt, im = e.target;
-    if (!DOUT_NAT || MK.on || DVZ.s > 1 || !it || !im || im.tagName !== 'IMG' || im.parentNode !== $('dvBody') || fileKind(it.name)) { e.preventDefault(); return; }
+    if (!DOUT_NAT || MK.on || DVZ.s > 1 || !it || it.fold || !im || im.tagName !== 'IMG' || im.parentNode !== $('dvBody') || fileKind(it.name)) { e.preventDefault(); return; }
     const o = dOutPrep(it);
     if (!o.url) { e.preventDefault(); dcMsg(o.err || 'ファイルを用意しています。少ししてから もう一度つかんでください。', !!o.err); return; }
     try { e.dataTransfer.setData('DownloadURL', o.mime + ':' + o.name + ':' + o.url); dtPutFile(e, o); e.dataTransfer.effectAllowed = 'copy'; } catch (x) {}
@@ -8712,7 +8871,7 @@
     }, true);
   });
   $('dvRot').addEventListener('click', function () { if (!S.dvId) return; rotSet(S.dvId, (S.rot[S.dvId] || 0) + 90); dvFit(); });   /* ★ 2026-11-12：向きは 覚える */
-  function docsClose() { if (MK.on) mkEnd(true); S.dvId = ''; S.dvIt = null; S.dvSeq = null; S.dvMemo = null; $('dvwSide').textContent = ''; $('dvwSide').dataset.set = ''; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
+  function docsClose() { if (MK.on) mkEnd(true); $('dview').classList.remove('dv-fold', 'dv-ro'); S.dvId = ''; S.dvIt = null; S.dvSeq = null; S.dvMemo = null; $('dvwSide').textContent = ''; $('dvwSide').dataset.set = ''; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
   $('dvClose').addEventListener('click', function (e) { e.stopPropagation(); docsClose(); });   /* ★ 2026-11-13（細谷）：大きな［閉じる］（上の帯の小さい［閉じる］［確認済］は なくした） */
 
   /* ================= ★★ 大きく見て サクサク確認（2026-10-26） =================
@@ -8750,7 +8909,7 @@
     return id;
   }
   function dvStep(dir, closeAtEnd) {
-    const it = S.dvIt; if (!it) return;
+    const it = S.dvIt; if (!it || it.fold) return;
     const id = dvNextId(it, dir);
     if (!id) {
       if (dir > 0 && closeAtEnd) { docsClose(); dcMsg('この箱の 最後まで 見ました。'); return; }
@@ -8761,13 +8920,14 @@
   /* ★★ まとめ書類のページ送り（2026-11-01）。まとめた書類なら その中の次・前のページへ。
        書類の最後（最初）のページから先は 次（前）の書類へ（前へ戻るときは その書類の最後のページ） */
   function dvPageTo(it, dir) {
+    if (it.fold) return null;   /* 事務所フォルダのファイルは 1つずつ開く（前・次 なし） */
     if (it.set && it.setOf > 1) { const m = dMembers(it.set), j = m.indexOf(it.id) + dir; if (j >= 0 && j < m.length) return m[j]; }
     let id = dvNextId(it, dir); if (!id) return null;
     if (dir < 0) { const d = dvDoc(id); if (d && d.set && d.setOf > 1) { const m = dMembers(d.set); if (m.length) id = m[m.length - 1]; } }
     return id;
   }
   function dvPage(dir) {
-    const it = S.dvIt; if (!it) return;
+    const it = S.dvIt; if (!it || it.fold) return;
     const id = dvPageTo(it, dir);
     if (!id) { dcMsg(dir > 0 ? 'この箱の 最後です。' : 'この箱の 最初です。'); $('dvPos').animate && $('dvPos').animate([{ background: '#FFE3DE' }, { background: '#fff' }], 500); return; }
     const d = dvDoc(id); if (d) docsOpen(d);
@@ -8777,6 +8937,7 @@
   /* 並べて見る（左にページの一覧・右に大きく）。この端末が覚える */
   function dvSplitOn() { return lsGet('collect_dvsplit_o') === '1'; }
   function dvChrome(it) {
+    if (it.fold) return;
     const multi = !!(it.set && it.setOf > 1); let m = multi ? dMembers(it.set) : [it.id];
     $('dvPg').hidden = !multi; if (multi) $('dvPg').textContent = (m.indexOf(it.id) + 1) + ' / ' + m.length + 'ページ';
     /* ★ K-0023：まとめた書類でなくても、箱の中が2つ以上なら 並べて見られる（左にこの箱の一覧・右に大きく） */
@@ -8831,7 +8992,7 @@
      Enter＝確認済にして次へ／1＝対象外にして次へ／2＝破棄して次へ（最後の1枚のあとは 小さい絵の一覧に戻る）
      0＝1枚戻って その資料を 元通り（確認済・対象外・破棄を どれも外した ただの状態）に */
   function dvAct(k) {
-    const it = S.dvIt; if (!it) return;
+    const it = S.dvIt; if (!it || it.fold) return;
     if (k === 'chk') {
       if (!it.chk) docsCheck([it], true);
       /* ★ K-0144：確認済は 1枚ずつなので まとめた書類は 中の次の写真へ（最後の写真なら 次の書類へ） */
@@ -8852,7 +9013,7 @@
   }
   let DV_ZERO = 0;
   function dvUndoPrev() {
-    const it = S.dvIt; if (!it) return;
+    const it = S.dvIt; if (!it || it.fold) return;
     const id = dvPageTo(it, -1);   /* ★ K-0144：まとめた書類の中では 1枚前の写真へ（確認済は 1枚ずつ） */
     if (!id) { dcMsg('この箱の 最初です。'); return; }
     const d = dvDoc(id); if (!d) return;
@@ -9307,6 +9468,11 @@
     const it = mkIt(), list = MK.list, changed = JSON.stringify(list) !== MK.was, wk = MKW ? MKW.key : '';
     MK.on = false; MK.drag = null; MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true;
     mkEl('dvMark').setAttribute('aria-pressed', 'false'); $('dvMkBar').hidden = true; mkEl('dview').classList.remove('dv-mk'); $('mkStBar').hidden = true;
+    if (save && changed && it && it.fold) {   /* ★ 事務所フォルダのファイル（2026-11-15）：書きこみは foldMark へ */
+      const prev = it.mark; it.mark = list;
+      gs('foldMark', it.id, list).then(function (r) { it.mark = r.mark; [FD.data, FD.search].forEach(function (d) { ((d && d.files) || []).forEach(function (x) { if (x.id === it.id) x.mark = r.mark; }); }); if (mkIt() === it) mkPaint(); fdMsg('書きこみを 保存しました（元のファイルは そのまま）。', 'ok'); if (S.tab === 'Fold') fdWorkDraw(); },
+        function (e) { it.mark = prev; if (mkIt() === it) mkPaint(); fdMsg('書きこみを 保存できませんでした。' + e.message, 'err'); alert('書きこみを 保存できませんでした。' + e.message); });
+    } else
     if (save && changed && it) {
       const code = S.code, prev = it.mark; it.mark = list;
       gs('workMark', code, it.id, list).then(function (r) { it.mark = r.mark; if (mkIt() === it) mkPaint(); docsDraw(); dcMsg('書きこみを 保存しました（元の資料は そのまま）。'); if (wk) { wsMsg(wk, '書きこみを 保存しました（元の資料は そのまま）。'); mkwShow(wk); } },
