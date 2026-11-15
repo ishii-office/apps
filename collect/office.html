@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794721098;</script>
+<script>window.__PAGE_VER=1794722948;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1273,6 +1273,10 @@
   .fdnote { color: var(--sub); padding: 18px 6px; line-height: 1.8; }
   .fdgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 10px; }
   .fdit { border: 1px solid var(--line); border-radius: 8px; background: var(--paper); padding: 6px; cursor: default; user-select: none; -webkit-user-select: none; position: relative; }
+  .fdit.insb { box-shadow: -5px 0 0 0 var(--accent); } .fdit.insa { box-shadow: 5px 0 0 0 var(--accent); }
+  .fdlist .fdit.insb { box-shadow: 0 -4px 0 0 var(--accent); } .fdlist .fdit.insa { box-shadow: 0 4px 0 0 var(--accent); }
+  .fdit.joinon { outline: 3px solid var(--accent); outline-offset: -3px; background: var(--a-tint); }
+  .fdit.joinon::after { content: '重ねて 1つの PDF に'; position: absolute; left: 4px; right: 4px; bottom: 4px; padding: 3px 4px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; text-align: center; pointer-events: none; }
   .fdit.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; background: var(--sel); }
   .fdit .pic { height: 92px; display: flex; align-items: center; justify-content: center; font-size: 46px; line-height: 1; overflow: hidden; border-radius: 4px; background: var(--bg); }
   .fdit .pic img { max-width: 100%; max-height: 100%; }
@@ -2228,6 +2232,7 @@
     <button type="button" id="fdRen" disabled>✎ 名前を変える</button>
     <button type="button" id="fdMv" disabled>➡ 移す</button>
     <button type="button" id="fdDel" disabled>🗑 ゴミ箱へ</button>
+    <button type="button" id="fdMail" disabled title="選んだファイルを Gmail の下書きに 添付する（Gmail へは つかんで落としても 渡せないので ここから）">✉ Gmailに添付</button>
     <button type="button" id="fdJoin" disabled title="選んだ PDF・画像を 並んでいる順に 1つの PDF にまとめる（元のファイルは そのまま）">🧷 まとめる</button>
     <select id="fdConv" disabled aria-label="選んだファイルを 別の形に変換する" title="選んだファイルを 別の形にして 同じフォルダに置く（元は そのまま）"><option value="">🔁 変換…</option><option value="pdf">PDF にする（画像・ワードから）</option><option value="jpg">画像（JPEG）にする（PDF・ワードから。ページごと）</option><option value="docx">ワードにする（PDF・画像から。文字を読み取る）</option></select>
     <button type="button" id="fdDrive" title="いま開いているフォルダを Google ドライブで開く">↗ Google ドライブで開く</button>
@@ -3144,7 +3149,7 @@
       else if (ev.ctrlKey || ev.metaKey) { if (FD.sel[it.id]) delete FD.sel[it.id]; else FD.sel[it.id] = 1; FD.anchor = i; }
       else { FD.sel = {}; FD.sel[it.id] = 1; FD.anchor = i; }
       fdSelPaint();
-      if (it.kind === 'file' && fdCanView(it) && Object.keys(FD.sel).length === 1) fdBytes(it).catch(function () {});   /* 外へ つかんで出せるように 読んでおく */
+      if (it.kind === 'file' && Object.keys(FD.sel).length === 1) fdOutReady(it);   /* 外へ つかんで出せるように 読んでおく（エクセル・ワードも） */
     });
     e.addEventListener('dblclick', function (ev) { ev.stopPropagation(); fdOpenIt(it); });
     e.addEventListener('dragstart', function (ev) {
@@ -3158,6 +3163,12 @@
       } catch (x) {}
     });
     e.addEventListener('dragend', function () { FD.drag = null; fdDropClear(); });
+    /* ★ マウスを のせたら 中身を読んでおく（2026-11-16）：選ばずに いきなり つかんでも 外へ ファイルとして出せるように */
+    if (it.kind === 'file') {
+      e.addEventListener('mouseenter', function () { clearTimeout(FDB.hov); FDB.hov = setTimeout(function () { fdOutReady(it); }, 350); });
+      e.addEventListener('mouseleave', function () { clearTimeout(FDB.hov); });
+      fdFileDropBind(e, it);
+    }
     if (it.kind === 'folder') fdDropBind(e, it.id);
     return e;
   }
@@ -3173,6 +3184,7 @@
     if (!FD.arm) $('fdDel').textContent = n > 1 ? '🗑 ゴミ箱へ（' + n + '）' : '🗑 ゴミ箱へ';
     /* まとめる … PDF・画像を 2つ以上／変換 … PDF・画像・ワードを 1つ以上（回収資料の中・いちばん上では なし。できたものを 置けないので） */
     const ks = FD.items.filter(function (x) { return FD.sel[x.id]; }).map(fdKind), okJ = ks.length >= 2 && ks.every(function (k) { return k === 'pdf' || k === 'img'; }), okC = ks.length >= 1 && ks.every(Boolean);
+    $('fdMail').disabled = n < 1 || mv || top || FD.items.some(function (x) { return FD.sel[x.id] && x.kind !== 'file'; });
     const j = $('fdJoin'), cv = $('fdConv'); j.dataset.off = okJ && !lk && !top && !mv && !FD.search ? '' : '1'; cv.dataset.off = okC && !lk && !top && !mv && !FD.search ? '' : '1';
     j.disabled = FDB.run || j.dataset.off === '1'; cv.disabled = FDB.run || cv.dataset.off === '1'; j.textContent = okJ ? '🧷 まとめる（' + ks.length + '）' : '🧷 まとめる';
   }
@@ -3227,7 +3239,52 @@
       const fs = ev.dataTransfer && ev.dataTransfer.files; if (fs && fs.length) fdUpload(fs, folderId);
     });
   }
-  function fdDropClear() { document.querySelectorAll('#paneFold .drop').forEach(function (e) { e.classList.remove('drop'); }); $('fdWork').classList.remove('over'); }
+  function fdDropClear() { document.querySelectorAll('#paneFold .drop, #paneFold .insb, #paneFold .insa, #paneFold .joinon').forEach(function (e) { e.classList.remove('drop', 'insb', 'insa', 'joinon'); }); $('fdWork').classList.remove('over'); }
+  /* 外へ出せる大きさなら 中身を読んでおく（12MB まで。Google のスプレッドシートは エクセルの形で） */
+  function fdOutReady(it) {
+    if (!it || it.kind !== 'file' || FDB.bytes[it.id] || FDB.miss[it.id] || Number(it.size) > 12 * 1048576) return;
+    fdBytes(it, true).catch(function () { FDB.miss[it.id] = 1; });
+  }
+  /* ★★ ファイルを ファイルの上へ（2026-11-16）
+       まん中に落とす … 重ねる（PDF・画像どうし。落とされたほうが先、つかんだほうが後ろの 1つの PDF に）
+       左・右のふちに落とす … その前・そのうしろへ 並べ替える（並びは フォルダごとに覚える） */
+  function fdDropZone(node, ev, it) {
+    const r = node.getBoundingClientRect(), list = FD.mode === 'list';
+    const t = list ? (ev.clientY - r.top) / Math.max(1, r.height) : (ev.clientX - r.left) / Math.max(1, r.width);
+    const canJoin = !(FD.data && FD.data.lock) && fdJoinable(it) && FD.drag.every(function (x) { return fdJoinable(FD.items.filter(function (y) { return y.id === x.id; })[0]); });
+    if (canJoin && t > 0.28 && t < 0.72) return 'join';
+    return t < 0.5 ? 'before' : 'after';
+  }
+  function fdJoinable(it) { const k = fdKind(it); return k === 'pdf' || k === 'img'; }
+  function fdFileDropBind(node, it) {
+    node.addEventListener('dragover', function (ev) {
+      if (!FD.drag || FD.search || !FD.data || FD.data.top) return;
+      if (FD.drag.some(function (x) { return x.id === it.id || x.kind !== 'file'; })) return;
+      ev.preventDefault(); ev.stopPropagation(); try { ev.dataTransfer.dropEffect = 'move'; } catch (x) {}
+      const z = fdDropZone(node, ev, it), c = z === 'join' ? 'joinon' : z === 'before' ? 'insb' : 'insa';
+      if (!node.classList.contains(c)) { fdDropClear(); node.classList.add(c); }
+    });
+    node.addEventListener('dragleave', function () { node.classList.remove('insb', 'insa', 'joinon'); });
+    node.addEventListener('drop', function (ev) {
+      if (!FD.drag || FD.search || !FD.data || FD.data.top) return;
+      if (FD.drag.some(function (x) { return x.id === it.id || x.kind !== 'file'; })) return;
+      ev.preventDefault(); ev.stopPropagation();
+      const z = fdDropZone(node, ev, it), ids = FD.drag.map(function (x) { return x.id; }); FD.drag = null; fdDropClear();
+      if (z === 'join') { const pick = {}; ids.forEach(function (x) { pick[x] = 1; }); fdJoin([it].concat(FD.items.filter(function (x) { return pick[x.id]; }))); return; }
+      fdReorder(ids, it.id, z === 'after');
+    });
+  }
+  function fdReorder(ids, targetId, after) {
+    if (FD.data.lock) { fdMsg('回収資料は ここでは 見るだけです（並べ替えられません）。', 'err'); return; }
+    const pick = {}; ids.forEach(function (x) { pick[x] = 1; });
+    const files = FD.data.files, moving = files.filter(function (x) { return pick[x.id]; }), rest = files.filter(function (x) { return !pick[x.id]; });
+    let at = rest.findIndex(function (x) { return x.id === targetId; }); if (at < 0) return; if (after) at++;
+    const next = rest.slice(0, at).concat(moving, rest.slice(at));
+    if (next.every(function (x, i) { return x === files[i]; })) return;
+    const was = files.slice(), cur = FD.cur;
+    FD.data.files = next; fdWorkDraw(); fdMsg('並べ替えました（この並びを 覚えます）。', 'ok');
+    gs('foldOrder', cur, next.map(function (x) { return x.id; })).then(function () {}, function (e) { if (FD.cur !== cur) return; FD.data.files = was; fdWorkDraw(); fdMsg('並べ替えを 覚えられませんでした。' + e.message, 'err'); });
+  }
   function fdMove(items, toId) {
     if (!items || !items.length) return;
     if (toId === FD.cur && !FD.search) { fdMsg('もう このフォルダの中にあります。'); return; }
@@ -3345,6 +3402,15 @@
       FD.move = its; fdDisarm(); fdFormClose(); $('fdMain').classList.add('tree'); fdBtns(); fdMsg('移す先のフォルダを 左の並びで押してください。');
     };
     $('fdDel').onclick = fdTrash;
+    $('fdMail').onclick = function () {
+      const its = fdSelected().filter(function (x) { return x.kind === 'file'; }); if (!its.length) return;
+      const win = window.open('', '_blank');   /* 押した流れの中で 窓を開いておく（あとで開くと ブラウザに止められる） */
+      fdMsg('Gmail の下書きを 作っています…（' + its.length + '件）'); $('fdMail').disabled = true;
+      gs('foldGmail', its.map(function (x) { return x.id; })).then(function (r) {
+        if (win) win.location.href = r.url; else fdOut(r.url);
+        fdBtns(); fdMsg('Gmail の下書きに ' + r.n + '件 添付しました。開いた Gmail で 宛先・件名を入れて 送ってください。', 'ok');
+      }, function (e) { try { if (win) win.close(); } catch (x) {} fdBtns(); fdMsg('Gmail の下書きを 作れませんでした。' + e.message + '（デスクトップへ つかんで出してから Gmail へ落とすこともできます）', 'err'); });
+    };
     $('fdDrive').onclick = function () { fdOut((FD.data && FD.data.url) || (FD.info && FD.info.url)); };
     $('fdReload').onclick = function () { fdReload(); };
     $('fdTreeBtn').onclick = function () { $('fdMain').classList.toggle('tree'); };
@@ -3372,7 +3438,7 @@
      ・変換 … PDF → 画像（ページごとの JPEG）／画像 → PDF／PDF・画像 → ワード（OCR）／ワード → PDF・画像
      ・できたものは 同じフォルダに 別のファイルとして置く
      ・外へ出す … 選んだときに 中身を読んでおき、つかんで デスクトップ・フォルダへ落とすと ファイルになる（Chrome・Edge） */
-  const FDB = { bytes: {}, order: [], run: false };
+  const FDB = { bytes: {}, order: [], run: false, miss: {}, hov: 0 };
   function fdKind(it) {
     if (!it || it.kind !== 'file') return '';
     const m = String(it.mime || ''), x = fdExt(it.name);
@@ -3381,12 +3447,12 @@
     if (/wordprocessingml|msword/.test(m) || x === 'DOCX' || x === 'DOC') return 'word';
     return '';
   }
-  function fdBytes(it) {
+  function fdBytes(it, any) {
     if (FDB.bytes[it.id]) return Promise.resolve(FDB.bytes[it.id]);
-    return gs('foldFile', it.id).then(function (r) {
+    return gs('foldFile', it.id, any ? 1 : 0).then(function (r) {
       if (!r || !r.b64) throw new Error('「' + it.name + '」は ここでは 読めない形か、大きすぎます（12MB まで）。');
       const o = { id: it.id, name: r.name, mime: r.mime, b64: r.b64 };
-      FDB.bytes[it.id] = o; FDB.order.push(it.id); while (FDB.order.length > 6) delete FDB.bytes[FDB.order.shift()];   /* 覚えるのは 6つまで（端末の記憶を 使いすぎない） */
+      FDB.bytes[it.id] = o; FDB.order.push(it.id); while (FDB.order.length > 10) delete FDB.bytes[FDB.order.shift()];   /* 覚えるのは 10 まで（端末の記憶を 使いすぎない） */
       return o;
     });
   }
@@ -3430,8 +3496,8 @@
   function fdBusy(on) { FDB.run = on; ['fdJoin', 'fdConv'].forEach(function (i) { const e = $(i); if (e) e.disabled = on || e.dataset.off === '1'; }); }
   function fdDoneReload(t, bad) { return fdReload().then(function () { fdMsg(t, bad ? 'err' : 'ok'); }); }
   /* まとめる */
-  async function fdJoin() {
-    const its = FD.items.filter(function (x) { return FD.sel[x.id]; });
+  async function fdJoin(list) {
+    const its = Array.isArray(list) ? list : FD.items.filter(function (x) { return FD.sel[x.id]; });
     if (FDB.run || its.length < 2) return;
     if (its.some(function (x) { const k = fdKind(x); return k !== 'pdf' && k !== 'img'; })) { fdMsg('まとめられるのは PDF と 画像です（DocuWorks・エクセル・ワードは 先に PDF にしてください）。', 'err'); return; }
     const to = FD.cur; fdBusy(true);
@@ -3439,7 +3505,8 @@
       const u8 = await fdPdfOf(its, function (i, n) { fdMsg('まとめています… ' + i + ' / ' + n); });
       if (u8.length > ((FD.info && FD.info.maxMb) || 20) * 1048576) throw new Error('まとめたものが 大きすぎます（20MB まで）。少なく選んで まとめてください。');
       fdMsg('保存しています…');
-      const name = fdBase(its[0].name) + '_まとめ.pdf';
+      let name = fdBase(its[0].name) + '_まとめ.pdf';
+      for (let n = 2; FD.items.some(function (x) { return x.name === name; }) && n < 100; n++) name = fdBase(its[0].name) + '_まとめ(' + n + ').pdf';   /* 同じ名前を 2つ作らない */
       await gs('foldUp', to, name, 'application/pdf', fdU8b64(u8));
       fdBusy(false); await fdDoneReload(its.length + 'つを 1つの PDF に まとめました（「' + name + '」。元のファイルは そのままです）。');
     } catch (e) { fdBusy(false); fdMsg(e.message, 'err'); }
