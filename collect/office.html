@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794734418;</script>
+<script>window.__PAGE_VER=1794737177;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -199,6 +199,21 @@
   .jfast.on { background: #E8A400; color: #fff; border-color: #E8A400; }
   .jtouch .jpop, .jtouch #jLay button[data-l="w"], .jtouch .jwin:not(#jAi) { display: none !important; }
   /* ★ AI で下書きは スマホでも使う（別ウィンドウの道具だけ隠す。2026-10-13） */
+  #jLedIn { display: none; } .jtouch #jLedIn.jwin { display: inline-block !important; }
+  #ledIn { position: fixed; inset: 0; z-index: 2900; background: #F5F2EA; overflow: auto; -webkit-overflow-scrolling: touch; }
+  #ledIn[hidden] { display: none; }
+  #ledIn .lih { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--accent); color: #fff; font-weight: 700; }
+  #ledIn .lih button { margin-left: auto; }
+  #ledIn .bxl { padding: 8px; } #ledIn .bxh { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; margin-bottom: 6px; } #ledIn .bxh .note { font-size: 12px; color: var(--sub); }
+  #ledIn .lisc { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #ledIn table { border-collapse: collapse; font-size: 13px; background: #fff; min-width: 640px; width: 100%; }
+  #ledIn th { white-space: pre-line; background: var(--ai); color: #fff; border: 1px solid #fff; padding: 4px 6px; font-size: 12px; text-align: center; }
+  #ledIn td { border: 1px solid var(--a-soft); padding: 4px 6px; vertical-align: top; overflow-wrap: anywhere; }
+  #ledIn td.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; } #ledIn td:nth-child(2) { white-space: nowrap; }
+  #ledIn tr.bcy td, #ledIn tr.bsum td { font-weight: 700; background: #F4F8F6; } #ledIn tr.cur td { background: #FFF4C8; } #ledIn tr.draft td { font-style: italic; color: #555; } #ledIn tr.none td { color: #B3261E; }
+  #ledIn .sb, #ledIn small { color: var(--sub); font-size: 11px; } #ledIn small { margin-left: 4px; } #ledIn .tx { text-align: center; white-space: nowrap; }
+  #ledIn .st { font-size: 11px; font-weight: 700; border-radius: 4px; padding: 0 5px; white-space: nowrap; font-style: normal; } #ledIn .st.ok { background: #E2F2EA; color: #0F6E56; } #ledIn .st.dr { background: #FFF0C2; color: #7A5B00; } #ledIn .st.no { background: #FBE4E2; color: #B3261E; }
+  #ledIn .lgv.ok { color: #0F6E56; } #ledIn .lgv.ng { color: #B3261E; } #ledIn .msg { padding: 24px 8px; color: var(--sub); }
   .jwin { font: inherit; font-size: 12.5px; font-weight: 700; border: 1.5px solid var(--ai); color: var(--ai); background: #fff; border-radius: 7px; padding: 2px 9px; cursor: pointer; }
   /* ★ 出納帳の別ウィンドウは 縦1列・横2列でも使える（2026-10-13）。［3つに並べる］も いつも出す */
   .ledpop .jdrow .jledg { display: none; }
@@ -1019,9 +1034,9 @@
   .aiask[hidden] { display: none; }
   .aiask .box { background: #fff; border-radius: 16px; padding: 18px 18px 14px; max-width: 520px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
   .aiask h3 { margin: 0 0 6px; font-size: 18px; } .aiask p { margin: 4px 0 12px; font-size: 14px; color: var(--sub); }
-  .aiask .ch { display: grid; gap: 10px; }
-  .aiask .ch button { text-align: left; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font: inherit; cursor: pointer; }
-  .aiask .ch button b { display: block; font-size: 17px; } .aiask .ch button span { font-size: 13px; color: var(--sub); }
+  .aiask .ch { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+  .aiask .ch button { min-width: 0; width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: left; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font: inherit; cursor: pointer; }
+  .aiask .ch button b { display: block; font-size: 17px; } .aiask .ch button span { display: block; font-size: 13px; color: var(--sub); line-height: 1.5; }
   .aiask .ch button[data-m="batch"] { border-color: #0F6E56; background: #EEF7F2; }
   .aiask .ch button:focus { outline: 3px solid #0F6E56; outline-offset: 1px; }
   .aiask .no { margin-top: 10px; width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: #fff; font: inherit; cursor: pointer; }
@@ -1661,7 +1676,7 @@
     <div class="jlhead">
       <span class="jlsum" id="jlsum"></span>
       <span class="seg" id="jLay" role="group" aria-label="並べ方"><button type="button" data-l="v" aria-pressed="true">縦1列</button><button type="button" data-l="h" aria-pressed="false">横2列</button><button type="button" data-l="w" aria-pressed="false">画像を別ウィンドウ表示</button></span>
-      <button type="button" class="jpop" id="jPopGo" hidden>📎 画像を別ウィンドウ表示</button><button type="button" class="jwin" id="jLedGo" title="複数仕訳辞書の写真の 総勘定元帳を 別ウィンドウに">📗 元帳を別ウィンドウ</button><button type="button" class="jwin" id="jAi" hidden title="この画面の未処理の写真を AI に読ませて、日付・金額・辞書の下書きを付ける（もう一度押すと 読み直して上書き）">🤖 AI で下書き</button><button type="button" class="jwin" id="jAiRep" hidden title="この画面に並んでいる写真について、AI が何を読み・どう考えて・どの仕訳にしたか（決め手・確からしさの内訳・別の案・決められなかった理由・背骨との当たり・人が確定した仕訳との違い）を まとめて書き出す。Claude に渡して 改善に使う">🧾 AI の判断を書き出す</button><button type="button" class="jwin" id="jArrange" title="写真・辞書の一覧（この画面）・元帳の3つを 重ならないように並べる。モニターが何枚あっても使える">🪟 3つに並べる</button>
+      <button type="button" class="jpop" id="jPopGo" hidden>📎 画像を別ウィンドウ表示</button><button type="button" class="jwin" id="jLedGo" title="複数仕訳辞書の写真の 総勘定元帳を 別ウィンドウに">📗 元帳を別ウィンドウ</button><button type="button" class="jwin" id="jLedIn" title="この箱の元帳（できた仕訳と 残高）を この画面の上に開く">📗 元帳を見る</button><button type="button" class="jwin" id="jAi" hidden title="この画面の未処理の写真を AI に読ませて、日付・金額・辞書の下書きを付ける（もう一度押すと 読み直して上書き）">🤖 AI で下書き</button><button type="button" class="jwin" id="jAiRep" hidden title="この画面に並んでいる写真について、AI が何を読み・どう考えて・どの仕訳にしたか（決め手・確からしさの内訳・別の案・決められなかった理由・背骨との当たり・人が確定した仕訳との違い）を まとめて書き出す。Claude に渡して 改善に使う">🧾 AI の判断を書き出す</button><button type="button" class="jwin" id="jArrange" title="写真・辞書の一覧（この画面）・元帳の3つを 重ならないように並べる。モニターが何枚あっても使える">🪟 3つに並べる</button>
       <span class="jlsave" id="saving" role="status"></span>
     </div>
     <div class="bdask" id="bdAsk" hidden role="status" aria-live="polite"></div>
@@ -4588,8 +4603,11 @@
   }
   function ledAcct(code, sb) { if (!code) return ''; const a = (S.acctMap || {})[code] || {}, sn = sb ? ((S.subMap || {})[code + '|' + sb] || '') : ''; return { c: code + (sb ? '-' + sb : ''), n: (a.name || '') + (sn ? '・' + sn : '') }; }
   function ledBoxFill() {
-    if (!LPOP || LPOP.closed) return;
-    const d = LPOP.document, host = d.getElementById('bxl'); if (!host) return;
+    if (LPOP && !LPOP.closed) ledBoxFill1(LPOP.document, LPOP.document.getElementById('bxl'));
+    const hi = document.getElementById('bxlIn'); if (hi && !document.getElementById('ledIn').hidden) ledBoxFill1(document, hi);
+  }
+  function ledBoxFill1(d, host) {
+    if (!host) return;
     const mk = function (tag, cls, txt) { const x = d.createElement(tag); if (cls) x.className = cls; if (txt != null) x.textContent = txt; return x; };
     const rows = LEDROWS = ledBoxRows(), view = S.view || [];
     const key = (S.code || '') + '|' + view.map(function (x) { return x.id; }).join(',');
@@ -4699,6 +4717,17 @@
   }
   /* ★ 元帳を別ウィンドウにしたら 窓は3つになるので、その場で 3等分に並べる（2026-10-13） */
   /* 画像も別ウィンドウなら 3等分に並べる。縦1列・横2列なら 出納帳だけ別ウィンドウ（右の1/3）に */
+  /* ★★ スマホでも 元帳を見る（2026-11-16）：別の窓は 開けないので、この画面の上に 元帳を いっぱいに開く。行を押すと 閉じて その取引の伝票へ */
+  (function () {
+    const w = el('div'); w.id = 'ledIn'; w.hidden = true; w.setAttribute('role', 'dialog'); w.setAttribute('aria-label', '元帳');
+    w.innerHTML = '<div class="lih"><span>📗 元帳</span><button type="button" id="ledInX">閉じる</button></div><div class="lisc"><div class="bxl" id="bxlIn"></div></div>';
+    document.body.appendChild(w);
+    const close = function () { w.hidden = true; };
+    w.querySelector('#ledInX').onclick = close;
+    w.addEventListener('click', function (e) { const tr = e.target.closest && e.target.closest('tbody tr[data-i]'); if (!tr) return; const i = Number(tr.dataset.i); close(); ledBoxGo(i); const r = LEDROWS[i], row = r && rowOf(r.img); if (row) { try { row.scrollIntoView({ block: 'start' }); } catch (x) {} } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !w.hidden) close(); });
+    $('jLedIn').addEventListener('click', function () { w.hidden = false; ledBoxFill(); w.scrollTop = 0; });
+  })();
   $('jLedGo').addEventListener('click', function () {
     if (jlay() === 'w') { arrange3(true); return; }
     if (!ledOpen()) return;
