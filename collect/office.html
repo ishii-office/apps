@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794728193;</script>
+<script>window.__PAGE_VER=1794729986;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -10307,6 +10307,15 @@
     if (l.memo != null) v.memo = l.memo;
     /* ★ 取引先コードがあれば 取引先の表の名前を出す（AI の下書き・辞書のどちらでも） */
     if (v.party && !v.partyName) { let pc = String(v.party); if (/^\d{1,5}$/.test(pc)) pc = ('000000' + pc).slice(-6); v.partyName = (S.partyMap || {})[pc] || ''; }
+    /* ★★ 科目・補助の名前（2026-11-16）：コードを AI・人が入れ替えたら その科目の名前。空なら 科目の表の名前（6218 → 通信費、1111 → 現金） */
+    [['dr', 'drCode', 'drSub', 'drSubName'], ['cr', 'crCode', 'crSub', 'crSubName']].forEach(function (q) {
+      const code = String(v[q[1]] || ''), sb = String(v[q[2]] || ''), am = (S.acctMap || {})[code];
+      if (code && am && am.name && ((l.ov[q[1]] != null && l.ov[q[0]] == null) || !v[q[0]])) v[q[0]] = am.name;
+      const sn = code && sb ? (S.subMap || {})[code + '|' + sb] : '';
+      if (sn && ((l.ov[q[2]] != null && l.ov[q[3]] == null) || (l.ov[q[1]] != null && l.ov[q[3]] == null) || !v[q[3]])) v[q[3]] = sn;
+    });
+    /* ★★ 取引先のコード（2026-11-16）：名前だけ分かっているとき、取引先の表に 同じ名前が1つだけあれば そのコードを 名前の前に出す */
+    if (!v.party && v.partyName) { const pc2 = partyCodeOf(v.partyName); if (pc2) v.party = pc2; }
     v.per = (itemOf(id) || {}).period || '';
     v.date = c.date || datePre(v.per); v.amount = l.amount;
     return v;
@@ -11463,7 +11472,9 @@
   }
   /* 取引先（FX の取引先別管理の一覧）。コード → 取引先名 */
   S.party = []; S.partyMap = {};
-  function partySet(p) { S.party = p || []; S.partyMap = {}; S.party.forEach(function (x) { if (x.name && !S.partyMap[x.code]) S.partyMap[x.code] = x.name; }); if (S.dsub === 'p') drawParty(); }
+  function partyKey(n) { return String(n || '').normalize('NFKC').toLowerCase().replace(/株式会社|有限会社|合同会社|\(株\)|\(有\)|㈱|㈲|[\s　・･,.，．()（）-]/g, ''); }
+  function partyCodeOf(name) { const k = partyKey(name); if (!k) return ''; const m = S.partyKeyMap || {}; return m[k] && m[k] !== '*' ? m[k] : ''; }
+  function partySet(p) { S.party = p || []; S.partyMap = {}; S.partyKeyMap = {}; S.party.forEach(function (x) { const k = partyKey(x.name); if (k) S.partyKeyMap[k] = S.partyKeyMap[k] && S.partyKeyMap[k] !== x.code ? '*' : x.code; }); S.party.forEach(function (x) { if (x.name && !S.partyMap[x.code]) S.partyMap[x.code] = x.name; }); if (S.dsub === 'p') drawParty(); }
   /* ---- 取引先の表（科目コード・取引先コード・取引先名。マスターだけ変えられる） ---- */
   function drawParty(rows) {
     const box = $('pRows'); box.textContent = '';
@@ -12058,8 +12069,8 @@
       base = aiBase(it, pr);
       if (base) {
         ov = {};
-        if (pr.drCode && pr.drCode !== base.drCode) { ov.drCode = pr.drCode; ov.dr = acctName(pr.drCode); }
-        if (pr.crCode && pr.crCode !== base.crCode) { ov.crCode = pr.crCode; ov.cr = acctName(pr.crCode); }
+        if (pr.drCode && pr.drCode !== base.drCode) { ov.drCode = pr.drCode; ov.dr = pr.dr || acctName(pr.drCode); }
+        if (pr.crCode && pr.crCode !== base.crCode) { ov.crCode = pr.crCode; ov.cr = pr.cr || acctName(pr.crCode); }
         /* ★ 新しいやり方は 補助まで決めてくる */
         if (pr.drSub != null && (pr.drCode || base.drCode) && String(pr.drSub) !== String(base.drSub || '')) { ov.drSub = pr.drSub; ov.drSubName = pr.drSubName || ''; }
         if (pr.crSub != null && (pr.crCode || base.crCode) && String(pr.crSub) !== String(base.crSub || '')) { ov.crSub = pr.crSub; ov.crSubName = pr.crSubName || ''; }
