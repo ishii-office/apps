@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794746257;</script>
+<script>window.__PAGE_VER=1794747597;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2066,7 +2066,7 @@
     <textarea id="mText" rows="16" maxlength="20000" aria-label="引き継ぎメモ" placeholder="# この顧問先の引き継ぎメモ&#10;## 通帳（みらい銀行 1113-02）&#10;- 毎月10日 公庫の返済：元金 30,000 固定（長期借入金 2212-04）、残りは 支払利息 7511-04&#10;## 現金・領収書&#10;- ガソリンは 旅費交通費 6112-02（燃料代）"></textarea>
     <div class="bar">
       <button type="button" class="btn sm" id="mSave">保存（新しい版）</button>
-      <button type="button" class="btn ghost sm" id="mAi">🤖 AI に書かせる（過去の仕訳から）</button>
+      <button type="button" class="btn ghost sm" id="mAi" title="過去の仕訳を AI が読んで、毎月の決まった取引・この顧問先の決まり・事務所共通とちがう処理を見つけ、引き継ぎメモの新しい版に入れます。押したときだけ動きます（1回 数十円〜百円ほど・1〜2分）">🔎 過去仕訳から ルールを見つけ出す</button><span class="note" id="mAiNote">押したときだけ AI が読みます（1回 数十円〜百円ほど・1〜2分）。過去仕訳を入れただけでは 動きません。</span>
       <span class="note" id="mLen"></span>
     </div>
     <div class="mqs" id="mQs" hidden></div>
@@ -12760,8 +12760,8 @@
   });
   $('mAi').addEventListener('click', function () {
     const code = S.code; if (!code || MT.busy) return;
-    if (!confirm('AI に 過去の仕訳から 引き継ぎメモを書かせます（1回 数十円〜百円ほど）。\nいまのメモは 前の版として残ります。')) return;
-    MT.busy = true; this.disabled = true; mtMsg('mMsg', 'AI が 過去の仕訳を読んで メモを書いています…（1〜2分）');
+    if (!confirm('AI が 過去の仕訳を読んで ルールを見つけ出し、引き継ぎメモの新しい版に入れます。\n費用：1回 数十円〜百円ほど（過去仕訳が多いほど 高くなります）。時間：1〜2分。\nいまのメモは 前の版として残ります。')) return;
+    MT.busy = true; this.disabled = true; mtMsg('mMsg', 'AI が 過去の仕訳を読んで ルールを見つけています…（1〜2分）');
     const btn = this;
     gs('memoWrite', code).then(function (m) {
       MT.busy = false; btn.disabled = false; if (code !== S.code) return;
@@ -13262,14 +13262,8 @@
       if (code !== S.code) return;
       const base = (head ? head + '　' : '') + x.from + '件の仕訳から ルールを ' + x.rules + '件 作りました。';
       rMsg(base, 'ok'); rLoad();
-      /* ★★ 過去仕訳を入れたら 続けて AI が ルールを見つける（2026-11-17）。引き継ぎメモの新しい版になる（前の版は残る）。AI を使わない顧問先・仕訳が少ないときは しない */
-      if (!head || MT.busy || !(S.fxConf && S.fxConf.ai)) return;
-      MT.busy = true; rMsg(base + '　続けて AI が 過去の仕訳から ルールを見つけています…（1〜2分。数十円〜百円ほど）');
-      return gs('memoWrite', code).then(function (m) {
-        MT.busy = false; if (code !== S.code) return;
-        memoDraw(m); memoFound(m); mtLoad();
-        rMsg(base + '　AI が ルールを ' + (m.found || []).length + '件 見つけて 引き継ぎメモ（版 ' + m.ver + '）に入れました（約' + yenS(m.yen) + '円）。下の「引き継ぎメモ」で 確かめてください。', 'ok');
-      }, function (e) { MT.busy = false; if (code === S.code) rMsg(base + '（AI のルール探しは できませんでした：' + e.message + '）', 'ok'); });
+      /* ★ 過去仕訳を入れただけでは AI は動かさない（2026-11-17 石井：勝手に お金がかかるのは困る）。ルールを見つけるのは ［🔎 過去仕訳から ルールを見つけ出す］を押したときだけ */
+      if (head && S.fxConf && S.fxConf.ai) rMsg(base + '　AI に ルールを見つけさせるときは 下の［🔎 過去仕訳から ルールを見つけ出す］を押してください（押したときだけ 費用がかかります）。', 'ok');
     }, function (e) { rMsg(e.message, 'err'); });
   }
   $('rOffice').addEventListener('click', function () {
