@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794731541;</script>
+<script>window.__PAGE_VER=1794732844;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -4796,10 +4796,11 @@
        仕訳は CSV の行から入れる。写真の下書きは 脇へよけておく（CSV を外したら 戻る）。もう 写真から仕訳を入れてあるときは そのまま */
   function bookSrcFix() {
     const ai = S.ai || (S.ai = {}), keep = S.aiSrc || (S.aiSrc = {}), csv = {}, src = {};
-    (S.items || []).forEach(function (it) { if (isSheetFile(it) && /出納帳（アプリ）_|現金出納帳（業務日報）_/.test(it.name) && !(it.skip && it.status !== 'done')) csv[it.box + '|' + it.period] = it.id; });
+    const isBook = function (it) { return isSheetFile(it) && /出納帳（アプリ）_|現金出納帳（業務日報）_/.test(it.name); };
+    (S.items || []).forEach(function (it) { if (isBook(it) && !(it.skip && it.status !== 'done')) csv[it.box + '|' + it.period] = it.id; });   /* 同じ月分に 2つあれば あとから入ったほうが 補助簿 */
     (S.items || []).forEach(function (it) {
-      const c = csv[it.box + '|' + it.period]; if (!c || it.id === c || isSheetFile(it) || (it.entries || []).length || it.status === 'done') return;
-      const d = ai[it.id] || keep[it.id]; if (!((d && d.multi) || isMulti(it))) return;
+      const c = csv[it.box + '|' + it.period]; if (!c || it.id === c || (isSheetFile(it) && !isBook(it)) || (it.entries || []).length || it.status === 'done') return;
+      const d = ai[it.id] || keep[it.id]; if (!(isBook(it) || (d && d.multi) || isMulti(it))) return;
       src[it.id] = c; if (ai[it.id]) { keep[it.id] = ai[it.id]; delete ai[it.id]; }
     });
     Object.keys(keep).forEach(function (id) { if (!src[id]) { if (!ai[id]) ai[id] = keep[id]; delete keep[id]; } });
@@ -6332,7 +6333,7 @@
       if (code !== S.code) return;
       if (r.skipped) { it.skip = 1; try { docsLoad(true); } catch (e) {} try { load(); } catch (e) {} }
       docsClose();
-      const msg = '✓ 写真から ' + r.n + ' 行を起こしました' + (r.merged ? '（2つの資料に重なった取引 ' + r.merged + '件は 1つに）' : '') + (r.carrySet ? '（繰越 ' + Number(r.carryRead).toLocaleString('ja-JP') + ' 円を入れました）' : '') + ((r.pre || r.post) ? '。' + perLabel(ym) + '以外の行（前の月 ' + (r.pre || 0) + '・次の月 ' + (r.post || 0) + '）は 入れていません' : '') + (r.alias ? '。摘要の書き方がちがう取引 ' + r.alias + '件を ルールにしました' : '') + (r.turnedOn ? '。この箱に 出納帳を付けました' : '') + (r.skipped ? '。元の写真は 対象外（出納帳の原本）にしました' : '') + '。' + (r.note ? '　AI のメモ：' + r.note : '');
+      const msg = '✓ 写真から ' + r.n + ' 行を起こしました' + (r.merged ? '（2つの資料に重なった取引 ' + r.merged + '件は 1つに）' : '') + (r.carrySet ? '（繰越 ' + Number(r.carryRead).toLocaleString('ja-JP') + ' 円を入れました）' : '') + (r.filled ? '（行ごとの残高は 明細の おわりの残高から 計算しました）' : '') + ((r.pre || r.post) ? '。' + perLabel(ym) + '以外の行（前の月 ' + (r.pre || 0) + '・次の月 ' + (r.post || 0) + '）は 入れていません' : '') + (r.alias ? '。摘要の書き方がちがう取引 ' + r.alias + '件を ルールにしました' : '') + (r.turnedOn ? '。この箱に 出納帳を付けました' : '') + (r.skipped ? '。元の写真は 対象外（出納帳の原本）にしました' : '') + '。' + (r.note ? '　AI のメモ：' + r.note : '');
       obOpen(box, ym, '', msg);
     }, function (e) { b.disabled = false; b.textContent = was; alert('出納帳として読めませんでした。' + e.message); });
   }
