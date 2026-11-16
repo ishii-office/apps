@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794802083;</script>
+<script>window.__PAGE_VER=1794805653;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1293,6 +1293,8 @@
   .fdlist .fdit.insb { box-shadow: 0 -4px 0 0 var(--accent); } .fdlist .fdit.insa { box-shadow: 0 4px 0 0 var(--accent); }
   .fdit.joinon { outline: 3px solid var(--accent); outline-offset: -3px; background: var(--a-tint); }
   .fdit.joinon::after { content: '重ねて 1つの PDF に'; position: absolute; left: 4px; right: 4px; bottom: 4px; padding: 3px 4px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; text-align: center; pointer-events: none; }
+  .fdit.upl { opacity: .6; border-style: dashed; }
+  .fdit.upl .at { color: var(--accent); font-weight: 700; }
   .fdit.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; background: var(--sel); }
   .fdit .pic { height: 92px; display: flex; align-items: center; justify-content: center; font-size: 46px; line-height: 1; overflow: hidden; border-radius: 4px; background: var(--bg); }
   .fdit .pic img { max-width: 100%; max-height: 100%; }
@@ -3145,7 +3147,7 @@
     fdBtns(); fdThumbs();
   }
   function fdTile(it, i) {
-    const e = el('div', 'fdit' + (FD.sel[it.id] ? ' sel' : '') + (it.drive ? ' drv' : '')); e.dataset.id = it.id; e.dataset.kind = it.kind; e.dataset.i = String(i); e.tabIndex = 0; e.draggable = !it.drive;
+    const e = el('div', 'fdit' + (FD.sel[it.id] ? ' sel' : '') + (it.drive ? ' drv' : '') + (it.up ? ' upl' : '')); e.dataset.id = it.id; e.dataset.kind = it.kind; e.dataset.i = String(i); e.tabIndex = 0; e.draggable = !it.drive && !it.up;
     e.title = it.name + (it.where ? '\n' + it.where : '');
     const pic = el('div', 'pic');
     if (it.kind === 'folder') pic.textContent = '📁';
@@ -3157,6 +3159,7 @@
     e.appendChild(el('div', 'nm', it.name));
     e.appendChild(el('div', 'sub at', it.where || (it.drive ? '共有ドライブ' : it.lock ? '🔒 見るだけ' : it.kind === 'folder' ? 'フォルダ' : it.at || '')));
     e.appendChild(el('div', 'sub sz', it.kind === 'folder' ? '' : fdSize(it.size)));
+    if (it.up) { e.addEventListener('click', function (ev) { ev.stopPropagation(); }); return e; }   /* 入れている途中の札は 触れない（届いたら 本物に入れ替わる） */
     e.addEventListener('click', function (ev) {
       ev.stopPropagation(); fdDisarm();
       const only = Object.keys(FD.sel).length === 1 && FD.sel[it.id];
@@ -3181,7 +3184,7 @@
     e.addEventListener('dragend', function () { FD.drag = null; fdDropClear(); });
     /* ★ マウスを のせたら 中身を読んでおく（2026-11-16）：選ばずに いきなり つかんでも 外へ ファイルとして出せるように */
     if (it.kind === 'file') {
-      e.addEventListener('mouseenter', function () { clearTimeout(FDB.hov); FDB.hov = setTimeout(function () { fdOutReady(it); }, 350); });
+      e.addEventListener('mouseenter', function () { clearTimeout(FDB.hov); FDB.hov = setTimeout(function () { fdOutReady(it); }, 120); });
       e.addEventListener('mouseleave', function () { clearTimeout(FDB.hov); });
       fdFileDropBind(e, it);
     }
@@ -3208,7 +3211,7 @@
   /* 小さい絵：画像と PDF だけ。12枚ずつ・1回に1往復 */
   function fdThumbs() {
     if (FD.thq) return;
-    const need = FD.items.filter(function (x) { return x.kind === 'file' && !(x.id in FD.thumbs) && (/^image\//.test(x.mime || '') || x.mime === 'application/pdf'); }).slice(0, 12).map(function (x) { return x.id; });
+    const need = FD.items.filter(function (x) { return x.kind === 'file' && !x.up && !(x.id in FD.thumbs) && (/^image\//.test(x.mime || '') || x.mime === 'application/pdf'); }).slice(0, 12).map(function (x) { return x.id; });
     if (!need.length) return;
     FD.thq = 1; const at = FD.cur, sr = FD.search;
     gs('foldThumbs', need).then(function (r) {
@@ -3344,33 +3347,68 @@
     else gs('foldRename', f.it.id, f.it.kind, v).then(function () { done('名前を変えました。'); }, ng);
   }
   /* ---- ファイルを入れる ---- */
+  /* ★★ 速さ（2026-11-16）：落とした瞬間に 作業スペースへ並べる（「入れています…」の札）。1つ届くたびに 本物に入れ替える。
+       前は 全部 届いてから 一覧を取り直していたので、そのあいだ 何も出なかった。入れた中身は 手元に覚えて、そのまま 外へ つかめる */
+  let fdUpSeq = 0;
   function fdUpload(list, toId) {
     const fs = Array.prototype.slice.call(list || []), max = ((FD.info && FD.info.maxMb) || 20) * 1024 * 1024;
     if (!fs.length) return;
-    /* ★ 2026-11-15：3つ並べて送る（前は 1つずつ 順番で 遅かった）。大きいもの・数が多いときは パソコンの Google ドライブ（G:）のほうが速い */
     let i = 0, ok = 0, run = 0, fin = 0; const bad = [];
+    const here = toId === FD.cur && FD.data && !FD.search;
+    const ph = fs.map(function (f) {
+      if (!here || f.size > max || !f.size) return null;
+      const o = { id: 'up_' + (++fdUpSeq), kind: 'file', name: f.name, size: f.size, mime: f.type || '', at: '入れています…', up: 1 };
+      if (/^image\/(jpeg|png|gif|webp)$/.test(f.type)) { try { FD.thumbs[o.id] = URL.createObjectURL(f); } catch (e) {} }
+      FD.data.files = (FD.data.files || []).concat([o]);
+      return o;
+    });
+    if (here) fdWorkDrawSoon();
     const say = function () { fdMsg('入れています… ' + fin + ' / ' + fs.length + ' 済み'); };
     const end = function () {
       const t = ok + '件を 入れました。' + (bad.length ? '（入れられなかったもの：' + bad.slice(0, 3).join('、') + (bad.length > 3 ? ' ほか' : '') + '）' : '');
-      if (toId === FD.cur) fdReload().then(function () { fdMsg(t, bad.length ? 'err' : 'ok'); }); else fdMsg(t, bad.length ? 'err' : 'ok');
+      if (toId === FD.cur && !FD.drag && S.tab === 'Fold') { clearTimeout(fdWdT); fdWorkDraw(); }
+      fdMsg(t, bad.length ? 'err' : 'ok');
+      /* 並びは サーバと同じに そろえる（裏で 静かに。小さい絵・選んでいるものは そのまま） */
+      if (toId === FD.cur && !FD.search && !FD.loading) {
+        gs('foldList', toId).then(function (r) {
+          if (FD.cur !== toId || FD.search || FD.loading || !r || !FD.data) return;
+          if (FD.data.files.some(function (x) { return x.up; })) return;
+          FD.data = r; FD.kids[r.id] = r.folders; fdWorkDrawSoon();
+        }, function () {});
+      }
     };
-    const one = function (f, done) {
+    const swap = function (o, row) {
+      if (!o || !FD.data || FD.cur !== toId) return;
+      const at = FD.data.files.indexOf(o);
+      if (row) { if (FD.thumbs[o.id]) FD.thumbs[row.id] = FD.thumbs[o.id]; if (at >= 0) FD.data.files[at] = row; else FD.data.files.push(row); }
+      else if (at >= 0) FD.data.files.splice(at, 1);
+      delete FD.thumbs[o.id];
+      fdWorkDrawSoon();
+    };
+    const one = function (f, o, done) {
       if (f.size > max) { bad.push(f.name + '（大きすぎます。パソコンの Google ドライブから入れてください）'); done(); return; }
       if (!f.size) { bad.push(f.name + '（空か フォルダです）'); done(); return; }
       const rd = new FileReader();
-      rd.onerror = function () { bad.push(f.name); done(); };
+      rd.onerror = function () { bad.push(f.name); swap(o, null); done(); };
       rd.onload = function () {
         const s = String(rd.result || ''), b64 = s.slice(s.indexOf(',') + 1);
-        gs('foldUp', toId, f.name, f.type || 'application/octet-stream', b64).then(function () { ok++; done(); }, function (e) { bad.push(f.name + '（' + e.message + '）'); done(); });
+        gs('foldUp', toId, f.name, f.type || 'application/octet-stream', b64).then(function (row) {
+          ok++;
+          if (row && row.id) fdBytesPut(row.id, { id: row.id, name: row.name || f.name, mime: row.mime || f.type || 'application/octet-stream', b64: b64 });
+          swap(o, row && row.id ? row : null); done();
+        }, function (e) { bad.push(f.name + '（' + e.message + '）'); swap(o, null); done(); });
       };
       rd.readAsDataURL(f);
     };
     const pump = function () {
       if (fin >= fs.length) { end(); return; }
-      while (run < 3 && i < fs.length) { run++; one(fs[i++], function () { run--; fin++; say(); pump(); }); }
+      while (run < 4 && i < fs.length) { const k = i++; run++; one(fs[k], ph[k], function () { run--; fin++; say(); pump(); }); }
     };
     say(); pump();
   }
+  /* 描き直しは まとめて1回（つかんでいる最中は 離してから） */
+  let fdWdT = 0;
+  function fdWorkDrawSoon() { clearTimeout(fdWdT); fdWdT = setTimeout(function () { if (FD.drag) { fdWorkDrawSoon(); return; } if (S.tab === 'Fold') fdWorkDraw(); }, 60); }
   /* ---- さがす ---- */
   function fdSearch() {
     const q = $('fdQ').value.trim();
@@ -3468,16 +3506,26 @@
     return gs('foldFile', it.id, any ? 1 : 0).then(function (r) {
       if (!r || !r.b64) throw new Error('「' + it.name + '」は ここでは 読めない形か、大きすぎます（12MB まで）。');
       const o = { id: it.id, name: r.name, mime: r.mime, b64: r.b64 };
-      FDB.bytes[it.id] = o; FDB.order.push(it.id); while (FDB.order.length > 10) delete FDB.bytes[FDB.order.shift()];   /* 覚えるのは 10 まで（端末の記憶を 使いすぎない） */
+      fdBytesPut(it.id, o);
       return o;
     });
+  }
+  /* 覚える中身：合わせて 80MB まで（前は 10件まで。★ 2026-11-16 速さ：入れたもの・のせたものを 長く覚えて 取り直さない） */
+  function fdBytesPut(id, o) {
+    if (!id || !o || !o.b64) return;
+    if (FDB.bytes[id]) FDB.order.splice(FDB.order.indexOf(id), 1);
+    FDB.bytes[id] = o; FDB.order.push(id);
+    let sz = 0; FDB.order.forEach(function (k) { sz += (FDB.bytes[k] && FDB.bytes[k].b64.length) || 0; });
+    while (sz > 80 * 1048576 && FDB.order.length > 1) { const k = FDB.order.shift(); sz -= (FDB.bytes[k] && FDB.bytes[k].b64.length) || 0; delete FDB.bytes[k]; }
   }
   function fdBase(name) { return String(name || '').replace(/\.[A-Za-z0-9]{1,5}$/, '') || String(name || 'ファイル'); }
   function fdU8b64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
   function fdImgSize(src) { return new Promise(function (ok, ng) { const im = new Image(); im.onload = function () { ok([im.naturalWidth, im.naturalHeight]); }; im.onerror = function () { ng(new Error('画像が読めません')); }; im.src = src; }); }
   /* いくつかの PDF・画像 → 1つの PDF（バイト） */
   async function fdPdfOf(items, prog) {
-    const L = await pdflib(), out = await L.PDFDocument.create();
+    /* ★ 速さ（2026-11-16）：中身は 先に 3本 並べて取ってくる（前は 1つずつ順番） */
+    const q = items.slice(); const lane = async function () { while (q.length) { const it = q.shift(); try { await fdBytes(it); } catch (e) {} } };
+    const [L] = await Promise.all([pdflib(), lane(), lane(), lane()]); const out = await L.PDFDocument.create();
     for (let i = 0; i < items.length; i++) {
       prog(i + 1, items.length);
       const b = await fdBytes(items[i]);
@@ -8176,12 +8224,16 @@
     items.forEach(function (it) { if (IMG[it.id] && IMG[it.id].t !== 'later') out[it.id] = IMG[it.id]; });
     let need = items.map(function (it) { return it.id; }).filter(function (id) { return !out[id]; });
     let done = items.length - need.length; prog(done);
-    while (need.length) {
-      const b = need.splice(0, 6);
-      const r = await gs('viewerImages', b);
-      b.forEach(function (id) { const v = r[id] || { t: 'drive' }; if (v.t === 'later') need.unshift(id); else { out[id] = v; done++; } });
-      prog(done);
-    }
+    /* ★ 速さ（2026-11-16）：6件ずつを 3本 並べて取る（前は 1本ずつ順番。PDF・外へ出す が 待たされていた） */
+    const lane = async function () {
+      while (need.length) {
+        const b = need.splice(0, 6);
+        let r; try { r = await gs('viewerImages', b); } catch (e) { need.unshift.apply(need, b); throw e; }
+        b.forEach(function (id) { const v = r[id] || { t: 'drive' }; if (v.t === 'later') need.push(id); else { out[id] = v; done++; } });
+        prog(done);
+      }
+    };
+    await Promise.all([lane(), lane(), lane()]);
     return out;
   }
   function toJpeg(src) {
