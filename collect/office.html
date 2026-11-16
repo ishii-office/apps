@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794812418;</script>
+<script>window.__PAGE_VER=1794814552;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -7013,124 +7013,10 @@
        返す：ファイル（DownloadURL）を渡せたか。渡せないとき（Chrome 以外）だけ 呼ぶ側が 文字を入れる */
   const DT_CHROME = /Chrome\//.test(navigator.userAgent);
   function dtPutFile(e, o) { return DT_CHROME || !!(o && o.url); }
-  /* ★★ 2026-11-11：DocuWorks の机へ（アプリの外へ）。
-       Chrome・Edge の DownloadURL は エクスプローラー（デスクトップ・フォルダ）なら ファイルになるが、DocuWorks の机は 受け取らない
-       （ブラウザは 落とすまで ファイルを渡さないしくみで、DocuWorks は 落とす前に中身を確かめに来るため。ページの側からは 変えられない）。
-       そこで ファイルをつかんでいるあいだ 画面の右下に［📂 DocuWorks へ］の受け口を出し、そこへ落とすと
-       はじめに選んだ DocuWorks のフォルダ（机のフォルダ）へ そのまま書きこむ（File System Access。この端末が覚える）。
-       どの つかみ方（札・別ウィンドウ・作業デスク・大きく見る・取っ手）でも、DownloadURL を入れたドラッグなら 同じ受け口が出る */
-  const DW_OK = typeof window.showDirectoryPicker === 'function' && !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-  const DW_MEM = { dir: null };   /* 選んだフォルダ（ほかの窓とも分け合う） */
-  function dwParse(s) {
-    s = String(s || ''); const i = s.indexOf(':'); if (i < 0) return null;
-    const rest = s.slice(i + 1), j = rest.search(/:(data|blob|https?):/); if (j < 0) return null;
-    return { mime: s.slice(0, i), name: rest.slice(0, j), url: rest.slice(j + 1) };
-  }
-  function dwDb(w, fn) {
-    return new Promise(function (ok) {
-      try {
-        const rq = w.indexedDB.open('collect_dw', 1);
-        rq.onupgradeneeded = function () { rq.result.createObjectStore('h'); };
-        rq.onerror = function () { ok(null); };
-        rq.onsuccess = function () { try { const tx = rq.result.transaction('h', 'readwrite'); const r = fn(tx.objectStore('h')); tx.oncomplete = function () { ok(r && 'result' in r ? r.result : null); }; tx.onerror = function () { ok(null); }; } catch (e) { ok(null); } };
-      } catch (e) { ok(null); }
-    });
-  }
-  function dwDir(w) { return DW_MEM.dir ? Promise.resolve(DW_MEM.dir) : dwDb(w, function (s) { return s.get('dir'); }).then(function (h) { if (h) DW_MEM.dir = h; return h || null; }); }
-  function dwPick(w) {
-    return w.showDirectoryPicker({ id: 'collect_dw', mode: 'readwrite' }).then(function (h) {
-      DW_MEM.dir = h; return dwDb(w, function (s) { return s.put(h, 'dir'); }).then(function () { return h; });
-    });
-  }
-  function dwFree(dir, name) {
-    const m = String(name || 'file').replace(/[\\/:*?"<>|]+/g, '_').match(/^(.*?)(\.[^.]*)?$/), base = m[1] || 'file', ext = m[2] || '';
-    const tryN = function (n) {
-      const nm = n ? base + ' (' + n + ')' + ext : base + ext;
-      return dir.getFileHandle(nm).then(function () { return n > 50 ? nm : tryN(n + 1); }, function () { return nm; });
-    };
-    return tryN(0);
-  }
-  function dwWrite(dir, f) {
-    return fetch(f.url).then(function (r) { return r.blob(); }).then(function (bl) {
-      return dwFree(dir, f.name).then(function (nm) {
-        return dir.getFileHandle(nm, { create: true }).then(function (fh) { return fh.createWritable(); }).then(function (ws) { return ws.write(bl).then(function () { return ws.close(); }); }).then(function () { return nm; });
-      });
-    });
-  }
-  function dwInstall(w) {
-    if (!DW_OK || !w || !w.document || !w.document.body || w.document.__dw) return;
-    const d = w.document; d.__dw = 1;   /* 窓ではなく 書類（document）ごと（作業デスクは 同じ窓に書き直す） */
-    const st = d.createElement('style');
-    st.textContent = '.dwz{position:fixed;right:18px;bottom:18px;z-index:2147483000;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:200px;max-width:320px;padding:16px 18px;border:3px dashed #2B5DA8;border-radius:16px;background:rgba(232,240,252,.97);color:#1B3D73;font:700 15px/1.45 system-ui,sans-serif;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}' +
-      '.dwz[hidden]{display:none}.dwz.on{background:#2B5DA8;color:#fff}.dwz small{font-weight:500;font-size:12px}.dwz button{font:inherit;font-size:14px;padding:6px 12px;border-radius:9px;border:1.5px solid #2B5DA8;background:#fff;color:#1B3D73;cursor:pointer}.dwz .dwx{position:absolute;top:2px;right:8px;border:0;background:none;padding:2px;font-size:16px}';
-    d.head.appendChild(st);
-    const z = d.createElement('div'); z.className = 'dwz'; z.id = 'dwZone'; z.hidden = true; z.setAttribute('role', 'region'); z.setAttribute('aria-label', 'DocuWorks へ落とす');
-    d.body.appendChild(z);
-    const S1 = { cur: null, pend: null, hideT: 0 };
-    const say = function (html, btn) {
-      z.innerHTML = '<button type="button" class="dwx" title="閉じる" aria-label="閉じる">✕</button><div>' + html + '</div>' + (btn ? '<button type="button" class="dwb">' + btn + '</button>' : '');
-      z.hidden = false;
-    };
-    const idle = function () { DW_MEM.dir ? say('📂 DocuWorks へ<br><small>ここへ落とすと「' + DW_MEM.dir.name + '」に入ります</small>') : say('📂 DocuWorks へ<br><small>ここへ落とします（はじめに 入れるフォルダを選びます）</small>'); };
-    /* ★ K-0140（2026-11-13）：フォルダを選んだのに「選ばなかった」と出ていた。選び窓が 断られた・取りやめになった わけを出し、
-         その場で もう一度 選べるようにする（ブラウザは デスクトップ・ドキュメント・ダウンロード そのもの や システムのフォルダを 使わせない） */
-    const pickNg = function (er) {
-      const nm = (er && er.name) || '', ms = (er && er.message) || String(er || '');
-      const why = nm === 'AbortError' ? 'ブラウザが このフォルダを 使わせなかったか、選ぶ途中で 取りやめになりました。<br>デスクトップ・ドキュメント・ダウンロード の<b>そのもの</b>は 選べません。<b>その中のフォルダ</b>（DocuWorks の机のフォルダ など）を選んでください。<br>選んだあと「ファイルの編集を許可しますか」と聞かれたら［編集を許可］を押してください。'
-        : nm === 'SecurityError' || nm === 'NotAllowedError' ? 'この画面からは フォルダを選べませんでした。もう一度 ボタンを押してください（だめなら 元の事務所の画面で ドラッグしてください）。'
-        : 'フォルダを選べませんでした。';
-      say('⚠ 入れられませんでした（フォルダを使えませんでした）<br><small>' + why + '<br>（' + (nm || 'エラー') + (ms ? '：' + ms.replace(/[<>&]/g, '') : '') + '）</small>', S1.pend ? '📂 もう一度 フォルダを選んで 入れる' : '');
-      clearTimeout(S1.hideT);
-    };
-    const done = function (msg, err) { say((err ? '⚠ ' : '✓ ') + msg + '<br><small><a href="#" class="dwc">入れるフォルダを変える</a></small>'); clearTimeout(S1.hideT); S1.hideT = setTimeout(function () { if (!S1.cur && !S1.pend) z.hidden = true; }, err ? 12000 : 5000); };
-    const save = function (f) {
-      S1.pend = f;
-      return dwDir(w).then(function (dir) {
-        if (!dir) { say('入れるフォルダが まだ決まっていません。<br><small>DocuWorks の机のフォルダを 選んでください（はじめの1回だけ）</small>', '📂 フォルダを選んで 入れる'); return; }
-        const q = dir.queryPermission ? dir.queryPermission({ mode: 'readwrite' }) : Promise.resolve('granted');
-        return q.then(function (p) {
-          if (p !== 'granted') { say('「' + dir.name + '」へ 書きこむ許可が要ります。<br><small>押すと ブラウザが 確かめます</small>', '✓ 許可して 入れる'); return; }
-          return dwWrite(dir, f).then(function (nm) { S1.pend = null; done('「' + nm + '」を DocuWorks の「' + dir.name + '」に 入れました'); });
-        });
-      }).catch(function (e) { S1.pend = null; done('入れられませんでした（' + (e && e.message || e) + '）', true); });
-    };
-    z.addEventListener('click', function (e) {
-      const x = e.target.closest('.dwx, .dwb, .dwc'); if (!x) return;
-      e.preventDefault(); e.stopPropagation();
-      if (x.classList.contains('dwx')) { S1.pend = null; z.hidden = true; return; }
-      if (x.classList.contains('dwc')) { dwPick(w).then(function (h) { done('これから「' + h.name + '」に 入れます'); }, pickNg); return; }
-      const f = S1.pend; if (!f) return;
-      if (DW_MEM.dir && DW_MEM.dir.requestPermission) {
-        DW_MEM.dir.requestPermission({ mode: 'readwrite' }).then(function (p) { if (p === 'granted') save(f); else done('許可されなかったので 入れていません', true); }, function () { done('許可されなかったので 入れていません', true); });
-        return;
-      }
-      dwPick(w).then(function () { save(f); }, pickNg);
-    });
-    w.addEventListener('dragstart', function (e) {
-      if (e.defaultPrevented || !e.dataTransfer) return;
-      let f = null; try { f = dwParse(e.dataTransfer.getData('DownloadURL')); } catch (x) {}
-      if (!f) return;
-      S1.cur = f; clearTimeout(S1.hideT);
-      dwDir(w).then(function () { if (S1.cur === f) { idle(); z.classList.remove('on'); } });
-      idle();
-    });
-    w.addEventListener('dragend', function () { S1.cur = null; z.classList.remove('on'); clearTimeout(S1.hideT); S1.hideT = setTimeout(function () { if (!S1.cur && !S1.pend) z.hidden = true; }, 600); });
-    const inZ = function (e) { return !z.hidden && e.target && e.target.nodeType === 1 && (e.target === z || z.contains(e.target)); };
-    ['dragenter', 'dragover'].forEach(function (ev) {
-      w.addEventListener(ev, function (e) {
-        if (!S1.cur) return;
-        if (inZ(e)) { e.preventDefault(); e.stopImmediatePropagation(); try { e.dataTransfer.dropEffect = 'copy'; } catch (x) {} z.classList.add('on'); }
-        else z.classList.remove('on');
-      }, true);
-    });
-    w.addEventListener('drop', function (e) {
-      if (!S1.cur || !inZ(e)) return;
-      e.preventDefault(); e.stopImmediatePropagation();
-      const f = S1.cur; S1.cur = null; z.classList.remove('on');
-      say('入れています…'); save(f);
-    }, true);
-  }
-  dwInstall(window);
+  /* ★ 2026-11-16（石井）：右下の［📂 DocuWorks へ］の受け口（2026-11-11）は やめた。
+       顧問先は DocuWorks を使っていない。事務所も DocuWorks へは いったん デスクトップへ落としてから入れるので 要らない。
+       外へ出すのは これまでどおり DownloadURL（デスクトップ・フォルダへ落とすと ファイルになる）。呼んでいる所は残すので 何もしない */
+  function dwInstall() {}
   function dOutUrl(b) { return new Promise(function (ok, ng) { const r = new FileReader(); r.onload = function () { ok(String(r.result)); }; r.onerror = function () { ng(new Error('ファイルを用意できませんでした')); }; r.readAsDataURL(b); }); }
   function dOutFmtPaint() {
     const w = $('dOutFmt'); if (!w) return;
