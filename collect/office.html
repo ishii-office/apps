@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794814552;</script>
+<script>window.__PAGE_VER=1794825720;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -84,6 +84,8 @@
   @media (max-width: 700px) { .toclient .lbl { display: none; } .toclient::after { content: '顧問先'; } }
   /* ★ K-0019（2026-10-31）：右上の［📷 顧問先の画面を表示］［↻ 開き直す］の幅は 実際に測って あける（--toprw）。文字が大きい端末でも［ログアウト］と重ならない */
   @media (min-width: 701px) { .top { padding-right: calc(var(--toprw, 248px) + 16px); } }
+  /* ★ 2026-11-16：窓が狭いと タブの列が 右上のボタンの下へ はみ出し「送付物」が隠れていた → 入りきらない分は 2段目へ折り返す */
+  @media (min-width: 701px) { #tabs { flex-wrap: wrap; max-width: 100%; } #tabs button { flex: 1 0 auto; border-bottom: 1px solid var(--line); margin-bottom: -1px; } }
   .vtoast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 42px); right: 8px; z-index: 61; max-width: calc(100vw - 16px); display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 7px 8px 7px 12px; box-shadow: 0 6px 20px rgba(0,0,0,.18); font-size: 14px; }
   .vtoast button { font: inherit; font-size: 14px; font-weight: 700; border-radius: 8px; padding: 4px 10px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
   .vtoast button.x { background: none; color: var(--sub); border: 0; padding: 4px 6px; }
@@ -1301,6 +1303,9 @@
   .fdlist .fdit.insb { box-shadow: 0 -4px 0 0 var(--accent); } .fdlist .fdit.insa { box-shadow: 0 4px 0 0 var(--accent); }
   .fdit.joinon { outline: 3px solid var(--accent); outline-offset: -3px; background: var(--a-tint); }
   .fdit.joinon::after { content: '重ねて 1つの PDF に'; position: absolute; left: 4px; right: 4px; bottom: 4px; padding: 3px 4px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; text-align: center; pointer-events: none; }
+  .fdprn { font-size: 12.5px; color: var(--sub); }
+  .fdprn.on { color: var(--accent); font-weight: 700; }
+  .fdprn.err { color: var(--err); }
   .fdit.upl { opacity: .6; border-style: dashed; }
   .fdit.upl .at { color: var(--accent); font-weight: 700; }
   .fdit.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; background: var(--sel); }
@@ -2257,14 +2262,18 @@
     <button type="button" id="fdOpen" disabled>開く</button>
     <button type="button" id="fdRen" disabled>✎ 名前を変える</button>
     <button type="button" id="fdMv" disabled>➡ 移す</button>
+    <button type="button" id="fdCp" disabled title="選んだファイルの コピーを ほかのフォルダに置く（元は そのまま。見るだけの 回収資料からも できる）。回収資料の中から つかんで 左のフォルダへ落としても コピー">📋 コピーを置く</button>
+    <button type="button" id="fdSend" disabled title="選んだファイルを 顧問先の 送付ボックスへ入れる（顧問先には まだ見えない。送るのは［送付物］タブで）">📮 送付物へ</button>
     <button type="button" id="fdDel" disabled>🗑 ゴミ箱へ</button>
     <button type="button" id="fdMail" disabled title="選んだファイルを Gmail の下書きに 添付する（Gmail へは つかんで落としても 渡せないので ここから）">✉ Gmailに添付</button>
     <button type="button" id="fdJoin" disabled title="選んだ PDF・画像を 並んでいる順に 1つの PDF にまとめる（元のファイルは そのまま）">🧷 まとめる</button>
     <select id="fdConv" disabled aria-label="選んだファイルを 別の形に変換する" title="選んだファイルを 別の形にして 同じフォルダに置く（元は そのまま）"><option value="">🔁 変換…</option><option value="pdf">PDF にする（画像・ワードから）</option><option value="jpg">画像（JPEG）にする（PDF・ワードから。ページごと）</option><option value="docx">ワードにする（PDF・画像から。文字を読み取る）</option><option value="mkpdf">書きこみ入りの PDF にする（✏ のある PDF・画像から）</option></select>
     <button type="button" id="fdDrive" title="いま開いているフォルダを Google ドライブで開く">↗ Google ドライブで開く</button>
     <button type="button" id="fdReload" title="読み直す">↻</button>
+    <button type="button" id="fdPrn" hidden title="PDF24 で印刷すると、いま開いているフォルダへ ひとりでに入る（受け口の フォルダを はじめに1回 選ぶ。押すと 受け口を変える）">🖨 印刷の受け口</button><span class="fdprn" id="fdPrnS"></span>
     <span class="pagemsg" id="fdMsg" role="status"></span>
   </div>
+  <div class="fdform" id="fdSendF" hidden><b>📮 送付物へ：</b><select id="fdSendC" aria-label="どの顧問先へ"></select><select id="fdSendB" aria-label="どの送付ボックスへ"></select><button type="button" id="fdSendOk" class="primary">送付ボックスに入れる</button><button type="button" id="fdSendNo">やめる</button></div>
   <div class="fdform" id="fdForm" hidden><b id="fdFormT"></b><input id="fdFormIn" maxlength="120"><button type="button" id="fdFormOk" class="primary">決定</button><button type="button" id="fdFormNo">やめる</button></div>
   <div class="fdmain" id="fdMain">
     <aside class="fdtree" id="fdTree" aria-label="フォルダの並び"></aside>
@@ -2932,7 +2941,100 @@
   function fdExt(name) { const m = String(name || '').match(/\.([A-Za-z0-9]{1,5})$/); return m ? m[1].toUpperCase() : ''; }
   function fdIcon(it) { const m = String(it.mime || ''), x = fdExt(it.name); if (/^image\//.test(m)) return '🖼'; if (m === 'application/pdf') return '📕'; if (x === 'XDW' || x === 'XBD') return '📘'; if (/sheet|excel|csv/.test(m) || /^(XLSX?|CSV)$/.test(x)) return '📗'; if (/word|document/.test(m) || /^DOCX?$/.test(x)) return '📄'; return '📄'; }
   function fdCanView(it) { const m = String(it.mime || ''); return (/^image\/(jpeg|png|gif|webp)$/.test(m) || m === 'application/pdf' || m === 'text/plain' || m === 'text/csv') && (Number(it.size) || 0) <= 12 * 1024 * 1024; }
+  /* ================= ★★ 印刷の受け口（2026-11-16。石井） =================
+     DocuWorks Printer のように「印刷すると 開いている所へ 電子で入る」。プリンタ（ドライバ）は アプリでは作れないので、
+     無料の PDF プリンタ「PDF24」を パソコンに入れ、印刷したら 聞かずに 決まったフォルダ（受け口）へ保存する設定にする。
+     アプリは その受け口を【1秒おきに 直接】見て（File System Access。Chrome・Edge のパソコンだけ）、来た PDF・写真を すぐ取りこみ、
+     取りこめたものは 受け口から消す。Google ドライブの同期を待たないので 速い。受け口は この端末が覚える（IndexedDB collect_print）。
+     書きかけ（PDF24 が まだ書いている）を拾わないよう、大きさが 2回つづけて同じで 0.6秒より前に書き終わったものだけ */
+  const PRN_OK = typeof window.showDirectoryPicker === 'function' && !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const PRN = { dir: null, perm: '', t: 0, seen: {}, busy: false, fly: {}, take: null, can: null, say: null, wait: 0 };
+  function prnDb(fn) {
+    return new Promise(function (ok) {
+      try { const rq = indexedDB.open('collect_print', 1); rq.onupgradeneeded = function () { rq.result.createObjectStore('h'); };
+        rq.onsuccess = function () { try { const tx = rq.result.transaction('h', 'readwrite'), st = tx.objectStore('h'), r = fn(st); tx.oncomplete = function () { ok(r && 'result' in r ? r.result : null); }; tx.onerror = function () { ok(null); }; } catch (e) { ok(null); } };
+        rq.onerror = function () { ok(null); }; } catch (e) { ok(null); }
+    });
+  }
+  function prnLoad() { if (!PRN_OK) return Promise.resolve(null); return prnDb(function (s) { return s.get('dir'); }).then(function (h) { if (h) PRN.dir = h; return h; }); }
+  function prnPerm(ask) {
+    if (!PRN.dir) return Promise.resolve(false);
+    const o = { mode: 'readwrite' };
+    return Promise.resolve(PRN.dir.queryPermission ? PRN.dir.queryPermission(o) : 'granted').then(function (q) {
+      if (q === 'granted' || !ask) { PRN.perm = q; return q === 'granted'; }
+      return PRN.dir.requestPermission(o).then(function (p) { PRN.perm = p; return p === 'granted'; });
+    }).catch(function () { PRN.perm = 'denied'; return false; });
+  }
+  /* ボタンを押したとき：まだ無い・許可が切れた → 選ぶ／許可を取り直す。受け付け中なら 受け口を変える */
+  function prnClick() {
+    const pick = function () {
+      return window.showDirectoryPicker({ id: 'collect_print', mode: 'readwrite', startIn: 'documents' }).then(function (h) {
+        PRN.dir = h; PRN.perm = 'granted'; PRN.seen = {}; return prnDb(function (s) { return s.put(h, 'dir'); });
+      });
+    };
+    let p;
+    if (!PRN.dir) p = pick();
+    else if (PRN.perm !== 'granted') p = prnPerm(true).then(function (ok) { if (!ok) return pick(); });
+    else p = pick();
+    return p.then(function () { prnTick(true); }, function (e) { if (PRN.say) PRN.say(e && e.name === 'AbortError' ? '受け口の フォルダを選びませんでした（デスクトップ・ドキュメントそのものは 選べません。その中に「印刷の受け口」などのフォルダを作って 選んでください）。' : '受け口を使えませんでした（' + (e && e.message || e) + '）', true); });
+  }
+  /* 1回 見る。来たものを take(files) に渡し、取りこめた（true を返した）ものは 受け口から消す */
+  function prnTick(now) {
+    clearTimeout(PRN.t);
+    const again = function (ms) { PRN.t = setTimeout(prnTick, ms); };
+    if (!PRN.dir || !PRN.take || document.hidden || (PRN.can && !PRN.can())) { if (PRN.say) PRN.say(); again(2500); return; }
+    if (PRN.busy) { again(1000); return; }
+    (PRN.perm === 'granted' ? Promise.resolve(true) : prnPerm(false)).then(function (ok) {
+      if (!ok) { if (PRN.say) PRN.say(); again(4000); return; }
+      PRN.busy = true;
+      const ready = [], live = {};
+      const it = PRN.dir.entries ? PRN.dir.entries() : PRN.dir.values();
+      const step = function () {
+        return it.next().then(function (r) {
+          if (r.done) return;
+          const v = r.value, name = Array.isArray(v) ? v[0] : v.name, h = Array.isArray(v) ? v[1] : v;
+          if (!h || h.kind !== 'file' || !/\.(pdf|jpe?g|png)$/i.test(name) || /^~|\.part$|\.tmp$/i.test(name)) return step();
+          return h.getFile().then(function (f) {
+            const k = f.size + '|' + f.lastModified; live[name] = 1;
+            const prev = PRN.seen[name]; PRN.seen[name] = k;
+            if (!PRN.fly[name] && prev === k && f.size > 0 && Date.now() - f.lastModified > 600) ready.push(f);
+          }, function () {}).then(step);
+        });
+      };
+      return step().then(function () {
+        Object.keys(PRN.seen).forEach(function (n) { if (!live[n]) delete PRN.seen[n]; });
+        PRN.wait = Object.keys(live).length;
+        if (PRN.say) PRN.say();
+        if (!ready.length) return;
+        ready.forEach(function (f) { PRN.fly[f.name] = 1; });
+        return Promise.resolve(PRN.take(ready)).then(function (oks) {
+          return Promise.all(ready.map(function (f, i) {
+            if (!(oks && oks[i])) { delete PRN.fly[f.name]; return null; }
+            return PRN.dir.removeEntry(f.name).catch(function () {}).then(function () { delete PRN.fly[f.name]; delete PRN.seen[f.name]; });
+          }));
+        });
+      });
+    }).catch(function () {}).then(function () { PRN.busy = false; again(now ? 300 : 1000); });
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && PRN.dir) prnTick(true); });
+  /* 事務所：いま開いている（書ける）フォルダへ 入れる。回収資料（見るだけ）・いちばん上・さがしている最中は 受け口に置いたまま */
+  function fdPrnCan() { return S.tab === 'Fold' && !!FD.data && !!FD.cur && !FD.data.lock && !FD.data.top && !FD.search; }
+  PRN.can = fdPrnCan;
+  PRN.take = function (files) { const to = FD.cur; return new Promise(function (ok) { fdUpload(files, to, ok); }); };
+  PRN.say = function (t, err) {
+    const b = $('fdPrn'), sEl = $('fdPrnS'); if (!b || !sEl) return;
+    b.hidden = !PRN_OK;
+    let m = '', cls = '';
+    if (t) { m = t; cls = err ? 'err' : 'on'; }
+    else if (!PRN.dir) m = '';
+    else if (PRN.perm !== 'granted') { m = '押して 受け口の 許可を（ブラウザが 開くたびに 聞きます）'; cls = 'err'; }
+    else if (!fdPrnCan()) m = PRN.wait ? '🖨 印刷したもの ' + PRN.wait + '件（書けるフォルダを 開くと 入ります）' : '🖨 受け口「' + PRN.dir.name + '」（書けるフォルダを開いているとき 入ります）';
+    else { m = '🖨 受け口「' + PRN.dir.name + '」→ 印刷すると このフォルダへ'; cls = 'on'; }
+    sEl.textContent = m; sEl.className = 'fdprn' + (cls ? ' ' + cls : '');
+    b.textContent = PRN.dir && PRN.perm === 'granted' ? '🖨 受け口を変える' : PRN.dir ? '🖨 受け口を使う（許可）' : '🖨 印刷の受け口';
+  };
   function fdShow() {
+    if (PRN_OK && !fdShow.prn) { fdShow.prn = 1; $('fdPrn').onclick = prnClick; prnLoad().then(function () { prnPerm(false).then(function () { PRN.say(); prnTick(true); }); }); }
     if (FD.info && FD.info.set) { if (!FD.data) fdGo(FD.cur || FD.info.root.id, true); return; }
     fdBoot();
   }
@@ -3212,7 +3314,12 @@
     if (!FD.arm) $('fdDel').textContent = n > 1 ? '🗑 ゴミ箱へ（' + n + '）' : '🗑 ゴミ箱へ';
     /* まとめる … PDF・画像を 2つ以上／変換 … PDF・画像・ワードを 1つ以上（回収資料の中・いちばん上では なし。できたものを 置けないので） */
     const ks = FD.items.filter(function (x) { return FD.sel[x.id]; }).map(fdKind), okJ = ks.length >= 2 && ks.every(function (k) { return k === 'pdf' || k === 'img'; }), okC = ks.length >= 1 && ks.every(Boolean);
-    $('fdMail').disabled = n < 1 || mv || top || FD.items.some(function (x) { return FD.sel[x.id] && x.kind !== 'file'; });
+    const onlyFiles = n >= 1 && !FD.items.some(function (x) { return FD.sel[x.id] && x.kind !== 'file'; });
+    $('fdMail').disabled = !onlyFiles || mv || top;
+    $('fdSend').disabled = !onlyFiles || mv || top;
+    $('fdCp').disabled = !FD.move && (!onlyFiles || top || FD.search && false);
+    $('fdCp').textContent = FD.move && FD.mvCopy ? '✕ コピーをやめる' : '📋 コピーを置く';
+    if (mv) $('fdMv').disabled = !!FD.mvCopy;
     const j = $('fdJoin'), cv = $('fdConv'); j.dataset.off = okJ && !lk && !top && !mv && !FD.search ? '' : '1'; cv.dataset.off = okC && !lk && !top && !mv && !FD.search ? '' : '1';
     j.disabled = FDB.run || j.dataset.off === '1'; cv.disabled = FDB.run || cv.dataset.off === '1'; j.textContent = okJ ? '🧷 まとめる（' + ks.length + '）' : '🧷 まとめる';
   }
@@ -3263,7 +3370,7 @@
     node.addEventListener('dragleave', function () { node.classList.remove('drop'); });
     node.addEventListener('drop', function (ev) {
       ev.preventDefault(); ev.stopPropagation(); fdDropClear();
-      if (FD.drag) { const its = FD.drag; FD.drag = null; fdMove(its, folderId); return; }
+      if (FD.drag) { const its = FD.drag; FD.drag = null; if (FD.data && FD.data.lock) fdCopy(its.filter(function (x) { return x.kind === 'file'; }), folderId); else fdMove(its, folderId); return; }   /* ★ 回収資料（見るだけ）から つかんで落とすと コピー */
       const fs = ev.dataTransfer && ev.dataTransfer.files; if (fs && fs.length) fdUpload(fs, folderId);
     });
   }
@@ -3323,7 +3430,35 @@
       fdReload().then(function () { fdMsg(r.moved + '件を 移しました。' + (k ? '（' + k + '件は 移せませんでした：' + r.kept[0] + '）' : ''), k ? 'err' : 'ok'); });
     }, function (e) { fdMsg(e.message, 'err'); });
   }
-  function fdMoveTo(id) { const its = FD.move; FD.move = null; fdTreeHide(); fdBtns(); fdMove(its, id); }
+  function fdMoveTo(id) { const its = FD.move, cp = FD.mvCopy; FD.move = null; FD.mvCopy = false; fdTreeHide(); fdBtns(); if (cp) fdCopy(its, id); else fdMove(its, id); }
+  /* ★★ コピーを置く（2026-11-16）：元は そのまま。見るだけ（回収資料）の中のものも コピーできる */
+  function fdCopy(items, toId) {
+    if (!items || !items.length) return;
+    if (toId === 'ALL') { fdMsg('いちばん上には 置けません。中のフォルダを選んでください。', 'err'); return; }
+    fdMsg(items.length + '件の コピーを 置いています…');
+    gs('foldCopy', items.map(function (x) { return { id: x.id, kind: x.kind }; }), toId).then(function (r) {
+      const k = (r.kept || []).length;
+      const t = r.copied + '件の コピーを 置きました（元は そのまま）。' + (k ? '（' + k + '件は できませんでした：' + r.kept[0] + '）' : '');
+      if (toId === FD.cur) fdReload().then(function () { fdMsg(t, k ? 'err' : 'ok'); }); else { FD.kids = {}; fdTreeDraw(); fdMsg(t, k ? 'err' : 'ok'); }
+    }, function (e) { fdMsg(e.message, 'err'); });
+  }
+  /* ★★ 送付物へ（2026-11-16）：選んだファイルを 顧問先の 送付ボックスへ（保管）。顧問先は いま開いているフォルダの名前（「コード_名前」）から 当たりを付ける */
+  function fdSendGuess() {
+    const ps = ((FD.data && FD.data.path) || []).map(function (p) { return p.name; }).reverse();
+    for (let i = 0; i < ps.length; i++) { const m = String(ps[i]).match(/(?:^|_)(\d{3,6})_/); if (m) { const c = (S.clients || []).find(function (x) { return String(x.code) === m[1] || String(x.code).replace(/^0+/, '') === m[1].replace(/^0+/, ''); }); if (c) return c.code; } }
+    return S.code || '';
+  }
+  function fdSendBoxes(code) {
+    const b = $('fdSendB'); b.textContent = ''; b.disabled = true;
+    gs('sendBoxesGet', code).then(function (r) { if ($('fdSendC').value !== code) return; b.textContent = ''; (r.boxes || []).forEach(function (x) { const o = el('option', null, x); o.value = x; b.appendChild(o); }); b.disabled = false; }, function (e) { fdMsg(e.message, 'err'); });
+  }
+  function fdSendOpen() {
+    const its = fdSelected().filter(function (x) { return x.kind === 'file'; }); if (!its.length) return;
+    const c = $('fdSendC'); c.textContent = '';
+    (S.clients || []).forEach(function (x) { const o = el('option', null, x.code + '　' + x.name); o.value = x.code; c.appendChild(o); });
+    c.value = fdSendGuess(); $('fdSendF').hidden = false; fdSendBoxes(c.value);
+    fdMsg(its.length + '件を 入れる 顧問先と 送付ボックスを 選んでください（顧問先には まだ見えません）。');
+  }
   /* ---- ゴミ箱へ（2回押し） ---- */
   function fdDisarm() { if (!FD.arm) return; FD.arm = 0; clearTimeout(FD.armT); const b = $('fdDel'); b.classList.remove('warn'); fdBtns(); }
   function fdTrash() {
@@ -3359,10 +3494,10 @@
   /* ★★ 速さ（2026-11-16）：落とした瞬間に 作業スペースへ並べる（「入れています…」の札）。1つ届くたびに 本物に入れ替える。
        前は 全部 届いてから 一覧を取り直していたので、そのあいだ 何も出なかった。入れた中身は 手元に覚えて、そのまま 外へ つかめる */
   let fdUpSeq = 0;
-  function fdUpload(list, toId) {
+  function fdUpload(list, toId, cb) {
     const fs = Array.prototype.slice.call(list || []), max = ((FD.info && FD.info.maxMb) || 20) * 1024 * 1024;
-    if (!fs.length) return;
-    let i = 0, ok = 0, run = 0, fin = 0; const bad = [];
+    if (!fs.length) { if (cb) cb([]); return; }
+    let i = 0, ok = 0, run = 0, fin = 0; const bad = [], okI = [];   /* okI … 入れられたか（印刷の受け口が 消してよいか 見る） */
     const here = toId === FD.cur && FD.data && !FD.search;
     const ph = fs.map(function (f) {
       if (!here || f.size > max || !f.size) return null;
@@ -3377,6 +3512,7 @@
       const t = ok + '件を 入れました。' + (bad.length ? '（入れられなかったもの：' + bad.slice(0, 3).join('、') + (bad.length > 3 ? ' ほか' : '') + '）' : '');
       if (toId === FD.cur && !FD.drag && S.tab === 'Fold') { clearTimeout(fdWdT); fdWorkDraw(); }
       fdMsg(t, bad.length ? 'err' : 'ok');
+      if (cb) cb(fs.map(function (x, j) { return !!okI[j]; }));
       /* 並びは サーバと同じに そろえる（裏で 静かに。小さい絵・選んでいるものは そのまま） */
       if (toId === FD.cur && !FD.search && !FD.loading) {
         gs('foldList', toId).then(function (r) {
@@ -3394,7 +3530,7 @@
       delete FD.thumbs[o.id];
       fdWorkDrawSoon();
     };
-    const one = function (f, o, done) {
+    const one = function (f, o, done, j) {
       if (f.size > max) { bad.push(f.name + '（大きすぎます。パソコンの Google ドライブから入れてください）'); done(); return; }
       if (!f.size) { bad.push(f.name + '（空か フォルダです）'); done(); return; }
       const rd = new FileReader();
@@ -3402,7 +3538,7 @@
       rd.onload = function () {
         const s = String(rd.result || ''), b64 = s.slice(s.indexOf(',') + 1);
         gs('foldUp', toId, f.name, f.type || 'application/octet-stream', b64).then(function (row) {
-          ok++;
+          ok++; okI[j] = true;
           if (row && row.id) fdBytesPut(row.id, { id: row.id, name: row.name || f.name, mime: row.mime || f.type || 'application/octet-stream', b64: b64 });
           swap(o, row && row.id ? row : null); done();
         }, function (e) { bad.push(f.name + '（' + e.message + '）'); swap(o, null); done(); });
@@ -3411,7 +3547,7 @@
     };
     const pump = function () {
       if (fin >= fs.length) { end(); return; }
-      while (run < 4 && i < fs.length) { const k = i++; run++; one(fs[k], ph[k], function () { run--; fin++; say(); pump(); }); }
+      while (run < 4 && i < fs.length) { const k = i++; run++; one(fs[k], ph[k], function () { run--; fin++; say(); pump(); }, k); }
     };
     say(); pump();
   }
@@ -3460,11 +3596,29 @@
     $('fdUpIn').addEventListener('change', function () { const fs = Array.prototype.slice.call(this.files || []); this.value = ''; fdUpload(fs, FD.cur); });
     $('fdOpen').onclick = function () { const s = fdSelected()[0]; if (s) fdOpenIt(FD.items.filter(function (x) { return x.id === s.id; })[0]); };
     $('fdMv').onclick = function () {
-      if (FD.move) { FD.move = null; fdMsg(''); fdTreeHide(); fdBtns(); return; }
+      if (FD.move) { FD.move = null; FD.mvCopy = false; fdMsg(''); fdTreeHide(); fdBtns(); return; }
       const its = fdSelected(); if (!its.length) return;
-      FD.move = its; fdDisarm(); fdFormClose(); $('fdMain').classList.add('tree'); fdBtns(); fdMsg('移す先のフォルダを 左の並びで押してください。');
+      FD.move = its; FD.mvCopy = false; fdDisarm(); fdFormClose(); $('fdMain').classList.add('tree'); fdBtns(); fdMsg('移す先のフォルダを 左の並びで押してください。');
     };
     $('fdDel').onclick = fdTrash;
+    $('fdCp').onclick = function () {
+      if (FD.move) { FD.move = null; FD.mvCopy = false; fdMsg(''); fdTreeHide(); fdBtns(); return; }
+      const its = fdSelected(); if (!its.length) return;
+      FD.move = its; FD.mvCopy = true; fdDisarm(); fdFormClose(); $('fdMain').classList.add('tree'); fdBtns(); fdMsg('コピーを置く先のフォルダを 左の並びで押してください（元は そのまま）。');
+    };
+    $('fdSend').onclick = fdSendOpen;
+    $('fdSendC').onchange = function () { fdSendBoxes(this.value); };
+    $('fdSendNo').onclick = function () { $('fdSendF').hidden = true; fdMsg(''); };
+    $('fdSendOk').onclick = function () {
+      const its = fdSelected().filter(function (x) { return x.kind === 'file'; }), code = $('fdSendC').value, box = $('fdSendB').value;
+      if (!its.length || !code || !box) return;
+      const b = this; b.disabled = true; fdMsg(its.length + '件を 送付ボックスに 入れています…');
+      gs('foldToSend', its.map(function (x) { return x.id; }), code, box).then(function (r) {
+        b.disabled = false; $('fdSendF').hidden = true;
+        const k = (r.kept || []).length, nm = ((S.clients || []).find(function (x) { return x.code === code; }) || {}).name || code;
+        fdMsg(r.n + '件を ' + nm + ' の［' + box + '］に 入れました（顧問先には まだ見えません。［送付物］タブで 選んで 送ってください）。' + (k ? '（' + k + '件は 入れられませんでした：' + r.kept[0] + '）' : ''), k ? 'err' : 'ok');
+      }, function (e) { b.disabled = false; fdMsg(e.message, 'err'); });
+    };
     $('fdMail').onclick = function () {
       const its = fdSelected().filter(function (x) { return x.kind === 'file'; }); if (!its.length) return;
       const win = window.open('', '_blank');   /* 押した流れの中で 窓を開いておく（あとで開くと ブラウザに止められる） */
