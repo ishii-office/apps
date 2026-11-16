@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794825720;</script>
+<script>window.__PAGE_VER=1794832070;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -964,6 +964,13 @@
   .dmv-pers { display: flex; gap: 6px; } .dmv-pers select { flex: 1; min-width: 0; }
   .dmv-now { font-size: 13px; color: var(--sub); margin: 0; }
   .dmv-b { display: flex; gap: 8px; margin-top: 12px; }
+  .dfv-p { display: flex; flex-wrap: wrap; gap: 4px; font-size: 13px; margin: 8px 0 4px; }
+  .dfv-p button { border: 0; background: none; color: var(--accent); text-decoration: underline; cursor: pointer; padding: 2px; font-size: 13px; }
+  .dfv-l { border: 1px solid var(--line); border-radius: 8px; max-height: 46vh; overflow: auto; }
+  .dfv-l button { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: #fff; padding: 9px 10px; font-size: 15px; cursor: pointer; }
+  .dfv-l button:hover { background: #F2F7F5; }
+  .dfv-l .lk { color: var(--sub); }
+  .dfv-l .em { padding: 10px; color: var(--sub); font-size: 13px; }
   .dtile { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px; min-width: 0; }
   .dimg { position: relative; display: block; width: 100%; aspect-ratio: 3 / 4; padding: 0; border: 0; background: #F4F2EC; overflow: hidden; border-radius: 6px; }
   .dimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -2543,8 +2550,19 @@
 
 <div class="dcbar" id="dcbar" hidden>
   <b id="dcN">0件を選んでいます</b>
-  <span class="dcb"><button type="button" class="btn ghost sm" id="dcMarq" title="スマホ：押してから 指でなぞって四角く囲むと、中の書類を まとめて選べます（パソコンは 何もないところから マウスで囲めます）">⬚ 範囲で選ぶ</button><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn sm" id="dcPrint">🖨 印刷</button><button type="button" class="btn sm" id="dcGmail" title="選んだ書類を Gmail の下書きに 添付する（1書類＝1ファイル）">✉ Gmailに添付</button><button type="button" class="btn sm" id="dcChk" title="選んだものに 確認済の印を付ける（全部 付いていれば外す）">✓ 確認済</button><button type="button" class="btn ghost sm" id="dcSkip" title="選んだものを 仕訳化・AI下書きの対象から外す（全部 対象外なら 対象に戻す）。印刷・PDF には入ります">⊘ 対象外にする</button><button type="button" class="btn ghost sm" id="dcMove">↪ 別の箱へ移す</button><button type="button" class="btn ghost sm" id="dcToImg" title="選んだ書類の PDF を ページごとの写真（JPEG）に変える。元の PDF は 破棄したもの へ（戻せる）">🖼 画像に変換</button><button type="button" class="btn ghost sm" id="dcToPdf" title="選んだ書類（写真・まとめた書類）を 1つの PDF に変える。元の写真は 破棄したもの へ（戻せる）">📄 PDFに変換</button>
+  <span class="dcb"><button type="button" class="btn ghost sm" id="dcMarq" title="スマホ：押してから 指でなぞって四角く囲むと、中の書類を まとめて選べます（パソコンは 何もないところから マウスで囲めます）">⬚ 範囲で選ぶ</button><button type="button" class="btn sm" id="dcJoin" title="選んだものを 左から順に 1つの書類にまとめる">📎 まとめる</button><button type="button" class="btn sm" id="dcPdf">PDF切り出し</button><button type="button" class="btn sm" id="dcPrint">🖨 印刷</button><button type="button" class="btn sm" id="dcGmail" title="選んだ書類を Gmail の下書きに 添付する（1書類＝1ファイル）">✉ Gmailに添付</button><button type="button" class="btn sm" id="dcChk" title="選んだものに 確認済の印を付ける（全部 付いていれば外す）">✓ 確認済</button><button type="button" class="btn ghost sm" id="dcSkip" title="選んだものを 仕訳化・AI下書きの対象から外す（全部 対象外なら 対象に戻す）。印刷・PDF には入ります">⊘ 対象外にする</button><button type="button" class="btn ghost sm" id="dcMove">↪ 別の箱へ移す</button><button type="button" class="btn ghost sm" id="dcFold" title="選んだ書類のコピーを Google共有ドライブの 好きなフォルダへ置く（元は そのまま）">📂 フォルダへ写す</button><button type="button" class="btn ghost sm" id="dcToImg" title="選んだ書類の PDF を ページごとの写真（JPEG）に変える。元の PDF は 破棄したもの へ（戻せる）">🖼 画像に変換</button><button type="button" class="btn ghost sm" id="dcToPdf" title="選んだ書類（写真・まとめた書類）を 1つの PDF に変える。元の写真は 破棄したもの へ（戻せる）">📄 PDFに変換</button>
     <button type="button" class="btn ghost sm danger" id="dcDel">破棄</button><button type="button" class="btn ghost sm" id="dcNone">全部外す</button><button type="button" class="btn ghost sm" id="dcEnd">やめる</button></span>
+</div>
+
+<div class="dmove" id="dfv" hidden role="dialog" aria-modal="true" aria-labelledby="dfvT">
+  <div class="dmove-s ogs">
+    <h3 id="dfvT">📂 フォルダへ写す</h3>
+    <p class="dmv-now" id="dfvN"></p>
+    <div class="dfv-p" id="dfvP"></div>
+    <div class="dfv-l" id="dfvL"></div>
+    <p class="dmv-now" id="dfvM" role="status"></p>
+    <div class="dmv-b"><button type="button" class="btn" id="dfvOk">ここに写す</button><button type="button" class="btn ghost" id="dfvNo">やめる</button></div>
+  </div>
 </div>
 
 <div class="dmove" id="ogv" hidden role="dialog" aria-modal="true" aria-labelledby="ogvT">
@@ -7975,7 +7993,7 @@
     const docs = {}; si.forEach(function (x) { docs[x.set && x.setOf > 1 ? 'S' + x.set : x.id] = 1; });
     const nd = Object.keys(docs).length;
     $('dcN').textContent = nd + '件を選んでいます' + (nd !== n ? '（写真 ' + n + '枚）' : '');
-    ['dcPdf', 'dcPrint', 'dcMove', 'dcDel', 'dcChk', 'dcSkip'].forEach(function (k) { $(k).disabled = !n; });
+    ['dcPdf', 'dcPrint', 'dcMove', 'dcFold', 'dcDel', 'dcChk', 'dcSkip'].forEach(function (k) { $(k).disabled = !n; });
     $('dcToImg').disabled = !convDocs(si, 'img').length; $('dcToPdf').disabled = !convDocs(si, 'pdf').length;
     $('dcSkip').textContent = n && si.every(function (x) { return x.skip; }) ? '↩ 対象に戻す' : '⊘ 対象外にする';
     $('dcChk').textContent = n && si.every(function (x) { return x.chk; }) ? '確認済を外す' : '✓ 確認済にする';
@@ -8045,6 +8063,57 @@
   $('dcPdf').addEventListener('click', function () { cutPdf(selItems(), '選択'); });
   $('dcPrint').addEventListener('click', function () { printDocs(selItems(), '選択'); });
   $('dcMove').addEventListener('click', function () { dMoveOpen(selItems()); });
+  /* ★★ 回収資料 → Google共有ドライブの 好きなフォルダへ コピー（2026-11-16。石井）：選んだものだけ・行き先は そのつど選ぶ（前の行き先を 覚えて そこから開く）。元は そのまま */
+  const DFV = { its: [], stack: [], cur: null, busy: false }, LS_DFV = 'collect_office_tofold';
+  function dfvOpen(its) {
+    its = (its || []).filter(function (x) { return x && x.id; });
+    if (!its.length) return;
+    DFV.its = its; DFV.busy = false;
+    $('dfvN').textContent = its.length + '件の コピーを置きます（元は そのまま）。置く先のフォルダを開いて［ここに写す］。';
+    $('dfvM').textContent = '';
+    let st = null; try { st = JSON.parse(lsGet(LS_DFV) || 'null'); } catch (e) {}
+    DFV.stack = Array.isArray(st) && st.length ? st : [{ id: '', name: 'Google共有ドライブ' }];
+    $('dfv').hidden = false; dfvLoad();
+  }
+  function dfvLoad() {
+    const top = DFV.stack[DFV.stack.length - 1];
+    const p = $('dfvP'); p.textContent = '';
+    DFV.stack.forEach(function (x, i) { if (i) p.appendChild(el('span', null, '›')); const b = el('button', null, x.name); b.type = 'button'; b.addEventListener('click', function () { DFV.stack = DFV.stack.slice(0, i + 1); dfvLoad(); }); p.appendChild(b); });
+    const L = $('dfvL'); L.textContent = ''; L.appendChild(el('div', 'em', '読んでいます…'));
+    $('dfvOk').disabled = true; DFV.cur = null;
+    gs('foldList', top.id, 1).then(function (r) {
+      if (DFV.stack[DFV.stack.length - 1] !== top) return;
+      DFV.cur = r; L.textContent = '';
+      (r.folders || []).forEach(function (f) {
+        const b = el('button', f.lock ? 'lk' : null, (f.lock ? '🔒 ' : '📁 ') + f.name); b.type = 'button';
+        b.addEventListener('click', function () { DFV.stack.push({ id: f.id, name: f.name }); dfvLoad(); });
+        L.appendChild(b);
+      });
+      if (!(r.folders || []).length) L.appendChild(el('div', 'em', '中に フォルダは ありません。ここに写せます。'));
+      const ok = !r.top && !r.lock;
+      $('dfvOk').disabled = !ok;
+      $('dfvM').textContent = r.top ? '中の共有ドライブを開いてください。' : (r.lock ? '回収資料の中（見るだけ）には 置けません。' : '');
+      if (ok) lsSet(LS_DFV, JSON.stringify(DFV.stack));
+    }, function (e) {
+      L.textContent = ''; L.appendChild(el('div', 'em', e.message));
+      if (DFV.stack.length > 1) { DFV.stack = [{ id: '', name: 'Google共有ドライブ' }]; lsSet(LS_DFV, ''); }
+    });
+  }
+  function dfvClose() { $('dfv').hidden = true; }
+  $('dfvNo').addEventListener('click', dfvClose);
+  $('dfv').addEventListener('click', function (e) { if (e.target === $('dfv')) dfvClose(); });
+  $('dfvOk').addEventListener('click', function () {
+    if (DFV.busy || !DFV.cur) return;
+    const to = DFV.cur, its = DFV.its, code = S.code, name = DFV.stack[DFV.stack.length - 1].name;
+    DFV.busy = true; $('dfvOk').disabled = true; $('dfvM').textContent = its.length + '件を 写しています…';
+    gs('workToFold', code, its.map(function (x) { return x.id; }), to.id).then(function (r) {
+      DFV.busy = false; dfvClose();
+      const k = (r.kept || []).length;
+      dcMsg('「' + name + '」へ ' + r.copied + '件の コピーを置きました（元は そのまま）。' + (k ? '（' + k + '件は 写せませんでした：' + r.kept[0] + '）' : ''), !!k);
+      if (typeof FD !== 'undefined' && FD) FD.kids = {};
+    }, function (e) { DFV.busy = false; $('dfvOk').disabled = false; $('dfvM').textContent = e.message; });
+  });
+  $('dcFold').addEventListener('click', function () { dfvOpen(selItems()); });
   $('dcDel').addEventListener('click', function () { discard(selItems(), '選んだ'); });
   $('dcToImg').addEventListener('click', function () { convertDocs(selItems(), 'img'); });
   $('dcToPdf').addEventListener('click', function () { convertDocs(selItems(), 'pdf'); });
@@ -12845,7 +12914,7 @@
       });
     }
   }
-  /* ★★ Claude が見つけたルール（2026-11-17）：過去の仕訳から AI が見つけたものを 種類ごとに並べる。メモに入っているので 次から効く。
+  /* ★★ Claude が見つけたルール（2026-11-16）：過去の仕訳から AI が見つけたものを 種類ごとに並べる。メモに入っているので 次から効く。
        「事務所共通にできそうな決まり」は ボタンで 事務所共通メモの欄へ（保存は マスターが押す） */
   function memoFound(m) {
     const q = $('mQs'); q.textContent = ''; const fs = m.found || [], qs = m.questions || [];
@@ -13373,7 +13442,7 @@
       if (code !== S.code) return;
       const base = (head ? head + '　' : '') + x.from + '件の仕訳から ルールを ' + x.rules + '件 作りました。';
       rMsg(base, 'ok'); rLoad();
-      /* ★ 過去仕訳を入れただけでは AI は動かさない（2026-11-17 石井：勝手に お金がかかるのは困る）。ルールを見つけるのは ［🔎 過去仕訳から ルールを見つけ出す］を押したときだけ */
+      /* ★ 過去仕訳を入れただけでは AI は動かさない（2026-11-16 石井：勝手に お金がかかるのは困る）。ルールを見つけるのは ［🔎 過去仕訳から ルールを見つけ出す］を押したときだけ */
       if (head && S.fxConf && S.fxConf.ai) rMsg(base + '　AI に ルールを見つけさせるときは 下の［🔎 過去仕訳から ルールを見つけ出す］を押してください（押したときだけ 費用がかかります）。', 'ok');
     }, function (e) { rMsg(e.message, 'err'); });
   }
