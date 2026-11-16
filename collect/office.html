@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794808570;</script>
+<script>window.__PAGE_VER=1794810072;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -106,6 +106,11 @@
     /* ★ 事務所フォルダ（2026-11-14）：3段目を4つに（4段にはしない。タブで画面を取りすぎない） */
     #tabs button[data-tab="Rule"] { grid-area: 3 / 1 / 4 / 4; border-right: 1px solid var(--line); } #tabs button[data-tab="Fold"] { grid-area: 3 / 4 / 4 / 8; font-size: 13px; }
     #tabs button[data-tab="Kaizen"] { grid-area: 3 / 8 / 4 / 11; } #tabs button[data-tab="Send"] { grid-area: 3 / 11 / 4 / 13; border-right: 0; }
+    /* ★ 2026-11-16：3段目は 字を少し小さく（Google共有ドライブ が長い）。改善要望の赤い印は 字の上に重ねず 右上の角に小さく（見切れていた） */
+    #tabs button[data-tab="Rule"], #tabs button[data-tab="Kaizen"], #tabs button[data-tab="Send"] { font-size: 13px; }
+    #tabs button[data-tab="Fold"] { font-size: 12px; letter-spacing: -.02em; }
+    #tabs button[data-tab="Kaizen"] { padding-left: 0; padding-right: 0; }
+    #tabs button[data-tab="Kaizen"] .kzbadge { margin-left: 2px; min-width: 14px; padding: 0 3px; font-size: 9.5px; line-height: 14px; border-radius: 7px; vertical-align: 1px; }
   }
   .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
   .ctl label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -1577,7 +1582,7 @@
     <button type="button" role="tab" data-tab="Clients" aria-pressed="false">顧問先</button>
     <button type="button" role="tab" data-tab="Dict" aria-pressed="false">仕訳辞書</button>
     <button type="button" role="tab" data-tab="Rule" aria-pressed="false">AIの考え方</button>
-    <button type="button" role="tab" data-tab="Fold" aria-pressed="false" id="tabFold">事務所フォルダ</button>
+    <button type="button" role="tab" data-tab="Fold" aria-pressed="false" id="tabFold">Google共有ドライブ</button>
     <button type="button" role="tab" data-tab="Kaizen" aria-pressed="false" id="tabKaizen">改善要望<b class="kzbadge" id="kzBadge" hidden></b></button>
     <button type="button" role="tab" data-tab="Send" aria-pressed="false" id="tabSend">送付物</button>
   </span>
@@ -2240,7 +2245,7 @@
     <button type="button" id="fdTreeBtn" title="フォルダの並びを出す・しまう">📁 フォルダ</button>
     <nav class="fdcrumb" id="fdCrumb" aria-label="いま開いているフォルダまでの道すじ"></nav>
     <span class="sp"></span>
-    <input id="fdQ" type="search" maxlength="60" placeholder="名前でさがす（Enter）" aria-label="事務所フォルダの中を 名前でさがす">
+    <input id="fdQ" type="search" maxlength="60" placeholder="名前でさがす（Enter）" aria-label="Google共有ドライブの中を 名前でさがす">
     <span class="seg" id="fdMode"><button type="button" data-m="grid" aria-pressed="true" title="絵で並べる">▦</button><button type="button" data-m="list" aria-pressed="false" title="一覧で並べる">☰</button></span>
   </div>
   <div class="fdtools" id="fdTools">
@@ -2946,9 +2951,9 @@
   function fdSetup(change) {
     const r = FD.info || {}, w = $('fdWork'); w.textContent = '';
     const c = el('div', 'fdset'), roots = r.roots || [];
-    c.appendChild(el('h2', null, change ? '親（共有ドライブ）を足す・外す' : '事務所フォルダは まだ決まっていません'));
+    c.appendChild(el('h2', null, change ? '親（共有ドライブ）を足す・外す' : 'Google共有ドライブの 親が まだ決まっていません'));
     if (r.err) { const e = el('p', 'pagemsg err', r.err); c.appendChild(e); }
-    c.appendChild(el('p', null, 'Google ドライブの 共有ドライブ（か その中のフォルダ）を、事務所フォルダの「親」にします。何個でも足せて、画面では「事務所フォルダ」の下に 赤い印で並びます。この画面で さわれるのは その中だけです。回収資料のフォルダと マイナンバーのフォルダは 親にできません。'));
+    c.appendChild(el('p', null, 'Google ドライブの 共有ドライブ（か その中のフォルダ）を、Google共有ドライブの「親」にします。何個でも足せて、画面では「Google共有ドライブ」の下に 赤い印で並びます。この画面で さわれるのは その中だけです。回収資料のフォルダと マイナンバーのフォルダは 親にできません。'));
     const m = el('span', 'pagemsg'); m.id = 'fdRootMsg';
     const say = function (t, cls) { m.textContent = t || ''; m.className = 'pagemsg' + (cls ? ' ' + cls : ''); };
     /* 親が変わったあと：並びを読み直して、この札を出し直す */
@@ -3635,7 +3640,7 @@
     DVZ.s = 1; DVZ.x = 0; DVZ.y = 0;
     const box = $('dvBody'); box.classList.remove('zin'); box.textContent = ''; box.classList.add('loading');
     S.dvIt = pit; S.dvId = pit.id; S.dvSeq = null;
-    $('dvName').textContent = '事務所フォルダ　' + it.name; $('dvDrive').href = it.url || '#'; $('dvMemo').hidden = true; $('dvwSide').hidden = true;
+    $('dvName').textContent = 'Google共有ドライブ　' + it.name; $('dvDrive').href = it.url || '#'; $('dvMemo').hidden = true; $('dvwSide').hidden = true;
     fdBytes(it).then(function (b) {
       if (S.dvIt !== pit) return;
       IMG[pit.id] = b.mime === 'application/pdf' ? { t: 'pdf', b64: b.b64 } : { t: 'img', src: 'data:' + b.mime + ';base64,' + b.b64 };
