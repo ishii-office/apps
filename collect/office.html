@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794877179;</script>
+<script>window.__PAGE_VER=1794909018;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1471,6 +1471,45 @@
   /* ★★ 顧問先から届いた知らせ・未処理の数（2026-11-04） */
   .arrbtn { font: inherit; font-size: 13px; font-weight: 800; border: 1.5px solid var(--accent, #0F6E56); color: var(--accent, #0F6E56); background: #fff; border-radius: 999px; padding: 3px 10px; margin-right: 8px; cursor: pointer; white-space: nowrap; }
   .arrbtn.has { background: #B3261E; border-color: #B3261E; color: #fff; }
+  /* ★ 2026-11-17：資料のそろい具合 */
+  .sor-s { max-width: 980px; max-height: 92vh; overflow: auto; }
+  /* ★ 2026-11-17：操作ガイド */
+  .guidev { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 12px; }
+  .guidev[hidden] { display: none; }
+  .guidev .gd-s { background: #fff; border-radius: 16px; width: 100%; max-width: 760px; max-height: 92vh; overflow: auto; padding: 14px 18px 18px; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+  .guidev .gd-h { display: flex; align-items: center; justify-content: space-between; font-size: 18px; color: #1f3a5f; }
+  .guidev .gd-x { font: inherit; font-size: 18px; border: 0; background: none; cursor: pointer; padding: 4px 8px; }
+  .guidev .gd-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+  .guidev .gd-tabs button { font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid #c8d0d8; background: #fff; cursor: pointer; }
+  .guidev .gd-tabs button.on { background: #1f3a5f; color: #fff; border-color: #1f3a5f; font-weight: 700; }
+  .guidev h3 { margin: 10px 0 4px; font-size: 18px; } .guidev h4 { margin: 12px 0 4px; font-size: 14px; color: #1f3a5f; }
+  .guidev .gd-lead { margin: 4px 0; line-height: 1.6; } .guidev ol, .guidev ul { margin: 4px 0; padding-left: 22px; line-height: 1.65; } .guidev li { margin: 3px 0; }
+  @media (min-width: 701px) { #sorv { align-items: center; } #sorv .sor-s { border-radius: 16px; } }
+  .sor-n { margin: 4px 0 8px; font-size: 13px; color: #55657a; line-height: 1.5; }
+  .sor-ok { color: #1E8E3E; } .sor-pt { color: #B07D00; } .sor-ng { color: #B3261E; }
+  .sor-f { font-size: 13px; display: inline-flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .sor-w { overflow: auto; max-height: 56vh; border: 1px solid var(--line, #d5dbe2); border-radius: 10px; }
+  .sor-t { border-collapse: collapse; width: 100%; font-size: 13px; }
+  .sor-t th, .sor-t td { border-bottom: 1px solid #eef1f4; padding: 5px 6px; text-align: center; white-space: nowrap; }
+  .sor-t thead th { position: sticky; top: 0; background: #f6f8fb; z-index: 1; font-weight: 700; }
+  .sor-t th.nm { text-align: left; position: sticky; left: 0; background: #fff; max-width: 220px; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+  .sor-t thead th.nm { background: #f6f8fb; z-index: 2; }
+  .sor-t td button { font: inherit; font-weight: 800; min-width: 52px; padding: 3px 6px; border-radius: 8px; border: 1px solid #d5dbe2; background: #fff; cursor: pointer; }
+  .sor-t td button.ok { color: #1E8E3E; border-color: #1E8E3E55; background: #effaf2; }
+  .sor-t td button.pt { color: #8a6100; border-color: #B07D0066; background: #fff6e0; }
+  .sor-t td button.ng { color: #B3261E; border-color: #B3261E66; background: #fdeeed; }
+  .sor-t td button.now { opacity: .8; border-style: dashed; }
+  .sor-t td button.ask { border: 2px solid #7B3FA0; box-shadow: inset 0 0 0 1px #7B3FA055; } .sor-ak { color: #7B3FA0; }
+  .sor-t td button.on { box-shadow: 0 0 0 2px #1f3a5f; }
+  .sor-t td .no { color: #a0a8b2; }
+  .sor-d { margin-top: 8px; padding: 8px 10px; border: 1px solid #d5dbe2; border-radius: 10px; background: #f9fbfd; font-size: 13px; line-height: 1.7; }
+  .sor-d b { margin-right: 6px; } .sor-d button { font: inherit; font-size: 13px; margin: 2px 4px 2px 0; padding: 2px 9px; border-radius: 999px; border: 1px solid #c8d0d8; background: #fff; cursor: pointer; }
+  .sor-d button.ng { border-color: #B3261E; color: #B3261E; } .sor-d button.ok { border-color: #1E8E3E; color: #1E8E3E; }
+  .sor-ask { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #c8d0d8; }
+  .sor-at { font-weight: 800; color: #1f3a5f; margin-bottom: 4px; }
+  .sor-bx, .sor-op { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0; } .sor-bx label, .sor-op label { display: inline-flex; gap: 4px; align-items: center; }
+  .sor-memo { font: inherit; font-size: 13px; width: 100%; padding: 5px 8px; border: 1px solid #c8d0d8; border-radius: 8px; box-sizing: border-box; margin: 4px 0; }
+  .sor-am { font-size: 13px; color: #1E8E3E; margin-top: 4px; } .sor-am.err { color: #B3261E; } .sor-ah { font-size: 12px; color: #55657a; margin-top: 4px; }
   /* ★ K-0092：担当者ごとのマイページ・お知らせ（未読の赤い丸） */
   .minesel { font: inherit; font-size: 13px; font-weight: 700; border: 1.5px solid var(--accent, #0F6E56); color: var(--accent, #0F6E56); background: #fff; border-radius: 999px; padding: 3px 8px; margin-right: 8px; max-width: 220px; }
   .minesel.on { background: var(--accent, #0F6E56); color: #fff; }
@@ -1601,7 +1640,7 @@
     <button type="button" role="tab" data-tab="Kaizen" aria-pressed="false" id="tabKaizen">改善要望<b class="kzbadge" id="kzBadge" hidden></b></button>
     <button type="button" role="tab" data-tab="Send" aria-pressed="false" id="tabSend">送付物</button>
   </span>
-  <span class="who"><select class="minesel" id="mineSel" hidden aria-label="どの担当者の顧問先を出すか" title="担当者ごとのマイページ：自分（または選んだ担当者）の担当・補助担当の顧問先だけを 一覧と 上の顧問先の欄に出す"></select><button type="button" class="arrbtn bellbtn" id="bellBtn" hidden aria-expanded="false" title="顧問先から届いた知らせ（直近30日）。赤い数字は まだ見ていない数">🔔<span class="bt"> お知らせ</span><b class="belln" id="bellN" hidden></b></button><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥<span class="bt"> 未処理</span> <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
+  <span class="who"><select class="minesel" id="mineSel" hidden aria-label="どの担当者の顧問先を出すか" title="担当者ごとのマイページ：自分（または選んだ担当者）の担当・補助担当の顧問先だけを 一覧と 上の顧問先の欄に出す"></select><button type="button" class="arrbtn bellbtn" id="bellBtn" hidden aria-expanded="false" title="顧問先から届いた知らせ（直近30日）。赤い数字は まだ見ていない数">🔔<span class="bt"> お知らせ</span><b class="belln" id="bellN" hidden></b></button><button type="button" class="arrbtn" id="guideBtn" hidden title="この画面の 使い方（操作ガイド）">📖<span class="bt"> 操作ガイド</span></button><button type="button" class="arrbtn" id="sorBtn" hidden title="担当の顧問先の 資料のそろい具合（月分ごと・箱ごと）。いつも来る箱が まだ来ていない顧問先が 一目で分かります">📊<span class="bt"> そろい具合</span></button><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥<span class="bt"> 未処理</span> <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
 <div class="arrpop" id="arrPop" hidden role="dialog" aria-label="未処理の資料（顧問先ごと）"></div>
 <div class="arrpop" id="bellPop" hidden role="dialog" aria-label="お知らせ（届いた知らせ）"></div>
@@ -2554,6 +2593,17 @@
     <button type="button" class="btn ghost sm danger" id="dcDel">破棄</button><button type="button" class="btn ghost sm" id="dcNone">全部外す</button><button type="button" class="btn ghost sm" id="dcEnd">やめる</button></span>
 </div>
 
+<div class="dmove" id="sorv" hidden role="dialog" aria-modal="true" aria-labelledby="sorT">
+  <div class="dmove-s sor-s">
+    <h3 id="sorT">📊 資料のそろい具合（月分ごと）</h3>
+    <p class="sor-n">いつも来る箱（今月より前に 2か月以上 来た箱）が 来ているか。<b class="sor-ok">✓</b> そろっている／<b class="sor-pt">△</b> 足りない箱がある／<b class="sor-ng">✕</b> まだ1つも来ていない／<b class="sor-ak">📩</b> お願いを送ったのに まだ届いていない（紫の枠）。マスを押すと 箱ごとの数（箱を押すと その箱を開く）。</p>
+    <label class="sor-f"><input type="checkbox" id="sorOnly"> 足りない顧問先だけ</label> <label class="sor-f"><input type="checkbox" id="sorAsk"> 📩 お願い中（まだ届いていない）の顧問先だけ</label>
+    <div class="sor-w" id="sorW">読んでいます…</div>
+    <div class="sor-d" id="sorD" hidden></div>
+    <div class="dmv-b"><button type="button" class="btn ghost" id="sorRe">↻ 読み直す</button><button type="button" class="btn ghost" id="sorNo">閉じる</button></div>
+  </div>
+</div>
+
 <div class="dmove" id="dfv" hidden role="dialog" aria-modal="true" aria-labelledby="dfvT">
   <div class="dmove-s ogs">
     <h3 id="dfvT">📂 フォルダへ写す</h3>
@@ -2703,7 +2753,7 @@
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
   const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
-    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
+    acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, arriveGrid: 1, askList: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
   /* ★ 2026-11-08：AI の下書き（通帳2枚を明細で読む など）は 1分を超える。60秒で切ると サーバは読み終えたのに「返事がありません」になっていた */
@@ -2785,7 +2835,7 @@
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
   }
-  function signOut(msg) { try { $('arrBtn').hidden = true; $('arrPop').hidden = true; $('bellBtn').hidden = true; $('bellPop').hidden = true; $('mineSel').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
+  function signOut(msg) { try { $('arrBtn').hidden = true; $('sorBtn').hidden = true; $('guideBtn').hidden = true; $('arrPop').hidden = true; $('bellBtn').hidden = true; $('bellPop').hidden = true; $('mineSel').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
   $('signOut').addEventListener('click', function () { signOut('ログアウトしました。'); });
   $('gate').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -6371,7 +6421,7 @@
   const LS_ARSINCE = 'collect_arr_since';
   function arDraw() {
     const tot = AR.pend.reduce(function (a, y) { return a + y.n; }, 0);
-    $('arrN').textContent = String(tot); $('arrBtn').hidden = !S.started || LIVE; $('arrBtn').classList.toggle('has', tot > 0);
+    $('arrN').textContent = String(tot); $('arrBtn').hidden = !S.started || LIVE; $('sorBtn').hidden = !S.started || LIVE; $('guideBtn').hidden = !S.started; $('arrBtn').classList.toggle('has', tot > 0);
     const pop = $('arrPop'); if (pop.hidden) return;
     pop.textContent = '';
     pop.appendChild(el('h4', null, '📥 未処理の資料（' + tot + '件）'));
@@ -6785,6 +6835,175 @@
     if (S.tab === 'Docs') docsLoad(); else selectTab('Docs');
     LN.n = 0; lnBadge();
   }
+  const GUIDE = {
+    order: ['top', 'Docs', 'In', 'Out', 'Clients', 'Dict', 'Rule', 'Fold', 'Send', 'Kaizen', 'Staff'],
+    top: { t: '🧭 全体・右上のボタン', lead: '上の「顧問先」で 顧問先を選び、タブで 仕事を切り替えます。右上のボタンは どのタブからでも使えます。',
+      steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
+      tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
+    Docs: { t: '回収資料', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
+      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー'],
+      tips: ['破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
+    In: { t: '仕訳化', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
+      steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
+      tips: ['よく出る取引は［仕訳辞書］に登録すると 次から ひとりでに当たります', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
+    Out: { t: '取込ファイル', lead: '確定した仕訳を 会計ソフト（FX）へ 取り込むファイルにする タブです。',
+      steps: ['処理済ボックス（月分・箱）を選ぶ', 'ファイルにして 保存する', 'FX で 取り込む'], tips: [] },
+    Clients: { t: '顧問先', lead: '顧問先の登録・箱（資料の入れもの）・URL・公式LINE などを決めるタブです。',
+      steps: ['［＋ 新しい顧問先］で 登録', '［＋ 箱を足す］で 資料の箱を決める（並べ替え・中の箱も）', '顧問先に渡す URL は ここ（［URLを作り直す］で 前の URL は 使えなくなります）', '担当・補助担当・決算月を 入れる'],
+      tips: ['顧問先の画面に 出納帳などの帳簿を出すのも ここで 箱ごとに決めます'] },
+    Dict: { t: '仕訳辞書', lead: '取引先・摘要ごとの 決まった仕訳を 登録しておく タブです。AI の下書きにも 効きます。',
+      steps: ['［＋ 辞書を登録］で 取引先・科目・税区分を 入れる', 'まちがえたものは 直す・［この辞書を消す］'], tips: [] },
+    Rule: { t: 'AIの考え方', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
+      steps: ['決まりを 書いて［考え方を保存］', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
+    Fold: { t: 'Google共有ドライブ', lead: '事務所の Google共有ドライブを この画面から 開く・整理する タブです。',
+      steps: ['フォルダを押して 中へ', '写真・PDF を押すと 大きく見る。［✏ 書きこむ］［🔴 ハンコ］', '［📮 送付物へ］で 顧問先へ送る 送付物にする', '［🖨 印刷の受け口］… PDF24 で印刷すると いま開いているフォルダに 入ります'],
+      tips: ['🔒 の付いたフォルダ（回収資料）は 見るだけです', 'PDF24 の設定は 説明書「職員向け はじめての設定（Claude と PDF24）」'] },
+    Send: { t: '送付物', lead: '申告書の控え・請求書などを 顧問先へ送るタブです。顧問先の画面の［📨 事務所から］に 届きます。',
+      steps: ['顧問先を選ぶ', 'ファイルを選んで 送付ボックスを決める', '［送る］（メールでも 知らせられます）'], tips: ['顧問先が開くと 開いた日時が 出ます'] },
+    Kaizen: { t: '改善要望', lead: 'アプリへの 要望・顧問先から 聞いたことを 書いて、直してもらうタブです。',
+      steps: ['画面のどこで 何が困るか・どうなってほしいかを 書く（写真も貼れます）', '直ったら【改善済み】になり、顧問先へのお知らせを 出すかを選ぶ'], tips: ['自分の Claude で 直すこともできます（説明書「自分の Claude で 資料回収アプリを直す」）'] },
+    Staff: { t: '担当者', show: function () { return !!(document.getElementById('tabStaff') && !document.getElementById('tabStaff').hidden); }, lead: '事務所の 担当者（職員）を 登録するタブです（管理する人だけ）。',
+      steps: ['名前・パスワードを 入れて 登録'], tips: [] }
+  };
+  function guideKey() { return S.tab && GUIDE[S.tab] ? S.tab : 'top'; }
+  /* ================= ★★ 操作ガイド（2026-11-17。石井） =================
+     TKC の「操作ガイダンス」のように、右上の［📖 操作ガイド］で いまの画面の使い方を出す（ほかの画面のガイドも 上の札で選べる）。
+     ★ 説明は この GUIDE の1か所に集める。画面のボタンの名前・手順を変えたら ここも一緒に直す
+       （tools/guide.mjs が「［］で書いたボタンの名前が 画面に本当にあるか」「どの画面にも ガイドがあるか」を見張る） */
+  function guideOpen(key) {
+    let v = document.getElementById('guidev');
+    if (!v) {
+      v = document.createElement('div'); v.id = 'guidev'; v.className = 'guidev'; v.setAttribute('role', 'dialog'); v.setAttribute('aria-modal', 'true'); v.setAttribute('aria-label', '操作ガイド');
+      v.innerHTML = '<div class="gd-s"><div class="gd-h"><b>📖 操作ガイド</b><button type="button" class="gd-x" aria-label="閉じる">✕</button></div><div class="gd-tabs"></div><div class="gd-b"></div></div>';
+      document.body.appendChild(v);
+      v.addEventListener('click', function (e) { if (e.target === v || e.target.closest('.gd-x')) v.hidden = true; });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !v.hidden) v.hidden = true; });
+    }
+    const keys = GUIDE.order.filter(function (k) { return GUIDE[k] && (!GUIDE[k].show || GUIDE[k].show()); });
+    if (keys.indexOf(key) < 0) key = keys[0];
+    const tabs = v.querySelector('.gd-tabs'); tabs.textContent = '';
+    keys.forEach(function (k) { const b = document.createElement('button'); b.type = 'button'; b.textContent = GUIDE[k].t; if (k === key) b.className = 'on'; b.addEventListener('click', function () { guideOpen(k); }); tabs.appendChild(b); });
+    const g = GUIDE[key], body = v.querySelector('.gd-b'); body.textContent = '';
+    const add = function (tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; body.appendChild(e); return e; };
+    add('h3', null, g.t);
+    if (g.lead) add('p', 'gd-lead', g.lead);
+    if (g.steps && g.steps.length) { add('h4', null, '操作のしかた'); const ol = add('ol'); g.steps.forEach(function (s) { const li = document.createElement('li'); li.textContent = s; ol.appendChild(li); }); }
+    if (g.tips && g.tips.length) { add('h4', null, 'こんなときは'); const ul = add('ul'); g.tips.forEach(function (s) { const li = document.createElement('li'); li.textContent = s; ul.appendChild(li); }); }
+    if (g.more) g.more(body);
+    v.hidden = false;
+    try { v.querySelector('.gd-x').focus(); } catch (e) {}
+  }
+  $('guideBtn').addEventListener('click', function () { guideOpen(guideKey()); });
+  /* ================= ★★ 資料のそろい具合（2026-11-17。石井） =================
+     顧問先 × 月分（直近6か月）。いつも来る箱（今月より前の月で 2か月以上 来た箱）が その月分に来ているか。
+     マイページ（担当者）を選んでいれば その人の担当先だけ。マスを押すと 箱ごとの数、箱を押すと 回収資料タブで その箱を開く */
+  const SOR = { r: null, at: 0, pick: '' };
+  function sorExpect(c, pers) {
+    const now = pers[pers.length - 1], skip = (SOR.r && SOR.r.skip) || [];
+    return Object.keys(c.cnt || {}).filter(function (b) { if (skip.indexOf(b) >= 0) return false; let k = 0; pers.forEach(function (p) { if (p !== now && c.cnt[b][p]) k++; }); return k >= 2; });
+  }
+  function sorCell(c, p, exp) {
+    if (!exp.length) return { cls: '', t: '' };
+    const got = exp.filter(function (b) { return (c.cnt[b] || {})[p]; }).length;
+    return { cls: got === exp.length ? 'ok' : got ? 'pt' : 'ng', t: (got === exp.length ? '✓ ' : got ? '△ ' : '✕ ') + got + '/' + exp.length, got: got };
+  }
+  function sorOpen(force) {
+    $('sorv').hidden = false;
+    if (SOR.r && !force && Date.now() - SOR.at < 300000) { sorDraw(); return; }
+    $('sorW').textContent = '読んでいます…';
+    gs('arriveGrid', 6).then(function (r) { SOR.r = r; SOR.at = Date.now(); sorDraw(); }, function (e) { $('sorW').textContent = '読めませんでした（' + ((e && e.message) || e) + '）'; });
+  }
+  function sorDraw() {
+    const r = SOR.r, w = $('sorW'); if (!r) return;
+    const pers = r.pers, now = pers[pers.length - 1], only = $('sorOnly').checked;
+    let L = (r.clients || []).filter(mineOk); if (!L.length) L = r.clients || [];
+    const tb = el('table', 'sor-t'), th = el('thead'), hr = el('tr');
+    hr.appendChild(el('th', 'nm', '顧問先'));
+    pers.forEach(function (p) { hr.appendChild(el('th', null, Number(p.slice(5)) + '月分' + (p === now ? '（今月）' : ''))); });
+    th.appendChild(hr); tb.appendChild(th);
+    const bd = el('tbody'); let n = 0;
+    L.forEach(function (c) {
+      const exp = sorExpect(c, pers);
+      const cells = pers.map(function (p) { return sorCell(c, p, exp); });
+      if (only && !cells.some(function (x, i) { return (pers[i] !== now && (x.cls === 'pt' || x.cls === 'ng')) || (c.asked || {})[pers[i]]; })) return;
+      if ($('sorAsk').checked && !Object.keys(c.asked || {}).length) return;
+      n++;
+      const tr = el('tr'); const nm = el('th', 'nm', c.code + '　' + c.name); nm.title = c.name + (c.tanto ? '（担当 ' + c.tanto + '）' : ''); tr.appendChild(nm);
+      cells.forEach(function (x, i) {
+        const td = el('td'), p = pers[i];
+        const ak = (c.asked || {})[p];   /* ★ お願いを送ったのに まだ届いていない（2026-11-17） */
+        if (!x.cls && !ak) { const total = Object.keys(c.cnt || {}).reduce(function (a, b) { return a + ((c.cnt[b] || {})[p] || 0); }, 0); td.appendChild(el('span', 'no', total ? total + '件' : '—')); td.title = 'いつも来る箱が まだ決まっていません（2か月ぶん たまると 出ます）'; }
+        else {
+          const b = el('button', (x.cls || 'pt') + (p === now ? ' now' : '') + (ak ? ' ask' : '') + (SOR.pick === c.code + '|' + p ? ' on' : ''), (ak ? '📩 ' : '') + (x.t || 'お願い中')); b.type = 'button';
+          b.title = perLabel(p) + '：' + (x.cls ? 'いつも来る箱 ' + exp.length + 'つのうち ' + x.got + 'つ 来ています' : '') + (ak ? '（' + ak.at + ' に お願い済み・まだ：' + ak.miss.join('・') + '）' : '') + '（押すと 箱ごと）';
+          b.addEventListener('click', function () { SOR.pick = c.code + '|' + p; sorDetail(c, p, exp); tb.querySelectorAll('button.on').forEach(function (q) { q.classList.remove('on'); }); b.classList.add('on'); });
+          td.appendChild(b);
+        }
+        tr.appendChild(td);
+      });
+      bd.appendChild(tr);
+    });
+    tb.appendChild(bd);
+    w.textContent = '';
+    if (!n) w.appendChild(el('p', 'sor-n', only ? '足りない顧問先は ありません。' : '顧問先が ありません。'));
+    else w.appendChild(tb);
+  }
+  function sorDetail(c, p, exp) {
+    const d = $('sorD'); d.hidden = false; d.textContent = '';
+    d.appendChild(el('b', null, c.name + '　' + perLabel(p)));
+    const all = exp.slice(); Object.keys(c.cnt || {}).forEach(function (b) { if (all.indexOf(b) < 0 && (c.cnt[b] || {})[p]) all.push(b); });
+    all.forEach(function (b) {
+      const k = (c.cnt[b] || {})[p] || 0, need = exp.indexOf(b) >= 0;
+      const x = el('button', k ? 'ok' : need ? 'ng' : null, (k ? '✓ ' : '✕ ') + b + (k ? ' ' + k : ' なし')); x.type = 'button';
+      x.title = 'この箱を 回収資料タブで開く'; x.addEventListener('click', function () { $('sorv').hidden = true; arGo(c.code, b); });
+      d.appendChild(x);
+    });
+    if (!all.length) d.appendChild(el('span', null, 'この月分は まだ何も来ていません。'));
+    /* ★ 2026-11-17：足りない箱の お願いを 顧問先へ（顧問先の画面の上に帯。届いたら ひとりでに消える） */
+    const cand = all.filter(function (b) { return b !== (SOR.r.skip || [])[1]; });
+    if (!cand.length) return;
+    const f = el('div', 'sor-ask');
+    f.appendChild(el('div', 'sor-at', '📩 顧問先へ お願いを送る（' + perLabel(p) + '）'));
+    const bx = el('div', 'sor-bx');
+    cand.forEach(function (b) { const lb = el('label'), cb = el('input'); cb.type = 'checkbox'; cb.value = b; cb.checked = exp.indexOf(b) >= 0 && !((c.cnt[b] || {})[p]); lb.appendChild(cb); lb.appendChild(document.createTextNode(' ' + b)); bx.appendChild(lb); });
+    f.appendChild(bx);
+    const memo = el('input', 'sor-memo'); memo.type = 'text'; memo.maxLength = 300; memo.placeholder = 'ひとこと（任意）例：月末までに お願いします'; memo.setAttribute('aria-label', 'ひとこと'); f.appendChild(memo);
+    const op = el('div', 'sor-op'), ln = el('label'), lc = el('input'), ml = el('label'), mc = el('input');
+    lc.type = 'checkbox'; ln.appendChild(lc); ln.appendChild(document.createTextNode(' LINE でも知らせる（つないでいれば）'));
+    mc.type = 'checkbox'; ml.appendChild(mc); ml.appendChild(document.createTextNode(' メールでも知らせる'));
+    op.appendChild(ln); op.appendChild(ml); f.appendChild(op);
+    const go = el('button', 'btn sm', '📩 お願いを送る'); go.type = 'button';
+    const msg = el('div', 'sor-am'); msg.setAttribute('role', 'status');
+    f.appendChild(go); f.appendChild(msg);
+    const hist = el('div', 'sor-ah'); f.appendChild(hist);
+    const histDraw = function (l) {
+      hist.textContent = '';
+      (l || []).filter(function (x) { return x.per === p && !x.del; }).slice(0, 5).forEach(function (x) {
+        hist.appendChild(el('div', null, x.at + ' に送った：' + x.boxes.join('・') + (x.miss.length ? '（まだ：' + x.miss.join('・') + '）' : '（✓ 全部 届きました）') + (x.who ? '　' + x.who : '')));
+      });
+    };
+    gs('askList', c.code).then(histDraw, function () {});
+    go.addEventListener('click', function () {
+      const boxes = Array.prototype.filter.call(bx.querySelectorAll('input'), function (x) { return x.checked; }).map(function (x) { return x.value; });
+      if (!boxes.length) { msg.textContent = 'お願いする箱に チェックを入れてください。'; msg.className = 'sor-am err'; return; }
+      go.disabled = true; msg.className = 'sor-am'; msg.textContent = '送っています…';
+      gs('askSend', c.code, p, boxes, { memo: memo.value.trim(), line: lc.checked, mail: mc.checked }).then(function (r) {
+        go.disabled = false; memo.value = '';
+        msg.textContent = '送りました。顧問先の画面の上に 出ます（届いたら ひとりでに消えます）。' + (r.line ? '　LINE：' + r.line : '') + (r.mail ? '　メール：' + r.mail : '');
+        histDraw(r.list);
+        (c.asked = c.asked || {})[p] = { at: (new Date().getMonth() + 1) + '/' + new Date().getDate(), miss: boxes.filter(function (b) { return !((c.cnt[b] || {})[p]); }) };
+        if (!c.asked[p].miss.length) delete c.asked[p];
+        sorDraw();   /* 表の そのマスを 紫の枠（お願い中）に */
+      }, function (e) { go.disabled = false; msg.className = 'sor-am err'; msg.textContent = '送れませんでした（' + ((e && e.message) || e) + '）'; });
+    });
+    d.appendChild(f);
+  }
+  $('sorBtn').addEventListener('click', function () { sorOpen(false); });
+  $('sorRe').addEventListener('click', function () { sorOpen(true); });
+  $('sorNo').addEventListener('click', function () { $('sorv').hidden = true; });
+  $('sorOnly').addEventListener('change', sorDraw);
+  $('sorAsk').addEventListener('change', sorDraw);
+  $('sorv').addEventListener('click', function (e) { if (e.target === this) this.hidden = true; });
   function arCheck(force) {
     if (!S.started || !S.booted || LIVE || (AR.busy && !force)) return;
     if (!AR.since) AR.since = Number(lsGet(LS_ARSINCE) || 0) || Date.now();
@@ -9470,7 +9689,7 @@
   /* ★ K-0188（2026-11-16）：下線・枠の 太さ（細 0.5・中 1・太 1.8 ＝ 前の太さが「中」）。はじめは 細。この端末が覚える */
   try { const w0 = Number(localStorage.getItem('collect_office_mk_lw')); if ([0.5, 1, 1.8].indexOf(w0) >= 0) MK.lw = w0; } catch (e) {}
   let MKW_EL = null;   /* 太さの帯（別ウィンドウへ 貸し出しても 同じ要素） */
-  function mkLwPaint() { const w = MKW_EL || (MKW_EL = document.getElementById('mkW')); if (w) w.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(Number(b.dataset.w) === MK.lw)); }); }
+  function mkLwPaint(v) { const lw = v || MK.lw, w = MKW_EL || (MKW_EL = document.getElementById('mkW')); if (w) w.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(Number(b.dataset.w) === lw)); }); }   /* v … 選んだ線の太さ（K-0188 続き） */
   function mkLineW(W, m) { return Math.max(1, W * 0.004 * ((m && m.lw) || 1)); }
   /* ★★ 事務所のハンコ（2026-11-01）：日付印（はじめから使える）と 登録したハンコの画像。押すと 書きこみの1つとして重ねる（元の資料は書き換えない） */
   let STAMPS = null, STAMPS_P = null;
@@ -9609,6 +9828,7 @@
   function mkMarks() { return MK.on ? MK.list : ((mkIt() && mkIt().mark) || []); }
   function mkPaint() {
     if (!mkEl('dview') || mkEl('dview').hidden || !mkIt()) return;
+    if (MK.on && MK.sel < 0) mkLwPaint();   /* ★ K-0188 続き：線を選んでいないときは これから引く太さを 出す */
     const b = mkEl('dvBody');
     b.querySelectorAll('.mksvg').forEach(function (x) { x.remove(); });
     const tg = mkTargets(), ms = mkMarks();
@@ -9621,10 +9841,18 @@
       sv.style.left = t.offsetLeft + 'px'; sv.style.top = t.offsetTop + 'px'; sv.style.width = W + 'px'; sv.style.height = H + 'px';
       if (t.tagName === 'IMG') { sv.style.transform = t.style.transform || ''; sv.style.margin = '0'; }
       let selEl = null;
-      ms.forEach(function (m, i) { if ((m.p || 0) !== p) return; const sh = mkShape(m, W, H); if (MK.on) { sh.dataset.i = i; if (i === MK.sel) selEl = sh; } sv.appendChild(sh); });
+      const hits = MK.on ? document.createElementNS(SVGNS, 'g') : null; if (hits) { hits.setAttribute('class', 'mkhits'); sv.appendChild(hits); }
+      ms.forEach(function (m, i) { if ((m.p || 0) !== p) return; const sh = mkShape(m, W, H); if (MK.on) { sh.dataset.i = i; if (i === MK.sel) selEl = sh; const hp = mkHitOf(m, W, H); if (hp) { hp.dataset.i = i; hits.appendChild(hp); } } sv.appendChild(sh); });
       if (MK.drag && MK.drag.p === p && MK.drag.cur) sv.appendChild(mkShape(MK.drag.cur, W, H));
       t.parentNode.insertBefore(sv, t.nextSibling);
       if (selEl) mkSelBox(sv, selEl);
+      /* ★ 2026-11-17（柳田）：選んだ下線の 両端に 丸い つまみ。つかむと 長さ・傾きを 変えられる */
+      const sm = MK.on && MK.sel >= 0 ? MK.list[MK.sel] : null;
+      if (sm && (sm.t === 'line' || sm.t === 'box') && (sm.p || 0) === p) mkEnds(sm).forEach(function (q, k) {
+        const c = document.createElementNS(SVGNS, 'circle'); c.setAttribute('class', 'mkend'); c.dataset.e = k;
+        c.setAttribute('cx', q[0] * W); c.setAttribute('cy', q[1] * H); c.setAttribute('r', Math.max(7, W * 0.012));
+        c.setAttribute('fill', '#fff'); c.setAttribute('stroke', '#1A4FD0'); c.setAttribute('stroke-width', Math.max(2, W * 0.003)); c.style.cursor = 'crosshair'; sv.appendChild(c);
+      });
       if (MK.on) mkBind(sv, p);
     });
   }
@@ -9666,6 +9894,16 @@
     const r = document.createElementNS(SVGNS, 'rect'); r.setAttribute('x', m.x * W); r.setAttribute('y', m.y * H); r.setAttribute('width', m.w * W); r.setAttribute('height', m.h * H);
     if (m.a) { r.setAttribute('fill', m.c); r.setAttribute('fill-opacity', MK_ALPHA); r.setAttribute('stroke', 'none'); return r; }   /* ★ K-0126：透過の枠＝中を うすく塗る */
     const bw = mkLineW(W, m); r.setAttribute('fill', 'none'); r.setAttribute('stroke', m.c); r.setAttribute('stroke-width', bw); r.setAttribute('rx', bw); return r;
+  }
+  /* ★ K-0188 続き（2026-11-17 柳田）：書きこみ中は 細い線・枠も 押しやすいように 見えない太い当たり。いちばん下の層に置く（上の 文字・✔・ハンコを 押すのを じゃましない） */
+  /* つまみの場所（下線＝両端 2つ・枠＝四隅 4つ。左上から 時計回り） */
+  function mkEnds(m) { return m.t === 'box' ? [[m.x, m.y], [m.x + m.w, m.y], [m.x + m.w, m.y + m.h], [m.x, m.y + m.h]] : [[m.x, m.y], [m.x + m.w, m.y + m.h]]; }
+  function mkHitOf(m, W, H) {
+    let d;
+    if (m.t === 'line') d = 'M' + (m.x * W) + ' ' + (m.y * H) + ' L' + ((m.x + m.w) * W) + ' ' + ((m.y + m.h) * H);
+    else if (m.t === 'box' && !m.a) { const x0 = m.x * W, y0 = m.y * H, x1 = (m.x + m.w) * W, y1 = (m.y + m.h) * H; d = 'M' + x0 + ' ' + y0 + ' L' + x1 + ' ' + y0 + ' L' + x1 + ' ' + y1 + ' L' + x0 + ' ' + y1 + ' Z'; }
+    if (!d) return null;
+    const h = document.createElementNS(SVGNS, 'path'); h.setAttribute('d', d); h.setAttribute('fill', 'none'); h.setAttribute('stroke', 'transparent'); h.setAttribute('stroke-width', Math.max(14, W * 0.025)); h.setAttribute('class', 'mkhit'); return h;
   }
   /* ★★ K-0094：✔（チェック）と 付箋 */
   function mkInk(c) { const h = String(c || '').replace('#', ''); if (h.length !== 6) return '#111'; const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16); return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55 ? '#111' : '#fff'; }
@@ -9768,19 +10006,29 @@
     MK.sel = i;
     const m = MK.list[i], on = !!(m && MK_SEL_T[m.t]); if (!on) MK.sel = -1;
     $('mkSelBar').hidden = !on;
-    if (on) { $('mkSelL').textContent = { stamp: '選んだハンコ：', check: '選んだ ✔：', note: '選んだ付箋：' }[m.t] || '選んだ文字：'; $('mkFix').hidden = !(m.t === 'text' || m.t === 'note'); $('mkFix').textContent = m.t === 'note' ? '付箋を直す' : '文字を直す'; if (m.t === 'text' || m.t === 'note') $('mkSize').value = String(mkPtOf(m)); }
+    if (on) { const ln = m.t === 'line' || m.t === 'box'; $('mkSmall').hidden = $('mkBig').hidden = ln; if (ln) mkLwPaint(m.lw || 1); }
+    if (on) { $('mkSelL').textContent = { stamp: '選んだハンコ：', check: '選んだ ✔：', note: '選んだ付箋：', line: '選んだ線（つかんで動かす）：', box: '選んだ枠（つかんで動かす）：' }[m.t] || '選んだ文字：'; $('mkFix').hidden = !(m.t === 'text' || m.t === 'note'); $('mkFix').textContent = m.t === 'note' ? '付箋を直す' : '文字を直す'; if (m.t === 'text' || m.t === 'note') $('mkSize').value = String(mkPtOf(m)); }
     if (on) mkD().querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.c === m.c)); });
     mkPaint();
   }
-  const MK_SEL_T = { text: 1, stamp: 1, check: 1, note: 1 };
+  const MK_SEL_T = { text: 1, stamp: 1, check: 1, note: 1, line: 1, box: 1 };   /* ★ K-0188 続き（2026-11-17 柳田）：下線・枠も 選んで動かせる */
   function mkSelEdit(k) { const m = MK.list[MK.sel]; if (!m) return; k(m); mkDirty(); mkPaint(); }
   function mkBind(sv, p) {
     sv.addEventListener('pointerdown', function (e) {
       e.preventDefault(); e.stopPropagation();
       const a = mkPt(sv, e);
+      /* ★ 2026-11-17（柳田）：選んだ下線の 端の つまみ＝その端だけ 動かす（長さ・傾き） */
+      const en = e.target && e.target.closest ? e.target.closest('.mkend') : null;
+      if (en && MK.sel >= 0 && MK.list[MK.sel] && (MK.list[MK.sel].t === 'line' || MK.list[MK.sel].t === 'box')) {
+        const sm = MK.list[MK.sel], k = Number(en.dataset.e), ends = mkEnds(sm);
+        MK.end = { i: MK.sel, k: k, p: p, moved: false, fx: ends[(k + 2) % 4] ? ends[(k + 2) % 4][0] : 0, fy: ends[(k + 2) % 4] ? ends[(k + 2) % 4][1] : 0 };   /* 枠は 向かいの角を 止めておく */
+        try { sv.setPointerCapture(e.pointerId); } catch (x) {} return;
+      }
       /* 書いた文字を押す＝選ぶ（そのまま つかんで動かせる） */
       const hit = e.target && e.target.closest ? e.target.closest('[data-i]') : null;
-      const ti = hit ? Number(hit.dataset.i) : -1;
+      let ti = hit ? Number(hit.dataset.i) : -1;
+      /* ★ K-0188 続き：下線・枠を つかむのは 道具を選んでいないときだけ（道具を持っていれば その上にも ふつうに書ける） */
+      if (ti >= 0 && MK.m && MK.list[ti] && (MK.list[ti].t === 'line' || MK.list[ti].t === 'box')) ti = -1;
       /* ★ 2026-11-12（細谷）：書きかけの欄があれば まず置く（外を押すと 置く）。続けて書く道具なら そのまま次を置く */
       const pend = mkD().querySelector('.mkin');
       if (pend) { if (pend._done) pend._done(true); else pend.remove(); if (ti >= 0 || ['text', 'note', 'stamp', 'check'].indexOf(MK.m) < 0) return; }
@@ -9804,12 +10052,28 @@
     });
     sv.addEventListener('pointermove', function (e) {
       MK_HOVER = { p: p, a: mkPt(sv, e) };   /* Ctrl＋V で貼る所 */
+      if (MK.end && MK.end.p === p) {
+        const b = mkPt(sv, e), m = MK.list[MK.end.i]; if (!m) return;
+        const bx = Math.max(0, Math.min(1, b.x)), by = Math.max(0, Math.min(1, b.y));
+        if (m.t === 'box') { const fx = MK.end.fx, fy = MK.end.fy; m.x = Math.min(fx, bx); m.y = Math.min(fy, by); m.w = Math.abs(bx - fx); m.h = Math.abs(by - fy); }   /* ★ 枠の角：向かいの角は そのまま */
+        else if (MK.end.k === 0) { const ex = m.x + m.w, ey = m.y + m.h; m.x = bx; m.y = by; m.w = ex - bx; m.h = ey - by; } else { m.w = bx - m.x; m.h = by - m.y; }
+        MK.end.moved = true;
+        /* 描き直すと つかみが外れるので その場で 線・つまみ・当たりだけ 動かす */
+        const vb = sv.viewBox.baseVal, W = vb.width, H = vb.height, x1 = m.x * W, y1 = m.y * H, x2 = (m.x + m.w) * W, y2 = (m.y + m.h) * H;
+        const le = sv.querySelector('line[data-i="' + MK.end.i + '"]'); if (le) { le.setAttribute('x1', x1); le.setAttribute('y1', y1); le.setAttribute('x2', x2); le.setAttribute('y2', y2); }
+        const re = sv.querySelector('rect[data-i="' + MK.end.i + '"]'); if (re) { re.setAttribute('x', x1); re.setAttribute('y', y1); re.setAttribute('width', x2 - x1); re.setAttribute('height', y2 - y1); }
+        const hp = sv.querySelector('.mkhit[data-i="' + MK.end.i + '"]'); if (hp) hp.setAttribute('d', m.t === 'box' ? 'M' + x1 + ' ' + y1 + ' L' + x2 + ' ' + y1 + ' L' + x2 + ' ' + y2 + ' L' + x1 + ' ' + y2 + ' Z' : 'M' + x1 + ' ' + y1 + ' L' + x2 + ' ' + y2);
+        const es = sv.querySelectorAll('.mkend'); mkEnds(m).forEach(function (q, k) { if (es[k]) { es[k].setAttribute('cx', q[0] * W); es[k].setAttribute('cy', q[1] * H); } });
+        const sb = sv.querySelector('.mksel'); if (sb) sb.remove();
+        return;
+      }
       if (MK.mv && MK.mv.p === p) {
         const b = mkPt(sv, e), m = MK.list[MK.mv.i]; if (!m) return;
         m.x = Math.max(0, Math.min(1, b.x + MK.mv.dx)); m.y = Math.max(0, Math.min(1, b.y + MK.mv.dy)); MK.mv.moved = true;
         const vb = sv.viewBox.baseVal, te = sv.querySelector('text[data-i="' + MK.mv.i + '"]');
-        if (m.t !== 'text') { m.x = Math.min(m.x, 1 - m.w); m.y = Math.min(m.y, 1 - m.h); }
-        const ge = sv.querySelector('[data-i="' + MK.mv.i + '"]'); if (ge) ge.setAttribute('transform', 'translate(' + ((m.x - MK.mv.x0) * vb.width) + ' ' + ((m.y - MK.mv.y0) * vb.height) + ')');
+        if (m.t === 'line') { m.x = Math.max(Math.max(0, -m.w), Math.min(Math.min(1, 1 - m.w), m.x)); m.y = Math.max(Math.max(0, -m.h), Math.min(Math.min(1, 1 - m.h), m.y)); }   /* ★ K-0188 続き：線は 両端とも 写真の中に（向きは 負もある） */
+        else if (m.t !== 'text') { m.x = Math.min(m.x, 1 - m.w); m.y = Math.min(m.y, 1 - m.h); }
+        sv.querySelectorAll('[data-i="' + MK.mv.i + '"]').forEach(function (ge) { ge.setAttribute('transform', 'translate(' + ((m.x - MK.mv.x0) * vb.width) + ' ' + ((m.y - MK.mv.y0) * vb.height) + ')'); });   /* 当たり（mkhit）も いっしょに */
         const sb = sv.querySelector('.mksel'); if (sb) sb.remove(); void te;
         return;
       }
@@ -9820,6 +10084,7 @@
       const vb = sv.viewBox.baseVal, sh = mkShape(MK.drag.cur, vb.width, vb.height); sh.setAttribute('class', 'mkcur'); sv.appendChild(sh);
     });
     sv.addEventListener('pointerup', function (e) {
+      if (MK.end) { const en = MK.end; MK.end = null; if (en.moved) { const m = MK.list[en.i]; if (m && (m.t === 'box' ? (m.w < 0.005 || m.h < 0.005) : Math.abs(m.w) + Math.abs(m.h) < 0.005)) { MK.list.splice(en.i, 1); MK.sel = -1; $('mkSelBar').hidden = true; } mkDirty(); mkPaint(); } return; }   /* 端を重ねるほど 縮めたら 消す */
       if (MK.mv) { const mv = MK.mv; MK.mv = null; if (mv.moved) { mkDirty(); mkPaint(); } else if (MK.list[mv.i] && MK.list[mv.i].t === 'note') mkFixText(mv.i); return; }   /* ★ 2026-11-12（細谷）：付箋は 押す（動かさない）だけで 直せる */
       if (!MK.drag || MK.drag.p !== p) return;
       const m = MK.drag.cur; MK.drag = null;
@@ -9883,7 +10148,7 @@
     $('mkAuto').checked = mkAutoOn();
     const it = mkIt(); if (!it) return;
     if (fileKind(it.name)) { dcMsg('この形（エクセルなど）には 書きこめません。', true); return; }
-    MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); MK.sel = -1; MK.mv = null; $('mkSelBar').hidden = true; MK.m = ''; MK.keep = false; mkToolPaint();
+    MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); MK.sel = -1; MK.mv = null; MK.end = null; $('mkSelBar').hidden = true; MK.m = ''; MK.keep = false; mkToolPaint();
     mkEl('dvMark').setAttribute('aria-pressed', 'true'); $('dvMkBar').hidden = false; mkEl('dview').classList.add('dv-mk'); stampBar(); stampsLoad().then(stampBar);   /* ハンコの帯は すぐ出す（写真が あとで ずれないように） */
     $('mkMsg').textContent = '';   /* ★ 2026-11-13（細谷）：長い説明は 出さない（使ううちに 覚える。ボタンに マウスを乗せると 説明が出る） */
     mkPaint();
@@ -9947,7 +10212,9 @@
     if (MK.sel >= 0) mkSelEdit(function (m) { m.c = MK.c; });
   }
   $('mkColor').addEventListener('input', function () { mkColorSet(this.value); });
-  $('mkW').addEventListener('click', function (e) { const b = e.target.closest('button[data-w]'); if (!b) return; MK.lw = Number(b.dataset.w); try { localStorage.setItem('collect_office_mk_lw', String(MK.lw)); } catch (x) {} mkLwPaint(); });
+  $('mkW').addEventListener('click', function (e) { const b = e.target.closest('button[data-w]'); if (!b) return; MK.lw = Number(b.dataset.w); try { localStorage.setItem('collect_office_mk_lw', String(MK.lw)); } catch (x) {} mkLwPaint();
+    const sm = MK.sel >= 0 ? MK.list[MK.sel] : null; if (sm && (sm.t === 'line' || sm.t === 'box') && !sm.a) mkSelEdit(function (m) { if (MK.lw === 1) delete m.lw; else m.lw = MK.lw; });   /* ★ K-0188 続き：選んだ線・枠の太さも 変える */
+  });
   mkLwPaint();
   /* ★ K-0126：［🖍 透過（マーカー）］押すたびに 入る／切れる。これから引く 下線・枠に効く（色は そのまま選べる） */
   $('mkAlpha').addEventListener('click', function () { MK.a = !MK.a; this.setAttribute('aria-pressed', String(MK.a)); });
@@ -10117,7 +10384,11 @@
   function mkwWatch(key) {
     const o = WS[key]; if (!o || !o.win || o.win.closed) return; const zi = o.win.document.getElementById('wzi'); if (!zi || zi._mkw) return; zi._mkw = 1;
     zi.addEventListener('load', function () { mkwShow(key); });
-    try { new MutationObserver(function () { const sv = o.win.document.querySelector('#wzs .mksvg'); if (sv) sv.style.transform = zi.style.transform || ''; }).observe(zi, { attributes: true, attributeFilter: ['style'] }); } catch (e) {}
+    /* ★ 2026-11-17（柳田）：窓の大きさを変えると 写真の大きさが変わるのに 書きこみは 前の大きさのまま残り、写真の外へ ずれていた。
+         窓の大きさ・写真の大きさ（回した向きで 収まる大きさが変わる）が変わったら 描き直す。拡大・移動（transform）は そのまま写す */
+    let rq = 0; const again = function () { if (rq) return; rq = o.win.requestAnimationFrame(function () { rq = 0; const sv = o.win.document.querySelector('#wzs .mksvg'); if (!sv || Number(sv.getAttribute('width')) !== zi.offsetWidth || Number(sv.getAttribute('height')) !== zi.offsetHeight || parseFloat(sv.style.left) !== zi.offsetLeft || parseFloat(sv.style.top) !== zi.offsetTop) mkwShow(key); }); };
+    o.win.addEventListener('resize', again);
+    try { new MutationObserver(function () { const sv = o.win.document.querySelector('#wzs .mksvg'); if (sv) sv.style.transform = zi.style.transform || ''; again(); }).observe(zi, { attributes: true, attributeFilter: ['style'] }); } catch (e) {}
   }
   /* 別ウィンドウの「大きく見る」に 書きこみを 重ねて見せる（見るだけ） */
   function mkwShow(key) {
