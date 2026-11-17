@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794922058;</script>
+<script>window.__PAGE_VER=1794923129;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -5864,7 +5864,7 @@
       '.wsh{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 16px;background:#1f3a5f;color:#fff}.wsh h1{margin:0;font-size:18px}.wsh .n{font-size:13px;opacity:.85}.wsh .sp{flex:1}' +
       '.wsh button{font:inherit;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #fff6;background:#fff;color:#1f3a5f;cursor:pointer}' +
       '.wsnote{margin:0;padding:6px 16px;background:#fff8e6;color:#6b4d00;font-size:12px}.wsmsg{padding:6px 16px;font-size:13px;color:#0a5}.wsmsg.err{color:#c22}' +
-      '.wssz{display:flex;gap:4px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin:0 16px;font-size:12px;color:#555}.wsq{font:inherit;font-size:13px;padding:4px 10px;border:1px solid #c8d0d8;border-radius:999px;min-width:180px;margin-right:auto}.wc[hidden]{display:none!important}.wssz button{font:inherit;padding:2px 10px;border-radius:999px;border:1px solid #c8d0d8;background:#fff;cursor:pointer}.wssz button.on{background:#1f3a5f;color:#fff;border-color:#1f3a5f}.wsp{padding:6px 16px 22px}.wsp h2{margin:14px 0 8px;font-size:16px;color:#1f3a5f}.wsg{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--wsz,210px),1fr));gap:14px}' +
+      '.wssz{display:flex;gap:4px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin:0 16px;font-size:12px;color:#555}.wsq{font:inherit;font-size:13px;padding:4px 10px;border:1px solid #c8d0d8;border-radius:999px;min-width:180px;margin-right:auto}.wc[hidden]{display:none!important}.wc .lab{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #9aa6b2;background:#fff;cursor:pointer;padding:0;font-size:11px;line-height:18px;color:#9aa6b2}.wc .lab[data-l]{color:#fff}.wslf{display:inline-flex;gap:3px;align-items:center;margin-right:8px}.wslf button i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:3px;vertical-align:-1px}.wssz button{font:inherit;padding:2px 10px;border-radius:999px;border:1px solid #c8d0d8;background:#fff;cursor:pointer}.wssz button.on{background:#1f3a5f;color:#fff;border-color:#1f3a5f}.wsp{padding:6px 16px 22px}.wsp h2{margin:14px 0 8px;font-size:16px;color:#1f3a5f}.wsg{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--wsz,210px),1fr));gap:14px}' +
       '.wc{position:relative;background:#fff;border:2px solid #d5dbe2;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;cursor:grab}.wc.lock{cursor:default;opacity:.92}' +
       '.wc .im{height:230px;display:flex;align-items:center;justify-content:center;background:#f4f6f8;border-radius:8px;overflow:hidden}.wc .im img{max-width:100%;max-height:100%;object-fit:contain}.wc .im .k{font-size:13px;color:#667;white-space:pre-wrap;text-align:center;padding:8px}' +
       '.wc .bd{position:absolute;top:12px;left:12px;background:#1f3a5f;color:#fff;font-size:12px;border-radius:999px;padding:2px 8px}.wc .st{position:absolute;top:12px;right:12px;background:#fff;border:1px solid #ccd;font-size:11px;border-radius:999px;padding:1px 7px}' +
@@ -6002,6 +6002,8 @@
       const qi = E('input', 'wsq'); qi.type = 'search'; qi.placeholder = '🔎 名前で探す'; qi.value = o.q || ''; qi.setAttribute('aria-label', '名前で探す');
       qi.addEventListener('input', function () { o.q = qi.value; wsQApply(key); }); qi.addEventListener('keydown', function (e) { if (e.key === 'Escape') { qi.value = ''; o.q = ''; wsQApply(key); qi.blur(); } });
       sz.appendChild(qi); setTimeout(function () { wsQApply(key); }, 0);
+      { const lf = E('span', 'wslf'); [['', '全部']].concat(WSLABS.map(function (x) { return [x[0], x[1], x[2]]; })).forEach(function (x) { const b = E('button', (o.lab || '') === x[0] ? 'on' : null); b.type = 'button'; if (x[2]) { const i = E('i'); i.style.background = x[2]; b.appendChild(i); } b.appendChild(document.createTextNode(x[1])); b.title = x[0] ? '「' + x[1] + '」の札だけ出す' : 'ラベルで 絞らない';
+          b.addEventListener('click', function () { o.lab = x[0]; lf.querySelectorAll('button').forEach(function (y) { y.classList.toggle('on', y === b); }); wsQApply(key); }); lf.appendChild(b); }); sz.appendChild(lf); }
       sz.appendChild(E('span', null, '札の大きさ')); [['小', 150], ['中', 210], ['大', 300]].forEach(function (x) { const b = E('button', x[1] === wsSzGet() ? 'on' : null, x[0]); b.type = 'button'; b.dataset.v = x[1]; b.title = 'Ctrl＋ホイールでも 変えられます'; b.addEventListener('click', function () { wsSzSet(key, x[1]); }); sz.appendChild(b); }); root.appendChild(sz); }   /* ★ 2026-11-17：DocuWorks の サムネールの大きさ */
     root.appendChild(E('div', 'wsmsg', keep)).id = 'wsmsg';
     const need = [];
@@ -6021,6 +6023,9 @@
         im.addEventListener('click', function (e) { e.stopPropagation(); wsZoom(key, lead); });
         if (mem.length > 1) c.appendChild(E('span', 'bd', '📎 ' + mem.length + '枚'));
         if (ad.stat) { const s = ad.stat(lead); if (s) c.appendChild(E('span', 'st', s)); }
+        { const lk0 = ad.key(lead), lb = E('button', 'lab'); lb.type = 'button'; const paint = function () { const l = WSLAB[lk0], d0 = WSLABS.find(function (x) { return x[0] === l; }); if (d0) { lb.dataset.l = l; lb.style.background = d0[2]; lb.textContent = '●'; lb.title = 'ラベル：' + d0[1] + '（押すと 変わる）'; } else { delete lb.dataset.l; lb.style.background = '#fff'; lb.textContent = ''; lb.title = '色のラベルを付ける（押すたびに 要確認→あとで→済み→なし）'; } c.dataset.lab = l || ''; };
+          paint(); lb.addEventListener('mousedown', function (e) { e.stopPropagation(); }); lb.addEventListener('click', function (e) { e.stopPropagation(); const i = WSLABS.findIndex(function (x) { return x[0] === WSLAB[lk0]; }); const nx = WSLABS[i + 1]; if (nx) WSLAB[lk0] = nx[0]; else delete WSLAB[lk0]; wsLabSave(); paint(); wsQApply(key); });
+          c._lab = lb; }   /* ★★ 2026-11-17：色のラベル（下の段の左に出す）（DocuWorks の札の色分け。この端末が覚える） */
         const inp = E('input'); const nm = ad.name(lead); const ext = (nm.match(/\.[A-Za-z0-9]{1,5}$/) || [''])[0];
         inp.value = nm.slice(0, nm.length - ext.length); inp.disabled = !ad.rename || lock; inp.setAttribute('aria-label', '名前'); inp.title = '書き換えて Enter';
         const commit = function () { const v = inp.value.trim(), v0 = nm.slice(0, nm.length - ext.length); if (!v || v === v0) { inp.value = v0; return; } const say = function (t, err) { wsMsg(key, t, err); }; ad.rename(lead, v, say); wsRec(key, '名前を「' + v + '」にした', function () { ad.rename(lead, v0, say); }, function () { ad.rename(lead, v, say); }); };
@@ -6043,7 +6048,7 @@
           });
           c.appendChild(pg);
         }
-        const ft = E('div', 'ft'); ft.appendChild(E('span', 'x', mem.length > 1 ? mem.length + 'ページ' : '1ページ'));
+        const ft = E('div', 'ft'); if (c._lab) ft.appendChild(c._lab); ft.appendChild(E('span', 'x', wsPgText(key, mem)));   /* ★ 2026-11-17：PDF は 本当のページ数（何ページもある PDF が「1ページ」と出ていた） */
         /* ★ バラす（2026-10-28）：まとめた書類を 1枚ずつに */
         if (ad.split && mem.length > 1 && !lock) { const sb = E('button', 'hpdf', '✂ バラす'); sb.type = 'button'; sb.title = 'この書類を 1枚ずつに戻す'; sb.addEventListener('click', function (e) { e.stopPropagation(); const m0 = mem.slice(); ad.split(lead); if (ad.join) wsRec(key, 'バラした', function () { ad.join(m0); }, function () { ad.split(m0[0]); }); }); sb.addEventListener('mousedown', function (e) { e.stopPropagation(); }); ft.appendChild(sb); }
         if (ad.pdfBtn) { const pb = ad.pdfBtn(mem); if (pb) ft.appendChild(pb); }
@@ -6258,18 +6263,47 @@
      Ctrl（⌘）＋ホイール＝札の大きさ（小・中・大の3段と同じ。端末が覚える） */
   const WS_SZ = [150, 210, 300];
   function wsNorm(t) { return String(t || '').normalize('NFKC').toLowerCase().replace(/[\u3041-\u3096]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) + 0x60); }).replace(/\s+/g, ''); }
+  /* ★★ 2026-11-17：PDF の札に 本当のページ数（DocuWorks の札と同じ）。ad.pdfPages があれば 開かずに数える（裏で 2つずつ。端末が覚える） */
+  const WSLABS = [['r', '要確認', '#D33B2C'], ['y', 'あとで', '#E0A800'], ['g', '済み', '#2A8A4A']];
+  const WSLAB = (function () { try { return JSON.parse(lsGet('collect_wslab') || '{}') || {}; } catch (e) { return {}; } })();
+  function wsLabSave() { try { const ks = Object.keys(WSLAB); if (ks.length > 2000) ks.slice(0, ks.length - 2000).forEach(function (k) { delete WSLAB[k]; }); lsSet('collect_wslab', JSON.stringify(WSLAB)); } catch (e) {} }
+  const WSPG = (function () { try { return JSON.parse(lsGet('collect_pdfpg') || '{}') || {}; } catch (e) { return {}; } })();
+  let WSPGQ = [], WSPGRUN = 0;
+  function wsPgSave() { try { const ks = Object.keys(WSPG); if (ks.length > 600) ks.slice(0, ks.length - 600).forEach(function (k) { delete WSPG[k]; }); lsSet('collect_pdfpg', JSON.stringify(WSPG)); } catch (e) {} }
+  function wsPgText(key, mem) {
+    const o = WS[key], ad = o.ad; let n = 0, wait = false;
+    mem.forEach(function (x) { const k = ad.key(x), pg = ad.pdfPages && /\.pdf$/i.test(ad.name(x) || '') ? WSPG[k] : 1; if (pg) n += pg; else { n += 1; wait = true; wsPgAsk(key, x); } });
+    return n + 'ページ' + (wait ? '…' : '');
+  }
+  function wsPgAsk(key, x) {
+    const o = WS[key], k = o.ad.key(x); if (WSPGQ.some(function (q) { return q.k === k; })) return;
+    WSPGQ.push({ key: key, x: x, k: k }); wsPgRun();
+  }
+  function wsPgRun() {
+    while (WSPGRUN < 2 && WSPGQ.length) {
+      const q = WSPGQ.shift(), o = WS[q.key]; if (!o || WSPG[q.k]) continue;
+      const pr = o.ad.pdfPages(q.x); if (!pr) { WSPG[q.k] = 1; continue; }
+      WSPGRUN++;
+      pr.then(function (n) { WSPG[q.k] = Math.max(1, Number(n) || 1); wsPgSave(); }, function () {}).then(function () {
+        WSPGRUN--;
+        const d = o.win && !o.win.closed ? o.win.document : null, mem = o.mems && Object.keys(o.mems).map(function (kk) { return o.mems[kk]; }).find(function (m) { return m.some(function (y) { return o.ad.key(y) === q.k; }); });
+        if (d && mem) { const sp = d.querySelector('.wc[data-k="' + CSS.escape(String(o.ad.key(mem[0]))) + '"] .ft .x'); if (sp) sp.textContent = wsPgText(q.key, mem); }
+        wsPgRun();
+      });
+    }
+  }
   function wsQApply(key) {
     const o = WS[key]; if (!o || !o.win || o.win.closed) return; const d = o.win.document, q = wsNorm(o.q);
     let n = 0, all = 0;
     o.txt = o.txt || {}; o.txtq = o.txtq || {}; let wait = 0;
     d.querySelectorAll('.wc[data-k]').forEach(function (c) {
       const k = c.dataset.k, inp = c.querySelector('input'), t = wsNorm((inp ? inp.value : '') + ' ' + (c.getAttribute('title') || '') + ' ' + (c.dataset.q || '') + ' ' + (o.txt[k] || ''));
-      const hit = !q || t.indexOf(q) >= 0; c.hidden = !hit; all++; if (hit) n++;
+      const thit = !q || t.indexOf(q) >= 0, hit = thit && (!o.lab || c.dataset.lab === o.lab); c.hidden = !hit; all++; if (hit) n++;
       /* 名前で当たらない PDF は 中の文字も 読んでみる（読んだら 覚える） */
-      if (q && !hit && o.ad.pdfText && !(k in o.txt)) { if (!o.txtq[k]) { const it = o.ad.items().find(function (x) { return o.ad.key(x) === k; }); const pr = it && o.ad.pdfText(it); if (pr) { o.txtq[k] = 1; pr.then(function (tx) { o.txt[k] = String(tx || ''); }, function () { o.txt[k] = ''; }).then(function () { delete o.txtq[k]; wsQApply(key); }); } else o.txt[k] = ''; } if (o.txtq[k]) wait++; }
+      if (q && !thit && o.ad.pdfText && !(k in o.txt)) { if (!o.txtq[k]) { const it = o.ad.items().find(function (x) { return o.ad.key(x) === k; }); const pr = it && o.ad.pdfText(it); if (pr) { o.txtq[k] = 1; pr.then(function (tx) { o.txt[k] = String(tx || ''); }, function () { o.txt[k] = ''; }).then(function () { delete o.txtq[k]; wsQApply(key); }); } else o.txt[k] = ''; } if (o.txtq[k]) wait++; }
     });
-    if (q) wsMsg(key, all ? n + '件 見つかりました（「' + o.q + '」）。' + (wait ? ' PDF の中の文字も 探しています…（あと ' + wait + '）' : n ? '' : ' 別の言葉で 探してください。') : ''); else if (o.qWas) wsMsg(key, '');
-    o.qWas = !!q;
+    if (!q && o.lab) wsMsg(key, n + '件（ラベル「' + (WSLABS.find(function (x) { return x[0] === o.lab; }) || ['', ''])[1] + '」）'); else if (q) wsMsg(key, all ? n + '件 見つかりました（「' + o.q + '」）。' + (wait ? ' PDF の中の文字も 探しています…（あと ' + wait + '）' : n ? '' : ' 別の言葉で 探してください。') : ''); else if (o.qWas) wsMsg(key, '');
+    o.qWas = !!(q || o.lab);
   }
   function wsSzGet() { const v = Number(lsGet('collect_ws_sz')); return WS_SZ.indexOf(v) >= 0 ? v : 210; }
   function wsSzSet(key, v) { lsSet('collect_ws_sz', String(v)); const o = WS[key]; if (!o || o.win.closed) return; o.win.document.documentElement.style.setProperty('--wsz', v + 'px'); o.win.document.querySelectorAll('.wssz button').forEach(function (b) { b.classList.toggle('on', Number(b.dataset.v) === v); }); }
@@ -6916,7 +6950,7 @@
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
       steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー'],
-      tips: ['書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前で探す」で 名前・メモ・下書きの中身から 絞れます', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
+      tips: ['書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前で探す」で 名前・メモ・下書きの中身から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（この端末が覚えます）', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
       tips: ['よく出る取引は［仕訳辞書］に登録すると 次から ひとりでに当たります', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
