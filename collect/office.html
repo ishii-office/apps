@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794913358;</script>
+<script>window.__PAGE_VER=1794914804;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1483,6 +1483,7 @@
   .guidev .gd-tabs button { font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid #c8d0d8; background: #fff; cursor: pointer; }
   .guidev .gd-tabs button.on { background: #1f3a5f; color: #fff; border-color: #1f3a5f; font-weight: 700; }
   .guidev h3 { margin: 10px 0 4px; font-size: 18px; } .guidev h4 { margin: 12px 0 4px; font-size: 14px; color: #1f3a5f; }
+  .guidev .gd-pdf { display: block; margin: 14px auto 0; font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 999px; border: 1px solid #1f3a5f; background: #fff; color: #1f3a5f; cursor: pointer; }
   .guidev .gd-pic { display: block; max-width: 100%; max-height: 46vh; margin: 8px auto 4px; border: 1px solid #c8d0d8; border-radius: 10px; }
   .guidev .gd-lead { margin: 4px 0; line-height: 1.6; } .guidev ol, .guidev ul { margin: 4px 0; padding-left: 22px; line-height: 1.65; } .guidev li { margin: 3px 0; }
   @media (min-width: 701px) { #sorv { align-items: center; } #sorv .sor-s { border-radius: 16px; } }
@@ -5863,7 +5864,7 @@
       '.wsh{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 16px;background:#1f3a5f;color:#fff}.wsh h1{margin:0;font-size:18px}.wsh .n{font-size:13px;opacity:.85}.wsh .sp{flex:1}' +
       '.wsh button{font:inherit;font-size:13px;padding:6px 12px;border-radius:8px;border:1px solid #fff6;background:#fff;color:#1f3a5f;cursor:pointer}' +
       '.wsnote{margin:0;padding:6px 16px;background:#fff8e6;color:#6b4d00;font-size:12px}.wsmsg{padding:6px 16px;font-size:13px;color:#0a5}.wsmsg.err{color:#c22}' +
-      '.wsp{padding:6px 16px 22px}.wsp h2{margin:14px 0 8px;font-size:16px;color:#1f3a5f}.wsg{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}' +
+      '.wssz{display:flex;gap:4px;align-items:center;justify-content:flex-end;margin:0 16px;font-size:12px;color:#555}.wssz button{font:inherit;padding:2px 10px;border-radius:999px;border:1px solid #c8d0d8;background:#fff;cursor:pointer}.wssz button.on{background:#1f3a5f;color:#fff;border-color:#1f3a5f}.wsp{padding:6px 16px 22px}.wsp h2{margin:14px 0 8px;font-size:16px;color:#1f3a5f}.wsg{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--wsz,210px),1fr));gap:14px}' +
       '.wc{position:relative;background:#fff;border:2px solid #d5dbe2;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;cursor:grab}.wc.lock{cursor:default;opacity:.92}' +
       '.wc .im{height:230px;display:flex;align-items:center;justify-content:center;background:#f4f6f8;border-radius:8px;overflow:hidden}.wc .im img{max-width:100%;max-height:100%;object-fit:contain}.wc .im .k{font-size:13px;color:#667;white-space:pre-wrap;text-align:center;padding:8px}' +
       '.wc .bd{position:absolute;top:12px;left:12px;background:#1f3a5f;color:#fff;font-size:12px;border-radius:999px;padding:2px 8px}.wc .st{position:absolute;top:12px;right:12px;background:#fff;border:1px solid #ccd;font-size:11px;border-radius:999px;padding:1px 7px}' +
@@ -5910,6 +5911,7 @@
     });
     wsZKeys(key, d);
     wsSelBind(key, d);
+    wsGridKeys(key, d);
     wsDraw(key);
     return true;
   }
@@ -5955,7 +5957,10 @@
       if (!(e.ctrlKey || e.metaKey || e.shiftKey)) return;
       const c = e.target.closest && e.target.closest('.wc[data-k]'); if (!c || (e.target.closest('button, input'))) return;
       e.preventDefault(); e.stopPropagation();
-      if (o.sel[c.dataset.k]) delete o.sel[c.dataset.k]; else o.sel[c.dataset.k] = 1;
+      /* ★ 2026-11-17（DocuWorks と同じ）：Shift ＝ 前に押した札から ここまで まとめて選ぶ／Ctrl ＝ 1つずつ */
+      const all = Array.prototype.slice.call(d.querySelectorAll('.wc[data-k]')), ai = o.anchor ? all.findIndex(function (x) { return x.dataset.k === o.anchor; }) : -1, ci = all.indexOf(c);
+      if (e.shiftKey && ai >= 0 && ci >= 0) { if (!(e.ctrlKey || e.metaKey)) o.sel = {}; for (let i = Math.min(ai, ci); i <= Math.max(ai, ci); i++) o.sel[all[i].dataset.k] = 1; }
+      else { if (o.sel[c.dataset.k]) delete o.sel[c.dataset.k]; else o.sel[c.dataset.k] = 1; o.anchor = c.dataset.k; }
       wsSelPaint(o);
     }, true);
   }
@@ -5992,6 +5997,7 @@
     const cl = E('button', null, '閉じる'); cl.type = 'button'; cl.addEventListener('click', function () { o.win.close(); }); h.appendChild(cl);
     root.appendChild(h);
     root.appendChild(E('p', 'wsnote', 'つかんで 左右の端へ落とす＝並べ替え／まん中へ落とす＝重ねて1つの書類に（まとめた書類どうしも）／［✂ バラす］＝1枚ずつに／下の小さいページを つかむ＝ページの順番／名前を押して書き換え → Enter'));
+    { const sz = E('div', 'wssz'); sz.appendChild(E('span', null, '札の大きさ')); [['小', 150], ['中', 210], ['大', 300]].forEach(function (x) { const b = E('button', x[1] === wsSzGet() ? 'on' : null, x[0]); b.type = 'button'; b.dataset.v = x[1]; b.title = 'Ctrl＋ホイールでも 変えられます'; b.addEventListener('click', function () { wsSzSet(key, x[1]); }); sz.appendChild(b); }); root.appendChild(sz); }   /* ★ 2026-11-17：DocuWorks の サムネールの大きさ */
     root.appendChild(E('div', 'wsmsg', keep)).id = 'wsmsg';
     const need = [];
     if (!items.length) root.appendChild(E('div', 'empty', 'この箱には まだ何もありません。'));
@@ -6243,6 +6249,32 @@
     wsZGo(key, o.zseq[i - 1]);
     const m = wsMark(o.ad, p[0]); if (m) wsUnmark(o.ad, p, m);
   }
+  /* ★★ 2026-11-17（DocuWorks に学ぶ）：札の並びでも キーボード。Ctrl+A＝全部選ぶ／Esc＝選ぶのをやめる／F2＝選んだ1つの名前を書き換える。
+     Ctrl（⌘）＋ホイール＝札の大きさ（小・中・大の3段と同じ。端末が覚える） */
+  const WS_SZ = [150, 210, 300];
+  function wsSzGet() { const v = Number(lsGet('collect_ws_sz')); return WS_SZ.indexOf(v) >= 0 ? v : 210; }
+  function wsSzSet(key, v) { lsSet('collect_ws_sz', String(v)); const o = WS[key]; if (!o || o.win.closed) return; o.win.document.documentElement.style.setProperty('--wsz', v + 'px'); o.win.document.querySelectorAll('.wssz button').forEach(function (b) { b.classList.toggle('on', Number(b.dataset.v) === v); }); }
+  function wsGridKeys(key, d) {
+    const o = WS[key];
+    d.documentElement.style.setProperty('--wsz', wsSzGet() + 'px');
+    d.addEventListener('keydown', function (e) {
+      const z = d.getElementById('wzv'); if (z && !z.hidden) return;
+      const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA' || tn === 'SELECT') return;
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) { e.preventDefault(); o.sel = {}; d.querySelectorAll('.wc[data-k]').forEach(function (c) { o.sel[c.dataset.k] = 1; }); wsSelPaint(o); }
+      else if (e.key === 'Escape' && Object.keys(o.sel || {}).length) { e.preventDefault(); o.sel = {}; wsSelPaint(o); }
+      else if (e.key === 'F2') { const ks = Object.keys(o.sel || {}); if (ks.length !== 1) return; const c = d.querySelector('.wc[data-k="' + ks[0].replace(/["\\]/g, '\\$&') + '"] input'); if (c) { e.preventDefault(); c.focus(); c.select(); } }
+    });
+    d.addEventListener('wheel', function (e) {
+      if (!(e.ctrlKey || e.metaKey)) return; const z = d.getElementById('wzv'); if (z && !z.hidden) return;
+      e.preventDefault(); const i = WS_SZ.indexOf(wsSzGet()), j = Math.max(0, Math.min(WS_SZ.length - 1, i + (e.deltaY < 0 ? 1 : -1))); if (j !== i) wsSzSet(key, WS_SZ[j]);
+    }, { passive: false });
+  }
+  /* 大きく見るの 最初・最後（Home／End。DocuWorks Viewer と同じ） */
+  function wsZEdge(key, last) {
+    const o = WS[key]; if (!o.zseq) return;
+    if (last) { for (let j = o.zseq.length - 1; j >= 0; j--) { const n = wsZMem(o, j); if (n) { wsZoom(key, n[n.length - 1]); return; } } }
+    else { for (let j = 0; j < o.zseq.length; j++) { const n = wsZMem(o, j); if (n) { wsZoom(key, n[0]); return; } } }
+  }
   function wsZKeys(key, d) {
     const o = WS[key];
     d.addEventListener('keydown', function (e) {
@@ -6259,6 +6291,8 @@
       else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); wsZStep(key, -1); }
       else if (e.key === 'PageDown') { e.preventDefault(); wsZPage(key, 1); }
       else if (e.key === 'PageUp') { e.preventDefault(); wsZPage(key, -1); }
+      else if (e.key === 'Home') { e.preventDefault(); wsZEdge(key, false); }
+      else if (e.key === 'End') { e.preventDefault(); wsZEdge(key, true); }
     });
   }
   /* 事務所の 回収資料の作業場（顧問先 × 箱）。顧問先を切り替えたら その窓は閉じる（よその顧問先の資料を映さない） */
@@ -6843,7 +6877,7 @@
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
       steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー'],
-      tips: ['破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
+      tips: ['キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
       tips: ['よく出る取引は［仕訳辞書］に登録すると 次から ひとりでに当たります', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
@@ -6871,6 +6905,21 @@
      TKC の「操作ガイダンス」のように、右上の［📖 操作ガイド］で いまの画面の使い方を出す（ほかの画面のガイドも 上の札で選べる）。
      ★ 説明は この GUIDE の1か所に集める。画面のボタンの名前・手順を変えたら ここも一緒に直す
        （tools/guide.mjs が「［］で書いたボタンの名前が 画面に本当にあるか」「どの画面にも ガイドがあるか」を見張る） */
+  /* ★ 操作ガイドを 全部の画面ぶん 1つにして 印刷・PDFで保存（2026-11-17。中身は GUIDE そのもの） */
+  function guidePrint() {
+    const w = window.open('', '_blank'); if (!w) return;
+    const e = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    const base = location.href.replace(/[?#].*$/, '').replace(/[^/]*$/, '');
+    let h = '<!doctype html><meta charset="utf-8"><title>資料回収アプリ 操作ガイド（事務所の画面）</title><style>body{font-family:sans-serif;color:#222;line-height:1.65;max-width:780px;margin:20px auto;padding:0 14px}h1{color:#1f3a5f}h2{color:#fff;background:#1f3a5f;padding:5px 10px;border-radius:6px;margin:18px 0 6px}h3{color:#1f3a5f;margin:8px 0 2px;font-size:15px}h2,h3{break-after:avoid}img{display:block;max-width:100%;max-height:320px;margin:6px auto;border:1px solid #c8d0d8;border-radius:8px;break-inside:avoid}</style><h1>資料回収アプリ 操作ガイド（事務所の画面）</h1>';
+    GUIDE.order.forEach(function (k) {
+      const g = GUIDE[k]; if (!g || (g.show && !g.show())) return;
+      h += '<h2>' + e(g.t) + '</h2>' + (g.lead ? '<p>' + e(g.lead) + '</p>' : '') + (g.pic ? '<img src="' + base + 'names/' + g.pic + '.jpg" onerror="this.remove()">' : '');
+      if (g.steps && g.steps.length) h += '<h3>操作のしかた</h3><ol>' + g.steps.map(function (s) { return '<li>' + e(s) + '</li>'; }).join('') + '</ol>';
+      if (g.tips && g.tips.length) h += '<h3>こんなときは</h3><ul>' + g.tips.map(function (s) { return '<li>' + e(s) + '</li>'; }).join('') + '</ul>';
+    });
+    h += '<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},400);});<\/script>';
+    w.document.open(); w.document.write(h); w.document.close();
+  }
   function guideOpen(key) {
     let v = document.getElementById('guidev');
     if (!v) {
@@ -6893,6 +6942,7 @@
     if (g.steps && g.steps.length) { add('h4', null, '操作のしかた'); const ol = add('ol'); g.steps.forEach(function (s) { const li = document.createElement('li'); li.textContent = s; ol.appendChild(li); }); }
     if (g.tips && g.tips.length) { add('h4', null, 'こんなときは'); const ul = add('ul'); g.tips.forEach(function (s) { const li = document.createElement('li'); li.textContent = s; ul.appendChild(li); }); }
     if (g.more) g.more(body);
+    const pr = add('button', 'gd-pdf', '⬇ 操作ガイドを PDFで保存・印刷（全部の画面）'); pr.type = 'button'; pr.addEventListener('click', guidePrint);
     v.hidden = false;
     try { v.querySelector('.gd-x').focus(); } catch (e) {}
   }
