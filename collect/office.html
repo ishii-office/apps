@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794909018;</script>
+<script>window.__PAGE_VER=1794913358;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1483,6 +1483,7 @@
   .guidev .gd-tabs button { font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid #c8d0d8; background: #fff; cursor: pointer; }
   .guidev .gd-tabs button.on { background: #1f3a5f; color: #fff; border-color: #1f3a5f; font-weight: 700; }
   .guidev h3 { margin: 10px 0 4px; font-size: 18px; } .guidev h4 { margin: 12px 0 4px; font-size: 14px; color: #1f3a5f; }
+  .guidev .gd-pic { display: block; max-width: 100%; max-height: 46vh; margin: 8px auto 4px; border: 1px solid #c8d0d8; border-radius: 10px; }
   .guidev .gd-lead { margin: 4px 0; line-height: 1.6; } .guidev ol, .guidev ul { margin: 4px 0; padding-left: 22px; line-height: 1.65; } .guidev li { margin: 3px 0; }
   @media (min-width: 701px) { #sorv { align-items: center; } #sorv .sor-s { border-radius: 16px; } }
   .sor-n { margin: 4px 0 8px; font-size: 13px; color: #55657a; line-height: 1.5; }
@@ -1965,7 +1966,7 @@
         <div class="acns">
           <p class="st" id="aCnsSt">登録したあと、代表者の役職・氏名・説明担当者を入れて［保存］→［同意の画面を出す］</p>
           <div class="row3"><label>代表者の役職<input id="aRepTitle" maxlength="40" placeholder="例 代表取締役"></label><label>代表者氏名<input id="aRepName" maxlength="60" placeholder="例 山田 太郎"></label><label>説明担当者（事務所）<input id="aExplainer" maxlength="60" placeholder="例 石井 重洋"></label></div>
-          <div class="hint">［同意の画面を出す］を押すまで、顧問先の画面には 同意の画面は出ません（今までどおり使えます）。導入に行くときに 代表者の役職・氏名・説明担当者を入れて［保存］し、その場で押してください。<br>会社名（＝顧問先名）・役職・代表者氏名・控えのメール（顧問先メールの1つめ）は 同意の画面に 先に印字されます（顧問先が直せます）。説明担当者は 顧問先には入れさせず、ここで入れたものが 同意ログに残ります。</div>
+          <div class="hint">［同意の画面を出す］を押すまで 顧問先には出ません。導入の場で 代表者・説明担当者を入れて［保存］→ 押す。くわしくは 右上の［📖 操作ガイド］</div>
           <div class="btns" id="aCnsBtns" hidden><button type="button" class="btn ghost sm" id="aCnsLog">同意の記録を見る</button><button type="button" class="btn ghost sm" id="aCnsWd">撤回を記録する</button><button type="button" class="btn sm" id="aCnsRe" hidden>同意の画面を出す</button><button type="button" class="btn ghost sm" id="aCnsVerify">同意ログの書き換えを確かめる</button></div>
           <div class="log" id="aCnsOut" hidden></div>
         </div></div>
@@ -2021,7 +2022,7 @@
           <button type="button" class="btn primary sm" id="aStopOn">有効にする（URLを使えるように）</button></div>
         <div class="url"><input id="aUrl" readonly><button type="button" id="aCopyUrl">コピー</button></div>
         <div class="aqr"><div class="aqr-img" id="aQr" aria-label="提出URLのQRコード">QRコード</div>
-          <div class="aqr-b"><div class="hint">顧問先のスマホのカメラで読み込んでもらうと、そのままブラウザで開きます（LINE などから開いたときも ふだんのブラウザで開き直します）。あとは画面の案内どおり「ホーム画面に追加」で終わりです。</div>
+          <div class="aqr-b"><div class="hint">顧問先のスマホのカメラで読み込むと そのまま開きます。あとは「ホーム画面に追加」。</div>
             <div><button type="button" class="btn ghost sm" id="aQrSave">QRコードを画像で保存</button> <button type="button" class="btn ghost sm" id="aQrPrint">印刷する</button></div></div></div>
         <div class="hint"><button type="button" class="danger" id="aReissue">URLを作り直す</button>　URLが人に漏れたときだけ。前のURLは使えなくなります。</div>
       </div>
@@ -2334,7 +2335,7 @@
     <details class="sdbox" id="sdBoxD"><summary>📦 送付ボックスを つくる・直す（この顧問先）</summary>
       <div class="atree" id="sdTree" aria-label="送付ボックスの並び"></div>
       <div class="atree-add"><input id="sdNewBox" maxlength="30" placeholder="新しい箱の名前（例：決算書）"><button type="button" id="sdAddBox">＋ 箱を足す</button></div>
-      <p class="note">顧問先の箱と同じ作り方です。［＋中に］でその箱の中に箱（例：確定申告 › 2025年分）。↑↓で並べ替え。名前を押すと変えられます。×で外す（もう送ったものは消えません）。「その他」は いつも最後に付きます。直したら［この顧問先の箱にする］で決まります。<br>箱を決めていない顧問先は 事務所の標準を使います（はじめは 標準が並んでいます）。</p>
+      <p class="note">顧問先の箱と同じ作り方です。直したら［この顧問先の箱にする］。くわしくは 右上の［📖 操作ガイド］</p>
       <details class="abulk"><summary>まとめて書く</summary><p class="note">1行に1つ。/ でつなぐと 中の箱。空のままなら 事務所の標準を使います。</p>
       <textarea id="sdBoxes" spellcheck="false"></textarea></details>
       <div class="sdrow"><button type="button" class="primary" id="sdBoxSave">この顧問先の箱にする</button><button type="button" id="sdBoxDef" title="箱を決めていない顧問先 全部に効きます">この内容を 事務所の標準にする</button><span class="pagemsg" id="sdBoxMsg" role="status"></span></div>
@@ -2343,7 +2344,7 @@
     <p class="note" id="lnRow" hidden>💬 公式LINE：この顧問先で つないでいる人 <b id="lnN">0</b>人　<button type="button" id="lnOff">つながりを外す</button>　<button type="button" id="lnPick" title="この顧問先の方が 公式LINE に何か送っていれば（［事務所に質問］の「質問です」でも）、名前を選ぶだけで つながり、下のメニューが 3つ割りに変わります。顧問先は 何もしなくてよい">つないでいない LINE から選ぶ</button>　<button type="button" id="lnMenu" title="公式LINE の下のメニュー（資料アプリ・写真を撮る・チャット）を作って、つないだ人にだけ出します">公式LINE のメニューを作る</button>　<small>（顧問先が［💬公式LINEへ］から送る「連携コード」でつながります。LINE で届いた写真は「公式LINEから」の箱に入ります）</small></p>
     <div id="lnPickBox" class="note" hidden></div>
     <details class="sdbox" id="sdSignD"><summary>✍ 承認（電子サイン）の記録</summary>
-      <p class="note">送付物の書類を長押し（右クリック）→［✍ 承認をお願いする］。顧問先は 書類を開いて確かめ、お名前と 登録メールに届く確認コード（二段階の本人確認）で承認します。承認すると 承認証明書（PDF）が 書類と同じところにでき、顧問先と事務所に 控えのメールが届きます。記録は 書き替えられない形（ハッシュの鎖）で シート「承認ログ」に残ります。</p>
+      <p class="note">送付物の書類を長押し（右クリック）→［✍ 承認をお願いする］。くわしくは 右上の［📖 操作ガイド］</p>
       <div class="sdrow"><button type="button" id="sgVerify">🔗 承認ログを 確かめる（書き替え・差し替えが無いか）</button><span class="pagemsg" id="sgMsg" role="status"></span></div>
       <div id="sgList" class="sglist"></div>
     </details>
@@ -6837,30 +6838,30 @@
   }
   const GUIDE = {
     order: ['top', 'Docs', 'In', 'Out', 'Clients', 'Dict', 'Rule', 'Fold', 'Send', 'Kaizen', 'Staff'],
-    top: { t: '🧭 全体・右上のボタン', lead: '上の「顧問先」で 顧問先を選び、タブで 仕事を切り替えます。右上のボタンは どのタブからでも使えます。',
+    top: { t: '🧭 全体・右上のボタン', pic: 'g_otop', lead: '上の「顧問先」で 顧問先を選び、タブで 仕事を切り替えます。右上のボタンは どのタブからでも使えます。',
       steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
-    Docs: { t: '回収資料', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
+    Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
       steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー'],
       tips: ['破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
-    In: { t: '仕訳化', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
+    In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
       tips: ['よく出る取引は［仕訳辞書］に登録すると 次から ひとりでに当たります', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
-    Out: { t: '取込ファイル', lead: '確定した仕訳を 会計ソフト（FX）へ 取り込むファイルにする タブです。',
+    Out: { t: '取込ファイル', pic: 'g_oout', lead: '確定した仕訳を 会計ソフト（FX）へ 取り込むファイルにする タブです。',
       steps: ['処理済ボックス（月分・箱）を選ぶ', 'ファイルにして 保存する', 'FX で 取り込む'], tips: [] },
-    Clients: { t: '顧問先', lead: '顧問先の登録・箱（資料の入れもの）・URL・公式LINE などを決めるタブです。',
+    Clients: { t: '顧問先', pic: 'g_oclients', lead: '顧問先の登録・箱（資料の入れもの）・URL・公式LINE などを決めるタブです。',
       steps: ['［＋ 新しい顧問先］で 登録', '［＋ 箱を足す］で 資料の箱を決める（並べ替え・中の箱も）', '顧問先に渡す URL は ここ（［URLを作り直す］で 前の URL は 使えなくなります）', '担当・補助担当・決算月を 入れる'],
-      tips: ['顧問先の画面に 出納帳などの帳簿を出すのも ここで 箱ごとに決めます'] },
-    Dict: { t: '仕訳辞書', lead: '取引先・摘要ごとの 決まった仕訳を 登録しておく タブです。AI の下書きにも 効きます。',
+      tips: ['利用規約の同意は［同意の画面を出す］を押すまで 顧問先には出ません（今までどおり使えます）。導入に行くときに 代表者の役職・氏名・説明担当者を入れて［保存］し、その場で押します。会社名・役職・代表者氏名・控えのメールは 同意の画面に 先に印字されます（顧問先が直せます）。説明担当者は ここで入れたものが 同意ログに残ります', 'QRコードは 顧問先のスマホのカメラで読み込むと ブラウザで開きます（LINE などから開いたときも ふだんのブラウザで開き直します）。あとは 画面の案内どおり「ホーム画面に追加」で終わりです', '顧問先の画面に 出納帳などの帳簿を出すのも ここで 箱ごとに決めます'] },
+    Dict: { t: '仕訳辞書', pic: 'g_odict', lead: '取引先・摘要ごとの 決まった仕訳を 登録しておく タブです。AI の下書きにも 効きます。',
       steps: ['［＋ 辞書を登録］で 取引先・科目・税区分を 入れる', 'まちがえたものは 直す・［この辞書を消す］'], tips: [] },
-    Rule: { t: 'AIの考え方', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
+    Rule: { t: 'AIの考え方', pic: 'g_orule', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
       steps: ['決まりを 書いて［考え方を保存］', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
     Fold: { t: 'Google共有ドライブ', lead: '事務所の Google共有ドライブを この画面から 開く・整理する タブです。',
       steps: ['フォルダを押して 中へ', '写真・PDF を押すと 大きく見る。［✏ 書きこむ］［🔴 ハンコ］', '［📮 送付物へ］で 顧問先へ送る 送付物にする', '［🖨 印刷の受け口］… PDF24 で印刷すると いま開いているフォルダに 入ります'],
       tips: ['🔒 の付いたフォルダ（回収資料）は 見るだけです', 'PDF24 の設定は 説明書「職員向け はじめての設定（Claude と PDF24）」'] },
-    Send: { t: '送付物', lead: '申告書の控え・請求書などを 顧問先へ送るタブです。顧問先の画面の［📨 事務所から］に 届きます。',
-      steps: ['顧問先を選ぶ', 'ファイルを選んで 送付ボックスを決める', '［送る］（メールでも 知らせられます）'], tips: ['顧問先が開くと 開いた日時が 出ます'] },
-    Kaizen: { t: '改善要望', lead: 'アプリへの 要望・顧問先から 聞いたことを 書いて、直してもらうタブです。',
+    Send: { t: '送付物', pic: 'g_osend', lead: '申告書の控え・請求書などを 顧問先へ送るタブです。顧問先の画面の［📨 事務所から］に 届きます。',
+      steps: ['顧問先を選ぶ', 'ファイルを選んで 送付ボックスを決める', '［送る］（メールでも 知らせられます）'], tips: ['送付ボックスは 顧問先の箱と同じ作り方です。［＋中に］で 箱の中に箱（例：確定申告 › 2025年分）、↑↓で並べ替え、名前を押すと変えられます。×で外しても もう送ったものは消えません。「その他」は いつも最後。箱を決めていない顧問先は 事務所の標準を使います', '承認がほしい書類は 長押し（右クリック）→［✍ 承認をお願いする］。顧問先は お名前と 登録メールに届く確認コード（二段階の本人確認）で承認し、承認証明書（PDF）が 書類と同じところにできます。顧問先と事務所に 控えのメールが届き、記録は 書き替えられない形で シート「承認ログ」に残ります', '顧問先が開くと 開いた日時が 出ます'] },
+    Kaizen: { t: '改善要望', pic: 'g_okaizen', lead: 'アプリへの 要望・顧問先から 聞いたことを 書いて、直してもらうタブです。',
       steps: ['画面のどこで 何が困るか・どうなってほしいかを 書く（写真も貼れます）', '直ったら【改善済み】になり、顧問先へのお知らせを 出すかを選ぶ'], tips: ['自分の Claude で 直すこともできます（説明書「自分の Claude で 資料回収アプリを直す」）'] },
     Staff: { t: '担当者', show: function () { return !!(document.getElementById('tabStaff') && !document.getElementById('tabStaff').hidden); }, lead: '事務所の 担当者（職員）を 登録するタブです（管理する人だけ）。',
       steps: ['名前・パスワードを 入れて 登録'], tips: [] }
@@ -6887,6 +6888,8 @@
     const add = function (tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; body.appendChild(e); return e; };
     add('h3', null, g.t);
     if (g.lead) add('p', 'gd-lead', g.lead);
+    /* ★ 画面の写真（見本の顧問先「（例）山田商店」で撮ったもの。docs/手引き/src/guide_build.mjs が public/names/g_<key>.jpg に作る） */
+    if (g.pic) { const im = add('img', 'gd-pic'); im.loading = 'lazy'; im.alt = g.t + ' の画面'; im.src = 'names/' + g.pic + '.jpg'; im.addEventListener('error', function () { im.remove(); }); }
     if (g.steps && g.steps.length) { add('h4', null, '操作のしかた'); const ol = add('ol'); g.steps.forEach(function (s) { const li = document.createElement('li'); li.textContent = s; ol.appendChild(li); }); }
     if (g.tips && g.tips.length) { add('h4', null, 'こんなときは'); const ul = add('ul'); g.tips.forEach(function (s) { const li = document.createElement('li'); li.textContent = s; ul.appendChild(li); }); }
     if (g.more) g.more(body);
