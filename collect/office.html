@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794832070;</script>
+<script>window.__PAGE_VER=1794877179;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2999,7 +2999,7 @@
   /* 1回 見る。来たものを take(files) に渡し、取りこめた（true を返した）ものは 受け口から消す */
   function prnTick(now) {
     clearTimeout(PRN.t);
-    const again = function (ms) { PRN.t = setTimeout(prnTick, ms); };
+    const again = function (ms) { clearTimeout(PRN.t); PRN.t = setTimeout(prnTick, ms); };   /* ★ 総点検 2026-11-17：前の待ちを消してから（2本に ならないように） */
     if (!PRN.dir || !PRN.take || document.hidden || (PRN.can && !PRN.can())) { if (PRN.say) PRN.say(); again(2500); return; }
     if (PRN.busy) { again(1000); return; }
     (PRN.perm === 'granted' ? Promise.resolve(true) : prnPerm(false)).then(function (ok) {
@@ -3015,19 +3015,21 @@
           return h.getFile().then(function (f) {
             const k = f.size + '|' + f.lastModified; live[name] = 1;
             const prev = PRN.seen[name]; PRN.seen[name] = k;
+            const bad = PRN.bad && PRN.bad[name];   /* ★ 総点検 2026-11-17：入れられなかったものを 毎秒 やり直さない（同じ中身のあいだは 1分おき） */
+            if (bad && bad.k === k && Date.now() - bad.at < 60000) return;
             if (!PRN.fly[name] && prev === k && f.size > 0 && Date.now() - f.lastModified > 600) ready.push(f);
           }, function () {}).then(step);
         });
       };
       return step().then(function () {
-        Object.keys(PRN.seen).forEach(function (n) { if (!live[n]) delete PRN.seen[n]; });
+        Object.keys(PRN.seen).forEach(function (n) { if (!live[n]) { delete PRN.seen[n]; if (PRN.bad) delete PRN.bad[n]; } });
         PRN.wait = Object.keys(live).length;
         if (PRN.say) PRN.say();
         if (!ready.length) return;
         ready.forEach(function (f) { PRN.fly[f.name] = 1; });
         return Promise.resolve(PRN.take(ready)).then(function (oks) {
           return Promise.all(ready.map(function (f, i) {
-            if (!(oks && oks[i])) { delete PRN.fly[f.name]; return null; }
+            if (!(oks && oks[i])) { delete PRN.fly[f.name]; (PRN.bad = PRN.bad || {})[f.name] = { k: f.size + '|' + f.lastModified, at: Date.now() }; return null; }
             return PRN.dir.removeEntry(f.name).catch(function () {}).then(function () { delete PRN.fly[f.name]; delete PRN.seen[f.name]; });
           }));
         });
@@ -3701,7 +3703,6 @@
   }
   function fdBase(name) { return String(name || '').replace(/\.[A-Za-z0-9]{1,5}$/, '') || String(name || 'ファイル'); }
   function fdU8b64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
-  function fdImgSize(src) { return new Promise(function (ok, ng) { const im = new Image(); im.onload = function () { ok([im.naturalWidth, im.naturalHeight]); }; im.onerror = function () { ng(new Error('画像が読めません')); }; im.src = src; }); }
   /* いくつかの PDF・画像 → 1つの PDF（バイト） */
   async function fdPdfOf(items, prog) {
     /* ★ 速さ（2026-11-16）：中身は 先に 3本 並べて取ってくる（前は 1つずつ順番） */
@@ -7988,6 +7989,8 @@
     const bar = $('dcbar'); if (!bar) return;
     bar.hidden = !S.dcpick || $('paneDocs').hidden;
     if (S.dmarq && bar.hidden) dMarqSet(false);   /* 選ぶのをやめたら 囲む も終わる */
+    /* ★ 総点検 2026-11-17：下のバーの高さぶん 中身の下を空ける（スマホでは バーが5段に折れて 最後の札のボタンに かぶり 押せなかった） */
+    { const db = $('dBody'); if (db) db.style.paddingBottom = bar.hidden ? '' : (bar.offsetHeight + 24) + 'px'; }
     const si = selItems(), n = si.length;
     /* 書類の数で言う（まとめた書類は 1件） */
     const docs = {}; si.forEach(function (x) { docs[x.set && x.setOf > 1 ? 'S' + x.set : x.id] = 1; });
@@ -9197,7 +9200,7 @@
   }, { passive: false });
   /* ★ 2026-11-11：拡大していても・PDF でも［⇲ つかむ］からなら 外へ（パソコンのフォルダ・DocuWorks へ） */
   $('dvGrip').addEventListener('mouseenter', function () { const it = S.dvIt; if (DOUT_NAT && it && !fileKind(it.name)) dOutPrep(it); });
-  $('dvGrip').addEventListener('click', function () { dcMsg('［⇲ つかむ］を そのまま つかんで、パソコンのフォルダや DocuWorks（右下に出る受け口）へ 落としてください。'); });
+  $('dvGrip').addEventListener('click', function () { dcMsg('［⇲ つかむ］を そのまま つかんで、パソコンの フォルダや デスクトップへ 落としてください。'); });
   $('dvGrip').addEventListener('dragstart', function (e) {
     const it = S.dvIt;
     if (!DOUT_NAT || !it || fileKind(it.name)) { e.preventDefault(); if (it && fileKind(it.name)) dcMsg('エクセルなどは 外へ出せません（開いてから保存してください）。', true); return; }
@@ -11036,7 +11039,7 @@
       if (window.pdfjsLib) { ok(window.pdfjsLib); return; }
       const sc = document.createElement('script'); sc.src = PDFJS_BUILD + 'pdf.min.js';
       sc.onload = function () {
-        const lib = window.pdfjsLib; if (!lib) { ng(new Error('PDF を開く道具が読み込めませんでした')); return; }
+        const lib = window.pdfjsLib; if (!lib) { pdfjsP = null; ng(new Error('PDF を開く道具が読み込めませんでした')); return; }
         /* 別の場所から働き手（worker）を直に呼べないので、中身を取ってきて手元で起こす。だめなら pdf.js が自分で何とかする */
         fetch(PDFJS_BUILD + 'pdf.worker.min.js').then(function (r) { return r.text(); }).then(function (t) {
           lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([t], { type: 'text/javascript' }));
