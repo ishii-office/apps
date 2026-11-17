@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794920851;</script>
+<script>window.__PAGE_VER=1794922058;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -6261,8 +6261,14 @@
   function wsQApply(key) {
     const o = WS[key]; if (!o || !o.win || o.win.closed) return; const d = o.win.document, q = wsNorm(o.q);
     let n = 0, all = 0;
-    d.querySelectorAll('.wc[data-k]').forEach(function (c) { const inp = c.querySelector('input'), t = wsNorm((inp ? inp.value : '') + ' ' + (c.getAttribute('title') || '') + ' ' + (c.dataset.q || '')); const hit = !q || t.indexOf(q) >= 0; c.hidden = !hit; all++; if (hit) n++; });
-    if (q) wsMsg(key, all ? n + '件 見つかりました（「' + o.q + '」）。' + (n ? '' : ' 別の言葉で 探してください。') : ''); else if (o.qWas) wsMsg(key, '');
+    o.txt = o.txt || {}; o.txtq = o.txtq || {}; let wait = 0;
+    d.querySelectorAll('.wc[data-k]').forEach(function (c) {
+      const k = c.dataset.k, inp = c.querySelector('input'), t = wsNorm((inp ? inp.value : '') + ' ' + (c.getAttribute('title') || '') + ' ' + (c.dataset.q || '') + ' ' + (o.txt[k] || ''));
+      const hit = !q || t.indexOf(q) >= 0; c.hidden = !hit; all++; if (hit) n++;
+      /* 名前で当たらない PDF は 中の文字も 読んでみる（読んだら 覚える） */
+      if (q && !hit && o.ad.pdfText && !(k in o.txt)) { if (!o.txtq[k]) { const it = o.ad.items().find(function (x) { return o.ad.key(x) === k; }); const pr = it && o.ad.pdfText(it); if (pr) { o.txtq[k] = 1; pr.then(function (tx) { o.txt[k] = String(tx || ''); }, function () { o.txt[k] = ''; }).then(function () { delete o.txtq[k]; wsQApply(key); }); } else o.txt[k] = ''; } if (o.txtq[k]) wait++; }
+    });
+    if (q) wsMsg(key, all ? n + '件 見つかりました（「' + o.q + '」）。' + (wait ? ' PDF の中の文字も 探しています…（あと ' + wait + '）' : n ? '' : ' 別の言葉で 探してください。') : ''); else if (o.qWas) wsMsg(key, '');
     o.qWas = !!q;
   }
   function wsSzGet() { const v = Number(lsGet('collect_ws_sz')); return WS_SZ.indexOf(v) >= 0 ? v : 210; }
@@ -6363,7 +6369,7 @@
       canDel: function (it) { return isT(it); }, del: function (mem) { purge(mem.map(function (x) { return x.id; })); },
       delTitle: 'ドライブから 完全に消す（ゴミ箱にも残りません。戻せません）', delAsk: function (mem) { return (mem.length > 1 ? 'この' + mem.length + '枚' : 'この1枚') + 'を ドライブから完全に消しますか？（戻せません）'; },
       canWrite: function (it) { return !isT(it) && !fileKind(it.name); },
-      write: function (it, wk) { if (wk && WS[wk]) { mkwOpen(wk, it); return; } docsOpen(it); mkStart(); try { window.focus(); } catch (e) {} },
+      write: function (it, wk) { if (wk && WS[wk]) { mkwOpen(wk, it); return; } docsOpen(it); mkStart(true); try { window.focus(); } catch (e) {} },
       big: function (it, cb) {
         if (isT(it)) return cb('');
         const go = function () { const v = IMG[it.id]; if (v && v.t === 'img') cb(v.src); else if (v && v.t === 'pdf') wsPdfPages(it.id, v, cb); else cb(''); };
@@ -6910,7 +6916,7 @@
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
       steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー'],
-      tips: ['書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った色は 次も そのまま。別ウィンドウの「🔎 名前で探す」で 名前・メモ・下書きの中身から 絞れます', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
+      tips: ['書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前で探す」で 名前・メモ・下書きの中身から 絞れます', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
       tips: ['よく出る取引は［仕訳辞書］に登録すると 次から ひとりでに当たります', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
@@ -10260,12 +10266,12 @@
   function mkDirty() { $('mkMsg').textContent = '書きこみ ' + MK.list.length + 'つ（まだ保存していません）'; }
   function mkAutoOn() { return lsGet('collect_mkauto') === '1'; }
   $('mkAuto').addEventListener('change', function () { try { localStorage.setItem('collect_mkauto', this.checked ? '1' : '0'); } catch (e) {} });
-  function mkStart() {
+  function mkStart(fresh) {
     if (MKW && !MKW.go) { dcMsg('別ウィンドウで 書きこみの途中です（そちらで［保存して終わる］か［やめる］を押してから）。', true); return; }
     $('mkAuto').checked = mkAutoOn();
     const it = mkIt(); if (!it) return;
     if (fileKind(it.name)) { dcMsg('この形（エクセルなど）には 書きこめません。', true); return; }
-    MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); mkHistReset(); MK.sel = -1; MK.mv = null; MK.end = null; $('mkSelBar').hidden = true; MK.m = ''; MK.keep = false; mkToolPaint();
+    MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); mkHistReset(); MK.sel = -1; MK.mv = null; MK.end = null; $('mkSelBar').hidden = true; MK.m = fresh === true ? mkToolLast() : ''; MK.keep = false; mkToolPaint(); if (MK.m === 'stamp') stampsLoad().then(stampBar); else stampBar();
     mkEl('dvMark').setAttribute('aria-pressed', 'true'); $('dvMkBar').hidden = false; mkEl('dview').classList.add('dv-mk'); stampBar(); stampsLoad().then(stampBar);   /* ハンコの帯は すぐ出す（写真が あとで ずれないように） */
     $('mkMsg').textContent = '';   /* ★ 2026-11-13（細谷）：長い説明は 出さない（使ううちに 覚える。ボタンに マウスを乗せると 説明が出る） */
     mkPaint();
@@ -10289,7 +10295,7 @@
     if (wk) { mkwBack(); return; }   /* ★ K-0145：別ウィンドウで書いたときは 道具の帯を この画面へ戻して 終わり */
     mkPaint();
   }
-  mkEl('dvMark').addEventListener('click', function () { if (MK.on) mkEnd(true); else mkStart(); });
+  mkEl('dvMark').addEventListener('click', function () { if (MK.on) mkEnd(true); else mkStart(true); });   /* ★ 2026-11-17：手で始めたときだけ 最後の道具を選んでおく（次の書類へ送ったときは K-0103 のとおり 選ばない） */
   $('mkSave').addEventListener('click', function () { mkEnd(true); });
   $('mkCancel').addEventListener('click', function () { MK.list = JSON.parse(MK.was || '[]'); mkEnd(false); });
   $('mkUndo').addEventListener('click', function () { mkHistGo(true); });
@@ -10331,7 +10337,7 @@
     const pk = mkD().querySelector('#dvMkBar .mk-pick'); if (pk) { pk.classList.toggle('on', !hit); pk.style.setProperty('--c', MK.c); }
     if (MK.sel >= 0) mkSelEdit(function (m) { m.c = MK.c; });
   }
-  /* ★ 2026-11-17：最後に使った色を この端末が覚える（道具は K-0103 のとおり はじめは選ばない） */
+  /* ★ 2026-11-17：最後に使った色を この端末が覚える（道具も mkToolLast で覚える） */
   { const c0 = lsGet('collect_office_mk_col'); if (/^#[0-9A-Fa-f]{6}$/.test(c0)) mkColorSet(c0); }
 
   $('mkColor').addEventListener('input', function () { mkColorSet(this.value); });
@@ -10391,12 +10397,15 @@
     mkD().querySelectorAll('#dvMkBar .mk-m button').forEach(function (x) { const on = x.dataset.m === MK.m; x.setAttribute('aria-pressed', String(on)); x.classList.toggle('keep', on && MK.keep); });
   }
   function mkToolUsed() { if (MK.keep) return; MK.m = ''; mkToolPaint(); stampBar(); }
+  /* ★★ 2026-11-17：最後に使った道具を この端末が覚え、次に 書きこみを始めるとき 選んでおく（DocuWorks と同じ）。
+       K-0103 は そのまま … 選んであるのは 1つ置くまで（置いたら外れる）。Esc・もう一度押す で外せる */
+  function mkToolLast() { const t = lsGet('collect_office_mk_tool') || ''; return mkD().querySelector('#dvMkBar .mk-m button[data-m="' + t.replace(/[^a-z]/g, '') + '"]') ? t : ''; }
   mkD().querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('dblclick', function () { MK.m = b.dataset.m; MK.keep = true; mkToolPaint(); }); });
   mkD().querySelectorAll('#dvMkBar .mk-m button').forEach(function (b) { b.addEventListener('click', function (e) {
     const was = MK.m;
     if (e.detail >= 2) return;   /* ダブルクリックの2回目（dblclick で 続けて にする） */
     if (MK.keep && was === b.dataset.m) { MK.m = ''; MK.keep = false; mkToolPaint(); stampBar(); return; }   /* 続けて の道具を もう一度押す＝やめる */
-    MK.m = b.dataset.m; MK.keep = false; mkToolPaint();
+    MK.m = b.dataset.m; MK.keep = false; mkToolPaint(); lsSet('collect_office_mk_tool', MK.m);
     /* 付箋は 淡い色から（濃い色のままだと 字が読みにくい）。付箋をやめたら 赤に戻す */
     if (MK.m === 'note' && mkInk(MK.c) === '#fff') mkColorSet('#FFE680'); else if (was === 'note' && MK.m !== 'note' && mkInk(MK.c) === '#111' && /^#(FFE680|FFC2D6|BFE6FF)$/.test(MK.c)) mkColorSet('#D0201A');
     if (MK.m === 'stamp') stampsLoad().then(stampBar); else stampBar(); }); });
@@ -10475,7 +10484,7 @@
     const zi = d.getElementById('wzi'), same = o.zkey === o.ad.key(it);
     const first = same && o.zpages && o.zpages.length ? o.zpages.slice() : [(same && zi && zi.getAttribute('src')) || o.ad.thumb(it) || ''];
     const me = MKW;
-    mkwPages(d, body, first).then(function () { if (MKW !== me) return; mkwRot(body, it); me.go = true; mkStart(); me.go = false; });
+    mkwPages(d, body, first).then(function () { if (MKW !== me) return; mkwRot(body, it); me.go = true; mkStart(true); me.go = false; });
     if (o.ad.big && !(same && o.zpages)) o.ad.big(it, function (x) {
       if (MKW !== me || o.win.closed) return; const srcs = Array.isArray(x) ? x : (x ? [x] : []); if (!srcs.length || (srcs.length === 1 && srcs[0] === first[0])) return;
       mkwPages(d, body, srcs).then(function () { if (MKW === me) { mkwRot(body, it); mkPaint(); } });
