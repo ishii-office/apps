@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794925054;</script>
+<script>window.__PAGE_VER=1794931291;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -460,6 +460,7 @@
   #alist .kind.ind { background: #fff; color: #8A6A3D; border: 1px solid #C9A877; }
   /* ★ 名前が見えるように（2026-10-20）：名前は いちばん広く取り 2行まで折り返す。札（同意・決算月）は右にまとめて 縮めない */
   #alist .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; word-break: break-all; line-height: 1.35; }
+  #alist .nred { flex: none; height: 24px; padding: 0 8px; border-radius: 999px; border: 2px solid #D33B2C; color: #D33B2C; background: #fff; font-size: 13px; font-weight: 800; line-height: 20px; margin-left: 4px; white-space: nowrap; }
   #alist .nchk { flex: none; min-width: 28px; height: 28px; padding: 0 7px; border-radius: 999px; background: #E5352B; color: #fff; font-size: 16px; font-weight: 800; line-height: 28px; text-align: center; font-variant-numeric: tabular-nums; box-shadow: 0 1px 3px rgba(0,0,0,.25); margin: 0 2px 0 6px; }   /* ★ K-0095：未確認の枚数 */
   #alist .tg { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto; }
   #alist .tg .fy { margin-left: 0; }
@@ -865,6 +866,9 @@
   .dvmk .mk-m, .dvmk .mk-c { display: inline-flex; gap: 4px; }
   .dvmk .mk-m button { font: inherit; font-size: 13px; font-weight: 700; border: 1.5px solid var(--line); background: #fff; border-radius: 8px; padding: 3px 10px; cursor: pointer; }
   .dvmk .mk-m button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .dvmk .mk-list { display: flex; flex-wrap: wrap; gap: 4px; flex-basis: 100%; max-height: 120px; overflow: auto; padding: 4px; background: #fff; border: 1px solid var(--line, #d5dbe2); border-radius: 8px; }
+  .dvmk .mk-list button { font: inherit; font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid #c8d0d8; background: #fff; cursor: pointer; }
+  .dvmk .mk-list button.on { border-color: #1A4FD0; color: #1A4FD0; font-weight: 700; }
   .dvmk .mk-m button.keep { box-shadow: 0 0 0 3px #F2B800; background: #0A4F42; }   /* 続けて置ける（K-0103）。幅を変えない（押している最中に 位置がずれないように） */
   .dvmk .mk-z input { width: 64px; font: inherit; font-size: 14px; text-align: right; padding: 2px 4px; border: 1.5px solid var(--line); border-radius: 6px; margin: 0 2px; }
   .dvmk .mk-c button { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; background: var(--c); box-shadow: 0 0 0 1.5px var(--line); cursor: pointer; }
@@ -1642,10 +1646,11 @@
     <button type="button" role="tab" data-tab="Kaizen" aria-pressed="false" id="tabKaizen">改善要望<b class="kzbadge" id="kzBadge" hidden></b></button>
     <button type="button" role="tab" data-tab="Send" aria-pressed="false" id="tabSend">送付物</button>
   </span>
-  <span class="who"><select class="minesel" id="mineSel" hidden aria-label="どの担当者の顧問先を出すか" title="担当者ごとのマイページ：自分（または選んだ担当者）の担当・補助担当の顧問先だけを 一覧と 上の顧問先の欄に出す"></select><button type="button" class="arrbtn bellbtn" id="bellBtn" hidden aria-expanded="false" title="顧問先から届いた知らせ（直近30日）。赤い数字は まだ見ていない数">🔔<span class="bt"> お知らせ</span><b class="belln" id="bellN" hidden></b></button><button type="button" class="arrbtn" id="guideBtn" hidden title="この画面の 使い方（操作ガイド）">📖<span class="bt"> 操作ガイド</span></button><button type="button" class="arrbtn" id="sorBtn" hidden title="担当の顧問先の 資料のそろい具合（月分ごと・箱ごと）。いつも来る箱が まだ来ていない顧問先が 一目で分かります">📊<span class="bt"> そろい具合</span></button><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥<span class="bt"> 未処理</span> <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
+  <span class="who"><select class="minesel" id="mineSel" hidden aria-label="どの担当者の顧問先を出すか" title="担当者ごとのマイページ：自分（または選んだ担当者）の担当・補助担当の顧問先だけを 一覧と 上の顧問先の欄に出す"></select><button type="button" class="arrbtn bellbtn" id="circBtn" hidden aria-expanded="false" title="事務所の中の 回覧（自分あて・自分が回したもの）">📋<span class="bt"> 回覧</span><b class="belln" id="circN" hidden></b></button><button type="button" class="arrbtn bellbtn" id="bellBtn" hidden aria-expanded="false" title="顧問先から届いた知らせ（直近30日）。赤い数字は まだ見ていない数">🔔<span class="bt"> お知らせ</span><b class="belln" id="bellN" hidden></b></button><button type="button" class="arrbtn" id="guideBtn" hidden title="この画面の 使い方（操作ガイド）">📖<span class="bt"> 操作ガイド</span></button><button type="button" class="arrbtn" id="sorBtn" hidden title="担当の顧問先の 資料のそろい具合（月分ごと・箱ごと）。いつも来る箱が まだ来ていない顧問先が 一目で分かります">📊<span class="bt"> そろい具合</span></button><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥<span class="bt"> 未処理</span> <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
 <div class="arrpop" id="arrPop" hidden role="dialog" aria-label="未処理の資料（顧問先ごと）"></div>
 <div class="arrpop" id="bellPop" hidden role="dialog" aria-label="お知らせ（届いた知らせ）"></div>
+<div class="arrpop" id="circPop" hidden role="dialog" aria-label="回覧（事務所の中で 回す）"></div>
 <!-- ★ 箱を複数えらぶ（2026-11-07） -->
 <div class="obv" id="bxPop" hidden role="dialog" aria-modal="true" aria-labelledby="bxT">
   <div class="obbox" style="width:min(420px,100%)">
@@ -2558,7 +2563,7 @@
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
     </span></div>
   <div class="dvmk" id="dvMkBar" hidden>
-    <span class="mk-m" role="group" aria-label="書き方"><button type="button" data-m="text" aria-pressed="false" title="押した所に 文字を書く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">文字</button><button type="button" data-m="line" aria-pressed="false" title="なぞって 下線を引く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">下線</button><button type="button" data-m="box" aria-pressed="false" title="なぞって 枠で囲む（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">枠で囲む</button><button type="button" data-m="arrow" aria-pressed="false" title="なぞって 矢印（なぞり終わりが 矢の先。1回押す＝1つだけ・2回続けて押す＝続けて）">➜ 矢印</button><button type="button" data-m="oval" aria-pressed="false" title="なぞって 丸で囲む（1回押す＝1つだけ・2回続けて押す＝続けて）">◯ 丸</button><button type="button" data-m="check" aria-pressed="false" title="押した所に ✔ を置く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">✔ チェック</button><button type="button" data-m="note" aria-pressed="false" title="押した所に 付箋を貼って メモを書く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">🗒 付箋</button><button type="button" data-m="stamp" aria-pressed="false" title="事務所のハンコを押す（押した所に置く。日付印は 今日の日付）（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">🔴 ハンコ</button></span>
+    <span class="mk-m" role="group" aria-label="書き方"><button type="button" data-m="text" aria-pressed="false" title="押した所に 文字を書く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">文字</button><button type="button" data-m="pen" aria-pressed="false" title="なぞったとおりに 手書きの線（1回押す＝1つだけ・2回続けて押す＝続けて）">✍ ペン</button><button type="button" data-m="line" aria-pressed="false" title="なぞって 下線を引く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">下線</button><button type="button" data-m="box" aria-pressed="false" title="なぞって 枠で囲む（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">枠で囲む</button><button type="button" data-m="arrow" aria-pressed="false" title="なぞって 矢印（なぞり終わりが 矢の先。1回押す＝1つだけ・2回続けて押す＝続けて）">➜ 矢印</button><button type="button" data-m="oval" aria-pressed="false" title="なぞって 丸で囲む（1回押す＝1つだけ・2回続けて押す＝続けて）">◯ 丸</button><button type="button" data-m="check" aria-pressed="false" title="押した所に ✔ を置く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">✔ チェック</button><button type="button" data-m="note" aria-pressed="false" title="押した所に 付箋を貼って メモを書く（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">🗒 付箋</button><button type="button" data-m="stamp" aria-pressed="false" title="事務所のハンコを押す（押した所に置く。日付印は 今日の日付）（1回押す＝1つだけ置く・2回続けて押す＝続けて置ける）">🔴 ハンコ</button></span>
     <span class="mk-c" role="group" aria-label="色"><button type="button" data-c="#D0201A" aria-pressed="true" title="赤" style="--c:#D0201A"></button><button type="button" data-c="#111111" aria-pressed="false" title="黒" style="--c:#111111"></button><button type="button" data-c="#1A4FD0" aria-pressed="false" title="青" style="--c:#1A4FD0"></button><button type="button" data-c="#1E8E3E" aria-pressed="false" title="緑" style="--c:#1E8E3E"></button><button type="button" data-c="#F2B800" aria-pressed="false" title="黄" style="--c:#F2B800"></button><button type="button" data-c="#FFE680" aria-pressed="false" title="付箋の黄" style="--c:#FFE680"></button><button type="button" data-c="#FFC2D6" aria-pressed="false" title="付箋の桃" style="--c:#FFC2D6"></button><button type="button" data-c="#BFE6FF" aria-pressed="false" title="付箋の水色" style="--c:#BFE6FF"></button><label class="mk-pick" title="好みの色を選ぶ"><input type="color" id="mkColor" value="#D0201A" aria-label="好みの色">🎨</label></span>
     <button type="button" class="mk-alpha" id="mkAlpha" aria-pressed="false" title="下線・枠を 透ける色（マーカー）で引く。下線は 太い蛍光ペン、枠は 中を うすく塗る。もう一度押すと ふつうの線に戻る">🖍 透過（マーカー）</button>
     <span class="mk-w" id="mkW" role="group" aria-label="線の太さ（下線・枠）" title="これから引く 下線・枠の 太さ（この端末が覚える）"><span>線</span><button type="button" data-w="0.5" aria-pressed="true">細</button><button type="button" data-w="1" aria-pressed="false">中</button><button type="button" data-w="1.8" aria-pressed="false">太</button></span>
@@ -2566,6 +2571,7 @@
     <span class="mk-st" id="mkStBar" hidden></span>
     <span class="mk-sel" id="mkSelBar" hidden><b id="mkSelL">選んだ文字：</b><button type="button" class="btn ghost sm" id="mkFix">文字を直す</button><button type="button" class="btn ghost sm" id="mkSmall" title="少し小さく">A－</button><button type="button" class="btn ghost sm" id="mkBig" title="少し大きく">A＋</button><button type="button" class="btn ghost sm" id="mkDel">🗑 消す</button></span>
     <button type="button" class="btn ghost sm" id="mkUndo" title="Ctrl＋Z">↶ 元に戻す</button><button type="button" class="btn ghost sm" id="mkRedo" title="Ctrl＋Y">↷ やり直す</button>
+    <button type="button" class="btn ghost sm" id="mkListBtn" aria-expanded="false" title="書いたものの一覧（押すと そこへ飛んで 選ぶ）">📋 書いたもの</button><span class="mk-list" id="mkListPop" hidden></span>
     <button type="button" class="btn ghost sm" id="mkClear">全部消す</button>
     <button type="button" class="btn sm primary" id="mkSave" title="Ctrl＋S でも">保存して終わる</button>
     <button type="button" class="btn ghost sm" id="mkCancel">やめる</button>
@@ -2979,7 +2985,7 @@
     BELL.items.forEach(function (x) {
       const b2 = el('button', 'arr-row' + (x.unread ? ' unread' : '')); b2.type = 'button';
       b2.appendChild(el('span', 'dot'));
-      b2.appendChild(el('span', 'nm', (x.line ? '💬 ' : '📷 ') + x.code + '　' + x.name + ' 様　' + x.n + '件（' + x.box + '）')).title = x.name + ' 様から ' + x.n + '件（' + x.box + '）';
+      b2.appendChild(el('span', 'nm', x.red ? '🔴 ' + x.code + '　' + x.name + ' 様が「要確認」を ' + x.n + '件（' + x.box + '）' : (x.line ? '💬 ' : '📷 ') + x.code + '　' + x.name + ' 様　' + x.n + '件（' + x.box + '）')).title = x.red ? x.name + ' 様が 「要確認」の色のラベルを付けました（' + x.box + '）' : x.name + ' 様から ' + x.n + '件（' + x.box + '）';
       b2.appendChild(el('small', null, x.when));
       b2.addEventListener('click', function () {
         if (x.unread) { x.unread = false; BELL.unread = Math.max(0, BELL.unread - 1); gs('arriveRead', [x.key]).catch(function () {}); }
@@ -2997,6 +3003,56 @@
   document.addEventListener('click', function (e) { const p = $('bellPop'); if (!p.hidden && !e.target.closest('#bellPop, #bellBtn')) { p.hidden = true; $('bellBtn').setAttribute('aria-expanded', 'false'); } });
   (function bellFirst() { if (S.started && S.booted) { mineFill(); bellLoad(); if (!STAFF_NAMES) gs('staffNames').then(function (r) { STAFF_NAMES = r || []; mineFill(); }, function () {}); return; } setTimeout(bellFirst, 1500); })();
   setInterval(function () { if (S.started && !document.hidden && Date.now() - BELL.at > 120000) bellLoad(); }, 30000);
+  /* ---- ★★ 2026-11-18（ロードマップ 16）📋 回覧トレイ：自分あて（見ました・承認）と 自分が回したもの（誰が見たか） ---- */
+  const CIRC = { inbox: [], sent: [], open: 0, busy: false, at: 0 };
+  function circLoad() {
+    if (!S.started || LIVE || CIRC.busy) return;
+    CIRC.busy = true;
+    gs('circList').then(function (r) { CIRC.busy = false; CIRC.inbox = (r && r.inbox) || []; CIRC.sent = (r && r.sent) || []; CIRC.open = (r && r.open) || 0; CIRC.at = Date.now(); circDraw(); }, function () { CIRC.busy = false; });
+  }
+  const CIRC_K = { seen: '👁 見ました', ok: '✅ 承認' };
+  function circDraw() {
+    const n = CIRC.open, b = $('circBtn'); if (!b) return;
+    b.hidden = !S.started || LIVE; $('circN').hidden = !n; $('circN').textContent = n > 99 ? '99+' : String(n);
+    b.title = n ? 'まだ しるしを付けていない回覧が ' + n + '件' : '事務所の中の 回覧（自分あて・自分が回したもの）';
+    const pop = $('circPop'); if (pop.hidden) return;
+    pop.textContent = '';
+    pop.appendChild(el('h4', null, '📋 回覧（直近90日）'));
+    pop.appendChild(el('p', 'arr-note', '回すのは 作業場で 札を選んで［📋 回覧に回す］。押すと その箱を開きます。'));
+    pop.appendChild(el('h4', null, '自分あて'));
+    if (!CIRC.inbox.length) pop.appendChild(el('p', 'arr-note', '自分あての 回覧は ありません。'));
+    CIRC.inbox.forEach(function (x) {
+      const row = el('div', 'arr-row circ-row' + (x.mine ? '' : ' unread')); row.dataset.id = x.id;
+      row.appendChild(el('span', 'dot'));
+      const nm = el('button', 'nm circ-go', x.from + ' さんから　' + x.code + '　' + x.name + ' 様　' + x.n + '件' + (x.box ? '（' + x.box + '）' : '') + (x.memo ? '　「' + x.memo + '」' : '')); nm.type = 'button'; nm.style.cssText = 'all:unset;cursor:pointer;flex:1';
+      nm.addEventListener('click', function () { $('circPop').hidden = true; $('circBtn').setAttribute('aria-expanded', 'false'); if (!x.mine) circSet(x, 'seen'); arGo(x.code, x.box); });
+      row.appendChild(nm); row.appendChild(el('small', null, x.when));
+      ['seen', 'ok'].forEach(function (k) { const kb = el('button', 'btn ghost sm circ-k' + (x.mine === k ? ' on' : ''), CIRC_K[k]); kb.type = 'button'; kb.dataset.k = k; if (x.mine === k) kb.style.cssText = 'background:#0F6E56;color:#fff'; kb.title = x.mine === k ? 'もう一度押すと 外します' : CIRC_K[k] + ' の しるしを付ける'; kb.addEventListener('click', function () { circSet(x, x.mine === k ? '' : k); }); row.appendChild(kb); });
+      pop.appendChild(row);
+    });
+    pop.appendChild(el('h4', null, '自分が回したもの'));
+    if (!CIRC.sent.length) pop.appendChild(el('p', 'arr-note', 'まだ 回していません。'));
+    CIRC.sent.forEach(function (x) {
+      const row = el('div', 'arr-row circ-sent'); const nm = el('button', 'nm', x.code + '　' + x.name + ' 様　' + x.n + '件' + (x.box ? '（' + x.box + '）' : '') + (x.memo ? '　「' + x.memo + '」' : '')); nm.type = 'button'; nm.style.cssText = 'all:unset;cursor:pointer;flex:1';
+      nm.addEventListener('click', function () { $('circPop').hidden = true; arGo(x.code, x.box); });
+      row.appendChild(nm);
+      row.appendChild(el('small', 'circ-who', x.to.map(function (t) { return t.name + (t.k ? '：' + CIRC_K[t.k] : '：まだ'); }).join('　')));
+      row.appendChild(el('small', null, x.when));
+      pop.appendChild(row);
+    });
+  }
+  function circSet(x, k) {
+    const was = x.mine; x.mine = k; CIRC.open = CIRC.inbox.filter(function (y) { return !y.mine; }).length; circDraw();
+    gs('circMark', x.id, k).then(function () {}, function (e) { x.mine = was; CIRC.open = CIRC.inbox.filter(function (y) { return !y.mine; }).length; circDraw(); dcMsg('しるしを 付けられませんでした。' + e.message, true); });
+  }
+  $('circBtn').addEventListener('click', function (e) {
+    e.stopPropagation();
+    const p = $('circPop'); p.hidden = !p.hidden; $('circBtn').setAttribute('aria-expanded', String(!p.hidden));
+    if (!p.hidden) { $('arrPop').hidden = true; $('bellPop').hidden = true; circDraw(); circLoad(); }
+  });
+  document.addEventListener('click', function (e) { const p = $('circPop'); if (!p.hidden && !e.target.closest('#circPop, #circBtn')) { p.hidden = true; $('circBtn').setAttribute('aria-expanded', 'false'); } });
+  (function circFirst() { if (S.started && S.booted) { circLoad(); return; } setTimeout(circFirst, 1500); })();
+  setInterval(function () { if (S.started && !document.hidden && Date.now() - CIRC.at > 120000) circLoad(); }, 30000);
 
   /* ================= ★★★ 事務所フォルダ（2026-11-14） =================
      左に フォルダの木、右に 作業スペース（DocuWorks Desk の形）。正本は Google ドライブ。この画面は その窓。
@@ -5876,13 +5932,13 @@
       '.wc.m-trash{border-style:dashed}.wc.m-trash .im img{filter:grayscale(1);opacity:.45}.wc.m-chk{border-color:#1E8E3E}' +
       '.wc .ac .wpart,#wzr .wpart{align-self:center;color:#1E8E3E;font-weight:700;font-size:12px}.wc .ac{display:flex;flex-wrap:wrap;gap:4px}.wc .ac button{font:inherit;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid #9aa6b2;background:#fff;color:#1d2733;cursor:pointer}.wc .ac .ok{border-color:#1E8E3E;color:#1E8E3E;font-weight:700}.wc .ac .ng{border-color:#D0201A;color:#D0201A}' +
       '.wzr{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:8px 10px 0;cursor:default}.wzr button{font:inherit;font-size:14px;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.5);border-radius:10px;padding:5px 12px;cursor:pointer}.wzr button:disabled{opacity:.35;cursor:default}.wzr .on{background:#1E8E3E;border-color:#1E8E3E}.wzr .blk{background:#111;border-color:#fff}.wzr .ng{border-color:#ff9a90}.wzr .pos{color:#fff;font-weight:800;font-size:14px}.wzr .key{color:#aaa;font-size:12px;width:100%;text-align:center}' +
-      '.wzv{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:zoom-out}.wzv[hidden]{display:none}' +
+      '.wzpg{position:absolute;left:8px;top:56px;bottom:70px;width:92px;overflow:auto;display:flex;flex-direction:column;gap:6px;z-index:3;cursor:default}.wzpg[hidden]{display:none}.wzpg .zp{position:relative;flex:none}.wzpg img{display:block;width:100%;min-height:40px;background:#fff;border:3px solid transparent;border-radius:4px;cursor:pointer}.wzpg .zp.on img{border-color:#F2B800}.wzpg .zp b{position:absolute;left:4px;bottom:4px;background:#000a;color:#fff;font-size:11px;padding:0 5px;border-radius:999px}.wzpg .zp.zt img{border-top-color:#4FC3F7}.wzpg .zp.zb img{border-bottom-color:#4FC3F7}.wzv{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:zoom-out}.wzv[hidden]{display:none}' +
       '.zstage{flex:1 1 auto;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}.zstage img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:50% 50%;user-select:none;background:#fff}.zstage.zin{cursor:grab}.zstage.zgrab{cursor:grabbing}' +
       '.zbar{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;cursor:default}.zbar button{font:inherit;font-size:16px;font-weight:800;color:#fff;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.5);border-radius:10px;padding:6px 12px;cursor:pointer;min-width:44px}.zbar button:disabled{opacity:.35;cursor:default}.zbar .zpct{color:#fff;font-weight:800;font-size:14px;min-width:54px;text-align:center}' +
       '.wzc{color:#fff;font-size:15px;font-weight:700;padding:8px 16px 0;text-align:center}.wzl{color:#cfe;font-size:13px}.zhint{color:#aaa;font-size:12px;padding:4px 0 10px}.wzx{position:absolute;top:10px;right:14px;font:inherit;font-size:20px;color:#fff;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.5);border-radius:10px;padding:2px 12px;cursor:pointer;z-index:2}' +
       '.wc.sel{border-color:#b07d00;box-shadow:0 0 0 3px #b07d00}.wsmq{position:fixed;z-index:40;border:2px dashed #b07d00;background:rgba(176,125,0,.12);pointer-events:none}' +
       '</style></head><body><div id="ws"></div>' +
-      '<div class="wzv" id="wzv" hidden role="dialog" aria-label="大きく見る"><button type="button" class="wzx" id="wzx" title="閉じる（Esc）">✕</button><div class="zstage" id="wzs"><img id="wzi" alt="" draggable="false"></div>' +
+      '<div class="wzv" id="wzv" hidden role="dialog" aria-label="大きく見る"><button type="button" class="wzx" id="wzx" title="閉じる（Esc）">✕</button><div class="wzpg" id="wzpg" hidden aria-label="ページの一覧"></div><div class="zstage" id="wzs"><img id="wzi" alt="" draggable="false"></div>' +
       '<div class="zbar" id="wzb"><button type="button" data-z="out" title="縮小（－）" aria-label="縮小">🔍－</button><span class="zpct" data-z="pct">100%</span><button type="button" data-z="in" title="拡大（＋）" aria-label="拡大">🔍＋</button><button type="button" data-z="fit" title="元の大きさ">元の大きさ</button><button type="button" id="wzg" draggable="true" style="cursor:grab" title="つかんで パソコンのフォルダ・DocuWorks へ落とす（拡大していても つかめます）">⇲ つかむ</button></div>' +
       '<div class="wzr" id="wzr"></div><div class="wzc" id="wzc"></div><div class="wzl" id="wzl" hidden>くっきりした写真を読み込み中…</div><div class="zhint" id="wzh"></div></div></body></html>');
     d.close(); ismWm(d);
@@ -5999,11 +6055,28 @@
     root.appendChild(E('p', 'wsnote', 'つかんで 左右の端へ落とす＝並べ替え／まん中へ落とす＝重ねて1つの書類に（まとめた書類どうしも）／［✂ バラす］＝1枚ずつに／下の小さいページを つかむ＝ページの順番／名前を押して書き換え → Enter'));
     { const sz = E('div', 'wssz');
       /* ★★ 2026-11-17（DocuWorks の「見つける」）：🔎 名前で探す。打つと その場で 札を絞る（描き直さない。打っている字が消えないように） */
-      const qi = E('input', 'wsq'); qi.type = 'search'; qi.placeholder = '🔎 名前で探す'; qi.value = o.q || ''; qi.setAttribute('aria-label', '名前で探す');
-      qi.addEventListener('input', function () { o.q = qi.value; wsQApply(key); }); qi.addEventListener('keydown', function (e) { if (e.key === 'Escape') { qi.value = ''; o.q = ''; wsQApply(key); qi.blur(); } });
+      const qi = E('input', 'wsq'); qi.type = 'search'; qi.placeholder = ad.pdfText ? '🔎 名前・中の文字で探す' : '🔎 名前で探す'; qi.value = o.q || ''; qi.setAttribute('aria-label', '名前で探す');
+      qi.addEventListener('input', function () { (WS[key] || o).q = qi.value; wsQApply(key); }); qi.addEventListener('keydown', function (e) { if (e.key === 'Escape') { qi.value = ''; (WS[key] || o).q = ''; wsQApply(key); qi.blur(); } });   /* ★ 2026-11-18：開き直したあと 古い控えに書かないよう いまの WS[key] へ */
       sz.appendChild(qi); setTimeout(function () { wsQApply(key); }, 0);
+      /* ★ 2026-11-18（ロードマップ 11）：選んだ書類 ぜんぶに 同じ印を まとめて押す（DocuWorks の 複数文書への 一括貼り付け） */
+      if (ad.stampMany) { const sb = E('button', null, '🔴 選んだ書類に 受付印'); sb.type = 'button'; sb.title = '札を選んで（Shift・Ctrl＋押す／Ctrl＋A）押すと、選んだ書類の 1ページ目の 右上に 今日の受付印を押します'; sb.addEventListener('click', function () { const sel = Object.keys(o.sel || {}).filter(function (k) { return o.sel[k]; }); const mem = ad.items().filter(function (x) { return sel.indexOf(ad.key(x)) >= 0; }); if (!mem.length) { wsMsg(key, '先に 札を選んでください（押す・Shift／Ctrl＋押す・Ctrl＋A）。', true); return; } sb.disabled = true; ad.stampMany(mem, function (t, err) { wsMsg(key, t, err); sb.disabled = false; }); }); sz.appendChild(sb); }
+      /* ★★ 2026-11-18（ロードマップ 16）：回覧トレイ。選んだ書類を 事務所の人に回す（見た・承認の しるしは 右上の［📋 回覧］） */
+      if (ad.circ) { const cb = E('button', null, '📋 回覧に回す'); cb.type = 'button'; cb.title = '札を選んでから押すと、事務所の人に 回せます（相手の右上の［📋 回覧］に入り、見た・承認の しるしが あなたに返ります）';
+        cb.addEventListener('click', function () {
+          const old = d.querySelector('.wscirc'); if (old) { old.remove(); return; }
+          const sel = Object.keys(o.sel || {}).filter(function (k) { return o.sel[k]; }); const mem = ad.items().filter(function (x) { return sel.indexOf(ad.key(x)) >= 0; });
+          if (!mem.length) { wsMsg(key, '先に 札を選んでください（押す・Shift／Ctrl＋押す・Ctrl＋A）。', true); return; }
+          const pn = E('div', 'wscirc'); pn.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0;padding:8px 10px;border:1px solid #c8d0d8;border-radius:8px;background:#f7f9fb;font-size:13px';
+          pn.appendChild(E('b', null, '📋 ' + mem.length + '件を 回す人：'));
+          const bx = E('span', 'wscn', '（読みこみ中…）'); bx.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px 10px'; pn.appendChild(bx);
+          const mi = E('input', 'wscm'); mi.placeholder = 'ひとこと（なくてもよい）'; mi.maxLength = 200; mi.style.cssText = 'flex:1;min-width:160px;font:inherit;padding:4px 6px'; pn.appendChild(mi);
+          const go = E('button', 'go', '回す'); go.type = 'button'; const cx = E('button', null, 'やめる'); cx.type = 'button'; cx.addEventListener('click', function () { pn.remove(); }); pn.appendChild(go); pn.appendChild(cx);
+          sz.after(pn);
+          ad.circNames().then(function (ns) { bx.textContent = ''; ns.forEach(function (n) { const l = E('label'); const c = E('input'); c.type = 'checkbox'; c.value = n; l.appendChild(c); l.appendChild(d.createTextNode(' ' + n)); bx.appendChild(l); }); if (!ns.length) bx.textContent = '回せる人が いません（職員の名簿に ほかの人が 入っていません）'; }, function () { bx.textContent = '職員の名前を 読めませんでした'; });
+          go.addEventListener('click', function () { const to = [].slice.call(bx.querySelectorAll('input:checked')).map(function (x) { return x.value; }); if (!to.length) { wsMsg(key, '回す人を 選んでください。', true); return; } go.disabled = true; ad.circ(mem, to, mi.value, function (t, err) { wsMsg(key, t, err); go.disabled = false; if (!err) pn.remove(); }); });
+        }); sz.appendChild(cb); }
       { const lf = E('span', 'wslf'); [['', '全部']].concat(WSLABS.map(function (x) { return [x[0], x[1], x[2]]; })).forEach(function (x) { const b = E('button', (o.lab || '') === x[0] ? 'on' : null); b.type = 'button'; if (x[2]) { const i = E('i'); i.style.background = x[2]; b.appendChild(i); } b.appendChild(document.createTextNode(x[1])); b.title = x[0] ? '「' + x[1] + '」の札だけ出す' : 'ラベルで 絞らない';
-          b.addEventListener('click', function () { o.lab = x[0]; lf.querySelectorAll('button').forEach(function (y) { y.classList.toggle('on', y === b); }); wsQApply(key); }); lf.appendChild(b); }); sz.appendChild(lf); }
+          b.addEventListener('click', function () { (WS[key] || o).lab = x[0]; lf.querySelectorAll('button').forEach(function (y) { y.classList.toggle('on', y === b); }); wsQApply(key); }); lf.appendChild(b); }); sz.appendChild(lf); }
       sz.appendChild(E('span', null, '札の大きさ')); [['小', 150], ['中', 210], ['大', 300]].forEach(function (x) { const b = E('button', x[1] === wsSzGet() ? 'on' : null, x[0]); b.type = 'button'; b.dataset.v = x[1]; b.title = 'Ctrl＋ホイールでも 変えられます'; b.addEventListener('click', function () { wsSzSet(key, x[1]); }); sz.appendChild(b); }); root.appendChild(sz); }   /* ★ 2026-11-17：DocuWorks の サムネールの大きさ */
     root.appendChild(E('div', 'wsmsg', keep)).id = 'wsmsg';
     const need = [];
@@ -6196,6 +6269,12 @@
       r.appendChild(E('span', 'pos setpos', '📎 ' + (mi + 1) + '/' + mem.length + '枚目'));
       b('setpg', '▶', 'この書類の 次の写真（→）', function () { wsZoom(key, mem[mi + 1]); }).disabled = mi >= mem.length - 1;
     }
+    wsZStrip(key, mem, it, lock);
+    /* ★ 2026-11-18（ロードマップ 3）：ページ単位の編集 … このページを 書類から外す・このページだけ ゴミ箱へ（破棄）・回す */
+    if (mem.length > 1 && ad.splitOne && !lock) {
+      b(null, '✂ このページを外す', 'この1枚を 書類から外して 1枚の書類にする（ほかは そのまま）', function () { ad.splitOne(mem[0], it); setTimeout(function () { wsRefresh(); wsZoom(key, it); }, 0); });
+      if (ad.trash) b('ng', '🗑 このページだけ', 'この1枚だけ 書類から外して ' + (ad.trashLabel ? 'ゴミ箱へ' : '破棄'), function () { ad.splitOne(mem[0], it); ad.trash([it]); setTimeout(function () { wsRefresh(); const nx = mem.find(function (x) { return x !== it; }); if (nx) wsZoom(key, nx); else o.zclose(); }, 0); });
+    }
     if (o.zpages && o.zpages.length > 1) {
       b(null, '◀', '前のページ（PageUp）', function () { wsZPage(key, -1); }).disabled = o.zpg <= 0;
       r.appendChild(E('span', 'pos', (o.zpg + 1) + '/' + o.zpages.length + 'ページ'));
@@ -6213,8 +6292,27 @@
       if (ad.skip && !lock) b(m === 'skip' ? 'blk' : null, m === 'skip' ? '↩ 対象に戻す' : '⊘ 対象外', '1 で 対象外にして次へ', function () { ad.skip(mem, m !== 'skip'); });
       if (ad.trash && !lock) b('ng', '🗑 破棄', '2 で 破棄して次へ', function () { wsZAct(key, 'trash'); });
       if (ad.canWrite && ad.canWrite(it)) b(null, '✏ 書きこむ', 'いま見ている写真に 文字・下線・枠を書きこむ（この別ウィンドウの中で）', function () { ad.write(it, key); });   /* ★ K-0145：前は 元の画面へ戻っていた。まとめた書類は いま見ている1枚に */
+      if (ad.rotate && !lock && ad.rotate(it, true)) b(null, '↻ 回す', '右へ 90度 回す' + (ad.rotBurn ? '（写真そのものを回して 保存します）' : '（PDF・印刷も この向き）'), function () { ad.rotate(it, false, function () { wsRefresh(); wsZoom(key, it); }); });
     }
     r.appendChild(E('span', 'key', ad.skip ? 'Enter 確認済→次／1 対象外→次／2 破棄→次／0 戻して元通り／← → 前後（まとめた書類は 中の写真を順に）' : 'Enter 確認→次／0 戻して確認を外す／← → 前後（まとめた書類は 中の写真を順に）'));
+  }
+  /* ★★ 2026-11-18（ロードマップ 4）：大きく見るの左に ページの一覧（押すと そのページ・つかんで 上下に落とすと 順番）。PDF は ページの絵 */
+  function wsZStrip(key, mem, it, lock) {
+    const o = WS[key], d = o.win.document, st = d.getElementById('wzpg'), ad = o.ad; if (!st) return;
+    st.textContent = '';
+    const pdfN = o.zpages && o.zpages.length > 1, multi = mem.length > 1;
+    st.hidden = !(pdfN || multi); if (st.hidden) return;
+    const add = function (src, n, on, fn) { const w = d.createElement('div'); w.className = 'zp' + (on ? ' on' : ''); const im = d.createElement('img'); im.alt = ''; if (src) im.src = src; im.draggable = false; w.appendChild(im); const bb = d.createElement('b'); bb.textContent = n; w.appendChild(bb); w.addEventListener('click', function (e) { e.stopPropagation(); fn(); }); st.appendChild(w); return w; };
+    if (pdfN) { o.zpages.forEach(function (src, i) { add(src, i + 1, i === o.zpg, function () { o.zpg = i; o.zp.reset(); d.getElementById('wzi').src = o.zpages[i]; wsZBar(key); }); }); }
+    else mem.forEach(function (x, i) {
+      const w = add(ad.thumb(x), i + 1, x === it, function () { wsZoom(key, x); });
+      if (lock || !ad.pageOrder) return;
+      w.draggable = true; w.addEventListener('dragstart', function (e) { o.zdrag = x; try { e.dataTransfer.setData('text/plain', 'p'); e.dataTransfer.effectAllowed = 'move'; } catch (q) {} });
+      w.addEventListener('dragover', function (e) { if (!o.zdrag || o.zdrag === x) return; e.preventDefault(); const r = w.getBoundingClientRect(), up = e.clientY < r.top + r.height / 2; w.classList.toggle('zt', up); w.classList.toggle('zb', !up); });
+      w.addEventListener('dragleave', function () { w.classList.remove('zt', 'zb'); });
+      w.addEventListener('drop', function (e) { const dg = o.zdrag; o.zdrag = null; w.classList.remove('zt', 'zb'); if (!dg || dg === x) return; e.preventDefault(); e.stopPropagation(); const r = w.getBoundingClientRect(); ad.pageOrder(dg, x, e.clientY < r.top + r.height / 2); setTimeout(function () { wsRefresh(); wsZoom(key, dg); }, 0); });
+    });
+    const on = st.querySelector('.zp.on'); if (on && on.scrollIntoView) try { on.scrollIntoView({ block: 'nearest' }); } catch (e) {}
   }
   function wsZGo(key, k) {
     const o = WS[key]; if (!o) return;
@@ -6302,7 +6400,7 @@
       /* 名前で当たらない PDF は 中の文字も 読んでみる（読んだら 覚える） */
       if (q && !thit && o.ad.pdfText && !(k in o.txt)) { if (!o.txtq[k]) { const it = o.ad.items().find(function (x) { return o.ad.key(x) === k; }); const pr = it && o.ad.pdfText(it); if (pr) { o.txtq[k] = 1; pr.then(function (tx) { o.txt[k] = String(tx || ''); }, function () { o.txt[k] = ''; }).then(function () { delete o.txtq[k]; wsQApply(key); }); } else o.txt[k] = ''; } if (o.txtq[k]) wait++; }
     });
-    if (!q && o.lab) wsMsg(key, n + '件（ラベル「' + (WSLABS.find(function (x) { return x[0] === o.lab; }) || ['', ''])[1] + '」）'); else if (q) wsMsg(key, all ? n + '件 見つかりました（「' + o.q + '」）。' + (wait ? ' PDF の中の文字も 探しています…（あと ' + wait + '）' : n ? '' : ' 別の言葉で 探してください。') : ''); else if (o.qWas) wsMsg(key, '');
+    if (!q && o.lab) wsMsg(key, n + '件（ラベル「' + (WSLABS.find(function (x) { return x[0] === o.lab; }) || ['', ''])[1] + '」）'); else if (q) wsMsg(key, all ? n + '件 見つかりました（「' + o.q + '」）。' + (wait ? ' 中の文字も 探しています…（あと ' + wait + '）' : n ? '' : ' 別の言葉で 探してください。') : ''); else if (o.qWas) wsMsg(key, '');
     o.qWas = !!(q || o.lab);
   }
   function wsSzGet() { const v = Number(lsGet('collect_ws_sz')); return WS_SZ.indexOf(v) >= 0 ? v : 210; }
@@ -6369,6 +6467,13 @@
   }
   /* 事務所の 回収資料の作業場（顧問先 × 箱）。顧問先を切り替えたら その窓は閉じる（よその顧問先の資料を映さない） */
   /* opt.sub … 中の箱もいっしょに（大きい箱で開く）／opt.per … その月分だけ（小さい箱で開く）。2026-10-28 */
+  const WOCRQ = { want: {}, t: 0, busy: false };
+  function wocrAsk(code, id) { return new Promise(function (ok) { const k = code + '|' + id; (WOCRQ.want[k] = WOCRQ.want[k] || []).push(ok); clearTimeout(WOCRQ.t); WOCRQ.t = setTimeout(wocrRun, 200); }); }
+  function wocrRun() {
+    if (WOCRQ.busy) return; const all = Object.keys(WOCRQ.want); if (!all.length) return; const code = all[0].split('|')[0], ks = all.filter(function (k) { return k.split('|')[0] === code; }).slice(0, 3); WOCRQ.busy = true;
+    gs('workOcr', code, ks.map(function (k) { return k.split('|')[1]; })).then(function (r) { ks.forEach(function (k) { const id = k.split('|')[1]; if (r && r[id] != null) { (WOCRQ.want[k] || []).forEach(function (f) { f(r[id]); }); delete WOCRQ.want[k]; } }); },
+      function () { ks.forEach(function (k) { (WOCRQ.want[k] || []).forEach(function (f) { f(''); }); delete WOCRQ.want[k]; }); }).then(function () { WOCRQ.busy = false; if (Object.keys(WOCRQ.want).length) wocrRun(); });
+  }
   function wsOfficeAd(code, box, opt) {
     opt = opt || {};
     const nm = function (it) { return String(it.name || '').replace(/^\d{8}_\d{6}_/, ''); };
@@ -6376,8 +6481,11 @@
     const inBox = function (it) { return it.box === box || (opt.sub && it.box.indexOf(box + '/') === 0); };
     const isT = function (it) { return (S.trash || []).indexOf(it) >= 0; };
     return {
+      pdfText: function (it) { if (isT(it) || it.mynum || !/\.(pdf|jpe?g|png)$/i.test(it.name || '')) return null; return wocrAsk(code, it.id); },   /* ★ 2026-11-18（ロードマップ 12）：写真・PDF の字（Google ドライブの文字起こし。無料。マイナンバーは読まない） */
       labGet: function (it) { return it.lab || ''; },
-      labSet: function (mem, l, say) { mem.forEach(function (it) { it.lab = l; }); gs('workLabel', code, mem.map(function (it) { return it.id; }), l).then(function () {}, function (e) { say('ラベルを 残せませんでした。' + e.message, true); }); },   /* ★ 2026-11-17：列「ラベル」（顧問先と 同じ色が見える） */
+      circNames: function () { return (STAFF_NAMES ? Promise.resolve(STAFF_NAMES) : gs('staffNames').then(function (r) { STAFF_NAMES = r || []; return STAFF_NAMES; })).then(function (ns) { const me = (S.me && S.me.name) || ''; return (ns || []).filter(function (n) { return n && n !== me; }); }); },
+      circ: function (mem, to, memo, say) { const ids = mem.filter(function (it) { return !isT(it); }).map(function (it) { return it.id; }); if (!ids.length) { say('破棄したものは 回せません。', true); return; } gs('circSend', code, ids, to, memo).then(function (r) { say(r.n + '件を ' + r.to.join('・') + ' さんへ 回覧に回しました（右上の［📋 回覧］で 見た・承認が 分かります）。'); circLoad(); }, function (e) { say('回せませんでした。' + e.message, true); }); },
+      labSet: function (mem, l, say) { mem.forEach(function (it) { it.lab = l; }); try { aNchkSync(); } catch (e) {} gs('workLabel', code, mem.map(function (it) { return it.id; }), l).then(function () {}, function (e) { say('ラベルを 残せませんでした。' + e.message, true); }); },   /* ★ 2026-11-17：列「ラベル」（顧問先と 同じ色が見える） */
       qText: function (it) { return [it.name, it.memo, it.party, it.note, it.amount, it.amt].filter(function (x) { return x != null && x !== ''; }).join(' '); },
       alive: function () { return S.code === code; },
       title: function () { return cname + '　' + boxLabel(box) + (opt.sub ? '（中の箱も）' : '') + (opt.per != null ? '　' + perLabel(opt.per) : ''); },
@@ -6388,6 +6496,8 @@
       per: function (it) { return opt.sub ? (it.period || '') + '\u0001' + it.box : it.period || ''; },
       perLabel: function (p) { const a = String(p).split('\u0001'); return perLabel(a[0]) + (a.length > 1 ? '［' + boxLabel(a[1]) + '］' : ''); },
       split: function (it) { dSplit(it); },
+      splitOne: function (it, x) { dSplit(it, [x.id]); },   /* ★ 2026-11-18（ロードマップ 3）：この1枚だけ 外す */
+      rotate: function (it, test, done) { const ok = !isT(it) && !fileKind(it.name); if (test || !ok) return ok; rotSet(it.id, ((S.rot[it.id] || 0) + 90) % 360); if (done) done(); return true; },
       thumb: function (it) { return THUMB[it.id]; }, name: nm,
       stat: function (it) { return isT(it) ? '破棄済み' : stTag(it)[1]; }, locked: function (it) { return it.status === 'done' || isT(it); },
       need: function (ids) { wsThumbsO(ids); },
@@ -6413,6 +6523,17 @@
         if (IMG[it.id]) go(); else dWant(it.id, true, go);
       },
       reorder: function (list, to, before) { dReorder(list, to.id, before); },
+      stampMany: function (mem, say) {   /* ★ 2026-11-18（ロードマップ 11）：選んだ書類の 1ページ目（まとめた書類は 先頭の1枚）の右上に 今日の受付印 */
+        const leads = {}; mem.forEach(function (it) { if (isT(it) || fileKind(it.name)) return; const d = it.set || it.id; if (!leads[d]) leads[d] = it; });
+        const list = Object.keys(leads).map(function (k) { return leads[k]; }); if (!list.length) { say('印を押せる書類が ありません（破棄したもの・エクセルなどは 押せません）。', true); return; }
+        let n = 0, ng = 0; const one = function (it) { return new Promise(function (ok) { const src = THUMB[it.id]; if (!src) { ok(1.414); return; } const im = new Image(); im.onload = function () { ok(im.naturalHeight / Math.max(1, im.naturalWidth)); }; im.onerror = function () { ok(1.414); }; im.src = src; }).then(function (asp) {
+          const w = 0.16, h = Math.min(0.5, w / Math.max(0.2, asp)), mk = (it.mark || []).slice(); mk.push({ p: 0, t: 'stamp', s: 'auto', d: stampToday(), x: 1 - w - 0.02, y: 0.02, w: w, h: h, c: STAMP_RED });
+          return gs('workMark', code, it.id, mk).then(function (r) { it.mark = r.mark; n++; }, function () { ng++; }); }); };
+        list.reduce(function (pr, it) { return pr.then(function () { return one(it); }); }, Promise.resolve()).then(function () { docsDraw(); wsRefresh(); say(n + '件に 受付印を押しました' + (ng ? '（' + ng + '件は 押せませんでした）' : '') + '。大きく見るの［✏ 書きこむ］で 動かす・消す ができます。', !!ng); });
+      },
+      /* ★ 2026-11-18（ロードマップ 17）：並べ替えも Ctrl＋Z で戻す。その箱・月分の並びを控えて、戻すときは その順で workOrder */
+      ordSnap: function (list) { const bx = list[0] && list[0].box, per = list[0] && list[0].period; return (S.docs || []).filter(function (x) { return x.box === bx && x.period === per; }).map(function (x) { return [x, x.ord || 0]; }); },
+      ordRestore: function (sn) { if (S.code !== code) return; sn.forEach(function (a) { a[0].ord = a[1]; }); const ls = sn.map(function (a) { return a[0]; }).sort(dSort); docsDraw(); wsRefresh(); gs('workOrder', code, ls.map(function (x) { return x.id; })).catch(function (e) { dcMsg('並びを戻せませんでした。' + e.message, true); }); },
       join: function (list) { dJoin(list.map(function (x) { return x.id; })); },
       pageOrder: function (it, to, before) { dSetReorder(it, to.id, before); },
       rename: function (it, v, say) {
@@ -6949,11 +7070,11 @@
   const GUIDE = {
     order: ['top', 'Docs', 'In', 'Out', 'Clients', 'Dict', 'Rule', 'Fold', 'Send', 'Kaizen', 'Staff'],
     top: { t: '🧭 全体・右上のボタン', pic: 'g_otop', lead: '上の「顧問先」で 顧問先を選び、タブで 仕事を切り替えます。右上のボタンは どのタブからでも使えます。',
-      steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
+      steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
       steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー'],
-      tips: ['書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前で探す」で 名前・メモ・下書きの中身から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
+      tips: ['書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
       tips: ['よく出る取引は［仕訳辞書］に登録すると 次から ひとりでに当たります', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
@@ -8747,6 +8868,9 @@
         if (m.a) { x.globalAlpha = MK_ALPHA; x.lineWidth = mkMarkerW(W); } else x.lineWidth = mkLineW(W, m);   /* ★ K-0126：透過（マーカー）・K-0188：太さ */
         x.beginPath(); x.moveTo(m.x * W, m.y * H); x.lineTo((m.x + m.w) * W, (m.y + m.h) * H); x.stroke();
         if (m.ar) { const x2 = (m.x + m.w) * W, y2 = (m.y + m.h) * H, an = Math.atan2(m.h * H, m.w * W), hl = Math.max(x.lineWidth * 4, W * 0.022); x.lineJoin = 'round'; x.beginPath(); x.moveTo(x2 - hl * Math.cos(an - 0.45), y2 - hl * Math.sin(an - 0.45)); x.lineTo(x2, y2); x.lineTo(x2 - hl * Math.cos(an + 0.45), y2 - hl * Math.sin(an + 0.45)); x.stroke(); }
+      } else if (m.t === 'pen') {
+        if (m.a) { x.globalAlpha = MK_ALPHA; x.lineWidth = mkMarkerW(W); } else x.lineWidth = mkLineW(W, m); x.lineJoin = 'round';
+        x.beginPath(); (m.q || []).forEach(function (v, i) { const px = (m.x + v[0] * m.w) * W, py = (m.y + v[1] * m.h) * H; if (i) x.lineTo(px, py); else x.moveTo(px, py); }); x.stroke();
       } else if (m.t === 'box' && m.ov) {
         x.beginPath(); x.ellipse((m.x + m.w / 2) * W, (m.y + m.h / 2) * H, Math.max(1, m.w * W / 2), Math.max(1, m.h * H / 2), 0, 0, Math.PI * 2);
         if (m.a) { x.globalAlpha = MK_ALPHA; x.fill(); } else { x.lineWidth = mkLineW(W, m); x.stroke(); }
@@ -9975,6 +10099,7 @@
     to.push(MKH.last); MKH.last = from.pop(); MK.list = JSON.parse(MKH.last); MK.sel = -1; MK.mv = null; MK.end = null; mkEl('mkSelBar').hidden = true; mkHistPaint(); mkDirty(); mkPaint();
   }
   function mkPaint() {
+    try { mkListDraw(); } catch (e) {}
     if (!mkEl('dview') || mkEl('dview').hidden || !mkIt()) return;
     if (MK.on) { clearTimeout(MKH.t); MKH.t = setTimeout(mkCommit, 400); }
     if (MK.on && MK.sel < 0) mkLwPaint();   /* ★ K-0188 続き：線を選んでいないときは これから引く太さを 出す */
@@ -10034,6 +10159,11 @@
     }
     if (m.t === 'check') return checkShape(m, W, H);
     if (m.t === 'note') return noteShape(m, W, H);
+    if (m.t === 'pen') {
+      const pl = document.createElementNS(SVGNS, 'polyline'); pl.setAttribute('points', (m.q || []).map(function (v) { return ((m.x + v[0] * m.w) * W) + ',' + ((m.y + v[1] * m.h) * H); }).join(' '));
+      pl.setAttribute('fill', 'none'); pl.setAttribute('stroke', m.c); pl.setAttribute('stroke-width', m.a ? mkMarkerW(W) : mkLineW(W, m)); pl.setAttribute('stroke-linecap', 'round'); pl.setAttribute('stroke-linejoin', 'round'); if (m.a) pl.setAttribute('stroke-opacity', MK_ALPHA);
+      return pl;
+    }
     if (m.t === 'line') {
       const l = document.createElementNS(SVGNS, 'line'); l.setAttribute('x1', m.x * W); l.setAttribute('y1', m.y * H); l.setAttribute('x2', (m.x + m.w) * W); l.setAttribute('y2', (m.y + m.h) * H);
       l.setAttribute('stroke', m.c); l.setAttribute('stroke-width', m.a ? mkMarkerW(W) : mkLineW(W, m)); l.setAttribute('stroke-linecap', 'round');
@@ -10161,6 +10291,18 @@
   function mkSelBox(sv, el) {
     try { const b = el.getBBox(), r = document.createElementNS(SVGNS, 'rect'), pad = 4; r.setAttribute('class', 'mksel'); r.setAttribute('x', b.x - pad); r.setAttribute('y', b.y - pad); r.setAttribute('width', b.width + pad * 2); r.setAttribute('height', b.height + pad * 2); sv.appendChild(r); } catch (e) {}
   }
+  /* ★ 2026-11-18（ロードマップ 10）：書いたものの一覧（DocuWorks の アノテーション一覧）。押すと そのページへ飛んで 選ぶ */
+  function mkLabel(m) { const q = function (t) { t = String(t || '').replace(/\s+/g, ' '); return t.length > 10 ? t.slice(0, 10) + '…' : t; };
+    return m.t === 'text' ? '文字「' + q(m.s) + '」' : m.t === 'note' ? '付箋「' + q(m.s) + '」' : m.t === 'stamp' ? (m.s === 'auto' ? '受付印 ' + (m.d || '') : m.tx ? 'ハンコ「' + m.tx + '」' : 'ハンコ') : m.t === 'check' ? '✔' : m.t === 'pen' ? 'ペン' : m.t === 'line' ? (m.ar ? '矢印' : '下線') : m.t === 'box' ? (m.ov ? '丸' : '枠') : m.t; }
+  function mkListDraw() {
+    const pop = mkD().getElementById('mkListPop'), bt = mkD().getElementById('mkListBtn'); if (!pop || !bt) return;
+    bt.textContent = '📋 書いたもの（' + MK.list.length + '）'; if (pop.hidden) return; pop.textContent = '';
+    if (!MK.list.length) { pop.appendChild(el('span', null, 'まだ 何も書いていません。')); return; }
+    const multi = MK.list.some(function (m) { return (m.p || 0) > 0; });
+    MK.list.forEach(function (m, i) { const b = el('button', i === MK.sel ? 'on' : null, (multi ? ((m.p || 0) + 1) + 'ページ ' : '') + mkLabel(m)); b.type = 'button'; b.style.borderColor = i === MK.sel ? '' : (m.c || '');
+      b.addEventListener('click', function () { const sv = mkD().querySelector('#dvBody .mksvg[data-p="' + (m.p || 0) + '"]'); if (sv && sv.scrollIntoView) sv.scrollIntoView({ block: 'center' }); if (MK_SEL_T[m.t]) mkSelect(i); mkListDraw(); });
+      pop.appendChild(b); });
+  }
   function mkSelect(i) {
     MK.sel = i;
     const m = MK.list[i], on = !!(m && MK_SEL_T[m.t]); if (!on) MK.sel = -1;
@@ -10170,7 +10312,7 @@
     if (on) mkD().querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.c === m.c)); });
     mkPaint();
   }
-  const MK_SEL_T = { text: 1, stamp: 1, check: 1, note: 1, line: 1, box: 1 };   /* ★ K-0188 続き（2026-11-17 柳田）：下線・枠も 選んで動かせる */
+  const MK_SEL_T = { text: 1, stamp: 1, check: 1, note: 1, line: 1, box: 1, pen: 1 };   /* ★ K-0188 続き（2026-11-17 柳田）：下線・枠も 選んで動かせる */
   function mkSelEdit(k) { const m = MK.list[MK.sel]; if (!m) return; k(m); mkDirty(); mkPaint(); }
   function mkBind(sv, p) {
     sv.addEventListener('pointerdown', function (e) {
@@ -10206,7 +10348,7 @@
       if (MK.m === 'stamp') { const vb = sv.viewBox.baseVal; stampPut(p, a, vb.width, vb.height); mkToolUsed(); return; }
       if (MK.m === 'check') { const vb = sv.viewBox.baseVal, w = 0.05 * (MK.pt ? MK.pt / MK_PT_TEXT : 1), h = w * vb.width / Math.max(1, vb.height); MK.list.push(mkWithR({ p: p, t: 'check', x: Math.max(0, Math.min(1 - w, a.x - w * 0.35)), y: Math.max(0, Math.min(1 - h, a.y - h * 0.8)), w: w, h: h, c: MK.c })); mkDirty(); mkPaint(); mkToolUsed(); return; }
       if (MK.m === 'note') { mkText(e.clientX, e.clientY, p, a, null, 'note'); mkToolUsed(); return; }
-      MK.drag = { p: p, a: a, cur: null, m: MK.m };
+      MK.drag = { p: p, a: a, cur: null, m: MK.m, pts: [[a.x, a.y]] };
       try { sv.setPointerCapture(e.pointerId); } catch (x) {}
     });
     sv.addEventListener('pointermove', function (e) {
@@ -10238,6 +10380,7 @@
       }
       if (!MK.drag || MK.drag.p !== p) return;
       const b = mkPt(sv, e), a = MK.drag.a;
+      if (MK.drag.m === 'pen') { const lp = MK.drag.pts[MK.drag.pts.length - 1]; if (Math.abs(b.x - lp[0]) + Math.abs(b.y - lp[1]) > 0.002 && MK.drag.pts.length < 400) MK.drag.pts.push([b.x, b.y]); }
       MK.drag.cur = mkFrom(a, b); MK.drag.cur.p = p;
       const old = sv.querySelector('.mkcur'); if (old) old.remove();
       const vb = sv.viewBox.baseVal, sh = mkShape(MK.drag.cur, vb.width, vb.height); sh.setAttribute('class', 'mkcur'); sv.appendChild(sh);
@@ -10247,7 +10390,7 @@
       if (MK.mv) { const mv = MK.mv; MK.mv = null; if (mv.moved) { mkDirty(); mkPaint(); } else if (MK.list[mv.i] && MK.list[mv.i].t === 'note') mkFixText(mv.i); return; }   /* ★ 2026-11-12（細谷）：付箋は 押す（動かさない）だけで 直せる */
       if (!MK.drag || MK.drag.p !== p) return;
       const m = MK.drag.cur; MK.drag = null;
-      if (m && (Math.abs(m.w) > 0.01 || Math.abs(m.h) > 0.01)) { MK.list.push(m); mkDirty(); mkToolUsed(); }
+      if (m && (Math.abs(m.w) > 0.01 || Math.abs(m.h) > 0.01 || (m.t === 'pen' && m.q && m.q.length > 1))) { MK.list.push(m); mkDirty(); mkToolUsed(); }
       mkPaint();
     });
     sv.addEventListener('pointerleave', function () { if (MK_HOVER && MK_HOVER.p === p) MK_HOVER = null; });
@@ -10261,6 +10404,12 @@
     mkText(r.left, m.t === 'note' ? r.top + 16 : r.top + 16, m.p || 0, { x: m.x, y: m.y }, i, m.t);
   }
   function mkFrom(a, b) {
+    if (MK.m === 'pen') {   /* ★ 2026-11-18（ロードマップ 7）：手書きペン。点は 囲む箱の中の割合（q）で持つ（つかんで動かすと いっしょに動く） */
+      const pts = (MK.drag && MK.drag.pts) || [[a.x, a.y], [b.x, b.y]], xs = pts.map(function (v) { return v[0]; }), ys = pts.map(function (v) { return v[1]; });
+      const x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys), w = Math.max(0.002, Math.max.apply(null, xs) - x0), h = Math.max(0.002, Math.max.apply(null, ys) - y0);
+      const pn = { p: 0, t: 'pen', x: x0, y: y0, w: w, h: h, c: MK.c, q: pts.map(function (v) { return [Math.round((v[0] - x0) / w * 1000) / 1000, Math.round((v[1] - y0) / h * 1000) / 1000]; }) };
+      if (MK.a) pn.a = 1; if (!MK.a && MK.lw !== 1) pn.lw = MK.lw; return pn;
+    }
     if (MK.m === 'arrow') { const ar = { p: 0, t: 'line', ar: 1, x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y, c: MK.c }; if (MK.a) ar.a = 1; if (!MK.a && MK.lw !== 1) ar.lw = MK.lw; return ar; }   /* ★ 2026-11-17：矢印（なぞり終わりが 矢の先） */
     if (MK.m === 'line') {
       /* ★ K-0188（2026-11-16）：なぞったとおりの向き（斜めの資料には 斜めに）。前は 縦に ページの3%まで ずれても まっすぐ横にしていたので、
@@ -10339,6 +10488,7 @@
   $('mkRedo').addEventListener('click', function () { mkHistGo(false); });
   $('dvMkBar').addEventListener('click', function (e) { if (!e.target.closest('#mkUndo, #mkRedo')) mkCommit(); }, true);
   ['pointerdown', 'keydown'].forEach(function (n) { document.addEventListener(n, function () { if (MK.on) mkCommit(); }, true); });
+  $('mkListBtn').addEventListener('click', function () { const pop = $('mkListPop'); pop.hidden = !pop.hidden; this.setAttribute('aria-expanded', String(!pop.hidden)); mkListDraw(); });
   $('mkClear').addEventListener('click', function () { MK.list = []; MK.sel = -1; $('mkSelBar').hidden = true; mkDirty(); mkPaint(); });
   $('mkFix').addEventListener('click', function () { if (MK.sel >= 0) mkFixText(MK.sel); });
   function stampZoom(m, k) { const w = Math.max(0.04, Math.min(0.6, m.w * k)), h = m.h * w / m.w; m.x = Math.max(0, Math.min(1 - w, m.x + (m.w - w) / 2)); m.y = Math.max(0, Math.min(1 - h, m.y + (m.h - h) / 2)); m.w = w; m.h = h; }
@@ -14723,13 +14873,21 @@
     const s = el('span', 'nchk', n > 99 ? '99+' : String(n)); s.title = '届いて まだ確認済にしていない資料 ' + n + '枚'; s.setAttribute('aria-label', '未確認 ' + n + '枚');
     const nm = b.querySelector('.nm'); if (nm && nm.nextSibling) b.insertBefore(s, nm.nextSibling); else b.appendChild(s);
   }
+  /* ★ 2026-11-17：「要確認」の色のラベルが付いた資料の数（赤い枠の数字）。事務所・顧問先 どちらが付けても */
+  function aNredBadge(b, c) {
+    const n = Number(c.nred) || 0, old = b.querySelector('.nred'); if (old) old.remove();
+    if (!n) return;
+    const s = el('span', 'nred', '要確認 ' + (n > 99 ? '99+' : n)); s.title = '「要確認」のラベルが付いた資料 ' + n + '件';
+    const at = b.querySelector('.nchk') || b.querySelector('.nm'); if (at && at.nextSibling) b.insertBefore(s, at.nextSibling); else b.appendChild(s);
+  }
   /* 回収資料を読んだとき・確認済を付けたときに その顧問先の数を 数え直す（届いた資料のうち 確認済でない・確定していない・対象外でない・顧問先が消していない） */
   function aNchkSync() {
     if (!S.code || !S.docs || !A.list) return;
     const n = S.docs.filter(function (x) { return !x.chk && x.status !== 'done' && !x.gone && !x.skip; }).length;
-    const c = A.list.find(function (x) { return x.code === S.code; }); if (!c || (Number(c.nchk) || 0) === n) return;
-    c.nchk = n; try { aCacheSave(A.list); } catch (e) {}
-    document.querySelectorAll('#alist li[data-code="' + S.code + '"] > button').forEach(function (b) { aNchkBadge(b, c); });
+    const nr = S.docs.filter(function (x) { return x.lab === 'r' && !x.gone; }).length;
+    const c = A.list.find(function (x) { return x.code === S.code; }); if (!c || ((Number(c.nchk) || 0) === n && (Number(c.nred) || 0) === nr)) return;
+    c.nchk = n; c.nred = nr; try { aCacheSave(A.list); } catch (e) {}
+    document.querySelectorAll('#alist li[data-code="' + S.code + '"] > button').forEach(function (b) { aNchkBadge(b, c); aNredBadge(b, c); });
   }
   function aLoad() {
     if (A_LOADING) return A_LOADING;
@@ -14784,7 +14942,7 @@
       b.appendChild(el('span', 'code', c.code));
       const kd = corpKindOf(c), kb = el('span', 'kind ' + (kd === '法人' ? 'corp' : 'ind'), kd); if (!c.kindSet) kb.title = '名前から当てています（設定で決められます）'; b.appendChild(kb);
       b.appendChild(el('span', 'nm', c.name)).title = c.name;
-      aNchkBadge(b, c);
+      aNchkBadge(b, c); aNredBadge(b, c);
       const tg = el('span', 'tg');
       const cs = c.consent || {}; if (c.issued && !(cs.type === '同意' && !cs.need)) { const wd = cs.type === '撤回', wait = cs.need; const t = el('span', 'cns ' + (wd ? 'wd' : 'need')); t.dataset.t = wd ? 'AI撤回' : wait ? '同意待ち' : '同意まだ'; t.title = wd ? 'AI 等の利用を撤回しています（オプトアウト。AI 下書きは使えません）' : wait ? '同意の画面を出しています。顧問先が同意するまで 送れません（AI 下書きは 同意が無くても使えます）' : 'まだ 同意の画面を出していません（AI 下書きは 同意が無くても使えます）'; tg.appendChild(t); }
       if (!c.active) tg.appendChild(el('span', 'off', c.issued ? '止めています' : 'URL未発行'));
