@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794914804;</script>
+<script>window.__PAGE_VER=1794919550;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2423,7 +2423,7 @@
             <li><b>［小］［中］［大］</b>　文字と線の大きさ</li>
             <li><b>書く文字の欄</b>　書きたい文字を入れてから 写真の書きたいところを押す</li>
             <li><b>写真</b>　押したところに 文字が入る</li>
-            <li><b>［↶ 1つ戻す］</b>　最後に書いたものを消す</li>
+            <li><b>［↶ 元に戻す］［↷ やり直す］</b>　1手ずつ 戻す・やり直す（Ctrl＋Z／Ctrl＋Y）</li>
             <li><b>［書きこんで 保存］</b>　この箱の写真が 書きこんだものに 変わる（未送信のものだけ）</li>
           </ol>
           <h4>事務所の画面　共通の上の部分 と 回収資料タブ</h4>
@@ -2565,7 +2565,7 @@
     <label class="mk-z">文字の大きさ <input id="mkSize" type="text" inputmode="decimal" list="mkSizeList" value="18" autocomplete="off" aria-label="文字の大きさ（ポイント。一覧から選ぶか 数字を打つ）" title="マウスのホイールを回すと 10・11・12・14・16・18・20・22・24・26・28・36・48・72・90 の順に変わる。一覧から選ぶか、数字を打って Enter でも（4〜200）">pt<datalist id="mkSizeList"><option value="10"></option><option value="11"></option><option value="12"></option><option value="14"></option><option value="16"></option><option value="18"></option><option value="20"></option><option value="22"></option><option value="24"></option><option value="26"></option><option value="28"></option><option value="36"></option><option value="48"></option><option value="72"></option><option value="90"></option></datalist></label>
     <span class="mk-st" id="mkStBar" hidden></span>
     <span class="mk-sel" id="mkSelBar" hidden><b id="mkSelL">選んだ文字：</b><button type="button" class="btn ghost sm" id="mkFix">文字を直す</button><button type="button" class="btn ghost sm" id="mkSmall" title="少し小さく">A－</button><button type="button" class="btn ghost sm" id="mkBig" title="少し大きく">A＋</button><button type="button" class="btn ghost sm" id="mkDel">🗑 消す</button></span>
-    <button type="button" class="btn ghost sm" id="mkUndo">↶ 1つ戻す</button>
+    <button type="button" class="btn ghost sm" id="mkUndo" title="Ctrl＋Z">↶ 元に戻す</button><button type="button" class="btn ghost sm" id="mkRedo" title="Ctrl＋Y">↷ やり直す</button>
     <button type="button" class="btn ghost sm" id="mkClear">全部消す</button>
     <button type="button" class="btn sm primary" id="mkSave" title="Ctrl＋S でも">保存して終わる</button>
     <button type="button" class="btn ghost sm" id="mkCancel">やめる</button>
@@ -6018,7 +6018,7 @@
         if (ad.stat) { const s = ad.stat(lead); if (s) c.appendChild(E('span', 'st', s)); }
         const inp = E('input'); const nm = ad.name(lead); const ext = (nm.match(/\.[A-Za-z0-9]{1,5}$/) || [''])[0];
         inp.value = nm.slice(0, nm.length - ext.length); inp.disabled = !ad.rename || lock; inp.setAttribute('aria-label', '名前'); inp.title = '書き換えて Enter';
-        const commit = function () { const v = inp.value.trim(); if (!v || v === nm.slice(0, nm.length - ext.length)) { inp.value = nm.slice(0, nm.length - ext.length); return; } ad.rename(lead, v, function (t, err) { wsMsg(key, t, err); }); };
+        const commit = function () { const v = inp.value.trim(), v0 = nm.slice(0, nm.length - ext.length); if (!v || v === v0) { inp.value = v0; return; } const say = function (t, err) { wsMsg(key, t, err); }; ad.rename(lead, v, say); wsRec(key, '名前を「' + v + '」にした', function () { ad.rename(lead, v0, say); }, function () { ad.rename(lead, v, say); }); };
         inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); inp.blur(); } if (e.key === 'Escape') { inp.value = nm.slice(0, nm.length - ext.length); inp.blur(); } });
         inp.addEventListener('blur', function () { commit(); setTimeout(function () { if (o.wait) wsDraw(key); }, 0); });
         inp.addEventListener('mousedown', function (e) { e.stopPropagation(); });
@@ -6040,7 +6040,7 @@
         }
         const ft = E('div', 'ft'); ft.appendChild(E('span', 'x', mem.length > 1 ? mem.length + 'ページ' : '1ページ'));
         /* ★ バラす（2026-10-28）：まとめた書類を 1枚ずつに */
-        if (ad.split && mem.length > 1 && !lock) { const sb = E('button', 'hpdf', '✂ バラす'); sb.type = 'button'; sb.title = 'この書類を 1枚ずつに戻す'; sb.addEventListener('click', function (e) { e.stopPropagation(); ad.split(lead); }); sb.addEventListener('mousedown', function (e) { e.stopPropagation(); }); ft.appendChild(sb); }
+        if (ad.split && mem.length > 1 && !lock) { const sb = E('button', 'hpdf', '✂ バラす'); sb.type = 'button'; sb.title = 'この書類を 1枚ずつに戻す'; sb.addEventListener('click', function (e) { e.stopPropagation(); const m0 = mem.slice(); ad.split(lead); if (ad.join) wsRec(key, 'バラした', function () { ad.join(m0); }, function () { ad.split(m0[0]); }); }); sb.addEventListener('mousedown', function (e) { e.stopPropagation(); }); ft.appendChild(sb); }
         if (ad.pdfBtn) { const pb = ad.pdfBtn(mem); if (pb) ft.appendChild(pb); }
         c.appendChild(ft);
         const wm = wsActs(o, c, mem, E);
@@ -6065,9 +6065,9 @@
           const dg = o.drag; c.classList.remove('zl', 'zr', 'zc'); if (!dg || dg.page || dg.mem === mem || (dg.keys && dg.keys.indexOf(ad.key(lead)) >= 0) || wm === 'trash') return; e.preventDefault();
           o.sel = {};
           const z = zone(e); o.drag = null;
-          if (z === 'c') { if (lock || dg.mem.some(ad.locked)) { wsMsg(key, '確定済みのものは まとめられません。', true); wsDraw(key); return; } ad.join([lead].concat(mem.slice(1), dg.mem)); }
+          if (z === 'c') { if (lock || dg.mem.some(ad.locked)) { wsMsg(key, '確定済みのものは まとめられません。', true); wsDraw(key); return; } const jl = [lead].concat(mem.slice(1), dg.mem), single = mem.length === 1 && dg.mem.every(function (x) { return (wsMemOf(o, ad.key(x)) || [x]).length <= 1; }); ad.join(jl); wsRec(key, '1つにまとめた', ad.split && single ? function () { ad.split(lead); } : null, function () { ad.join(jl); }); }
           else if (ad.per(dg.mem[0]) !== ad.per(lead)) { wsMsg(key, '並べ替えは 同じ月分の中だけです（別の月分へは まん中へ落として まとめるか、移すで）。', true); wsDraw(key); }
-          else ad.reorder(dg.mem, lead, z === 'l');
+          else { const os = ad.ordSnap ? ad.ordSnap(dg.mem) : null, rm = dg.mem.slice(), bf = z === 'l'; ad.reorder(dg.mem, lead, bf); wsRec(key, '並べ替えた', os ? function () { ad.ordRestore(os); } : null, function () { ad.reorder(rm, lead, bf); }); }
         });
         g.appendChild(c);
       });
@@ -6121,7 +6121,7 @@
     if (m === 'chk' && ad.check) btn(null, mem.length > 1 ? '↺ まとめて確認を外す' : '↺ 確認を外す', '確認済を やめる', function () { ad.check(mem, false); });
     if ((!m || m === 'chk') && !lock && ad.skip) btn(null, '⊘ 対象外', '仕訳化・AI下書きの対象から外す（右上に黒の ✓。印刷・PDF には入ります）', function () { ad.skip(mem, true); });
     if (m === 'skip' && ad.skip) btn('ok', '◯ 対象に戻す', '対象外を やめて 仕訳化・AI下書きの対象に戻す', function () { ad.skip(mem, false); });
-    if (m !== 'trash' && !lock && ad.trash) btn('ng', '🗑 破棄', '破棄する（右上に赤の ✓。押すと 復活）', function () { ad.trash(mem); });
+    if (m !== 'trash' && !lock && ad.trash) btn('ng', '🗑 破棄', '破棄する（右上に赤の ✓。押すと 復活）', function () { ad.trash(mem); wsRec(key, '破棄した', null, null); });
     if (m === 'trash' && live && ad.revive) btn('ok', '↺ 戻す', '破棄を やめて 元に戻す', function () { ad.revive(mem); });
     if (ad.canWrite && ad.canWrite(lead)) btn(null, '✏ 書きこむ', '文字・下線・枠を書きこむ（この別ウィンドウの中で。元の写真・PDF は書き換えません）', function () { const wk = mkwKeyOf(o); wsZoom(wk, lead); ad.write(lead, wk); c.querySelectorAll('.ac button').forEach(function (x) { x.disabled = false; }); });   /* ★ K-0145 */
     if (ad.canDel && mem.every(ad.canDel)) btn('ng', ad.delLabel || '× 削除', ad.delTitle || '消す', function () { if (o.win.confirm(ad.delAsk ? ad.delAsk(mem) : mem.length > 1 ? 'この書類（' + mem.length + '枚）を消しますか？' : 'この1枚を消しますか？')) ad.del(mem); else wsDraw(o.key); });
@@ -6254,8 +6254,26 @@
   const WS_SZ = [150, 210, 300];
   function wsSzGet() { const v = Number(lsGet('collect_ws_sz')); return WS_SZ.indexOf(v) >= 0 ? v : 210; }
   function wsSzSet(key, v) { lsSet('collect_ws_sz', String(v)); const o = WS[key]; if (!o || o.win.closed) return; o.win.document.documentElement.style.setProperty('--wsz', v + 'px'); o.win.document.querySelectorAll('.wssz button').forEach(function (b) { b.classList.toggle('on', Number(b.dataset.v) === v); }); }
+  /* ★★ 2026-11-17：机の上の操作も Ctrl＋Z（元に戻す）／Ctrl＋Y（やり直す）。名前・まとめる・バラす・並べ替え（並びを覚える所だけ）。
+       戻せない操作（ゴミ箱・消す・送る）は 戻すのを ここで止める（間違えて 前の操作まで 戻さないように） */
+  function wsRec(key, label, undo, redo) { const o = WS[key]; if (!o) return; o.ur = o.ur || []; o.ur.push({ label: label, undo: undo, redo: redo }); if (o.ur.length > 50) o.ur.shift(); o.rr = []; }
+  function wsUndo(key, back) {
+    const o = WS[key]; o.ur = o.ur || []; o.rr = o.rr || [];
+    const from = back ? o.ur : o.rr, to = back ? o.rr : o.ur;
+    if (!from.length) { wsMsg(key, back ? '元に戻せる操作は ありません。' : 'やり直す操作は ありません。'); return; }
+    const x = from[from.length - 1];
+    if (back && !x.undo) { from.pop(); wsMsg(key, '「' + x.label + '」は ここでは 元に戻せません（もう一度 操作して 直してください）。', true); return; }
+    from.pop(); to.push(x);
+    try { (back ? x.undo : x.redo)(); wsMsg(key, (back ? '元に戻しました：' : 'やり直しました：') + x.label + '（' + (back ? 'Ctrl＋Y で やり直す' : 'Ctrl＋Z で 元に戻す') + '）'); } catch (e) { wsMsg(key, '戻せませんでした。' + (e && e.message || ''), true); }
+  }
   function wsGridKeys(key, d) {
     const o = WS[key];
+    d.addEventListener('keydown', function (e) {
+      const z = d.getElementById('wzv'); if (z && !z.hidden) return;
+      const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA' || tn === 'SELECT') return;
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return; const k = String(e.key || '').toLowerCase();
+      if (k === 'z' && !e.shiftKey) { e.preventDefault(); wsUndo(key, true); } else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); wsUndo(key, false); }
+    });
     d.documentElement.style.setProperty('--wsz', wsSzGet() + 'px');
     d.addEventListener('keydown', function (e) {
       const z = d.getElementById('wzv'); if (z && !z.hidden) return;
@@ -6877,7 +6895,7 @@
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
       steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー'],
-      tips: ['キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
+      tips: ['書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
       tips: ['よく出る取引は［仕訳辞書］に登録すると 次から ひとりでに当たります', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
@@ -9879,8 +9897,24 @@
   }
   const SVGNS = 'http://www.w3.org/2000/svg';
   function mkMarks() { return MK.on ? MK.list : ((mkIt() && mkIt().mark) || []); }
+  /* ★★ 2026-11-17（DocuWorks に学ぶ）：Ctrl＋Z＝元に戻す／Ctrl＋Y（Ctrl＋Shift＋Z）＝やり直す（顧問先の［書きこむ］と同じ）。
+       描き直しが 0.4秒 止まったところ・書き始め・ボタンを押す前に 書きこみの姿を 1つ覚える */
+  const MKH = { hist: [], fut: [], last: '[]', t: 0 };
+  function mkHistReset() { MKH.hist = []; MKH.fut = []; MKH.last = JSON.stringify(MK.list || []); clearTimeout(MKH.t); mkHistPaint(); }
+  function mkHistPaint() { const u = mkEl('mkUndo'), r = mkEl('mkRedo'); if (u) u.disabled = !MKH.hist.length; if (r) r.disabled = !MKH.fut.length; }
+  function mkCommit() {
+    clearTimeout(MKH.t); if (!MK.on) return;
+    const s = JSON.stringify(MK.list || []); if (s === MKH.last) return;
+    MKH.hist.push(MKH.last); if (MKH.hist.length > 100) MKH.hist.shift(); MKH.last = s; MKH.fut = []; mkHistPaint();
+  }
+  function mkHistGo(back) {
+    mkCommit();
+    const from = back ? MKH.hist : MKH.fut, to = back ? MKH.fut : MKH.hist; if (!from.length) { mkEl('mkMsg').textContent = back ? 'これより前には 戻せません。' : 'やり直すものは ありません。'; return; }
+    to.push(MKH.last); MKH.last = from.pop(); MK.list = JSON.parse(MKH.last); MK.sel = -1; MK.mv = null; MK.end = null; mkEl('mkSelBar').hidden = true; mkHistPaint(); mkDirty(); mkPaint();
+  }
   function mkPaint() {
     if (!mkEl('dview') || mkEl('dview').hidden || !mkIt()) return;
+    if (MK.on) { clearTimeout(MKH.t); MKH.t = setTimeout(mkCommit, 400); }
     if (MK.on && MK.sel < 0) mkLwPaint();   /* ★ K-0188 続き：線を選んでいないときは これから引く太さを 出す */
     const b = mkEl('dvBody');
     b.querySelectorAll('.mksvg').forEach(function (x) { x.remove(); });
@@ -10201,7 +10235,7 @@
     $('mkAuto').checked = mkAutoOn();
     const it = mkIt(); if (!it) return;
     if (fileKind(it.name)) { dcMsg('この形（エクセルなど）には 書きこめません。', true); return; }
-    MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); MK.sel = -1; MK.mv = null; MK.end = null; $('mkSelBar').hidden = true; MK.m = ''; MK.keep = false; mkToolPaint();
+    MK.on = true; MK.list = JSON.parse(JSON.stringify(it.mark || [])); MK.was = JSON.stringify(MK.list); mkHistReset(); MK.sel = -1; MK.mv = null; MK.end = null; $('mkSelBar').hidden = true; MK.m = ''; MK.keep = false; mkToolPaint();
     mkEl('dvMark').setAttribute('aria-pressed', 'true'); $('dvMkBar').hidden = false; mkEl('dview').classList.add('dv-mk'); stampBar(); stampsLoad().then(stampBar);   /* ハンコの帯は すぐ出す（写真が あとで ずれないように） */
     $('mkMsg').textContent = '';   /* ★ 2026-11-13（細谷）：長い説明は 出さない（使ううちに 覚える。ボタンに マウスを乗せると 説明が出る） */
     mkPaint();
@@ -10228,7 +10262,10 @@
   mkEl('dvMark').addEventListener('click', function () { if (MK.on) mkEnd(true); else mkStart(); });
   $('mkSave').addEventListener('click', function () { mkEnd(true); });
   $('mkCancel').addEventListener('click', function () { MK.list = JSON.parse(MK.was || '[]'); mkEnd(false); });
-  $('mkUndo').addEventListener('click', function () { MK.list.pop(); MK.sel = -1; $('mkSelBar').hidden = true; mkDirty(); mkPaint(); });
+  $('mkUndo').addEventListener('click', function () { mkHistGo(true); });
+  $('mkRedo').addEventListener('click', function () { mkHistGo(false); });
+  $('dvMkBar').addEventListener('click', function (e) { if (!e.target.closest('#mkUndo, #mkRedo')) mkCommit(); }, true);
+  ['pointerdown', 'keydown'].forEach(function (n) { document.addEventListener(n, function () { if (MK.on) mkCommit(); }, true); });
   $('mkClear').addEventListener('click', function () { MK.list = []; MK.sel = -1; $('mkSelBar').hidden = true; mkDirty(); mkPaint(); });
   $('mkFix').addEventListener('click', function () { if (MK.sel >= 0) mkFixText(MK.sel); });
   function stampZoom(m, k) { const w = Math.max(0.04, Math.min(0.6, m.w * k)), h = m.h * w / m.w; m.x = Math.max(0, Math.min(1 - w, m.x + (m.w - w) / 2)); m.y = Math.max(0, Math.min(1 - h, m.y + (m.h - h) / 2)); m.w = w; m.h = h; }
@@ -10305,7 +10342,10 @@
     MK.list.push(m); mkSelect(MK.list.length - 1); mkDirty(); return true;
   }
   function mkKeyCtrl(e) {
-    if (!MK.on || !(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+    if (!MK.on || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+    { const tn0 = e.target && e.target.tagName, kz = String(e.key || '').toLowerCase();
+      if (tn0 !== 'INPUT' && tn0 !== 'TEXTAREA' && !mkD().querySelector('.mkin') && (kz === 'z' || kz === 'y')) { e.preventDefault(); e.stopPropagation(); mkHistGo(kz === 'z' && !e.shiftKey); return; } }
+    if (e.shiftKey) return;
     if (String(e.key || '').toLowerCase() === 's') { e.preventDefault(); e.stopPropagation(); mkEnd(true); return; }   /* ★ 2026-11-12（細谷）：Ctrl＋S＝［保存して終わる］（書きかけの文字・付箋も 置いてから） */
     const tn = e.target && e.target.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA' || mkD().querySelector('.mkin')) return;
     const k = String(e.key || '').toLowerCase();
@@ -10385,6 +10425,7 @@
     v.appendChild(bar);   /* 道具の帯を 貸す */
     v.appendChild(body); d.body.appendChild(v);
     d.addEventListener('keydown', mkKeyDel, true); d.addEventListener('keydown', mkKeyCtrl, true); d.addEventListener('keydown', mkwKey, true);
+    ['pointerdown', 'keydown'].forEach(function (n) { d.addEventListener(n, function () { if (MK.on) mkCommit(); }, true); });   /* ★ 2026-11-17：元に戻す の区切り（別ウィンドウでも） */
     MKW.bye = function () {
       if (!MKW || MKW.key !== key) return;
       if (!o.win.closed) { try { mkEnd(true); } catch (e) {} if (MKW) mkwBack(); return; }
