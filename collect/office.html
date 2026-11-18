@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1794931291;</script>
+<script>window.__PAGE_VER=1795001220;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1717,7 +1717,7 @@
     <button type="button" id="dPdfAll" title="まとめた書類は その束で1つのPDF、ほかは1枚ずつのPDF（2つ以上なら ZIP 1つ）">一括PDF切り出し</button>
     <button type="button" id="dPrintAll" title="いま見えているものを 並んでいる順に印刷">🖨 印刷</button>
     <button type="button" id="dTrash" hidden>破棄したもの</button>
-    <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button>
+    <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button><button type="button" id="dAgent" title="この顧問先・この月分の 資料・補助簿・過去の仕訳・事務所の考え方を 1つの zip にして、自分の Claude Code に渡せるようにする">🤖 エージェントに渡す（zip）</button><span id="dAgentPick" hidden></span>
   </span>
 </div>
 
@@ -2765,7 +2765,7 @@
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
   /* ★ 2026-11-08：AI の下書き（通帳2枚を明細で読む など）は 1分を超える。60秒で切ると サーバは読み終えたのに「返事がありません」になっていた */
-  const LONG_FN = { foldUp: 300000, foldClients: 300000, tehonAnalyze: 370000, kaizenShot: 120000, aiRead: 370000, aiCheck: 370000, officeBookFromPhoto: 370000, memoWrite: 370000 };
+  const LONG_FN = { foldUp: 300000, foldClients: 300000, tehonAnalyze: 370000, kaizenShot: 120000, aiRead: 370000, aiCheck: 370000, officeBookFromPhoto: 370000, memoWrite: 370000, agentPack: 370000 };
   /* ★ 総点検（2026-10-26）：読むだけのものは 通信がこけたら 1回だけ自動でやり直す（打ち直させない）。
      書き込みは やり直さない（二度入るので）。GAS の中（LIVE）でも 返事が来なければ時間切れにする（固まらない） */
   const NETERR = /サーバの返事がありませんでした|サーバにつながりませんでした|Failed to fetch|NetworkError|Load failed|network/i;
@@ -7073,7 +7073,7 @@
       steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
-      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー'],
+      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）'],
       tips: ['書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
@@ -7397,6 +7397,26 @@
     }, function (e) { $('sgMsg').textContent = e.message; });
   });
   $('ogToSend').addEventListener('click', function () { selectTab('Send'); });
+  /* ★★★ 2026-11-18：エージェントに渡す zip（その月分の 資料・補助簿・過去の仕訳・事務所の考え方・カルテ）。職員が 自分の Claude Code に渡す */
+  $('dAgent').addEventListener('click', function () {
+    const pk = $('dAgentPick');
+    if (!pk.hidden) { pk.hidden = true; return; }
+    if (!S.code) { dcMsg('先に 顧問先を選んでください。', true); return; }
+    if (!(S.per && /^\d{4}-\d{2}$/.test(S.per))) { dcMsg('先に 上で 月分（◯年◯月分）を 1つ選んでください。', true); return; }
+    pk.textContent = ''; pk.hidden = false;
+    const go = function (ans) {
+      pk.hidden = true; const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
+      gs('agentPack', S.code, S.per, ans).then(function (r) {
+        b.disabled = false;
+        dcMsg('');
+        const m = $('dcMsg'); m.textContent = '';
+        m.appendChild(document.createTextNode('🤖 ' + r.name + '（資料 ' + r.n + '件・補助簿 ' + r.books + '・過去の仕訳 ' + r.past + '行' + (r.ans >= 0 ? '・答え合わせ ' + r.ans + '行' : '') + '・' + r.mb + 'MB）をドライブに置きました。 '));
+        const a = document.createElement('a'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'ドライブで開く（ダウンロード）'; m.appendChild(a);
+        m.appendChild(document.createTextNode('　→ 自分の Claude Code に 添付して「はじめに読む.md のとおり この月の仕訳を作って」と頼む。' + (r.skipped.length ? '　★ 大きすぎて入れられなかった資料：' + r.skipped.join('、') : '')));
+      }, function (e) { b.disabled = false; dcMsg('zip を作れませんでした。' + e.message, true); });
+    };
+    [['ふつう', false, 'その月の材料だけ'], ['答え合わせつき', true, 'その月の確定仕訳も「作り終わってから開く」に入れる（練習・精度を確かめるとき）']].forEach(function (x) { const bb = el('button', 'dmon-b', x[0]); bb.type = 'button'; bb.title = x[2]; bb.addEventListener('click', function () { go(x[1]); }); pk.appendChild(bb); });
+  });
   $('sdOld').addEventListener('click', function () { $('ogOpen').click(); });
   /* ★ 2026-11-01：送付ボックスも 顧問先の箱と同じ「箱の並び」で直す（名前・＋中に・↑↓・×・＋箱を足す）。
        中身は これまでどおり #sdBoxes（1行に1つの道すじ）。空なら 事務所の標準を並べて見せ、さわったら この顧問先の箱になる */
