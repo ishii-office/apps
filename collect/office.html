@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795001220;</script>
+<script>window.__PAGE_VER=1795006456;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2127,6 +2127,13 @@
     <div class="bar"><button type="button" class="btn sm" id="opSave">保存</button><span class="note" id="opN"></span></div>
     <span class="pagemsg" id="opMsg" role="status"></span>
   </details>
+  <details open class="rbox" id="kaBox"><summary>顧問先カルテ（担当者が書く。エージェントに いつも渡す）</summary>
+    <p class="note">この顧問先の 基礎（業種・本則か簡易か・税込か税抜か・発生主義か・給与・カード・現金の扱い・例外の処理と理由 など 12項目）。［🤖 エージェントに渡す（zip）］に いつも入ります。<b>Claude Code が作った「カルテ.md」は ここに そのまま貼って 保存</b>（書き足すたびに 版が残ります）。</p>
+    <div class="mhead"><b id="kaHead">まだありません</b></div>
+    <textarea id="kaText" rows="14" maxlength="40000" aria-label="顧問先カルテ" placeholder="［雛形を入れる］で 12項目が入ります"></textarea>
+    <div class="bar"><button type="button" class="btn sm" id="kaSave">保存（新しい版）</button><button type="button" class="btn ghost sm" id="kaBlank">雛形を入れる</button><span class="note" id="kaLen"></span></div>
+    <span class="pagemsg" id="kaMsg" role="status"></span>
+  </details>
   <details open class="rbox" id="memoBox"><summary>3. 引き継ぎメモ（この顧問先。前任者の頭の中）</summary>
     <p class="note">AI が 証憑を読むたびに いちばん先に読むメモです。<b>［AI に書かせる］</b>で 過去の仕訳から下書きを作り、人が直して<b>［保存］</b>。保存するたびに 版を積みます（上書きしません）。
       口座ごとの毎月の引落し・借入金の返済の分け方・よく出る相手と科目の使い分け・迷いやすいところ を 具体的に。</p>
@@ -2760,7 +2767,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
+  const READ_FN = { karteGet: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, arriveGrid: 1, askList: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -7086,7 +7093,7 @@
     Dict: { t: '仕訳辞書', pic: 'g_odict', lead: '取引先・摘要ごとの 決まった仕訳を 登録しておく タブです。AI の下書きにも 効きます。',
       steps: ['［＋ 辞書を登録］で 取引先・科目・税区分を 入れる', 'まちがえたものは 直す・［この辞書を消す］'], tips: [] },
     Rule: { t: 'AIの考え方', pic: 'g_orule', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
-      steps: ['決まりを 書いて［考え方を保存］', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
+      steps: ['決まりを 書いて［考え方を保存］', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
     Fold: { t: 'Google共有ドライブ', lead: '事務所の Google共有ドライブを この画面から 開く・整理する タブです。',
       steps: ['フォルダを押して 中へ', '写真・PDF を押すと 大きく見る。［✏ 書きこむ］［🔴 ハンコ］', '［📮 送付物へ］で 顧問先へ送る 送付物にする', '［🖨 印刷の受け口］… PDF24 で印刷すると いま開いているフォルダに 入ります'],
       tips: ['🔒 の付いたフォルダ（回収資料）は 見るだけです', 'PDF24 の設定は 説明書「職員向け はじめての設定（Claude と PDF24）」'] },
@@ -7404,13 +7411,22 @@
     if (!S.code) { dcMsg('先に 顧問先を選んでください。', true); return; }
     if (!(S.per && /^\d{4}-\d{2}$/.test(S.per))) { dcMsg('先に 上で 月分（◯年◯月分）を 1つ選んでください。', true); return; }
     pk.textContent = ''; pk.hidden = false;
+    /* ★ 箱を選べる（2026-11-18）：預金・カードは 会計ソフトの自動仕訳、現金だけ・給与だけ を エージェントに など。全部に✓なら その月分 全部 */
+    const bxs = []; (S.docs || []).forEach(function (it) { if (it.period !== S.per) return; const b = String(it.box || '').split('/')[0]; if (b && bxs.indexOf(b) < 0) bxs.push(b); });
+    ((S.clients.find(function (c) { return c.code === S.code; }) || {}).books || []).forEach(function (b) { if (bxs.indexOf(b) < 0) bxs.push(b); });
+    const bw = el('span', 'agbx'); bw.style.cssText = 'display:inline-flex;flex-wrap:wrap;gap:2px 8px;margin:0 6px;font-size:12.5px';
+    bxs.forEach(function (b) { const l = el('label'); const c = el('input'); c.type = 'checkbox'; c.checked = true; c.value = b; l.appendChild(c); l.appendChild(document.createTextNode(' ' + boxLabel(b))); bw.appendChild(l); });
+    if (bxs.length > 1) { pk.appendChild(el('span', null, '渡す箱：')); pk.appendChild(bw); }
     const go = function (ans) {
+      const on = [].slice.call(bw.querySelectorAll('input')).filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+      if (bxs.length && !on.length) { dcMsg('渡す箱を 1つ以上 選んでください。', true); return; }
+      const boxes = on.length === bxs.length ? [] : on;
       pk.hidden = true; const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
-      gs('agentPack', S.code, S.per, ans).then(function (r) {
+      gs('agentPack', S.code, S.per, ans, boxes).then(function (r) {
         b.disabled = false;
         dcMsg('');
         const m = $('dcMsg'); m.textContent = '';
-        m.appendChild(document.createTextNode('🤖 ' + r.name + '（資料 ' + r.n + '件・補助簿 ' + r.books + '・過去の仕訳 ' + r.past + '行' + (r.ans >= 0 ? '・答え合わせ ' + r.ans + '行' : '') + '・' + r.mb + 'MB）をドライブに置きました。 '));
+        m.appendChild(document.createTextNode('🤖 ' + r.name + '（' + (r.boxes && r.boxes.length ? r.boxes.join('・') + 'だけ・' : '') + '資料 ' + r.n + '件・補助簿 ' + r.books + '・過去の仕訳 ' + r.past + '行' + (r.ans >= 0 ? '・答え合わせ ' + r.ans + '行' : '') + '・' + r.mb + 'MB）をドライブに置きました。 '));
         const a = document.createElement('a'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'ドライブで開く（ダウンロード）'; m.appendChild(a);
         m.appendChild(document.createTextNode('　→ 自分の Claude Code に 添付して「はじめに読む.md のとおり この月の仕訳を作って」と頼む。' + (r.skipped.length ? '　★ 大きすぎて入れられなかった資料：' + r.skipped.join('、') : '')));
       }, function (e) { b.disabled = false; dcMsg('zip を作れませんでした。' + e.message, true); });
@@ -13484,7 +13500,15 @@
   function mtLoad() {
     const code = S.code; if (!code) return;
     gs('aiMaterials', code).then(function (r) { if (code !== S.code) return; MT.data = r; mtDraw(); memoDraw(r.memo); ckFill(r.checks || []); }, function (e) { mtMsg('mtMsg', e.message, 'err'); });
+    kaLoad();
   }
+  /* ★ 顧問先カルテ（2026-11-18） */
+  const KA = { blank: '' };
+  function kaDraw(k) { KA.blank = k.blank || KA.blank; $('kaHead').textContent = k.text ? '保存 ' + k.at + (k.by ? '（' + k.by + '）' : '') : 'まだありません（［雛形を入れる］か、Claude Code が作った カルテ.md を 貼って 保存）'; if (document.activeElement !== $('kaText')) $('kaText').value = k.text || ''; $('kaLen').textContent = ($('kaText').value.length || 0) + '字'; }
+  function kaLoad() { const code = S.code; if (!code) return; gs('karteGet', code).then(function (k) { if (code !== S.code) return; kaDraw(k); }, function (e) { mtMsg('kaMsg', e.message, 'err'); }); }
+  $('kaText').addEventListener('input', function () { $('kaLen').textContent = this.value.length + '字'; });
+  $('kaBlank').addEventListener('click', function () { if ($('kaText').value.trim()) { mtMsg('kaMsg', 'もう書いてあります（雛形は 空のときだけ入れます）。', 'err'); return; } $('kaText').value = KA.blank; $('kaLen').textContent = KA.blank.length + '字'; });
+  $('kaSave').addEventListener('click', function () { const code = S.code, b = this; if (!code) return; b.disabled = true; gs('karteSave', code, $('kaText').value).then(function (k) { b.disabled = false; if (code !== S.code) return; $('kaText').blur(); kaDraw(k); mtMsg('kaMsg', 'カルテを保存しました。次の zip から 入ります。', 'ok'); }, function (e) { b.disabled = false; mtMsg('kaMsg', e.message, 'err'); }); });
   const MT_IC = { ok: '✓', some: '△', none: '✗' };
   const MT_GO = { exp: '教える', hist: '入れる', bank: '入れる', memo: '書く', office: '書く', acct: '取込ファイルへ', dict: '仕訳辞書へ', kb: '書く', party: '取込ファイルへ', check: '答え合わせへ', key: '設定へ' };
   function mtDraw() {
