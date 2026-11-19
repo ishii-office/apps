@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795069454;</script>
+<script>window.__PAGE_VER=1795070301;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1691,7 +1691,7 @@
 <div class="obv" id="obv" hidden role="dialog" aria-modal="true" aria-labelledby="obT">
   <div class="obbox">
     <div class="obh"><h3 id="obT">📒 出納帳</h3><button type="button" class="btn ghost sm" id="obClose">閉じる</button></div>
-    <div class="obnav"><button type="button" class="btn ghost sm" id="obPrev">‹ 前の月</button><b id="obYm"></b><button type="button" class="btn ghost sm" id="obNext">次の月 ›</button><button type="button" class="btn ghost sm" id="obCsv" title="この月の出納帳を CSV（エクセルで開ける）で保存">CSV で保存</button><button type="button" class="btn sm" id="obToWork" title="この月の出納帳を CSV にして この箱へ入れる。仕訳化では 1行ずつ仕訳の下書きになり（背骨）、領収書は 証憑として当たる">🤖 この月を仕訳化に回す</button></div>
+    <div class="obnav"><button type="button" class="btn ghost sm" id="obPrev">‹ 前の月</button><b id="obYm"></b><button type="button" class="btn ghost sm" id="obNext">次の月 ›</button><button type="button" class="btn ghost sm" id="obPrint" hidden title="この月の 店舗売上日報の一覧と まとめを 印刷（PDF にも できます）">🖨 印刷</button><button type="button" class="btn ghost sm" id="obCsv" title="この月の出納帳を CSV（エクセルで開ける）で保存">CSV で保存</button><button type="button" class="btn sm" id="obToWork" title="この月の出納帳を CSV にして この箱へ入れる。仕訳化では 1行ずつ仕訳の下書きになり（背骨）、領収書は 証憑として当たる">🤖 この月を仕訳化に回す</button></div>
     <div class="obwrap"><table class="obtbl"><thead id="obHead"><tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th></tr></thead><tbody id="obBody"></tbody></table></div>
     <p class="note" id="obMsg"></p>
     <!-- ★ 2026-11-19（柳田）：店舗売上日報の 1か月の まとめ（カフェ／アパレル・8%／10%・現金／カード） -->
@@ -5763,7 +5763,7 @@
           /* ★ K-0014：日ごとの箱は 日ごとに見出しを入れて並べる（日の無いものは 最後） */
           const dayed = items.some(function (x) { return x.day; });
           let dgs = dGroups(items), lastDay = null;
-          if (dayed) dgs = dgs.slice().sort(function (a, b) { const da = a[0].day || '9999', db = b[0].day || '9999'; return da < db ? -1 : da > db ? 1 : 0; });
+          if (dayed) dgs = dgs.slice().sort(function (a, b) { const da = String(a[0].day || '9999').replace(/-00$/, '-99'), db = String(b[0].day || '9999').replace(/-00$/, '-99'); return da < db ? -1 : da > db ? 1 : 0; });
           dgs.forEach(function (g) {
             if (dayed && (g[0].day || '') !== lastDay) { lastDay = g[0].day || ''; grid.appendChild(el('div', 'dday', lastDay ? dDayLabel(lastDay) : '日の指定なし')); }
             if (g.length < 2) { grid.appendChild(dTile(g[0])); return; }
@@ -6793,6 +6793,7 @@
     $('obT').textContent = (({ kake: '📘 掛帳', kaikake: '📕 仕入等買掛金帳', kyuyo: '👛 給与台帳', uriage: '🧾 店舗売上日報' })[OB.kind] || '📒 出納帳') + '［' + boxLabel(box) + '］';
     /* 出納帳（業務日報も）だけ 直す・仕訳化に回す。掛帳・仕入等買掛金帳・給与台帳は 見るだけ */
     $('obToWork').hidden = !!OB.kind;
+    $('obPrint').hidden = OB.kind !== 'uriage';   /* ★ 2026-11-19（柳田）：店舗売上日報は 月の一覧を 印刷 */
     $('obEd').hidden = !!OB.kind;
     $('obv').querySelector('.obbox').classList.toggle('wide', OB.kind === 'kaikake' || OB.kind === 'kyuyo' || OB.kind === 'uriage');
     $('obv').hidden = false; obLoad();
@@ -6844,14 +6845,14 @@
   }
   function obUrSum(d) {
     const s = d.sum, c = s.c, k = s.k, a = function (x, y) { return (x || 0) + (y || 0); };
-    return [['カフェ 8%', c.a8, k.a8], ['カフェ 10%', c.a10, k.a10], ['カフェ 計', a(c.a8, c.a10), a(k.a8, k.a10)], ['アパレル', c.ap, k.ap], ['内訳の計', a(a(c.a8, c.a10), c.ap), a(a(k.a8, k.a10), k.ap)], ['売上合計（書いた合計）', c.t, k.t], ['売上レポートの合計', null, null, s.rep]]
+    return [['カフェ 8%', c.a8, k.a8], ['カフェ 10%', c.a10, k.a10], ['カフェ 計', a(c.a8, c.a10), a(k.a8, k.a10)], ['アパレル', c.ap, k.ap], ['内訳の計', a(a(c.a8, c.a10), c.ap), a(a(k.a8, k.a10), k.ap)], ['売上合計（書いた合計）', c.t, k.t], ['売上レポートの合計', null, null, s.rep]].concat(d.end && d.end.rep != null ? [['月末：1か月分の 売上レポートの合計', null, null, d.end.rep], ['月末：差異（1か月の売上合計 − 月末のレポート）', null, null, d.end.rdiff]] : [])
       .map(function (r) { return [r[0], r[1], r[2], r.length > 3 ? r[3] : a(r[1], r[2])]; });
   }
   function obUrSumDraw(d) {
     const w = $('obSum'); w.textContent = ''; w.hidden = !(OB.kind === 'uriage' && d && d.sum && d.sum.n); if (w.hidden) return;
     w.appendChild(el('h4', null, '📊 この月の まとめ（' + d.sum.n + '日ぶん）'));
     const tb = el('table', 'obtbl'), hd = el('tr'); ['', '現金', 'カード', '計'].forEach(function (h, i) { hd.appendChild(el('th', i ? 'n' : null, h)); }); const th = el('thead'); th.appendChild(hd); tb.appendChild(th);
-    const bd = el('tbody'); obUrSum(d).forEach(function (r) { const tr = el('tr', r[0] === '内訳の計' || r[0] === 'カフェ 計' ? 'tot' : ''); tr.appendChild(el('td', null, r[0])); [r[1], r[2], r[3]].forEach(function (v) { tr.appendChild(el('td', 'n', v == null ? '' : Number(v).toLocaleString('ja-JP'))); }); bd.appendChild(tr); });
+    const bd = el('tbody'); obUrSum(d).forEach(function (r) { const tr = el('tr', r[0] === '内訳の計' || r[0] === 'カフェ 計' ? 'tot' : /^月末：差異/.test(r[0]) && r[3] ? 'offrow' : ''); tr.appendChild(el('td', null, r[0])); [r[1], r[2], r[3]].forEach(function (v) { tr.appendChild(el('td', 'n', v == null ? '' : Number(v).toLocaleString('ja-JP'))); }); bd.appendChild(tr); });
     tb.appendChild(bd); w.appendChild(tb);
   }
   function obUrV(x, key) { const p = key.split('.'); return p.length > 1 ? (x[p[0]] || {})[p[1]] : x[key]; }   /* ★ 2026-11-13（細谷）：先方負担手数料の欄は なし */
@@ -6979,6 +6980,21 @@
   $('obv').addEventListener('click', function (e) { if (e.target === $('obv')) $('obv').hidden = true; });
   $('obPrev').addEventListener('click', function () { obMove(-1); });
   $('obNext').addEventListener('click', function () { obMove(1); });
+  /* ★ 2026-11-19（柳田）：店舗売上日報の 月の一覧と まとめを 印刷（新しい窓に 表を作って 印刷。PDF で保存も そこから） */
+  $('obPrint').addEventListener('click', function () {
+    const d = OB.data; if (!d || OB.kind !== 'uriage') return;
+    const w = window.open('', '_blank'); if (!w) { alert('印刷の窓が 開けませんでした（ポップアップを 許可してください）。'); return; }
+    const e = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    const c = S.clients.find(function (x) { return x.code === S.code; }) || { name: '' };
+    const m = OB.ym.split('-');
+    let h = '<!doctype html><html lang="ja"><meta charset="utf-8"><title>' + e(c.name + '_' + boxLabel(OB.box) + '_' + OB.ym + '_店舗売上日報') + '</title><style>@page{size:A4 landscape;margin:10mm}body{font-family:sans-serif;color:#222;margin:12px}h1{font-size:18px;margin:0 0 4px}p{margin:0 0 8px;font-size:12px;color:#555}table{border-collapse:collapse;width:100%;font-size:11px;margin-bottom:12px}th,td{border:1px solid #999;padding:3px 5px}th{background:#eef3f1}td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}td.neg{color:#c0392b;font-weight:700}tr.tot td{font-weight:700;background:#f6f6f6}.sumw table{width:auto;font-size:12px}button{display:none}tr{break-inside:avoid}</style>';
+    h += '<h1>店舗売上日報　' + m[0] + '年' + Number(m[1]) + '月</h1><p>' + e(c.name) + '　［' + e(boxLabel(OB.box)) + '］</p>';
+    /* 表は 画面に出ている もの（月の一覧・合計・まとめ）を そのまま使う */
+    h += '<table><thead>' + $('obHead').innerHTML + '</thead><tbody>' + $('obBody').innerHTML + '</tbody></table>';
+    if (!$('obSum').hidden) h += '<div class="sumw">' + $('obSum').innerHTML + '</div>';
+    h += '<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},300);});<\/script>';
+    w.document.open(); w.document.write(h); w.document.close();
+  });
   $('obCsv').addEventListener('click', function () {
     const d = OB.data; if (!d) return;
     const q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
@@ -8316,7 +8332,7 @@
      ・バラす … クリップを ダブルクリック ／ 右クリック［バラす］。その場で 順に1つずつに戻る
      ・確定済みは まとめない・バラさない（仕訳を取り消してから） */
   /* 月の並び（dSort）の中で、まとめた書類は 1枚目の場所に 順に並べる */
-  function dDayLabel(d) { const m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!m) return ''; const w = '日月火水木金土'.charAt(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getDay()); return Number(m[2]) + '月' + Number(m[3]) + '日（' + w + '）'; }
+  function dDayLabel(d) { const m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!m) return ''; if (m[3] === '00') return Number(m[2]) + '月分 月末のレシート（店舗売上日報）'; const w = '日月火水木金土'.charAt(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getDay()); return Number(m[2]) + '月' + Number(m[3]) + '日（' + w + '）'; }
   function dGroups(items) {
     const out = [], seen = {};
     items.forEach(function (it) {
