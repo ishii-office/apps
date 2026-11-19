@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795048818;</script>
+<script>window.__PAGE_VER=1795052492;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1571,7 +1571,12 @@
   .obtbl td { padding: 6px; border-top: 1px solid #eef1f0; } .obtbl .n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .jzwhy { display: block; flex-basis: 100%; color: #8C2A22; font-size: 12.5px; margin-top: 2px; }
   .obtbl tr.cy td { background: #FAFAFA; color: #555; } .obtbl .neg { color: #B3261E; }
-  .obtbl tr.offrow td { background: #FDF1F1; }   /* 店舗売上日報：売上合計と 内訳が 合っていない日 */
+  .obtbl tr.offrow td { background: #FDF1F1; }
+  .obgo .urmk { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: #C8322E; color: #fff; font-size: 11.5px; }
+  .obsum { margin-top: 10px; } .obsum[hidden] { display: none; }
+  .obsum h4 { margin: 4px 0 6px; font-size: 14px; }
+  .obsum table td.n, .obsum table th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .obsum tr.tot td { font-weight: 800; border-top: 2px solid #555; }   /* 店舗売上日報：売上合計と 内訳が 合っていない日 */
   .obtbl tr.r, .obtbl tr.cyed { cursor: pointer; } .obtbl tr.r:hover td, .obtbl tr.cyed:hover td { background: #F6FAF8; } .obtbl tr.on td { background: #FFF6D6; }
   .obtbl tr.off td { background: #FDECEA; } .obtbl tr.off td.pp { color: #B3261E; font-weight: 700; } .obtbl td.pp { color: #777; }
   .obed { border-top: 1px solid #e3e8e6; margin-top: 8px; padding-top: 8px; }
@@ -1689,6 +1694,8 @@
     <div class="obnav"><button type="button" class="btn ghost sm" id="obPrev">‹ 前の月</button><b id="obYm"></b><button type="button" class="btn ghost sm" id="obNext">次の月 ›</button><button type="button" class="btn ghost sm" id="obCsv" title="この月の出納帳を CSV（エクセルで開ける）で保存">CSV で保存</button><button type="button" class="btn sm" id="obToWork" title="この月の出納帳を CSV にして この箱へ入れる。仕訳化では 1行ずつ仕訳の下書きになり（背骨）、領収書は 証憑として当たる">🤖 この月を仕訳化に回す</button></div>
     <div class="obwrap"><table class="obtbl"><thead id="obHead"><tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th></tr></thead><tbody id="obBody"></tbody></table></div>
     <p class="note" id="obMsg"></p>
+    <!-- ★ 2026-11-19（柳田）：店舗売上日報の 1か月の まとめ（カフェ／アパレル・8%／10%・現金／カード） -->
+    <div class="obwrap obsum" id="obSum" hidden></div>
     <!-- ★ 事務所も直せる（2026-11-08）。紙の出納帳から起こした行を 紙と照らして直す -->
     <div class="obed" id="obEd" hidden>
       <div class="obedt" id="obEdT">行を足す</div>
@@ -5610,7 +5617,7 @@
       /* ★ 仕入等買掛金帳・給与台帳（ビーメイツの紙の様式。2026-11-12）。見るだけ・CSV。仕訳化・AI には回さない */
       kas.forEach(function (k) { const kb = el('button', 'dmon-b obgo kaikake', '📕 ' + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 仕入等買掛金帳（仕入先ごとの 8%・10%・合計・手数料・振込金額・自動振替）を見る';
         kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'kaikake'); }); st.appendChild(kb); });
-      urs.forEach(function (k) { const kb = el('button', 'dmon-b obgo uriage', '🧾 ' + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 店舗売上日報（1日ごとの 現金・カードの売上と 内訳・差異・天気・メモ。見るだけ・CSV）';   /* ★ 2026-11-18 */
+      urs.forEach(function (k) { const kb = el('button', 'dmon-b obgo uriage', '🧾 ' + boxLabel(k)); kb.type = 'button'; obUrMark(kb, S.code, k, S.per && S.per.length === 7 ? S.per : obYmNow()); kb.title = '顧問先が この箱で書いた 店舗売上日報（1日ごとの 現金・カードの売上と 内訳・差異・天気・メモ。見るだけ・CSV）';   /* ★ 2026-11-18 */
         kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'uriage'); }); st.appendChild(kb); });
       kys.forEach(function (k) { const kb = el('button', 'dmon-b obgo kyuyo', '👛 ' + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 給与台帳（時給×時間・交通費・源泉徴収・住民税・差引支給額）を見る';
         kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'kyuyo'); }); st.appendChild(kb); });
@@ -6789,7 +6796,7 @@
     const t = [];
     if (extra || OB.msg) t.push(extra || OB.msg);
     if (OB.kind === 'kyuyo') t.push('期間 ' + obMd(d.from) + '〜' + obMd(d.to));
-    if (OB.kind === 'uriage') { t.push(d.sum.n ? d.sum.n + '日ぶん' + (d.at ? '（最後の保存 ' + d.at + '・' + d.who + '）' : '') : 'この月は まだ書かれていません。'); if (d.sum.off) t.push('⚠ 売上合計と 内訳（カフェ8%・10%・アパレル）が 合っていない所が ' + d.sum.off + 'か所あります（赤い数字）。'); if (!d.conf.pref) t.push('天気の地域は まだ決まっていません（顧問先の画面の ⚙）。'); $('obMsg').textContent = t.join('　'); $('obMsg').className = 'note' + (d.sum.off ? ' oboff' : ''); return; }
+    if (OB.kind === 'uriage') { t.push(d.sum.n ? d.sum.n + '日ぶん' + (d.at ? '（最後の保存 ' + d.at + '・' + d.who + '）' : '') : 'この月は まだ書かれていません。'); if (d.sum.off) t.push('⚠ 売上合計と 内訳（カフェ8%・10%・アパレル）が 合っていない所が ' + d.sum.off + 'か所あります（赤い数字）。'); if (d.sum.roff) t.push('⚠ 1日の売上合計が 売上レポートの合計と 合わない日が ' + d.sum.roff + '日あります。'); if (!d.conf.pref) t.push('天気の地域は まだ決まっていません（顧問先の画面の ⚙）。'); $('obMsg').textContent = t.join('　'); $('obMsg').className = 'note' + (d.sum.off || d.sum.roff ? ' oboff' : ''); return; }
     if ((OB.kind === 'kaikake' || OB.kind === 'kyuyo') && !d.saved) t.push(d.carried === 'sup' ? 'この月は まだ保存されていません（事務所が決めた 仕入先の一覧だけ 出しています）。' : d.carried === 'party' ? 'この月は まだ保存されていません（会計ソフトの 買掛金の取引先だけ 出しています）。' : d.carried ? 'この月は まだ保存されていません（前の月の ' + (OB.kind === 'kyuyo' ? '人' : '仕入先') + 'だけ 出しています）。' : 'この月は まだ書かれていません。');
     else if (OB.kind === 'kaikake' || OB.kind === 'kyuyo') t.push('保存 ' + d.at + '（' + d.who + '）');
     else if (!d.rows.length) t.push('この月は まだ書かれていません。');
@@ -6805,10 +6812,30 @@
   const OB_KA = ['r8', 'r10', 'tot', 'fee2', 'pay', 'auto'];
   /* ★ 店舗売上日報の列（2026-11-18）。[持ち物, 見出し, 形]。表と CSV で 同じ並び。c.〜＝現金・k.〜＝カード */
   const OB_UR = [['date', '日付'], ['wx', '天気'], ['c.t', '現金売上合計', 'n'], ['c.a8', 'カフェ現金8%', 'n'], ['c.a10', 'カフェ現金10%', 'n'], ['c.ap', 'アパレル現金', 'n'], ['c.diff', '現金 差異', 'n'],
-    ['k.t', 'カード売上合計', 'n'], ['k.a8', 'カフェカード8%', 'n'], ['k.a10', 'カフェカード10%', 'n'], ['k.ap', 'アパレルカード', 'n'], ['k.diff', 'カード 差異', 'n'], ['tot', '1日の売上合計', 'n'], ['memo', 'メモ']];
+    ['k.t', 'カード売上合計', 'n'], ['k.a8', 'カフェカード8%', 'n'], ['k.a10', 'カフェカード10%', 'n'], ['k.ap', 'アパレルカード', 'n'], ['k.diff', 'カード 差異', 'n'], ['tot', '1日の売上合計', 'n'], ['rep', '売上レポートの合計', 'n'], ['rdiff', 'レポートとの差異', 'n'], ['memo', 'メモ']];
+  /* ★ 2026-11-19（柳田）：1か月の まとめ。行＝カフェ8%・カフェ10%・カフェ計・アパレル・内訳の計／列＝現金・カード・計 */
+  /* ★ 2026-11-19（柳田）：🧾 の札に 印。その月に 差異（✕）の日が あれば「⚠ n日」（1分 覚える） */
+  const OB_URM = {};
+  function obUrMark(b, code, box, ym) {
+    const key = code + '|' + box + '|' + ym, put = function (r) { if (!r || !r.sum) return; const n = r.sum.roff + r.sum.off; if (!n) return; b.appendChild(el('b', 'urmk', '⚠ ' + Object.keys(r.days).filter(function (dt) { const x = r.days[dt]; return x.rdiff || x.c.diff || x.k.diff; }).length + '日')); b.title += '\n⚠ ' + ym + '：売上合計・内訳・売上レポートの合計が 合っていない日が あります'; };
+    const c = OB_URM[key]; if (c && Date.now() - c.at < 60000) { put(c.r); return; }
+    gs('officeUriage', code, box, ym).then(function (r) { OB_URM[key] = { at: Date.now(), r: r }; put(r); }, function () {});
+  }
+  function obUrSum(d) {
+    const s = d.sum, c = s.c, k = s.k, a = function (x, y) { return (x || 0) + (y || 0); };
+    return [['カフェ 8%', c.a8, k.a8], ['カフェ 10%', c.a10, k.a10], ['カフェ 計', a(c.a8, c.a10), a(k.a8, k.a10)], ['アパレル', c.ap, k.ap], ['内訳の計', a(a(c.a8, c.a10), c.ap), a(a(k.a8, k.a10), k.ap)], ['売上合計（書いた合計）', c.t, k.t], ['売上レポートの合計', null, null, s.rep]]
+      .map(function (r) { return [r[0], r[1], r[2], r.length > 3 ? r[3] : a(r[1], r[2])]; });
+  }
+  function obUrSumDraw(d) {
+    const w = $('obSum'); w.textContent = ''; w.hidden = !(OB.kind === 'uriage' && d && d.sum && d.sum.n); if (w.hidden) return;
+    w.appendChild(el('h4', null, '📊 この月の まとめ（' + d.sum.n + '日ぶん）'));
+    const tb = el('table', 'obtbl'), hd = el('tr'); ['', '現金', 'カード', '計'].forEach(function (h, i) { hd.appendChild(el('th', i ? 'n' : null, h)); }); const th = el('thead'); th.appendChild(hd); tb.appendChild(th);
+    const bd = el('tbody'); obUrSum(d).forEach(function (r) { const tr = el('tr', r[0] === '内訳の計' || r[0] === 'カフェ 計' ? 'tot' : ''); tr.appendChild(el('td', null, r[0])); [r[1], r[2], r[3]].forEach(function (v) { tr.appendChild(el('td', 'n', v == null ? '' : Number(v).toLocaleString('ja-JP'))); }); bd.appendChild(tr); });
+    tb.appendChild(bd); w.appendChild(tb);
+  }
   function obUrV(x, key) { const p = key.split('.'); return p.length > 1 ? (x[p[0]] || {})[p[1]] : x[key]; }   /* ★ 2026-11-13（細谷）：先方負担手数料の欄は なし */
   function obDraw() {
-    const tb = $('obBody'); tb.textContent = ''; const d = OB.data; const pp = obHead(); if (!d) return;
+    const tb = $('obBody'); tb.textContent = ''; const d = OB.data; const pp = obHead(); if ($('obSum')) $('obSum').hidden = true; if (!d) return;
     const tr = function (cls, cells) { const r = el('tr', cls); cells.forEach(function (c) { r.appendChild(el('td', c[1] || '', c[0])); }); tb.appendChild(r); return r; };
     const nn = function (v) { return v == null ? '' : Number(v).toLocaleString('ja-JP'); };
     if (OB.kind === 'kaikake') {
@@ -6817,12 +6844,13 @@
       return;
     }
     if (OB.kind === 'uriage') {
+      obUrSumDraw(d);
       Object.keys(d.days).sort().forEach(function (dt) {
         const x = Object.assign({ date: dt }, d.days[dt]);
         const r = tr('', OB_UR.map(function (c) { const v = obUrV(x, c[0]); return [c[0] === 'date' ? obMd(dt) : c[2] === 'n' ? nn(v) : (v || ''), (c[2] || '') + (/diff$/.test(c[0]) && v ? ' neg' : '')]; }));
-        if ((x.c.diff || 0) !== 0 || (x.k.diff || 0) !== 0) r.classList.add('offrow');
+        if ((x.c.diff || 0) !== 0 || (x.k.diff || 0) !== 0 || (x.rdiff || 0) !== 0) r.classList.add('offrow');
       });
-      tr('tot', OB_UR.map(function (c) { const p = c[0].split('.'); return [c[0] === 'date' ? '合計' : c[0] === 'wx' ? d.sum.n + '日' : p.length > 1 && p[1] !== 'diff' ? nn(d.sum[p[0]][p[1]]) : c[0] === 'tot' ? nn(d.sum.tot) : '', c[2] || '']; }));
+      tr('tot', OB_UR.map(function (c) { const p = c[0].split('.'); return [c[0] === 'date' ? '合計' : c[0] === 'wx' ? d.sum.n + '日' : p.length > 1 && p[1] !== 'diff' ? nn(d.sum[p[0]][p[1]]) : c[0] === 'tot' ? nn(d.sum.tot) : c[0] === 'rep' ? nn(d.sum.rep) : '', c[2] || '']; }));
       return;
     }
     if (OB.kind === 'kyuyo') {
@@ -6936,6 +6964,7 @@
     const vv = function (v) { return v == null ? '' : v; };
     const lines = OB.kind === 'uriage'
       ? [OB_UR.map(function (c) { return c[1]; })].concat(Object.keys(d.days).sort().map(function (dt) { const x = Object.assign({ date: dt }, d.days[dt]); return OB_UR.map(function (c) { return vv(obUrV(x, c[0])); }); }))
+        .concat([[], ['この月の まとめ', '現金', 'カード', '計']]).concat(obUrSum(d).map(function (r) { return [r[0], vv(r[1]), vv(r[2]), vv(r[3])]; }))
       : OB.kind === 'kaikake'
       ? [['仕入先', '8%', '10%', '合計', '振込手数料', '振込金額', '自動振替', '✓']].concat(d.rows.map(function (x) { return [x.n].concat(OB_KA.map(function (k) { return vv(x[k]); })).concat([x.ok ? '✓' : '']); })).concat([['合計'].concat(OB_KA.map(function (k) { return d.sum[k]; })).concat([''])])
       : OB.kind === 'kyuyo'
