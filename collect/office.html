@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795063223;</script>
+<script>window.__PAGE_VER=1795063929;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2574,7 +2574,7 @@
     <span class="dvkey" title="テンキーで サクサク確認（最後の1枚のあとは 一覧に戻る）">Enter 確認済→次／1 対象外→次／2 破棄→次／0 戻して元通り</span>
     <button type="button" class="btn ghost sm" id="dvMark" title="文字・下線・枠を 重ねて書く（元の写真・PDF は書き換えません）">✏ 書きこむ</button>
     <button type="button" class="btn ghost sm" id="dvMove">別の月分へ移す</button>
-    <button type="button" class="btn ghost sm" id="dvGmail" title="この書類を Gmail の下書きに 添付する">✉ Gmailに添付</button>
+    <button type="button" class="btn ghost sm" id="dvGmail" title="この書類を Gmail の下書きに 添付する">✉ Gmailに添付</button><button type="button" class="btn ghost sm" id="dvSave" title="この書類を パソコン・スマホに保存する（書きこみ・ハンコも 入れて。まとめた書類は 1つの PDF）。パソコンは ダウンロード、スマホは 保存・共有の窓">⬇ 保存</button>
     <span class="dvback" id="dvBack"></span>
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
     </span></div>
@@ -3941,7 +3941,7 @@
     DVZ.s = 1; DVZ.x = 0; DVZ.y = 0;
     const box = $('dvBody'); box.classList.remove('zin'); box.textContent = ''; box.classList.add('loading');
     S.dvIt = pit; S.dvId = pit.id; S.dvSeq = null;
-    $('dvName').textContent = 'Google共有ドライブ　' + it.name; $('dvDrive').href = it.url || '#'; $('dvMemo').hidden = true; $('dvwSide').hidden = true;
+    $('dvName').textContent = 'Google共有ドライブ　' + it.name; $('dvDrive').href = it.url || '#'; $('dvSave').onclick = function (e) { if (e) e.stopPropagation(); dvSave(pit); }; $('dvMemo').hidden = true; $('dvwSide').hidden = true;
     fdBytes(it).then(function (b) {
       if (S.dvIt !== pit) return;
       IMG[pit.id] = b.mime === 'application/pdf' ? { t: 'pdf', b64: b.b64 } : { t: 'img', src: 'data:' + b.mime + ';base64,' + b.b64 };
@@ -5957,7 +5957,7 @@
       '.wc.sel{border-color:#b07d00;box-shadow:0 0 0 3px #b07d00}.wsmq{position:fixed;z-index:40;border:2px dashed #b07d00;background:rgba(176,125,0,.12);pointer-events:none}' +
       '</style></head><body><div id="ws"></div>' +
       '<div class="wzv" id="wzv" hidden role="dialog" aria-label="大きく見る"><button type="button" class="wzx" id="wzx" title="閉じる（Esc）">✕</button><div class="wzpg" id="wzpg" hidden aria-label="ページの一覧"></div><div class="zstage" id="wzs"><img id="wzi" alt="" draggable="false"></div>' +
-      '<div class="zbar" id="wzb"><button type="button" data-z="out" title="縮小（－）" aria-label="縮小">🔍－</button><span class="zpct" data-z="pct">100%</span><button type="button" data-z="in" title="拡大（＋）" aria-label="拡大">🔍＋</button><button type="button" data-z="fit" title="元の大きさ">元の大きさ</button><button type="button" id="wzg" draggable="true" style="cursor:grab" title="つかんで パソコンのフォルダ・DocuWorks へ落とす（拡大していても つかめます）">⇲ つかむ</button></div>' +
+      '<div class="zbar" id="wzb"><button type="button" data-z="out" title="縮小（－）" aria-label="縮小">🔍－</button><span class="zpct" data-z="pct">100%</span><button type="button" data-z="in" title="拡大（＋）" aria-label="拡大">🔍＋</button><button type="button" data-z="fit" title="元の大きさ">元の大きさ</button><button type="button" id="wzg" draggable="true" style="cursor:grab" title="つかんで パソコンのフォルダ・DocuWorks へ落とす（拡大していても つかめます）">⇲ つかむ</button><button type="button" id="wzsv" title="この書類を パソコンに保存する（ダウンロード。中身は［⇲ つかむ］と同じ）">⬇ 保存</button></div>' +
       '<div class="wzr" id="wzr"></div><div class="wzc" id="wzc"></div><div class="wzl" id="wzl" hidden>くっきりした写真を読み込み中…</div><div class="zhint" id="wzh"></div></div></body></html>');
     d.close(); ismWm(d);
     dwInstall(d.defaultView);   /* ★ 2026-11-11 DocuWorks へ の受け口 */
@@ -5971,6 +5971,18 @@
     /* ★ K-0020：別ウィンドウで 大きく見ている写真も（元の大きさのとき）つかんで アプリの外へ */
     const zit = function () { const m = o.zkey ? wsMemOf(o, o.zkey) : null; return m ? (m.find(function (x) { return o.ad.key(x) === o.zkey; }) || m[0]) : null; };
     d.getElementById('wzi').addEventListener('mouseenter', function () { const it = zit(); if (it && o.ad.out) o.ad.out(it); });
+    /* ★ K-0225（2026-11-19 林）：別ウィンドウの 大きく見る にも［⬇ 保存］（中身は［⇲ つかむ］と同じ・ダウンロード） */
+    d.getElementById('wzsv').hidden = !(o.ad.save || o.ad.out);
+    d.getElementById('wzsv').addEventListener('click', function (e) {
+      e.stopPropagation(); const it = zit(), hh = d.getElementById('wzh'), f = o.ad.save || o.ad.out, ox = it && f ? f(it) : null;
+      if (!ox) { if (hh) hh.textContent = 'この書類は ここから保存できません。'; return; }
+      if (hh) hh.textContent = '保存の用意をしています…';
+      Promise.resolve(ox.p || ox).then(function () {
+        if (!ox.url && !ox.blob) { if (hh) hh.textContent = ox.err || '保存できませんでした。もう一度 ためしてください。'; return; }
+        const a = d.createElement('a'); a.href = ox.url || URL.createObjectURL(ox.blob); a.download = ox.name || 'file'; d.body.appendChild(a); a.click(); a.remove();
+        if (hh) hh.textContent = '「' + ox.name + '」を 保存しました（ダウンロード）。';
+      });
+    });
     d.getElementById('wzg').addEventListener('mouseenter', function () { const it = zit(); if (it && o.ad.out) o.ad.out(it); });
     /* ★ 2026-11-11：拡大していても［⇲ つかむ］からなら 外へ（DocuWorks へも）。写真をつかむと 拡大中は 動かすほうになるため */
     d.getElementById('wzg').addEventListener('dragstart', function (e) {
@@ -6521,6 +6533,14 @@
       need: function (ids) { wsThumbsO(ids); },
       /* ★ K-0020：アプリの外へ（サムネイルと同じもの。まとめた書類は その束で1つの PDF・［PDFにする］も効く） */
       out: DOUT_NAT ? function (it) { return it && !fileKind(it.name) ? dOutPrep(it) : null; } : null,
+      /* ★ K-0225：別ウィンドウの［⬇ 保存］（どのブラウザでも。エクセルなどは そのまま） */
+      save: function (it) {
+        if (!it) return null;
+        if (!fileKind(it.name)) return dOutPrep(it);
+        const w = { url: '', name: '', mime: '' };
+        w.p = fileGet(it).then(function (f) { w.blob = f.blob; w.name = f.name; return w; }, function (e) { w.err = e.message; return w; });
+        return w;
+      },
       outMany: DOUT_NAT ? function (list) { return list.some(function (x) { return fileKind(x.name); }) ? null : dOutPrepMany(list); } : null,
       /* ★ サムネイルと同じ：確認済（緑）・対象外（黒）・破棄（赤）・書きこむ（2026-10-29） */
       mark: function (it) { return isT(it) ? 'trash' : it.skip ? 'skip' : it.chk ? 'chk' : ''; },
@@ -7131,7 +7151,7 @@
       steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
-      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）'],
+      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）'],
       tips: ['パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
@@ -7758,8 +7778,8 @@
     dOutFmtPaint(); dcMsg(b.dataset.f === 'pdf' ? '外へドラッグすると 写真も PDF になります。' : '外へドラッグすると 写真は 写真のまま出ます。');
   });
   dOutFmtPaint();
-  function dOutPrep(it) {
-    const mem = dOutMem(it), asPdf = mem.length === 1 && dOutFmt() === 'pdf' && !it.pdf && !fileKind(it.name);
+  function dOutPrep(it, asIs) {   /* asIs … 写真は 写真のまま（スマホの［⬇ 保存］。K-0225） */
+    const mem = dOutMem(it), asPdf = !asIs && mem.length === 1 && dOutFmt() === 'pdf' && !it.pdf && !fileKind(it.name);
     /* ★ 2026-11-01：書きこみ・ハンコのある1枚は 焼きこんで出す（PDF は PDF のまま・写真は写真のまま） */
     const marked = mem.length === 1 && !asPdf && (it.mark || []).length > 0 && !fileKind(it.name);
     const key = (asPdf ? 'pdf:' : '') + mem.map(function (x) { return x.id + (x.mark && x.mark.length ? '~' + JSON.stringify(x.mark).length + x.mark.length : ''); }).join(',');
@@ -7785,6 +7805,39 @@
       .catch(function (e) { delete DOUT[key]; o.err = e.message; return o; });
     DOUT[key] = o;
     return o;
+  }
+  /* ★ K-0225（2026-11-19 林）：大きく見る画面の［⬇ 保存］… いま見ている書類を パソコン・スマホに保存する。
+       中身は［⇲ つかむ］と同じ（書きこみ・ハンコは 焼きこむ・まとめた書類は その束で 1つの PDF）。エクセルなどは そのまま。
+       パソコン … ダウンロード（［写真のまま］［PDFにする］の選び方も効く）。
+       スマホ … 写真は 写真のまま、保存・共有の窓（「画像を保存」「ファイルに保存」）。窓は 押したその場でしか出せないので、
+       用意に時間がかかって出せなかったときは「もう一度押してください」（2回目は 用意ができているので すぐ出る） */
+  function dvSaveSay(t, err) {
+    const b = $('dvSave'); if (!b) return;
+    b.textContent = t; b.classList.toggle('err', !!err);
+    clearTimeout(dvSaveSay.t); dvSaveSay.t = setTimeout(function () { b.textContent = '⬇ 保存'; b.classList.remove('err'); }, err ? 6000 : 3500);
+  }
+  function dvSave(it) {
+    if (!it) return;
+    if (fileKind(it.name)) { dvSaveSay('取り出しています…'); fileDownload(it).then(function () { dvSaveSay('✓ 保存しました'); }, function (e) { dvSaveSay('保存できませんでした', true); dcMsg(e.message, true); }); return; }
+    const o = dOutPrep(it, MOBILE_DEV);
+    const give = function () {
+      if (!o.blob) { dvSaveSay('保存できませんでした', true); dcMsg(o.err || 'ファイルを用意できませんでした。もう一度 ためしてください。', true); return; }
+      let f = null; try { f = new File([o.blob], o.name, { type: o.mime || o.blob.type }); } catch (x) {}
+      let share = false; try { share = !!(MOBILE_DEV && f && navigator.share && navigator.canShare && navigator.canShare({ files: [f] })); } catch (x) {}
+      if (share) {
+        navigator.share({ files: [f], title: o.name }).then(function () { dvSaveSay('✓ 保存しました'); }, function (e) {
+          if (e && e.name === 'AbortError') { dvSaveSay('⬇ 保存'); return; }
+          dvSaveSay('用意できました。もう一度 押してください');
+        });
+        return;
+      }
+      const a = document.createElement('a'); a.href = o.url || URL.createObjectURL(o.blob); a.download = o.name; document.body.appendChild(a); a.click(); a.remove();
+      dvSaveSay('✓ 保存しました');
+      dcMsg('「' + o.name + '」を 保存しました（ブラウザのダウンロード）。');
+    };
+    if (o.blob) { give(); return; }
+    dvSaveSay('用意しています…');
+    Promise.resolve(o.p || o).then(give);
   }
   /* ★ K-0021 続き：箱の外（壁紙の余白）で離した札を ファイルで保存（ダウンロード）。外へドラッグしたときと同じ中身・同じ名前 */
   function dOutSave(list, el) {
@@ -9724,6 +9777,7 @@
     $('dvMemo').textContent = it.memo ? '💬 顧問先から：' + it.memo : ''; $('dvMemo').hidden = !it.memo;
     $('dvMove').onclick = function () { docsClose(); dMoveOpen([it]); };
     $('dvGmail').onclick = function () { dGmail([it]); };
+    $('dvSave').onclick = function (e) { if (e) e.stopPropagation(); dvSave(it); };
     $('dvBook').hidden = !!fileKind(it.name) || !S.code; $('dvBook').onclick = function () { dvBookRead(it); };
     const multi = !!(it.set && it.setOf > 1);
     const dvChkPaint = function () { $('dvChk').textContent = it.chk ? (multi ? '✓ この1枚 確認済（外す）' : '✓ 確認済（外す）') : (multi ? '✓ この1枚を確認済' : '✓ 確認済にする'); $('dvChk').classList.toggle('on', !!it.chk); };
