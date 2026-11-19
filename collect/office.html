@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795086045;</script>
+<script>window.__PAGE_VER=1795088316;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2321,6 +2321,7 @@
     </div>
     <p class="note">顧問先から聞いたこと・事務所で気づいたことを 1件ずつ書いてください。マスターが確かめて AI（Claude Code）に渡し、直ったら 書いた人に知らせます。<b>AI はこの文だけを読んで直します</b>。「どこで・何をしたら・どうなって・どうなってほしいか」をそのまま書いてください（右の例文を見ながら）。</p>
     <div id="kzNamesTop"></div>
+    <details class="kzstats" id="kzBoss" hidden><summary>🤖 エージェントからの［所長］の学び（事務所の考え方を 変える案）</summary><div id="kzBossBody" class="note">読み込み中…</div></details>
     <details class="kzstats" id="kzStats" open><summary>📊 改善と効率化の集計（直近30日・勤務評定の目安）</summary><div id="kzStatsBody" class="note">読み込み中…</div></details>
     <div class="kzmine" id="kzMine" hidden></div>
     <p class="pagemsg" id="kzMsg" role="status"></p>
@@ -2787,7 +2788,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
+  const READ_FN = { agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, arriveGrid: 1, askList: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -3012,11 +3013,12 @@
     BELL.items.forEach(function (x) {
       const b2 = el('button', 'arr-row' + (x.unread ? ' unread' : '')); b2.type = 'button';
       b2.appendChild(el('span', 'dot'));
-      b2.appendChild(el('span', 'nm', x.red ? '🔴 ' + x.code + '　' + x.name + ' 様が「要確認」を ' + x.n + '件（' + x.box + '）' : (x.line ? '💬 ' : '📷 ') + x.code + '　' + x.name + ' 様　' + x.n + '件（' + x.box + '）')).title = x.red ? x.name + ' 様が 「要確認」の色のラベルを付けました（' + x.box + '）' : x.name + ' 様から ' + x.n + '件（' + x.box + '）';
+      b2.appendChild(el('span', 'nm', x.minutes ? '📝 ' + x.code + '　' + x.name + ' 様　' + x.box + '（2週間たちました）' : x.red ? '🔴 ' + x.code + '　' + x.name + ' 様が「要確認」を ' + x.n + '件（' + x.box + '）' : (x.line ? '💬 ' : '📷 ') + x.code + '　' + x.name + ' 様　' + x.n + '件（' + x.box + '）')).title = x.red ? x.name + ' 様が 「要確認」の色のラベルを付けました（' + x.box + '）' : x.name + ' 様から ' + x.n + '件（' + x.box + '）';
       b2.appendChild(el('small', null, x.when));
       b2.addEventListener('click', function () {
         if (x.unread) { x.unread = false; BELL.unread = Math.max(0, BELL.unread - 1); gs('arriveRead', [x.key]).catch(function () {}); }
         $('bellPop').hidden = true; $('bellBtn').setAttribute('aria-expanded', 'false'); bellDraw();
+        if (x.minutes) { if (setCode(x.code)) { selectTab('Rule'); setTimeout(function () { const b = $('mnBox'); if (b) { b.open = true; b.scrollIntoView({ block: 'start' }); } }, 400); } return; }
         arGo(x.code, x.line ? '' : x.box);
       });
       pop.appendChild(b2);
@@ -7178,7 +7180,7 @@
       steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
-      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）'],
+      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）'],
       tips: ['パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
@@ -7515,19 +7517,19 @@
     const bw = el('span', 'agbx'); bw.style.cssText = 'display:inline-flex;flex-wrap:wrap;gap:2px 8px;margin:0 6px;font-size:12.5px';
     bxs.forEach(function (b) { const l = el('label'); const c = el('input'); c.type = 'checkbox'; c.checked = true; c.value = b; l.appendChild(c); l.appendChild(document.createTextNode(' ' + boxLabel(b))); bw.appendChild(l); });
     if (bxs.length > 1) { pk.appendChild(el('span', null, '渡す箱：')); pk.appendChild(bw); }
-    const yr = el('label'); yr.style.cssText = 'font-size:12.5px;margin:0 6px'; const yc = el('input'); yc.type = 'checkbox'; yr.appendChild(yc); yr.appendChild(document.createTextNode(' 1年分（この月までの12か月・年一の先）'));
+    const yr = el('select'); yr.style.cssText = 'font-size:12.5px;margin:0 6px'; yr.title = '年一の先は 1年分。資料が多くて 入りきらないときは 半年分で 2回に'; [['1', 'この月だけ'], ['6', '半年分（この月までの6か月）'], ['12', '1年分（この月までの12か月・年一の先）']].forEach(function (o) { const op = el('option', null, o[1]); op.value = o[0]; yr.appendChild(op); });
     const go = function (ans, mode) {
       const on = [].slice.call(bw.querySelectorAll('input')).filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
       if (bxs.length && !on.length) { dcMsg('渡す箱を 1つ以上 選んでください。', true); return; }
       const boxes = on.length === bxs.length ? [] : on;
       pk.hidden = true; ['dAgentBack', 'dAgentDocs', 'agDocsBox', 'dAgentRes', 'agResBox'].forEach(function (i) { $(i).hidden = true; }); const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
-      gs('agentPack', S.code, S.per, ans, boxes, { span: yc.checked ? 12 : 1, mode: mode || '' }).then(function (r) {
+      gs('agentPack', S.code, S.per, ans, boxes, { span: Number(yr.value) || 1, mode: mode || '' }).then(function (r) {
         b.disabled = false;
         dcMsg('');
         const m = $('dcMsg'); m.textContent = '';
         m.appendChild(document.createTextNode('🤖 ' + r.name + '（' + (r.boxes && r.boxes.length ? r.boxes.join('・') + 'だけ・' : '') + '資料 ' + r.n + '件・補助簿 ' + r.books + '・過去の仕訳 ' + r.past + '行' + (r.ans >= 0 ? '・答え合わせ ' + r.ans + '行' : '') + '・' + r.mb + 'MB）をドライブに置きました。 '));
         const a = document.createElement('a'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'ドライブで開く（ダウンロード）'; m.appendChild(a);
-        m.appendChild(document.createTextNode('　→ 自分の Claude Code に 添付して「はじめに読む.md のとおり この月の仕訳を作って」と頼む。' + (r.skipped.length ? '　★ 大きすぎて入れられなかった資料：' + r.skipped.join('、') : '')));
+        m.appendChild(document.createTextNode('　→ 自分の Claude Code に 添付して「はじめに読む.md のとおり この月の仕訳を作って」と頼む。' + (r.skipped.length ? '　★ 大きすぎて入れられなかった資料：' + r.skipped.join('、') : '') + (r.split ? '　★ ' + r.split : '')));
       }, function (e) { b.disabled = false; dcMsg('zip を作れませんでした。' + e.message, true); });
     };
     pk.appendChild(yr);
@@ -7597,6 +7599,14 @@
         });
         if (items.length) lw.appendChild(ok);
         d.appendChild(lw);
+      }
+      if (x.karte) {
+        const kr = el('button', 'dmon-b', '📘 カルテの案で 入れ替える'); kr.type = 'button'; kr.title = 'エージェントが 整理し直した カルテの 新しい版で 顧問先カルテを 入れ替える（前の版は 残ります）';
+        kr.addEventListener('click', function () {
+          if (kr.dataset.ok !== '1') { kr.dataset.ok = '1'; kr.textContent = 'もう一度押すと 入れ替える'; return; }
+          kr.disabled = true; gs('agentKarteReplace', S.code, x.fid).then(function () { dcMsg('📘 顧問先カルテを 新しい版に 入れ替えました（前の版も 残っています）。'); }, function (e) { kr.disabled = false; dcMsg('入れ替えられませんでした。' + e.message, true); });
+        });
+        d.appendChild(kr);
       }
       sec('気づいたこと（要注意仕訳 ほか）', x.note); sec('気づき（試算表から・社長面談の論点）', x.kiz); sec('質問一覧', x.q); sec('カルテの案（AI の考え方タブで 貼って保存できます）', x.karte); sec('集計', x.sum);
       w.appendChild(d);
@@ -9450,11 +9460,28 @@
       w.appendChild(el('div', 'note', '回収アプリを入れた顧問先 … 顧問先タブの「担当者（事務所）」がその人で、提出URLを出していて 有効なもの。運用中 … そのうち 直近30日に 顧問先から資料が届いたもの。AI下書き・仕訳化 … その人の担当先で 直近30日に AIが読めた枚数・確定した仕訳の数（取り消したものは数えない）。確認済にした … その人が押した数。エージェント研究 … 回収資料タブの［🤖 エージェントに渡す］で zip を作り、自分の Claude Code に投げて、できあがりを［⬆ できあがりを戻す］で 戻した回数（戻した人で数える）。カルテを書いた … AI の考え方タブで 顧問先カルテを 保存した回数。' + (r.master ? '' : '（マスター以外は 自分と事務所全体だけ出ます）') + '　' + r.at + ' 時点'));
     }, function (e) { $('kzStatsBody').textContent = '集計を出せませんでした。' + e.message; });
   }
+  /* ★ 141（2026-11-19）：エージェントが［所長］と付けた学び。所長が 考え方の文書へ 入れるか 決める */
+  function kzBossDraw(r) {
+    const w = $('kzBossBody'); w.textContent = '';
+    if (!(r.list || []).length) { w.appendChild(el('div', 'note', 'いまは ありません。')); return; }
+    w.appendChild(el('div', 'note', '入れるなら Claude Code で「事務所の考え方（docs/仕訳エージェント_事務所の考え方.md）に ◯◯ を足して」と頼み、［考え方に入れた］を押す。入れないものは［入れない］。'));
+    r.list.forEach(function (x) {
+      const row = el('div', 'agrow');
+      row.appendChild(el('span', 'note', x.at + '・' + x.code + '・' + x.ym + '分・' + x.who)); row.appendChild(el('span', null, x.text));
+      [['考え方に入れた', '入れた'], ['入れない', '入れない']].forEach(function (b) {
+        const bt = el('button', 'dmon-b', b[0]); bt.type = 'button';
+        bt.addEventListener('click', function () { bt.disabled = true; gs('agentBossDone', x.k, b[1]).then(kzBossDraw, function (e) { bt.disabled = false; $('kzBossBody').appendChild(el('div', 'note', e.message)); }); });
+        row.appendChild(bt);
+      });
+      w.appendChild(row);
+    });
+  }
   function kzLoad(force) {
     if (force && !$('paneKaizen').hidden) kzStatsLoad();
+    if (KZ.master && !$('paneKaizen').hidden) { $('kzBoss').hidden = false; gs('agentBossLearn').then(kzBossDraw, function () { $('kzBoss').hidden = true; }); }
     if (!force && Date.now() - KZ.loaded < 30000) return Promise.resolve();
     return gs('kaizenList').then(function (r) {
-      KZ.list = r.list || []; KZ.direct = r.direct || null; KZ.me = r.me; KZ.master = !!r.master; KZ.gh = !!r.gh; KZ.loaded = Date.now();
+      KZ.list = r.list || []; KZ.direct = r.direct || null; KZ.me = r.me; KZ.master = !!r.master; KZ.gh = !!r.gh; KZ.loaded = Date.now(); if (KZ.master && !$('paneKaizen').hidden && $('kzBoss').hidden) { $('kzBoss').hidden = false; gs('agentBossLearn').then(kzBossDraw, function () { $('kzBoss').hidden = true; }); }
       if (!KZ.flt) KZ.flt = 'all';
       kzBadge(); if (!$('paneKaizen').hidden) kzDraw();
       if (KZ.master && KZ.gh && !$('paneKaizen').hidden && Date.now() - KZ.synced > 600000) {
