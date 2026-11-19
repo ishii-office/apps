@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795065917;</script>
+<script>window.__PAGE_VER=1795067754;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1726,7 +1726,7 @@
     <button type="button" id="dPdfAll" title="まとめた書類は その束で1つのPDF、ほかは1枚ずつのPDF（2つ以上なら ZIP 1つ）">一括PDF切り出し</button>
     <button type="button" id="dPrintAll" title="いま見えているものを 並んでいる順に印刷">🖨 印刷</button>
     <button type="button" id="dTrash" hidden>破棄したもの</button>
-    <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button><button type="button" id="dAgent" title="この顧問先・この月分の 資料・補助簿・過去の仕訳・事務所の考え方を 1つの zip にして、自分の Claude Code に渡せるようにする">🤖 エージェントに渡す（zip）</button><span id="dAgentPick" hidden></span>
+    <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button><button type="button" id="dAgent" title="この顧問先・この月分の 資料・補助簿・過去の仕訳・事務所の考え方を 1つの zip にして、自分の Claude Code に渡せるようにする">🤖 エージェントに渡す（zip）</button><span id="dAgentPick" hidden></span><button type="button" id="dAgentBack" hidden title="自分の Claude Code が作った できあがり（仕訳.json・元帳・質問一覧・カルテ など）を zip にして この顧問先・この月分に 戻す。戻すと エージェント研究 1回として 改善と効率化の集計に 数えます">⬆ できあがりを戻す</button><input type="file" id="dAgentBackF" accept=".zip,application/zip" hidden>
   </span>
 </div>
 
@@ -2781,7 +2781,7 @@
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
   /* ★ 2026-11-08：AI の下書き（通帳2枚を明細で読む など）は 1分を超える。60秒で切ると サーバは読み終えたのに「返事がありません」になっていた */
-  const LONG_FN = { foldUp: 300000, foldClients: 300000, tehonAnalyze: 370000, kaizenShot: 120000, aiRead: 370000, aiCheck: 370000, officeBookFromPhoto: 370000, memoWrite: 370000, agentPack: 370000 };
+  const LONG_FN = { foldUp: 300000, foldClients: 300000, tehonAnalyze: 370000, kaizenShot: 120000, aiRead: 370000, aiCheck: 370000, officeBookFromPhoto: 370000, memoWrite: 370000, agentPack: 370000, agentReturn: 300000 };
   /* ★ 総点検（2026-10-26）：読むだけのものは 通信がこけたら 1回だけ自動でやり直す（打ち直させない）。
      書き込みは やり直さない（二度入るので）。GAS の中（LIVE）でも 返事が来なければ時間切れにする（固まらない） */
   const NETERR = /サーバの返事がありませんでした|サーバにつながりませんでした|Failed to fetch|NetworkError|Load failed|network/i;
@@ -7151,7 +7151,7 @@
       steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
-      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）'],
+      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）'],
       tips: ['パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
@@ -7478,10 +7478,10 @@
   /* ★★★ 2026-11-18：エージェントに渡す zip（その月分の 資料・補助簿・過去の仕訳・事務所の考え方・カルテ）。職員が 自分の Claude Code に渡す */
   $('dAgent').addEventListener('click', function () {
     const pk = $('dAgentPick');
-    if (!pk.hidden) { pk.hidden = true; return; }
+    if (!pk.hidden) { pk.hidden = true; $('dAgentBack').hidden = true; return; }
     if (!S.code) { dcMsg('先に 顧問先を選んでください。', true); return; }
     if (!(S.per && /^\d{4}-\d{2}$/.test(S.per))) { dcMsg('先に 上で 月分（◯年◯月分）を 1つ選んでください。', true); return; }
-    pk.textContent = ''; pk.hidden = false;
+    pk.textContent = ''; pk.hidden = false; $('dAgentBack').hidden = false;   /* ★ できあがりを戻す も ここで出す（ふだんは 出さない。並びを 動かさない） */
     /* ★ 箱を選べる（2026-11-18）：預金・カードは 会計ソフトの自動仕訳、現金だけ・給与だけ を エージェントに など。全部に✓なら その月分 全部 */
     const bxs = []; (S.docs || []).forEach(function (it) { if (it.period !== S.per) return; const b = String(it.box || '').split('/')[0]; if (b && bxs.indexOf(b) < 0) bxs.push(b); });
     ((S.clients.find(function (c) { return c.code === S.code; }) || {}).books || []).forEach(function (b) { if (bxs.indexOf(b) < 0) bxs.push(b); });
@@ -7492,7 +7492,7 @@
       const on = [].slice.call(bw.querySelectorAll('input')).filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
       if (bxs.length && !on.length) { dcMsg('渡す箱を 1つ以上 選んでください。', true); return; }
       const boxes = on.length === bxs.length ? [] : on;
-      pk.hidden = true; const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
+      pk.hidden = true; $('dAgentBack').hidden = true; const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
       gs('agentPack', S.code, S.per, ans, boxes).then(function (r) {
         b.disabled = false;
         dcMsg('');
@@ -7503,6 +7503,26 @@
       }, function (e) { b.disabled = false; dcMsg('zip を作れませんでした。' + e.message, true); });
     };
     [['ふつう', false, 'その月の材料だけ'], ['答え合わせつき', true, 'その月の確定仕訳も「作り終わってから開く」に入れる（練習・精度を確かめるとき）']].forEach(function (x) { const bb = el('button', 'dmon-b', x[0]); bb.type = 'button'; bb.title = x[2]; bb.addEventListener('click', function () { go(x[1]); }); pk.appendChild(bb); });
+  });
+  /* ★ できあがりを戻す（2026-11-19）：戻した＝エージェント研究 1回 */
+  $('dAgentBack').addEventListener('click', function () {
+    if (!S.code) { dcMsg('先に 顧問先を選んでください。', true); return; }
+    if (!(S.per && /^\d{4}-\d{2}$/.test(S.per))) { dcMsg('先に 上で 月分（◯年◯月分）を 1つ選んでください。', true); return; }
+    $('dAgentBackF').value = ''; $('dAgentBackF').click();
+  });
+  $('dAgentBackF').addEventListener('change', function () {
+    const f = this.files && this.files[0]; if (!f) return;
+    if (!/\.zip$/i.test(f.name)) { dcMsg('zip を 選んでください（できあがりの フォルダを zip に して）。', true); return; }
+    if (f.size > 30 * 1024 * 1024) { dcMsg('30MB までです。', true); return; }
+    const b = $('dAgentBack'); b.disabled = true; dcMsg('できあがりを 戻しています…');
+    const rd = new FileReader();
+    rd.onload = function () {
+      gs('agentReturn', S.code, S.per, { name: f.name, b64: String(rd.result).split(',')[1] || '' }).then(function (r) {
+        b.disabled = false; dcMsg('⬆ 戻しました（' + r.name + '）。あなたの エージェント研究は ' + r.n + '回目です。');
+      }, function (e) { b.disabled = false; dcMsg('戻せませんでした。' + e.message, true); });
+    };
+    rd.onerror = function () { b.disabled = false; dcMsg('ファイルを 読めませんでした。', true); };
+    rd.readAsDataURL(f);
   });
   $('sdOld').addEventListener('click', function () { $('ogOpen').click(); });
   /* ★ 2026-11-01：送付ボックスも 顧問先の箱と同じ「箱の並び」で直す（名前・＋中に・↑↓・×・＋箱を足す）。
@@ -9302,8 +9322,8 @@
   function kzStatsLoad() {
     gs('kaizenStats').then(function (r) {
       const w = $('kzStatsBody'); w.textContent = ''; w.className = '';
-      const H = ['担当者', '改善要望\n（書いた）', 'うち\n改善済み', '直近30日に\n書いた', '回収アプリを\n入れた顧問先', 'うち 運用中\n（30日に届いた）', '届いた資料\n（30日）', '確認済に\nした（30日）', 'AI下書き\n（30日）', '仕訳化\n（30日）'];
-      const F = ['kz', 'kzDone', 'kz30', 'clients', 'active', 'docs30', 'chk30', 'ai30', 'je30'];
+      const H = ['担当者', '改善要望\n（書いた）', 'うち\n改善済み', '直近30日に\n書いた', '回収アプリを\n入れた顧問先', 'うち 運用中\n（30日に届いた）', '届いた資料\n（30日）', '確認済に\nした（30日）', 'AI下書き\n（30日）', '仕訳化\n（30日）', 'エージェント\n研究（回）', 'うち\n30日', 'カルテを\n書いた（30日）'];
+      const F = ['kz', 'kzDone', 'kz30', 'clients', 'active', 'docs30', 'chk30', 'ai30', 'je30', 'res', 'res30', 'kar30'];
       const tb = el('table', 'kzst'); const tr0 = el('tr'); H.forEach(function (h) { tr0.appendChild(el('th', null, h)); }); tb.appendChild(tr0);
       (r.rows || []).concat([r.total]).forEach(function (x, i, a) {
         const tr = el('tr', i === a.length - 1 ? 'tot' : (x.name === KZ.me ? 'me' : null)); tr.appendChild(el('td', null, x.name));
@@ -9312,7 +9332,7 @@
       });
       const tw = el('div', 'kzstw'); tw.appendChild(tb); w.appendChild(tw);   /* ★ 表だけ 横に動かす（画面ごと はみ出さない。数が3けたになると スマホで はみ出していた 2026-11-11） */
       (r.rows || []).filter(function (x) { return x.direct; }).forEach(function (x) { w.appendChild(el('div', 'note', '★ ' + x.name + ' … 改善要望の数に Claude Code に直接頼んで直した ' + x.direct + '回（' + x.directSince.replace(/-/g, '/') + '〜。アプリに入った直しの回数）を含みます。')); });
-      w.appendChild(el('div', 'note', '回収アプリを入れた顧問先 … 顧問先タブの「担当者（事務所）」がその人で、提出URLを出していて 有効なもの。運用中 … そのうち 直近30日に 顧問先から資料が届いたもの。AI下書き・仕訳化 … その人の担当先で 直近30日に AIが読めた枚数・確定した仕訳の数（取り消したものは数えない）。確認済にした … その人が押した数。' + (r.master ? '' : '（マスター以外は 自分と事務所全体だけ出ます）') + '　' + r.at + ' 時点'));
+      w.appendChild(el('div', 'note', '回収アプリを入れた顧問先 … 顧問先タブの「担当者（事務所）」がその人で、提出URLを出していて 有効なもの。運用中 … そのうち 直近30日に 顧問先から資料が届いたもの。AI下書き・仕訳化 … その人の担当先で 直近30日に AIが読めた枚数・確定した仕訳の数（取り消したものは数えない）。確認済にした … その人が押した数。エージェント研究 … 回収資料タブの［🤖 エージェントに渡す］で zip を作り、自分の Claude Code に投げて、できあがりを［⬆ できあがりを戻す］で 戻した回数（戻した人で数える）。カルテを書いた … AI の考え方タブで 顧問先カルテを 保存した回数。' + (r.master ? '' : '（マスター以外は 自分と事務所全体だけ出ます）') + '　' + r.at + ' 時点'));
     }, function (e) { $('kzStatsBody').textContent = '集計を出せませんでした。' + e.message; });
   }
   function kzLoad(force) {
