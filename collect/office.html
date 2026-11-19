@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795080257;</script>
+<script>window.__PAGE_VER=1795086045;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1729,7 +1729,7 @@
     <button type="button" id="dPdfAll" title="まとめた書類は その束で1つのPDF、ほかは1枚ずつのPDF（2つ以上なら ZIP 1つ）">一括PDF切り出し</button>
     <button type="button" id="dPrintAll" title="いま見えているものを 並んでいる順に印刷">🖨 印刷</button>
     <button type="button" id="dTrash" hidden>破棄したもの</button>
-    <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button><button type="button" id="dAgent" title="この顧問先・この月分の 資料・補助簿・過去の仕訳・事務所の考え方を 1つの zip にして、自分の Claude Code に渡せるようにする">🤖 エージェントに渡す（zip）</button><span id="dAgentPick" hidden></span><button type="button" id="dAgentBack" hidden title="自分の Claude Code が作った できあがり（仕訳.json・元帳・質問一覧・カルテ など）を zip にして この顧問先・この月分に 戻す。戻すと エージェント研究 1回として 改善と効率化の集計に 数えます">⬆ できあがりを戻す</button><input type="file" id="dAgentBackF" accept=".zip,application/zip" hidden><button type="button" id="dAgentDocs" hidden title="月別減価償却確認表・返済予定表 など、事務所が足す 通年の資料（月に しばられない）。エージェントの zip に いつも入る">📎 事務所の資料（通年）</button><div id="agDocsBox" class="agdocs" hidden></div>
+    <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button><button type="button" id="dAgent" title="この顧問先・この月分の 資料・補助簿・過去の仕訳・事務所の考え方を 1つの zip にして、自分の Claude Code に渡せるようにする">🤖 エージェントに渡す（zip）</button><span id="dAgentPick" hidden></span><button type="button" id="dAgentBack" hidden title="自分の Claude Code が作った できあがり（仕訳.json・元帳・質問一覧・カルテ など）を zip にして この顧問先・この月分に 戻す。戻すと エージェント研究 1回として 改善と効率化の集計に 数えます">⬆ できあがりを戻す</button><input type="file" id="dAgentBackF" accept=".zip,application/zip" hidden><button type="button" id="dAgentRes" hidden title="戻した できあがりの 中身（仕訳の数・気づいたこと・学び・カルテの案・気づき）。学びは［はい］で 顧問先カルテに 入れると 次の zip から エージェントに 渡る">📥 結果と学び</button><div id="agResBox" class="agdocs" hidden></div><button type="button" id="dAgentDocs" hidden title="月別減価償却確認表・返済予定表 など、事務所が足す 通年の資料（月に しばられない）。エージェントの zip に いつも入る">📎 事務所の資料（通年）</button><div id="agDocsBox" class="agdocs" hidden></div>
   </span>
 </div>
 
@@ -2145,6 +2145,14 @@
     <textarea id="kaText" rows="14" maxlength="40000" aria-label="顧問先カルテ" placeholder="［雛形を入れる］で 12項目が入ります"></textarea>
     <div class="bar"><button type="button" class="btn sm" id="kaSave">保存（新しい版）</button><button type="button" class="btn ghost sm" id="kaBlank">雛形を入れる</button><span class="note" id="kaLen"></span></div>
     <span class="pagemsg" id="kaMsg" role="status"></span>
+  </details>
+  <details class="rbox" id="mnBox"><summary>議事録（証拠として残す。決算報告会・巡回監査・社長面談）</summary>
+    <p class="note">OMS などで 録音・文字起こしした 議事録を 入れます。入れた瞬間の 原本の 指紋（SHA-256）と 日時を <b>あとから 直せない記録（ハッシュの鎖）</b>に 残し、［🔒 本物か確かめる］で いじっていないことを 示せます。「顧問先に見せる」に ✓ すると 顧問先の画面に 確認のお願いが出て、［内容を確認しました］が 記録に 足されます。決定事項・やることは Claude Code などで 作って［＋ 決定事項・やること］で 足します（これも 直せない記録）。</p>
+    <div class="bar"><select id="mnKind" aria-label="会議の種類"></select><input type="date" id="mnDay" aria-label="会議の日"><input id="mnTitle" placeholder="題（例：第12期 決算報告会）" style="min-width:14em"><label class="note"><input type="checkbox" id="mnShow"> 顧問先に見せる（確認をもらう）</label></div>
+    <textarea id="mnText" rows="6" maxlength="200000" aria-label="議事録の文字" placeholder="議事録の 文字を 貼る（ファイルなら 下の［ファイルで入れる］）"></textarea>
+    <div class="bar"><button type="button" class="btn sm" id="mnAdd">文字で入れる</button><button type="button" class="btn ghost sm" id="mnFileB">ファイルで入れる（txt・PDF・Word・音声）</button><input type="file" id="mnFile" hidden accept=".txt,.pdf,.docx,.m4a,.mp3,.wav,.mp4,audio/*"></div>
+    <span class="pagemsg" id="mnMsg" role="status"></span>
+    <div id="mnList"></div>
   </details>
   <details open class="rbox" id="memoBox"><summary>3. 引き継ぎメモ（この顧問先。前任者の頭の中）</summary>
     <p class="note">AI が 証憑を読むたびに いちばん先に読むメモです。<b>［AI に書かせる］</b>で 過去の仕訳から下書きを作り、人が直して<b>［保存］</b>。保存するたびに 版を積みます（上書きしません）。
@@ -2779,12 +2787,12 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { karteGet: 1, agentDocs: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
+  const READ_FN = { karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, arriveGrid: 1, askList: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
   /* ★ 2026-11-08：AI の下書き（通帳2枚を明細で読む など）は 1分を超える。60秒で切ると サーバは読み終えたのに「返事がありません」になっていた */
-  const LONG_FN = { foldUp: 300000, foldClients: 300000, tehonAnalyze: 370000, kaizenShot: 120000, aiRead: 370000, aiCheck: 370000, officeBookFromPhoto: 370000, memoWrite: 370000, agentPack: 370000, agentReturn: 300000, agentDocAdd: 300000 };
+  const LONG_FN = { foldUp: 300000, foldClients: 300000, tehonAnalyze: 370000, kaizenShot: 120000, aiRead: 370000, aiCheck: 370000, officeBookFromPhoto: 370000, memoWrite: 370000, agentPack: 370000, agentReturn: 300000, agentDocAdd: 300000, agentLearnApply: 120000, minutesAdd: 300000 };
   /* ★ 総点検（2026-10-26）：読むだけのものは 通信がこけたら 1回だけ自動でやり直す（打ち直させない）。
      書き込みは やり直さない（二度入るので）。GAS の中（LIVE）でも 返事が来なければ時間切れにする（固まらない） */
   const NETERR = /サーバの返事がありませんでした|サーバにつながりませんでした|Failed to fetch|NetworkError|Load failed|network/i;
@@ -7170,7 +7178,7 @@
       steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
-      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）'],
+      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）'],
       tips: ['パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
@@ -7183,7 +7191,7 @@
     Dict: { t: '仕訳辞書', pic: 'g_odict', lead: '取引先・摘要ごとの 決まった仕訳を 登録しておく タブです。AI の下書きにも 効きます。',
       steps: ['［＋ 辞書を登録］で 取引先・科目・税区分を 入れる', 'まちがえたものは 直す・［この辞書を消す］'], tips: [] },
     Rule: { t: 'AIの考え方', pic: 'g_orule', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
-      steps: ['決まりを 書いて［考え方を保存］', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
+      steps: ['決まりを 書いて［考え方を保存］', '「議事録」… OMS などの 議事録を［文字で入れる］か［ファイルで入れる］（あとから直せない記録に 指紋と日時が残る）。［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
     Fold: { t: 'Google共有ドライブ', lead: '事務所の Google共有ドライブを この画面から 開く・整理する タブです。',
       steps: ['フォルダを押して 中へ', '写真・PDF を押すと 大きく見る。［✏ 書きこむ］［🔴 ハンコ］', '［📮 送付物へ］で 顧問先へ送る 送付物にする', '［🖨 印刷の受け口］… PDF24 で印刷すると いま開いているフォルダに 入ります'],
       tips: ['🔒 の付いたフォルダ（回収資料）は 見るだけです', 'PDF24 の設定は 説明書「職員向け はじめての設定（Claude と PDF24）」'] },
@@ -7497,22 +7505,23 @@
   /* ★★★ 2026-11-18：エージェントに渡す zip（その月分の 資料・補助簿・過去の仕訳・事務所の考え方・カルテ）。職員が 自分の Claude Code に渡す */
   $('dAgent').addEventListener('click', function () {
     const pk = $('dAgentPick');
-    if (!pk.hidden) { pk.hidden = true; $('dAgentBack').hidden = true; $('dAgentDocs').hidden = true; $('agDocsBox').hidden = true; return; }
+    if (!pk.hidden) { pk.hidden = true; ['dAgentBack', 'dAgentDocs', 'agDocsBox', 'dAgentRes', 'agResBox'].forEach(function (i) { $(i).hidden = true; }); return; }
     if (!S.code) { dcMsg('先に 顧問先を選んでください。', true); return; }
     if (!(S.per && /^\d{4}-\d{2}$/.test(S.per))) { dcMsg('先に 上で 月分（◯年◯月分）を 1つ選んでください。', true); return; }
-    pk.textContent = ''; pk.hidden = false; $('dAgentBack').hidden = false; $('dAgentDocs').hidden = false;   /* ★ できあがりを戻す も ここで出す（ふだんは 出さない。並びを 動かさない） */
+    pk.textContent = ''; pk.hidden = false; $('dAgentBack').hidden = false; $('dAgentDocs').hidden = false; $('dAgentRes').hidden = false;   /* ★ できあがりを戻す も ここで出す（ふだんは 出さない。並びを 動かさない） */
     /* ★ 箱を選べる（2026-11-18）：預金・カードは 会計ソフトの自動仕訳、現金だけ・給与だけ を エージェントに など。全部に✓なら その月分 全部 */
     const bxs = []; (S.docs || []).forEach(function (it) { if (it.period !== S.per) return; const b = String(it.box || '').split('/')[0]; if (b && bxs.indexOf(b) < 0) bxs.push(b); });
     ((S.clients.find(function (c) { return c.code === S.code; }) || {}).books || []).forEach(function (b) { if (bxs.indexOf(b) < 0) bxs.push(b); });
     const bw = el('span', 'agbx'); bw.style.cssText = 'display:inline-flex;flex-wrap:wrap;gap:2px 8px;margin:0 6px;font-size:12.5px';
     bxs.forEach(function (b) { const l = el('label'); const c = el('input'); c.type = 'checkbox'; c.checked = true; c.value = b; l.appendChild(c); l.appendChild(document.createTextNode(' ' + boxLabel(b))); bw.appendChild(l); });
     if (bxs.length > 1) { pk.appendChild(el('span', null, '渡す箱：')); pk.appendChild(bw); }
-    const go = function (ans) {
+    const yr = el('label'); yr.style.cssText = 'font-size:12.5px;margin:0 6px'; const yc = el('input'); yc.type = 'checkbox'; yr.appendChild(yc); yr.appendChild(document.createTextNode(' 1年分（この月までの12か月・年一の先）'));
+    const go = function (ans, mode) {
       const on = [].slice.call(bw.querySelectorAll('input')).filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
       if (bxs.length && !on.length) { dcMsg('渡す箱を 1つ以上 選んでください。', true); return; }
       const boxes = on.length === bxs.length ? [] : on;
-      pk.hidden = true; $('dAgentBack').hidden = true; $('dAgentDocs').hidden = true; $('agDocsBox').hidden = true; const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
-      gs('agentPack', S.code, S.per, ans, boxes).then(function (r) {
+      pk.hidden = true; ['dAgentBack', 'dAgentDocs', 'agDocsBox', 'dAgentRes', 'agResBox'].forEach(function (i) { $(i).hidden = true; }); const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
+      gs('agentPack', S.code, S.per, ans, boxes, { span: yc.checked ? 12 : 1, mode: mode || '' }).then(function (r) {
         b.disabled = false;
         dcMsg('');
         const m = $('dcMsg'); m.textContent = '';
@@ -7521,7 +7530,8 @@
         m.appendChild(document.createTextNode('　→ 自分の Claude Code に 添付して「はじめに読む.md のとおり この月の仕訳を作って」と頼む。' + (r.skipped.length ? '　★ 大きすぎて入れられなかった資料：' + r.skipped.join('、') : '')));
       }, function (e) { b.disabled = false; dcMsg('zip を作れませんでした。' + e.message, true); });
     };
-    [['ふつう', false, 'その月の材料だけ'], ['答え合わせつき', true, 'その月の確定仕訳も「作り終わってから開く」に入れる（練習・精度を確かめるとき）']].forEach(function (x) { const bb = el('button', 'dmon-b', x[0]); bb.type = 'button'; bb.title = x[2]; bb.addEventListener('click', function () { go(x[1]); }); pk.appendChild(bb); });
+    pk.appendChild(yr);
+    [['ふつう', false, 'その月の材料だけ'], ['答え合わせつき', true, 'その月の確定仕訳も「作り終わってから開く」に入れる（練習・精度を確かめるとき）'], ['📈 気づき（試算表から）', false, '［📎 事務所の資料］に入れた 月次試算表 から、前月比・前年同月比で 大きく動いた科目と 社長面談の 論点の下書きを 作ってもらう（証憑は 入れない。事務所の中だけで 使う）', 'kizuki']].forEach(function (x) { const bb = el('button', 'dmon-b', x[0]); bb.type = 'button'; bb.title = x[2]; bb.addEventListener('click', function () { go(x[1], x[3]); }); pk.appendChild(bb); });
   });
   /* ★ 事務所の資料（通年。2026-11-19）：月別減価償却確認表・返済予定表 など。月に しばられず zip に いつも入る */
   function agDocsDraw(r) {
@@ -7558,6 +7568,49 @@
       row.appendChild(del); w.appendChild(row);
     });
   }
+  /* ★ 結果と学び（2026-11-19・ロードマップ1・2）：学びは［はい］で 顧問先カルテへ（次の zip から エージェントに 渡る） */
+  function agResDraw(r) {
+    const w = $('agResBox'); w.textContent = '';
+    if (!(r.list || []).length) { w.appendChild(el('div', 'note', 'まだ 戻した結果が ありません。［⬆ できあがりを戻す］で zip を 戻すと ここに 出ます。')); return; }
+    r.list.forEach(function (x, i) {
+      const d = el('details'); if (i === 0) d.open = true;
+      d.appendChild(el('summary', null, x.at + '・' + x.ym + '分・' + x.who + '・仕訳 ' + (x.n < 0 ? '（読めず）' : x.n + '件') + (x.done ? '・学びを入れた ' + x.done : (x.learn ? '・学び まだ' : ''))));
+      const sec = function (t, body) { if (!body) return; const s = el('details'); s.appendChild(el('summary', null, t)); const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;font:inherit;font-size:12.5px;margin:4px 0;max-height:320px;overflow:auto'; pre.textContent = body; s.appendChild(pre); d.appendChild(s); };
+      if (x.learn) {
+        const lw = el('div'); lw.style.margin = '6px 0';
+        lw.appendChild(el('div', 'k', '学び（✓したものを 顧問先カルテに 入れる。直してから 入れてもよい）'));
+        const items = x.learn.split(/\n/).map(function (l) { return l.trim(); }).filter(function (l) { return /^[-・*]/.test(l); });
+        const boxes = items.map(function (l) {
+          const boss = /\[所長\]/.test(l);
+          const row = el('div', 'agrow'); const c = el('input'); c.type = 'checkbox'; c.checked = !boss && !x.done; c.disabled = boss && !r.master;
+          const t = el('input'); t.value = l.replace(/^[-・*]\s*/, ''); t.style.cssText = 'flex:1;min-width:14em';
+          row.appendChild(c); row.appendChild(t); if (boss) row.appendChild(el('span', 'note', '所長へ（事務所の考え方を変える案）'));
+          lw.appendChild(row); return { c: c, t: t };
+        });
+        if (!items.length) lw.appendChild(el('pre', null, x.learn));
+        const ok = el('button', 'dmon-b', '✓ したものを カルテに入れる'); ok.type = 'button';
+        ok.addEventListener('click', function () {
+          const ls = boxes.filter(function (b) { return b.c.checked && b.t.value.trim(); }).map(function (b) { return b.t.value.trim(); });
+          if (!ls.length) { dcMsg('入れる行に ✓ を 付けてください。', true); return; }
+          ok.disabled = true;
+          gs('agentLearnApply', S.code, x.fid, ls).then(function (rr) { dcMsg('📘 顧問先カルテに ' + rr.n + '行 入れました。次の zip から エージェントに 渡ります。'); agResOpen(); }, function (e) { ok.disabled = false; dcMsg('入れられませんでした。' + e.message, true); });
+        });
+        if (items.length) lw.appendChild(ok);
+        d.appendChild(lw);
+      }
+      sec('気づいたこと（要注意仕訳 ほか）', x.note); sec('気づき（試算表から・社長面談の論点）', x.kiz); sec('質問一覧', x.q); sec('カルテの案（AI の考え方タブで 貼って保存できます）', x.karte); sec('集計', x.sum);
+      w.appendChild(d);
+    });
+  }
+  function agResOpen() {
+    const w = $('agResBox'); w.hidden = false; $('dAgentRes').hidden = false; w.textContent = '読み込み中…';
+    gs('agentResults', S.code).then(agResDraw, function (e) { w.textContent = '出せませんでした。' + e.message; });
+  }
+  $('dAgentRes').addEventListener('click', function () {
+    if (!$('agResBox').hidden) { $('agResBox').hidden = true; return; }
+    if (!S.code) { dcMsg('先に 顧問先を選んでください。', true); return; }
+    agResOpen();
+  });
   $('dAgentDocs').addEventListener('click', function () {
     const w = $('agDocsBox');
     if (!w.hidden) { w.hidden = true; return; }
@@ -7579,7 +7632,8 @@
     const rd = new FileReader();
     rd.onload = function () {
       gs('agentReturn', S.code, S.per, { name: f.name, b64: String(rd.result).split(',')[1] || '' }).then(function (r) {
-        b.disabled = false; dcMsg('⬆ 戻しました（' + r.name + '）。あなたの エージェント研究は ' + r.n + '回目です。');
+        b.disabled = false; dcMsg('⬆ 戻しました（' + r.name + '）。あなたの エージェント研究は ' + r.n + '回目です。' + (r.res && r.res.err ? '　★ 中身を 読めませんでした（' + r.res.err + '）' : r.res ? '　仕訳 ' + r.res.entries + '件' + (r.res.learn ? '・学びあり →［📥 結果と学び］で カルテへ' : '') : ''));
+        if (r.res && !r.res.err) agResOpen();
       }, function (e) { b.disabled = false; dcMsg('戻せませんでした。' + e.message, true); });
     };
     rd.onerror = function () { b.disabled = false; dcMsg('ファイルを 読めませんでした。', true); };
@@ -13826,11 +13880,60 @@
   function mtLoad() {
     const code = S.code; if (!code) return;
     gs('aiMaterials', code).then(function (r) { if (code !== S.code) return; MT.data = r; mtDraw(); memoDraw(r.memo); ckFill(r.checks || []); }, function (e) { mtMsg('mtMsg', e.message, 'err'); });
-    kaLoad();
+    kaLoad(); mnLoad();
   }
   /* ★ 顧問先カルテ（2026-11-18） */
   const KA = { blank: '' };
   function kaDraw(k) { KA.blank = k.blank || KA.blank; $('kaHead').textContent = k.text ? '保存 ' + k.at + (k.by ? '（' + k.by + '）' : '') : 'まだありません（［雛形を入れる］か、Claude Code が作った カルテ.md を 貼って 保存）'; if (document.activeElement !== $('kaText')) $('kaText').value = k.text || ''; $('kaLen').textContent = ($('kaText').value.length || 0) + '字'; }
+  /* ★★★ 議事録（2026-11-19・ロードマップ6・7）：追記のみ・ハッシュの鎖。決定事項・顧問先の確認も 行を足す */
+  let MN_KINDS = null;
+  function mnDraw(r) {
+    if (r.kinds && !MN_KINDS) { MN_KINDS = r.kinds; const k = $('mnKind'); k.textContent = ''; r.kinds.forEach(function (x) { const o = el('option', null, x); o.value = x; k.appendChild(o); }); }
+    if (!$('mnDay').value) $('mnDay').value = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+    const w = $('mnList'); w.textContent = '';
+    if (!(r.list || []).length) { w.appendChild(el('div', 'note', 'まだ ありません。')); return; }
+    r.list.forEach(function (x) {
+      const d = el('details'); d.style.margin = '6px 0';
+      d.appendChild(el('summary', null, x.day + '・' + x.kind + '・' + x.title + (x.show ? (x.oks.length ? '　✅ 顧問先 確認済み（' + x.oks[x.oks.length - 1].who + '）' : '　⏳ 顧問先の確認待ち') : '') + (x.notes.length ? '　📝 決定事項 ' + x.notes.length : '')));
+      d.appendChild(el('div', 'note', '入れた ' + x.at + '・' + x.who + '・指紋 ' + x.sha.slice(0, 16) + '…'));
+      if (x.body) { const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;font:inherit;font-size:12.5px;max-height:260px;overflow:auto;background:#fafafa;padding:6px'; pre.textContent = x.body; d.appendChild(pre); }
+      x.notes.forEach(function (n) { const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;font:inherit;font-size:12.5px;border-left:3px solid #0F6E56;padding-left:8px'; pre.textContent = '📝 ' + n.at + '・' + n.who + '\n' + n.body; d.appendChild(pre); });
+      x.oks.forEach(function (o) { d.appendChild(el('div', 'note', '✅ ' + o.at + '　' + o.who + ' が 内容を確認しました')); });
+      const bar = el('div', 'bar');
+      const vb = el('button', 'btn ghost sm', '🔒 本物か確かめる'); vb.type = 'button';
+      vb.addEventListener('click', function () { vb.disabled = true; gs('minutesVerify', S.code, x.id).then(function (v) { vb.disabled = false; mtMsg('mnMsg', v.msg, v.ok ? '' : 'err'); }, function (e) { vb.disabled = false; mtMsg('mnMsg', e.message, 'err'); }); });
+      const cb = el('button', 'btn ghost sm', 'Claude に渡す文を写す'); cb.type = 'button';
+      cb.addEventListener('click', function () {
+        const t = '次の議事録から「決定事項」と「やること（担当・期限）」を 箇条書きで 作ってください。分からない担当は「担当者未確認」。推測は しない。\n\n# ' + x.day + ' ' + x.kind + ' ' + x.title + '\n\n' + (x.body || '（ファイルの議事録です。ファイルを 添付してください）');
+        try { navigator.clipboard.writeText(t).then(function () { mtMsg('mnMsg', '写しました。Claude Code に 貼って、できた 決定事項・やることを［＋ 決定事項・やること］に 貼ってください。'); }); } catch (e) { mtMsg('mnMsg', '写せませんでした。', 'err'); }
+      });
+      const nb = el('button', 'btn ghost sm', '＋ 決定事項・やること'); nb.type = 'button';
+      nb.addEventListener('click', function () {
+        if (d.querySelector('.mnnote')) return;
+        const ta = el('textarea', 'mnnote'); ta.rows = 5; ta.style.width = '100%'; ta.placeholder = '決定事項・やること（担当・期限）';
+        const ok = el('button', 'btn sm', '記録に足す（あとから直せません）'); ok.type = 'button';
+        ok.addEventListener('click', function () { ok.disabled = true; gs('minutesNote', S.code, x.id, ta.value).then(function (rr) { mtMsg('mnMsg', '📝 足しました。'); mnDraw(rr); }, function (e) { ok.disabled = false; mtMsg('mnMsg', e.message, 'err'); }); });
+        d.appendChild(ta); d.appendChild(ok); ta.focus();
+      });
+      bar.appendChild(vb); bar.appendChild(cb); bar.appendChild(nb); d.appendChild(bar);
+      w.appendChild(d);
+    });
+  }
+  function mnLoad() { const code = S.code; if (!code) return; gs('minutesList', code).then(function (r) { if (code !== S.code) return; mnDraw(r); }, function (e) { mtMsg('mnMsg', e.message, 'err'); }); }
+  function mnSend(extra) {
+    const o = Object.assign({ kind: $('mnKind').value, day: $('mnDay').value, title: $('mnTitle').value, show: $('mnShow').checked }, extra);
+    mtMsg('mnMsg', '記録しています…');
+    return gs('minutesAdd', S.code, o).then(function (r) { mtMsg('mnMsg', '🔒 記録しました（あとから直せない記録に 指紋と日時を 残しました）。'); $('mnText').value = ''; $('mnTitle').value = ''; mnDraw(r); }, function (e) { mtMsg('mnMsg', e.message, 'err'); });
+  }
+  $('mnAdd').addEventListener('click', function () { if (!S.code) return; if (!$('mnText').value.trim()) { mtMsg('mnMsg', '議事録の文字を 貼ってください。', 'err'); return; } mnSend({ text: $('mnText').value }); });
+  $('mnFileB').addEventListener('click', function () { if (!S.code) return; $('mnFile').value = ''; $('mnFile').click(); });
+  $('mnFile').addEventListener('change', function () {
+    const f = this.files && this.files[0]; if (!f) return;
+    if (f.size > 30 * 1024 * 1024) { mtMsg('mnMsg', '30MB までです。', 'err'); return; }
+    const e = (f.name.split('.').pop() || '').toLowerCase();
+    const mime = { txt: 'text/plain', pdf: 'application/pdf', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', mp4: 'video/mp4', m4a: 'audio/mp4', mp3: 'audio/mpeg', wav: 'audio/wav' }[e] || f.type || '';
+    const rd = new FileReader(); rd.onload = function () { mnSend({ name: f.name, mime: mime, b64: String(rd.result).split(',')[1] || '' }); }; rd.readAsDataURL(f);
+  });
   function kaLoad() { const code = S.code; if (!code) return; gs('karteGet', code).then(function (k) { if (code !== S.code) return; kaDraw(k); }, function (e) { mtMsg('kaMsg', e.message, 'err'); }); }
   $('kaText').addEventListener('input', function () { $('kaLen').textContent = this.value.length + '字'; });
   $('kaBlank').addEventListener('click', function () { if ($('kaText').value.trim()) { mtMsg('kaMsg', 'もう書いてあります（雛形は 空のときだけ入れます）。', 'err'); return; } $('kaText').value = KA.blank; $('kaLen').textContent = KA.blank.length + '字'; });
