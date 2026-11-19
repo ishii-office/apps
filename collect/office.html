@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795058531;</script>
+<script>window.__PAGE_VER=1795061526;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -6572,6 +6572,7 @@
       const b = need.slice(i, i + 40); b.forEach(function (id) { WSTH[id] = 1; });
       thumbsGet(b).then(function (t) { b.forEach(function (id) { delete WSTH[id]; THUMB[id] = (t && t[id]) || null; }); wsRefresh(); }, function () { b.forEach(function (id) { delete WSTH[id]; }); });
     }
+    ids.forEach(function (id) { if (!THUMB[id]) PTH_VIS[id] = 1; }); pthKick();   /* ★ K-0226：別ウィンドウの PDF も 絵が無ければ描く */
   }
   const WSTH = {};
   /* ★ PDF を ページごとの絵に（別ウィンドウの 大きく見る。1ページが まるごと見える大きさで出して、◀ ▶ で ページを送る） */
@@ -8009,6 +8010,7 @@
     if (S.dcpick) { if (!(it.set && it.setOf > 1)) b.appendChild(el('span', 'dck')); if (S.dcsel[it.id]) tile.classList.add('sel'); }
     DDX.bind(tile, it);
     if (dObs && !it.pdf && !fic) dObs.observe(tile);
+    if (it.pdf && !fic && !THUMB[it.id]) pthSee(tile, it.id);   /* ★ K-0226：絵の無い PDF は 見えたら この端末で描く */
     return tile;
   }
 
@@ -9994,6 +9996,7 @@
       });
       /* 小さい絵が無いものは くっきりした中身で（PDF は 小さい絵だけ） */
       const put = function (id) { const im = side.querySelector('.sp[data-id="' + id + '"] img'); if (!im) return; const v = IMG[id]; if (THUMB[id]) im.src = THUMB[id]; else if (v && v.t === 'img') im.src = v.src; };
+      need.forEach(function (id) { PTH_VIS[id] = 1; }); pthKick();   /* ★ K-0226：PDF のページも 絵が無ければ描く */
       if (need.length) thumbsGet(need).then(function (t) { need.forEach(function (id) { THUMB[id] = (t && t[id]) || null; put(id); if (!THUMB[id]) dWant(id, false, function () { put(id); }); }); }, function () {});
     }
     side.querySelectorAll('.sp').forEach(function (b) { b.classList.toggle('on', b.dataset.id === it.id); });
@@ -11684,6 +11687,57 @@
         if (Object.keys(keep).length) OTHDB.put(keep);
         return hit;
       });
+    }).then(function (hit) { setTimeout(pthKick, 0); return hit; });
+  }
+  /* ★ K-0226（2026-11-19）：PDF の札が 白いままで、押して開かないと 中身が見えなかった。
+       サーバに小さい絵が無い PDF（Drive が まだ絵を作っていない・マイナンバー記載で 絵を置かないもの など）は、
+       画面に見えたものから この端末で PDF の中身を取り、1ページ目を 小さい絵に描いて
+       回収資料の札・別ウィンドウ（作業場）・大きく見るの 横のページ に出す。1つずつ順に（重くしない）。
+       描いた絵は この端末に覚える（次からは すぐ出る）。マイナンバー記載のものは 覚えない（画面に出すだけ） */
+  const PTH = {}, PTH_VIS = {};   /* 描いた／描いている id ・ 画面に見えた id */
+  let PTH_Q = [], PTH_RUN = 0;
+  function pthItem(id) { let f = null; [S.docs, S.items, S.view].some(function (L) { f = (L || []).find(function (x) { return x && x.id === id; }) || null; return !!f; }); return f; }
+  function pthPdf(it) { return !!(it && (it.pdf || /\.pdf$/i.test(it.name || ''))); }
+  const pthObs = window.IntersectionObserver ? new IntersectionObserver(function (ents) {
+    ents.forEach(function (en) { if (en.isIntersecting) { pthObs.unobserve(en.target); PTH_VIS[en.target.dataset.id] = 1; pthKick(); } });
+  }, { rootMargin: '300px 0px' }) : null;
+  function pthSee(tile, id) { if (pthObs) pthObs.observe(tile); else { PTH_VIS[id] = 1; setTimeout(pthKick, 0); } }
+  /* サーバに聞いて 絵が無かった（THUMB が null）PDF だけ 描く */
+  function pthKick() {
+    Object.keys(PTH_VIS).forEach(function (id) { if (PTH[id] || !(id in THUMB) || THUMB[id] || !pthPdf(pthItem(id))) return; PTH[id] = 1; PTH_Q.push(id); });
+    pthPump();
+  }
+  function pthPump() {
+    if (PTH_RUN || !PTH_Q.length) return;
+    const id = PTH_Q.shift(); if (THUMB[id]) { pthPump(); return; }
+    PTH_RUN = 1; const fin = function () { PTH_RUN = 0; pthPump(); };
+    const v0 = IMG[id];
+    (v0 && v0.t === 'pdf' ? Promise.resolve(v0) : gs('viewerImages', [id]).then(function (r) { return r && r[id]; }))
+      .then(function (v) { return v && v.t === 'pdf' && v.b64 ? pdfThumbDraw(v.b64) : ''; })
+      .then(function (d) { if (d && !THUMB[id]) pthPut(id, d); fin(); }, fin);
+  }
+  function pthPut(id, d) {
+    THUMB[id] = d;
+    const it = pthItem(id);
+    if (it && !it.mynum && d.length < 120000) { const o = {}; o[id] = d; OTHDB.put(o); }
+    const q = window.CSS && CSS.escape ? CSS.escape(id) : id;
+    document.querySelectorAll('img.dthumb[data-id="' + q + '"], .sp[data-id="' + q + '"] img').forEach(function (im) { if (!im.getAttribute('src')) im.src = d; });
+    try { wsRefresh(); } catch (e) {}
+    try { if (!NEAR[id]) paint(id); } catch (e) {}
+  }
+  /* PDF の 1ページ目を 小さい絵（長い辺 400px の JPEG）に */
+  function pdfThumbDraw(b64) {
+    return pdfjs().then(function (lib) { return lib.getDocument(Object.assign({ data: b64bytes(b64) }, PDF_OPT)).promise; }).then(function (doc) {
+      const end = function () { try { doc.destroy(); } catch (e) {} };
+      return doc.getPage(1).then(function (page) {
+        const v1 = page.getViewport({ scale: 1 }), vp = page.getViewport({ scale: 400 / Math.max(v1.width, v1.height) });
+        const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(vp.width)); c.height = Math.max(1, Math.round(vp.height));
+        const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+        return page.render({ canvasContext: g, viewport: vp }).promise.then(function () {
+          let d = c.toDataURL('image/jpeg', 0.7); if (d.length > 110000) d = c.toDataURL('image/jpeg', 0.45);
+          c.width = c.height = 0; end(); return d;
+        });
+      }).catch(function (e) { end(); throw e; });
     });
   }
   const INFLIGHT = {};
