@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795098795;</script>
+<script>window.__PAGE_VER=1795133553;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -155,6 +155,14 @@
   #dIndex .fxno { color: var(--sub); font-size: 11.5px; font-weight: 500; white-space: nowrap; }
   #dIndex li[draggable="true"] button { cursor: grab; }
   #dIndex li.dragging { opacity: .4; }
+  /* ★ K-0237：まとめて箱を付ける（左の一覧に ✓） */
+  .dk-top.dbulk { flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13px; }
+  .dk-top.dbulk .dbb { display: flex; align-items: center; gap: 6px; font-weight: 700; flex: 1 1 100%; }
+  .dk-top.dbulk .dbb select { flex: 1; min-width: 0; }
+  #dBulkOn[aria-pressed="true"] { background: var(--sel); }
+  #dIndex li.pick { display: flex; align-items: stretch; }
+  #dIndex li.pick > input { margin: 0 0 0 8px; flex: none; width: 18px; }
+  #dIndex li.pick > button { flex: 1; min-width: 0; }
   #dIndex li.drop-b button { box-shadow: inset 0 3px 0 #E8A400; }
   #dIndex li.drop-a button { box-shadow: inset 0 -3px 0 #E8A400; }
   #dIndex li.grp.drop-in { background: #FFF4C8; }
@@ -425,6 +433,10 @@
   .dpz .kbcard { border: 1.5px solid var(--dline); border-radius: 12px; background: #fff; padding: 12px; max-width: 1100px; }
   .dpz .kbrow { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 6px; }
   .dpz .kbf { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; }
+  /* ★ K-0237：ほかの箱でも使う（✓ を付けた箱にも 同じ辞書が出る） */
+  .dpz .kbrow.boxmore { gap: 4px 12px; font-size: 13px; }
+  .dpz .kbrow.boxmore .bmh { font-weight: 700; color: var(--sub, #666); }
+  .dpz .kbrow.boxmore .bmc { display: inline-flex; align-items: center; gap: 3px; cursor: pointer; }
   .dpz .kbf.wide { flex: 1 1 260px; min-width: 0; }
   .dpz .kbf.wide input { flex: 1; min-width: 0; }
   .dpz .kbf.no input { width: 64px; text-align: right; font-size: 16px; font-weight: 800; }
@@ -1783,6 +1795,14 @@
     <div id="dvSide">
       <div class="dk-top"><label class="dbox">回収ボックス <select id="dBox" aria-label="どの回収ボックスの辞書か"></select></label></div>
       <div class="dk-top"><input id="dSearch" type="search" placeholder="No・取引の種類・科目・コード" aria-label="辞書を探す"><button type="button" class="primary" id="dNew">＋ 辞書を登録</button></div>
+      <div class="dk-top dbulk"><button type="button" class="btn ghost sm" id="dBulkOn" aria-pressed="false">☑ まとめて箱を付ける</button></div>
+      <div class="dk-top dbulk" id="dBulk" hidden>
+        <span id="dBulkN">0件 選んでいます</span>
+        <button type="button" class="btn ghost sm" id="dBulkAll">全部選ぶ</button>
+        <label class="dbb">箱 <select id="dBulkBox" aria-label="足す・外す回収ボックス"></select></label>
+        <button type="button" class="btn sm" id="dBulkAdd">＋ この箱でも使う</button>
+        <button type="button" class="btn ghost sm" id="dBulkDel">－ この箱から外す</button>
+      </div>
       <div id="dDup" hidden></div>
       <div id="dHeld" hidden></div>
       <ul id="dIndex"></ul>
@@ -1795,6 +1815,7 @@
         <div class="kbrow">
           <label class="kbf">回収ボックス <select id="sBox"></select></label>
         </div>
+        <div class="kbrow boxmore" id="sBoxMore" hidden></div>
         <div class="kbrow one">
           <label class="kbf no">No <input id="sNo" inputmode="numeric" maxlength="3"></label>
           <label class="kbf wide">取引の種類 <input id="sTitle" maxlength="40" placeholder="例：打ち合わせ食事代"></label>
@@ -7237,7 +7258,7 @@
       steps: ['［＋ 新しい顧問先］で 登録', '［＋ 箱を足す］で 資料の箱を決める（並べ替え・中の箱も）', '顧問先に渡す URL は ここ（［URLを作り直す］で 前の URL は 使えなくなります）', '担当・補助担当・決算月を 入れる'],
       tips: ['利用規約の同意は［同意の画面を出す］を押すまで 顧問先には出ません（今までどおり使えます）。導入に行くときに 代表者の役職・氏名・説明担当者を入れて［保存］し、その場で押します。会社名・役職・代表者氏名・控えのメールは 同意の画面に 先に印字されます（顧問先が直せます）。説明担当者は ここで入れたものが 同意ログに残ります', 'QRコードは 顧問先のスマホのカメラで読み込むと ブラウザで開きます（LINE などから開いたときも ふだんのブラウザで開き直します）。あとは 画面の案内どおり「ホーム画面に追加」で終わりです', '顧問先の画面に 出納帳などの帳簿を出すのも ここで 箱ごとに決めます'] },
     Dict: { t: '仕訳辞書', pic: 'g_odict', lead: '取引先・摘要ごとの 決まった仕訳を 登録しておく タブです。AI の下書きにも 効きます。',
-      steps: ['［＋ 辞書を登録］で 取引先・科目・税区分を 入れる', 'まちがえたものは 直す・［この辞書を消す］'], tips: [] },
+      steps: ['［＋ 辞書を登録］で 取引先・科目・税区分を 入れる', 'まちがえたものは 直す・［この辞書を消す］'], tips: ['同じ辞書を いくつかの回収ボックスで使うときは、「回収ボックス」の下の「ほかの箱でも使う」で その箱に ✓（どの箱にも出すなら「共通」）', 'いくつもの辞書に まとめて箱を足すときは［☑ まとめて箱を付ける］→ 辞書に ✓ → 箱を選んで［＋ この箱でも使う］（外すときは［－ この箱から外す］）'] },
     Rule: { t: 'AIの考え方', pic: 'g_orule', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
       steps: ['決まりを 書いて［考え方を保存］', '「経営のようす」… 標準保障額と 格付けを［リスクを入れる］［格付けを入れる］で 入れる（「顧問先に出す」に ✓ したものだけ 顧問先に出る）。下書きは［🤖 エージェントに渡す（zip）］の［🛡 標準保障額］［🏦 格付け］で作り［📥 結果と学び］の［経営のようすに入れる］で 写す。顧問先から 相談が来たら［提案を 顧問先に出す］', '「議事録」… OMS などの 議事録を［文字で入れる］か［ファイルで入れる］（あとから直せない記録に 指紋と日時が残る）。［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
     Fold: { t: 'Google共有ドライブ', lead: '事務所の Google共有ドライブを この画面から 開く・整理する タブです。',
@@ -11625,8 +11646,15 @@
   /* ★ 辞書は【回収ボックスごと】。その箱の辞書と、箱が空の辞書（共通）だけを出す */
   const GROUPS = [['いつも', 'いつもの取引'], ['たまに', 'たまにある取引'], ['わからない', 'わからない場合']];
   /* ★ 辞書の箱：FX のタグの対応を決めてあれば そちらを使う（辞書の書き直しが間に合っていなくても 箱に出る。2026-10-11） */
-  function dictBox(d) { const m = (S.fxConf && S.fxConf.tags) || {}; const b = d.fxTag && m[d.fxTag]; return b && (S.boxes || []).indexOf(b) >= 0 ? b : (d.box || ''); }
-  function boxDict(box) { return S.dict.filter(function (d) { const b = dictBox(d); return !b || b === box; }); }
+  /* ★★ K-0237（2026-11-19 林）：1つの辞書を いくつかの箱で使える。「箱」に 箱の名前を「、」で区切って持つ（はじめが 主の箱。空なら 共通）。
+       FX のタグの対応は 主の箱だけを置き換える。サーバの dictBoxes_ と同じ決め方 */
+  function boxesOf(v) { const out = []; String(v == null ? '' : v).split(/[、,，\n]/).forEach(function (b) { b = b.trim().slice(0, 30); if (b && out.indexOf(b) < 0) out.push(b); }); return out; }
+  function dictBoxes(d) { const m = (S.fxConf && S.fxConf.tags) || {}; const b = d.fxTag && m[d.fxTag]; const bs = boxesOf(d.box);
+    return b && (S.boxes || []).indexOf(b) >= 0 ? [b].concat(bs.slice(1).filter(function (x) { return x !== b; })) : bs; }
+  function dictBox(d) { return dictBoxes(d)[0] || ''; }
+  /* その辞書が その箱に出るか（box が '' ＝ 共通 なら 共通の辞書だけ） */
+  function dictIn(d, box) { const bs = dictBoxes(d); return box ? bs.indexOf(box) >= 0 : !bs.length; }
+  function boxDict(box) { return S.dict.filter(function (d) { const bs = dictBoxes(d); return !bs.length || bs.indexOf(box) >= 0; }); }
   /* ★ 選ぶときの番号（2026-10-11）：その箱の辞書を 群 → 並び順 に 上から 1, 2, 3 …。
        選ぶための番号なので 画面にはこれを出す。保存・FX へは 今までどおり辞書の No（d.no）で送る */
   function boxSeq(box) {
@@ -13018,7 +13046,7 @@
       if (code !== S.code) return;
       S.fxConf = r;
       let n = 0;
-      const list = S.dict.map(function (d) { if (!d.fxTag) return d; const b = fxTagBox(d.fxTag); if (b !== d.box) { n++; return Object.assign({}, d, { box: b }); } return d; });
+      const list = S.dict.map(function (d) { if (!d.fxTag) return d; const b = fxTagBox(d.fxTag), bs = boxesOf(d.box); const nb = [b].concat(bs.slice(1).filter(function (x) { return x !== b; })).join('、'); if (nb !== bs.join('、')) { n++; return Object.assign({}, d, { box: nb }); } return d; });   /* ★ K-0237：ほかの箱は 残す */
       if (!n) { fxMsg('タグの対応を保存しました（箱が変わる辞書はありません）。', 'ok'); return; }
       return gs('dictSave', code, list, { loose: true }).then(function (res) { if (code !== S.code) return; S.dict = res.list; S.held = res.held || []; drawDict(); drawIndex(); openSlip(null);
         fxMsg('タグの対応を保存し、' + n + '件の辞書の箱を付け直しました。左の「回収ボックス」で その箱を選ぶと出ます（仕訳化でも その箱の写真に出ます）。' +
@@ -14808,7 +14836,7 @@
       one(1, l.drCode, l.drSub); one(0, l.crCode, l.crSub);
     });
     return { cd_coopsystem: '', nm_jourdic: d.title || ('No ' + d.no), is_cpjour: ls.length > 1 ? 1 : 0, is_jourmonthly: 0, ord_dsp: ord,
-      id_jourdic: id, cd_fbcat: '', cd_fbbdcat: '', details: det, tags: [d.fxTag || d.box || ''].filter(Boolean) };
+      id_jourdic: id, cd_fbcat: '', cd_fbbdcat: '', details: det, tags: [d.fxTag || boxesOf(d.box)[0] || ''].filter(Boolean) };
   }
   $('fxOut').addEventListener('change', function (ev) {
     const f = (ev.target.files || [])[0]; ev.target.value = '';
@@ -14864,7 +14892,7 @@
     const sb = function (v) { v = String(v == null ? '' : v).trim(); return /^\d$/.test(v) ? '0' + v : v; };
     const pc = function (v) { v = String(v == null ? '' : v).trim(); return /^\d{1,6}$/.test(v) ? ('000000' + v).slice(-6) : v; };
     const key = function (d) { const ls = d.lines && d.lines.length ? d.lines : [d];
-      return [String(d.box || '').trim(), String(d.title || '').trim(), ls.map(function (l) { return [String(l.drCode || l.dr || '').trim(), sb(l.drSub), String(l.crCode || l.cr || '').trim(), sb(l.crSub), String(l.tax || '').trim(), Number(l.rate) || 0, pc(l.party), String(l.memo || '').trim()].join('/'); }).join('+'), String(d.memo || '').trim()].join('|'); };
+      return [boxesOf(d.box).join('、'), String(d.title || '').trim(), ls.map(function (l) { return [String(l.drCode || l.dr || '').trim(), sb(l.drSub), String(l.crCode || l.cr || '').trim(), sb(l.crSub), String(l.tax || '').trim(), Number(l.rate) || 0, pc(l.party), String(l.memo || '').trim()].join('/'); }).join('+'), String(d.memo || '').trim()].join('|'); };
     const seen = {}, out = [];
     (S.dict || []).slice().sort(function (a, b) { return a.no - b.no; }).forEach(function (d) {
       const ks = [key(d), d.fxId ? 'fx:' + d.fxId : ''].filter(Boolean);
@@ -14885,7 +14913,7 @@
     try { dupDraw(); } catch (e) {}
     const q = $('dSearch').value.trim().toLowerCase();
     const ul = $('dIndex'); ul.textContent = '';
-    const mine = S.dict.filter(function (d) { return dictBox(d) === (S.dbox || ''); });
+    const mine = S.dict.filter(function (d) { return dictIn(d, S.dbox || ''); });
     if (!mine.length) ul.appendChild(el('li', 'empty', 'この回収ボックスの辞書はまだありません。「＋ 辞書を登録」で作ってください。'));
     const hit = mine.filter(function (d) { return !q || [d.no, d.title, d.dr, d.cr, d.drCode, d.crCode, d.memo, d.partyName].join(' ').toLowerCase().indexOf(q) >= 0; });
     GROUPS.forEach(function (g) {
@@ -14895,7 +14923,16 @@
       rows.forEach(function (d) {
         const li = el('li'); const b = el('button'); b.type = 'button';
         li.dataset.no = String(d.no); li.dataset.grp = d.grp || 'いつも';
-        if (!q) li.draggable = true;
+        if (!q && !S.dbulk) li.draggable = true;
+        if (S.dbulk) {   /* ★ K-0237：まとめて箱を付ける … 押すと ✓（伝票は開かない） */
+          li.classList.add('pick'); const cb = el('input'); cb.type = 'checkbox'; cb.checked = !!S.dpick[d.no]; cb.setAttribute('aria-label', 'No ' + d.no + ' を選ぶ');
+          cb.addEventListener('change', function () { if (cb.checked) S.dpick[d.no] = 1; else delete S.dpick[d.no]; bulkPaint(); });
+          li.appendChild(cb);
+          const bs = dictBoxes(d); if (bs.length > 1) b.title = '使う箱：' + bs.join('・');
+          b.addEventListener('click', function () { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); });
+          b.appendChild(el('span', 'no', String(seqOf(S.dbox || '', d.no) || ''))); b.appendChild(el('span', 't', d.title || d.memo || d.dr)); b.appendChild(el('span', 'fxno', 'No ' + d.no));
+          li.appendChild(b); ul.appendChild(li); return;
+        }
         b.appendChild(el('span', 'no', String(seqOf(S.dbox || '', d.no) || '')));
         b.appendChild(el('span', 't', d.title || d.memo || d.dr));
         b.appendChild(el('span', 'fxno', 'No ' + d.no));
@@ -14906,7 +14943,55 @@
       });
     });
     $('dCopyBox').hidden = S.dict.length > 0;
+    if (S.dbulk) { const has = {}; mine.forEach(function (d) { has[d.no] = 1; }); Object.keys(S.dpick).forEach(function (k) { if (!has[k]) delete S.dpick[k]; }); bulkPaint(); }
   }
+  /* ★★ K-0237：［☑ まとめて箱を付ける］… 左の一覧で 辞書に ✓ → 選んだ箱を［＋ この箱でも使う］／［－ この箱から外す］。
+       共通の辞書は どの箱にも出るので 足さない。箱が1つだけの辞書から その箱は外さない（外すと 共通＝どの箱にも出る になるため） */
+  S.dpick = {}; S.dbulk = false;
+  function bulkPaint() {
+    const n = Object.keys(S.dpick).length;
+    $('dBulkN').textContent = n + '件 選んでいます';
+    $('dBulkAdd').disabled = $('dBulkDel').disabled = !n || !$('dBulkBox').value;
+  }
+  function bulkOn(on) {
+    if (on && !slipDirtyOk()) return;
+    S.dbulk = !!on; S.dpick = {};
+    $('dBulkOn').setAttribute('aria-pressed', String(S.dbulk)); $('dBulkOn').textContent = S.dbulk ? '✓ まとめて箱を付けるのを やめる' : '☑ まとめて箱を付ける';
+    $('dBulk').hidden = !S.dbulk;
+    if (S.dbulk) {
+      const sel = $('dBulkBox'), keep = sel.value; sel.textContent = '';
+      S.boxes.filter(function (b) { return !boxHid(b); }).forEach(function (b) { const o = el('option', null, b); o.value = b; sel.appendChild(o); });
+      sel.value = keep && S.boxes.indexOf(keep) >= 0 && keep !== S.dbox ? keep : (S.boxes.filter(function (b) { return !boxHid(b) && b !== S.dbox; })[0] || S.dbox || '');
+      openSlip(null);
+    }
+    drawIndex();
+  }
+  $('dBulkOn').addEventListener('click', function () { bulkOn(!S.dbulk); });
+  $('dBulkBox').addEventListener('change', bulkPaint);
+  $('dBulkAll').addEventListener('click', function () { $('dIndex').querySelectorAll('li.pick').forEach(function (li) { S.dpick[Number(li.dataset.no)] = 1; }); drawIndex(); });
+  function bulkBox(add) {
+    const box = $('dBulkBox').value, nos = Object.keys(S.dpick).map(Number); if (!box || !nos.length) return;
+    let n = 0, skipC = 0, skipS = 0, skipOne = 0;
+    const list = S.dict.map(function (d) {
+      if (nos.indexOf(d.no) < 0) return d;
+      const bs = dictBoxes(d);
+      if (add) {
+        if (!bs.length) { skipC++; return d; }
+        if (bs.indexOf(box) >= 0) { skipS++; return d; }
+        n++; return Object.assign({}, d, { box: bs.concat([box]).join('、') });
+      }
+      if (bs.indexOf(box) < 0) { skipS++; return d; }
+      if (bs.length < 2) { skipOne++; return d; }
+      n++; return Object.assign({}, d, { box: bs.filter(function (b) { return b !== box; }).join('、') });
+    });
+    const why = [skipC ? '共通の辞書 ' + skipC + '件は もう どの箱にも出るので そのまま' : '', skipS ? skipS + '件は ' + (add ? 'もう「' + box + '」に入っている' : '「' + box + '」に入っていない') + 'ので そのまま' : '',
+      skipOne ? skipOne + '件は「' + box + '」だけの辞書なので 外しませんでした（消すときは 伝票の［この辞書を消す］）' : ''].filter(Boolean).join('。');
+    if (!n) { dmsg('変わる辞書はありません。' + why, 'err'); return; }
+    S.dpick = {};
+    saveDict(list, n + '件を「' + box + '」' + (add ? 'でも 使うようにしました' : 'から 外しました') + '。' + (why ? why + '。' : ''), null, -1);
+  }
+  $('dBulkAdd').addEventListener('click', function () { bulkBox(true); });
+  $('dBulkDel').addEventListener('click', function () { bulkBox(false); });
   $('dBox').addEventListener('change', function () { if (!slipDirtyOk()) { this.value = S.dbox; return; } S.dbox = this.value; openSlip(null); });
   let DS_T = 0;
   $('dSearch').addEventListener('input', function () { clearTimeout(DS_T); DS_T = setTimeout(drawIndex, 120); });
@@ -14928,7 +15013,7 @@
   })();
   function dictReorder(no, sp) {
     if (!slipDirtyOk()) return;
-    const mine = S.dict.filter(function (d) { return dictBox(d) === (S.dbox || ''); });
+    const mine = S.dict.filter(function (d) { return dictIn(d, S.dbox || ''); });
     const seq = []; GROUPS.forEach(function (g) { mine.forEach(function (d) { if ((d.grp || 'いつも') === g[0]) seq.push(d); }); });
     const me = seq.find(function (d) { return d.no === no; }); if (!me) return;
     const rest = seq.filter(function (d) { return d !== me; });
@@ -15024,7 +15109,9 @@
     $('slip').hidden = !d;
     if (d) {
       $('sNo').value = d.no == null ? '' : String(d.no); $('sTitle').value = d.title || ''; $('sNote').value = d.note || '';
-      $('sGrp').value = d.grp || 'いつも'; boxOpt($('sBox'), d.box == null ? S.dbox : d.box); $('sBox').value = d.box == null ? S.dbox : d.box;
+      const bs = d.box == null ? (S.dbox ? [S.dbox] : []) : boxesOf(d.box);
+      $('sGrp').value = d.grp || 'いつも'; boxOpt($('sBox'), bs[0] || ''); $('sBox').value = bs[0] || '';
+      boxMoreDraw(bs.slice(1));
       $('sTitle').dataset.prev = d.title || '';
       dlinesDraw(d.lines && d.lines.length ? d.lines : [d]);
     }
@@ -15100,8 +15187,28 @@
     const o = Object.assign({}, ls[0] || {});
     o.lines = ls;
     o.no = Number(half($('sNo').value)); o.title = $('sTitle').value.trim(); o.note = $('sNote').value.trim();
-    o.grp = $('sGrp').value; o.box = $('sBox').value;
+    o.grp = $('sGrp').value; o.box = boxMoreRead().join('、');
     return o;
+  }
+  /* ★★ K-0237：［ほかの箱でも使う］… 主の箱（sBox）のほかに 同じ辞書を出す箱に ✓。主の箱が 共通 なら 出さない（共通は どの箱にも出る） */
+  function boxMoreDraw(more) {
+    const w = $('sBoxMore'); if (!w) return;
+    const main = $('sBox').value; more = (more || []).filter(function (b) { return b && b !== main; });
+    w.textContent = ''; w.hidden = !main;
+    if (!main) return;
+    w.appendChild(el('span', 'bmh', 'ほかの箱でも使う'));
+    const list = S.boxes.filter(function (b) { return b !== main && (!boxHid(b) || more.indexOf(b) >= 0); });
+    more.forEach(function (b) { if (list.indexOf(b) < 0) list.push(b); });   /* 顧問先の箱から消えた箱も ✓ のまま見せる（保存で 黙って消えないように） */
+    if (!list.length) { w.appendChild(el('span', 'note', '（ほかの箱はありません）')); return; }
+    list.forEach(function (b) {
+      const lb = el('label', 'bmc'); const cb = el('input'); cb.type = 'checkbox'; cb.value = b; cb.checked = more.indexOf(b) >= 0;
+      lb.appendChild(cb); lb.appendChild(document.createTextNode(' ' + b + (boxHid(b) ? '（非表示の箱）' : ''))); w.appendChild(lb);
+    });
+  }
+  function boxMoreRead() {
+    const main = $('sBox').value; if (!main) return [];
+    const w = $('sBoxMore');
+    return [main].concat(w ? Array.prototype.filter.call(w.querySelectorAll('input[type=checkbox]'), function (c) { return c.checked && c.value !== main; }).map(function (c) { return c.value; }) : []);
   }
   /* 打ったコード → 科目名・税区分（表にあれば）。科目名 → コード（表に1つだけあれば） */
   $('dslip').addEventListener('input', function (e) {
@@ -15132,6 +15239,8 @@
   });
   ['sNo', 'sTitle', 'sNote'].forEach(function (id) { $(id).addEventListener('input', function () { S.dirty = true; dmsg(''); }); });
   ['sGrp', 'sBox'].forEach(function (id) { $(id).addEventListener('change', function () { S.dirty = true; dmsg(''); }); });
+  $('sBox').addEventListener('change', function () { boxMoreDraw(boxMoreRead().slice(1)); });
+  $('sBoxMore').addEventListener('change', function () { S.dirty = true; dmsg(''); });
   /* 取引の種類 ＝ 元帳摘要の初期表示。摘要を書き替えていなければ ついていく */
   $('sTitle').addEventListener('input', function () {
     const m = $('dslip').querySelector('.dline [data-k="memo"]'); if (!m) return;
@@ -15202,7 +15311,7 @@
     /* 並び（ord）は 直しても そのまま残す */
     const prev = S.dict.find(function (x) { return x.no === S.dsel; }); if (prev && prev.ord) o.ord = prev.ord;
     const list = S.dict.filter(function (x) { return x.no !== S.dsel; }).concat([o]);
-    S.dbox = o.box; $('dBox').value = o.box;
+    const obs = boxesOf(o.box); if (!(S.dbox && obs.indexOf(S.dbox) >= 0)) { S.dbox = obs[0] || ''; $('dBox').value = S.dbox; }   /* ★ K-0237：いま見ている箱にも入っていれば そのまま */
     saveDict(list, 'No ' + o.no + ' を保存しました。', o.no, o.no);
   }
   $('sSaveSlip').addEventListener('click', saveSlip);
