@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795134817;</script>
+<script>window.__PAGE_VER=1795149065;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -7649,7 +7649,9 @@
     if (!(r.list || []).length) { w.appendChild(el('div', 'note', 'まだ 戻した結果が ありません。［⬆ できあがりを戻す］で zip を 戻すと ここに 出ます。')); return; }
     r.list.forEach(function (x, i) {
       const d = el('details'); if (i === 0) d.open = true;
-      d.appendChild(el('summary', null, x.at + '・' + x.ym + '分・' + x.who + '・仕訳 ' + (x.n < 0 ? '（読めず）' : x.n + '件') + (x.done ? '・学びを入れた ' + x.done : (x.learn ? '・学び まだ' : ''))));
+      const ans = (function () { try { const j = JSON.parse(String(x.sum || '').replace(/^```(json)?|```$/gm, '')); return j && j.answer && j.answer.rows ? j.answer : null; } catch (e) { return null; } })();
+      const pct = function (n) { return Math.round((Number(n) || 0) / ans.rows * 1000) / 10 + '%'; };
+      d.appendChild(el('summary', null, x.at + '・' + x.ym + '分・' + x.who + '・仕訳 ' + (x.n < 0 ? '（読めず）' : x.n + '件') + (ans ? '・一致率 ' + pct(ans.match) + (ans.hold ? '（保留 ' + pct(ans.hold) + '）' : '') : '') + (x.done ? '・学びを入れた ' + x.done : (x.learn ? '・学び まだ' : ''))));
       const sec = function (t, body) { if (!body) return; const s = el('details'); s.appendChild(el('summary', null, t)); const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;font:inherit;font-size:12.5px;margin:4px 0;max-height:320px;overflow:auto'; pre.textContent = body; s.appendChild(pre); d.appendChild(s); };
       if (x.learn) {
         const lw = el('div'); lw.style.margin = '6px 0';
