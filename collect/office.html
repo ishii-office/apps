@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795133553;</script>
+<script>window.__PAGE_VER=1795134817;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1795,13 +1795,14 @@
     <div id="dvSide">
       <div class="dk-top"><label class="dbox">回収ボックス <select id="dBox" aria-label="どの回収ボックスの辞書か"></select></label></div>
       <div class="dk-top"><input id="dSearch" type="search" placeholder="No・取引の種類・科目・コード" aria-label="辞書を探す"><button type="button" class="primary" id="dNew">＋ 辞書を登録</button></div>
-      <div class="dk-top dbulk"><button type="button" class="btn ghost sm" id="dBulkOn" aria-pressed="false">☑ まとめて箱を付ける</button></div>
+      <div class="dk-top dbulk"><button type="button" class="btn ghost sm" id="dBulkOn" aria-pressed="false" title="辞書を いくつも選んで、まとめて ほかの箱でも使う・箱から外す・ほかの箱へ移す（Shift＋クリックで あいだを ぜんぶ選べます）">☑ まとめて箱を付ける・移す</button></div>
       <div class="dk-top dbulk" id="dBulk" hidden>
         <span id="dBulkN">0件 選んでいます</span>
         <button type="button" class="btn ghost sm" id="dBulkAll">全部選ぶ</button>
         <label class="dbb">箱 <select id="dBulkBox" aria-label="足す・外す回収ボックス"></select></label>
         <button type="button" class="btn sm" id="dBulkAdd">＋ この箱でも使う</button>
         <button type="button" class="btn ghost sm" id="dBulkDel">－ この箱から外す</button>
+        <button type="button" class="btn sm" id="dBulkMove" title="いま見ている回収ボックスから 選んだ箱へ 移す（No・仕訳の中身は そのまま。移す先の いちばん下に並ぶ）">→ この箱へ移す</button>
       </div>
       <div id="dDup" hidden></div>
       <div id="dHeld" hidden></div>
@@ -7258,7 +7259,7 @@
       steps: ['［＋ 新しい顧問先］で 登録', '［＋ 箱を足す］で 資料の箱を決める（並べ替え・中の箱も）', '顧問先に渡す URL は ここ（［URLを作り直す］で 前の URL は 使えなくなります）', '担当・補助担当・決算月を 入れる'],
       tips: ['利用規約の同意は［同意の画面を出す］を押すまで 顧問先には出ません（今までどおり使えます）。導入に行くときに 代表者の役職・氏名・説明担当者を入れて［保存］し、その場で押します。会社名・役職・代表者氏名・控えのメールは 同意の画面に 先に印字されます（顧問先が直せます）。説明担当者は ここで入れたものが 同意ログに残ります', 'QRコードは 顧問先のスマホのカメラで読み込むと ブラウザで開きます（LINE などから開いたときも ふだんのブラウザで開き直します）。あとは 画面の案内どおり「ホーム画面に追加」で終わりです', '顧問先の画面に 出納帳などの帳簿を出すのも ここで 箱ごとに決めます'] },
     Dict: { t: '仕訳辞書', pic: 'g_odict', lead: '取引先・摘要ごとの 決まった仕訳を 登録しておく タブです。AI の下書きにも 効きます。',
-      steps: ['［＋ 辞書を登録］で 取引先・科目・税区分を 入れる', 'まちがえたものは 直す・［この辞書を消す］'], tips: ['同じ辞書を いくつかの回収ボックスで使うときは、「回収ボックス」の下の「ほかの箱でも使う」で その箱に ✓（どの箱にも出すなら「共通」）', 'いくつもの辞書に まとめて箱を足すときは［☑ まとめて箱を付ける］→ 辞書に ✓ → 箱を選んで［＋ この箱でも使う］（外すときは［－ この箱から外す］）'] },
+      steps: ['［＋ 辞書を登録］で 取引先・科目・税区分を 入れる', 'まちがえたものは 直す・［この辞書を消す］'], tips: ['同じ辞書を いくつかの回収ボックスで使うときは、「回収ボックス」の下の「ほかの箱でも使う」で その箱に ✓（どの箱にも出すなら「共通」）', 'いくつもの辞書に まとめて箱を足すときは［☑ まとめて箱を付ける・移す］→ 辞書に ✓ → 箱を選んで［＋ この箱でも使う］（外すときは［－ この箱から外す］）', 'ほかの回収ボックスへ まとめて移すときは［☑ まとめて箱を付ける・移す］→ 辞書に ✓（Shift＋クリックで あいだを ぜんぶ・［全部選ぶ］）→ 箱を選んで［→ この箱へ移す］。移した辞書は 移す先の いちばん下に並びます'] },
     Rule: { t: 'AIの考え方', pic: 'g_orule', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
       steps: ['決まりを 書いて［考え方を保存］', '「経営のようす」… 標準保障額と 格付けを［リスクを入れる］［格付けを入れる］で 入れる（「顧問先に出す」に ✓ したものだけ 顧問先に出る）。下書きは［🤖 エージェントに渡す（zip）］の［🛡 標準保障額］［🏦 格付け］で作り［📥 結果と学び］の［経営のようすに入れる］で 写す。顧問先から 相談が来たら［提案を 顧問先に出す］', '「議事録」… OMS などの 議事録を［文字で入れる］か［ファイルで入れる］（あとから直せない記録に 指紋と日時が残る）。［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
     Fold: { t: 'Google共有ドライブ', lead: '事務所の Google共有ドライブを この画面から 開く・整理する タブです。',
@@ -14929,7 +14930,15 @@
           cb.addEventListener('change', function () { if (cb.checked) S.dpick[d.no] = 1; else delete S.dpick[d.no]; bulkPaint(); });
           li.appendChild(cb);
           const bs = dictBoxes(d); if (bs.length > 1) b.title = '使う箱：' + bs.join('・');
-          b.addEventListener('click', function () { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); });
+          b.addEventListener('click', function (e) {
+            /* ★ K-0238：Shift＋クリックで 前に押した所から ここまで ぜんぶ ✓ */
+            if (e.shiftKey && S.dpickLast != null) {
+              const seen = Array.prototype.map.call(ul.querySelectorAll('li.pick'), function (x) { return Number(x.dataset.no); });
+              const a = seen.indexOf(S.dpickLast), z = seen.indexOf(d.no);
+              if (a >= 0 && z >= 0) { seen.slice(Math.min(a, z), Math.max(a, z) + 1).forEach(function (n) { S.dpick[n] = 1; }); S.dpickLast = d.no; drawIndex(); return; }
+            }
+            S.dpickLast = d.no; cb.checked = !cb.checked; cb.dispatchEvent(new Event('change'));
+          });
           b.appendChild(el('span', 'no', String(seqOf(S.dbox || '', d.no) || ''))); b.appendChild(el('span', 't', d.title || d.memo || d.dr)); b.appendChild(el('span', 'fxno', 'No ' + d.no));
           li.appendChild(b); ul.appendChild(li); return;
         }
@@ -14952,11 +14961,12 @@
     const n = Object.keys(S.dpick).length;
     $('dBulkN').textContent = n + '件 選んでいます';
     $('dBulkAdd').disabled = $('dBulkDel').disabled = !n || !$('dBulkBox').value;
+    $('dBulkMove').disabled = !n || !$('dBulkBox').value || $('dBulkBox').value === (S.dbox || '');
   }
   function bulkOn(on) {
     if (on && !slipDirtyOk()) return;
-    S.dbulk = !!on; S.dpick = {};
-    $('dBulkOn').setAttribute('aria-pressed', String(S.dbulk)); $('dBulkOn').textContent = S.dbulk ? '✓ まとめて箱を付けるのを やめる' : '☑ まとめて箱を付ける';
+    S.dbulk = !!on; S.dpick = {}; S.dpickLast = null;
+    $('dBulkOn').setAttribute('aria-pressed', String(S.dbulk)); $('dBulkOn').textContent = S.dbulk ? '✓ まとめて箱を付ける・移すのを やめる' : '☑ まとめて箱を付ける・移す';
     $('dBulk').hidden = !S.dbulk;
     if (S.dbulk) {
       const sel = $('dBulkBox'), keep = sel.value; sel.textContent = '';
@@ -14992,6 +15002,40 @@
   }
   $('dBulkAdd').addEventListener('click', function () { bulkBox(true); });
   $('dBulkDel').addEventListener('click', function () { bulkBox(false); });
+  /* ★★ K-0238（2026-11-20 林）：［→ この箱へ移す］… いま見ている箱（左上の「回収ボックス」）から 選んだ箱へ まとめて移す。
+       その辞書の ほかの箱（K-0237）は そのまま。移す先に もう入っていれば いまの箱から外すだけ。共通の辞書は 移す先だけの辞書になる。
+       FX のタグの対応で いまの箱に決まっている辞書は 移しても戻るので 移さない（わけを出す）。移した辞書は 移す先の いちばん下に 今の順で並ぶ */
+  function bulkMove() {
+    const to = $('dBulkBox').value, from = S.dbox || '', nos = Object.keys(S.dpick).map(Number); if (!to || to === from || !nos.length) return;
+    const fxm = (S.fxConf && S.fxConf.tags) || {};
+    const seen = Array.prototype.map.call($('dIndex').querySelectorAll('li.pick'), function (x) { return Number(x.dataset.no); });
+    const order = seen.filter(function (n) { return nos.indexOf(n) >= 0; }).concat(nos.filter(function (n) { return seen.indexOf(n) < 0; }));
+    let skipFx = 0; const moved = {};
+    let list = S.dict.map(function (d) {
+      if (order.indexOf(d.no) < 0) return d;
+      const bs = dictBoxes(d);
+      if (from && d.fxTag && fxm[d.fxTag] === from && bs[0] === from) { skipFx++; return d; }
+      let nb;
+      if (!bs.length) nb = [to];
+      else if (bs.indexOf(to) >= 0) nb = bs.filter(function (b) { return b !== from; });
+      else nb = bs.map(function (b) { return b === from ? to : b; });
+      moved[d.no] = 1;
+      return Object.assign({}, d, { box: nb.join('、') });
+    });
+    const n = Object.keys(moved).length;
+    const why = skipFx ? skipFx + '件は FX のタグの対応で「' + from + '」に決まっているので 移していません（［FX から取り込む］の タグの対応で 変えてください）' : '';
+    if (!n) { dmsg('移せる辞書はありません。' + why, 'err'); return; }
+    if (!confirm(n + '件の辞書を「' + (from || '共通') + '」から「' + to + '」へ移します。よろしいですか？（No・仕訳の中身は そのままです）')) return;
+    /* 移す先に もとからある辞書は 今の並びのまま 1, 2, 3 …、そのうしろに 移したもの */
+    const sorted = function (a, b) { return (a.ord || 1e9) - (b.ord || 1e9) || a.no - b.no; };
+    const ord = {}; let k = 0;
+    S.dict.slice().sort(sorted).filter(function (d) { return !moved[d.no] && dictBoxes(d).indexOf(to) >= 0; }).forEach(function (d) { ord[d.no] = ++k; });
+    order.forEach(function (no) { if (moved[no]) ord[no] = ++k; });
+    list = list.map(function (d) { return ord[d.no] ? Object.assign({}, d, { ord: ord[d.no] }) : d; }).sort(sorted);
+    S.dpick = {}; S.dpickLast = null;
+    saveDict(list, n + '件を「' + to + '」へ移しました。' + (why ? why + '。' : ''), null, -1);
+  }
+  $('dBulkMove').addEventListener('click', bulkMove);
   $('dBox').addEventListener('change', function () { if (!slipDirtyOk()) { this.value = S.dbox; return; } S.dbox = this.value; openSlip(null); });
   let DS_T = 0;
   $('dSearch').addEventListener('input', function () { clearTimeout(DS_T); DS_T = setTimeout(drawIndex, 120); });
