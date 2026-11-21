@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795255249;</script>
+<script>window.__PAGE_VER=1795259514;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1674,7 +1674,7 @@
     <button type="button" role="tab" data-tab="Kaizen" aria-pressed="false" id="tabKaizen">改善要望<b class="kzbadge" id="kzBadge" hidden></b></button>
     <button type="button" role="tab" data-tab="Send" aria-pressed="false" id="tabSend">送付物</button>
   </span>
-  <span class="who"><select class="minesel" id="mineSel" hidden aria-label="どの担当者の顧問先を出すか" title="担当者ごとのマイページ：自分（または選んだ担当者）の担当・補助担当の顧問先だけを 一覧と 上の顧問先の欄に出す"></select><button type="button" class="arrbtn bellbtn" id="circBtn" hidden aria-expanded="false" title="事務所の中の 回覧（自分あて・自分が回したもの）">📋<span class="bt"> 回覧</span><b class="belln" id="circN" hidden></b></button><button type="button" class="arrbtn bellbtn" id="bellBtn" hidden aria-expanded="false" title="顧問先から届いた知らせ（直近30日）。赤い数字は まだ見ていない数">🔔<span class="bt"> お知らせ</span><b class="belln" id="bellN" hidden></b></button><button type="button" class="arrbtn" id="guideBtn" hidden title="この画面の 使い方（操作ガイド）">📖<span class="bt"> 操作ガイド</span></button><button type="button" class="arrbtn" id="sorBtn" hidden title="担当の顧問先の 資料のそろい具合（月分ごと・箱ごと）。いつも来る箱が まだ来ていない顧問先が 一目で分かります">📊<span class="bt"> そろい具合</span></button><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥<span class="bt"> 未処理</span> <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
+  <span class="who"><select class="minesel" id="mineSel" hidden aria-label="どの担当者の顧問先を出すか" title="担当者ごとのマイページ：自分（または選んだ担当者）の担当・補助担当の顧問先だけを 一覧と 上の顧問先の欄に出す"></select><button type="button" class="arrbtn bellbtn" id="circBtn" hidden aria-expanded="false" title="事務所の中の 回覧（自分あて・自分が回したもの）">📋<span class="bt"> 回覧</span><b class="belln" id="circN" hidden></b></button><button type="button" class="arrbtn bellbtn" id="bellBtn" hidden aria-expanded="false" title="顧問先から届いた知らせ（直近30日）。赤い数字は まだ見ていない数">🔔<span class="bt"> お知らせ</span><b class="belln" id="bellN" hidden></b></button><button type="button" class="arrbtn" id="guideBtn" hidden title="この画面の 使い方（操作ガイド）">📖<span class="bt"> 操作ガイド</span></button><button type="button" class="arrbtn" id="agpBtn" hidden title="エージェントの 進み具合（zip を 渡した → 戻した → 元帳で 確かめ中 → 取り込みファイルに した）。担当の顧問先・月分ごと">🤖<span class="bt"> エージェント</span></button><button type="button" class="arrbtn" id="sorBtn" hidden title="担当の顧問先の 資料のそろい具合（月分ごと・箱ごと）。いつも来る箱が まだ来ていない顧問先が 一目で分かります">📊<span class="bt"> そろい具合</span></button><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥<span class="bt"> 未処理</span> <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
 <div class="arrpop" id="arrPop" hidden role="dialog" aria-label="未処理の資料（顧問先ごと）"></div>
 <div class="arrpop" id="bellPop" hidden role="dialog" aria-label="お知らせ（届いた知らせ）"></div>
@@ -1747,7 +1747,7 @@
     <button type="button" id="dPdfAll" title="まとめた書類は その束で1つのPDF、ほかは1枚ずつのPDF（2つ以上なら ZIP 1つ）">一括PDF切り出し</button>
     <button type="button" id="dPrintAll" title="いま見えているものを 並んでいる順に印刷">🖨 印刷</button>
     <button type="button" id="dTrash" hidden>破棄したもの</button>
-    <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button><button type="button" id="dAgent" title="この顧問先・この月分の 資料・補助簿・過去の仕訳・事務所の考え方を 1つの zip にして、自分の Claude Code に渡せるようにする">🤖 エージェントに渡す（zip）</button><span id="dAgentPick" hidden></span><button type="button" id="dAgentBack" hidden title="自分の Claude Code が作った できあがり（仕訳.json・元帳・質問一覧・カルテ など）を zip にして この顧問先・この月分に 戻す。戻すと エージェント研究 1回として 改善と効率化の集計に 数えます">⬆ できあがりを戻す</button><input type="file" id="dAgentBackF" accept=".zip,application/zip" hidden><button type="button" id="dAgentRes" hidden title="戻した できあがりの 中身（仕訳の数・気づいたこと・学び・カルテの案・気づき）。学びは［はい］で 顧問先カルテに 入れると 次の zip から エージェントに 渡る">📥 結果と学び</button><button type="button" id="dLedger" hidden title="エージェントが 戻した 仕訳を TKC と同じ形の 元帳（月別の残高 → 口座別 → 総勘定元帳 → 伝票）で 確かめる。Enter で ✓ して 次の伝票。全部 ✓ で 取り込みファイルに">📗 元帳で確かめる</button><div id="agResBox" class="agdocs" hidden></div><button type="button" id="dAgentNeed" hidden title="この顧問先で エージェントに 要る資料の チェック表（通年・毎月）。そろったら 投げる。足りないものは 顧問先に お願い">✅ 要る資料のチェック表</button><button type="button" id="dAgentStd" hidden title="事務所の 標準体系（記帳の 考え方・科目の 標準・企業防衛の 考え方）を 自分の Claude Code に 入れる 形で ダウンロード。分からないことは そこで 聞く">📚 事務所の標準体系</button><button type="button" id="dAgentDocs" hidden title="月別減価償却確認表・返済予定表 など、事務所が足す 通年の資料（月に しばられない）。エージェントの zip に いつも入る">📎 事務所の資料（通年）</button><div id="agDocsBox" class="agdocs" hidden></div><div id="needBox" class="agdocs" hidden></div>
+    <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button><span id="agpLine" class="note" style="margin:0 6px"></span><button type="button" id="dAgent" title="この顧問先・この月分の 資料・補助簿・過去の仕訳・事務所の考え方を 1つの zip にして、自分の Claude Code に渡せるようにする">🤖 エージェントに渡す（zip）</button><span id="dAgentPick" hidden></span><button type="button" id="dAgentBack" hidden title="自分の Claude Code が作った できあがり（仕訳.json・元帳・質問一覧・カルテ など）を zip にして この顧問先・この月分に 戻す。戻すと エージェント研究 1回として 改善と効率化の集計に 数えます">⬆ できあがりを戻す</button><input type="file" id="dAgentBackF" accept=".zip,application/zip" hidden><button type="button" id="dAgentRes" hidden title="戻した できあがりの 中身（仕訳の数・気づいたこと・学び・カルテの案・気づき）。学びは［はい］で 顧問先カルテに 入れると 次の zip から エージェントに 渡る">📥 結果と学び</button><button type="button" id="dLedger" hidden title="エージェントが 戻した 仕訳を TKC と同じ形の 元帳（月別の残高 → 口座別 → 総勘定元帳 → 伝票）で 確かめる。Enter で ✓ して 次の伝票。全部 ✓ で 取り込みファイルに">📗 元帳で確かめる</button><div id="agResBox" class="agdocs" hidden></div><button type="button" id="dAgentNeed" hidden title="この顧問先で エージェントに 要る資料の チェック表（通年・毎月）。そろったら 投げる。足りないものは 顧問先に お願い">✅ 要る資料のチェック表</button><button type="button" id="dAgentStd" hidden title="事務所の 標準体系（記帳の 考え方・科目の 標準・企業防衛の 考え方）を 自分の Claude Code に 入れる 形で ダウンロード。分からないことは そこで 聞く">📚 事務所の標準体系</button><button type="button" id="dAgentDocs" hidden title="月別減価償却確認表・返済予定表 など、事務所が足す 通年の資料（月に しばられない）。エージェントの zip に いつも入る">📎 事務所の資料（通年）</button><div id="agDocsBox" class="agdocs" hidden></div><div id="needBox" class="agdocs" hidden></div>
   </span>
 </div>
 
@@ -2646,7 +2646,7 @@
     <span class="dvbr" aria-hidden="true"></span>
     <span class="dvkey" title="テンキーで サクサク確認（最後の1枚のあとは 一覧に戻る）">Enter 確認済→次／1 対象外→次／2 破棄→次／0 戻して元通り</span>
     <button type="button" class="btn ghost sm" id="dvMark" title="文字・下線・枠を 重ねて書く（元の写真・PDF は書き換えません）">✏ 書きこむ</button>
-    <button type="button" class="btn ghost sm" id="dvMove">別の月分へ移す</button>
+    <button type="button" class="btn ghost sm" id="dvPdfSplit" hidden title="まとまった PDF を 1ページ ＝ 1つの 資料に 分ける（PDF の 中身は そのまま。元の PDF は 破棄したものへ。いつでも 戻せる）">✂ 1ページずつに分ける</button><button type="button" class="btn ghost sm" id="dvMove">別の月分へ移す</button>
     <button type="button" class="btn ghost sm" id="dvGmail" title="この書類を Gmail の下書きに 添付する">✉ Gmailに添付</button><button type="button" class="btn ghost sm" id="dvSave" title="この書類を パソコン・スマホに保存する（書きこみ・ハンコも 入れて。まとめた書類は 1つの PDF）。パソコンは ダウンロード、スマホは 保存・共有の窓">⬇ 保存</button>
     <span class="dvback" id="dvBack"></span>
     <a class="btn ghost sm" id="dvDrive" target="_blank" rel="noopener">Drive</a>
@@ -2690,6 +2690,15 @@
     <button type="button" class="btn ghost sm danger" id="dcDel">破棄</button><button type="button" class="btn ghost sm" id="dcNone">全部外す</button><button type="button" class="btn ghost sm" id="dcEnd">やめる</button></span>
 </div>
 
+<div class="dmove" id="agpv" hidden role="dialog" aria-modal="true" aria-labelledby="agpT">
+  <div class="dmove-s sor-s">
+    <h3 id="agpT">🤖 エージェントの 進み具合</h3>
+    <p class="sor-n">顧問先・月分ごとに いま どこまで 来ているか。<b>⏳ 戻り待ち</b>（zip を 渡した）→ <b>📥 確かめ中</b>（戻した。元帳の ✓ の数）→ <b>✅ 確かめ済み</b> → <b>📤 取り込みファイルに した</b>。行を押すと その顧問先・月分の 回収資料へ</p>
+    <label class="sor-f"><input type="checkbox" id="agpOpen" checked> 終わっていないものだけ</label>
+    <div class="sor-w" id="agpW">読んでいます…</div>
+    <div class="dmv-b"><button type="button" class="btn ghost" id="agpRe">↻ 読み直す</button><button type="button" class="btn ghost" id="agpNo">閉じる</button></div>
+  </div>
+</div>
 <div class="dmove" id="sorv" hidden role="dialog" aria-modal="true" aria-labelledby="sorT">
   <div class="dmove-s sor-s">
     <h3 id="sorT">📊 資料のそろい具合（月分ごと）</h3>
@@ -2932,7 +2941,7 @@
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
   }
-  function signOut(msg) { try { $('arrBtn').hidden = true; $('sorBtn').hidden = true; $('guideBtn').hidden = true; $('arrPop').hidden = true; $('bellBtn').hidden = true; $('bellPop').hidden = true; $('mineSel').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
+  function signOut(msg) { try { $('arrBtn').hidden = true; $('sorBtn').hidden = true; $('agpBtn').hidden = true; $('guideBtn').hidden = true; $('arrPop').hidden = true; $('bellBtn').hidden = true; $('bellPop').hidden = true; $('mineSel').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
   $('signOut').addEventListener('click', function () { signOut('ログアウトしました。'); });
   $('gate').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -5677,6 +5686,7 @@
     return (a.t - b.t) || ((a.rn || 0) - (b.rn || 0));
   }
   function docsDraw() {
+    try { agpLine(true); } catch (e) {}
     try { aNchkSync(); } catch (e) {}
     try { wsRefresh(); } catch (e) {}
     const body = $('dBody'); body.textContent = '';
@@ -6784,7 +6794,7 @@
   const LS_ARSINCE = 'collect_arr_since';
   function arDraw() {
     const tot = AR.pend.reduce(function (a, y) { return a + y.n; }, 0);
-    $('arrN').textContent = String(tot); $('arrBtn').hidden = !S.started || LIVE; $('sorBtn').hidden = !S.started || LIVE; $('guideBtn').hidden = !S.started; $('arrBtn').classList.toggle('has', tot > 0);
+    $('arrN').textContent = String(tot); $('arrBtn').hidden = !S.started || LIVE; $('sorBtn').hidden = !S.started || LIVE; $('agpBtn').hidden = !S.started || LIVE; $('guideBtn').hidden = !S.started; $('arrBtn').classList.toggle('has', tot > 0);
     const pop = $('arrPop'); if (pop.hidden) return;
     pop.textContent = '';
     pop.appendChild(el('h4', null, '📥 未処理の資料（' + tot + '件）'));
@@ -7256,10 +7266,10 @@
   const GUIDE = {
     order: ['top', 'Docs', 'In', 'Out', 'Clients', 'Dict', 'Rule', 'Fold', 'Send', 'Kaizen', 'Staff'],
     top: { t: '🧭 全体・右上のボタン', pic: 'g_otop', lead: '上の「顧問先」で 顧問先を選び、タブで 仕事を切り替えます。右上のボタンは どのタブからでも使えます。',
-      steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
+      steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［🤖 エージェント］… エージェントの 進み具合（顧問先・月分ごとに ⏳ 戻り待ち → 📥 確かめ中 ✓ n／m → ✅ 確かめ済み → 📤 取り込みファイルに した）。行を押すと その回収資料へ', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
-      steps: ['上で 顧問先・月分・箱を選ぶ', '赤い枠の［⚠ 二重では？］… 先に届いた写真と 同じ写真・同じ日付と金額と相手・同じ字（日付・合計）。二重なら その写真を 破棄、ちがえば 2回押して「二重ではない」（顧問先には 聞かない）', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）', '戻したら［📗 元帳で確かめる］… TKC と同じ形（月別の残高 → 口座別 → 総勘定元帳 → 伝票）。伝票は 左に 写真（預金は 通帳の行）、右に 10行。Enter で ✓ して 次の伝票・0 で 前・T（F2）で 訂正・1・2 で エージェントの 別の案・Esc で 戻る。全部 ✓ で［📤 取り込みファイルにする］（FX の 一括読み込み。使った箱は 処理済ボックスへ）'],
+      steps: ['上で 顧問先・月分・箱を選ぶ', 'まとまった PDF（スキャナで 何十枚も 1つに なったもの）は 大きく見るで［✂ 1ページずつに分ける］。1ページ ＝ 1つの 資料に なり、元の PDF は 破棄したものへ（戻せます）', '赤い枠の［⚠ 二重では？］… 先に届いた写真と 同じ写真・同じ日付と金額と相手・同じ字（日付・合計）。二重なら その写真を 破棄、ちがえば 2回押して「二重ではない」（顧問先には 聞かない）', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）', '戻したら［📗 元帳で確かめる］… TKC と同じ形（月別の残高 → 口座別 → 総勘定元帳 → 伝票）。伝票は 左に 写真（預金は 通帳の行）、右に 10行。Enter で ✓ して 次の伝票・0 で 前・T（F2）で 訂正・1・2 で エージェントの 別の案・Esc で 戻る。全部 ✓ で［📤 取り込みファイルにする］（FX の 一括読み込み。使った箱は 処理済ボックスへ）'],
       tips: ['パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
@@ -7434,6 +7444,44 @@
     });
     d.appendChild(f);
   }
+  /* ★★ エージェントの 進み具合（2026-11-21）。zip の やり方の まま（お金は かからない）。マイページ（担当者）を 選んでいれば その人の 担当先だけ */
+  const AGP = { r: null, at: 0 };
+  const AGP_ST = { gave: ['⏳ 戻り待ち', 'ng'], back: ['📥 確かめ中', 'pt'], checked: ['✅ 確かめ済み', 'ok'], done: ['📤 取り込みファイルに した', 'ok'] };
+  function agpLoad(force) { if (AGP.r && !force && Date.now() - AGP.at < 120000) return Promise.resolve(AGP.r); return gs('agentProgress').then(function (r) { AGP.r = r; AGP.at = Date.now(); return r; }); }
+  function agpOpen(force) { $('agpv').hidden = false; $('agpW').textContent = '読んでいます…'; agpLoad(force).then(agpDraw, function (e) { $('agpW').textContent = '読めませんでした（' + ((e && e.message) || e) + '）'; }); }
+  function agpStText(x) { const st = AGP_ST[x.st] || ['', '']; return st[0] + (x.st === 'back' && x.n ? '（✓ ' + x.ok + '／' + x.n + '）' : '') + (x.st === 'gave' && x.waitMin ? '（' + (x.waitMin >= 1440 ? Math.floor(x.waitMin / 1440) + '日' : x.waitMin >= 60 ? Math.floor(x.waitMin / 60) + '時間' : x.waitMin + '分') + '）' : ''); }
+  function agpDraw(r) {
+    const w = $('agpW'); w.textContent = '';
+    const cl = {}; (S.clients || []).forEach(function (c) { cl[c.code] = c; });
+    let L = (r.rows || []).filter(function (x) { return mineOk(cl[x.code]); });
+    if ($('agpOpen').checked) L = L.filter(function (x) { return x.st !== 'done'; });
+    if (!L.length) { w.appendChild(el('div', 'note', 'まだ ありません。回収資料タブの［🤖 エージェントに渡す（zip）］で 渡すと ここに 出ます。')); return; }
+    const t = el('table', 'sor-t'), hr = el('tr');
+    ['顧問先', '月分', 'いま', '渡した', '戻した', '取り込み'].forEach(function (h) { hr.appendChild(el('th', null, h)); }); t.appendChild(hr);
+    L.forEach(function (x) {
+      const tr = el('tr'); tr.style.cursor = 'pointer'; tr.title = '押すと この顧問先・月分の 回収資料へ';
+      tr.appendChild(el('td', 'nm', x.code + ' ' + (x.name || ''))); tr.appendChild(el('td', null, Number(x.ym.slice(5)) + '月分'));
+      const st = el('td', AGP_ST[x.st] ? AGP_ST[x.st][1] : null, agpStText(x)); tr.appendChild(st);
+      tr.appendChild(el('td', null, x.gave ? x.gave + ' ' + x.gaveBy : '')); tr.appendChild(el('td', null, x.back ? x.back + ' ' + x.backBy : '')); tr.appendChild(el('td', null, x.done ? x.done + ' ' + x.doneBy : ''));
+      tr.addEventListener('click', function () { $('agpv').hidden = true; if (!setCode(x.code)) return; perPick(x.ym); if (S.tab === 'Docs') docsLoad(); else selectTab('Docs'); });
+      t.appendChild(tr);
+    });
+    w.appendChild(t);
+  }
+  /* 回収資料タブ：いまの 顧問先・月分の 進み具合を［🤖 エージェントに渡す］の 横に 1行 */
+  function agpLine(cacheOnly) {   /* cacheOnly … 一覧を 描くたびに サーバへ 行かない（読んである ものだけ 使う） */
+    const sp = $('agpLine'); if (!sp) return; sp.textContent = ''; if (!S.code) return;
+    if (cacheOnly && !AGP.r) return;
+    (cacheOnly ? Promise.resolve(AGP.r) : agpLoad(false)).then(function (r) {
+      if (!S.code) return;
+      const x = (r.rows || []).filter(function (y) { return y.code === S.code && (!S.per || y.ym === S.per); })[0];
+      sp.textContent = x ? '🤖 ' + Number(x.ym.slice(5)) + '月分：' + agpStText(x) : '';
+    }, function () {});
+  }
+  $('agpBtn').addEventListener('click', function () { agpOpen(false); });
+  $('agpRe').addEventListener('click', function () { agpOpen(true); });
+  $('agpNo').addEventListener('click', function () { $('agpv').hidden = true; });
+  $('agpOpen').addEventListener('change', function () { if (AGP.r) agpDraw(AGP.r); });
   $('sorBtn').addEventListener('click', function () { sorOpen(false); });
   $('sorRe').addEventListener('click', function () { sorOpen(true); });
   $('sorNo').addEventListener('click', function () { $('sorv').hidden = true; });
@@ -7589,7 +7637,7 @@
     if (!pk.hidden) { pk.hidden = true; ['dAgentBack', 'dAgentDocs', 'agDocsBox', 'dAgentRes', 'dLedger', 'agResBox', 'dAgentNeed', 'needBox', 'dAgentStd'].forEach(function (i) { $(i).hidden = true; }); return; }
     if (!S.code) { dcMsg('先に 顧問先を選んでください。', true); return; }
     if (!(S.per && /^\d{4}-\d{2}$/.test(S.per))) { dcMsg('先に 上で 月分（◯年◯月分）を 1つ選んでください。', true); return; }
-    pk.textContent = ''; pk.hidden = false; $('dAgentBack').hidden = false; $('dAgentDocs').hidden = false; $('dAgentRes').hidden = false; $('dLedger').hidden = false; $('dAgentNeed').hidden = false; $('dAgentStd').hidden = false;   /* ★ できあがりを戻す も ここで出す（ふだんは 出さない。並びを 動かさない） */
+    pk.textContent = ''; pk.hidden = false; try { agpLine(false); } catch (q) {} $('dAgentBack').hidden = false; $('dAgentDocs').hidden = false; $('dAgentRes').hidden = false; $('dLedger').hidden = false; $('dAgentNeed').hidden = false; $('dAgentStd').hidden = false;   /* ★ できあがりを戻す も ここで出す（ふだんは 出さない。並びを 動かさない） */
     /* ★ 箱を選べる（2026-11-18）：預金・カードは 会計ソフトの自動仕訳、現金だけ・給与だけ を エージェントに など。全部に✓なら その月分 全部 */
     const bxs = []; (S.docs || []).forEach(function (it) { if (it.period !== S.per) return; const b = String(it.box || '').split('/')[0]; if (b && bxs.indexOf(b) < 0) bxs.push(b); });
     ((S.clients.find(function (c) { return c.code === S.code; }) || {}).books || []).forEach(function (b) { if (bxs.indexOf(b) < 0) bxs.push(b); });
@@ -7613,7 +7661,8 @@
         return;
       }
       pk.hidden = true; ['dAgentBack', 'dAgentDocs', 'agDocsBox', 'dAgentRes', 'dLedger', 'agResBox', 'dAgentNeed', 'needBox', 'dAgentStd'].forEach(function (i) { $(i).hidden = true; }); const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
-      gs('agentPack', S.code, S.per, ans, boxes, { span: Number(yr.value) || 1, mode: mode || '' }).then(function (r) {
+      const phone = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      gs('agentPack', S.code, S.per, ans, boxes, { span: Number(yr.value) || 1, mode: mode || '', nob64: phone }).then(function (r) { AGP.at = 0; try { agpLine(false); } catch (q) {}
         b.disabled = false;
         dcMsg('');
         const m = $('dcMsg'); m.textContent = '';
@@ -7621,7 +7670,14 @@
         if (r.b64) { try { const bin = atob(r.b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const dl = document.createElement('a'); dl.href = URL.createObjectURL(new Blob([u8], { type: 'application/zip' })); dl.download = r.name; document.body.appendChild(dl); dl.click(); setTimeout(function () { URL.revokeObjectURL(dl.href); dl.remove(); }, 30000); m.appendChild(document.createTextNode('⬇ ダウンロードしました（ブラウザの ダウンロードから そのまま Claude Code へ ドラッグ）。 ')); } catch (e) {} }
         const a = document.createElement('a'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = r.b64 ? 'ドライブの 控え' : 'ドライブで開く（ダウンロード）'; m.appendChild(a);
         m.appendChild(document.createTextNode('　→ 自分の Claude Code に 添付して「はじめに読む.md のとおり この月の仕訳を作って」と頼む。' + (r.skipped.length ? '　★ 大きすぎて入れられなかった資料：' + r.skipped.join('、') : '') + (r.split ? '　★ ' + r.split : '')));
-      }, function (e) { b.disabled = false; dcMsg('zip を作れませんでした。' + e.message, true); });
+      }, function (e) {
+        b.disabled = false;
+        /* ★ 返事が 途中で 切れても（スマホの Load failed など）ドライブには できていることが 多い。いちばん 新しい zip を 探して 出す */
+        gs('agentPackLast', S.code).then(function (z) {
+          if (z && !z.none && z.min <= 10) { const m = $('dcMsg'); dcMsg('返事は 途中で 切れましたが、zip は できています（' + z.at + '）：'); const a = document.createElement('a'); a.href = z.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = z.name + ' を ドライブで開く（ダウンロード）'; m.appendChild(a); }
+          else dcMsg('zip を作れませんでした。' + e.message, true);
+        }, function () { dcMsg('zip を作れませんでした。' + e.message, true); });
+      });
     };
     pk.appendChild(yr);
     [['ふつう', false, 'その月の材料だけ'], ['答え合わせつき', true, 'その月の確定仕訳も「作り終わってから開く」に入れる（練習・精度を確かめるとき）'], ['📈 気づき（試算表から）', false, '［📎 事務所の資料］に入れた 月次試算表 から、前月比・前年同月比で 大きく動いた科目と 社長面談の 論点の下書きを 作ってもらう（証憑は 入れない。事務所の中だけで 使う）', 'kizuki'], ['📝 書面添付の下書き', false, '1年分の 仕訳・試算表・議事録（巡回監査・社長面談）・［📚 事務所共通の資料］の 様式と 事例集から、書面添付の 下書きを 作ってもらう（事実だけ。証憑は 入れない）', 'shomen'], ['🛡 標準保障額', false, '試算表・決算書・返済予定表と［📚 事務所共通の資料］の 標準保障額算定書から、標準保障額の 下書き（金額・理由・内訳・算定式）を 作ってもらう', 'risk'], ['🏦 格付け', false, '決算書・試算表と［📚 事務所共通の資料］の Fプラスの資料から、形式的な格付けと 上げられる幅・上げるための点の 下書きを 作ってもらう', 'rating']].forEach(function (x) { const bb = el('button', 'dmon-b', x[0]); bb.type = 'button'; bb.title = x[2]; bb.addEventListener('click', function () { go(x[1], x[3]); }); pk.appendChild(bb); });
@@ -8085,7 +8141,7 @@
   }
   function ledExport() {
     const b = $('ledExp'); b.disabled = true; ledMsg('取り込みファイル（FX の 一括読み込み）を 作っています…');
-    gs('ledgerExport', S.code, LED.d.ym).then(function (r) {
+    gs('ledgerExport', S.code, LED.d.ym).then(function (r) { AGP.at = 0; try { agpLine(false); } catch (q) {}
       (r.dl || []).forEach(function (f) { try { const bin = atob(f.b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = f.name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 30000); } catch (e) {} });
       ledMsg('📤 取り込みファイルに しました（伝票 ' + r.slips + '枚・' + r.count + '行・直した ' + r.edited + '枚）。' + (r.boxes.length ? '使った資料の 箱（' + r.boxes.join('・') + '）は 処理済ボックスへ。' : '') + ' 控えは 顧問先フォルダの「一括読み込みエクセル」に あります。');
       b.disabled = false;
@@ -8111,7 +8167,7 @@
     const b = $('dAgentBack'); b.disabled = true; dcMsg('できあがりを 戻しています…');
     const rd = new FileReader();
     rd.onload = function () {
-      gs('agentReturn', S.code, S.per, { name: f.name, b64: String(rd.result).split(',')[1] || '' }).then(function (r) {
+      gs('agentReturn', S.code, S.per, { name: f.name, b64: String(rd.result).split(',')[1] || '' }).then(function (r) { AGP.at = 0; try { agpLine(false); } catch (q) {}
         b.disabled = false; dcMsg('⬆ 戻しました（' + r.name + '）。あなたの エージェント研究は ' + r.n + '回目です。' + (r.res && r.res.err ? '　★ 中身を 読めませんでした（' + r.res.err + '）' : r.res ? '　仕訳 ' + r.res.entries + '件' + (r.res.learn ? '・学びあり →［📥 結果と学び］で カルテへ' : '') + (r.res.needAdded ? '・足りなかった資料 ' + r.res.needAdded + '件を ✅ チェック表に 足しました' : '') + (r.res.karteIn ? '・カルテを 新しい版に しました（前の版も 残る）' : '') : ''));
         if (r.res && !r.res.err) agResOpen();
         if (r.res && r.res.ledger) { $('dLedger').hidden = false; const m = document.getElementById('dcMsg'); if (m) m.appendChild(document.createTextNode('　📗 伝票 ' + r.res.ledger + '枚を［元帳で確かめる］で 確かめられます。')); }
@@ -10665,14 +10721,50 @@
     if (!id) { dcMsg(dir > 0 ? 'この箱の 最後です。' : 'この箱の 最初です。'); $('dvPos').animate && $('dvPos').animate([{ background: '#FFE3DE' }, { background: '#fff' }], 500); return; }
     const d = dvDoc(id); if (d) docsOpen(d);
   }
+  $('dvPdfSplit').addEventListener('click', function (e) {
+    e.stopPropagation();
+    const b = this, it = S.dvIt, code = S.code; if (!it) return;
+    if (b.dataset.ok !== '1') { b.dataset.ok = '1'; b.textContent = 'もう一度押すと 1ページずつに 分けます（元は 破棄したものへ）'; return; }
+    b.disabled = true; b.textContent = '分けています…';
+    const run = function () {
+      const v = IMG[it.id]; if (!v || v.t !== 'pdf' || !v.b64) { b.disabled = false; b.dataset.ok = ''; b.textContent = '✂ 1ページずつに分ける'; dcMsg('PDF を 読めませんでした（大きすぎるかも）。', true); return; }
+      pdfSplitRun(v.b64, function (pages, last) { return gs('officePdfSplit', code, it.id, pages, last); }, function (t) { b.textContent = '分けています… ' + t; }).then(function (n) {
+        docsClose(); dcMsg('📄 ' + n + 'ページを 1ページずつ に 分けました（元の PDF は 破棄したものへ。戻せます）。'); docsLoad(true);
+      }, function (er) { b.disabled = false; b.dataset.ok = ''; b.textContent = '✂ 1ページずつに分ける'; dcMsg('分けられませんでした。' + er.message, true); });
+    };
+    if (IMG[it.id]) run(); else dWant(it.id, true, run);
+  });
   $('dvPrev').addEventListener('click', function (e) { e.stopPropagation(); dvPage(-1); });
   $('dvNext').addEventListener('click', function (e) { e.stopPropagation(); dvPage(1); });
   /* 並べて見る（左にページの一覧・右に大きく）。この端末が覚える */
   function dvSplitOn() { return lsGet('collect_dvsplit_o') === '1'; }
+  /* ★★ まとまった PDF を 1ページずつ に 分ける（2026-11-21）。PDF の 中身は そのまま（pdf-lib で ページを 写すだけ。字も 残る）。
+     何ページかずつ サーバへ 送り、最後に 元の PDF を 外す。顧問先と 事務所で 同じ 作り（PSPLIT） */
+  /* pdf-lib は 上の PDF でダウンロード と 同じ 道具（pdflib）を 使う */
+  async function pdfSplitRun(b64, send, say) {
+    const lib = await pdflib();
+    const bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    const src = await lib.PDFDocument.load(u8, { ignoreEncryption: true });
+    const n = src.getPageCount();
+    if (n < 2) throw new Error('1ページしか ありません。');
+    let batch = [], size = 0;
+    const flush = async function (last) { await send(batch, last); batch = []; size = 0; };
+    for (let i = 0; i < n; i++) {
+      const doc = await lib.PDFDocument.create(); const pg = await doc.copyPages(src, [i]); doc.addPage(pg[0]);
+      const out = await doc.save(); let s = ''; for (let j = 0; j < out.length; j += 0x8000) s += String.fromCharCode.apply(null, out.subarray(j, j + 0x8000));
+      const pb = btoa(s);
+      if (batch.length && (size + pb.length > 6 * 1024 * 1024 || batch.length >= 8)) await flush(false);
+      batch.push({ n: i + 1, b64: pb }); size += pb.length;
+      if (say) say((i + 1) + ' / ' + n + 'ページ');
+    }
+    await flush(true);
+    return n;
+  }
   function dvChrome(it) {
     if (it.fold) return;
     const multi = !!(it.set && it.setOf > 1); let m = multi ? dMembers(it.set) : [it.id];
     $('dvPg').hidden = !multi; if (multi) $('dvPg').textContent = (m.indexOf(it.id) + 1) + ' / ' + m.length + 'ページ';
+    { const sp = $('dvPdfSplit'); const can = !!it.pdf && it.status !== 'done' && !it.gone && !it.mynum; sp.hidden = !can; if (can && sp.dataset.id !== it.id) { sp.dataset.id = it.id; sp.dataset.ok = ''; sp.disabled = false; sp.textContent = '✂ 1ページずつに分ける'; } }
     /* ★ K-0023：まとめた書類でなくても、箱の中が2つ以上なら 並べて見られる（左にこの箱の一覧・右に大きく） */
     const sq = multi ? m : (typeof dvSeq === 'function' ? dvSeq(it) : [it.id]) || [it.id], can = sq.length > 1, skey = multi ? 's:' + it.set : 'b:' + sq.join(',');
     $('dvSplit').hidden = !can; $('dvSplit').setAttribute('aria-pressed', String(can && dvSplitOn()));
