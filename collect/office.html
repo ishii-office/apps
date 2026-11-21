@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795248889;</script>
+<script>window.__PAGE_VER=1795253522;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1745,7 +1745,7 @@
     <button type="button" id="dPdfAll" title="まとめた書類は その束で1つのPDF、ほかは1枚ずつのPDF（2つ以上なら ZIP 1つ）">一括PDF切り出し</button>
     <button type="button" id="dPrintAll" title="いま見えているものを 並んでいる順に印刷">🖨 印刷</button>
     <button type="button" id="dTrash" hidden>破棄したもの</button>
-    <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button><button type="button" id="dAgent" title="この顧問先・この月分の 資料・補助簿・過去の仕訳・事務所の考え方を 1つの zip にして、自分の Claude Code に渡せるようにする">🤖 エージェントに渡す（zip）</button><span id="dAgentPick" hidden></span><button type="button" id="dAgentBack" hidden title="自分の Claude Code が作った できあがり（仕訳.json・元帳・質問一覧・カルテ など）を zip にして この顧問先・この月分に 戻す。戻すと エージェント研究 1回として 改善と効率化の集計に 数えます">⬆ できあがりを戻す</button><input type="file" id="dAgentBackF" accept=".zip,application/zip" hidden><button type="button" id="dAgentRes" hidden title="戻した できあがりの 中身（仕訳の数・気づいたこと・学び・カルテの案・気づき）。学びは［はい］で 顧問先カルテに 入れると 次の zip から エージェントに 渡る">📥 結果と学び</button><div id="agResBox" class="agdocs" hidden></div><button type="button" id="dAgentNeed" hidden title="この顧問先で エージェントに 要る資料の チェック表（通年・毎月）。そろったら 投げる。足りないものは 顧問先に お願い">✅ 要る資料のチェック表</button><button type="button" id="dAgentStd" hidden title="事務所の 標準体系（記帳の 考え方・科目の 標準・企業防衛の 考え方）を 自分の Claude Code に 入れる 形で ダウンロード。分からないことは そこで 聞く">📚 事務所の標準体系</button><button type="button" id="dAgentDocs" hidden title="月別減価償却確認表・返済予定表 など、事務所が足す 通年の資料（月に しばられない）。エージェントの zip に いつも入る">📎 事務所の資料（通年）</button><div id="agDocsBox" class="agdocs" hidden></div><div id="needBox" class="agdocs" hidden></div>
+    <button type="button" id="ogToSend" title="申告書の控え・決算書・届出書・お知らせ などを この顧問先へ送る（［送付物］タブ。顧問先の画面の「📨 事務所から」に出ます）">📮 顧問先へ送る（送付物）</button><button type="button" id="ogOpen" hidden>📨</button><button type="button" id="dAgent" title="この顧問先・この月分の 資料・補助簿・過去の仕訳・事務所の考え方を 1つの zip にして、自分の Claude Code に渡せるようにする">🤖 エージェントに渡す（zip）</button><span id="dAgentPick" hidden></span><button type="button" id="dAgentBack" hidden title="自分の Claude Code が作った できあがり（仕訳.json・元帳・質問一覧・カルテ など）を zip にして この顧問先・この月分に 戻す。戻すと エージェント研究 1回として 改善と効率化の集計に 数えます">⬆ できあがりを戻す</button><input type="file" id="dAgentBackF" accept=".zip,application/zip" hidden><button type="button" id="dAgentRes" hidden title="戻した できあがりの 中身（仕訳の数・気づいたこと・学び・カルテの案・気づき）。学びは［はい］で 顧問先カルテに 入れると 次の zip から エージェントに 渡る">📥 結果と学び</button><button type="button" id="dLedger" hidden title="エージェントが 戻した 仕訳を TKC と同じ形の 元帳（月別の残高 → 口座別 → 総勘定元帳 → 伝票）で 確かめる。Enter で ✓ して 次の伝票。全部 ✓ で 取り込みファイルに">📗 元帳で確かめる</button><div id="agResBox" class="agdocs" hidden></div><button type="button" id="dAgentNeed" hidden title="この顧問先で エージェントに 要る資料の チェック表（通年・毎月）。そろったら 投げる。足りないものは 顧問先に お願い">✅ 要る資料のチェック表</button><button type="button" id="dAgentStd" hidden title="事務所の 標準体系（記帳の 考え方・科目の 標準・企業防衛の 考え方）を 自分の Claude Code に 入れる 形で ダウンロード。分からないことは そこで 聞く">📚 事務所の標準体系</button><button type="button" id="dAgentDocs" hidden title="月別減価償却確認表・返済予定表 など、事務所が足す 通年の資料（月に しばられない）。エージェントの zip に いつも入る">📎 事務所の資料（通年）</button><div id="agDocsBox" class="agdocs" hidden></div><div id="needBox" class="agdocs" hidden></div>
   </span>
 </div>
 
@@ -7256,7 +7256,7 @@
       steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
-      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）'],
+      steps: ['上で 顧問先・月分・箱を選ぶ', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）', '戻したら［📗 元帳で確かめる］… TKC と同じ形（月別の残高 → 口座別 → 総勘定元帳 → 伝票）。伝票は 左に 写真（預金は 通帳の行）、右に 10行。Enter で ✓ して 次の伝票・0 で 前・T（F2）で 訂正・1・2 で エージェントの 別の案・Esc で 戻る。全部 ✓ で［📤 取り込みファイルにする］（FX の 一括読み込み。使った箱は 処理済ボックスへ）'],
       tips: ['パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ'],
@@ -7583,10 +7583,10 @@
   /* ★★★ 2026-11-18：エージェントに渡す zip（その月分の 資料・補助簿・過去の仕訳・事務所の考え方・カルテ）。職員が 自分の Claude Code に渡す */
   $('dAgent').addEventListener('click', function () {
     const pk = $('dAgentPick');
-    if (!pk.hidden) { pk.hidden = true; ['dAgentBack', 'dAgentDocs', 'agDocsBox', 'dAgentRes', 'agResBox', 'dAgentNeed', 'needBox', 'dAgentStd'].forEach(function (i) { $(i).hidden = true; }); return; }
+    if (!pk.hidden) { pk.hidden = true; ['dAgentBack', 'dAgentDocs', 'agDocsBox', 'dAgentRes', 'dLedger', 'agResBox', 'dAgentNeed', 'needBox', 'dAgentStd'].forEach(function (i) { $(i).hidden = true; }); return; }
     if (!S.code) { dcMsg('先に 顧問先を選んでください。', true); return; }
     if (!(S.per && /^\d{4}-\d{2}$/.test(S.per))) { dcMsg('先に 上で 月分（◯年◯月分）を 1つ選んでください。', true); return; }
-    pk.textContent = ''; pk.hidden = false; $('dAgentBack').hidden = false; $('dAgentDocs').hidden = false; $('dAgentRes').hidden = false; $('dAgentNeed').hidden = false; $('dAgentStd').hidden = false;   /* ★ できあがりを戻す も ここで出す（ふだんは 出さない。並びを 動かさない） */
+    pk.textContent = ''; pk.hidden = false; $('dAgentBack').hidden = false; $('dAgentDocs').hidden = false; $('dAgentRes').hidden = false; $('dLedger').hidden = false; $('dAgentNeed').hidden = false; $('dAgentStd').hidden = false;   /* ★ できあがりを戻す も ここで出す（ふだんは 出さない。並びを 動かさない） */
     /* ★ 箱を選べる（2026-11-18）：預金・カードは 会計ソフトの自動仕訳、現金だけ・給与だけ を エージェントに など。全部に✓なら その月分 全部 */
     const bxs = []; (S.docs || []).forEach(function (it) { if (it.period !== S.per) return; const b = String(it.box || '').split('/')[0]; if (b && bxs.indexOf(b) < 0) bxs.push(b); });
     ((S.clients.find(function (c) { return c.code === S.code; }) || {}).books || []).forEach(function (b) { if (bxs.indexOf(b) < 0) bxs.push(b); });
@@ -7609,7 +7609,7 @@
         }, function () { go.ok = 1; go(ans, mode); go.ok = 0; });
         return;
       }
-      pk.hidden = true; ['dAgentBack', 'dAgentDocs', 'agDocsBox', 'dAgentRes', 'agResBox', 'dAgentNeed', 'needBox', 'dAgentStd'].forEach(function (i) { $(i).hidden = true; }); const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
+      pk.hidden = true; ['dAgentBack', 'dAgentDocs', 'agDocsBox', 'dAgentRes', 'dLedger', 'agResBox', 'dAgentNeed', 'needBox', 'dAgentStd'].forEach(function (i) { $(i).hidden = true; }); const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
       gs('agentPack', S.code, S.per, ans, boxes, { span: Number(yr.value) || 1, mode: mode || '' }).then(function (r) {
         b.disabled = false;
         dcMsg('');
@@ -7774,6 +7774,321 @@
     if (!S.code) { dcMsg('先に 顧問先を選んでください。', true); return; }
     agResOpen();
   });
+  /* ==================================================================
+   *  ★★★ 元帳で確かめる（2026-11-21・TKC の総勘定元帳と同じ形）
+   *   月別の残高 → 口座別 → 総勘定元帳 → 伝票（左に 写真・右に 10行）
+   *   キー：Enter ＝ ✓ して 次の伝票／0 ＝ 前の伝票／T・F2 ＝ 訂正／1・2 ＝ エージェントの 別の案／Esc ＝ 1つ戻る
+   * ================================================================== */
+  const LED = { d: null, lv: 'acct', acct: '', sub: null, m: '', i: 0, order: [], si: 0, edit: false, past: null };
+  const ledFmt = function (n) { n = Math.round(Number(n) || 0); return n ? n.toLocaleString() : ''; };
+  const ledBS = function (c) { return /^[1239]/.test(String(c || '')); };
+  function ledStyle() {
+    if (document.getElementById('ledCss')) return;
+    const st = document.createElement('style'); st.id = 'ledCss';
+    st.textContent = '#ledOv{position:fixed;inset:0;z-index:9000;background:#f4f6f1;display:flex;flex-direction:column;font-size:14px}' +
+      '#ledOv .lh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 10px;background:#0F6E56;color:#fff}#ledOv .lh b{font-size:15px}#ledOv .lh button{font-size:13px}' +
+      '#ledOv .lcr{padding:4px 10px;background:#e3ead8;font-size:13px}#ledOv .lcr a{color:#0F6E56;cursor:pointer;text-decoration:underline}' +
+      '#ledOv .lb{flex:1;display:flex;min-height:0}#ledOv .lpane{overflow:auto;padding:6px}#ledOv .lleft{width:300px;border-right:1px solid #cdd6c3;background:#fbfcf8}#ledOv .lright{flex:1}' +
+      '#ledOv table{border-collapse:collapse;width:100%;background:#fff}#ledOv th{background:#6a9a3a;color:#fff;font-weight:600;padding:3px 6px;font-size:12.5px;position:sticky;top:0}#ledOv td{border-bottom:1px solid #e3e8dc;padding:3px 6px;vertical-align:top}' +
+      '#ledOv td.r,#ledOv th.r{text-align:right;white-space:nowrap}#ledOv tr.sel td{background:#fff3c4!important}#ledOv tr.ok td{background:#e7f4e9}#ledOv tr.ed td{background:#fde9d9}#ledOv tr.cur td{font-weight:600}' +
+      '#ledOv .ac{display:flex;gap:6px;padding:3px 6px;cursor:pointer;border-bottom:1px solid #eef2e8}#ledOv .ac.sel{background:#fff3c4}#ledOv .ac .mk{width:1.4em;text-align:center}#ledOv .ac .ng{color:#c0392b;font-weight:700}#ledOv .ac .okk{color:#1e8449}' +
+      '#ledOv .lslip{display:flex;flex:1;min-height:0}#ledOv .limg{width:42%;overflow:auto;border-right:1px solid #cdd6c3;background:#fff;padding:6px}#ledOv .limg img{max-width:100%}#ledOv .ldoc{flex:1;overflow:auto;padding:6px}' +
+      '#ledOv .conf{display:inline-block;padding:1px 8px;border-radius:9px;color:#fff;font-size:12px}#ledOv .c-hi{background:#1e8449}#ledOv .c-mid{background:#d68910}#ledOv .c-lo{background:#c0392b}' +
+      '#ledOv .lf{padding:5px 10px;background:#2c3e2f;color:#e8f0e0;font-size:12.5px}#ledOv .lf kbd{background:#fff;color:#222;border-radius:3px;padding:0 5px;margin:0 2px;font-size:12px}' +
+      '#ledOv input.le{width:100%;box-sizing:border-box;font-size:13px;padding:1px 3px}#ledOv .alts div{margin:2px 0;padding:3px 6px;background:#eef3f8;border-radius:4px}';
+    document.head.appendChild(st);
+  }
+  /* 科目・口座ごとの 月の 借方・貸方（過去は 会計ソフトから、その月は エージェントの 伝票） */
+  function ledAgg() {
+    const d = LED.d, mon = {}, open = Object.assign({}, d.open);
+    Object.keys(d.mon).forEach(function (k) { mon[k] = {}; Object.keys(d.mon[k]).forEach(function (m) { mon[k][m] = d.mon[k][m].slice(); }); });
+    d.slips.forEach(function (s) { s.lines.forEach(function (l) {
+      const a = Number(l.amount) || 0, kd = l.drCode + '|' + (l.drSub || ''), kc = l.crCode + '|' + (l.crSub || '');
+      if (l.drCode) { mon[kd] = mon[kd] || {}; const x = mon[kd][d.ym] = mon[kd][d.ym] || [0, 0]; x[0] += a; }
+      if (l.crCode) { mon[kc] = mon[kc] || {}; const y = mon[kc][d.ym] = mon[kc][d.ym] || [0, 0]; y[1] += a; }
+    }); });
+    const months = []; { let y = Number(d.first.slice(0, 4)), m = Number(d.first.slice(5)); for (let k = 0; k <= 12; k++) { months.push(y + '-' + ('0' + m).slice(-2)); m++; if (m > 12) { m = 1; y++; } } }
+    const accts = {};
+    Object.keys(mon).concat(Object.keys(open)).forEach(function (k) { const c = k.split('|')[0]; if (!c) return; accts[c] = accts[c] || {}; accts[c][k.split('|')[1] || ''] = 1; });
+    LED.agg = { mon: mon, open: open, months: months, accts: accts };
+  }
+  function ledNat(acct) { /* 貸方が ふつうの 科目か（残高を 貸方プラスで 見せる） */
+    const A = LED.agg; let dr = 0, cr = 0;
+    Object.keys(A.mon).forEach(function (k) { if (k.split('|')[0] !== acct) return; Object.keys(A.mon[k]).forEach(function (m) { dr += A.mon[k][m][0]; cr += A.mon[k][m][1]; }); });
+    Object.keys(A.open).forEach(function (k) { if (k.split('|')[0] === acct) { const v = A.open[k]; if (v > 0) dr += v; else cr -= v; } });
+    return cr > dr ? -1 : 1;
+  }
+  function ledSeries(acct, sub) { /* 月ごと [借方, 貸方, 残高（ふつうの向き）] */
+    const A = LED.agg, sg = ledNat(acct), keys = Object.keys(A.accts[acct] || {}).filter(function (s) { return sub == null || s === sub; }).map(function (s) { return acct + '|' + s; });
+    let bal = keys.reduce(function (t, k) { return t + (A.open[k] || 0); }, 0);
+    const out = { open: bal * sg, rows: [] };
+    A.months.forEach(function (m) { let dr = 0, cr = 0; keys.forEach(function (k) { const x = (A.mon[k] || {})[m]; if (x) { dr += x[0]; cr += x[1]; } }); bal += dr - cr; out.rows.push({ m: m, dr: dr, cr: cr, bal: bal * sg }); });
+    return out;
+  }
+  function ledPrevNg(acct) { /* 前月末が マイナス（合わせ切れていない しるし）の 口座が あるか */
+    if (!ledBS(acct)) return null;
+    const pm = LED.agg.months[LED.agg.months.length - 2];
+    const subs = Object.keys(LED.agg.accts[acct] || {});
+    return subs.some(function (s) { const r = ledSeries(acct, s).rows.filter(function (x) { return x.m === pm; })[0]; return r && Math.round(r.bal) < 0; });
+  }
+  function ledName(c) { return (LED.d.acct[c] || '') || c; }
+  function ledSubName(c, s) { return s ? (LED.d.subs[c + '-' + s] || '') : ''; }
+  function ledMsg(t, err) { const m = document.getElementById('ledMsg'); if (!m) { dcMsg(t, err); return; } m.textContent = t || ''; m.style.color = err ? '#ffd2cc' : '#fff'; }
+  function lgOpen() {
+    if (!S.code) { dcMsg('先に 顧問先を選んでください。', true); return; }
+    if (!(S.per && /^\d{4}-\d{2}$/.test(S.per))) { dcMsg('先に 上で 月分（◯年◯月分）を 1つ選んでください。', true); return; }
+    ledStyle();
+    let ov = document.getElementById('ledOv'); if (ov) ov.remove();
+    ov = el('div'); ov.id = 'ledOv'; ov.tabIndex = -1;
+    ov.innerHTML = '<div class="lh"><b>📗 元帳で確かめる</b><span id="ledTitle"></span><span id="ledStat"></span><span id="ledMsg" style="flex:1;font-size:13px"></span><button type="button" id="ledExp" disabled>📤 取り込みファイルにする</button><button type="button" id="ledX">閉じる（Esc）</button></div>' +
+      '<div class="lcr" id="ledCr"></div><div class="lb" id="ledBody"><div class="lpane">読み込み中…</div></div>' +
+      '<div class="lf"><kbd>Enter</kbd>✓して次の伝票 <kbd>0</kbd>前の伝票 <kbd>T</kbd>/<kbd>F2</kbd>訂正 <kbd>1</kbd><kbd>2</kbd>エージェントの別の案 <kbd>↑</kbd><kbd>↓</kbd>行を選ぶ <kbd>Esc</kbd>1つ戻る</div>';
+    document.body.appendChild(ov);
+    $('ledX').addEventListener('click', ledClose);
+    $('ledExp').addEventListener('click', ledExport);
+    ov.addEventListener('keydown', ledKey);
+    ov.focus();
+    LED.lv = 'acct'; LED.acct = ''; LED.sub = null; LED.m = ''; LED.i = 0; LED.edit = false;
+    gs('ledgerGet', S.code, S.per).then(function (d) { LED.d = d; ledAgg(); ledDraw(); }, function (e) { $('ledBody').textContent = '出せませんでした。' + e.message; });
+  }
+  function ledClose() { const ov = document.getElementById('ledOv'); if (ov) ov.remove(); }
+  function ledStat() {
+    const s = LED.d.stat, n = LED.d.slips.length, ok = LED.d.slips.filter(function (x) { return x.ok; }).length;
+    $('ledTitle').textContent = '　' + S.code + '　' + LED.d.ym.replace('-', '年') + '月分';
+    $('ledStat').textContent = n ? '　✓ ' + ok + '／' + n + '枚・直した ' + s.edited + '枚・一致率 ' + s.match + '%' : '　エージェントの 伝票は まだ ありません（過去の 元帳だけ 見られます）';
+    $('ledExp').disabled = !(n && ok === n);
+  }
+  function ledCr() {
+    const c = $('ledCr'); c.textContent = '';
+    const a = function (t, f) { const x = el('a', null, t); x.addEventListener('click', f); c.appendChild(x); c.appendChild(document.createTextNode(' ＞ ')); };
+    a('月別の残高', function () { LED.lv = 'acct'; ledDraw(); });
+    if (LED.lv !== 'acct') {
+      if (Object.keys(LED.agg.accts[LED.acct] || {}).some(Boolean)) a('口座別（' + LED.acct + ' ' + ledName(LED.acct) + '）', function () { LED.lv = 'sub'; ledDraw(); });
+      if (LED.lv === 'ledger' || LED.lv === 'slip') a('総勘定元帳（' + LED.m.replace('-', '年') + '月' + (LED.sub ? '・' + ledSubName(LED.acct, LED.sub) : '') + '）', function () { LED.lv = 'ledger'; ledDraw(); });
+    }
+    c.lastChild && c.removeChild(c.lastChild);
+  }
+  function ledDraw() {
+    ledStat(); ledCr(); LED.edit = false;
+    const b = $('ledBody'); b.textContent = '';
+    if (LED.lv === 'acct' || LED.lv === 'sub') return ledDrawMon(b);
+    if (LED.lv === 'ledger') return ledDrawLedger(b);
+    if (LED.lv === 'slip') return ledDrawSlip(b);
+  }
+  /* 1段目・2段目：左に 科目（口座）、右に 月ごとの 借方・貸方・残高 */
+  function ledDrawMon(b) {
+    const L = el('div', 'lpane lleft'), R = el('div', 'lpane lright'); b.appendChild(L); b.appendChild(R);
+    let items;
+    if (LED.lv === 'acct') {
+      items = Object.keys(LED.agg.accts).sort(function (x, y) { return (ledBS(x) ? 0 : 1) - (ledBS(y) ? 0 : 1) || (x < y ? -1 : 1); }).map(function (c) { return { k: c, sub: null, t: c + ' ' + ledName(c), ng: ledPrevNg(c) }; });
+      L.appendChild(el('div', 'note', '○＝前月末の 残高に マイナスが ない ／ ✗＝マイナスの 口座が ある（合わせ切れていない しるし）'));
+    } else {
+      items = [{ k: LED.acct, sub: null, t: '【勘定科目残高】' }].concat(Object.keys(LED.agg.accts[LED.acct] || {}).sort().map(function (s) { return { k: LED.acct, sub: s, t: (s || '—') + ' ' + (ledSubName(LED.acct, s) || (s ? '' : '（口座なし）')) }; }));
+    }
+    if (!items.length) { R.appendChild(el('div', 'note', 'まだ 科目が ありません（過去の仕訳を 取り込み、エージェントの できあがりを 戻すと 出ます）。')); return; }
+    if (LED.i >= items.length) LED.i = 0;
+    items.forEach(function (it, i) {
+      const r = el('div', 'ac' + (i === LED.i ? ' sel' : ''));
+      const mk = el('span', 'mk ' + (it.ng === true ? 'ng' : it.ng === false ? 'okk' : ''), it.ng === true ? '✗' : it.ng === false ? '○' : '');
+      r.appendChild(mk); r.appendChild(el('span', null, it.t));
+      r.addEventListener('click', function () { LED.i = i; ledDraw(); });
+      r.addEventListener('dblclick', function () { LED.i = i; ledEnter(); });
+      L.appendChild(r);
+    });
+    LED.items = items;
+    const it = items[LED.i], s = ledSeries(it.k, it.sub);
+    R.appendChild(el('div', 'k', (it.k + ' ' + ledName(it.k)) + (it.sub != null ? '　' + (ledSubName(it.k, it.sub) || it.sub || '（口座なし）') : '') + '　（行を押すと その月の 総勘定元帳）'));
+    const t = el('table'), th = el('tr'); ['年月', '借方', '貸方', '残高'].forEach(function (h, k) { th.appendChild(el('th', k ? 'r' : null, h)); }); t.appendChild(th);
+    s.rows.forEach(function (x) {
+      const tr = el('tr', x.m === LED.d.ym ? 'cur' : null);
+      tr.appendChild(el('td', null, x.m.replace('-', '年') + '月' + (x.m === LED.d.ym ? '　★エージェント' : '')));
+      tr.appendChild(el('td', 'r', ledFmt(x.dr))); tr.appendChild(el('td', 'r', ledFmt(x.cr))); tr.appendChild(el('td', 'r', (Math.round(x.bal) || 0).toLocaleString()));
+      tr.style.cursor = 'pointer'; tr.addEventListener('click', function () { LED.acct = it.k; LED.sub = it.sub; LED.m = x.m; LED.lv = 'ledger'; LED.i = 0; ledDraw(); });
+      t.appendChild(tr);
+    });
+    R.appendChild(t);
+  }
+  function ledEnter() {
+    if (LED.lv === 'acct') { const it = LED.items[LED.i]; LED.acct = it.k; LED.sub = null; const subs = Object.keys(LED.agg.accts[it.k] || {}); if (subs.some(Boolean)) { LED.lv = 'sub'; LED.i = 0; } else { LED.m = LED.d.ym; LED.lv = 'ledger'; LED.i = 0; } ledDraw(); return; }
+    if (LED.lv === 'sub') { const it = LED.items[LED.i]; LED.sub = it.sub; LED.m = LED.d.ym; LED.lv = 'ledger'; LED.i = 0; ledDraw(); return; }
+  }
+  /* 3段目：総勘定元帳（その科目が 左か 右に 立つ。相手科目と 残高。その月は エージェントの 伝票、前の月は 会計ソフトの 過去の仕訳） */
+  function ledLedgerRows() {
+    const acct = LED.acct, sub = LED.sub, rows = [];
+    const hit = function (c, s) { return c === acct && (sub == null || (s || '') === sub); };
+    LED.d.slips.forEach(function (sl, si) { sl.lines.forEach(function (l) {
+      const dr = hit(l.drCode, l.drSub), cr = hit(l.crCode, l.crSub); if (!dr && !cr) return;
+      rows.push({ si: si, sl: sl, date: sl.date, other: dr ? l.crCode : l.drCode, otherName: ledName(dr ? l.crCode : l.drCode), otherSub: ledSubName(dr ? l.crCode : l.drCode, dr ? l.crSub : l.drSub), tax: l.tax, rate: l.rate, party: l.partyName, memo: l.memo, dr: dr ? l.amount : 0, cr: cr ? l.amount : 0 });
+    }); });
+    return rows;
+  }
+  function ledDrawLedger(b) {
+    const P = el('div', 'lpane lright'); b.appendChild(P);
+    const sg = ledNat(LED.acct), ser = ledSeries(LED.acct, LED.sub), idx = ser.rows.findIndex(function (x) { return x.m === LED.m; });
+    let bal = idx > 0 ? ser.rows[idx - 1].bal : ser.open;
+    const draw = function (rows, live) {
+      const t = el('table'), th = el('tr');
+      ['', '月日', '伝票番号', '税区\n税率', '相手科目名', '取引先名／元帳摘要', '借方', '貸方', '残高'].forEach(function (h, k) { const c = el('th', k >= 6 ? 'r' : null, h); c.style.whiteSpace = 'pre-line'; th.appendChild(c); }); t.appendChild(th);
+      const r0 = el('tr'); [ '', '', '', '', '【前残高】', '', '', '', (Math.round(bal) || 0).toLocaleString()].forEach(function (v, k) { r0.appendChild(el('td', k >= 6 ? 'r' : null, v)); }); t.appendChild(r0);
+      if (LED.i >= rows.length) LED.i = Math.max(0, rows.length - 1);
+      rows.forEach(function (x, i) {
+        bal += (x.dr - x.cr) * sg;
+        const st = live ? (x.sl.ok ? ' ok' : (x.sl.ed ? ' ed' : '')) : '';
+        const tr = el('tr', (i === LED.i ? 'sel' : '') + st);
+        tr.appendChild(el('td', null, live ? (x.sl.ok ? '✓' : '') + (x.sl.files.length ? '📎' : '') : ''));
+        tr.appendChild(el('td', null, String(x.date || '').slice(5).replace('-', '/').replace(/^(\d\d)\/(\d\d)\/(\d\d)$/, '$2/$3')));
+        tr.appendChild(el('td', 'r', live ? String(x.sl.no) : ''));
+        tr.appendChild(el('td', null, (x.tax || '') + (x.rate ? '\n' + x.rate + '%' : ''))); tr.lastChild.style.whiteSpace = 'pre-line';
+        const oc = el('td', null, x.otherName + (x.otherSub ? '\n' + x.otherSub : '')); oc.style.whiteSpace = 'pre-line'; tr.appendChild(oc);
+        const pc = el('td', null, (x.party || '') + '\n' + (x.memo || '')); pc.style.whiteSpace = 'pre-line'; tr.appendChild(pc);
+        tr.appendChild(el('td', 'r', ledFmt(x.dr))); tr.appendChild(el('td', 'r', ledFmt(x.cr))); tr.appendChild(el('td', 'r', (Math.round(bal) || 0).toLocaleString()));
+        if (live) { tr.style.cursor = 'pointer'; tr.addEventListener('click', function () { LED.i = i; ledDraw(); }); tr.addEventListener('dblclick', function () { LED.i = i; ledToSlip(); }); }
+        t.appendChild(tr);
+      });
+      P.appendChild(t);
+      if (!rows.length) P.appendChild(el('div', 'note', 'この月の 仕訳は ありません。'));
+    };
+    P.appendChild(el('div', 'k', LED.acct + ' ' + ledName(LED.acct) + (LED.sub ? '　' + (ledSubName(LED.acct, LED.sub) || LED.sub) : '') + '　' + LED.m.replace('-', '年') + '月' + (LED.m === LED.d.ym ? '（エージェントの 伝票。Enter で 伝票を 開く）' : '（会計ソフトの 過去の仕訳。見るだけ）')));
+    if (LED.m === LED.d.ym) { LED.rows = ledLedgerRows(); draw(LED.rows, true); return; }
+    LED.rows = [];
+    gs('ledgerPast', S.code, LED.m, LED.acct, LED.sub).then(function (r) { draw(r.rows.map(function (x) { return { date: x.date.replace(/\//g, '-'), otherName: x.otherName || x.other, party: x.party, memo: x.memo, dr: x.dr, cr: x.cr }; }), false); }, function (e) { P.appendChild(el('div', 'note', '出せませんでした。' + e.message)); });
+  }
+  function ledToSlip() {
+    if (!LED.rows || !LED.rows.length) return;
+    const seen = {}; LED.order = []; LED.rows.forEach(function (x) { if (!seen[x.sl.id]) { seen[x.sl.id] = 1; LED.order.push(x.si); } });
+    LED.si = Math.max(0, LED.order.indexOf(LED.rows[LED.i].si)); LED.lv = 'slip'; ledDraw();
+  }
+  /* 4段目：伝票（左に 証憑の 写真／通帳の行、右に 10行の 複合仕訳） */
+  function ledDrawSlip(b) {
+    const sl = LED.d.slips[LED.order[LED.si]]; if (!sl) { LED.lv = 'ledger'; ledDraw(); return; }
+    const W = el('div', 'lslip'), I = el('div', 'limg'), D = el('div', 'ldoc'); W.appendChild(I); W.appendChild(D); b.appendChild(W);
+    /* 左 */
+    if (sl.files.length) {
+      sl.files.forEach(function (f) {
+        const box = el('div'); box.appendChild(el('div', 'note', '📎 ' + (f.name || f.id))); I.appendChild(box);
+        gs('viewerImage', f.id).then(function (r) {
+          if (r.src) { const im = el('img'); im.src = r.src; box.appendChild(im); }
+          else { const fr = el('iframe'); fr.src = 'https://drive.google.com/file/d/' + encodeURIComponent(f.id) + '/preview'; fr.style.cssText = 'width:100%;height:70vh;border:0'; box.appendChild(fr); }
+        }, function () { box.appendChild(el('div', 'note', '写真を 出せませんでした。')); });
+      });
+    } else {
+      const bank = sl.lines.some(function (l) { return /預金/.test(ledName(l.drCode) + ledName(l.crCode)) || /^111[2-5]/.test(l.drCode + ' ' + l.crCode); });
+      const amts = sl.lines.map(function (l) { return Number(l.amount) || 0; });
+      const hits = (LED.d.book || []).filter(function (r) { return String(r.date).replace(/\//g, '-').slice(0, 10) === sl.date && (amts.indexOf(r.in) >= 0 || amts.indexOf(r.out) >= 0 || amts.reduce(function (t, a) { return t + a; }, 0) === (r.in || r.out)); });
+      if (bank || hits.length) {
+        I.appendChild(el('div', 'k', '通帳（アプリの 出納帳）の その日の 行'));
+        if (!hits.length) I.appendChild(el('div', 'note', '同じ日・同じ金額の 行が 見つかりません（通帳を 出納帳に 入れていないか、日付が ちがう）。'));
+        hits.forEach(function (r) { const t = el('table'); [['箱', r.box], ['日付', r.date], ['摘要', r.memo], ['入金', ledFmt(r.in)], ['出金', ledFmt(r.out)], ['残高', r.bal === '' ? '' : (Number(r.bal) || 0).toLocaleString()]].forEach(function (p) { const tr = el('tr'); tr.appendChild(el('th', null, p[0])); tr.appendChild(el('td', null, p[1])); t.appendChild(tr); }); I.appendChild(t); });
+      } else I.appendChild(el('div', 'note', '証憑なし（' + (sl.from || '補助簿の行・推論') + '）'));
+    }
+    /* 右 */
+    const cf = sl.conf, cc = cf >= 80 ? 'c-hi' : cf >= 50 ? 'c-mid' : 'c-lo';
+    const hd = el('div'); hd.style.cssText = 'display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:4px';
+    hd.appendChild(el('b', null, '年月日 ' + String(sl.date).replace(/-/g, '/') + '　伝票番号 ' + sl.no + '　（' + (LED.si + 1) + '／' + LED.order.length + '枚）'));
+    const cb = el('span', 'conf ' + cc, '確からしさ ' + cf); hd.appendChild(cb);
+    if (sl.ok) hd.appendChild(el('span', 'conf c-hi', '✓ 確認済み ' + sl.ok + ' ' + sl.okBy));
+    if (sl.ed) hd.appendChild(el('span', 'conf c-mid', '訂正 ' + sl.ed + ' ' + sl.edBy));
+    if (sl.kari) hd.appendChild(el('span', 'conf c-lo', '仮払・仮受（要確認）'));
+    D.appendChild(hd);
+    const t = el('table'), h1 = el('tr');
+    ['行', '借方科目／口座', '税', '取引金額', '貸方科目／口座', '税', '取引金額', '取引先名／元帳摘要'].forEach(function (x, k) { h1.appendChild(el('th', k === 3 || k === 6 ? 'r' : null, x)); }); t.appendChild(h1);
+    const ls = sl.lines;
+    for (let k = 0; k < 10; k++) {
+      const l = ls[k], tr = el('tr');
+      tr.appendChild(el('td', null, String(k + 1)));
+      if (LED.edit) {
+        const inp = function (v, w, key) { const td = el('td'); const x = el('input', 'le'); x.value = v == null ? '' : v; x.dataset.k = key; x.dataset.r = k; if (w) x.style.width = w; td.appendChild(x); return td; };
+        const two = function (a, b2, ka, kb) { const td = el('td'); [[a, ka, '4.5em'], [b2, kb, '2.6em']].forEach(function (p) { const x = el('input', 'le'); x.value = p[0] || ''; x.dataset.k = p[1]; x.dataset.r = k; x.style.width = p[2]; x.placeholder = p[1].indexOf('Sub') >= 0 ? '口座' : '科目'; td.appendChild(x); }); return td; };
+        tr.appendChild(two(l && l.drCode, l && l.drSub, 'drCode', 'drSub'));
+        tr.appendChild(inp(l && (l.tax + (l.rate ? '/' + l.rate : '')), '4em', 'taxrate'));
+        tr.appendChild(inp(l && l.amount, '7em', 'amount'));
+        tr.appendChild(two(l && l.crCode, l && l.crSub, 'crCode', 'crSub'));
+        tr.appendChild(el('td'));
+        tr.appendChild(el('td'));
+        const td = el('td'); [['partyName', l && l.partyName, '取引先'], ['memo', l && l.memo, '元帳摘要']].forEach(function (p) { const x = el('input', 'le'); x.value = p[1] || ''; x.dataset.k = p[0]; x.dataset.r = k; x.placeholder = p[2]; td.appendChild(x); }); tr.appendChild(td);
+      } else if (l) {
+        const sc = function (c, s) { const td = el('td', null, c + ' ' + ledName(c) + (s ? '\n' + s + ' ' + ledSubName(c, s) : '')); td.style.whiteSpace = 'pre-line'; return td; };
+        const bs2 = ledBS(l.drCode) && !ledBS(l.crCode);
+        tr.appendChild(sc(l.drCode, l.drSub)); tr.appendChild(el('td', null, bs2 ? '' : (l.tax || '') + (l.rate ? ' ' + l.rate + '%' : ''))); tr.appendChild(el('td', 'r', ledFmt(l.amount)));
+        tr.appendChild(sc(l.crCode, l.crSub)); tr.appendChild(el('td', null, bs2 ? (l.tax || '') + (l.rate ? ' ' + l.rate + '%' : '') : '')); tr.appendChild(el('td', 'r', ledFmt(l.amount)));
+        const pc = el('td', null, (l.party ? l.party + ' ' : '') + (l.partyName || '') + (l.invoiceNo ? '（' + l.invoiceNo + '）' : '') + '\n' + (l.memo || '')); pc.style.whiteSpace = 'pre-line'; tr.appendChild(pc);
+      } else for (let j = 0; j < 7; j++) tr.appendChild(el('td', null, ''));
+      t.appendChild(tr);
+    }
+    const tot = ls.reduce(function (s2, l) { return s2 + (Number(l.amount) || 0); }, 0), tf = el('tr');
+    ['', '借方合計', '', ledFmt(tot), '貸方合計', '', ledFmt(tot), ''].forEach(function (v, k) { tf.appendChild(el('td', k === 3 || k === 6 ? 'r' : null, v)); }); tf.style.fontWeight = '600'; t.appendChild(tf);
+    D.appendChild(t);
+    if (LED.edit) {
+      const bar = el('div'); bar.style.margin = '6px 0';
+      const sv = el('button', 'dmon-b', '💾 訂正を保存（Ctrl+Enter）'); sv.type = 'button'; sv.addEventListener('click', ledSaveEdit);
+      const cn = el('button', null, 'やめる（Esc）'); cn.type = 'button'; cn.addEventListener('click', function () { LED.edit = false; ledDrawSlipOnly(); });
+      bar.appendChild(sv); bar.appendChild(cn); bar.appendChild(el('span', 'note', '　税は「課税区分/税率」（例 5/10・52/10・0）。科目名は 科目コードから 自動で 付きます'));
+      D.appendChild(bar);
+      setTimeout(function () { const f = D.querySelector('input.le'); if (f) f.focus(); }, 0);
+    }
+    if (sl.why) D.appendChild(el('div', 'note', '決め手：' + sl.why));
+    if (sl.q) D.appendChild(el('div', 'note', '顧問先に 聞くこと：' + sl.q));
+    if (sl.alts.length) {
+      const al = el('div', 'alts'); al.appendChild(el('div', 'k', 'エージェントの 別の案（数字キーで 差し替え）'));
+      sl.alts.forEach(function (a, k) { al.appendChild(el('div', null, (k + 1) + '：' + a.lines.map(function (l) { return ledName(l.drCode) + ' ／ ' + ledName(l.crCode) + ' ' + ledFmt(l.amount); }).join('、') + '（確からしさ ' + a.conf + '）' + (a.why ? '　' + a.why : ''))); });
+      D.appendChild(al);
+    }
+    if (sl.ed) { const bk = el('button', null, '↩ エージェントの はじめの 案に 戻す'); bk.type = 'button'; bk.addEventListener('click', function () { ledAltPick('orig'); }); D.appendChild(bk); }
+  }
+  function ledDrawSlipOnly() { const b = $('ledBody'); b.textContent = ''; ledStat(); ledCr(); ledDrawSlip(b); }
+  function ledCur() { return LED.d.slips[LED.order[LED.si]]; }
+  function ledApply(r) { const sl = LED.d.slips.filter(function (x) { return x.id === r.id; })[0]; if (!sl) return sl; if (r.lines) sl.lines = r.lines; if (r.edited !== undefined) { sl.ed = r.edited ? '今' : ''; sl.edBy = r.edited ? 'あなた' : ''; sl.ok = ''; } return sl; }
+  function ledRestat() { const n = LED.d.slips.length, ed = LED.d.slips.filter(function (x) { return x.ed; }).length; LED.d.stat = { n: n, ok: LED.d.slips.filter(function (x) { return x.ok; }).length, edited: ed, match: n ? Math.round((n - ed) / n * 1000) / 10 : 0 }; ledAgg(); }
+  function ledCheckNext() {
+    const sl = ledCur(); if (!sl) return;
+    if (!sl.ok) { sl.ok = '今'; sl.okBy = 'あなた'; gs('ledgerCheck', S.code, LED.d.ym, sl.id, true).then(function () {}, function (e) { sl.ok = ''; ledMsg('✓ を 付けられませんでした。' + e.message, true); ledRestat(); ledDrawSlipOnly(); }); }
+    ledRestat();
+    if (LED.si < LED.order.length - 1) { LED.si++; ledDrawSlipOnly(); }
+    else { LED.lv = 'ledger'; ledDraw(); ledMsg('この元帳の 伝票を 最後まで ✓ しました。' + (LED.d.slips.every(function (x) { return x.ok; }) ? '全部 ✓ です。［📤 取り込みファイルにする］で FX の 一括読み込みに。' : '')); }
+  }
+  function ledAltPick(k) {
+    const sl = ledCur(); if (!sl) return;
+    if (k !== 'orig' && !sl.alts[k - 1]) return;
+    gs('ledgerEdit', S.code, LED.d.ym, sl.id, null, k).then(function (r) { ledApply(r); ledRestat(); ledDrawSlipOnly(); }, function (e) { ledMsg('差し替えられませんでした。' + e.message, true); });
+  }
+  function ledSaveEdit() {
+    const sl = ledCur(), rows = {};
+    document.querySelectorAll('#ledOv input.le').forEach(function (x) { const r = x.dataset.r; rows[r] = rows[r] || {}; rows[r][x.dataset.k] = x.value.trim(); });
+    const lines = Object.keys(rows).sort(function (a, b) { return a - b; }).map(function (r) { const o = rows[r], tr = String(o.taxrate || '').split('/'); return { drCode: o.drCode, drSub: o.drSub, crCode: o.crCode, crSub: o.crSub, amount: o.amount, tax: tr[0] || '', rate: Number(tr[1]) || 0, partyName: o.partyName, memo: o.memo, partyCode: (sl.lines[r] || {}).party || '', invoiceNo: (sl.lines[r] || {}).invoiceNo || '' }; }).filter(function (l) { return (l.drCode || l.crCode) && Number(String(l.amount).replace(/,/g, '')); });
+    gs('ledgerEdit', S.code, LED.d.ym, sl.id, lines, '').then(function (r) { ledApply(r); LED.edit = false; ledRestat(); ledDrawSlipOnly(); ledMsg('訂正しました。Enter で ✓ して 次へ。'); }, function (e) { ledMsg('訂正できませんでした。' + e.message, true); });
+  }
+  function ledKey(ev) {
+    if (!LED.d) { if (ev.key === 'Escape') ledClose(); return; }
+    const inInput = /^(INPUT|TEXTAREA|SELECT)$/.test((ev.target || {}).tagName || '');
+    if (LED.edit) {
+      if (ev.key === 'Escape') { ev.preventDefault(); LED.edit = false; ledDrawSlipOnly(); }
+      else if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); ledSaveEdit(); }
+      return;
+    }
+    if (inInput) return;
+    const k = ev.key;
+    if (k === 'Escape') { ev.preventDefault(); if (LED.lv === 'slip') LED.lv = 'ledger'; else if (LED.lv === 'ledger') LED.lv = Object.keys(LED.agg.accts[LED.acct] || {}).some(Boolean) ? 'sub' : 'acct'; else if (LED.lv === 'sub') LED.lv = 'acct'; else { ledClose(); return; } ledDraw(); return; }
+    if (LED.lv === 'slip') {
+      if (k === 'Enter') { ev.preventDefault(); ledCheckNext(); }
+      else if (k === '0') { ev.preventDefault(); if (LED.si > 0) { LED.si--; ledDrawSlipOnly(); } }
+      else if (k === 't' || k === 'T' || k === 'F2') { ev.preventDefault(); LED.edit = true; ledDrawSlipOnly(); }
+      else if (k === '1' || k === '2') { ev.preventDefault(); ledAltPick(Number(k)); }
+      return;
+    }
+    const n = LED.lv === 'ledger' ? (LED.rows || []).length : (LED.items || []).length;
+    if (k === 'ArrowDown') { ev.preventDefault(); LED.i = Math.min(n - 1, LED.i + 1); ledDraw(); }
+    else if (k === 'ArrowUp') { ev.preventDefault(); LED.i = Math.max(0, LED.i - 1); ledDraw(); }
+    else if (k === 'Enter') { ev.preventDefault(); if (LED.lv === 'ledger') ledToSlip(); else ledEnter(); }
+  }
+  function ledExport() {
+    const b = $('ledExp'); b.disabled = true; ledMsg('取り込みファイル（FX の 一括読み込み）を 作っています…');
+    gs('ledgerExport', S.code, LED.d.ym).then(function (r) {
+      (r.dl || []).forEach(function (f) { try { const bin = atob(f.b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = f.name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 30000); } catch (e) {} });
+      ledMsg('📤 取り込みファイルに しました（伝票 ' + r.slips + '枚・' + r.count + '行・直した ' + r.edited + '枚）。' + (r.boxes.length ? '使った資料の 箱（' + r.boxes.join('・') + '）は 処理済ボックスへ。' : '') + ' 控えは 顧問先フォルダの「一括読み込みエクセル」に あります。');
+      b.disabled = false;
+    }, function (e) { b.disabled = false; ledMsg('作れませんでした。' + e.message, true); });
+  }
+  $('dLedger').addEventListener('click', lgOpen);
   $('dAgentDocs').addEventListener('click', function () {
     const w = $('agDocsBox');
     if (!w.hidden) { w.hidden = true; return; }
@@ -7796,6 +8111,7 @@
       gs('agentReturn', S.code, S.per, { name: f.name, b64: String(rd.result).split(',')[1] || '' }).then(function (r) {
         b.disabled = false; dcMsg('⬆ 戻しました（' + r.name + '）。あなたの エージェント研究は ' + r.n + '回目です。' + (r.res && r.res.err ? '　★ 中身を 読めませんでした（' + r.res.err + '）' : r.res ? '　仕訳 ' + r.res.entries + '件' + (r.res.learn ? '・学びあり →［📥 結果と学び］で カルテへ' : '') + (r.res.needAdded ? '・足りなかった資料 ' + r.res.needAdded + '件を ✅ チェック表に 足しました' : '') + (r.res.karteIn ? '・カルテを 新しい版に しました（前の版も 残る）' : '') : ''));
         if (r.res && !r.res.err) agResOpen();
+        if (r.res && r.res.ledger) { $('dLedger').hidden = false; const m = document.getElementById('dcMsg'); if (m) m.appendChild(document.createTextNode('　📗 伝票 ' + r.res.ledger + '枚を［元帳で確かめる］で 確かめられます。')); }
       }, function (e) { b.disabled = false; dcMsg('戻せませんでした。' + e.message, true); });
     };
     rd.onerror = function () { b.disabled = false; dcMsg('ファイルを 読めませんでした。', true); };
