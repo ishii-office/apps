@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795276162;</script>
+<script>window.__PAGE_VER=1795277759;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2773,15 +2773,6 @@
     <button type="button" class="btn ghost sm danger" id="dcDel">破棄</button><button type="button" class="btn ghost sm" id="dcNone">全部外す</button><button type="button" class="btn ghost sm" id="dcEnd">やめる</button></span>
 </div>
 
-<div class="dmove" id="agpv" hidden role="dialog" aria-modal="true" aria-labelledby="agpT">
-  <div class="dmove-s sor-s">
-    <h3 id="agpT">🤖 エージェントの 進み具合</h3>
-    <p class="sor-n">顧問先・月分ごとに いま どこまで 来ているか。<b>⏳ 戻り待ち</b>（zip を 渡した）→ <b>📥 確かめ中</b>（戻した。元帳の ✓ の数）→ <b>✅ 確かめ済み</b> → <b>📤 取り込みファイルに した</b>。行を押すと その顧問先・月分の 回収資料へ</p>
-    <label class="sor-f"><input type="checkbox" id="agpOpen" checked> 終わっていないものだけ</label>
-    <div class="sor-w" id="agpW">読んでいます…</div>
-    <div class="dmv-b"><button type="button" class="btn ghost" id="agpRe">↻ 読み直す</button><button type="button" class="btn ghost" id="agpNo">閉じる</button></div>
-  </div>
-</div>
 <div class="dmove" id="sorv" hidden role="dialog" aria-modal="true" aria-labelledby="sorT">
   <div class="dmove-s sor-s">
     <h3 id="sorT">📊 資料のそろい具合（月分ごと）</h3>
@@ -7564,26 +7555,7 @@
   try { const c0 = JSON.parse(lsGet('collect_agp_v1') || 'null'); if (c0 && c0.rows) AGP.r = c0; } catch (e) {}
   const AGP_ST = { gave: ['⏳ 戻り待ち', 'ng'], back: ['📥 確かめ中', 'pt'], checked: ['✅ 確かめ済み', 'ok'], done: ['📤 取り込みファイルに した', 'ok'] };
   function agpLoad(force) { if (AGP.r && !force && Date.now() - AGP.at < 120000) return Promise.resolve(AGP.r); return gs('agentProgress').then(function (r) { AGP.r = r; AGP.at = Date.now(); try { lsSet('collect_agp_v1', JSON.stringify(r)); } catch (e) {} return r; }); }
-  function agpOpen(force) { $('agpv').hidden = false; $('agpW').textContent = '読んでいます…'; agpLoad(force).then(agpDraw, function (e) { $('agpW').textContent = '読めませんでした（' + ((e && e.message) || e) + '）'; }); }
   function agpStText(x) { const st = AGP_ST[x.st] || ['', '']; return st[0] + (x.st === 'back' && x.n ? '（✓ ' + x.ok + '／' + x.n + '）' : '') + (x.st === 'gave' && x.waitMin ? '（' + (x.waitMin >= 1440 ? Math.floor(x.waitMin / 1440) + '日' : x.waitMin >= 60 ? Math.floor(x.waitMin / 60) + '時間' : x.waitMin + '分') + '）' : ''); }
-  function agpDraw(r) {
-    const w = $('agpW'); w.textContent = '';
-    const cl = {}; (S.clients || []).forEach(function (c) { cl[c.code] = c; });
-    let L = (r.rows || []).filter(function (x) { return mineOk(cl[x.code]); });
-    if ($('agpOpen').checked) L = L.filter(function (x) { return x.st !== 'done'; });
-    if (!L.length) { w.appendChild(el('div', 'note', 'まだ ありません。仕訳化タブの［🤖 エージェントに渡す（zip）］で 渡すと ここに 出ます。')); return; }
-    const t = el('table', 'sor-t'), hr = el('tr');
-    ['顧問先', '月分', 'いま', '渡した', '戻した', '取り込み'].forEach(function (h) { hr.appendChild(el('th', null, h)); }); t.appendChild(hr);
-    L.forEach(function (x) {
-      const tr = el('tr'); tr.style.cursor = 'pointer'; tr.title = '押すと この顧問先・月分の 回収資料へ';
-      tr.appendChild(el('td', 'nm', x.code + ' ' + (x.name || ''))); tr.appendChild(el('td', null, Number(x.ym.slice(5)) + '月分'));
-      const st = el('td', AGP_ST[x.st] ? AGP_ST[x.st][1] : null, agpStText(x)); tr.appendChild(st);
-      tr.appendChild(el('td', null, x.gave ? x.gave + ' ' + x.gaveBy : '')); tr.appendChild(el('td', null, x.back ? x.back + ' ' + x.backBy : '')); tr.appendChild(el('td', null, x.done ? x.done + ' ' + x.doneBy : ''));
-      tr.addEventListener('click', function () { $('agpv').hidden = true; if (!setCode(x.code)) return; perPick(x.ym); if (S.tab === 'Docs') docsLoad(); else selectTab('Docs'); });
-      t.appendChild(tr);
-    });
-    w.appendChild(t);
-  }
   /* 回収資料タブ：いまの 顧問先・月分の 進み具合を［🤖 エージェントに渡す］の 横に 1行 */
   function agpLine(cacheOnly) {   /* cacheOnly … 一覧を 描くたびに サーバへ 行かない（読んである ものだけ 使う） */
     const sp = $('agpLine'); if (!sp) return; sp.textContent = ''; if (!S.code) return;
@@ -7609,7 +7581,7 @@
   function pgGo(x, k) {
     if (k === 'fx') {
       const on = x.st.fx !== 'ok';
-      gs('progressMark', x.code, x.ym, 'fx', on).then(function () { x.st.fx = on ? 'ok' : 'no'; x.done = on && Object.keys(x.st).every(function (q) { return x.st[q] === 'ok'; }); x.cur = ''; PG.r.steps.some(function (s2) { if (x.st[s2[0]] !== 'ok') { x.cur = s2[0]; return true; } return false; }); x.done = !x.cur; pgDraw(); }, function (e) { alert('付けられませんでした。' + e.message); });
+      gs('progressMark', x.code, x.ym, 'fx', on).then(function () { x.st.fx = on ? 'ok' : 'no'; x.done = on && Object.keys(x.st).every(function (q) { return x.st[q] === 'ok'; }); x.cur = ''; PG.r.steps.some(function (s2) { if (x.st[s2[0]] !== 'ok') { x.cur = s2[0]; return true; } return false; }); x.done = !x.cur; x.fx = on ? { at: 'いま', by: '' } : null; try { lsSet('collect_pg_v1', JSON.stringify(PG.r)); } catch (q) {} pgDraw(); }, function (e) { alert('付けられませんでした。' + e.message); });
       return;
     }
     if (!setCode(x.code)) return; perPick(x.ym);
@@ -7649,9 +7621,6 @@
   $('pgRe').addEventListener('click', function () { pgLoad(true); });
   $('pgMon').addEventListener('change', function () { pgLoad(true); });
   $('pgAll').addEventListener('change', pgDraw);
-  $('agpRe').addEventListener('click', function () { agpOpen(true); });
-  $('agpNo').addEventListener('click', function () { $('agpv').hidden = true; });
-  $('agpOpen').addEventListener('change', function () { if (AGP.r) agpDraw(AGP.r); });
   $('sorBtn').addEventListener('click', function () { sorOpen(false); });
   $('sorRe').addEventListener('click', function () { sorOpen(true); });
   $('sorNo').addEventListener('click', function () { $('sorv').hidden = true; });
@@ -14872,6 +14841,7 @@
     if (!$('grRepYm').value) $('grRepYm').value = (S.per && /^\d{4}-\d{2}$/.test(S.per)) ? S.per : ymNow();
     if (!$('grShYm').value) $('grShYm').value = ymNow();
     if (!$('grDocYm').value) $('grDocYm').value = ymNow();
+    if (GR.code !== code) { GR.code = code; GR.v = null; grtDraw(); }   /* ★ 総点検：顧問先を 変えたら 前の 顧問先の 文を 残さない（まちがって 別の 顧問先に 保存しない） */
     mnLoad();
     gs('grtGet', code).then(function (v) { if (code !== S.code) return; GR.v = v; grtDraw(); }, function (e) { mtMsg('grRepMsg', e.message, 'err'); });
   }
@@ -14909,8 +14879,9 @@
   function grtSaveGo(kind, show) {
     if (!S.code) return;
     const rep = kind === 'report', msg = rep ? 'grRepMsg' : 'grShMsg';
+    if (GR.busy) return; GR.busy = 1; const code = S.code;
     mtMsg(msg, '保存しています…');
-    gs('grtSave', S.code, kind, $(rep ? 'grRepYm' : 'grShYm').value, $(rep ? 'grRepText' : 'grShText').value, !!show).then(function (v) { GR.v = v; grtDraw(); mtMsg(msg, show ? '📤 保存して 顧問先の 画面に 出しました。' : '保存しました（新しい版）。'); }, function (e) { mtMsg(msg, e.message, 'err'); });
+    gs('grtSave', code, kind, $(rep ? 'grRepYm' : 'grShYm').value, $(rep ? 'grRepText' : 'grShText').value, !!show).then(function (v) { GR.busy = 0; if (code !== S.code) return; GR.v = v; grtDraw(); mtMsg(msg, show ? '📤 保存して 顧問先の 画面に 出しました。' : '保存しました（新しい版）。'); }, function (e) { GR.busy = 0; mtMsg(msg, e.message, 'err'); });
   }
   $('grRepSave').addEventListener('click', function () { grtSaveGo('report', false); });
   $('grRepShow').addEventListener('click', function () { grtSaveGo('report', true); });
@@ -14929,9 +14900,10 @@
     if (!S.code || !f) return;
     if (!/^(application\/pdf|image\/(jpeg|png))$/.test(f.type)) { mtMsg('grDocMsg', 'PDF か 写真（jpg・png）を 入れてください。', 'err'); return; }
     if (f.size > 20 * 1024 * 1024) { mtMsg('grDocMsg', '20MB までです。', 'err'); return; }
+    if (GR.docBusy) return; GR.docBusy = 1; const code = S.code;
     mtMsg('grDocMsg', '出しています…');
-    const rd = new FileReader(); rd.onload = function () {
-      gs('grtDocAdd', S.code, $('grDocYm').value, $('grDocTitle').value || f.name.replace(/\.[^.]+$/, ''), { name: f.name, mime: f.type, b64: String(rd.result).split(',')[1] || '' }, '').then(function (v) { GR.v = v; grtDraw(); $('grDocTitle').value = ''; mtMsg('grDocMsg', '📤 顧問先の 画面に 出しました（確認を もらうと ✅ が 付きます）。'); }, function (e) { mtMsg('grDocMsg', e.message, 'err'); });
+    const rd = new FileReader(); rd.onerror = function () { GR.docBusy = 0; mtMsg('grDocMsg', 'ファイルを 読めませんでした。', 'err'); }; rd.onload = function () {
+      gs('grtDocAdd', code, $('grDocYm').value, $('grDocTitle').value || f.name.replace(/\.[^.]+$/, ''), { name: f.name, mime: f.type, b64: String(rd.result).split(',')[1] || '' }, '').then(function (v) { GR.docBusy = 0; if (code !== S.code) return; GR.v = v; grtDraw(); $('grDocTitle').value = ''; mtMsg('grDocMsg', '📤 顧問先の 画面に 出しました（確認を もらうと ✅ が 付きます）。'); }, function (e) { GR.docBusy = 0; mtMsg('grDocMsg', e.message, 'err'); });
     }; rd.readAsDataURL(f);
   }
   $('grDocB').addEventListener('click', function () { $('grDocFile').value = ''; $('grDocFile').click(); });
@@ -15019,8 +14991,8 @@
     w.appendChild(pv);
   }
   function hoSave(pub) {
-    if (!S.code || !HO.inp) return;
-    gs('hoshoSave', S.code, HO.inp, !!pub).then(function (r) { HO.base = r.base; hoMsg(pub ? '🛡 保存して 顧問先の 画面の リスクに 入れました（「更新されました」と 出ます）。' : '💾 保存しました。'); if (pub) kyLoad(); }, function (e) { hoMsg(e.message, true); });
+    if (!S.code || !HO.inp || HO.busy) return; HO.busy = 1; const code = S.code; hoMsg('保存しています…');
+    gs('hoshoSave', code, HO.inp, !!pub).then(function (r) { HO.busy = 0; if (code !== S.code) return; HO.base = r.base; hoMsg(pub ? '🛡 保存して 顧問先の 画面の リスクに 入れました（「更新されました」と 出ます）。' : '💾 保存しました。'); if (pub) kyLoad(); }, function (e) { HO.busy = 0; hoMsg(e.message, true); });
   }
   function kyLoad() { const code = S.code; if (!code) return; gs('kyoGet', code).then(function (r) { if (code !== S.code) return; kyDraw(r); }, function (e) { mtMsg('kyMsg', e.message, 'err'); }); }
   /* エージェントの リスク.json／格付け.json を 下のマスに 写す（直してから 入れる） */
