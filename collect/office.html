@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795277759;</script>
+<script>window.__PAGE_VER=1795278572;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -76,6 +76,7 @@
   .reopen:disabled { opacity: .6; }
   .topr { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 5px); right: 8px; z-index: 60; display: flex; gap: 6px; align-items: center; }
   .topr .reopen { position: static; }
+  @media (max-width: 700px) { .topr { position: absolute; } }   /* ★ 2026-11-21：スマホは 下へ 送ると 中身（見出し）に かぶっていた → いちばん上に 置いたまま 一緒に 流れる */
   .toclient { font: inherit; font-size: 13px; font-weight: 700; color: #fff; background: var(--accent); border: 1.5px solid var(--accent); border-radius: 999px; padding: 3px 11px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.12); white-space: nowrap; }
   .toclient:disabled { opacity: .6; }
   .toclient[hidden], .reopen[hidden] { display: none; }
@@ -1638,7 +1639,17 @@
   .pgb.cur { border-width: 3px; border-color: #C0601A; font-weight: 700; }
   .pga { flex: 0 0 auto; color: #9aa6a0; padding: 0 3px; font-size: 16px; }
   .pgdone { font-size: 13px; color: #1E6B3A; cursor: pointer; margin: 2px 0; }
+  .tabmenu { position: fixed; z-index: 9999; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.18); padding: 4px; display: flex; flex-direction: column; min-width: 13em; }
+  .tabmenu button { font: inherit; font-size: 14px; text-align: left; padding: 8px 10px; border: 0; background: none; border-radius: 6px; cursor: pointer; } .tabmenu button:hover, .tabmenu button:focus { background: #EEF4F1; outline: none; }
+  .tabmenu .note { font-size: 11.5px; padding: 2px 10px 4px; color: #667; }
   .hobar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }   /* ★ 標準保障額（2026-11-21） */
+  @media (max-width: 700px) {   /* ★ スマホ：3列（17em・10em・説明）が 入らず 説明が 1文字幅で 縦に 伸びていた → 名前と 欄の 2列、説明は 下の 行 */
+    .hof { grid-template-columns: minmax(0, 1fr) 9.5em; gap: 2px 8px; margin: 6px 0; }
+    .hof small { grid-column: 1 / -1; margin-top: -2px; }
+    .hof input:not([type=checkbox]), .hof select { width: 100%; box-sizing: border-box; min-width: 0; }
+    #hoCalc fieldset { min-width: 0; padding-left: 8px; padding-right: 8px; }
+    #hoCalc table { display: block; overflow-x: auto; }
+  }
   .hof { display: grid; grid-template-columns: 17em 10em 1fr; gap: 6px; align-items: center; margin: 3px 0; font-size: 14px; } .hof input:not([type=checkbox]) { text-align: right; } .hof small { color: #667; font-size: 12px; }
   .hot { border-collapse: collapse; margin: 4px 0; font-size: 13px; } .hot th, .hot td { border: 1px solid #dde4e0; padding: 3px 6px; } .hot th { background: #f1f5f3; } .hot td.n { text-align: right; white-space: nowrap; }
   .hobig { border-radius: 8px; padding: 10px 12px; font-size: 18px; font-weight: 700; margin: 6px 0; } .hobig.ng { background: #FDECEC; color: #A3271F; } .hobig.ok { background: #E3F3E8; color: #1E6B3A; }
@@ -4202,6 +4213,40 @@
     });
   });
   window.addEventListener('beforeunload', function (e) { if (REOPENING) return; if (S.dirty || S.saving) { e.preventDefault(); e.returnValue = ''; } });
+  /* ★★ 2026-11-21（石井）：タブを 右クリック →［新しいタブで開く］［別ウィンドウで開く］。Ctrl（⌘）＋クリック・中ボタンも 新しいタブ。
+       いまの 顧問先・月分を 引き継ぐ。合図は 端末に 覚えているので 入り直さなくてよい。複数の 画面を 並べて 操作できる */
+  function tabUrl(k) {
+    const u = new URL(location.href); ['v', 'u', 'tab', 'code', 'per'].forEach(function (q) { u.searchParams.delete(q); });
+    u.searchParams.set('tab', k); if (S.code) u.searchParams.set('code', S.code); if (S.per) u.searchParams.set('per', S.per);
+    return u.toString();
+  }
+  function tabOpen(k, win) {
+    if (LIVE) { alert('Google の 入れ物の 中からは 開けません。ホーム画面の アプリ（ishii-office.github.io）から 開いてください。'); return; }
+    try { resumeKeep(); } catch (e) {}
+    const w = window.open(tabUrl(k), win ? 'col_' + k + '_' + Date.now() : '_blank', win ? 'popup=yes,width=1280,height=900' : 'noopener');
+    if (win && !w) alert('ブラウザが 新しい 画面を 止めました（この サイトの ポップアップを 許可してください）。');
+  }
+  (function () {
+    let menu = null;
+    const close = function () { if (menu) { menu.remove(); menu = null; } };
+    document.querySelectorAll('#tabs button').forEach(function (b) {
+      b.addEventListener('contextmenu', function (e) {
+        e.preventDefault(); close();
+        menu = el('div', 'tabmenu'); menu.setAttribute('role', 'menu');
+        [['🗗 新しいタブで開く', false], ['🪟 別ウィンドウで開く', true]].forEach(function (x) { const m = el('button', null, x[0]); m.type = 'button'; m.setAttribute('role', 'menuitem'); m.addEventListener('click', function () { close(); tabOpen(b.dataset.tab, x[1]); }); menu.appendChild(m); });
+        menu.appendChild(el('div', 'note', '「' + b.textContent.trim() + '」' + (S.code ? '・' + S.code : '') + (S.per ? '・' + S.per.replace('-', '年') + '月分' : '')));
+        document.body.appendChild(menu);
+        const r = menu.getBoundingClientRect();
+        menu.style.left = Math.max(4, Math.min(e.clientX, innerWidth - r.width - 4)) + 'px'; menu.style.top = Math.max(4, Math.min(e.clientY, innerHeight - r.height - 4)) + 'px';
+        menu.querySelector('button').focus();
+      });
+      b.addEventListener('click', function (e) { if (e.ctrlKey || e.metaKey || e.shiftKey) { e.preventDefault(); e.stopImmediatePropagation(); tabOpen(b.dataset.tab, e.shiftKey); } }, true);
+      b.addEventListener('auxclick', function (e) { if (e.button === 1) { e.preventDefault(); tabOpen(b.dataset.tab, false); } });
+    });
+    document.addEventListener('mousedown', function (e) { if (menu && !menu.contains(e.target)) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    window.addEventListener('scroll', close, { passive: true });
+  })();
 
   /* ================= 仕訳化（伝票チェックの形。ビーメイツ 708 の伝票化と同じ） =================
      ・届いた写真を【上から下へ】1件ずつ並べる。写真 → 辞書の No → 伝票 → ✓ 確定
@@ -4649,7 +4694,20 @@
   const LS_RESUME = 'collect_office_resume';
   var RESUME = null, REOPENING = false, RESUME_OFF = false;   /* var：ログアウト（上の方の関数）からも触るので */
   const RESUME_NAV = 30 * 86400000, RESUME_DRAFT = 86400000;
-  function resumeLoad(name) {
+  /* ★ 2026-11-21：タブを 別タブ・別ウィンドウで 開いたとき（?tab=&code=&per=）は その タブ・顧問先・月分で 始める */
+  function resumeLoad(name) { resumeLoad0(name); try { tabUrlApply(); } catch (e) {} }
+  function tabUrlApply() {
+    const qt = qp('tab'), qc = qp('code'), qe = qp('per');
+    if (!qt || !/^[A-Za-z]{2,12}$/.test(qt) || !document.getElementById('pane' + qt)) return;
+    const okc = /^[\w-]{1,20}$/.test(qc), oke = /^\d{4}-\d{2}$/.test(qe);
+    if (okc && (!RESUME || RESUME.code !== qc)) RESUME = { at: Date.now(), C: {}, code: qc };
+    if (!RESUME) RESUME = { at: Date.now(), C: {} };
+    RESUME.tab = qt; S.resumeTab = qt;
+    if (okc) S.code = qc;
+    if (oke) { RESUME.per = qe; S.per = qe; }
+    try { const u = new URL(location.href); ['tab', 'code', 'per'].forEach(function (k) { u.searchParams.delete(k); }); history.replaceState(null, '', u.pathname + u.search); } catch (e) {}
+  }
+  function resumeLoad0(name) {
     let r = null; try { r = JSON.parse(lsGet(LS_RESUME) || 'null'); } catch (e) {}
     RESUME_OFF = false;
     if (!r || Date.now() - r.at > RESUME_NAV || (r.who && name && r.who !== name)) { lsDel(LS_RESUME); return; }
@@ -7363,8 +7421,8 @@
   const GUIDE = {
     order: ['top', 'Docs', 'In', 'Out', 'Prog', 'Advice', 'Grt', 'Clients', 'Dict', 'Rule', 'Fold', 'Send', 'Kaizen', 'Staff'],
     top: { t: '🧭 全体・右上のボタン', pic: 'g_otop', lead: '上の「顧問先」で 顧問先を選び、タブで 仕事を切り替えます。右上のボタンは どのタブからでも使えます。',
-      steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［🤖 エージェント］… エージェントの 進み具合（顧問先・月分ごとに ⏳ 戻り待ち → 📥 確かめ中 ✓ n／m → ✅ 確かめ済み → 📤 取り込みファイルに した）。行を押すと その回収資料へ', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
-      tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
+      steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
+      tips: ['タブを 右クリック →［新しいタブで開く］［別ウィンドウで開く］で 複数の 画面を 並べて 使えます（いまの 顧問先・月分を 引き継ぐ。Ctrl＋クリック・中ボタンでも 新しいタブ）', '紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 月分・箱ごとに見て、確かめる・整理する タブです。',
       steps: ['上で 顧問先・月分・箱を選ぶ', 'まとまった PDF（スキャナで 何十枚も 1つに なったもの）は 大きく見るで［✂ 1ページずつに分ける］。1ページ ＝ 1つの 資料に なり、元の PDF は 破棄したものへ（戻せます）', '赤い枠の［⚠ 二重では？］… 先に届いた写真と 同じ写真・同じ日付と金額と相手・同じ字（日付・合計）。二重なら その写真を 破棄、ちがえば 2回押して「二重ではない」（顧問先には 聞かない）', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）', '戻したら［📗 元帳で確かめる］… TKC と同じ形（月別の残高 → 口座別 → 総勘定元帳 → 伝票）。伝票は 左に 写真（預金は 通帳の行）、右に 10行。Enter で ✓ して 次の伝票・0 で 前・T（F2）で 訂正・1・2 で エージェントの 別の案・Esc で 戻る。全部 ✓ で［📤 取り込みファイルにする］（FX の 一括読み込み。使った箱は 処理済ボックスへ）'],
       tips: ['パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
