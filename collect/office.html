@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795278572;</script>
+<script>window.__PAGE_VER=1795280395;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3026,7 +3026,7 @@
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
   }
-  function signOut(msg) { try { $('arrBtn').hidden = true; $('sorBtn').hidden = true; $('agpBtn').hidden = true; $('guideBtn').hidden = true; $('arrPop').hidden = true; $('bellBtn').hidden = true; $('bellPop').hidden = true; $('mineSel').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
+  function signOut(msg) { try { $('arrBtn').hidden = true; $('sorBtn').hidden = true; $('agpBtn').hidden = true; $('guideBtn').hidden = true; $('arrPop').hidden = true; $('bellBtn').hidden = true; $('bellPop').hidden = true; $('mineSel').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); ['collect_led_v1', 'collect_warm_v1', 'collect_pg_v1', 'collect_agp_v1', 'collect_kzst_v1'].forEach(function (k) { lsDel(k); });   /* ★ 2026-11-21：先読みで 覚えた 顧問先の 中身も 消す */ try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
   $('signOut').addEventListener('click', function () { signOut('ログアウトしました。'); });
   $('gate').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -4600,6 +4600,7 @@
     if (S.dirty && !confirm('辞書の書き替えが保存されていません。捨てて顧問先を替えますか？')) return false;
     S.code = code; $('client').value = code; switchClient();
     try { if (S.tab === 'In') agpLine(false); } catch (e) {}
+    try { standby(); } catch (e) {}
     return true;
   }
   function switchClient(soft) {
@@ -4681,6 +4682,7 @@
     if (S.tab === 'Rule') rLoad();
     if (S.tab === 'Advice') advLoad();
     if (S.tab === 'Grt') grtLoad();
+    try { standby(); } catch (e) {}
     if (RESUME && RESUME.code === b.code) resumeApply();
   }
   /* ================= ★★ いつでも開き直す（2026-10-12） =================
@@ -7428,7 +7430,7 @@
       tips: ['パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料から 仕訳を作るタブです。AI の下書きを確かめて 確定します。',
       steps: ['写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ', 'エージェントは 上の帯で：［🤖 エージェントに渡す（zip）］→ 自分の Claude Code に 渡す → できあがりの zip を［⬆ できあがりを戻す］か 帯へ ドラッグ → ［📥 結果と学び］［📗 元帳で確かめる］（TKC と 同じ 伝票の形・Enter で ✓ して 次へ。写真は 先に 読んでおくので 速く 押しても 追いつきます）'],
-      tips: ['よく出る取引は［仕訳辞書］に登録すると 次から ひとりでに当たります', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
+      tips: ['スマホの［📗 元帳で確かめる］は 上から 下（上に 科目・下に 元帳／上に 写真・下に 伝票）。下の［✓ 次へ］［‹ 前］［✎ 訂正］［案1］［案2］［↩ 戻る］で 進みます', 'よく出る取引は［仕訳辞書］に登録すると 次から ひとりでに当たります', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
     Out: { t: '取込ファイル', pic: 'g_oout', lead: '確定した仕訳を 会計ソフト（FX）へ 取り込むファイルにする タブです。',
       steps: ['処理済ボックス（月分・箱）を選ぶ', 'ファイルにして 保存する', 'FX で 取り込む'], tips: [] },
     Clients: { t: '顧問先', pic: 'g_oclients', lead: '顧問先の登録・箱（資料の入れもの）・URL・公式LINE などを決めるタブです。',
@@ -7625,6 +7627,8 @@
       sp.textContent = x ? '🤖 ' + Number(x.ym.slice(5)) + '月分：' + agpStText(x) : '';
       /* ★ 2026-11-21（石井）：zip を 渡したあとは［⬆ できあがりを戻す］を いつも出す（戻り待ちの あいだ 探さなくてよい）。戻したあとは 元帳・結果も */
       if ($('dAgentPick').hidden) { $('dAgentBack').hidden = !x; $('dLedger').hidden = !(x && x.st !== 'gave'); $('dAgentRes').hidden = !(x && x.st !== 'gave'); }
+      /* ★ 元帳を 前もって 読んでおく（［📗 元帳で確かめる］を 押した 瞬間に 出る） */
+      if (x && x.st !== 'gave') { const c0 = S.code, m0 = x.ym; setTimeout(function () { if (c0 === S.code && !document.getElementById('ledOv')) ledPreLoad(c0, m0, false).catch(function () {}); }, 800); }
     }, function () {});
   }
   $('agpBtn').addEventListener('click', function () { selectTab('Prog'); });   /* ★ 2026-11-21：エージェントの 進み具合は［進捗］タブへ（ボタンは 出さない） */
@@ -8052,7 +8056,16 @@
       '#ledOv .conf{display:inline-block;padding:1px 8px;border-radius:9px;color:#fff;font-size:12px}#ledOv .c-hi{background:#1e8449}#ledOv .c-mid{background:#d68910}#ledOv .c-lo{background:#c0392b}' +
       '#ledOv .lf{padding:5px 10px;background:#2c3e2f;color:#e8f0e0;font-size:12.5px}#ledOv .lf kbd{background:#fff;color:#222;border-radius:3px;padding:0 5px;margin:0 2px;font-size:12px}' +
       '#ledOv table.tkc{border:1px solid #9bb37a}#ledOv table.tkc th{position:static;border:1px solid #fff;text-align:center;font-size:12px;padding:2px 4px}#ledOv table.tkc td{border:1px solid #d5dfc8;font-size:13px}#ledOv table.tkc td.ml{white-space:pre-line;line-height:1.55}#ledOv table.tkc td.c{text-align:center}#ledOv table.tkc td.ln{text-align:center;vertical-align:middle;width:2em}#ledOv table.tkc tr.tf td{font-weight:600;background:#f3f6ee}#ledOv table.tkc input.le{margin:1px 0}#ledOv .lpnav{display:flex;gap:6px;align-items:center;margin:2px 0 4px;flex-wrap:wrap}#ledOv table.tkcm{width:auto;border:1px solid #9bb37a}#ledOv table.tkcm th{position:static;border:1px solid #fff;text-align:center}#ledOv table.tkcm td{border:1px solid #d5dfc8;padding:2px 8px}#ledOv table.tkcm td:first-child{width:7.5em}#ledOv table.tkcm td.r{width:8.5em}#ledOv table.tkcm td.ic{width:1.6em;text-align:center;color:#2c6fbf}#ledOv table.tkcm tr:hover td{background:#eef6ff}#ledOv .tkctab{display:flex;gap:2px;margin-bottom:4px}#ledOv .tkctab button{flex:1;font-size:13px;padding:3px;border:1px solid #9bb37a;background:#fff}#ledOv .tkctab button.on{background:#e5f0d6;font-weight:700;border-bottom:2px solid #6a9a3a}#ledOv .ac .gt{margin-left:auto;color:#888}' +
-      '#ledOv input.le{width:100%;box-sizing:border-box;font-size:13px;padding:1px 3px}#ledOv .alts div{margin:2px 0;padding:3px 6px;background:#eef3f8;border-radius:4px}';
+      '#ledOv input.le{width:100%;box-sizing:border-box;font-size:13px;padding:1px 3px}#ledOv .alts div{margin:2px 0;padding:3px 6px;background:#eef3f8;border-radius:4px}' +
+      /* ★ 2026-11-21（石井）：パソコンは 左右（左から 展開）、スマホは 上から 下（上に 科目・下に 元帳／上に 写真・下に 伝票）。スマホは キーの 代わりに 下の ボタン */
+      '#ledOv .lcards{display:none}#ledOv .ltb{display:none}' +
+      '@media (max-width:700px){#ledOv{font-size:15px}#ledOv .lh{padding:6px 8px;gap:4px 8px}#ledOv .lh b{font-size:14px}#ledOv #ledMsg{flex-basis:100%!important;order:9}' +
+      '#ledOv .lb{flex-direction:column;overflow:auto;-webkit-overflow-scrolling:touch}#ledOv .lpane{overflow:visible}#ledOv .lleft{width:auto;border-right:0;border-bottom:2px solid #cdd6c3}' +
+      '#ledOv .lright{overflow-x:auto}#ledOv .lright table{min-width:0}#ledOv .lright th,#ledOv .lright td{white-space:nowrap;font-size:13px;padding:5px 6px}' +
+      '#ledOv .ac{padding:9px 8px;font-size:15px}#ledOv .lslip{flex-direction:column;flex:none}#ledOv .limg{width:auto;border-right:0;border-bottom:2px solid #cdd6c3;max-height:48vh;overflow:auto}#ledOv .ldoc{overflow:visible}' +
+      '#ledOv .ldoc table.tkc{display:none}#ledOv.led-edit .ldoc table.tkc{display:table}#ledOv.led-edit .ldoc{overflow-x:auto}#ledOv.led-edit .lcards{display:none}' +
+      '#ledOv .lcards{display:block;margin:6px 0}#ledOv .lcard{background:#fff;border:1px solid #cdd6c3;border-radius:10px;padding:8px 10px;margin:6px 0}#ledOv .lcard .lr{display:flex;justify-content:space-between;gap:8px;align-items:baseline}#ledOv .lcard .lk{font-size:12px;color:#5a6b4e}#ledOv .lcard .lv{font-weight:600}#ledOv .lcard .lam{font-size:17px;font-weight:700;white-space:nowrap}#ledOv .lcard .lm{font-size:13px;color:#444;margin-top:2px}' +
+      '#ledOv .lf{display:none}#ledOv .ltb{display:flex;gap:6px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:#2c3e2f}#ledOv .ltb button{flex:1;font-size:15px;padding:10px 4px;border-radius:9px;border:0;background:#fff;color:#1f3a28;font-weight:700}#ledOv .ltb button.go{background:#1e8449;color:#fff}#ledOv .ltb button[hidden]{display:none}}' ;
     document.head.appendChild(st);
   }
   /* 科目・口座ごとの 月の 借方・貸方（過去は 会計ソフトから、その月は エージェントの 伝票） */
@@ -8099,16 +8112,60 @@
     ov = el('div'); ov.id = 'ledOv'; ov.tabIndex = -1;
     ov.innerHTML = '<div class="lh"><b>📗 元帳で確かめる</b><span id="ledTitle"></span><span id="ledStat"></span><span id="ledMsg" style="flex:1;font-size:13px"></span><button type="button" id="ledExp" disabled>📤 取り込みファイルにする</button><button type="button" id="ledX">閉じる（Esc）</button></div>' +
       '<div class="lcr" id="ledCr"></div><div class="lb" id="ledBody"><div class="lpane">読み込み中…</div></div>' +
-      '<div class="lf"><kbd>Enter</kbd>✓して次の伝票 <kbd>0</kbd>前の伝票 <kbd>T</kbd>/<kbd>F2</kbd>訂正 <kbd>1</kbd><kbd>2</kbd>エージェントの別の案 <kbd>↑</kbd><kbd>↓</kbd>行を選ぶ <kbd>Esc</kbd>1つ戻る</div>';
+      '<div class="lf"><kbd>Enter</kbd>✓して次の伝票 <kbd>0</kbd>前の伝票 <kbd>T</kbd>/<kbd>F2</kbd>訂正 <kbd>1</kbd><kbd>2</kbd>エージェントの別の案 <kbd>↑</kbd><kbd>↓</kbd>行を選ぶ <kbd>Esc</kbd>1つ戻る</div>' +
+      '<div class="ltb" id="ledTb"><button type="button" data-k="Escape">↩ 戻る</button><button type="button" data-k="0" data-s="1">‹ 前</button><button type="button" data-k="t" data-s="1" id="ledTbEd">✎ 訂正</button><button type="button" data-k="1" data-s="1" data-a="1">案1</button><button type="button" data-k="2" data-s="1" data-a="2">案2</button><button type="button" data-k="Enter" data-s="1" class="go">✓ 次へ</button></div>';
     document.body.appendChild(ov);
     $('ledX').addEventListener('click', ledClose);
     $('ledExp').addEventListener('click', ledExport);
     ov.addEventListener('keydown', ledKey);
+    $('ledTb').addEventListener('click', function (e) {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.k === 't' && LED.edit) { ledSaveEdit(); return; }
+      ledKey({ key: b.dataset.k, ctrlKey: false, metaKey: false, target: document.body, preventDefault: function () {} });
+    });
     ov.focus();
     LED.lv = 'acct'; LED.acct = ''; LED.sub = null; LED.m = ''; LED.i = 0; LED.edit = false;
-    gs('ledgerGet', S.code, S.per).then(function (d) { LED.d = d; ledAgg(); ledDraw(); }, function (e) { $('ledBody').textContent = '出せませんでした。' + e.message; });
+    /* ★ 2026-11-21：前もって 読んでおいた 元帳（仕訳化タブを 開いた ときに 裏で 読む）か 前に 開いた 元帳を まず 出して、裏で 新しく する */
+    const code = S.code, per = S.per, pre = ledPreGet(code, per);
+    if (pre) { LED.d = pre; ledAgg(); ledDraw(); }
+    ledPreLoad(code, per, true).then(function (d) {
+      if (!document.getElementById('ledOv') || code !== S.code || per !== S.per) return;
+      const keep = LED.lv, si = LED.si;
+      LED.d = d; ledAgg();
+      if (!pre) ledDraw(); else if (!LED.edit) { LED.lv = keep; LED.si = si; ledDraw(); }
+    }, function (e) { if (!pre) $('ledBody').textContent = '出せませんでした。' + e.message; });
   }
-  function ledClose() { const ov = document.getElementById('ledOv'); if (ov) ov.remove(); }
+  function ledClose() { const ov = document.getElementById('ledOv'); if (ov) ov.remove(); if (LED.d && S.code) ledPreSet(S.code, LED.d.ym, LED.d); }
+  /* ★ 元帳の 先読み（メモリと 端末）。✓ を 付けた 状態も 覚えておく */
+  const LED_PRE = {};
+  function ledPreGet(code, per) {
+    const k = code + '|' + per; if (LED_PRE[k]) return LED_PRE[k].d;
+    try { const v = JSON.parse(lsGet('collect_led_v1') || 'null'); if (v && v.k === k && Date.now() - v.at < 3 * 864e5) return v.d; } catch (e) {}
+    return null;
+  }
+  function ledPreSet(code, per, d) {
+    const k = code + '|' + per; LED_PRE[k] = { d: d, at: Date.now() };
+    try { const t = JSON.stringify({ k: k, at: Date.now(), d: d }); if (t.length < 1500000) lsSet('collect_led_v1', t); } catch (e) {}
+  }
+  function ledPreLoad(code, per, force) {
+    const k = code + '|' + per, c = LED_PRE[k];
+    if (!force && c && Date.now() - c.at < 120000) return Promise.resolve(c.d);
+    if (c && c.p) return c.p;
+    const p = gs('ledgerGet', code, per).then(function (d) { ledPreSet(code, per, d); return d; }, function (e) { if (LED_PRE[k]) delete LED_PRE[k].p; throw e; });
+    LED_PRE[k] = Object.assign(LED_PRE[k] || {}, { p: p });
+    return p;
+  }
+  function ledTbSync() {
+    const tb = $('ledTb'); if (!tb) return;
+    const ov = $('ledOv'); if (ov) ov.classList.toggle('led-edit', !!LED.edit);
+    const slip = LED.lv === 'slip', sl = slip ? ledCur() : null;
+    tb.querySelectorAll('button').forEach(function (b) {
+      if (b.dataset.s) b.hidden = !slip;
+      if (b.dataset.a) b.hidden = !slip || LED.edit || !(sl && sl.alts && sl.alts[Number(b.dataset.a) - 1]);
+    });
+    const ed = $('ledTbEd'); if (ed) ed.textContent = LED.edit ? '💾 保存' : '✎ 訂正';
+    const go = tb.querySelector('.go'); if (go) { go.hidden = LED.edit; go.textContent = slip ? '✓ 次へ' : '開く ›'; if (!slip) go.hidden = false; go.dataset.s = slip ? '1' : ''; }
+  }
   function ledStat() {
     const s = LED.d.stat, n = LED.d.slips.length, ok = LED.d.slips.filter(function (x) { return x.ok; }).length;
     $('ledTitle').textContent = '　' + S.code + '　' + LED.d.ym.replace('-', '年') + '月分';
@@ -8124,6 +8181,7 @@
       if (LED.lv === 'ledger' || LED.lv === 'slip') a('総勘定元帳（' + LED.m.replace('-', '年') + '月' + (LED.sub ? '・' + ledSubName(LED.acct, LED.sub) : '') + '）', function () { LED.lv = 'ledger'; ledDraw(); });
     }
     c.lastChild && c.removeChild(c.lastChild);
+    setTimeout(ledTbSync, 0);
   }
   function ledDraw() {
     ledStat(); ledCr(); LED.edit = false;
@@ -8292,6 +8350,20 @@
     const tot = ls.reduce(function (s2, l) { return s2 + (Number(l.amount) || 0); }, 0), tf = el('tr', 'tf');
     ['', '借方合計', '', ledFmt(tot), '貸方合計', '', ledFmt(tot), ''].forEach(function (v, k) { tf.appendChild(el('td', k === 3 || k === 6 ? 'r' : null, v)); }); t.appendChild(tf);
     D.appendChild(t);
+    /* ★ スマホ：表の 代わりに 1行ずつの カード（借方 → 貸方・金額・税・摘要）。訂正は 表で */
+    if (!LED.edit) {
+      const cs = el('div', 'lcards');
+      ls.forEach(function (l, k) {
+        const c = el('div', 'lcard'), r1 = el('div', 'lr');
+        const sd = function (lbl, code, sb) { const w = el('div'); w.appendChild(el('div', 'lk', lbl)); w.appendChild(el('div', 'lv', code + ' ' + ledName(code) + (sb ? '・' + sb + ' ' + ledSubName(code, sb) : ''))); return w; };
+        r1.appendChild(sd((ls.length > 1 ? (k + 1) + '　' : '') + '借方', l.drCode, l.drSub)); r1.appendChild(el('div', 'lam', ledFmt(l.amount))); c.appendChild(r1);
+        c.appendChild(sd('貸方', l.crCode, l.crSub));
+        const m = [l.tax ? '税 ' + l.tax + (l.biz ? '・業 ' + l.biz : '') + (l.rate ? '・' + l.rate + '%' : '') : '', (l.party ? l.party + ' ' : '') + (l.partyName || ''), l.memo || ''].filter(Boolean).join('　');
+        if (m) c.appendChild(el('div', 'lm', m));
+        cs.appendChild(c);
+      });
+      D.appendChild(cs);
+    }
     if (LED.edit) {
       const bar = el('div'); bar.style.margin = '6px 0';
       const sv = el('button', 'dmon-b', '💾 訂正を保存（Ctrl+Enter）'); sv.type = 'button'; sv.addEventListener('click', ledSaveEdit);
@@ -14890,6 +14962,41 @@
     return o;
   }
   /* ★★★ 保証（2026-11-21 石井）：巡回監査報告書・書面添付・決算書類の 確認。議事録（mnBox）も ここ */
+  /* ★★ 2026-11-21（石井）：開いている タブ 以外も 裏で 読んでおく（スタンバイ）。押した 瞬間に 前に 読んだ ものを 出し、裏で 新しく する。
+       別タブ・別ウィンドウで 開いても 端末に 覚えた ものから すぐ 出る（collect_warm_v1・最近の 12件・合わせて 60万字まで） */
+  const WARM = {};
+  try { const w0 = JSON.parse(lsGet('collect_warm_v1') || 'null'); if (w0 && w0.who === (lsGet('collect_office_name') || '')) Object.keys(w0.m || {}).forEach(function (k) { WARM[k] = { v: w0.m[k].v, at: w0.m[k].at }; }); } catch (e) {}
+  const warmKey = function (fn, a) { return fn + '|' + a.join('|'); };
+  function warmPeek(fn, a) { const w = WARM[warmKey(fn, a)]; return w && w.v !== undefined ? w.v : null; }
+  function warmSet(fn, a, v) {
+    WARM[warmKey(fn, a)] = { v: v, at: Date.now() };
+    clearTimeout(warmSet.t); warmSet.t = setTimeout(function () {
+      try { const ks = Object.keys(WARM).filter(function (k) { return WARM[k].v !== undefined; }).sort(function (x, y) { return WARM[y].at - WARM[x].at; }).slice(0, 12), m = {}; let n = 0;
+        ks.forEach(function (k) { const t = JSON.stringify(WARM[k].v); if (n + t.length < 600000) { m[k] = { v: WARM[k].v, at: WARM[k].at }; n += t.length; } });
+        lsSet('collect_warm_v1', JSON.stringify({ who: lsGet('collect_office_name') || '', m: m })); } catch (e) {}
+    }, 800);
+  }
+  function warmGo(fn, a, maxAge) {
+    const k = warmKey(fn, a), w = WARM[k];
+    if (w && w.v !== undefined && Date.now() - w.at < (maxAge || 0)) return Promise.resolve(w.v);
+    if (w && w.p) return w.p;
+    const p = gs.apply(null, [fn].concat(a)).then(function (v) { warmSet(fn, a, v); return v; }, function (e) { if (WARM[k]) delete WARM[k].p; throw e; });
+    WARM[k] = Object.assign(WARM[k] || {}, { p: p });
+    return p;
+  }
+  /* 顧問先を 選んで 1.5秒 とどまったら、ほかの タブの 分を 読んでおく（経営助言・保証・進捗・元帳） */
+  function standby() {
+    clearTimeout(standby.t);
+    standby.t = setTimeout(function () {
+      const code = S.code; if (!code || !S.booted) return;
+      const go = function () {
+        if (code !== S.code) return;
+        ['kyoGet', 'hoshoBase', 'grtGet'].forEach(function (fn) { if (S.tab !== (fn === 'grtGet' ? 'Grt' : 'Advice')) warmGo(fn, [code], 60000).catch(function () {}); });
+        if (S.tab !== 'Prog' && (!PG.at || Date.now() - PG.at > 300000)) { try { pgLoad(false); } catch (e) {} }
+      };
+      if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 4000 }); else go();
+    }, 1500);
+  }
   const GR = { v: null };
   const ymNow = function () { return new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 7); };
   function grtLoad() {
@@ -14901,7 +15008,9 @@
     if (!$('grDocYm').value) $('grDocYm').value = ymNow();
     if (GR.code !== code) { GR.code = code; GR.v = null; grtDraw(); }   /* ★ 総点検：顧問先を 変えたら 前の 顧問先の 文を 残さない（まちがって 別の 顧問先に 保存しない） */
     mnLoad();
-    gs('grtGet', code).then(function (v) { if (code !== S.code) return; GR.v = v; grtDraw(); }, function (e) { mtMsg('grRepMsg', e.message, 'err'); });
+    const wv = warmPeek('grtGet', [code]); if (wv && !GR.v) { GR.v = wv; grtDraw(); }
+    const typing = function () { const a = document.activeElement; return a && /^(grRepText|grShText)$/.test(a.id); };
+    warmGo('grtGet', [code], 0).then(function (v) { if (code !== S.code) return; GR.v = v; if (!typing()) grtDraw(); }, function (e) { mtMsg('grRepMsg', e.message, 'err'); });
   }
   function grtFill(kind) {
     const v = GR.v || {}, rep = kind === 'report', ym = $(rep ? 'grRepYm' : 'grShYm').value, ta = $(rep ? 'grRepText' : 'grShText');
@@ -14910,6 +15019,7 @@
     $(rep ? 'grRepInfo' : 'grShInfo').textContent = x ? (x.draft ? '🤖 エージェントの 下書き（' + x.at + '）。直して 保存' : '保存 ' + x.at + '・' + x.who + (x.vers > 1 ? '・' + x.vers + '版目' : '') + (rep && x.show ? '・顧問先に 出した' + (x.oks && x.oks.length ? '（✅ ' + x.oks[x.oks.length - 1].name + ' が 確認）' : '') : '')) : 'まだ ありません';
   }
   function grtDraw() {
+    if (GR.v && GR.code) warmSet('grtGet', [GR.code], GR.v);
     const v = GR.v || { reports: [], shomen: [], docs: [] };
     grtFill('report'); grtFill('shomen');
     const list = function (id, rows, kind) {
@@ -14971,9 +15081,15 @@
   function advLoad() {
     const code = S.code; if (!code) { $('hoCalc').innerHTML = '<div class="note">上で 顧問先を 選んでください。</div>'; return; }
     const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' }; $('advClient').textContent = '— ' + code + ' ' + c.name;
+    const kc = warmPeek('kyoGet', [code]); if (kc) kyDraw(kc);
     kyLoad();
-    $('hoCalc').innerHTML = '<div class="note">読んでいます…</div>';
-    gs('hoshoBase', code).then(function (b) { if (code !== S.code) return; HO.base = b; HO.inp = Object.assign(hoDefault(), b.saved || {}); hoDraw(); }, function (e) { $('hoCalc').textContent = '読めませんでした。' + e.message; });
+    const hb = warmPeek('hoshoBase', [code]);
+    if (hb) { HO.base = hb; HO.inp = Object.assign(hoDefault(), hb.saved || {}); hoDraw(); } else $('hoCalc').innerHTML = '<div class="note">読んでいます…</div>';
+    warmGo('hoshoBase', [code], 0).then(function (b) {
+      if (code !== S.code) return; HO.base = b;
+      const a = document.activeElement; if (hb && a && $('hoCalc').contains(a)) return;   /* 打っている 最中は 入れ替えない */
+      HO.inp = Object.assign(hoDefault(), b.saved || {}); hoDraw();
+    }, function (e) { if (!hb) $('hoCalc').textContent = '読めませんでした。' + e.message; });
   }
   function hoDraw() {
     const w = $('hoCalc'), x = HO.inp, b = HO.base || {}; w.textContent = '';
@@ -15050,9 +15166,9 @@
   }
   function hoSave(pub) {
     if (!S.code || !HO.inp || HO.busy) return; HO.busy = 1; const code = S.code; hoMsg('保存しています…');
-    gs('hoshoSave', code, HO.inp, !!pub).then(function (r) { HO.busy = 0; if (code !== S.code) return; HO.base = r.base; hoMsg(pub ? '🛡 保存して 顧問先の 画面の リスクに 入れました（「更新されました」と 出ます）。' : '💾 保存しました。'); if (pub) kyLoad(); }, function (e) { HO.busy = 0; hoMsg(e.message, true); });
+    gs('hoshoSave', code, HO.inp, !!pub).then(function (r) { HO.busy = 0; warmSet('hoshoBase', [code], r.base); if (code !== S.code) return; HO.base = r.base; hoMsg(pub ? '🛡 保存して 顧問先の 画面の リスクに 入れました（「更新されました」と 出ます）。' : '💾 保存しました。'); if (pub) kyLoad(); }, function (e) { HO.busy = 0; hoMsg(e.message, true); });
   }
-  function kyLoad() { const code = S.code; if (!code) return; gs('kyoGet', code).then(function (r) { if (code !== S.code) return; kyDraw(r); }, function (e) { mtMsg('kyMsg', e.message, 'err'); }); }
+  function kyLoad() { const code = S.code; if (!code) return; warmGo('kyoGet', [code], 0).then(function (r) { if (code !== S.code) return; kyDraw(r); }, function (e) { mtMsg('kyMsg', e.message, 'err'); }); }
   /* エージェントの リスク.json／格付け.json を 下のマスに 写す（直してから 入れる） */
   function kyFill(kind, text) {
     let o = null; try { o = JSON.parse(String(text || '').replace(/^```(json)?|```$/gm, '')); } catch (e) {}
