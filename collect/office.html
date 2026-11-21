@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795266358;</script>
+<script>window.__PAGE_VER=1795268173;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -6923,7 +6923,7 @@
     const t = [];
     if (extra || OB.msg) t.push(extra || OB.msg);
     if (OB.kind === 'kyuyo') t.push('期間 ' + obMd(d.from) + '〜' + obMd(d.to));
-    if (OB.kind === 'esp') { t.push(d.sum.n ? d.sum.n + '日ぶん' + (d.at ? '（最後の保存 ' + d.at + '・' + d.who + '）' : '') : 'この月は まだ書かれていません。'); if (d.off) t.push('⚠ 人数と 男＋女が ちがう・現金が マイナスの日が ' + d.off + '日あります（赤い行）。'); ['h1', 'h2'].forEach(function (h) { const b = d.sb[h]; if (b.diff) t.push('⚠ ' + (h === 'h1' ? '前半' : '後半') + '：アプリのキャッシュレス計と SBペイメントの収納明細書が ' + Number(b.diff).toLocaleString('ja-JP') + '円 ちがいます。'); }); $('obMsg').textContent = t.join('　'); $('obMsg').className = 'note' + (d.off || d.sb.h1.diff || d.sb.h2.diff ? ' oboff' : ''); return; }
+    if (OB.kind === 'esp') { t.push(d.sum.n ? d.sum.n + '日ぶん' + (d.at ? '（最後の保存 ' + d.at + '・' + d.who + '）' : '') : 'この月は まだ書かれていません。'); if (d.off) t.push('⚠ 人数と 男＋女が ちがう・お会計票の合計と 合わない日が ' + d.off + '日あります（赤い行）。'); $('obMsg').textContent = t.join('　'); $('obMsg').className = 'note' + (d.off ? ' oboff' : ''); return; }
     if (OB.kind === 'uriage') { t.push(d.sum.n ? d.sum.n + '日ぶん' + (d.at ? '（最後の保存 ' + d.at + '・' + d.who + '）' : '') : 'この月は まだ書かれていません。'); if (d.sum.off) t.push('⚠ 売上合計と 内訳（カフェ8%・10%・アパレル）が 合っていない所が ' + d.sum.off + 'か所あります（赤い数字）。'); if (d.sum.roff) t.push('⚠ 1日の売上合計が 売上レポートの合計と 合わない日が ' + d.sum.roff + '日あります。'); if (!d.conf.pref) t.push('天気の地域は まだ決まっていません（顧問先の画面の ⚙）。'); $('obMsg').textContent = t.join('　'); $('obMsg').className = 'note' + (d.sum.off || d.sum.roff ? ' oboff' : ''); return; }
     if ((OB.kind === 'kaikake' || OB.kind === 'kyuyo') && !d.saved) t.push(d.carried === 'sup' ? 'この月は まだ保存されていません（事務所が決めた 仕入先の一覧だけ 出しています）。' : d.carried === 'party' ? 'この月は まだ保存されていません（会計ソフトの 買掛金の取引先だけ 出しています）。' : d.carried ? 'この月は まだ保存されていません（前の月の ' + (OB.kind === 'kyuyo' ? '人' : '仕入先') + 'だけ 出しています）。' : 'この月は まだ書かれていません。');
     else if (OB.kind === 'kaikake' || OB.kind === 'kyuyo') t.push('保存 ' + d.at + '（' + d.who + '）');
@@ -6939,7 +6939,7 @@
     ['base', '基本給', 'n'], ['ot', '残業代', 'n'], ['com', '通勤手当', 'n'], ['tot', '合計', 'n'], ['tax', '源泉徴収', 'n'], ['res', '住民税', 'n'], ['net', '差引支給額', 'n'], ['ok', '✓', 'ck']];
   const OB_KA = ['r8', 'r10', 'tot', 'fee2', 'pay', 'auto'];
   /* ★ 🍸 売上日報（現金・Bar Espressa。2026-11-21）の列。エクセルの 売上管理表と 同じ並び（表と CSV） */
-  const OB_ES = [['date', '日'], ['kumi', '組', 'n'], ['nin', '人数', 'n'], ['man', '男', 'n'], ['wom', '女', 'n'], ['tot', '合計額', 'n'], ['p.sbps', 'ｸﾚｼﾞｯﾄSBPS', 'n'], ['p.jcb', 'ｸﾚｼﾞｯﾄJCB', 'n'], ['p.gin', '銀聯', 'n'], ['p.dbr', 'd払い', 'n'], ['p.pp', 'PayPay', 'n'], ['p.rk', '楽天pay', 'n'], ['p.au', 'au pay', 'n'], ['p.mer', 'メルペイ', 'n'], ['p.oth', 'その他', 'n'], ['cl', 'キャッシュレス計', 'n'], ['cash', '現金', 'n'], ['memo', 'メモ']];
+  const OB_ES = [['date', '日'], ['kumi', '組', 'n'], ['nin', '人数', 'n'], ['man', '男', 'n'], ['wom', '女', 'n'], ['sum', '合計額', 'n'], ['p.sbps', 'ｸﾚｼﾞｯﾄSBPS', 'n'], ['p.jcb', 'ｸﾚｼﾞｯﾄJCB', 'n'], ['p.gin', '銀聯', 'n'], ['p.dbr', 'd払い', 'n'], ['p.pp', 'PayPay', 'n'], ['p.rk', '楽天pay', 'n'], ['p.au', 'au pay', 'n'], ['p.mer', 'メルペイ', 'n'], ['p.oth', 'その他', 'n'], ['cl', 'キャッシュレス計', 'n'], ['cash', '現金', 'n'], ['tot', 'お会計票の合計', 'n'], ['diff', '差異', 'n'], ['memo', 'メモ']];
   /* ★ 店舗売上日報の列（2026-11-18）。[持ち物, 見出し, 形]。表と CSV で 同じ並び。c.〜＝現金・k.〜＝カード */
   const OB_UR = [['date', '日付'], ['wx', '天気'], ['c.t', '現金売上合計', 'n'], ['c.a8', 'カフェ現金8%', 'n'], ['c.a10', 'カフェ現金10%', 'n'], ['c.ap', 'アパレル現金', 'n'], ['c.diff', '現金 差異', 'n'],
     ['k.t', 'カード売上合計', 'n'], ['k.a8', 'カフェカード8%', 'n'], ['k.a10', 'カフェカード10%', 'n'], ['k.ap', 'アパレルカード', 'n'], ['k.diff', 'カード 差異', 'n'], ['tot', '1日の売上合計', 'n'], ['rep', '売上レポートの合計', 'n'], ['rdiff', 'レポートとの差異', 'n'], ['memo', 'メモ']];
@@ -6976,11 +6976,10 @@
     if (OB.kind === 'esp') {
       const er = function (lbl, x, cls) { const r = tr(cls, OB_ES.map(function (c) { const v = c[0] === 'date' ? lbl : obUrV(x, c[0]); return [c[0] === 'date' ? v : c[2] === 'n' ? nn(v) : (v || ''), c[2] || '']; })); return r; };
       const ds = Object.keys(d.days).sort();
-      ds.filter(function (dt) { return Number(dt.slice(8)) <= 15; }).forEach(function (dt) { const r = er(obMd(dt), d.days[dt], ''); if (d.days[dt].ninOff || d.days[dt].cashNeg) r.classList.add('offrow'); });
+      ds.filter(function (dt) { return Number(dt.slice(8)) <= 15; }).forEach(function (dt) { const r = er(obMd(dt), d.days[dt], ''); if (d.days[dt].ninOff || d.days[dt].diff) r.classList.add('offrow'); });
       er('前半', d.half.h1, 'tot');
-      ds.filter(function (dt) { return Number(dt.slice(8)) > 15; }).forEach(function (dt) { const r = er(obMd(dt), d.days[dt], ''); if (d.days[dt].ninOff || d.days[dt].cashNeg) r.classList.add('offrow'); });
+      ds.filter(function (dt) { return Number(dt.slice(8)) > 15; }).forEach(function (dt) { const r = er(obMd(dt), d.days[dt], ''); if (d.days[dt].ninOff || d.days[dt].diff) r.classList.add('offrow'); });
       er('後半', d.half.h2, 'tot'); er('合計', d.sum, 'tot');
-      [['h1', '収納明細書（前半）'], ['h2', '収納明細書（後半）']].forEach(function (h) { const b = d.sb[h[0]]; if (b.tot == null && b.fee == null && b.pay == null) return; tr(b.diff ? 'offrow' : 'cy', OB_ES.map(function (c, i) { return [i === 0 ? h[1] : i === 1 ? '決済端末売上合計 ' + nn(b.tot) : i === 2 ? '差異 ' + (b.diff == null ? '' : nn(b.diff)) : i === 3 ? '手数料 ' + nn(b.fee) : i === 4 ? '入金額 ' + nn(b.pay) : '', '']; })); });
       return;
     }
     if (OB.kind === 'uriage') {
@@ -7117,7 +7116,7 @@
     const d = OB.data; if (!d) return;
     const q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
     const vv = function (v) { return v == null ? '' : v; };
-    const esRows = function () { const ds = Object.keys(d.days).sort(), ln = function (lbl, x) { return OB_ES.map(function (c) { return c[0] === 'date' ? lbl : vv(obUrV(x, c[0])); }); }; return [OB_ES.map(function (c) { return c[1]; })].concat(ds.map(function (dt) { return ln(dt, d.days[dt]); })).concat([ln('前半', d.half.h1), ln('後半', d.half.h2), ln('合計', d.sum), [], ['SBペイメント 収納明細書', 'アプリのキャッシュレス計', '決済端末売上合計', '差異', '手数料', '入金額']]).concat(['h1', 'h2'].map(function (h) { const b = d.sb[h]; return [h === 'h1' ? '前半' : '後半', d.half[h].cl, vv(b.tot), vv(b.diff), vv(b.fee), vv(b.pay)]; })); };
+    const esRows = function () { const ds = Object.keys(d.days).sort(), ln = function (lbl, x) { return OB_ES.map(function (c) { return c[0] === 'date' ? lbl : vv(obUrV(x, c[0])); }); }; return [OB_ES.map(function (c) { return c[1]; })].concat(ds.map(function (dt) { return ln(dt, d.days[dt]); })).concat([ln('前半', d.half.h1), ln('後半', d.half.h2), ln('合計', d.sum)]); };
     const lines = OB.kind === 'esp' ? esRows() : OB.kind === 'uriage'
       ? [OB_UR.map(function (c) { return c[1]; })].concat(Object.keys(d.days).sort().map(function (dt) { const x = Object.assign({ date: dt }, d.days[dt]); return OB_UR.map(function (c) { return vv(obUrV(x, c[0])); }); }))
         .concat([[], ['この月の まとめ', '現金', 'カード', '計']]).concat(obUrSum(d).map(function (r) { return [r[0], vv(r[1]), vv(r[2]), vv(r[3])]; }))
@@ -16540,7 +16539,7 @@
     { v: 'kaikake', icon: '📕', name: '仕入等買掛金帳', kind: '専用', from: 'ビーメイツ', what: '仕入先ごとに 8%・10%・合計・振込手数料・振込金額・自動振替・✓。その月分を 翌月に払う。仕入先は 次の月へ写る' },
     { v: 'kyuyo', icon: '👛', name: '給与台帳', kind: '専用', from: 'ビーメイツ', what: '従業員・アルバイトの 時給×時間・交通費（基本給・残業代・通勤手当）・源泉徴収・住民税・差引支給額・✓。人は 次の月へ写る' },
     { v: 'uriage', icon: '🧾', name: '店舗売上日報', kind: '専用', from: 'aswell', what: '1日1枚。現金・カードそれぞれ 売上合計と カフェ8%・カフェ10%・アパレル（内訳と合計の差異を出す）・天気・メモ・売上合計レシートの写真' },
-    { v: 'esp', icon: '🍸', name: '売上日報（現金）', kind: '専用', from: 'Bar Espressa', what: '1日1枚。組数・人数（男・女）・売上合計（お会計票）・日計のクレジット（SBPS・JCB）・銀聯・QR（d払い・PayPay・楽天pay・au pay・メルペイ）→ 現金を出す・日計の写真。月の売上管理表（前半・後半）と SBペイメントの収納明細書を 突き合わせる。仕入・現金実査はなし' }
+    { v: 'esp', icon: '🍸', name: '売上日報（現金）', kind: '専用', from: 'Bar Espressa', what: '1日1枚。組数・人数（男・女）・現金売上・日計のクレジット（SBPS・JCB）・銀聯・QR（d払い・PayPay・楽天pay・au pay・メルペイ）→ 1日の売上（お会計票の合計と照らす）・日計の写真・月の売上管理表（前半・後半）。仕入・現金実査はなし' }
   ];
   function aTreeDraw() {
     const t = $('aTree'); t.textContent = '';
