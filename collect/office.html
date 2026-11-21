@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795273938;</script>
+<script>window.__PAGE_VER=1795276162;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -103,9 +103,10 @@
     #tabs button[data-tab="Docs"] { grid-area: 1 / 1 / 2 / 5; } #tabs button[data-tab="In"] { grid-area: 1 / 5 / 2 / 9; }
     #tabs button[data-tab="Out"] { grid-area: 1 / 9 / 2 / 13; border-right: 0; } #tabs button[data-tab="Staff"] { grid-area: 2 / 9 / 3 / 13; border-right: 0; }
     #tabs button[data-tab="Clients"] { grid-area: 2 / 5 / 3 / 9; } #tabs button[data-tab="Dict"] { grid-area: 2 / 1 / 3 / 5; border-right: 1px solid var(--line); }
-    /* ★ 2026-11-21：2段目は 進捗・経営助言・顧問先・担当者（仕訳辞書タブは 出さない） */
-    #tabs button[data-tab="Prog"] { grid-area: 2 / 1 / 3 / 4; border-right: 1px solid var(--line); } #tabs button[data-tab="Advice"] { grid-area: 2 / 4 / 3 / 7; font-size: 13px; }
-    #tabs button[data-tab="Clients"] { grid-area: 2 / 7 / 3 / 10; } #tabs button[data-tab="Staff"] { grid-area: 2 / 10 / 3 / 13; }
+    /* ★ 2026-11-21：2段目は 進捗・経営助言・保証・顧問先・担当者（仕訳辞書タブは 出さない） */
+    #tabs button[data-tab="Prog"] { grid-area: 2 / 1 / 3 / 3; border-right: 1px solid var(--line); } #tabs button[data-tab="Advice"] { grid-area: 2 / 3 / 3 / 6; }
+    #tabs button[data-tab="Grt"] { grid-area: 2 / 6 / 3 / 8; } #tabs button[data-tab="Clients"] { grid-area: 2 / 8 / 3 / 11; } #tabs button[data-tab="Staff"] { grid-area: 2 / 11 / 3 / 13; border-right: 0; }
+    #tabs button[data-tab="Prog"], #tabs button[data-tab="Advice"], #tabs button[data-tab="Grt"], #tabs button[data-tab="Clients"], #tabs button[data-tab="Staff"] { font-size: 13px; }
     /* 3段目：AIの考え方（2つぶん）と 改善要望 を1行に（2026-10-25。別の行にしない） */
     /* ★ 送付物（2026-10-26）：3段目を AIの考え方・改善要望・送付物 の3つに */
     /* ★ 事務所フォルダ（2026-11-14）：3段目を4つに（4段にはしない。タブで画面を取りすぎない） */
@@ -1286,7 +1287,7 @@
   .ctl[data-tab="Dict"] label:has(#month), .ctl[data-tab="Dict"] #filter, .ctl[data-tab="Dict"] label:has(#perY), .ctl[data-tab="Dict"] label:has(#perM), .ctl[data-tab="Dict"] label:has(#box),
   .ctl[data-tab="Rule"] label:has(#month), .ctl[data-tab="Rule"] #filter, .ctl[data-tab="Rule"] label:has(#perY), .ctl[data-tab="Rule"] label:has(#perM), .ctl[data-tab="Rule"] label:has(#box),
   .ctl[data-tab="Out"] label:has(#month), .ctl[data-tab="Out"] #filter, .ctl[data-tab="Out"] label:has(#perY), .ctl[data-tab="Out"] label:has(#perM), .ctl[data-tab="Out"] label:has(#box) { display: none; }
-  .ctl[data-tab="Clients"] > :not(label:has(#client)), .ctl[data-tab="Send"] > :not(label:has(#client)), .ctl[data-tab="Advice"] > :not(label:has(#client)) { display: none; }
+  .ctl[data-tab="Clients"] > :not(label:has(#client)), .ctl[data-tab="Send"] > :not(label:has(#client)), .ctl[data-tab="Advice"] > :not(label:has(#client)), .ctl[data-tab="Grt"] > :not(label:has(#client)) { display: none; }
   /* ★★★ 送付物（事務所 → 顧問先。2026-10-26）。中は 顧問先の画面（index.html?m=send）をそのまま使う */
   /* ★★★ 事務所フォルダ（2026-11-14）：左に フォルダの木、右に 作業スペース（DocuWorks Desk の形） */
   #paneFold { display: flex; flex-direction: column; }
@@ -1696,6 +1697,7 @@
     <button type="button" role="tab" data-tab="Out" aria-pressed="false">取込ファイル</button>
     <button type="button" role="tab" data-tab="Prog" aria-pressed="false" id="tabProg">進捗</button>
     <button type="button" role="tab" data-tab="Advice" aria-pressed="false" id="tabAdvice">経営助言</button>
+    <button type="button" role="tab" data-tab="Grt" aria-pressed="false" id="tabGrt">保証</button>
     <button type="button" role="tab" data-tab="Staff" aria-pressed="false" id="tabStaff" hidden>担当者</button>
     <button type="button" role="tab" data-tab="Clients" aria-pressed="false">顧問先</button>
     <button type="button" role="tab" data-tab="Dict" aria-pressed="false" hidden>仕訳辞書</button>
@@ -2159,6 +2161,41 @@
     </details>
   </details>
 </div>
+<div class="pane page" id="paneGrt" hidden>
+  <h2>保証 <small id="grtClient"></small></h2>
+  <p class="note">巡回監査の 議事録 → 巡回監査報告書（顧問先への ご報告）→ 書面添付（税理士法33条の2）、そして 決算書類の 確認まで、ここで 済ませます（紙で 出しません）。雛形・書き方は［📚 雛形・書き方を 入れる］へ。エージェントの zip に 入ります。</p>
+  <details open class="rbox" id="mnBox"><summary>🎙 議事録（巡回監査・社長面談・決算報告会。証拠として残す）</summary>
+    <p class="note">OMS などで 録音・文字起こしした 議事録を 入れます。入れた瞬間の 原本の 指紋（SHA-256）と 日時を <b>あとから 直せない記録（ハッシュの鎖）</b>に 残し、［🔒 本物か確かめる］で いじっていないことを 示せます。「顧問先に見せる」に ✓ すると 顧問先の画面に 確認のお願いが出て、［内容を確認しました］が 記録に 足されます。決定事項・やることは Claude Code などで 作って［＋ 決定事項・やること］で 足します（これも 直せない記録）。</p>
+    <div class="bar"><select id="mnKind" aria-label="会議の種類"></select><input type="date" id="mnDay" aria-label="会議の日"><input id="mnTitle" placeholder="題（例：第12期 決算報告会）" style="min-width:14em"><label class="note"><input type="checkbox" id="mnShow"> 顧問先に見せる（確認をもらう）</label></div>
+    <textarea id="mnText" rows="6" maxlength="200000" aria-label="議事録の文字" placeholder="議事録の 文字を 貼る（ファイルなら 下の［ファイルで入れる］）"></textarea>
+    <div class="bar"><button type="button" class="btn sm" id="mnAdd">文字で入れる</button><button type="button" class="btn ghost sm" id="mnFileB">ファイルで入れる（txt・PDF・Word・音声）</button><input type="file" id="mnFile" hidden accept=".txt,.pdf,.docx,.m4a,.mp3,.wav,.mp4,audio/*"></div>
+    <span class="pagemsg" id="mnMsg" role="status"></span>
+    <div id="mnList"></div>
+  </details>
+  <details open class="rbox" id="grRepBox"><summary>📋 巡回監査報告書（月ごと。顧問先に「こういうことを しました」と ご報告）</summary>
+    <p class="note">ふつうの 仕訳の zip を 戻すと、その月に 議事録が あれば エージェントの 下書きが 入ります（🤖）。直して［保存して 顧問先に 出す］。</p>
+    <div class="bar"><label class="note">巡回の月 <input type="month" id="grRepYm" aria-label="巡回の月"></label><span class="note" id="grRepInfo"></span></div>
+    <textarea id="grRepText" rows="10" maxlength="40000" aria-label="巡回監査報告書" placeholder="① 訪問日・面談した方　② 確かめたこと（証憑と帳簿・残高）　③ 社長との やりとり・決まったこと　④ 経営助言　⑤ 次回までに お願いすること"></textarea>
+    <div class="bar"><button type="button" class="btn ghost sm" id="grRepSave">保存（新しい版）</button><button type="button" class="btn sm" id="grRepShow">保存して 顧問先に 出す</button></div>
+    <span class="pagemsg" id="grRepMsg" role="status"></span>
+    <div id="grRepList"></div>
+  </details>
+  <details open class="rbox" id="grShBox"><summary>📝 書面添付（税理士法33条の2）</summary>
+    <p class="note">毎月の 巡回監査報告書・議事録・仕訳の チェックの 積み重ねから、決算期ごとに 作ります。［🤖 下書きの zip を作る］→ 自分の Claude Code に 渡す → できた zip を 仕訳化タブで 戻すと ここに 下書きが 入ります。</p>
+    <div class="bar"><label class="note">決算期（期末の月）<input type="month" id="grShYm" aria-label="決算期"></label><button type="button" class="btn ghost sm" id="grShZip">🤖 下書きの zip を作る（1年分）</button><span class="note" id="grShInfo"></span></div>
+    <textarea id="grShText" rows="12" maxlength="40000" aria-label="書面添付" placeholder="1. 自ら作成・相談を受けた 帳簿書類　2. 計算し整理した 主な事項　3. 相談に応じた事項　4. その他（巡回監査で 確かめたこと）"></textarea>
+    <div class="bar"><button type="button" class="btn sm" id="grShSave">保存（新しい版）</button></div>
+    <span class="pagemsg" id="grShMsg" role="status"></span>
+    <div id="grShList"></div>
+  </details>
+  <details open class="rbox" id="grDocBox"><summary>📑 決算書類の 確認（顧問先に 見てもらう）</summary>
+    <p class="note">決算書・申告書の控え・書面添付・添付書類 などを 顧問先の 画面に 出し、［内容を確認しました］を もらいます。PDF を ここへ ドラッグしても 出せます。</p>
+    <div class="bar" id="grDocDrop"><label class="note">決算期 <input type="month" id="grDocYm" aria-label="決算期（書類）"></label><input id="grDocTitle" placeholder="書類の名前（例：第12期 決算書）" style="min-width:14em"><button type="button" class="btn sm" id="grDocB">PDF を 選んで 出す</button><input type="file" id="grDocFile" hidden accept=".pdf,image/jpeg,image/png"></div>
+    <span class="pagemsg" id="grDocMsg" role="status"></span>
+    <div id="grDocList"></div>
+  </details>
+  <div class="bar"><button type="button" class="btn ghost sm" id="grCmn">📚 雛形・書き方を 入れる（巡回監査報告書・書面添付。事務所共通の資料）</button></div>
+</div>
 <div class="pane page" id="paneRule" hidden>
   <div class="rwrap">
   <h2 class="rh">AI の考え方 <span id="rClient"></span></h2>
@@ -2258,14 +2295,6 @@
     <textarea id="kaText" rows="14" maxlength="40000" aria-label="顧問先カルテ" placeholder="［雛形を入れる］で 12項目が入ります"></textarea>
     <div class="bar"><button type="button" class="btn sm" id="kaSave">保存（新しい版）</button><button type="button" class="btn ghost sm" id="kaBlank">雛形を入れる</button><span class="note" id="kaLen"></span></div>
     <span class="pagemsg" id="kaMsg" role="status"></span>
-  </details>
-  <details class="rbox" id="mnBox"><summary>議事録（証拠として残す。決算報告会・巡回監査・社長面談）</summary>
-    <p class="note">OMS などで 録音・文字起こしした 議事録を 入れます。入れた瞬間の 原本の 指紋（SHA-256）と 日時を <b>あとから 直せない記録（ハッシュの鎖）</b>に 残し、［🔒 本物か確かめる］で いじっていないことを 示せます。「顧問先に見せる」に ✓ すると 顧問先の画面に 確認のお願いが出て、［内容を確認しました］が 記録に 足されます。決定事項・やることは Claude Code などで 作って［＋ 決定事項・やること］で 足します（これも 直せない記録）。</p>
-    <div class="bar"><select id="mnKind" aria-label="会議の種類"></select><input type="date" id="mnDay" aria-label="会議の日"><input id="mnTitle" placeholder="題（例：第12期 決算報告会）" style="min-width:14em"><label class="note"><input type="checkbox" id="mnShow"> 顧問先に見せる（確認をもらう）</label></div>
-    <textarea id="mnText" rows="6" maxlength="200000" aria-label="議事録の文字" placeholder="議事録の 文字を 貼る（ファイルなら 下の［ファイルで入れる］）"></textarea>
-    <div class="bar"><button type="button" class="btn sm" id="mnAdd">文字で入れる</button><button type="button" class="btn ghost sm" id="mnFileB">ファイルで入れる（txt・PDF・Word・音声）</button><input type="file" id="mnFile" hidden accept=".txt,.pdf,.docx,.m4a,.mp3,.wav,.mp4,audio/*"></div>
-    <span class="pagemsg" id="mnMsg" role="status"></span>
-    <div id="mnList"></div>
   </details>
   <details open class="rbox" id="memoBox"><summary>3. 引き継ぎメモ（この顧問先。前任者の頭の中）</summary>
     <p class="note">AI が 証憑を読むたびに いちばん先に読むメモです。<b>［AI に書かせる］</b>で 過去の仕訳から下書きを作り、人が直して<b>［保存］</b>。保存するたびに 版を積みます（上書きしません）。
@@ -2912,7 +2941,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { progressBoard: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
+  const READ_FN = { progressBoard: 1, grtGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, arriveGrid: 1, askList: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -2988,7 +3017,7 @@
 
   /* ================= 入口 ================= */
   function fatal(t) { ['gate', 'chg', 'top', 'ctl', 'toClient'].forEach(function (k) { $(k).hidden = true; }); hidePanes(); $('fatal').hidden = false; $('fatalMsg').textContent = t; }
-  function hidePanes() { ['Docs', 'In', 'Dict', 'Out', 'Prog', 'Advice', 'Clients', 'Staff', 'Rule', 'Kaizen', 'Send', 'Fold'].forEach(function (k) { $('pane' + k).hidden = true; }); }
+  function hidePanes() { ['Docs', 'In', 'Dict', 'Out', 'Prog', 'Advice', 'Grt', 'Clients', 'Staff', 'Rule', 'Kaizen', 'Send', 'Fold'].forEach(function (k) { $('pane' + k).hidden = true; }); }
   function showGate(msg) {
     $('top').hidden = true; $('ctl').hidden = true; $('chg').hidden = true; hidePanes(); $('toClient').hidden = true;
     $('gate').hidden = false; $('gMsg').textContent = msg || '';
@@ -4116,7 +4145,7 @@
     /* 隠れた欄にフォーカスが残って テンキーが出たままにならないように */
     const ae = document.activeElement; if (ae && ae.dataset && ae.dataset.tk && !$('pane' + k).contains(ae)) { ae.blur(); tkHide(); }
     /* ★ 2026-11-07：顧問先タブは 下の一覧で選ぶので 上の帯（顧問先の欄）を出さない（選ぶところを1つに） */
-    $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Dict' || k === 'Out' || k === 'Rule' || k === 'Send' || k === 'Advice');
+    $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Dict' || k === 'Out' || k === 'Rule' || k === 'Send' || k === 'Advice' || k === 'Grt');
     /* 帯の欄は タブに要るものだけ（処理する月・未処理/確定 は仕訳化だけ、月分・箱は 回収資料と仕訳化） */
     $('ctl').dataset.tab = k;
     if (k === 'Docs') docsLoad();
@@ -4135,6 +4164,7 @@
     if (k === 'Staff') sLoad();
     if (k === 'Rule') rLoad();
     if (k === 'Advice') advLoad();
+    if (k === 'Grt') grtLoad();
     if (k === 'Kaizen') kzLoad(true); else { try { if (KZ.loaded) kzBadge(); } catch (e) {} }
     if (k === 'Send') sdLoad();
     if (k === 'Fold') fdShow();
@@ -4614,6 +4644,7 @@
     if (S.tab === 'Out') oLoad();
     if (S.tab === 'Rule') rLoad();
     if (S.tab === 'Advice') advLoad();
+    if (S.tab === 'Grt') grtLoad();
     if (RESUME && RESUME.code === b.code) resumeApply();
   }
   /* ================= ★★ いつでも開き直す（2026-10-12） =================
@@ -7339,7 +7370,7 @@
     LN.n = 0; lnBadge();
   }
   const GUIDE = {
-    order: ['top', 'Docs', 'In', 'Out', 'Prog', 'Advice', 'Clients', 'Dict', 'Rule', 'Fold', 'Send', 'Kaizen', 'Staff'],
+    order: ['top', 'Docs', 'In', 'Out', 'Prog', 'Advice', 'Grt', 'Clients', 'Dict', 'Rule', 'Fold', 'Send', 'Kaizen', 'Staff'],
     top: { t: '🧭 全体・右上のボタン', pic: 'g_otop', lead: '上の「顧問先」で 顧問先を選び、タブで 仕事を切り替えます。右上のボタンは どのタブからでも使えます。',
       steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［🤖 エージェント］… エージェントの 進み具合（顧問先・月分ごとに ⏳ 戻り待ち → 📥 確かめ中 ✓ n／m → ✅ 確かめ済み → 📤 取り込みファイルに した）。行を押すと その回収資料へ', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
       tips: ['紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
@@ -7361,8 +7392,11 @@
     Advice: { t: '経営助言', lead: '企業防衛（標準保障額）・格付け・顧問先ごとの 助言を 作り、顧問先の 画面の 経営助言に 出す タブです。',
       steps: ['［📥 試算表（過去の仕訳）から 入れる］で 借入金・運転資金・固定費・現預金を 入れて 内訳を 直す', '役員ごとに 報酬月額・在任年数・功績倍率（役位で 目安が 入る）・弔慰金の月数を 入れる。実効税率・繰越欠損金・法人保険の 死亡保険金を 入れる', '標準保障額・不足額・納税資金・就業不能の 必要額と 顧問先に 出る 文が 出る →［💾 入力を 保存］か［🛡 顧問先の 画面に 出す（保存して リスクに 入れる）］', '助言は 項目ごとに 書いて［助言を出す］（税務判断を 含むものは「担当 石井」と 出る）。格付けは［格付けを入れる］。顧問先から 相談が来たら［提案を 顧問先に出す］'],
       tips: ['計算式と 考え方は エージェントの zip にも 入る（企業防衛_標準保障額の考え方.md）。事業を 継続し 後継者に 引き継ぐ 前提の 概算'] },
+    Grt: { t: '保証', lead: '巡回監査の 議事録・巡回監査報告書・書面添付（税理士法33条の2）・決算書類の 確認を まとめる タブです（TKC の 4大業務の 保証）。',
+      steps: ['「議事録」… OMS などの 議事録を［文字で入れる］か［ファイルで入れる］（あとから直せない記録に 指紋と日時が残る）。［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す', '「巡回監査報告書」… 巡回の月を 選び、書いて［保存（新しい版）］か［保存して 顧問先に 出す］（エージェントの 下書きが あれば 入っている）', '「書面添付」… 決算期を 選んで［🤖 下書きの zip を作る（1年分）］→ Claude Code に 渡し、できた zip を 仕訳化タブで 戻す → 直して［保存（新しい版）］', '「決算書類の 確認」… 決算期と 書類の名前を 入れて［PDF を 選んで 出す］→ 顧問先が［内容を確認しました］を 押すと ✅ が 付く。［出すのを やめる］で 引っ込める'],
+      tips: ['雛形・書き方（巡回監査報告書・書面添付）は［📚 雛形・書き方を 入れる］から 事務所共通の資料へ。どの顧問先の zip にも 入る'] },
     Rule: { t: 'AIの考え方', pic: 'g_orule', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
-      steps: ['決まりを 書いて［考え方を保存］', '仕訳辞書は「仕訳辞書を入れる口」へ 会計システムから 切り出した 辞書を ドラッグ（参考の 材料。［中身を 見る・直す］で 開ける）。経営助言（企業防衛・格付け・助言）は［経営助言］タブへ 移しました', '「議事録」… OMS などの 議事録を［文字で入れる］か［ファイルで入れる］（あとから直せない記録に 指紋と日時が残る）。［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
+      steps: ['決まりを 書いて［考え方を保存］', '仕訳辞書は「仕訳辞書を入れる口」へ 会計システムから 切り出した 辞書を ドラッグ（参考の 材料。［中身を 見る・直す］で 開ける）。経営助言（企業防衛・格付け・助言）は［経営助言］タブへ 移しました', '議事録は［保証］タブへ 移しました', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
     Fold: { t: 'Google共有ドライブ', lead: '事務所の Google共有ドライブを この画面から 開く・整理する タブです。',
       steps: ['フォルダを押して 中へ', '［☑ 選ぶ］で 押したものに ✓（何枚でも）。［☑ すべて選ぶ］で ぜんぶ', '写真・PDF を押すと 大きく見る。［✏ 書きこむ］［🔴 ハンコ］', '［📮 送付物へ］で 顧問先へ送る 送付物にする', '［🖨 印刷の受け口］… PDF24 で印刷すると いま開いているフォルダに 入ります'],
       tips: ['🔒 の付いたフォルダ（回収資料）は 見るだけです', 'PDF24 の設定は 説明書「職員向け はじめての設定（Claude と PDF24）」'] },
@@ -8377,7 +8411,7 @@
     const rd = new FileReader();
     rd.onload = function () {
       gs('agentReturn', S.code, S.per, { name: f.name, b64: String(rd.result).split(',')[1] || '' }).then(function (r) { AGP.at = 0; try { agpLine(false); } catch (q) {}
-        b.disabled = false; dcMsg('⬆ 戻しました（' + r.name + '）。あなたの エージェント研究は ' + r.n + '回目です。' + (r.res && r.res.err ? '　★ 中身を 読めませんでした（' + r.res.err + '）' : r.res ? '　仕訳 ' + r.res.entries + '件' + (r.res.learn ? '・学びあり →［📥 結果と学び］で カルテへ' : '') + (r.res.needAdded ? '・足りなかった資料 ' + r.res.needAdded + '件を ✅ チェック表に 足しました' : '') + (r.res.karteIn ? '・カルテを 新しい版に しました（前の版も 残る）' : '') : ''));
+        b.disabled = false; dcMsg('⬆ 戻しました（' + r.name + '）。あなたの エージェント研究は ' + r.n + '回目です。' + (r.res && r.res.err ? '　★ 中身を 読めませんでした（' + r.res.err + '）' : r.res ? '　仕訳 ' + r.res.entries + '件' + (r.res.learn ? '・学びあり →［📥 結果と学び］で カルテへ' : '') + (r.res.needAdded ? '・足りなかった資料 ' + r.res.needAdded + '件を ✅ チェック表に 足しました' : '') + (r.res.karteIn ? '・カルテを 新しい版に しました（前の版も 残る）' : '') + (r.res.report ? '・巡回監査報告書の 下書きを［保証］に 入れました' : '') + (r.res.shomen ? '・書面添付の 下書きを［保証］に 入れました' : '') + (r.res.hosho ? '・標準保障額の 下書きを［経営助言］に 入れました' : '') : ''));
         if (r.res && !r.res.err) agResOpen();
         if (r.res && r.res.ledger) { $('dLedger').hidden = false; const m = document.getElementById('dcMsg'); if (m) m.appendChild(document.createTextNode('　📗 伝票 ' + r.res.ledger + '枚を［元帳で確かめる］で 確かめられます。')); }
       }, function (e) { b.disabled = false; dcMsg('戻せませんでした。' + e.message, true); });
@@ -14828,6 +14862,82 @@
     o.surplus = Math.max(0, o.cash - Math.max(0, o.wc));
     return o;
   }
+  /* ★★★ 保証（2026-11-21 石井）：巡回監査報告書・書面添付・決算書類の 確認。議事録（mnBox）も ここ */
+  const GR = { v: null };
+  const ymNow = function () { return new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 7); };
+  function grtLoad() {
+    const code = S.code;
+    if (!code) { ['grRepList', 'grShList', 'grDocList'].forEach(function (i) { $(i).innerHTML = '<div class="note">上で 顧問先を 選んでください。</div>'; }); return; }
+    const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' }; $('grtClient').textContent = '— ' + code + ' ' + c.name;
+    if (!$('grRepYm').value) $('grRepYm').value = (S.per && /^\d{4}-\d{2}$/.test(S.per)) ? S.per : ymNow();
+    if (!$('grShYm').value) $('grShYm').value = ymNow();
+    if (!$('grDocYm').value) $('grDocYm').value = ymNow();
+    mnLoad();
+    gs('grtGet', code).then(function (v) { if (code !== S.code) return; GR.v = v; grtDraw(); }, function (e) { mtMsg('grRepMsg', e.message, 'err'); });
+  }
+  function grtFill(kind) {
+    const v = GR.v || {}, rep = kind === 'report', ym = $(rep ? 'grRepYm' : 'grShYm').value, ta = $(rep ? 'grRepText' : 'grShText');
+    const x = ((rep ? v.reports : v.shomen) || []).filter(function (r) { return r.ym === ym; })[0];
+    ta.value = x ? x.text : '';
+    $(rep ? 'grRepInfo' : 'grShInfo').textContent = x ? (x.draft ? '🤖 エージェントの 下書き（' + x.at + '）。直して 保存' : '保存 ' + x.at + '・' + x.who + (x.vers > 1 ? '・' + x.vers + '版目' : '') + (rep && x.show ? '・顧問先に 出した' + (x.oks && x.oks.length ? '（✅ ' + x.oks[x.oks.length - 1].name + ' が 確認）' : '') : '')) : 'まだ ありません';
+  }
+  function grtDraw() {
+    const v = GR.v || { reports: [], shomen: [], docs: [] };
+    grtFill('report'); grtFill('shomen');
+    const list = function (id, rows, kind) {
+      const w = $(id); w.textContent = '';
+      if (!rows.length) { w.appendChild(el('div', 'note', 'まだ ありません。')); return; }
+      rows.forEach(function (x) {
+        const b = el('button', 'dmon-b', x.ym.replace('-', '年') + '月' + (x.draft ? '　🤖 下書き' : '') + (kind === 'report' && x.show ? '　📤 出した' : '') + (x.oks && x.oks.length ? '　✅' : '')); b.type = 'button';
+        b.addEventListener('click', function () { $(kind === 'report' ? 'grRepYm' : 'grShYm').value = x.ym; grtFill(kind); });
+        w.appendChild(b);
+      });
+    };
+    list('grRepList', v.reports || [], 'report'); list('grShList', v.shomen || [], 'shomen');
+    const dw = $('grDocList'); dw.textContent = '';
+    if (!(v.docs || []).length) dw.appendChild(el('div', 'note', 'まだ 出していません。'));
+    (v.docs || []).forEach(function (d) {
+      const r = el('div', 'grdoc'); r.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)';
+      r.appendChild(el('b', null, d.ym.replace('-', '年') + '月期　' + d.title));
+      r.appendChild(el('span', 'note', d.oks.length ? '✅ ' + d.oks[d.oks.length - 1].name + ' が 確認（' + d.oks[d.oks.length - 1].at + '）' : '⏳ 顧問先の 確認待ち（' + d.at + ' に 出した）'));
+      const off = el('button', 'btn ghost sm', '出すのを やめる'); off.type = 'button';
+      off.addEventListener('click', function () { if (off.dataset.y !== '1') { off.dataset.y = '1'; off.textContent = 'もう一度 押すと やめます'; return; } gs('grtDocOff', S.code, d.id).then(function (vv) { GR.v = vv; grtDraw(); mtMsg('grDocMsg', '顧問先の 画面から 引っ込めました。'); }, function (e) { mtMsg('grDocMsg', e.message, 'err'); }); });
+      r.appendChild(off); dw.appendChild(r);
+    });
+  }
+  ['report', 'shomen'].forEach(function (kind) { $(kind === 'report' ? 'grRepYm' : 'grShYm').addEventListener('change', function () { grtFill(kind); }); });
+  function grtSaveGo(kind, show) {
+    if (!S.code) return;
+    const rep = kind === 'report', msg = rep ? 'grRepMsg' : 'grShMsg';
+    mtMsg(msg, '保存しています…');
+    gs('grtSave', S.code, kind, $(rep ? 'grRepYm' : 'grShYm').value, $(rep ? 'grRepText' : 'grShText').value, !!show).then(function (v) { GR.v = v; grtDraw(); mtMsg(msg, show ? '📤 保存して 顧問先の 画面に 出しました。' : '保存しました（新しい版）。'); }, function (e) { mtMsg(msg, e.message, 'err'); });
+  }
+  $('grRepSave').addEventListener('click', function () { grtSaveGo('report', false); });
+  $('grRepShow').addEventListener('click', function () { grtSaveGo('report', true); });
+  $('grShSave').addEventListener('click', function () { grtSaveGo('shomen', false); });
+  $('grShZip').addEventListener('click', function () {
+    if (!S.code) return; const ym = $('grShYm').value; if (!/^\d{4}-\d{2}$/.test(ym)) { mtMsg('grShMsg', '決算期（期末の月）を 選んでください。', 'err'); return; }
+    const b = this; b.disabled = true; mtMsg('grShMsg', 'zip を作っています…（1〜2分）');
+    gs('agentPack', S.code, ym, false, [], { span: 12, mode: 'shomen', nob64: /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) }).then(function (r) {
+      b.disabled = false; const m = $('grShMsg'); m.textContent = '🤖 ' + r.name + ' を 作りました。 ';
+      if (r.b64) { try { const bin = atob(r.b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const dl = document.createElement('a'); dl.href = URL.createObjectURL(new Blob([u8], { type: 'application/zip' })); dl.download = r.name; document.body.appendChild(dl); dl.click(); setTimeout(function () { URL.revokeObjectURL(dl.href); dl.remove(); }, 30000); m.appendChild(document.createTextNode('⬇ ダウンロードしました。 ')); } catch (e) {} }
+      const a = document.createElement('a'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'ドライブの 控え'; m.appendChild(a);
+      m.appendChild(document.createTextNode('　→ 自分の Claude Code に 渡して「はじめに読む.md の とおり」と 頼み、できた zip を 仕訳化タブの［⬆ できあがりを戻す］で 戻す（' + ym + ' の 月分で）。'));
+    }, function (e) { b.disabled = false; mtMsg('grShMsg', 'zip を作れませんでした。' + e.message, 'err'); });
+  });
+  function grtDocSend(f) {
+    if (!S.code || !f) return;
+    if (!/^(application\/pdf|image\/(jpeg|png))$/.test(f.type)) { mtMsg('grDocMsg', 'PDF か 写真（jpg・png）を 入れてください。', 'err'); return; }
+    if (f.size > 20 * 1024 * 1024) { mtMsg('grDocMsg', '20MB までです。', 'err'); return; }
+    mtMsg('grDocMsg', '出しています…');
+    const rd = new FileReader(); rd.onload = function () {
+      gs('grtDocAdd', S.code, $('grDocYm').value, $('grDocTitle').value || f.name.replace(/\.[^.]+$/, ''), { name: f.name, mime: f.type, b64: String(rd.result).split(',')[1] || '' }, '').then(function (v) { GR.v = v; grtDraw(); $('grDocTitle').value = ''; mtMsg('grDocMsg', '📤 顧問先の 画面に 出しました（確認を もらうと ✅ が 付きます）。'); }, function (e) { mtMsg('grDocMsg', e.message, 'err'); });
+    }; rd.readAsDataURL(f);
+  }
+  $('grDocB').addEventListener('click', function () { $('grDocFile').value = ''; $('grDocFile').click(); });
+  $('grDocFile').addEventListener('change', function () { grtDocSend(this.files && this.files[0]); });
+  (function () { const z = $('grDocBox'); z.addEventListener('dragover', function (e) { e.preventDefault(); }); z.addEventListener('drop', function (e) { e.preventDefault(); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) grtDocSend(f); }); })();
+  $('grCmn').addEventListener('click', function () { AGD_ALL = true; selectTab('In'); try { agDocsLoad(); $('agDocsBox').scrollIntoView({ block: 'center' }); } catch (e) {} });
   function advLoad() {
     const code = S.code; if (!code) { $('hoCalc').innerHTML = '<div class="note">上で 顧問先を 選んでください。</div>'; return; }
     const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' }; $('advClient').textContent = '— ' + code + ' ' + c.name;
@@ -14837,6 +14947,7 @@
   }
   function hoDraw() {
     const w = $('hoCalc'), x = HO.inp, b = HO.base || {}; w.textContent = '';
+    if (b.savedBy === 'エージェント') w.appendChild(el('div', 'note hodraft', '🤖 エージェントの 下書き（' + b.savedAt + '）を 入れています。確かめて 直してから［💾 入力を 保存］・［🛡 顧問先の 画面に 出す］。' + (x.note ? '　メモ：' + x.note : '')));
     const yen = function (v) { return (Math.round(Number(v) || 0)).toLocaleString('ja-JP'); };
     const f = function (lbl, key, note, kind) { const r = el('label', 'hof'); r.appendChild(el('span', null, lbl)); let i; if (kind === 'chk') { i = el('input'); i.type = 'checkbox'; i.checked = !!x[key]; i.addEventListener('change', function () { x[key] = i.checked; hoPaint(); }); } else { i = el('input'); i.inputMode = 'numeric'; i.value = x[key] == null ? '' : String(x[key]); i.addEventListener('input', function () { x[key] = i.value.replace(/[,，円\s]/g, ''); hoPaint(); }); } i.dataset.k = key; r.appendChild(i); if (note) r.appendChild(el('small', null, note)); return r; };
     const top = el('div', 'hobar');
