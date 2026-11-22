@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795334132;</script>
+<script>window.__PAGE_VER=1795334940;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -701,9 +701,10 @@
   .dbgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 8px 0; }
   .dgcol { display: flex; flex-direction: column; gap: 8px; min-width: 0; } .dgh { font-weight: 700; font-size: 14px; color: #33475b; padding: 2px 2px 4px; border-bottom: 2px solid #d8e1ea; }
   .dgcol.spt .dgh { border-color: #f0c08a; } .dgcol.off .dgh { border-color: #9cc5b4; }
-  .dgt { text-align: left; font: inherit; background: #fff; border: 1.5px solid #cfd9e3; border-radius: 12px; padding: 10px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; }
+  .dgt { text-align: left; font: inherit; background: linear-gradient(180deg, #fff 0%, #f1f6f3 100%); border: 2.5px dashed #9cc5b4; border-radius: 18px; padding: 12px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }   /* ★ 2026-11-23：顧問先の 画面の 箱と 同じ 見た目（点線・角丸・封筒・›） */
+  .dgth { display: flex; align-items: center; gap: 8px; } .dgth b { flex: 1; } .dgico { width: 24px; height: 24px; color: #0F6E56; flex-shrink: 0; } .dggo { color: #0F6E56; font-size: 20px; font-weight: 700; } .dgtag { font-size: 11.5px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: #C46A12; color: #fff; }
   .dgt b { font-size: 15px; } .dgt .dgs { font-size: 12.5px; color: #5a6b7d; } .dgt:hover { border-color: #0F6E56; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
-  .dgt.todo { border-color: #e0a040; background: #fffaf0; } .dgt.none { opacity: .6; } .dgt.spt { border-style: dashed; } .dgt.off { background: #f3faf6; border-color: #9cc5b4; }
+  .dgt.todo { border-color: #0F6E56; } .dgt.none { opacity: .6; } .dgt.spt { border-color: #E0A15A; background: linear-gradient(180deg, #fff 0%, #FFF3E3 100%); } .dgt.spt .dgico { color: #C46A12; } .dgt.off { background: #f3faf6; border-style: solid; border-color: #9cc5b4; }
   .dgset { align-self: flex-start; } .agdl { margin-left: auto; display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; } .agdlb { font-weight: 700; } .tbtop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 0; } .tbck { font-size: 13px; } .tbimp { border: 1.5px dashed #9cc5b4; border-radius: 10px; padding: 8px; margin: 6px 0; } .tbimp textarea { width: 100%; font-size: 12px; } .tbinfo { font-size: 12.5px; margin: 4px 0 8px; } .tbkari { color: #a26100; } .tbpart { color: #0F6E56; } .tbmiss { color: #b23b3b; } .tbok { color: #0F6E56; font-weight: 700; } .tbcap { font-weight: 700; font-size: 13.5px; margin: 8px 0 4px; } .tbsc { overflow-x: auto; } .tbt { border-collapse: collapse; font-size: 12.5px; background: #fff; } .tbt th { background: #5b8a63; color: #fff; font-weight: 600; padding: 3px 6px; border: 1px solid #4a7652; white-space: nowrap; } .tbt th small { color: #e8f3ea; font-weight: 400; } .tbt td { padding: 2px 6px; border: 1px solid #e3e8e3; white-space: nowrap; } .tbt td.nr { text-align: right; font-variant-numeric: tabular-nums; } .tbt td.tbn { min-width: 12em; } .tbt tr.tot td { background: #dbead8; } .tbt tr.kari td { background: #fff4d6; } .tbt tr.subr td { color: #445; font-size: 12px; } .tbt tbody tr:hover td { outline: 1px solid #b9d3bd; cursor: default; } .tbk { background: #e0a040; color: #fff; border-radius: 4px; padding: 0 4px; font-size: 11px; } .tbx { color: #5b8a63; } .tbtr td.tbn { position: sticky; left: 0; background: inherit; } .tbdrill { border: 1.5px solid #9cc5b4; border-radius: 10px; padding: 8px; margin: 10px 0; background: #fbfdfb; } .tbdh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; } .tbg { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 12px; align-items: start; } .tbsvg { width: 100%; height: auto; background: #fff; border: 1px solid #e3e8e3; border-radius: 8px; } .tbgbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; } @media (max-width: 760px) { .tbg { grid-template-columns: 1fr; } } .dkgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 6px 0 12px; } @media (max-width: 700px) { .dkgrid { grid-template-columns: 1fr; } } .dgpk { align-self: flex-end; font-size: 12px; color: #33475b; font-weight: 400; } .pkbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; background: #eef7f2; border: 1.5px solid #9cc5b4; border-radius: 10px; padding: 6px 10px; margin: 6px 0; font-size: 13.5px; } .inpick { margin: 4px 0 8px; } .inchips .inrow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 4px 0; } .inlab { font-weight: 700; font-size: 13px; min-width: 2.6em; } .inchip { font: inherit; font-size: 12.5px; border: 1.3px solid #cfd9e3; background: #fff; border-radius: 999px; padding: 3px 10px; cursor: pointer; } .inchip.on { background: #0F6E56; color: #fff; border-color: #0F6E56; } .inchip.sub { font-size: 12px; } .inchip.none { opacity: .55; } .kadraft { background: #fff7e6; border: 1.5px solid #e0a040; border-radius: 10px; padding: 8px 10px; margin: 6px 0; font-size: 13.5px; } .krbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; } .dgall { margin: 4px 0 8px; } .dvhead { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; font-size: 16px; }
   @media (max-width: 700px) { .dbgrid { grid-template-columns: 1fr; } }   /* 上の帯に置いた 回収資料の道具は 回収資料のときだけ */
   .dtools button { font: inherit; font-size: 13.5px; font-weight: 700; padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
@@ -5894,7 +5895,7 @@
     const done = function (x) { return !!x.chk || stTag(x)[0] === 'gone'; };
     const items = all.filter(function (x) { return x.box === b || String(x.box).indexOf(b + '/') === 0; });
     const sp = dSpot(c, b), t = el('button', 'dgt' + (sp ? ' spt' : '')); t.type = 'button'; t.dataset.box = b;
-    t.appendChild(el('b', null, name || bxDisp(b)));
+    { const hd = el('span', 'dgth'); hd.innerHTML = '<svg class="dgico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 6.5l8.5 6 8.5-6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>'; hd.appendChild(el('b', null, name || bxDisp(b))); if (sp) hd.appendChild(el('span', 'dgtag', 'スポット')); hd.appendChild(el('span', 'dggo', '›')); t.appendChild(hd); }
     const todo = items.filter(function (x) { return !done(x); }).length;
     let sub = items.length + '件' + (todo ? '・未確認 ' + todo : items.length ? '・✓ 全部 確認' : '');
     if (!sp && items.length) { const ps = items.map(function (x) { return x.period; }).filter(Boolean).sort(); if (ps.length) sub += '・最新 ' + perLabel(ps[ps.length - 1]); }
@@ -6094,6 +6095,7 @@
         tr.innerHTML = '<td>' + TBR.e(String(m.date || '').slice(5).replace('/', '-')) + '</td><td class="tbn">' + TBR.e(m.memo) + '</td><td class="tbn">' + TBR.e(m.other) + '</td><td class="nr">' + (m.dr ? TBR.n(m.dr) : '') + '</td><td class="nr">' + (m.cr ? TBR.n(m.cr) : '') + '</td><td class="nr">' + TBR.n(bal) + '</td><td>' + TBR.e(m.src) + '</td><td></td>';
         const td = tr.lastChild;
         if (m.led) { const b = el('button', 'dmon-b', '伝票を開く'); b.type = 'button'; b.addEventListener('click', function () { tbOpenSlip(m.ledYm, m.led); }); td.appendChild(b); }
+        else if (m.file && m.entry) { const b = el('button', 'dmon-b', '✎ 仕訳を 直す'); b.type = 'button'; b.title = '仕訳化の その 1件（写真と 伝票）を 開いて 直す'; b.addEventListener('click', function () { tbGoCard(m.file, String(m.date || '').slice(0, 7).replace('/', '-')); }); td.appendChild(b); }
         else if (m.file) { const b = el('button', 'dmon-b', '写真'); b.type = 'button'; b.addEventListener('click', function () { const it = (S.items || []).concat(S.docs || []).find(function (q) { return q.id === m.file; }); if (it) docsOpen(it); else dcMsg('写真が この画面に まだ ありません（回収資料で 開いてください）。', true); }); td.appendChild(b); }
         tb.appendChild(tr);
       });
@@ -6101,6 +6103,14 @@
       if (!x.list.length) w.appendChild(el('div', 'note', 'この月の 動きは ありません（前月までの 残高だけ）。'));
       w.scrollIntoView({ block: 'nearest' });
     }, function (e) { w.textContent = '出せませんでした。' + e.message; });
+  }
+  /* ★ 仕訳化で 確定した 仕訳を 開く（写真と 伝票。確定も 含めて 出してから その 1件へ） */
+  function tbGoCard(id, ym) {
+    S.box = ''; S.bsel = []; boxSelPaint(); perPick(''); selectTab('In');
+    const go = function () { if (rowOf(id)) focusCard(id); else dcMsg('その 仕訳が 仕訳化に 見つかりませんでした。', true); };
+    if (S.st === 'all' && S.items.some(function (x) { return x.id === id; })) { render(); go(); return; }
+    S.st = 'all'; document.querySelectorAll('#filter button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.st === 'all')); });
+    load().then(go);
   }
   /* 伝票を 開く：その月分の［元帳で確かめる］を 開いて その伝票へ */
   function tbOpenSlip(ym, id) {
@@ -7852,7 +7862,7 @@
       steps: ['上の 札で 月分（「◯月分（一括）」で その月分を まとめて）と 箱・小箱を 選ぶ（いくつでも。［全部の箱］で 戻す）。選んだ 分だけが 並び、AI 下書き・エージェントの zip も その分', '写真を選び［🤖 AI で下書き］（マイナンバーの書類は AI に回りません）', '下書きの 日付・金額・科目を確かめて 直す', '［📗 元帳を見る］で 箱ごとの元帳と 写真を 1対1 で確かめる（［🪟 3つに並べる］）', '確定したものは［取込ファイル］タブへ', '［🤖 エージェントに渡す（zip）］で できた zip は 帯の 右上の［⬇ ダウンロード］で その場で 保存（30MB を 超えるときは 1／2・2／2 に 分かれるので 両方 落として 同じ フォルダに 展開）', 'エージェントは 上の帯で：［🤖 エージェントに渡す（zip）］→ 自分の Claude Code に 渡す → できあがりの zip を［⬆ できあがりを戻す］か 帯へ ドラッグ → ［📥 結果と学び］［📗 元帳で確かめる］（TKC と 同じ 伝票の形・Enter で ✓ して 次へ。写真は 先に 読んでおくので 速く 押しても 追いつきます）'],
       tips: ['スマホの［📗 元帳で確かめる］は 上から 下（上に 科目・下に 元帳／上に 写真・下に 伝票）。下の［✓ 次へ］［‹ 前］［✎ 訂正］［案1］［案2］［↩ 戻る］で 進みます', 'よく出る取引は［仕訳辞書］に登録すると 次から ひとりでに当たります', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
     Tb: { t: '試算表', lead: '仕訳化で 確かめた 仕訳から 試算表（TKC の 勘定科目残高と 同じ 形）を 作る タブです。途中でも 作れます。',
-      steps: ['はじめに 1回だけ［📥 FX の 推移表を 入れる（期首・前年）］… FX の［勘定科目残高推移表］を「累計残高」で 切り出した CSV を ドラッグ（前年の 月も 入れると 前年同月・前年比が 出ます）', '月分を 選ぶと 前月末 ＋ 当月の 増減（仕訳化で 確定した 仕訳・元帳で ✓ した 伝票）＝ 当月末。✓ 前の 伝票は 黄色の「仮」', '［勘定科目残高］［残高推移表］［グラフ］と［貸借対照表］［損益計算書］［製造原価報告書］を 切り替える。［内訳表示（口座・取引先）］［0円行を表示］', '科目を ダブルクリック → 口座別 → もう一度 ダブルクリックで 元帳 →［伝票を開く］で 元帳で確かめるの その伝票（写真つき）', '［選んだ 箱だけ（途中の 試算表）］… 回収資料・仕訳化の 札で 選んだ 箱の ぶんだけで 当月を 出す（全部 そろっていなくても 作れる）', '［✓ この月を 確定（顧問先の 画面にも 出す）］… 仮が 無ければ 確定できる。確定した 月が 顧問先の 画面の「📊 試算表」に 出て、経営助言の「📥 確定した 試算表から 入れる」の 材料にも なる', '［🖨 印刷・PDF（A4）］… TKC の 紙と 同じ 形で 印刷'],
+      steps: ['はじめに 1回だけ［📥 FX の 推移表を 入れる（期首・前年）］… FX の［勘定科目残高推移表］を「累計残高」で 切り出した CSV を ドラッグ（前年の 月も 入れると 前年同月・前年比が 出ます）', '月分を 選ぶと 前月末 ＋ 当月の 増減（仕訳化で 確定した 仕訳・元帳で ✓ した 伝票）＝ 当月末。✓ 前の 伝票は 黄色の「仮」', '［勘定科目残高］［残高推移表］［グラフ］と［貸借対照表］［損益計算書］［製造原価報告書］を 切り替える。［内訳表示（口座・取引先）］［0円行を表示］', '科目を ダブルクリック → 口座別 → もう一度 ダブルクリックで 元帳 →［伝票を開く］で 元帳で確かめるの その伝票（写真つき・［✎ 訂正］で 直せる）。仕訳化で 確定した 仕訳は［✎ 仕訳を 直す］で 仕訳化の その 1件へ', '［選んだ 箱だけ（途中の 試算表）］… 回収資料・仕訳化の 札で 選んだ 箱の ぶんだけで 当月を 出す（全部 そろっていなくても 作れる）', '［✓ この月を 確定（顧問先の 画面にも 出す）］… 仮が 無ければ 確定できる。確定した 月が 顧問先の 画面の「📊 試算表」に 出て、経営助言の「📥 確定した 試算表から 入れる」の 材料にも なる', '［🖨 印刷・PDF（A4）］… TKC の 紙と 同じ 形で 印刷'],
       tips: ['途中の 月でも 推移表と グラフは 出ます（確定しなくても 見られる）', 'エージェントが 作った 試算表は 使いません。仕訳化で 確かめた ものだけが 積み上がります'] },
     Out: { t: '取込ファイル', pic: 'g_oout', lead: '確定した仕訳を 会計ソフト（FX）へ 取り込むファイルにする タブです。',
       steps: ['処理済ボックス（月分・箱）を選ぶ', 'ファイルにして 保存する', 'FX で 取り込む'], tips: [] },
