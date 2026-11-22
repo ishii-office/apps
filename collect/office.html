@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795359499;</script>
+<script>window.__PAGE_VER=1795363705;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -106,8 +106,9 @@
     #tabs button[data-tab="Clients"] { grid-area: 2 / 5 / 3 / 9; } #tabs button[data-tab="Dict"] { grid-area: 2 / 1 / 3 / 5; border-right: 1px solid var(--line); }
     /* ★ 2026-11-21：2段目は 進捗・経営助言・保証・顧問先・担当者（仕訳辞書タブは 出さない） */
     #tabs button[data-tab="Prog"] { grid-area: 2 / 1 / 3 / 3; border-right: 1px solid var(--line); } #tabs button[data-tab="Advice"] { grid-area: 2 / 3 / 3 / 6; }
-    #tabs button[data-tab="Grt"] { grid-area: 2 / 6 / 3 / 8; } #tabs button[data-tab="Clients"] { grid-area: 2 / 8 / 3 / 11; } #tabs button[data-tab="Staff"] { grid-area: 2 / 11 / 3 / 13; border-right: 0; }
-    #tabs button[data-tab="Prog"], #tabs button[data-tab="Advice"], #tabs button[data-tab="Grt"], #tabs button[data-tab="Clients"], #tabs button[data-tab="Staff"] { font-size: 13px; }
+    #tabs button[data-tab="Grt"] { grid-area: 2 / 5 / 3 / 7; } #tabs button[data-tab="Min"] { grid-area: 2 / 7 / 3 / 9; } #tabs button[data-tab="Clients"] { grid-area: 2 / 9 / 3 / 11; } #tabs button[data-tab="Staff"] { grid-area: 2 / 11 / 3 / 13; border-right: 0; }
+    #tabs button[data-tab="Advice"] { grid-area: 2 / 3 / 3 / 5; }
+    #tabs button[data-tab="Prog"], #tabs button[data-tab="Advice"], #tabs button[data-tab="Grt"], #tabs button[data-tab="Min"], #tabs button[data-tab="Clients"], #tabs button[data-tab="Staff"] { font-size: 13px; }
     /* 3段目：AIの考え方（2つぶん）と 改善要望 を1行に（2026-10-25。別の行にしない） */
     /* ★ 送付物（2026-10-26）：3段目を AIの考え方・改善要望・送付物 の3つに */
     /* ★ 事務所フォルダ（2026-11-14）：3段目を4つに（4段にはしない。タブで画面を取りすぎない） */
@@ -708,7 +709,7 @@
   .dgth { display: flex; align-items: center; gap: 8px; } .dgth b { flex: 1; } .dgico { width: 24px; height: 24px; color: #0F6E56; flex-shrink: 0; } .dggo { color: #0F6E56; font-size: 20px; font-weight: 700; } .dgtag { font-size: 11.5px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: #C46A12; color: #fff; }
   .dgt b { font-size: 15px; } .dgt .dgs { font-size: 12.5px; color: #5a6b7d; } .dgt:hover { border-color: #0F6E56; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
   .dgt.todo { border-color: #0F6E56; } .dgt.none { opacity: .6; } .dgt.spt { border-color: #E0A15A; background: linear-gradient(180deg, #fff 0%, #FFF3E3 100%); } .dgt.spt .dgico { color: #C46A12; } .dgt.off { background: #f3faf6; border-style: solid; border-color: #9cc5b4; }
-  .dgset { align-self: flex-start; } .agdl { margin-left: auto; display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; } .agdlb { font-weight: 700; } .tbtop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 0; } .tbck { font-size: 13px; } .tbimp { border: 1.5px dashed #9cc5b4; border-radius: 10px; padding: 8px; margin: 6px 0; } .tbimp textarea { width: 100%; font-size: 12px; } .tbinfo { font-size: 12.5px; margin: 4px 0 8px; } .tbkari { color: #a26100; } .tbpart { color: #0F6E56; } .tbmiss { color: #b23b3b; } .tbok { color: #0F6E56; font-weight: 700; } .tbcap { font-weight: 700; font-size: 13.5px; margin: 8px 0 4px; } .tbsc { overflow-x: auto; } .tbt { border-collapse: collapse; font-size: 12.5px; background: #fff; } .tbt th { background: #5b8a63; color: #fff; font-weight: 600; padding: 3px 6px; border: 1px solid #4a7652; white-space: nowrap; } .tbt th small { color: #e8f3ea; font-weight: 400; } .tbt td { padding: 2px 6px; border: 1px solid #e3e8e3; white-space: nowrap; } .tbt td.nr { text-align: right; font-variant-numeric: tabular-nums; } .tbt td.tbn { min-width: 12em; } .tbt tr.tot td { background: #dbead8; } .tbt tr.kari td { background: #fff4d6; } .tbt tr.subr td { color: #445; font-size: 12px; } .tbt tbody tr:hover td { outline: 1px solid #b9d3bd; cursor: default; } .tbk { background: #e0a040; color: #fff; border-radius: 4px; padding: 0 4px; font-size: 11px; } .tbx { color: #5b8a63; } .tbtr td.tbn { position: sticky; left: 0; background: inherit; } .tbdrill { border: 1.5px solid #9cc5b4; border-radius: 10px; padding: 8px; margin: 10px 0; background: #fbfdfb; } .tbdh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; } .tbg { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 12px; align-items: start; } .tbsvg { width: 100%; height: auto; background: #fff; border: 1px solid #e3e8e3; border-radius: 8px; } .tbgbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; } @media (max-width: 760px) { .tbg { grid-template-columns: 1fr; } } .dkgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 6px 0 12px; } @media (max-width: 700px) { .dkgrid { grid-template-columns: 1fr; } } .dgpk { align-self: flex-end; font-size: 12px; color: #33475b; font-weight: 400; } .pkbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; background: #eef7f2; border: 1.5px solid #9cc5b4; border-radius: 10px; padding: 6px 10px; margin: 6px 0; font-size: 13.5px; } .inpick { margin: 4px 0 8px; } .inchips .inrow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 4px 0; } .inlab { font-weight: 700; font-size: 13px; min-width: 2.6em; } .inchip { font: inherit; font-size: 12.5px; border: 1.3px solid #cfd9e3; background: #fff; border-radius: 999px; padding: 3px 10px; cursor: pointer; } .inchip.on { background: #0F6E56; color: #fff; border-color: #0F6E56; } .inchip.sub { font-size: 12px; } .inchip.none { opacity: .55; } .kadraft { background: #fff7e6; border: 1.5px solid #e0a040; border-radius: 10px; padding: 8px 10px; margin: 6px 0; font-size: 13.5px; } .krbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; } .dgall { margin: 4px 0 8px; } .dvhead { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; font-size: 16px; }
+  .dgset { align-self: flex-start; } .agdl { margin-left: auto; display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; } .agdlb { font-weight: 700; } .tbtop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 0; } .tbck { font-size: 13px; } .tbimp { border: 1.5px dashed #9cc5b4; border-radius: 10px; padding: 8px; margin: 6px 0; } .tbimp textarea { width: 100%; font-size: 12px; } .tbinfo { font-size: 12.5px; margin: 4px 0 8px; } .tbkari { color: #a26100; } .tbpart { color: #0F6E56; } .tbmiss { color: #b23b3b; } .tbok { color: #0F6E56; font-weight: 700; } .tbcap { font-weight: 700; font-size: 13.5px; margin: 8px 0 4px; } .tbsc { overflow-x: auto; } .tbt { border-collapse: collapse; font-size: 12.5px; background: #fff; } .tbt th { background: #5b8a63; color: #fff; font-weight: 600; padding: 3px 6px; border: 1px solid #4a7652; white-space: nowrap; } .tbt th small { color: #e8f3ea; font-weight: 400; } .tbt td { padding: 2px 6px; border: 1px solid #e3e8e3; white-space: nowrap; } .tbt td.nr { text-align: right; font-variant-numeric: tabular-nums; } .tbt td.tbn { min-width: 12em; } .tbt tr.tot td { background: #dbead8; } .tbt tr.kari td { background: #fff4d6; } .tbt tr.subr td { color: #445; font-size: 12px; } .tbt tbody tr:hover td { outline: 1px solid #b9d3bd; cursor: default; } .tbk { background: #e0a040; color: #fff; border-radius: 4px; padding: 0 4px; font-size: 11px; } .tbx { color: #5b8a63; } .tbtr td.tbn { position: sticky; left: 0; background: inherit; } .tbdrill { border: 1.5px solid #9cc5b4; border-radius: 10px; padding: 8px; margin: 10px 0; background: #fbfdfb; } .tbdh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; } .tbg { display: grid; grid-template-columns: minmax(380px, 470px) 1fr; gap: 12px; align-items: start; } .tbgt { font-size: 14px; width: 100%; } .tbgt td, .tbgt th { padding: 6px 8px !important; } .tbt tr.sel td { background: #fff1b8 !important; } .tbsvg { width: 100%; height: auto; display: block; background: #fff; border: 1px solid #e3e8e3; border-radius: 8px; } .tbgbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; } @media (max-width: 760px) { .tbg { grid-template-columns: 1fr; } } .dkgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 6px 0 12px; } @media (max-width: 700px) { .dkgrid { grid-template-columns: 1fr; } } .dgpk { align-self: flex-end; font-size: 12px; color: #33475b; font-weight: 400; } .pkbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; background: #eef7f2; border: 1.5px solid #9cc5b4; border-radius: 10px; padding: 6px 10px; margin: 6px 0; font-size: 13.5px; } .inpick { margin: 4px 0 8px; } .inchips .inrow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 4px 0; } .inlab { font-weight: 700; font-size: 13px; min-width: 2.6em; } .inchip { font: inherit; font-size: 12.5px; border: 1.3px solid #cfd9e3; background: #fff; border-radius: 999px; padding: 3px 10px; cursor: pointer; } .inchip.on { background: #0F6E56; color: #fff; border-color: #0F6E56; } .inchip.sub { font-size: 12px; } .inchip.none { opacity: .55; } .kadraft { background: #fff7e6; border: 1.5px solid #e0a040; border-radius: 10px; padding: 8px 10px; margin: 6px 0; font-size: 13.5px; } .krbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; } .dgall { margin: 4px 0 8px; } .dvhead { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; font-size: 16px; }
   @media (max-width: 700px) { .dbgrid { grid-template-columns: 1fr; } }   /* 上の帯に置いた 回収資料の道具は 回収資料のときだけ */
   .dtools button { font: inherit; font-size: 13.5px; font-weight: 700; padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
   .dtools button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -840,6 +841,13 @@
   .dmon-c { flex: 1; font-size: 12.5px; color: var(--sub); text-align: right; }
   .dmon-h .chev { color: var(--accent); }
   .dmon:not(.open) .chev { transform: rotate(-90deg); display: inline-block; }
+  /* ★★ 2026-11-23（石井）：押した感。押したら 薄い緑、作っている あいだは 緑のまま */
+  button.tapped:not(:disabled) { background: #dff3e8 !important; border-color: #0F6E56 !important; color: #0b4f3e !important; transition: background .1s; }
+  button.busy, .dmon-b.busy { background: #dff3e8 !important; border-color: #0F6E56 !important; color: #0b4f3e !important; cursor: progress; }
+  .dmon-b.on { background: #0F6E56 !important; border-color: #0F6E56 !important; color: #fff !important; }
+  .agout { margin: 6px 0; padding: 8px 10px; border: 1.5px solid #0F6E56; border-radius: 10px; background: #f3faf6; font-size: 13px; }
+  .agout .agout-h { font-weight: 700; margin-bottom: 4px; } .agout ol { margin: 6px 0 4px 1.2em; padding: 0; } .agout li { margin: 3px 0; }
+  .agout .agdl { margin-left: 0; display: flex; } .agout .agpath { display: block; word-break: break-all; margin-top: 3px; }
   .dmon-b { font: inherit; font-size: 12.5px; font-weight: 700; padding: 5px 9px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
   .agdocs { margin: 6px 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font-size: 13px; }
   .agdocs .agrow { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 3px 0; border-top: 1px dashed var(--line); }
@@ -1301,7 +1309,7 @@
   .ctl[data-tab="Dict"] label:has(#month), .ctl[data-tab="Dict"] #filter, .ctl[data-tab="Dict"] label:has(#perY), .ctl[data-tab="Dict"] label:has(#perM), .ctl[data-tab="Dict"] label:has(#box),
   .ctl[data-tab="Rule"] label:has(#month), .ctl[data-tab="Rule"] #filter, .ctl[data-tab="Rule"] label:has(#perY), .ctl[data-tab="Rule"] label:has(#perM), .ctl[data-tab="Rule"] label:has(#box),
   .ctl[data-tab="Tb"] label:has(#month), .ctl[data-tab="Tb"] #filter, .ctl[data-tab="Tb"] label:has(#perY), .ctl[data-tab="Tb"] label:has(#perM), .ctl[data-tab="Tb"] label:has(#box), .ctl[data-tab="Out"] label:has(#month), .ctl[data-tab="Out"] #filter, .ctl[data-tab="Out"] label:has(#perY), .ctl[data-tab="Out"] label:has(#perM), .ctl[data-tab="Out"] label:has(#box) { display: none; }
-  .ctl[data-tab="Clients"] > :not(label:has(#client)), .ctl[data-tab="Send"] > :not(label:has(#client)), .ctl[data-tab="Advice"] > :not(label:has(#client)), .ctl[data-tab="Grt"] > :not(label:has(#client)) { display: none; }
+  .ctl[data-tab="Clients"] > :not(label:has(#client)), .ctl[data-tab="Send"] > :not(label:has(#client)), .ctl[data-tab="Advice"] > :not(label:has(#client)), .ctl[data-tab="Grt"] > :not(label:has(#client)), .ctl[data-tab="Min"] > :not(label:has(#client)) { display: none; }
   /* ★★★ 送付物（事務所 → 顧問先。2026-10-26）。中は 顧問先の画面（index.html?m=send）をそのまま使う */
   /* ★★★ 事務所フォルダ（2026-11-14）：左に フォルダの木、右に 作業スペース（DocuWorks Desk の形） */
   #paneFold { display: flex; flex-direction: column; }
@@ -1741,6 +1749,7 @@
     <button type="button" role="tab" data-tab="Prog" aria-pressed="false" id="tabProg">進捗</button>
     <button type="button" role="tab" data-tab="Advice" aria-pressed="false" id="tabAdvice">経営助言</button>
     <button type="button" role="tab" data-tab="Grt" aria-pressed="false" id="tabGrt">保証</button>
+    <button type="button" role="tab" data-tab="Min" aria-pressed="false" id="tabMin">議事録</button>
     <button type="button" role="tab" data-tab="Staff" aria-pressed="false" id="tabStaff" hidden>担当者</button>
     <button type="button" role="tab" data-tab="Clients" aria-pressed="false">顧問先</button>
     <button type="button" role="tab" data-tab="Dict" aria-pressed="false" hidden>仕訳辞書</button>
@@ -1846,6 +1855,7 @@
     <section class="isle agbar" id="agBar"><div class="isle-h"><b class="agbar-t">🤖 エージェントに渡す</b><span id="agpLine" class="note"></span></div>
       <div class="inrow isle-mon" id="isleMon"></div>
       <div id="pkBarDocs" class="pkbar"></div>
+      <div id="agOut" class="agout" hidden aria-live="polite"></div>
       <div class="isle-row"><button type="button" id="dAgentBack" title="自分の Claude Code が作った できあがり（仕訳.json・元帳・質問一覧・カルテ など）を zip にして この顧問先・この月分に 戻す。戻すと エージェント研究 1回として 改善と効率化の集計に 数えます">⬆ できあがりを戻す</button><input type="file" id="dAgentBackF" accept=".zip,application/zip" hidden><span class="agdrop" id="agDrop">⬇ できあがりの zip を ここへ ドラッグして 戻す</span><button type="button" id="agPick" title="Claude Code が 共有ドライブの フォルダの「結果」に 置いた できあがりを 拾う（ひとりでにも 見に行く）">📂 フォルダの できあがりを 拾う</button><button type="button" id="dAgent" title="この顧問先・この月分の 資料・補助簿・過去の仕訳・事務所の考え方を 1つの zip にして、自分の Claude Code に渡せるようにする">⚙ ほかの渡し方（半年・1年・気づき・書面添付 など）</button><span id="dAgentPick" hidden></span></div>
       <span class="dmsg" id="agMsg" role="status"></span></section>
     <section class="isle" id="isleLed"><div class="isle-h"><b>📗 元帳チェック</b></div>
@@ -2113,6 +2123,7 @@
     <div class="cl-top">
       <input id="aq" type="search" placeholder="コード・名前で探す" aria-label="顧問先を探す">
       <button type="button" class="primary" id="aNew">＋ 新しい顧問先</button>
+      <button type="button" class="btn ghost sm" id="refOpen" title="顧問先の 紹介 URL から お試しを はじめた 方と その 質問">🎁 紹介・お試し</button>
       <button type="button" class="btn ghost sm" id="iOpen" title="請求書を作って PDF にする（顧問先の画面には まだ出しません）">🧾 請求書</button>
       <button type="button" class="btn ghost sm" id="mOpen" title="顧問先メールへ 資料のお願い・年末調整のお知らせなどを送る">📨 お願いメール</button>
     </div>
@@ -2208,15 +2219,34 @@
 <div class="pane page" id="paneAdvice" hidden>
   <h2>経営助言 <small id="advClient"></small></h2>
   <p class="note">数字（試算表）から 事務所の 考え方で 算定し、顧問先の 画面に「いまの リスク」として 出します。エージェントも 同じ 計算式で 下書きします。</p>
-  <details open class="rbox" id="hoBox"><summary>🛡 標準保障額の 算定（企業防衛）</summary>
+  <details open class="rbox" id="hoBox"><summary>🛡 ① 企業防衛（標準保障額の 算定）</summary>
     <div id="hoCalc"></div>
+    <details class="kysub"><summary>手で 入れる（エージェントの リスク.json から 写す など）</summary>
+    <fieldset class="kyf"><legend>リスク（標準保障額）</legend>
+      <div class="bar"><input id="kyAmt" inputmode="numeric" placeholder="標準保障額（円）" style="width:12em"><input id="kyReason" placeholder="理由（1〜2文。顧問先に出す）" style="flex:1;min-width:16em"></div>
+      <textarea id="kyItems" rows="4" aria-label="内訳" placeholder="内訳（1行に1つ：名前,金額,理由）&#10;借入金の返済,20000000,借入残高&#10;運転資金,10000000,固定費の半年分"></textarea>
+      <textarea id="kyFormula" rows="2" aria-label="算定式" placeholder="算定式（事務所の中だけ）"></textarea>
+      <textarea id="kySteps" rows="3" aria-label="計算の過程" placeholder="計算の過程（事務所の中だけ）"></textarea>
+      <div class="bar"><label class="note"><input type="checkbox" id="kyShow" checked> 顧問先に出す（変わったら「更新されました」と出ます）</label><button type="button" class="btn sm" id="kySaveR">リスクを入れる</button></div>
+    </fieldset>
+    </details>
+    <details><summary>標準保障額の考え方（顧問先に出す説明・全顧問先 共通）</summary>
+      <textarea id="kyIdea" rows="5" aria-label="考え方"></textarea>
+      <div class="bar"><button type="button" class="btn ghost sm" id="kyIdeaSave">考え方を保存</button></div>
+    </details>
   </details>
-  <details class="rbox" id="aqBox"><summary>💬 顧問先が AI に聞いたこと（確かめて 返す）</summary>
-    <p class="note">顧問先の［💬 AI に聞く］の 質問と AI の 答え。ふだんは AI が すぐ 答え、税額が 大きく 変わりそうな ものは 答えを 出さずに 待っています。［✓ この答えで よい］か、直して［✎ 直して 送る］。月の 費用の 上限で 止まります。</p>
-    <div class="note" id="aqStat"></div>
-    <div id="aqList"></div>
+  <details open class="rbox" id="rtBox"><summary>🏦 ② 格付け（債務者区分）</summary>
+    <p class="note">金融機関の 格付けは ① 定量評価（決算書の 数字）→ ② 定性評価（経営者・業界・将来性）→ ③ 実態評価（役員借入金を 自己資本と みなす・含み損益 など）の 3段階。ここでは まず 試算表から 一般的な 計算式で ①（形式的 格付け）を 出します。実質的な 格付けは 事務所の 考え方で 直します。</p>
+    <div id="rtCalc"></div>
+    <fieldset class="kyf"><legend>格付け</legend>
+      <div class="bar"><input id="kgFormal" placeholder="形式的な格付け（試算表から・中だけ）" style="width:14em"><input id="kgLow" placeholder="上げられる幅 低" style="width:7em"><input id="kgHigh" placeholder="高" style="width:7em"><input id="kgShow" placeholder="顧問先に見せる（例：およそ 5〜6）" style="width:16em"></div>
+      <input id="kgReason" placeholder="理由（1〜2文。顧問先に出す）" style="width:100%">
+      <textarea id="kgPoints" rows="4" aria-label="上げるための点" placeholder="格付けを上げるための点（1行に1つ：指標,いま,目安,どうすれば）&#10;自己資本比率,8%,20%以上,利益を残す"></textarea>
+      <textarea id="kgSteps" rows="3" aria-label="判断の過程" placeholder="判断の過程（事務所の中だけ）"></textarea>
+      <div class="bar"><label class="note"><input type="checkbox" id="kgPub" checked> 顧問先に出す</label><button type="button" class="btn sm" id="kySaveG">格付けを入れる</button></div>
+    </fieldset>
   </details>
-  <details open class="rbox" id="kyBox"><summary>経営助言（企業防衛のリスク・格付け・顧問先ごとの助言。顧問先の画面に出す）</summary>
+  <details open class="rbox" id="kyBox"><summary>💬 ③ 顧問先ごとの 助言（これから 出す 助言）</summary>
     <p class="note">算定は 事務所の仕事です。［🤖 エージェントに渡す（zip）］の［🛡 標準保障額］［🏦 格付け］で 下書きを作ってもらい、［📥 結果と学び］の［経営助言に入れる］で ここに 写して 直してから 入れます。<b>顧問先には「出す」に ✓ したものだけ</b>（算定式・過程・形式的な格付けは 出ません）。<b>保険の提案は 顧問先が［石井事務所に相談する］を 押してから</b>でないと 出せません。</p>
     <fieldset class="kyf"><legend>助言（顧問先ごとの 項目・今月の 助言）</legend>
       <div id="kaItems" class="bar"></div>
@@ -2226,39 +2256,35 @@
       <div class="bar"><label class="note"><input type="checkbox" id="kadTax"> 税務判断を 含む（顧問先には「担当 <span id="kadTaxName">石井</span>」と 出る）</label><label class="note"><input type="checkbox" id="kadShow" checked> 顧問先に出す</label><button type="button" class="btn sm" id="kadSave">助言を出す</button></div>
       <div id="kadList"></div>
     </fieldset>
-    <fieldset class="kyf"><legend>リスク（標準保障額）</legend>
-      <div class="bar"><input id="kyAmt" inputmode="numeric" placeholder="標準保障額（円）" style="width:12em"><input id="kyReason" placeholder="理由（1〜2文。顧問先に出す）" style="flex:1;min-width:16em"></div>
-      <textarea id="kyItems" rows="4" aria-label="内訳" placeholder="内訳（1行に1つ：名前,金額,理由）&#10;借入金の返済,20000000,借入残高&#10;運転資金,10000000,固定費の半年分"></textarea>
-      <textarea id="kyFormula" rows="2" aria-label="算定式" placeholder="算定式（事務所の中だけ）"></textarea>
-      <textarea id="kySteps" rows="3" aria-label="計算の過程" placeholder="計算の過程（事務所の中だけ）"></textarea>
-      <div class="bar"><label class="note"><input type="checkbox" id="kyShow" checked> 顧問先に出す（変わったら「更新されました」と出ます）</label><button type="button" class="btn sm" id="kySaveR">リスクを入れる</button></div>
-    </fieldset>
-    <fieldset class="kyf"><legend>格付け</legend>
-      <div class="bar"><input id="kgFormal" placeholder="形式的な格付け（試算表から・中だけ）" style="width:14em"><input id="kgLow" placeholder="上げられる幅 低" style="width:7em"><input id="kgHigh" placeholder="高" style="width:7em"><input id="kgShow" placeholder="顧問先に見せる（例：およそ 5〜6）" style="width:16em"></div>
-      <input id="kgReason" placeholder="理由（1〜2文。顧問先に出す）" style="width:100%">
-      <textarea id="kgPoints" rows="4" aria-label="上げるための点" placeholder="格付けを上げるための点（1行に1つ：指標,いま,目安,どうすれば）&#10;自己資本比率,8%,20%以上,利益を残す"></textarea>
-      <textarea id="kgSteps" rows="3" aria-label="判断の過程" placeholder="判断の過程（事務所の中だけ）"></textarea>
-      <div class="bar"><label class="note"><input type="checkbox" id="kgPub" checked> 顧問先に出す</label><button type="button" class="btn sm" id="kySaveG">格付けを入れる</button></div>
-    </fieldset>
     <span class="pagemsg" id="kyMsg" role="status"></span>
     <div id="kyList"></div>
-    <details><summary>標準保障額の考え方（顧問先に出す説明・全顧問先 共通）</summary>
-      <textarea id="kyIdea" rows="5" aria-label="考え方"></textarea>
-      <div class="bar"><button type="button" class="btn ghost sm" id="kyIdeaSave">考え方を保存</button></div>
-    </details>
+  </details>
+  <details class="rbox" id="aqBox"><summary>💬 顧問先が AI に聞いたこと（確かめて 返す）</summary>
+    <p class="note">顧問先の［💬 AI に聞く］の 質問と AI の 答え。ふだんは AI が すぐ 答え、税額が 大きく 変わりそうな ものは 答えを 出さずに 待っています。［✓ この答えで よい］か、直して［✎ 直して 送る］。月の 費用の 上限で 止まります。</p>
+    <div class="note" id="aqStat"></div>
+    <div id="aqList"></div>
+  </details>
+</div>
+<div class="pane page" id="paneMin" hidden>
+  <h2>議事録 <small id="minClient"></small></h2>
+  <p class="note">顧問先で 話したこと・見てきたこと（現物確認の 写真・パソコンや モニターの 様子 など）は ぜんぶ ここへ。あとから 直せない 記録（ハッシュの鎖）に 残し、エージェントの zip にも 入ります。次の 経営助言・企業防衛の 前提・カルテ・巡回監査報告書・書面添付・顧問料の 合意の 証拠 などの もとに なります。</p>
+  <details open class="rbox" id="mnBox"><summary>🎙 議事録を 入れる（文字・ファイル・音声・現物確認の 写真）</summary>
+    <p class="note">OMS などで 録音・文字起こしした 議事録を 入れます。入れた瞬間の 原本の 指紋（SHA-256）と 日時を <b>あとから 直せない記録（ハッシュの鎖）</b>に 残し、［🔒 本物か確かめる］で いじっていないことを 示せます。「顧問先に見せる」に ✓ すると 顧問先の画面に 確認のお願いが出て、［内容を確認しました］が 記録に 足されます。決定事項・やることは Claude Code などで 作って［＋ 決定事項・やること］で 足します（これも 直せない記録）。</p>
+    <div class="bar"><select id="mnKind" aria-label="会議の種類"></select><input type="date" id="mnDay" aria-label="会議の日"><input id="mnTitle" placeholder="題（例：第12期 決算報告会）" style="min-width:14em"><label class="note"><input type="checkbox" id="mnShow"> 顧問先に見せる（確認をもらう）</label></div>
+    <textarea id="mnText" rows="6" maxlength="200000" aria-label="議事録の文字" placeholder="議事録の 文字を 貼る（ファイルなら 下の［ファイルで入れる］）"></textarea>
+    <div class="bar"><button type="button" class="btn sm" id="mnAdd">文字で入れる</button><button type="button" class="btn ghost sm" id="mnFileB">ファイル・写真で入れる（txt・PDF・Word・音声・写真）</button><input type="file" id="mnFile" hidden accept=".txt,.pdf,.docx,.m4a,.mp3,.wav,.mp4,audio/*,image/jpeg,image/png,image/heic,image/webp" multiple></div>
+    <span class="pagemsg" id="mnMsg" role="status"></span>
+    <div id="mnList"></div>
+  </details>
+  <details open class="rbox" id="mnFind"><summary>🔎 議事録を 探す・ほかへ 引く</summary>
+    <div class="bar"><input id="mnQ" placeholder="ことばで 探す（例：顧問料・後継者・保険）" style="min-width:16em"><select id="mnQk" aria-label="種類で しぼる"><option value="">ぜんぶの 種類</option></select><span class="note" id="mnQn"></span></div>
+    <p class="note">探した 議事録の［📎 巡回監査報告書へ 引く］［📎 書面添付へ 引く］で 保証タブの 下書きに 引用を 足します。</p>
   </details>
 </div>
 <div class="pane page" id="paneGrt" hidden>
   <h2>保証 <small id="grtClient"></small></h2>
   <p class="note">巡回監査の 議事録 → 巡回監査報告書（顧問先への ご報告）→ 書面添付（税理士法33条の2）、そして 決算書類の 確認まで、ここで 済ませます（紙で 出しません）。雛形・書き方は［📚 雛形・書き方を 入れる］へ。エージェントの zip に 入ります。</p>
-  <details open class="rbox" id="mnBox"><summary>🎙 議事録（巡回監査・社長面談・決算報告会。証拠として残す）</summary>
-    <p class="note">OMS などで 録音・文字起こしした 議事録を 入れます。入れた瞬間の 原本の 指紋（SHA-256）と 日時を <b>あとから 直せない記録（ハッシュの鎖）</b>に 残し、［🔒 本物か確かめる］で いじっていないことを 示せます。「顧問先に見せる」に ✓ すると 顧問先の画面に 確認のお願いが出て、［内容を確認しました］が 記録に 足されます。決定事項・やることは Claude Code などで 作って［＋ 決定事項・やること］で 足します（これも 直せない記録）。</p>
-    <div class="bar"><select id="mnKind" aria-label="会議の種類"></select><input type="date" id="mnDay" aria-label="会議の日"><input id="mnTitle" placeholder="題（例：第12期 決算報告会）" style="min-width:14em"><label class="note"><input type="checkbox" id="mnShow"> 顧問先に見せる（確認をもらう）</label></div>
-    <textarea id="mnText" rows="6" maxlength="200000" aria-label="議事録の文字" placeholder="議事録の 文字を 貼る（ファイルなら 下の［ファイルで入れる］）"></textarea>
-    <div class="bar"><button type="button" class="btn sm" id="mnAdd">文字で入れる</button><button type="button" class="btn ghost sm" id="mnFileB">ファイルで入れる（txt・PDF・Word・音声）</button><input type="file" id="mnFile" hidden accept=".txt,.pdf,.docx,.m4a,.mp3,.wav,.mp4,audio/*"></div>
-    <span class="pagemsg" id="mnMsg" role="status"></span>
-    <div id="mnList"></div>
-  </details>
+  <div class="bar"><button type="button" class="btn ghost sm" id="grToMin">🎙 議事録は［議事録］タブへ（入れる・探す・引く）</button></div>
   <details open class="rbox" id="grRepBox"><summary>📋 巡回監査報告書（月ごと。顧問先に「こういうことを しました」と ご報告）</summary>
     <p class="note">ふつうの 仕訳の zip を 戻すと、その月に 議事録が あれば エージェントの 下書きが 入ります（🤖）。直して［保存して 顧問先に 出す］。</p>
     <div class="bar"><label class="note">巡回の月 <input type="month" id="grRepYm" aria-label="巡回の月"></label><span class="note" id="grRepInfo"></span></div>
@@ -3026,7 +3052,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
+  const READ_FN = { refList: 1, aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, arriveGrid: 1, askList: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -3102,7 +3128,7 @@
 
   /* ================= 入口 ================= */
   function fatal(t) { ['gate', 'chg', 'top', 'ctl', 'toClient'].forEach(function (k) { $(k).hidden = true; }); hidePanes(); $('fatal').hidden = false; $('fatalMsg').textContent = t; }
-  function hidePanes() { ['Docs', 'In', 'Tb', 'Dict', 'Out', 'Prog', 'Advice', 'Grt', 'Clients', 'Staff', 'Rule', 'Kaizen', 'Send', 'Fold'].forEach(function (k) { $('pane' + k).hidden = true; }); }
+  function hidePanes() { ['Docs', 'In', 'Tb', 'Dict', 'Out', 'Prog', 'Advice', 'Grt', 'Min', 'Clients', 'Staff', 'Rule', 'Kaizen', 'Send', 'Fold'].forEach(function (k) { $('pane' + k).hidden = true; }); }
   function showGate(msg) {
     $('top').hidden = true; $('ctl').hidden = true; $('chg').hidden = true; hidePanes(); $('toClient').hidden = true;
     $('gate').hidden = false; $('gMsg').textContent = msg || '';
@@ -4231,7 +4257,7 @@
     /* 隠れた欄にフォーカスが残って テンキーが出たままにならないように */
     const ae = document.activeElement; if (ae && ae.dataset && ae.dataset.tk && !$('pane' + k).contains(ae)) { ae.blur(); tkHide(); }
     /* ★ 2026-11-07：顧問先タブは 下の一覧で選ぶので 上の帯（顧問先の欄）を出さない（選ぶところを1つに） */
-    $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Tb' || k === 'Dict' || k === 'Out' || k === 'Rule' || k === 'Send' || k === 'Advice' || k === 'Grt');
+    $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Tb' || k === 'Dict' || k === 'Out' || k === 'Rule' || k === 'Send' || k === 'Advice' || k === 'Grt' || k === 'Min');
     /* 帯の欄は タブに要るものだけ（処理する月・未処理/確定 は仕訳化だけ、月分・箱は 回収資料と仕訳化） */
     $('ctl').dataset.tab = k;
     if (k === 'Docs') docsLoad();
@@ -4252,6 +4278,7 @@
     if (k === 'Rule') rLoad();
     if (k === 'Advice') advLoad();
     if (k === 'Grt') grtLoad();
+    if (k === 'Min') minLoadTab();
     if (k === 'Kaizen') kzLoad(true); else { try { if (KZ.loaded) kzBadge(); } catch (e) {} }
     if (k === 'Send') sdLoad();
     if (k === 'Fold') fdShow();
@@ -5958,7 +5985,20 @@
   /* ★★ 2026-11-22（石井）：AI 下書きは やめて「エージェントに渡す」一択。コードは 残す（true に 戻せば 復活） */
   var AI_DRAFT_ON = !!window.__aiDraftOn;   /* 見張りが AI の 仕組みを 確かめるときだけ 立てる */
   /* 選んだものの 帯（回収資料・仕訳化 の 上）。［🤖 新規に渡す］［🧪 答え合わせ付きで渡す］［✕ 選びを 外す］ */
+  /* ★★ 2026-11-23（石井）：押した感 ── いま 作っている／できた ボタンを 色で 残す */
+  var AGB = { busy: '', done: '' };
+  function agMsgSet(t) { const m = $('agMsg'); if (m) m.textContent = t || ''; }
+  /* 開き直しても 前回の zip と 手順を 島に 出す */
+  function agOutRestore() {
+    const box = $('agOut'); if (!box) return; if (!S.code) { box.hidden = true; return; }
+    if (box.dataset.code === S.code && !box.hidden) return;
+    let k = null; try { k = JSON.parse(localStorage.getItem('collect_agout_' + S.code) || 'null'); } catch (e) {}
+    box.dataset.code = S.code;
+    if (!k || !k.id) { box.hidden = true; box.textContent = ''; return; }
+    agDlShow(k);
+  }
   function pkBar() {
+    try { agOutRestore(); } catch (e) {}
     try { inPickDraw(); } catch (e) {}
     ['pkBarDocs', 'pkBarIn'].forEach(function (id) {
       const w = $(id); if (!w) return; w.textContent = '';
@@ -5976,6 +6016,11 @@
       const ag = el('button', 'dmon-b', '🤖 新規に渡す'); ag.type = 'button'; ag.dataset.ag = 'new'; ag.title = 'まだ 仕訳を 作っていない 月。選んだ 箱・月分の 資料・補助簿・過去の仕訳・考え方を zip に'; ag.addEventListener('click', function () { send(false); });
       const ag2 = el('button', 'dmon-b', '🧪 答え合わせ付きで渡す'); ag2.type = 'button'; ag2.dataset.ag = 'ans'; ag2.title = 'もう 仕訳が ある 月（研究）。確定仕訳を「作り終わってから開く」に 入れる'; ag2.addEventListener('click', function () { send(true); });
       const cl = el('button', 'dmon-b ghost', '✕ 選びを 外す'); cl.type = 'button'; cl.addEventListener('click', pkClear);
+      [[ag, 'new'], [ag2, 'ans']].forEach(function (z) {
+        if (AGB.busy === z[1]) { z[0].classList.add('busy'); z[0].disabled = true; z[0].textContent = '⏳ zip を 作っています…'; }
+        else if (AGB.done === z[1]) { z[0].classList.add('on'); z[0].textContent = '✓ ' + z[0].textContent.replace(/^\S+ /, '') + '（できました）'; }
+        else if (AGB.busy) z[0].disabled = true;
+      });
       w.appendChild(ag); w.appendChild(ag2);
       if (AI_DRAFT_ON) { const ai = el('button', 'dmon-b', '✍ AI で下書き'); ai.type = 'button'; ai.addEventListener('click', function () { if (S.tab !== 'In') selectTab('In'); setTimeout(function () { const b = $('jAi'); if (b && !b.hidden) b.click(); }, 50); }); w.appendChild(ai); }
       w.appendChild(cl);
@@ -6045,8 +6090,8 @@
       cur.forEach(function (m, i) { const x = a[i], y = b[i]; if (x != null) { sa += x; na++; } if (y != null) { sb += y; nb++; } body.insertAdjacentHTML('beforeend', '<tr><td>' + m.slice(0, 4) + '年' + m.slice(5) + '月</td><td class="nr">' + TBR.n(x) + '</td><td class="nr">' + TBR.n(y) + '</td><td class="nr">' + (x != null && y != null ? TBR.n(x - y) : '') + '</td><td class="nr">' + (x != null && y ? TBR.p(x / y * 100) : '') + '</td></tr>'); });
       if (kind !== 'cum') { body.insertAdjacentHTML('beforeend', '<tr class="tot"><td>累計</td><td class="nr">' + TBR.n(sa) + '</td><td class="nr">' + TBR.n(sb) + '</td><td class="nr">' + TBR.n(sa - sb) + '</td><td class="nr">' + (sb ? TBR.p(sa / sb * 100) : '') + '</td></tr><tr class="tot"><td>平均</td><td class="nr">' + TBR.n(na ? sa / na : null) + '</td><td class="nr">' + TBR.n(nb ? sb / nb : null) + '</td><td></td><td></td></tr>'); }
       tb.appendChild(body); w.appendChild(tb);
-      /* 絵（SVG。外の ライブラリは 使わない） */
-      const W = 640, H = 300, L = 56, B = 30, T = 16, R = 10;
+      /* 絵（SVG。外の ライブラリは 使わない）。★★ 2026-11-23：表と 同じ 高さ・字は 等倍（大きく ならない・重ならない） */
+      const svgOf = function (W, H) { const L = 64, B = 30, T = 30, R = 12;
       let ser;
       if (kind === 'z') {
         const cum = [], mov = []; let c = 0; cur.forEach(function (m, i) { const x = a[i]; if (x == null) { cum.push(null); mov.push(null); return; } c += x; cum.push(c); let s = 0; for (let k = 0; k < 12; k++) s += (r.mon || {})[TBR.pm(m, -k)] || 0; mov.push(s); });
@@ -6055,13 +6100,16 @@
       const vals = []; ser.forEach(function (s) { s.v.forEach(function (x) { if (x != null) vals.push(x); }); }); const mx = Math.max(1, Math.max.apply(null, vals.concat([0]))), mn = Math.min(0, Math.min.apply(null, vals.concat([0])));
       const y = function (v) { return T + (H - T - B) * (mx - v) / (mx - mn || 1); }, gw = (W - L - R) / 12;
       let sv = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="tbsvg" role="img" aria-label="' + TBR.e(r.name || '') + 'の グラフ">';
-      for (let k = 0; k <= 4; k++) { const v = mn + (mx - mn) * k / 4, yy = y(v); sv += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="#e3e8ee"/><text x="' + (L - 4) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="10" fill="#667">' + TBR.n(v / 1000) + '</text>'; }
-      sv += '<text x="4" y="10" font-size="10" fill="#667">（千円）</text>';
-      cur.forEach(function (m, i) { sv += '<text x="' + (L + gw * i + gw / 2) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="10" fill="#445">' + m.slice(5) + '月</text>'; });
+      for (let k = 0; k <= 4; k++) { const v = mn + (mx - mn) * k / 4, yy = y(v); sv += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="#e3e8ee"/><text x="' + (L - 4) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="11" fill="#667">' + TBR.n(v / 1000) + '</text>'; }
+      sv += '<text x="4" y="14" font-size="11" fill="#667">（千円）</text>';
+      cur.forEach(function (m, i) { sv += '<text x="' + (L + gw * i + gw / 2) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="11.5" fill="#445">' + m.slice(5) + '月</text>'; });
       if (kind === 'z') ser.forEach(function (s) { let d = ''; s.v.forEach(function (v, i) { if (v == null) return; d += (d ? 'L' : 'M') + (L + gw * i + gw / 2) + ' ' + y(v); }); if (d) sv += '<path d="' + d + '" fill="none" stroke="' + s.c + '" stroke-width="2.4"/>'; });
       else ser.forEach(function (s, si) { s.v.forEach(function (v, i) { if (v == null) return; const bw = gw * 0.36, x = L + gw * i + gw * 0.12 + si * bw, y0 = y(0), yy = y(v); sv += '<rect x="' + x + '" y="' + Math.min(y0, yy) + '" width="' + bw + '" height="' + Math.abs(y0 - yy) + '" fill="' + s.c + '"><title>' + s.n + ' ' + TBR.n(v) + '</title></rect>'; }); });
-      sv += ser.map(function (s, i) { return '<rect x="' + (W - 230 + i * 76) + '" y="2" width="10" height="10" fill="' + s.c + '"/><text x="' + (W - 216 + i * 76) + '" y="11" font-size="11" fill="#334">' + s.n + '</text>'; }).join('') + '</svg>';
-      const g = document.createElement('div'); g.className = 'tbgsv'; g.innerHTML = sv; w.appendChild(g);
+      sv += ser.map(function (s, i) { return '<rect x="' + (W - 90 * ser.length + i * 90) + '" y="6" width="11" height="11" fill="' + s.c + '"/><text x="' + (W - 90 * ser.length + i * 90 + 15) + '" y="16" font-size="12" fill="#334">' + s.n + '</text>'; }).join('') + '</svg>';
+      return sv; };
+      const g = document.createElement('div'); g.className = 'tbgsv'; g.innerHTML = svgOf(640, 320); w.appendChild(g);
+      const fit = function () { const gw = g.clientWidth; if (!gw) return; const hh = window.matchMedia('(max-width: 760px)').matches ? 300 : Math.max(300, tb.offsetHeight); g.innerHTML = svgOf(Math.round(gw), Math.round(hh)); g.querySelector('svg').style.height = hh + 'px'; };
+      requestAnimationFrame(fit); setTimeout(fit, 120);
       return w;
     },
     /** 印刷（TKC の 紙と 同じ A4 縦） */
@@ -6110,6 +6158,11 @@
         onDbl: function (r, s) { if (r.t) return; if (!s && (r.subs || []).length && !$('tbSub').checked && !TB.open[r.code]) { TB.open[r.code] = 1; tbDraw(); return; } tbDrill(r, s); } });
       const cap = el('div', 'tbcap', TBR.SN[TB.sheet] + '　勘定科目残高　' + (TB.sheet === 'bs' ? TBR.end(d.ym) + ' 現在' : TBR.ymL(d.fyStart) + '/01 〜 ' + TBR.end(d.ym)) + '　（科目を ダブルクリック → 口座別 → 元帳 → 伝票）');
       body.appendChild(cap); const sc = el('div', 'tbsc'); sc.appendChild(t); body.appendChild(sc);
+      /* ★★ 2026-11-23（石井）：TKC と 同じく 科目の 行を 選んで［グラフ］ */
+      const gb = el('button', 'btn sm', '📈 選んだ 科目の グラフ'); gb.type = 'button'; gb.id = 'tbGsel'; gb.disabled = true;
+      cap.appendChild(gb);
+      t.addEventListener('click', function (e) { const tr = e.target.closest && e.target.closest('tr[data-code]'); if (!tr || !tr.dataset.code) return; t.querySelectorAll('tr.sel').forEach(function (x) { x.classList.remove('sel'); }); tr.classList.add('sel'); TB.gcode = TB.sheet + ':' + tr.dataset.code; gb.disabled = false; gb.textContent = '📈 ' + tr.dataset.code + ' の グラフ'; });
+      gb.addEventListener('click', function () { if (TB.gcode) { TB.view = 'graph'; tbDraw(); } });
     } else if (TB.view === 'trend') {
       const cap = el('div', 'tbcap', TBR.SN[TB.sheet] + '　勘定科目残高推移表（' + ($('tbMode').value === 'mon' ? '各月発生' : '累計残高') + '）　科目を ダブルクリック → グラフ');
       const t = TBR.trend(d.trend, TB.sheet, $('tbMode').value, { from: d.fyStart, zero: $('tbZero').checked, onDbl: function (r) { TB.gcode = TB.sheet + ':' + r.code; TB.view = 'graph'; tbDraw(); } });
@@ -6308,8 +6361,8 @@
     docsTools();
     /* ★ 出納帳（2026-11-07）：顧問先が 出納帳を付けた箱で書いたもの。資料が届いていなくても いつも上に出す（見るだけ） */
     const cc0 = S.clients.find(function (c) { return c.code === S.code; }) || {};
-    const books = cc0.books || [], kakes = cc0.kakes || [], kas = cc0.kaikakes || [], kys = cc0.kyuyos || [], urs = cc0.uriages || [], ess = cc0.esps || [];
-    if (books.length || kakes.length || kas.length || kys.length || urs.length || ess.length) {
+    const books = cc0.books || [], kakes = cc0.kakes || [], kas = cc0.kaikakes || [], kys = cc0.kyuyos || [], urs = cc0.uriages || [], ess = cc0.esps || [], kns = cc0.kinmus || [];
+    if (books.length || kakes.length || kas.length || kys.length || urs.length || ess.length || kns.length) {
       const st = el('div', 'obstrip'); st.appendChild(el('span', null, '補助簿'));
       const nps = cc0.nippos || []; books.forEach(function (k) { const kb = el('button', 'dmon-b obgo', (nps.indexOf(k) >= 0 ? '📋 ' : '📒 ') + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 出納帳（日付・摘要・入金・出金・残高）を見る';
         kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : ''); }); st.appendChild(kb); });
@@ -6322,6 +6375,8 @@
         kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'uriage'); }); st.appendChild(kb); });
       ess.forEach(function (k) { const kb = el('button', 'dmon-b obgo uriage', '🍸 ' + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 売上日報（現金。組数・人数・売上合計・日計のキャッシュレス・現金。SBペイメントの収納明細書との突き合わせ。見るだけ・CSV）';   /* ★ 2026-11-21 Bar Espressa */
         kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'esp'); }); st.appendChild(kb); });
+      kns.forEach(function (k) { const kb = el('button', 'dmon-b obgo kyuyo', '⏱ ' + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 出勤簿・給与（人ごとの 日数・時間・時給・給与・通勤手当・源泉所得税・差引支給額）を見る';
+        kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'kinmu'); }); st.appendChild(kb); });
       kys.forEach(function (k) { const kb = el('button', 'dmon-b obgo kyuyo', '👛 ' + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 給与台帳（時給×時間・交通費・源泉徴収・住民税・差引支給額）を見る';
         kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'kyuyo'); }); st.appendChild(kb); });
       body.appendChild(st);
@@ -7503,12 +7558,12 @@
   function obYmNow() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
   function obOpen(box, ym, kind, msg) {
     OB.box = box; OB.ym = ym || obYmNow(); OB.kind = kind || ''; OB.edit = ''; OB.msg = msg || '';
-    $('obT').textContent = (({ kake: '📘 掛帳', kaikake: '📕 仕入等買掛金帳', kyuyo: '👛 給与台帳', uriage: '🧾 店舗売上日報', esp: '🍸 売上日報（現金）' })[OB.kind] || '📒 出納帳') + '［' + boxLabel(box) + '］';
+    $('obT').textContent = (({ kake: '📘 掛帳', kaikake: '📕 仕入等買掛金帳', kyuyo: '👛 給与台帳', uriage: '🧾 店舗売上日報', esp: '🍸 売上日報（現金）', kinmu: '⏱ 出勤簿・給与' })[OB.kind] || '📒 出納帳') + '［' + boxLabel(box) + '］';
     /* 出納帳（業務日報も）だけ 直す・仕訳化に回す。掛帳・仕入等買掛金帳・給与台帳は 見るだけ */
     $('obToWork').hidden = !!OB.kind;
     $('obPrint').hidden = OB.kind !== 'uriage';   /* ★ 2026-11-19（柳田）：店舗売上日報は 月の一覧を 印刷 */
     $('obEd').hidden = !!OB.kind;
-    $('obv').querySelector('.obbox').classList.toggle('wide', OB.kind === 'kaikake' || OB.kind === 'kyuyo' || OB.kind === 'uriage' || OB.kind === 'esp');
+    $('obv').querySelector('.obbox').classList.toggle('wide', OB.kind === 'kaikake' || OB.kind === 'kyuyo' || OB.kind === 'uriage' || OB.kind === 'esp' || OB.kind === 'kinmu');
     $('obv').hidden = false; obLoad();
   }
   function obHead() {
@@ -7516,6 +7571,7 @@
     if (OB.kind === 'kaikake') { $('obHead').innerHTML = '<tr><th>仕入先</th><th class="n">8%</th><th class="n">10%</th><th class="n">合計</th><th class="n">振込手数料</th><th class="n">振込金額</th><th class="n">自動振替</th><th class="ck">✓</th></tr>'; return false; }
     if (OB.kind === 'esp') { $('obHead').innerHTML = '<tr>' + OB_ES.map(function (c) { return '<th' + (c[2] ? ' class="' + c[2] + '"' : '') + '>' + c[1] + '</th>'; }).join('') + '</tr>'; return false; }
     if (OB.kind === 'uriage') { $('obHead').innerHTML = '<tr>' + OB_UR.map(function (c) { return '<th' + (c[2] ? ' class="' + c[2] + '"' : '') + '>' + c[1] + '</th>'; }).join('') + '</tr>'; return false; }
+    if (OB.kind === 'kinmu') { $('obHead').innerHTML = '<tr>' + OB_KN.map(function (c) { return '<th' + (c[2] ? ' class="' + c[2] + '"' : '') + '>' + c[1] + '</th>'; }).join('') + '</tr>'; return false; }
     if (OB.kind === 'kyuyo') { $('obHead').innerHTML = '<tr>' + OB_KY.map(function (c) { return '<th' + (c[2] ? ' class="' + c[2] + '"' : '') + '>' + c[1] + '</th>'; }).join('') + '</tr>'; return false; }
     $('obHead').innerHTML = OB.kind === 'kake' ? '<tr><th>締日</th><th class="n">発生額</th><th>入金日</th><th class="n">入金額</th><th>入金口座</th><th class="n">残高</th></tr>' : '<tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th>' + (pp ? '<th class="n">紙の残高</th>' : '') + '</tr>';
     return pp;
@@ -7524,7 +7580,7 @@
     const m = OB.ym.split('-'); $('obYm').textContent = m[0] + '年' + Number(m[1]) + '月分'; OB.data = null; obDraw(); $('obMsg').textContent = '読み込んでいます…';
     if (OB.kind === 'kaikake') { const n = new Date(Number(m[0]), Number(m[1]), 1); $('obYm').textContent += '（' + n.getFullYear() + '年' + (n.getMonth() + 1) + '月支払い）'; }
     const want = OB.box + '|' + OB.ym;
-    gs(({ kake: 'officeKake', kaikake: 'officeKaikake', kyuyo: 'officeKyuyo', uriage: 'officeUriage', esp: 'officeEsp' })[OB.kind] || 'officeBook', S.code, OB.box, OB.ym).then(function (r) { if (OB.box + '|' + OB.ym !== want) return; OB.data = r; obEdReset(); obDraw(); obNote(); },
+    gs(({ kake: 'officeKake', kaikake: 'officeKaikake', kyuyo: 'officeKyuyo', uriage: 'officeUriage', esp: 'officeEsp', kinmu: 'officeKinmu' })[OB.kind] || 'officeBook', S.code, OB.box, OB.ym).then(function (r) { if (OB.box + '|' + OB.ym !== want) return; OB.data = r; obEdReset(); obDraw(); obNote(); },
       function (e) { $('obMsg').textContent = '読み込めませんでした。' + e.message; });
   }
   function obNote(extra) {
@@ -7532,13 +7588,14 @@
     const t = [];
     if (extra || OB.msg) t.push(extra || OB.msg);
     if (OB.kind === 'kyuyo') t.push('期間 ' + obMd(d.from) + '〜' + obMd(d.to));
+    if (OB.kind === 'kinmu') { t.push(d.saved ? '保存 ' + d.at + '（' + d.who + '）' : d.carried ? 'この月は まだ保存されていません（' + d.carried + ' の 人と 時給だけ 写しています）。' : 'この月は まだ書かれていません。'); if (d.sum.need) t.push('⚠ 源泉所得税を 月額表で 確かめて 入れる 人が ' + d.sum.need + '人（給与 88,000円 以上）'); }
     if (OB.kind === 'esp') { t.push(d.sum.n ? d.sum.n + '日ぶん' + (d.at ? '（最後の保存 ' + d.at + '・' + d.who + '）' : '') : 'この月は まだ書かれていません。'); if (d.off) t.push('⚠ 人数と 男＋女が ちがう・お会計票の合計と 合わない日が ' + d.off + '日あります（赤い行）。'); $('obMsg').textContent = t.join('　'); $('obMsg').className = 'note' + (d.off ? ' oboff' : ''); return; }
     if (OB.kind === 'uriage') { t.push(d.sum.n ? d.sum.n + '日ぶん' + (d.at ? '（最後の保存 ' + d.at + '・' + d.who + '）' : '') : 'この月は まだ書かれていません。'); if (d.sum.off) t.push('⚠ 売上合計と 内訳（カフェ8%・10%・アパレル）が 合っていない所が ' + d.sum.off + 'か所あります（赤い数字）。'); if (d.sum.roff) t.push('⚠ 1日の売上合計が 売上レポートの合計と 合わない日が ' + d.sum.roff + '日あります。'); if (!d.conf.pref) t.push('天気の地域は まだ決まっていません（顧問先の画面の ⚙）。'); $('obMsg').textContent = t.join('　'); $('obMsg').className = 'note' + (d.sum.off || d.sum.roff ? ' oboff' : ''); return; }
     if ((OB.kind === 'kaikake' || OB.kind === 'kyuyo') && !d.saved) t.push(d.carried === 'sup' ? 'この月は まだ保存されていません（事務所が決めた 仕入先の一覧だけ 出しています）。' : d.carried === 'party' ? 'この月は まだ保存されていません（会計ソフトの 買掛金の取引先だけ 出しています）。' : d.carried ? 'この月は まだ保存されていません（前の月の ' + (OB.kind === 'kyuyo' ? '人' : '仕入先') + 'だけ 出しています）。' : 'この月は まだ書かれていません。');
     else if (OB.kind === 'kaikake' || OB.kind === 'kyuyo') t.push('保存 ' + d.at + '（' + d.who + '）');
-    else if (!d.rows.length) t.push('この月は まだ書かれていません。');
+    else if (OB.kind !== 'kinmu' && !(d.rows || []).length) t.push('この月は まだ書かれていません。');
     if (d.off) t.push('⚠ 紙の残高と 合わない行が ' + d.off + ' 行あります（赤い行）。行を押して 直してください。');
-    else if (d.rows.some(function (x) { return x.paper != null; })) t.push('✓ 紙の残高と ぜんぶ合っています。よければ［🤖 この月を仕訳化に回す］。');
+    else if ((d.rows || []).some(function (x) { return x.paper != null; })) t.push('✓ 紙の残高と ぜんぶ合っています。よければ［🤖 この月を仕訳化に回す］。');
     $('obMsg').textContent = t.join('　'); $('obMsg').className = 'note' + (d.off ? ' oboff' : '');
   }
   function obYen(n) { return n ? Number(n).toLocaleString('ja-JP') : ''; }
@@ -7547,6 +7604,9 @@
   const OB_KY = [['n', '氏名'], ['k', '区分'], ['wr', '平日時給', 'n'], ['wh', '平日時間', 'n'], ['wp', '平日給与', 'n'], ['hr', '土日祝時給', 'n'], ['hh', '土日祝時間', 'n'], ['hp', '土日祝給与', 'n'], ['days', '出勤数', 'n'], ['tr', '交通費', 'n'], ['trt', '交通費合計', 'n'],
     ['base', '基本給', 'n'], ['ot', '残業代', 'n'], ['com', '通勤手当', 'n'], ['tot', '合計', 'n'], ['tax', '源泉徴収', 'n'], ['res', '住民税', 'n'], ['net', '差引支給額', 'n'], ['ok', '✓', 'ck']];
   const OB_KA = ['r8', 'r10', 'tot', 'fee2', 'pay', 'auto'];
+  /* ★ ⏱ 出勤簿・給与（aswell。2026-11-23）の列。表と CSV で 同じ並び */
+  const OB_KN = [['no', 'NO'], ['n', '氏名'], ['col', '区分'], ['days', '出勤日数', 'n'], ['hm', '勤務時間', 'n'], ['rate', '時給', 'n'], ['pay', '給与', 'n'], ['tr', '通勤手当', 'n'], ['tax', '源泉所得税', 'n'], ['net', '差引支給額', 'n'], ['ok1', '本人確認', 'ck'], ['ok2', '会社確認', 'ck']];
+  function obKnV(x, k) { return k === 'days' || k === 'hm' || k === 'pay' || k === 'tax' || k === 'net' ? x.c[k] : x[k]; }
   /* ★ 🍸 売上日報（現金・Bar Espressa。2026-11-21）の列。エクセルの 売上管理表と 同じ並び（表と CSV） */
   const OB_ES = [['date', '日'], ['kumi', '組', 'n'], ['nin', '人数', 'n'], ['man', '男', 'n'], ['wom', '女', 'n'], ['sum', '合計額', 'n'], ['p.sbps', 'ｸﾚｼﾞｯﾄSBPS', 'n'], ['p.jcb', 'ｸﾚｼﾞｯﾄJCB', 'n'], ['p.gin', '銀聯', 'n'], ['p.dbr', 'd払い', 'n'], ['p.pp', 'PayPay', 'n'], ['p.rk', '楽天pay', 'n'], ['p.au', 'au pay', 'n'], ['p.mer', 'メルペイ', 'n'], ['p.oth', 'その他', 'n'], ['cl', 'キャッシュレス計', 'n'], ['cash', '現金', 'n'], ['tot', 'お会計票の合計', 'n'], ['diff', '差異', 'n'], ['memo', 'メモ']];
   /* ★ 店舗売上日報の列（2026-11-18）。[持ち物, 見出し, 形]。表と CSV で 同じ並び。c.〜＝現金・k.〜＝カード */
@@ -7599,6 +7659,11 @@
         if ((x.c.diff || 0) !== 0 || (x.k.diff || 0) !== 0 || (x.rdiff || 0) !== 0) r.classList.add('offrow');
       });
       tr('tot', OB_UR.map(function (c) { const p = c[0].split('.'); return [c[0] === 'date' ? '合計' : c[0] === 'wx' ? d.sum.n + '日' : p.length > 1 && p[1] !== 'diff' ? nn(d.sum[p[0]][p[1]]) : c[0] === 'tot' ? nn(d.sum.tot) : c[0] === 'rep' ? nn(d.sum.rep) : '', c[2] || '']; }));
+      return;
+    }
+    if (OB.kind === 'kinmu') {
+      d.people.forEach(function (x) { const r = tr(x.ok2 ? 'okd' : '', OB_KN.map(function (c) { const v = obKnV(x, c[0]); return [c[2] === 'ck' ? (v ? '✓' : '') : c[2] === 'n' && c[0] !== 'hm' ? nn(v) : (v == null ? '' : String(v)), c[2] || '']; })); if (x.c.taxNeed) r.classList.add('offrow'); });
+      tr('tot', OB_KN.map(function (c) { const m = { n: '合計', days: nn(d.sum.days), hm: d.sum.hm, pay: nn(d.sum.pay), tr: nn(d.sum.tr), tax: nn(d.sum.tax), net: nn(d.sum.net) }; return [m[c[0]] || '', c[2] || '']; }));
       return;
     }
     if (OB.kind === 'kyuyo') {
@@ -7726,7 +7791,7 @@
     const q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
     const vv = function (v) { return v == null ? '' : v; };
     const esRows = function () { const ds = Object.keys(d.days).sort(), ln = function (lbl, x) { return OB_ES.map(function (c) { return c[0] === 'date' ? lbl : vv(obUrV(x, c[0])); }); }; return [OB_ES.map(function (c) { return c[1]; })].concat(ds.map(function (dt) { return ln(dt, d.days[dt]); })).concat([ln('前半', d.half.h1), ln('後半', d.half.h2), ln('合計', d.sum)]); };
-    const lines = OB.kind === 'esp' ? esRows() : OB.kind === 'uriage'
+    const lines = OB.kind === 'kinmu' ? [OB_KN.map(function (c) { return c[1]; })].concat(d.people.map(function (x) { return OB_KN.map(function (c) { const v = obKnV(x, c[0]); return c[2] === 'ck' ? (v ? '✓' : '') : vv(v); }); })) : OB.kind === 'esp' ? esRows() : OB.kind === 'uriage'
       ? [OB_UR.map(function (c) { return c[1]; })].concat(Object.keys(d.days).sort().map(function (dt) { const x = Object.assign({ date: dt }, d.days[dt]); return OB_UR.map(function (c) { return vv(obUrV(x, c[0])); }); }))
         .concat([[], ['この月の まとめ', '現金', 'カード', '計']]).concat(obUrSum(d).map(function (r) { return [r[0], vv(r[1]), vv(r[2]), vv(r[3])]; }))
       : OB.kind === 'kaikake'
@@ -7737,7 +7802,7 @@
       ? [['締日', '発生額', '入金日', '入金額', '入金口座', '口座名', '残高'], ['前月からの繰越', '', '', '', '', '', d.carry]].concat(d.rows.map(function (x) { return [x.close, x.amt || '', x.payDate, x.pay || '', x.pay ? x.acct : '', x.acctName || '', x.bal]; })).concat([['この月の計', d.amtSum, '', d.paySum, '', '', d.end]])
       : [['日付', '摘要', '入金', '出金', '残高'], ['', '前月からの繰越', '', '', d.carry]].concat(d.rows.map(function (x) { return [x.date, x.memo, x.in || '', x.out || '', x.bal]; })).concat([['', 'この月の計', d.inSum, d.outSum, d.end]]);
     const c = S.clients.find(function (x) { return x.code === S.code; }) || { name: '' };
-    saveBlob(new Blob(['\ufeff' + lines.map(function (l) { return l.map(q).join(','); }).join('\r\n')], { type: 'text/csv' }), [S.code, c.name, boxLabel(OB.box), OB.ym, ({ kake: '掛帳', kaikake: '仕入等買掛金帳', kyuyo: '給与台帳', uriage: '店舗売上日報', esp: '売上日報' })[OB.kind] || '出納帳'].join('_').replace(/[\\\/:*?"<>|\s]+/g, '_') + '.csv');
+    saveBlob(new Blob(['\ufeff' + lines.map(function (l) { return l.map(q).join(','); }).join('\r\n')], { type: 'text/csv' }), [S.code, c.name, boxLabel(OB.box), OB.ym, ({ kake: '掛帳', kaikake: '仕入等買掛金帳', kyuyo: '給与台帳', kinmu: '出勤簿', uriage: '店舗売上日報', esp: '売上日報' })[OB.kind] || '出納帳'].join('_').replace(/[\\\/:*?"<>|\s]+/g, '_') + '.csv');
   });
   /* ================= ★★ 処理済ボックス（2026-11-07）── 月分 × 箱 =================
        ・仕訳化の区切り（2026年9月分 現金の領収書）と 回収資料の月分の見出しに「✓ 処理済」の色と［処理済にする］［処理済を外す］
@@ -7890,7 +7955,7 @@
     LN.n = 0; lnBadge();
   }
   const GUIDE = {
-    order: ['top', 'Docs', 'In', 'Tb', 'Out', 'Prog', 'Advice', 'Grt', 'Clients', 'Dict', 'Rule', 'Fold', 'Send', 'Kaizen', 'Staff'],
+    order: ['top', 'Docs', 'In', 'Tb', 'Out', 'Prog', 'Advice', 'Grt', 'Min', 'Clients', 'Dict', 'Rule', 'Fold', 'Send', 'Kaizen', 'Staff'],
     top: { t: '🧭 全体・右上のボタン', pic: 'g_otop', lead: '上の「顧問先」で 顧問先を選び、タブで 仕事を切り替えます。右上のボタンは どのタブからでも使えます。',
       steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
       tips: ['タブを 右クリック →［新しいタブで開く］［別ウィンドウで開く］で 複数の 画面を 並べて 使えます（いまの 顧問先・月分を 引き継ぐ。Ctrl＋クリック・中ボタンでも 新しいタブ）', '紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
@@ -7906,18 +7971,21 @@
     Out: { t: '取込ファイル', pic: 'g_oout', lead: '確定した仕訳を 会計ソフト（FX）へ 取り込むファイルにする タブです。',
       steps: ['処理済ボックス（月分・箱）を選ぶ', 'ファイルにして 保存する', 'FX で 取り込む'], tips: [] },
     Clients: { t: '顧問先', pic: 'g_oclients', lead: '顧問先の登録・箱（資料の入れもの）・URL・公式LINE などを決めるタブです。',
-      steps: ['［＋ 新しい顧問先］で 登録', '［＋ 箱を足す］で 資料の箱を決める（並べ替え・中の箱も）', '顧問先に渡す URL は ここ（［URLを作り直す］で 前の URL は 使えなくなります）', '担当・補助担当・決算月を 入れる'],
+      steps: ['［🎁 紹介・お試し］… 顧問先の 紹介 URL から お試しを はじめた 方（名前・連絡先・だれの 紹介か）と 質問。答えを 直して［送る］', '［＋ 新しい顧問先］で 登録', '［＋ 箱を足す］で 資料の箱を決める（並べ替え・中の箱も）', '顧問先に渡す URL は ここ（［URLを作り直す］で 前の URL は 使えなくなります）', '担当・補助担当・決算月を 入れる'],
       tips: ['利用規約の同意は［同意の画面を出す］を押すまで 顧問先には出ません（今までどおり使えます）。導入に行くときに 代表者の役職・氏名・説明担当者を入れて［保存］し、その場で押します。会社名・役職・代表者氏名・控えのメールは 同意の画面に 先に印字されます（顧問先が直せます）。説明担当者は ここで入れたものが 同意ログに残ります', 'QRコードは 顧問先のスマホのカメラで読み込むと ブラウザで開きます（LINE などから開いたときも ふだんのブラウザで開き直します）。あとは 画面の案内どおり「ホーム画面に追加」で終わりです', '顧問先の画面に 出納帳などの帳簿を出すのも ここで 箱ごとに決めます'] },
     Dict: { t: '仕訳辞書', pic: 'g_odict', lead: '取引先・摘要ごとの 決まった仕訳を 登録しておく タブです。AI の下書きにも 効きます。',
       steps: ['［＋ 辞書を登録］で 取引先・科目・税区分を 入れる', 'まちがえたものは 直す・［この辞書を消す］'], tips: ['同じ辞書を いくつかの回収ボックスで使うときは、「回収ボックス」の下の「ほかの箱でも使う」で その箱に ✓（どの箱にも出すなら「共通」）', 'いくつもの辞書に まとめて箱を足すときは［☑ まとめて箱を付ける・移す］→ 辞書に ✓ → 箱を選んで［＋ この箱でも使う］（外すときは［－ この箱から外す］）', 'ほかの回収ボックスへ まとめて移すときは［☑ まとめて箱を付ける・移す］→ 辞書に ✓（Shift＋クリックで あいだを ぜんぶ・［全部選ぶ］）→ 箱を選んで［→ この箱へ移す］。移した辞書は 移す先の いちばん下に並びます'] },
     Prog: { t: '進捗', lead: '顧問先 × 月分で いま どの 工程まで 来ているかを 見る タブです（担当先だけ・上の 👥 で 選ぶ）。',
       steps: ['数えるのは 毎月の箱だけ（年末調整 などの スポットの箱は 数えない）。顧問先の 名前の［🙈 非表示］で 進捗から 外し、［非表示に した 顧問先も 出す］で また 出せる', '資料回収 → 資料チェック → エージェント → 元帳チェック → 取込ファイル化 → 会計システムへ計上 の 順に 並ぶ（緑＝済み・黄＝途中・灰＝まだ。太い枠が いま 止まっている 工程）', 'ブロックを 押すと その工程の 画面へ（資料は 回収資料・エージェント／元帳は 仕訳化・取込ファイル化は 取込ファイル）', '会計システム（FX）へ 取り込んだら「会計システムへ計上」を 押す（もう一度 押すと 取り消し）。最後まで 済んだ 月分は たたむ（［終わった 月分も 出す］で 出す）'], tips: ['期間は 3・6・12か月'] },
-    Advice: { t: '経営助言', lead: '企業防衛（標準保障額）・格付け・顧問先ごとの 助言を 作り、顧問先の 画面の 経営助言に 出す タブです。',
-      steps: ['「💬 顧問先が AI に聞いたこと」… 顧問先の［💬 AI に聞く］の 質問と AI の 答え。［✓ この答えで よい］か、直して［✎ 直して 送る］（お知らせにも 出る）。税額が 大きく 変わりそうな 質問は 顧問先に まだ 答えを 出していないので 先に 確かめる。今月の 費用と 上限（月1万円）も ここ', '［📥 試算表（過去の仕訳）から 入れる］で 借入金・運転資金・固定費・現預金を 入れて 内訳を 直す', '役員ごとに 報酬月額・在任年数・功績倍率（役位で 目安が 入る）・弔慰金の月数を 入れる。実効税率・繰越欠損金・法人保険の 死亡保険金を 入れる', '標準保障額・不足額・納税資金・就業不能の 必要額と 顧問先に 出る 文が 出る →［💾 入力を 保存］か［🛡 顧問先の 画面に 出す（保存して リスクに 入れる）］', '助言は 項目ごとに 書いて［助言を出す］（税務判断を 含むものは「担当 石井」と 出る）。格付けは［格付けを入れる］。顧問先から 相談が来たら［提案を 顧問先に出す］'],
-      tips: ['計算式と 考え方は エージェントの zip にも 入る（企業防衛_標準保障額の考え方.md）。事業を 継続し 後継者に 引き継ぐ 前提の 概算'] },
-    Grt: { t: '保証', lead: '巡回監査の 議事録・巡回監査報告書・書面添付（税理士法33条の2）・決算書類の 確認を まとめる タブです（TKC の 4大業務の 保証）。',
-      steps: ['「議事録」… OMS などの 議事録を［文字で入れる］か［ファイルで入れる］（あとから直せない記録に 指紋と日時が残る）。［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す', '「巡回監査報告書」… 巡回の月を 選び、書いて［保存（新しい版）］か［保存して 顧問先に 出す］（エージェントの 下書きが あれば 入っている）', '「書面添付」… 決算期を 選んで［🤖 下書きの zip を作る（1年分）］→ Claude Code に 渡し、できた zip を 仕訳化タブで 戻す → 直して［保存（新しい版）］', '「決算書類の 確認」… 決算期と 書類の名前を 入れて［PDF を 選んで 出す］→ 顧問先が［内容を確認しました］を 押すと ✅ が 付く。［出すのを やめる］で 引っ込める'],
+    Advice: { t: '経営助言', lead: '経営助言は 3つの 島：① 企業防衛（標準保障額）② 格付け（債務者区分）③ 顧問先ごとの 助言。作って 顧問先の 画面の 経営助言に 出す タブです。',
+      steps: ['① 企業防衛：まず 大前提（事業承継か 清算・廃業か・2番手が いるか）を 選ぶ。［📥 試算表（過去の仕訳）から 入れる］で 負債・運転資金・固定費（販管費＋支払利息）・現預金が 入る', '① 負債は 借入金・社債。リース債務は 原則 入れない（全額 払う ときだけ ✓）。② 必要運転資金は 過去 1年で いちばん 大きい 月で 見る。③ 納税資金（実効税率・繰越欠損金）④ 役員退職金・弔慰金（役員ごと）', '大同生命と 同じ 2列（死亡のとき／就業不能のとき）の 算定書が 出る。［🖨 算定書を 印刷・PDF］・［💾 入力を 保存］・［🛡 顧問先の 画面に 出す（保存して リスクに 入れる）］', '② 格付け：月を 選んで［🏦 試算表から 形式的 格付けを 出す］→ 12の 指標の 点数・格付け（1〜10）・債務者区分の 目安。［↓ 下の 格付けの マスへ 写す］で 直して［格付けを入れる］', '③ 顧問先ごとの 助言：項目ごとに 書いて［助言を出す］（税務判断を 含むものは「担当 石井」と 出る）。下に これから 出す 助言の 一覧', '「💬 顧問先が AI に聞いたこと」… ［✓ この答えで よい］か、直して［✎ 直して 送る］。税額が 大きく 変わりそうな 質問は 先に 確かめる。今月の 費用と 上限（月1万円）も ここ'],
+      tips: ['計算式と 考え方は エージェントの zip にも 入る（企業防衛_標準保障額の考え方.md）。格付けの 配点は 一般的な 目安（金融機関で ちがう）。実質的な 格付けと F プラスは 事務所の 考え方で あとから'] },
+    Grt: { t: '保証', lead: '巡回監査報告書・書面添付（税理士法33条の2）・決算書類の 確認を まとめる タブです（TKC の 4大業務の 保証）。議事録は［議事録］タブへ 移りました。',
+      steps: ['「巡回監査報告書」… 巡回の月を 選び、書いて［保存（新しい版）］か［保存して 顧問先に 出す］（エージェントの 下書きが あれば 入っている）。議事録の 中身は［議事録］タブの［📎 巡回監査報告書へ 引く］で 足せる', '「書面添付」… 決算期を 選んで［🤖 下書きの zip を作る（1年分）］→ Claude Code に 渡し、できた zip を 仕訳化タブで 戻す → 直して［保存（新しい版）］', '「決算書類の 確認」… 決算期と 書類の名前を 入れて［PDF を 選んで 出す］→ 顧問先が［内容を確認しました］を 押すと ✅ が 付く。［出すのを やめる］で 引っ込める'],
       tips: ['雛形・書き方（巡回監査報告書・書面添付）は［📚 雛形・書き方を 入れる］から 事務所共通の資料へ。どの顧問先の zip にも 入る'] },
+    Min: { t: '議事録', lead: '顧問先で 話したこと・見てきたことを ぜんぶ 残す タブです。あとから 直せない 記録に 残り、エージェントの zip にも 入って 次の 経営助言・企業防衛の 前提・カルテの もとに なります。',
+      steps: ['種類（巡回監査・社長面談・訪問（現物確認）など）・日・題を 選び、OMS などの 議事録を［文字で入れる］か［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］。写真は 何枚でも（車・設備・パソコンや モニターの 様子 など）', '［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す（顧問料の 合意 など 言った 言わないの 証拠にも なる）', '「🔎 議事録を 探す」… ことば・種類で しぼる →［📎 巡回監査報告書へ 引く］［📎 書面添付へ 引く］で 保証タブの 下書きに 引用を 足す', 'エージェントに 渡すと 議事録（写真も）を 読んで、助言の 下書き（経営助言タブの「これから 出す 助言」）・企業防衛の 前提・カルテ案を 直して くる。［✓ 顧問先に 出す］まで 顧問先には 出ない'],
+      tips: ['議事録は 追記だけ（消せない）。まちがえたら［＋ 決定事項・やること］で 訂正を 足す'] },
     Rule: { t: 'AIの考え方', pic: 'g_orule', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
       steps: ['「原則と例外」… 左に 事務所の標準（原則）、右に この顧問先の 例外（按分の基準 など）。例外には 理由を 書いて［この顧問先の 例外を 保存］（版を 積む・zip の 原則と例外.md に 入る）。原則は 所長だけ が 直せる', 'エージェントが 戻した カルテ.md は【案】。上に「承認待ち」と 出たら［読んで 承認する］→［📥 結果と学び］で 読んで［✓ 承認して カルテに する］か［採らない（いまの カルテの まま）］（承認するまで カルテにも zip にも 入らない）', '決まりを 書いて［考え方を保存］', '仕訳辞書は「仕訳辞書を入れる口」へ 会計システムから 切り出した 辞書を ドラッグ（参考の 材料。［中身を 見る・直す］で 開ける）。経営助言（企業防衛・格付け・助言）は［経営助言］タブへ 移しました', '議事録は［保証］タブへ 移しました', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
     Fold: { t: 'Google共有ドライブ', lead: '事務所の Google共有ドライブを この画面から 開く・整理する タブです。',
@@ -8330,8 +8398,10 @@
       return;
   }
   $('dAgentPick').hidden = true; ['agDocsBox', 'agResBox', 'needBox'].forEach(function (i) { $(i).hidden = true; }); const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
+  AGB.busy = ans >= 0 && ans !== false ? 'ans' : 'new'; AGB.done = ''; try { pkBar(); } catch (q) {} agMsgSet('⏳ zip を 作っています…（資料が 多いと 1〜2分）');
   const phone = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
   gs('agentPack', S.code, S.per, ans, boxes, { span: span || 1, mode: mode || '', nob64: phone }).then(function (r) { AGP.at = 0; try { agpLine(false); } catch (q) {}
+    AGB.done = AGB.busy; AGB.busy = ''; try { pkBar(); } catch (q) {} agMsgSet('✓ zip が できました。下の 手順で 渡してください。');
     b.disabled = false;
     dcMsg('');
     const m = $('dcMsg'); m.textContent = '';
@@ -8340,7 +8410,7 @@
     agDlShow(r);
     m.appendChild(document.createTextNode('　→ 自分の Claude Code に 渡して（添付か、保存した フォルダを 読ませる）「はじめに読む.md のとおり この月の仕訳を作って」と頼む。' + (r.skipped.length ? '　★ 大きすぎて入れられなかった資料：' + r.skipped.join('、') : '') + (r.split ? '　★ ' + r.split : '')));
   }, function (e) {
-    b.disabled = false;
+    b.disabled = false; AGB.busy = ''; try { pkBar(); } catch (q) {} agMsgSet('');
     /* ★ 返事が 途中で 切れても（スマホの Load failed など）ドライブには できていることが 多い。いちばん 新しい zip を 探して 出す */
     gs('agentPackLast', S.code).then(function (z) {
       if (z && !z.none && z.min <= 10) { const m = $('dcMsg'); dcMsg('返事は 途中で 切れましたが、zip は できています（' + z.at + '）：'); const a = document.createElement('a'); a.href = z.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = z.name + ' を ドライブで開く（ダウンロード）'; m.appendChild(a); }
@@ -8431,7 +8501,15 @@
   });
   /* ★★ 2026-11-22（石井）：できた zip は エージェントの 帯の 右上に［⬇ ダウンロード］（ドライブを 開かない）。30MB を 超えるときは 分けた zip を 1つずつ */
   function agDlShow(r) {
-    let w = $('agDl'); if (!w) { w = el('span', 'agdl'); w.id = 'agDl'; $('agBar').appendChild(w); }
+    const box = $('agOut'); box.hidden = false; box.textContent = ''; box.dataset.code = S.code || '';
+    box.appendChild(el('div', 'agout-h', '📦 できた zip：' + (r.name || '') + (r.at ? '（' + r.at + '）' : '')));
+    const ol = el('ol');
+    ol.appendChild(el('li', null, r.dir ? 'パソコンの Claude Code … ［📋 Claude への 指示を コピー］を 押して 貼るだけ（共有ドライブの フォルダを 読みます）' : 'パソコンの Claude Code … ［⬇ ダウンロード］した フォルダを 読ませる'));
+    ol.appendChild(el('li', null, 'ブラウザの Claude Code … ［⬇ ダウンロード］して チャットに 添付し「はじめに読む.md の とおり この月の 仕訳を 作って」と 頼む'));
+    ol.appendChild(el('li', null, 'できあがったら … ［📂 フォルダの できあがりを 拾う］か、できあがりの zip を 上の 枠へ ドラッグ'));
+    box.appendChild(ol);
+    let w = el('span', 'agdl'); w.id = 'agDl'; box.appendChild(w);
+    try { const k = { name: r.name, at: r.at || new Date().toLocaleString('ja-JP'), id: r.id, parts: r.parts, dir: r.dir, per: S.per }; localStorage.setItem('collect_agout_' + S.code, JSON.stringify(k)); } catch (e) {}
     w.textContent = ''; const ps = (r.parts && r.parts.length) ? r.parts : [{ id: r.id, name: r.name, size: 0 }];
     w.appendChild(el('span', 'note', ps.length > 1 ? '📦 ' + ps.length + 'つに 分けました。全部 同じ フォルダに 保存して、Claude Code に「このフォルダの zip を 全部 展開して はじめに読む.md のとおり」と 頼む（添付しなくても 渡せる）' : '📦 できました'));
     const save = function (name, b64) { const bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const dl = document.createElement('a'); dl.href = URL.createObjectURL(new Blob([u8], { type: 'application/zip' })); dl.download = name; document.body.appendChild(dl); dl.click(); setTimeout(function () { URL.revokeObjectURL(dl.href); dl.remove(); }, 4000); };
@@ -15471,13 +15549,19 @@
   }
   /* ★★★ 議事録（2026-11-19・ロードマップ6・7）：追記のみ・ハッシュの鎖。決定事項・顧問先の確認も 行を足す */
   let MN_KINDS = null;
+  let MN_R = null;
   function mnDraw(r) {
-    if (r.kinds && !MN_KINDS) { MN_KINDS = r.kinds; const k = $('mnKind'); k.textContent = ''; r.kinds.forEach(function (x) { const o = el('option', null, x); o.value = x; k.appendChild(o); }); }
+    MN_R = r;
+    if (r.kinds && !MN_KINDS) { MN_KINDS = r.kinds; const k = $('mnKind'); k.textContent = ''; r.kinds.forEach(function (x) { const o = el('option', null, x); o.value = x; k.appendChild(o); }); const qk = $('mnQk'); if (qk) r.kinds.forEach(function (x) { const o = el('option', null, x); o.value = x; qk.appendChild(o); }); }
     if (!$('mnDay').value) $('mnDay').value = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
     const w = $('mnList'); w.textContent = '';
     if (!(r.list || []).length) { w.appendChild(el('div', 'note', 'まだ ありません。')); return; }
-    r.list.forEach(function (x) {
-      const d = el('details'); d.style.margin = '6px 0';
+    /* ★★ 2026-11-23（石井）：ことば・種類で 探す */
+    const q = (($('mnQ') || {}).value || '').trim(), qk = ($('mnQk') || {}).value || '';
+    const hit = r.list.filter(function (x) { return (!qk || x.kind === qk) && (!q || (x.title + '\n' + x.body + '\n' + x.notes.map(function (n) { return n.body; }).join('\n')).indexOf(q) >= 0); });
+    if ($('mnQn')) $('mnQn').textContent = (q || qk) ? hit.length + '件 見つかりました（ぜんぶで ' + r.list.length + '件）' : 'ぜんぶで ' + r.list.length + '件';
+    hit.forEach(function (x) {
+      const d = el('details'); d.style.margin = '6px 0'; d.className = 'mnitem'; if (q || qk) d.open = true;
       d.appendChild(el('summary', null, x.day + '・' + x.kind + '・' + x.title + (x.show ? (x.oks.length ? '　✅ 顧問先 確認済み（' + x.oks[x.oks.length - 1].who + '）' : '　⏳ 顧問先の確認待ち') : '') + (x.notes.length ? '　📝 決定事項 ' + x.notes.length : '')));
       d.appendChild(el('div', 'note', '入れた ' + x.at + '・' + x.who + '・指紋 ' + x.sha.slice(0, 16) + '…'));
       if (x.body) { const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;font:inherit;font-size:12.5px;max-height:260px;overflow:auto;background:#fafafa;padding:6px'; pre.textContent = x.body; d.appendChild(pre); }
@@ -15499,9 +15583,23 @@
         ok.addEventListener('click', function () { ok.disabled = true; gs('minutesNote', S.code, x.id, ta.value).then(function (rr) { mtMsg('mnMsg', '📝 足しました。'); mnDraw(rr); }, function (e) { ok.disabled = false; mtMsg('mnMsg', e.message, 'err'); }); });
         d.appendChild(ta); d.appendChild(ok); ta.focus();
       });
-      bar.appendChild(vb); bar.appendChild(cb); bar.appendChild(nb); d.appendChild(bar);
+      bar.appendChild(vb); bar.appendChild(cb); bar.appendChild(nb);
+      if (x.fid) { const a = el('a', 'btn ghost sm', /写真|現物/.test(x.kind + x.title) ? '🖼 写真・原本を 開く' : '📄 原本を 開く'); a.href = 'https://drive.google.com/file/d/' + encodeURIComponent(x.fid) + '/view'; a.target = '_blank'; a.rel = 'noopener'; bar.appendChild(a); }
+      [['report', '📎 巡回監査報告書へ 引く'], ['shomen', '📎 書面添付へ 引く']].forEach(function (k) { const b = el('button', 'btn ghost sm mncite', k[1]); b.type = 'button'; b.addEventListener('click', function () { mnCite(k[0], x); }); bar.appendChild(b); });
+      d.appendChild(bar);
       w.appendChild(d);
     });
+  }
+  /* 議事録から 保証の 下書きへ 引用を 足す（あとで 直して 保存） */
+  function mnCite(kind, x) {
+    const quote = '\n【議事録より ' + x.day + '・' + x.kind + '・' + x.title + '】\n' + String(x.body || '（ファイルの 議事録）').slice(0, 1500) + (x.notes.length ? '\n（決定事項）' + x.notes.map(function (n) { return n.body; }).join(' ／ ').slice(0, 800) : '') + '\n';
+    selectTab('Grt');
+    setTimeout(function () { const ta = $(kind === 'report' ? 'grRepText' : 'grShText'); ta.value = (ta.value ? ta.value.replace(/\s+$/, '') + '\n' : '') + quote; ta.focus(); mtMsg(kind === 'report' ? 'grRepMsg' : 'grShMsg', '議事録を 引きました。直して 保存してください。'); }, 300);
+  }
+  function minLoadTab() {
+    const code = S.code; if (!code) { $('mnList').innerHTML = '<div class="note">上で 顧問先を 選んでください。</div>'; return; }
+    const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' }; $('minClient').textContent = '— ' + code + ' ' + c.name;
+    mnLoad();
   }
   function mnLoad() { const code = S.code; if (!code) return; gs('minutesList', code).then(function (r) { if (code !== S.code) return; mnDraw(r); }, function (e) { mtMsg('mnMsg', e.message, 'err'); }); }
   function mnSend(extra) {
@@ -15512,12 +15610,21 @@
   $('mnAdd').addEventListener('click', function () { if (!S.code) return; if (!$('mnText').value.trim()) { mtMsg('mnMsg', '議事録の文字を 貼ってください。', 'err'); return; } mnSend({ text: $('mnText').value }); });
   $('mnFileB').addEventListener('click', function () { if (!S.code) return; $('mnFile').value = ''; $('mnFile').click(); });
   $('mnFile').addEventListener('change', function () {
-    const f = this.files && this.files[0]; if (!f) return;
-    if (f.size > 30 * 1024 * 1024) { mtMsg('mnMsg', '30MB までです。', 'err'); return; }
-    const e = (f.name.split('.').pop() || '').toLowerCase();
-    const mime = { txt: 'text/plain', pdf: 'application/pdf', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', mp4: 'video/mp4', m4a: 'audio/mp4', mp3: 'audio/mpeg', wav: 'audio/wav' }[e] || f.type || '';
-    const rd = new FileReader(); rd.onload = function () { mnSend({ name: f.name, mime: mime, b64: String(rd.result).split(',')[1] || '' }); }; rd.readAsDataURL(f);
+    const fs = Array.prototype.slice.call(this.files || []); if (!fs.length) return;
+    let i = 0;
+    const next = function () {
+      if (i >= fs.length) return; const f = fs[i++];
+      if (f.size > 30 * 1024 * 1024) { mtMsg('mnMsg', f.name + '：30MB までです。', 'err'); next(); return; }
+      const e = (f.name.split('.').pop() || '').toLowerCase();
+      const mime = { txt: 'text/plain', pdf: 'application/pdf', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', mp4: 'video/mp4', m4a: 'audio/mp4', mp3: 'audio/mpeg', wav: 'audio/wav', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', heic: 'image/heic', webp: 'image/webp' }[e] || f.type || '';
+      const extra = /^image\//.test(mime) && !$('mnTitle').value ? { title: '現物確認の 写真 ' + f.name.replace(/\.[^.]+$/, '') } : {};
+      const rd = new FileReader(); rd.onload = function () { const p = mnSend(Object.assign({ name: f.name, mime: mime, b64: String(rd.result).split(',')[1] || '' }, extra)); if (p && p.then) p.then(next, next); else next(); }; rd.readAsDataURL(f);
+    };
+    next();
   });
+  $('mnQ').addEventListener('input', function () { if (MN_R) mnDraw(MN_R); });
+  $('mnQk').addEventListener('change', function () { if (MN_R) mnDraw(MN_R); });
+  $('grToMin').addEventListener('click', function () { selectTab('Min'); });
   /* ★★★ 経営助言（2026-11-19・器）：リスク（標準保障額）・格付け。算定は 事務所。顧問先には 出したものだけ。提案は 相談の あとだけ */
   const kyN = function (v) { return Math.round(Number(String(v || '').replace(/[,，円\s]/g, '')) || 0); };
   const kyLines = function (t, keys) { return String(t || '').split(/\n/).map(function (l) { return l.trim(); }).filter(Boolean).map(function (l) { const a = l.split(/[,，\t]/); const o = {}; keys.forEach(function (k, i) { o[k] = (a[i] || '').trim(); }); return o; }).filter(function (o) { return o[keys[0]]; }); };
@@ -15528,7 +15635,14 @@
       const iw = $('kaItems'); iw.textContent = ''; iw.appendChild(el('span', 'note', 'この顧問先の 項目：'));
       r.items.forEach(function (n) { const b = el('button', 'dmon-b', n + ' ×'); b.type = 'button'; b.title = 'この項目を 外す（2回押し）'; b.addEventListener('click', function () { if (b.dataset.ok !== '1') { b.dataset.ok = '1'; b.textContent = 'もう一度押すと 外す'; return; } gs('kyoItem', S.code, n, true).then(kyDraw, function (e) { mtMsg('kyMsg', e.message, 'err'); }); }); iw.appendChild(b); });
       const al = $('kadList'); al.textContent = '';
-      (r.advice || []).slice(0, 12).forEach(function (x) { const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;font:inherit;font-size:12.5px;border-left:3px solid #0F6E56;padding-left:8px'; pre.textContent = x.at + '・' + x.val + '・担当 ' + (x.body.tax ? (r.taxName || '石井') + '（税務判断）' : x.who) + (x.show ? '' : '（出していない）') + '\n' + (x.body.text || '') + '\n理由：' + (x.body.reason || ''); al.appendChild(pre); });
+      /* ★★ 2026-11-23（石井）：これから 出す 助言（エージェントの 下書き・まだ 出していない もの）を 上に。［✓ 顧問先に 出す］ */
+      const adv = (r.advice || []).slice(0, 20), pend = adv.filter(function (x) { return !x.show && !adv.some(function (y) { return y.show && y.val === x.val && y.body.text === x.body.text; }); }), done = adv.filter(function (x) { return x.show; });
+      if (pend.length) al.appendChild(el('b', null, '📝 これから 出す 助言（' + pend.length + '）'));
+      pend.concat(done.slice(0, 12)).forEach(function (x) { const box = el('div', 'kadrow'); const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;font:inherit;font-size:12.5px;border-left:3px solid ' + (x.show ? '#0F6E56' : '#e0a040') + ';padding-left:8px;margin:4px 0'; pre.textContent = x.at + '・' + x.val + '・' + (x.who === 'エージェント' ? '🤖 エージェントの 下書き' : '担当 ' + (x.body.tax ? (r.taxName || '石井') + '（税務判断）' : x.who)) + (x.show ? '' : '（まだ 出していない）') + '\n' + (x.body.text || '') + '\n理由：' + (x.body.reason || ''); box.appendChild(pre);
+        if (!x.show) { const ok = el('button', 'btn sm', '✓ 顧問先に 出す'); ok.type = 'button'; ok.addEventListener('click', function () { ok.disabled = true; gs('kyoAdvise', S.code, { item: x.val, text: x.body.text, reason: x.body.reason || '（エージェントの 下書き）', tax: !!x.body.tax, ym: x.body.ym || '', show: true }).then(function (rr) { kyDraw(rr); mtMsg('kyMsg', '顧問先の 画面に 出しました。'); }, function (e) { ok.disabled = false; mtMsg('kyMsg', e.message, 'err'); }); });
+          const ed = el('button', 'btn ghost sm', '✎ 直して 出す'); ed.type = 'button'; ed.addEventListener('click', function () { $('kadText').value = x.body.text || ''; $('kadReason').value = x.body.reason || ''; const sel = $('kadItem'); if (Array.prototype.some.call(sel.options, function (o) { return o.value === x.val; })) sel.value = x.val; $('kadText').focus(); });
+          box.appendChild(ok); box.appendChild(ed); }
+        al.appendChild(box); });
     }
     if (document.activeElement !== $('kyIdea')) $('kyIdea').value = r.idea || '';
     const w = $('kyList'); w.textContent = '';
@@ -15556,10 +15670,10 @@
   const HO_ROLE = [['代表取締役社長', 3.0], ['専務', 2.4], ['常務', 2.2], ['取締役', 1.8], ['監査役', 1.6]];
   function hoCalc(x) {
     const n = function (v) { return Math.max(0, Math.round(Number(v) || 0)); };
-    const t = Math.min(0.6, Math.max(0, Number(x.tax) || 0) / 100), loan = n(x.loan), wc0 = Math.round(Number(x.wc) || 0), shortL = n(x.shortLoan);
+    const t = Math.min(0.6, Math.max(0, Number(x.tax) || 0) / 100), loan = n(x.loan) + n(x.bond) + (x.leaseIn ? n(x.lease) : 0), wc0 = Math.round(Number(x.wc) || 0), shortL = n(x.shortLoan);
     let wc = wc0 < 0 ? n(x.fixed) * Math.max(0, Number(x.fixMon) || 3) : wc0;
     if (x.shortAsWc) wc = Math.max(0, wc - shortL);
-    if (x.liquidate) wc = 0;
+    if (x.liquidate || x.premise === 'liq') wc = 0;
     const A = loan + wc;
     const ret = (x.officers || []).map(function (o) { const pay = n(o.pay), yrs = Math.max(0, Number(o.years) || 0), mul = Math.max(0, Number(o.mul) || 0), add = Math.min(30, Math.max(0, Number(o.add) || 0)) / 100, ch = Math.max(0, Number(o.choi) || 6); return { name: String(o.name || ''), ret: Math.round(pay * yrs * mul * (1 + add)), choi: pay * ch }; });
     const B = ret.reduce(function (a, o) { return a + o.ret + o.choi; }, 0), D = n(x.lossCarry) + n(x.reserveOut);
@@ -15567,17 +15681,19 @@
     const have = n(x.ins) + (x.surplusIn ? n(x.surplus) : 0), gap = P - have;
     return { A: A, B: B, D: D, t: t, loan: loan, wc: wc, wcNeg: wc0 < 0, ret: ret, P: P, taxFund: taxFund, have: have, gap: gap };
   }
-  function hoDefault() { return { loan: '', shortLoan: '', officerLoan: '', wc: '', wcWay: 'avg', fixed: '', fixMon: 3, cash: '', surplus: '', tax: 33, lossCarry: '', reserveOut: '', ins: '', disInsure: '', shortAsWc: false, liquidate: false, surplusIn: false, disMon: 12, officers: [{ name: '', role: '代表取締役社長', pay: '', years: '', mul: 3.0, add: 0, choi: 6 }] }; }
+  function hoDefault() { return { loan: '', shortLoan: '', officerLoan: '', wc: '', wcWay: 'peak', premise: 'succ', second: false, bond: '', lease: '', leaseIn: false, fixed: '', fixMon: 3, cash: '', surplus: '', tax: 33, lossCarry: '', reserveOut: '', ins: '', disInsure: '', shortAsWc: false, liquidate: false, surplusIn: false, disMon: 12, officers: [{ name: '', role: '代表取締役社長', pay: '', years: '', mul: 3.0, add: 0, choi: 6 }] }; }
   function hoFromBase(b, way) {
     const nm = b.names || {}, net = b.net || {}, sum = function (re, neg, mode) { let tot = 0; Object.keys(net).forEach(function (c) { if (!re.test(nm[c] || '')) return; const e = net[c].end, v = mode === 'avg' ? e.reduce(function (a, q) { return a + q; }, 0) / e.length : mode === 'peak' ? (neg ? Math.min.apply(null, e) : Math.max.apply(null, e)) : e[e.length - 1]; tot += neg ? -v : v; }); return Math.round(tot); };
-    const mode = way || 'avg', o = {};
+    const mode = way || 'peak', o = {};
     o.officerLoan = Math.max(0, sum(/役員借入/, true));
     o.shortLoan = Math.max(0, sum(/短期借入/, true));
-    o.loan = Math.max(0, sum(/借入金|社債|リース債務/, true) - o.officerLoan);
+    o.loan = Math.max(0, sum(/借入金/, true) - o.officerLoan);
+    o.bond = Math.max(0, sum(/社債/, true)); o.lease = Math.max(0, sum(/リース債務/, true));
     const plus = sum(/売掛金|受取手形|電子記録債権|商品|製品|仕掛品|原材料|貯蔵品|未成工事支出金/, false, mode), minus = sum(/買掛金|支払手形|電子記録債務|前受金|未成工事受入金/, true, mode);
     o.wc = plus - minus;
     o.cash = Math.max(0, sum(/現金|預金/, false));
-    let fx = 0; Object.keys(net).forEach(function (c) { if (/^6/.test(c) && !/減価償却/.test(nm[c] || '')) fx += net[c].pl.reduce(function (a, q) { return a + q; }, 0); }); o.fixed = Math.max(0, Math.round(fx / 12));
+    /* ★ 2026-11-23（石井）：固定費 ＝ 販管費（6xxx）ぜんぶ ＋ 支払利息。顧問先ごとの 例外は カルテの 考え方で */
+    let fx = 0; Object.keys(net).forEach(function (c) { if (/^6/.test(c) || /支払利息/.test(nm[c] || '')) fx += net[c].pl.reduce(function (a, q) { return a + q; }, 0); }); o.fixed = Math.max(0, Math.round(fx / 12));
     o.surplus = Math.max(0, o.cash - Math.max(0, o.wc));
     return o;
   }
@@ -15701,6 +15817,7 @@
   function advLoad() {
     const code = S.code; if (!code) { $('hoCalc').innerHTML = '<div class="note">上で 顧問先を 選んでください。</div>'; return; }
     const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' }; $('advClient').textContent = '— ' + code + ' ' + c.name;
+    try { if (!$('rtCalc').dataset.code || $('rtCalc').dataset.code !== code) { $('rtCalc').dataset.code = code; rtLoad(); } } catch (e) {}
     const kc = warmPeek('kyoGet', [code]); if (kc) kyDraw(kc);
     kyLoad();
     const hb = warmPeek('hoshoBase', [code]);
@@ -15718,19 +15835,45 @@
     const f = function (lbl, key, note, kind) { const r = el('label', 'hof'); r.appendChild(el('span', null, lbl)); let i; if (kind === 'chk') { i = el('input'); i.type = 'checkbox'; i.checked = !!x[key]; i.addEventListener('change', function () { x[key] = i.checked; hoPaint(); }); } else { i = el('input'); i.inputMode = 'numeric'; i.value = x[key] == null ? '' : String(x[key]); i.addEventListener('input', function () { x[key] = i.value.replace(/[,，円\s]/g, ''); hoPaint(); }); } i.dataset.k = key; r.appendChild(i); if (note) r.appendChild(el('small', null, note)); return r; };
     const top = el('div', 'hobar');
     const gb = el('button', 'btn ghost sm', b.tbYm ? '📥 確定した 試算表（' + perLabel(b.tbYm) + '）から 入れる' : '📥 試算表（過去の仕訳）から 入れる'); gb.type = 'button';
-    const way = el('select'); [['avg', '運転資金：12か月の 平均'], ['peak', '12か月の ピーク'], ['last', '直近月']].forEach(function (q) { const o = el('option', null, q[1]); o.value = q[0]; way.appendChild(o); }); way.value = x.wcWay || 'avg'; way.addEventListener('change', function () { x.wcWay = way.value; });
+    const way = el('select'); [['avg', '運転資金：12か月の 平均'], ['peak', '12か月の ピーク'], ['last', '直近月']].forEach(function (q) { const o = el('option', null, q[1]); o.value = q[0]; way.appendChild(o); }); way.value = x.wcWay || 'peak'; way.addEventListener('change', function () { x.wcWay = way.value; });
     gb.addEventListener('click', function () { if (!b.net || !Object.keys(b.net).length) { hoMsg('過去の仕訳が まだ ありません（AI の考え方の［過去の仕訳］を 入れてください）。', true); return; } Object.assign(x, hoFromBase(b, x.wcWay)); hoDraw(); hoMsg('過去の仕訳の 月末残高から 入れました（' + (b.months || [])[0] + '〜' + (b.months || []).slice(-1)[0] + '。期首残高が 無いと ずれます。内訳を 確かめて 直してください）。'); });
-    top.appendChild(gb); top.appendChild(way); if (b.savedAt) top.appendChild(el('span', 'note', '前に 保存：' + b.savedAt + ' ' + (b.savedBy || ''))); w.appendChild(top);
-    const g1 = el('fieldset', 'kyf'); g1.appendChild(el('legend', null, '① 借入金 ・ ② 必要運転資金'));
-    g1.appendChild(f('借入金（円）', 'loan', '長期・短期・社債・リース債務。役員借入金は 入れない'));
+    top.appendChild(gb); if (b.savedAt) top.appendChild(el('span', 'note', '前に 保存：' + b.savedAt + ' ' + (b.savedBy || ''))); w.appendChild(top);
+    /* ★★ 2026-11-23（石井）：大前提 → ① 負債 → ② 必要運転資金 → ③ 納税資金 → ④ 役員退職金 */
+    const g0 = el('fieldset', 'kyf hopre'); g0.appendChild(el('legend', null, '大前提（社長に 万一の とき、会社は どうなるか）'));
+    const pr = el('div', 'hobar'); [['succ', '事業承継が 前提（会社を 続けて 後継者に 渡す）'], ['liq', '清算・廃業が 前提']].forEach(function (q) { const l = el('label', 'note'), r0 = el('input'); r0.type = 'radio'; r0.name = 'hoPremise'; r0.value = q[0]; r0.checked = (x.premise || (x.liquidate ? 'liq' : 'succ')) === q[0]; r0.dataset.k = 'premise'; r0.addEventListener('change', function () { x.premise = q[0]; x.liquidate = q[0] === 'liq'; hoPaint(); }); l.appendChild(r0); l.appendChild(document.createTextNode(' ' + q[1])); pr.appendChild(l); });
+    g0.appendChild(pr);
+    g0.appendChild(f('2番手が いる（すぐ 会社を 回せる・バトンタッチ できる）', 'second', '事業承継が 前提なら ここも 見る。いなければ 清算・廃業も 考える。カルテに 書いておく', 'chk'));
+    g0.appendChild(el('p', 'note', '清算・廃業が 前提なら ②必要運転資金は 0（会社を 回さないので）。事業承継が 前提なら ②を 入れる。'));
+    w.appendChild(g0);
+    const g1 = el('fieldset', 'kyf'); g1.appendChild(el('legend', null, '① 負債（その時に 全額 返さないと いけない もの）'));
+    g1.appendChild(f('借入金（長期・短期。円）', 'loan', '役員借入金は 入れない'));
     g1.appendChild(f('うち 短期借入金', 'shortLoan', '運転資金との 二重計上の 調整に 使う'));
+    g1.appendChild(f('社債', 'bond'));
+    g1.appendChild(f('リース債務', 'lease', '建設機械などは リース会社が 引き上げて 返せる → 原則 入れない'));
+    g1.appendChild(f('リース債務を 入れる（全額 払わないと いけないとき）', 'leaseIn', 'ポイントは「その時に 全額 払わないと いけないか」', 'chk'));
     g1.appendChild(f('役員借入金（参考）', 'officerLoan', '保障額に 入れない。相続財産に なり 返済を 求められる 恐れ → 警告'));
-    g1.appendChild(f('必要運転資金（円）', 'wc', '売掛金＋棚卸資産−買掛金 など。マイナスなら 固定費×月数で 計算'));
-    g1.appendChild(f('固定費（月・減価償却を 除く）', 'fixed')); g1.appendChild(f('運転資金が マイナスのときの 月数', 'fixMon'));
-    g1.appendChild(f('短期借入金を 運転資金の 財源と みなす', 'shortAsWc', 'オンで 運転資金 − 短期借入金', 'chk'));
-    g1.appendChild(f('清算・廃業 前提', 'liquidate', 'オンで 運転資金 0', 'chk'));
     w.appendChild(g1);
-    const g2 = el('fieldset', 'kyf'); g2.appendChild(el('legend', null, '③ 役員退職金・弔慰金（役員ごと）'));
+    const gw = el('fieldset', 'kyf'); gw.appendChild(el('legend', null, '② 必要運転資金'));
+    gw.appendChild(el('p', 'note howc', '必要運転資金 ＝ 売掛金（受取手形）＋ 棚卸資産 − 買掛金（支払手形）など。例：月末に 売掛金 100・棚卸資産 100・買掛金 50 なら 100＋100−50 ＝ 150。'
+      + 'これは「その時点」の 考え方なので、過去 1年を 見て いちばん 大きい 月で 見る（ふだん 100万円でも ある月に 500万円に なるなら、同じ 事業を 続ける かぎり 500万円 要る）。'
+      + '顧問先ごとの 見方（季節・大口の 入金待ち など）は カルテに 書いておき、エージェントは それを 読んで 算式どおりに 出す。'));
+    const wr = el('label', 'hof'); wr.appendChild(el('span', null, '試算表から 取る 見方')); wr.appendChild(way); gw.appendChild(wr);
+    gw.appendChild(f('必要運転資金（円）', 'wc', 'マイナス（お金が 先に 入る 商売）なら 固定費 × 月数で 計算'));
+    gw.appendChild(f('固定費（月）', 'fixed', '販管費（ぜんぶ）＋ 支払利息。試算表から ひとりでに 入る'));
+    gw.appendChild(f('運転資金が マイナスのときの 月数', 'fixMon'));
+    gw.appendChild(f('短期借入金を 運転資金の 財源と みなす', 'shortAsWc', 'オンで 運転資金 − 短期借入金', 'chk'));
+    w.appendChild(gw);
+    const g3 = el('fieldset', 'kyf'); g3.appendChild(el('legend', null, '③ 納税資金 ・ 既存の備え'));
+    g3.appendChild(f('実効税率（%）', 'tax', '事務所の 標準値 33%。中小法人は 利益水準で 変わる（概算）'));
+    g3.appendChild(f('繰越欠損金', 'lossCarry', '直前期の 申告書（別表七）の 金額で 書く'));
+    g3.appendChild(f('保険積立金の 取崩額', 'reserveOut'));
+    g3.appendChild(f('法人契約の 死亡保険金（受取人 法人）の 合計', 'ins'));
+    g3.appendChild(f('現預金', 'cash')); g3.appendChild(f('余剰資金（現預金 − 必要運転資金）', 'surplus'));
+    g3.appendChild(f('余剰資金を 既存の備えに 含める', 'surplusIn', '既定は 含めない（納税・賞与・設備投資の 予定が あるため）', 'chk'));
+    g3.appendChild(f('就業不能：報酬の 継続月数', 'disMon')); g3.appendChild(f('就業不能保険・三大疾病の 給付', 'disInsure'));
+    g3.appendChild(el('p', 'note', '④ 役員退職金は 会社が 受け取る 保険金（雑収入）と 退職金（損金）で 相殺されるので、③ 納税資金の 下に 置きます。'));
+    w.appendChild(g3);
+    const g2 = el('fieldset', 'kyf'); g2.appendChild(el('legend', null, '④ 役員退職金・弔慰金（役員ごと）'));
     const tb = el('table', 'hot'), hd = el('tr'); ['氏名', '役位', '報酬月額', '在任年数', '功績倍率', '特別功労加算%', '弔慰金の月数', '退職金', '弔慰金', ''].forEach(function (h) { hd.appendChild(el('th', null, h)); }); tb.appendChild(hd);
     (x.officers || []).forEach(function (o, i) {
       const tr = el('tr'), inp = function (k, wd) { const td = el('td'), q = el('input'); q.value = o[k] == null ? '' : String(o[k]); q.style.width = wd; q.addEventListener('input', function () { o[k] = q.value.replace(/[,，円\s]/g, ''); hoPaint(); }); td.appendChild(q); return td; };
@@ -15746,20 +15889,101 @@
     const ad = el('button', 'btn ghost sm', '＋ 役員を 足す'); ad.type = 'button'; ad.addEventListener('click', function () { x.officers.push({ name: '', role: '取締役', pay: '', years: '', mul: 1.8, add: 0, choi: 6 }); hoDraw(); }); g2.appendChild(ad);
     g2.appendChild(el('p', 'note', '功績倍率は 実務上の 目安（法令の 基準ではない）。役員退職慰労金規程が あれば その倍率・加算率を 入れる。弔慰金は 相続税で 非課税の 範囲（業務外 6か月・業務上 3年）'));
     w.appendChild(g2);
-    const g3 = el('fieldset', 'kyf'); g3.appendChild(el('legend', null, '④ 納税資金 ・ 既存の備え'));
-    g3.appendChild(f('実効税率（%）', 'tax', '事務所の 標準値 33%。中小法人は 利益水準で 変わる（概算）'));
-    g3.appendChild(f('繰越欠損金', 'lossCarry')); g3.appendChild(f('保険積立金の 取崩額', 'reserveOut'));
-    g3.appendChild(f('法人契約の 死亡保険金（受取人 法人）の 合計', 'ins'));
-    g3.appendChild(f('現預金', 'cash')); g3.appendChild(f('余剰資金（現預金 − 必要運転資金）', 'surplus'));
-    g3.appendChild(f('余剰資金を 既存の備えに 含める', 'surplusIn', '既定は 含めない（納税・賞与・設備投資の 予定が あるため）', 'chk'));
-    g3.appendChild(f('就業不能：報酬の 継続月数', 'disMon')); g3.appendChild(f('就業不能保険・三大疾病の 給付', 'disInsure'));
-    w.appendChild(g3);
     const res = el('div', 'hores'); res.id = 'hoRes'; w.appendChild(res);
     const bar = el('div', 'hobar');
     const sv = el('button', 'btn ghost sm', '💾 入力を 保存'); sv.type = 'button'; sv.addEventListener('click', function () { hoSave(false); });
     const pb = el('button', 'btn sm', '🛡 顧問先の 画面に 出す（保存して リスクに 入れる）'); pb.type = 'button'; pb.addEventListener('click', function () { hoSave(true); });
     bar.appendChild(sv); bar.appendChild(pb); bar.appendChild(el('span', 'pagemsg', '')); bar.lastChild.id = 'hoMsg'; w.appendChild(bar);
     hoPaint();
+  }
+  /** ★★ 2026-11-23（石井）：大同生命の 算定書と 同じ 2列。サーバの hoshoSheet_ と 同じ（片方だけ 直さない） */
+  function hoSheet(x, r) {
+    const n = function (v) { return Math.max(0, Math.round(Number(v) || 0)); };
+    const dRet = r.ret.reduce(function (a, o) { return a + o.ret; }, 0), main = (x.officers || [])[0] || {};
+    const payKeep = n(main.pay) * (Math.max(0, Number(x.disMon) || 12)), dis0 = payKeep + dRet;
+    const disNeed = r.A > r.D ? Math.ceil((r.A - r.t * r.D) / (1 - r.t)) + dis0 : r.A + dis0, disTax = disNeed - r.A - dis0, disHave = n(x.disInsure);
+    return [
+      { name: '① 負債（借入金・社債 など）', d: r.loan, s: r.loan, why: 'その時に 全額 返さないと いけない お金。後継者に 背負わせずに 返し切る' },
+      { name: '② 必要運転資金', d: r.wc, s: r.wc, why: x.premise === 'liq' || x.liquidate ? '清算・廃業が 前提なので 入れない' : '売掛金＋在庫−買掛金（過去 1年で いちばん 大きい 月）。社長の 信用で 回している 分' },
+      { name: '③ 納税資金', d: r.taxFund, s: disTax, why: '会社が 受け取る 保険金には 税金が かかる。手取りで 確保する 上乗せ' },
+      { name: '④ 役員退職金・弔慰金', d: r.B, s: dRet, why: 'ご家族の 生活を 守る お金（保険金の 雑収入と 退職金で 相殺）' },
+      { name: '役員報酬の 継続', d: 0, s: payKeep, why: '働けなく なっても 報酬を ' + (Math.max(0, Number(x.disMon) || 12)) + 'か月 払い続ける' },
+      { name: '必要保障額（合計）', d: r.P, s: disNeed, why: '' },
+      { name: '既存の備え', d: r.have, s: disHave, why: '法人契約の 保険など' },
+      { name: '不足額', d: r.gap, s: disNeed - disHave, why: '' }
+    ];
+  }
+  function hoSheetPrint() {
+    const x = HO.inp, r = hoCalc(x), rows = hoSheet(x, r), c = (S.clients || []).find(function (q) { return q.code === S.code; }) || { name: '' };
+    const e = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (q) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[q]; }); }, y = function (v) { return (Math.round(Number(v) || 0)).toLocaleString('ja-JP'); };
+    const d = new Date(), ds = d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
+    const html = '<!doctype html><html><head><meta charset="utf-8"><title>標準保障額 算定書</title><style>@page{size:A4 portrait;margin:14mm}body{font-family:"Yu Gothic","Hiragino Sans",sans-serif;font-size:12px;color:#000}h1{text-align:center;font-size:18px;letter-spacing:.3em;margin:0 0 4px}.hd{display:flex;justify-content:space-between;margin:6px 0 10px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #000;padding:5px 6px;vertical-align:top}th{background:#eef}td.r{text-align:right;white-space:nowrap}tr.sum td{background:#f4f4f4;font-weight:700}.ins td{color:#666}.note{font-size:11px;margin-top:8px;line-height:1.6}</style></head><body>'
+      + '<h1>標準保障額 算定書</h1><div class="hd"><div>' + e(c.name) + ' 御中</div><div>' + ds + '　石井重洋税理士事務所</div></div>'
+      + '<div>前提：' + (x.premise === 'liq' || x.liquidate ? '清算・廃業' : '事業承継（会社を 続けて 後継者に 渡す）') + (x.second ? '・2番手あり' : '') + '　実効税率 ' + (Math.round(r.t * 1000) / 10) + '%</div>'
+      + '<table><thead><tr><th>項目</th><th>死亡のとき（円）</th><th>就業不能のとき（円）</th><th>わけ</th></tr></thead><tbody>'
+      + rows.map(function (q) { return '<tr' + (/合計|不足/.test(q.name) ? ' class="sum"' : '') + '><td>' + e(q.name) + '</td><td class="r">' + y(q.d) + '</td><td class="r">' + y(q.s) + '</td><td>' + e(q.why) + '</td></tr>'; }).join('')
+      + '<tr class="ins"><td>大同生命の ご提案（RL・JTM）</td><td class="r">（担当者が 入れます）</td><td class="r">（担当者が 入れます）</td><td></td></tr></tbody></table>'
+      + '<div class="note">標準保障額 ＝（① 負債 ＋ ② 必要運転資金 − 実効税率 × 繰越欠損金など）÷（1 − 実効税率）＋ ④ 役員退職金・弔慰金。差が ③ 納税資金です。<br>この 金額は 試算表を もとにした 概算です。詳しくは 担当者に ご相談ください。</div><script>window.onload=function(){window.print();}<\/script></body></html>';
+    const w = window.open('', '_blank'); if (!w) { hoMsg('窓が 開けませんでした（ポップアップを 許してください）。', true); return; } w.document.write(html); w.document.close();
+  }
+  /* ★★ 形式的 格付け（2026-11-23 石井）── 試算表から 一般的な 計算式で 点数 → 格付け（1〜10）→ 債務者区分。
+       金融機関に よって 指標と 配点は ちがう（目安）。実質的な 格付け（役員借入金を 自己資本と みなす など）と F プラスは あとで 入れる */
+  const RT_BANDS = {
+    eq: [[50, 10], [30, 8], [20, 6], [10, 4], [0, 2]], gear: [[50, 8], [100, 6], [200, 4], [400, 2]], cur: [[200, 6], [150, 5], [120, 4], [100, 3], [80, 1]], fix: [[60, 6], [80, 5], [100, 3], [120, 1]],
+    ros: [[5, 8], [3, 6], [1, 4], [0, 2]], roa: [[5, 6], [3, 4], [1, 2], [0, 1]], debt: [[3, 15], [5, 12], [10, 8], [15, 4], [20, 2]], icr: [[10, 10], [5, 8], [2, 5], [1, 2]],
+    cf: [[1e8, 10], [5e7, 8], [1e7, 6], [0, 3]], eqa: [[1e8, 8], [3e7, 6], [1e7, 4], [0, 2]], sales: [[1e9, 7], [3e8, 5], [1e8, 4], [3e7, 2], [0, 1]] };
+  function rtBand(v, bands, low) { if (v == null || isNaN(v)) return 0; for (let i = 0; i < bands.length; i++) { if (low ? v <= bands[i][0] : v >= bands[i][0]) return bands[i][1]; } return 0; }
+  function rtCalc(d) {
+    const bs = d.sheets.bs || [], pl = d.sheets.pl || [];
+    const g = function (rows, c) { const r = rows.filter(function (x) { return x.code === c; })[0]; return r ? Number(r.cur) || 0 : 0; };
+    const sumN = function (rows, re, ex) { return rows.filter(function (x) { return !x.t && re.test(x.name || '') && !(ex && ex.test(x.name || '')); }).reduce(function (a, x) { return a + (Number(x.cur) || 0); }, 0); };
+    const fm = d.fyStart || d.ym, mon = Math.max(1, (Number(d.ym.slice(0, 4)) - Number(fm.slice(0, 4))) * 12 + Number(d.ym.slice(5)) - Number(fm.slice(5)) + 1), an = 12 / mon;
+    const asset = g(bs, '1000'), curA = g(bs, '1100'), fixA = g(bs, '1200'), cash = g(bs, '1101'), curL = g(bs, '2100'), fixL = g(bs, '2200'), eq = g(bs, '3000');
+    const debt = sumN(bs, /借入金|社債|リース債務|割引手形/, /役員借入/), officer = sumN(bs, /役員借入/);
+    const sales = g(pl, '4000') * an, op = g(pl, '6000') * an, ord = g(pl, '7000') * an, intE = sumN(pl, /支払利息|割引料/) * an, intI = sumN(pl, /受取利息|受取配当/) * an, dep = sumN(pl, /減価償却/) * an;
+    const cfv = ord * (1 - 0.33 * (ord > 0 ? 1 : 0)) + dep;
+    const m = {
+      eq: { n: '自己資本比率', v: asset ? eq / asset * 100 : null, u: '%', max: 10, ok: '30% 以上', s: 0 },
+      gear: { n: 'ギアリング比率（有利子負債 ÷ 自己資本）', v: eq > 0 ? debt / eq * 100 : null, u: '%', max: 8, ok: '100% 以下', low: 1 },
+      cur: { n: '流動比率', v: curL ? curA / curL * 100 : null, u: '%', max: 6, ok: '150% 以上' },
+      fix: { n: '固定長期適合率', v: (eq + fixL) > 0 ? fixA / (eq + fixL) * 100 : null, u: '%', max: 6, ok: '80% 以下', low: 1 },
+      ros: { n: '売上高経常利益率', v: sales ? ord / sales * 100 : null, u: '%', max: 8, ok: '3% 以上' },
+      roa: { n: '総資本経常利益率', v: asset ? ord / asset * 100 : null, u: '%', max: 6, ok: '3% 以上' },
+      flow: { n: '収益フロー（経常利益が 黒字か）', v: ord, u: '円', max: 6, ok: '黒字' },
+      debt: { n: '債務償還年数（（有利子負債 − 現預金）÷ キャッシュフロー）', v: debt - cash <= 0 ? 0 : cfv > 0 ? (debt - cash) / cfv : null, u: '年', max: 15, ok: '10年 以内', low: 1 },
+      icr: { n: 'インタレスト・カバレッジ・レシオ', v: intE > 0 ? (op + intI) / intE : (op + intI >= 0 ? 99 : null), u: '倍', max: 10, ok: '2倍 以上' },
+      cf: { n: 'キャッシュフロー額（経常利益（税引後）＋ 減価償却）', v: cfv, u: '円', max: 10, ok: 'プラス' },
+      eqa: { n: '自己資本額', v: eq, u: '円', max: 8, ok: 'プラス（債務超過でない）' },
+      sales: { n: '売上高（年に 直して）', v: sales, u: '円', max: 7, ok: '' } };
+    Object.keys(m).forEach(function (k) { const x = m[k]; x.s = k === 'flow' ? (x.v > 0 ? 6 : 0) : rtBand(x.v, RT_BANDS[k], !!x.low); if (k === 'gear' && eq <= 0) x.s = 0; });
+    const score = Object.keys(m).reduce(function (a, k) { return a + m[k].s; }, 0);
+    let grade = score >= 90 ? 1 : score >= 80 ? 2 : score >= 70 ? 3 : score >= 60 ? 4 : score >= 50 ? 5 : score >= 40 ? 6 : score >= 30 ? 7 : score >= 20 ? 8 : score >= 10 ? 9 : 10;
+    if (eq <= 0 && grade < 7) grade = 7;   /* 債務超過は 要注意先 以下 */
+    const kubun = grade <= 6 ? '正常先' : grade === 7 ? '要注意先' : grade === 8 ? '要注意先（要管理先 相当）' : grade === 9 ? '破綻懸念先' : '実質破綻先・破綻先';
+    return { m: m, score: score, grade: grade, kubun: kubun, mon: mon, officer: officer, eq: eq, ym: d.ym };
+  }
+  function rtLoad() {
+    const w = $('rtCalc'), code = S.code; if (!w || !code) return; w.textContent = '';
+    const bar = el('div', 'hobar'), ym = el('input'); ym.type = 'month'; ym.id = 'rtYm'; ym.value = (S.per && /^\d{4}-\d{2}$/.test(S.per)) ? S.per : (function () { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); })();
+    const go = el('button', 'btn sm', '🏦 試算表から 形式的 格付けを 出す'); go.type = 'button'; go.id = 'rtGo';
+    bar.appendChild(el('span', 'note', 'どの月の 試算表で')); bar.appendChild(ym); bar.appendChild(go); w.appendChild(bar);
+    const out = el('div'); out.id = 'rtOut'; w.appendChild(out);
+    go.addEventListener('click', function () {
+      go.disabled = true; go.classList.add('busy'); out.textContent = '試算表を 読んでいます…';
+      gs('tbGet', code, ym.value, {}).then(function (d) { go.disabled = false; go.classList.remove('busy'); if (code !== S.code) return; rtDraw(rtCalc(d)); }, function (e) { go.disabled = false; go.classList.remove('busy'); out.textContent = '読めませんでした。' + e.message; });
+    });
+  }
+  function rtDraw(r) {
+    const out = $('rtOut'); out.textContent = '';
+    const fmt = function (x) { if (x.v == null || isNaN(x.v)) return '—'; if (x.u === '円') return Math.round(x.v).toLocaleString('ja-JP') + '円'; if (x.u === '倍' && x.v >= 99) return '支払利息 なし'; return (Math.round(x.v * 10) / 10).toLocaleString('ja-JP') + x.u; };
+    const big = el('div', 'hobig ' + (r.grade <= 6 ? 'ok' : 'ng')); big.appendChild(el('div', null, '形式的 格付け ' + r.grade + '（' + r.score + '点／100点）')); big.appendChild(el('div', null, '債務者区分の 目安：' + r.kubun)); out.appendChild(big);
+    const t = el('table', 'hot rtt'); t.innerHTML = '<tr><th>指標</th><th>いま</th><th>点</th><th>満点</th><th>目安</th></tr>';
+    Object.keys(r.m).forEach(function (k) { const x = r.m[k], tr = el('tr', x.s < x.max / 2 ? 'offrow' : ''); tr.appendChild(el('td', null, x.n)); tr.appendChild(el('td', 'n', fmt(x))); tr.appendChild(el('td', 'n', String(x.s))); tr.appendChild(el('td', 'n', String(x.max))); tr.appendChild(el('td', 'note', x.ok)); t.appendChild(tr); });
+    out.appendChild(t);
+    out.appendChild(el('p', 'note', '安全性（自己資本比率・ギアリング・流動比率・固定長期適合率）30点 ／ 収益性（売上高経常利益率・総資本経常利益率・収益フロー）20点 ／ 返済能力（債務償還年数・インタレストカバレッジ・キャッシュフロー額）35点 ／ 規模（自己資本額・売上高）15点。損益は ' + r.mon + 'か月分を 年に 直しています。格付け：90点〜1・80〜2・70〜3・60〜4・50〜5・40〜6（ここまで 正常先）・30〜7 要注意先・20〜8 要管理先 相当・10〜9 破綻懸念先・それ未満 10。債務超過は 7 以下。金融機関に よって 指標・配点は ちがう（目安）。'));
+    if (r.officer > 0) out.appendChild(el('div', 'hoalert', '役員借入金 ' + Math.round(r.officer).toLocaleString('ja-JP') + '円：実質的な 格付けでは 自己資本と みなして 上げられることが ある（事務所の 考え方で 直す）。'));
+    const cp = el('button', 'btn ghost sm', '↓ 下の 格付けの マスへ 写す'); cp.type = 'button'; cp.addEventListener('click', function () { $('kgFormal').value = r.grade + '（' + r.score + '点・' + r.kubun + '）'; const pts = Object.keys(r.m).filter(function (k) { return r.m[k].s < r.m[k].max / 2; }).map(function (k) { return r.m[k].n.replace(/（.*$/, '') + ',' + fmt(r.m[k]) + ',' + r.m[k].ok + ','; }); if (pts.length && !$('kgPoints').value) $('kgPoints').value = pts.join('\n'); $('kgSteps').value = '試算表 ' + r.ym + '・形式的 格付け ' + r.grade + '（' + r.score + '点）。' + Object.keys(r.m).map(function (k) { return r.m[k].n.replace(/（.*$/, '') + ' ' + fmt(r.m[k]) + '→' + r.m[k].s + '点'; }).join('／'); mtMsg('kyMsg', '格付けの マスに 写しました。直してから［格付けを入れる］。'); });
+    out.appendChild(cp);
   }
   function hoMsg(t, err) { const m = $('hoMsg'); if (m) { m.textContent = t || ''; m.className = 'pagemsg' + (err ? ' err' : ''); } }
   function hoPaint() {
@@ -15770,16 +15994,22 @@
     const disNeed0 = Math.round((Number(main.pay) || 0) * (Number(x.disMon) || 12)) + dRet, disNeed = dA > r.D ? Math.ceil((dA - r.t * r.D) / (1 - r.t)) + disNeed0 : dA + disNeed0, disGap = disNeed - (Number(x.disInsure) || 0);
     w.innerHTML = '';
     const big = el('div', 'hobig ' + (r.gap > 0 ? 'ng' : 'ok')); big.appendChild(el('div', null, '標準保障額 ' + yen(r.P) + ' 円')); big.appendChild(el('div', null, '既存の備え ' + yen(r.have) + ' 円 → ' + (r.gap > 0 ? '不足 ' + yen(r.gap) + ' 円（リスクあり）' : '備えあり' + (r.gap < 0 ? '（' + yen(-r.gap) + ' 円 多い）' : '')))); w.appendChild(big);
-    const t = el('table', 'hot'); [['A（損金にならない）＝ 借入金 ＋ 必要運転資金', r.A, '借入金 ' + yen(r.loan) + ' ＋ 運転資金 ' + yen(r.wc) + (r.wcNeg ? '（マイナスなので 固定費 × ' + (Number(x.fixMon) || 3) + 'か月）' : '') + (x.shortAsWc ? '（短期借入金を 引いた）' : '') + (x.liquidate ? '（清算前提で 0）' : '')],
-      ['B（損金になる）＝ 役員退職金 ＋ 弔慰金', r.B, ''], ['D（課税所得から 引ける額）', r.D, ''], ['実効税率 t', Math.round(r.t * 1000) / 10, '%'], ['④ 納税資金', r.taxFund, '標準保障額 −（A＋B）'], ['就業不能の 必要額', disNeed, '報酬 × ' + (Number(x.disMon) || 12) + 'か月 ＋ 退職金 ＋ A（税で 割り戻し）。不足 ' + yen(disGap)]].forEach(function (q) { const tr = el('tr'); tr.appendChild(el('td', null, q[0])); tr.appendChild(el('td', 'n', q[2] === '%' ? q[1] + '%' : yen(q[1]))); tr.appendChild(el('td', 'note', q[2] === '%' ? '' : q[2])); t.appendChild(tr); });
+    const t = el('table', 'hot'); [['A（損金にならない）＝ ① 負債 ＋ ② 必要運転資金', r.A, '負債 ' + yen(r.loan) + ' ＋ 運転資金 ' + yen(r.wc) + (r.wcNeg ? '（マイナスなので 固定費 × ' + (Number(x.fixMon) || 3) + 'か月）' : '') + (x.shortAsWc ? '（短期借入金を 引いた）' : '') + (x.liquidate ? '（清算前提で 0）' : '')],
+      ['B（損金になる）＝ ④ 役員退職金 ＋ 弔慰金', r.B, ''], ['D（課税所得から 引ける額）', r.D, ''], ['実効税率 t', Math.round(r.t * 1000) / 10, '%'], ['③ 納税資金', r.taxFund, '標準保障額 −（A＋B）'], ['就業不能の 必要額', disNeed, '報酬 × ' + (Number(x.disMon) || 12) + 'か月 ＋ 退職金 ＋ A（税で 割り戻し）。不足 ' + yen(disGap)]].forEach(function (q) { const tr = el('tr'); tr.appendChild(el('td', null, q[0])); tr.appendChild(el('td', 'n', q[2] === '%' ? q[1] + '%' : yen(q[1]))); tr.appendChild(el('td', 'note', q[2] === '%' ? '' : q[2])); t.appendChild(tr); });
     w.appendChild(t);
+    /* ★★ 大同生命の 算定書と 同じ 2列 */
+    const sh = el('table', 'hot hosheet'); sh.innerHTML = '<tr><th>算定書</th><th>死亡のとき</th><th>就業不能のとき</th><th>わけ</th></tr>';
+    hoSheet(x, r).forEach(function (q) { const tr = el('tr', /合計|不足/.test(q.name) ? 'tot' : ''); tr.appendChild(el('td', null, q.name)); tr.appendChild(el('td', 'n', yen(q.d))); tr.appendChild(el('td', 'n', yen(q.s))); tr.appendChild(el('td', 'note', q.why)); sh.appendChild(tr); });
+    const ins = el('tr', 'note'); ins.appendChild(el('td', null, '大同生命の ご提案（RL・JTM）')); ins.appendChild(el('td', 'n', '（これから）')); ins.appendChild(el('td', 'n', '（これから）')); ins.appendChild(el('td')); sh.appendChild(ins);
+    w.appendChild(sh);
+    const pb2 = el('button', 'btn ghost sm', '🖨 算定書を 印刷・PDF'); pb2.type = 'button'; pb2.id = 'hoPrint'; pb2.addEventListener('click', hoSheetPrint); w.appendChild(pb2);
     if (Number(x.officerLoan) > 0) w.appendChild(el('div', 'hoalert', '⚠ 役員借入金 ' + yen(x.officerLoan) + ' 円：社長が 亡くなると 相続財産（貸付金債権）に なり、相続人から 返済を 求められる ことが あります。相続税の 対象にも なります。'));
     const pv = el('details'); pv.appendChild(el('summary', null, '顧問先に 出る 文（下書き）'));
     [['全体', '社長に 万一のことが あったとき、会社を 後継者に 渡すために 必要な お金は ' + man(r.P) + 'です。今の 備えは ' + man(r.have) + (r.gap > 0 ? 'で、' + man(r.gap) + ' 不足しています。' : 'で、備えは 足りています。')],
-      ['①借入金', '会社には ' + man(r.loan) + 'の 借入金が あります。社長が 積み上げた 借入金を、後継者に 背負わせずに 返し切るための お金です。'],
+      ['①負債', '会社には ' + man(r.loan) + 'の 借入金・社債が あります。社長が 積み上げた 借入金を、後継者に 背負わせずに 返し切るための お金です。'],
       ['②運転資金', r.wcNeg ? 'お金が 先に入る 商売なので、立て替えの お金は ほとんど ありません。代わりに、売上が 落ち込んでも 固定費を 払い続けるための ' + (Number(x.fixMon) || 3) + 'か月分を 計上しています。' : '売掛金と 在庫で、毎月 ' + man(r.wc) + 'ほどの お金が 寝ています。今は 社長の 信用で 待ってもらって 回していますが、社長が いなくなると その 信用も なくなり、「今すぐ 現金で」と 言われます。事業を 止めずに 渡すための お金です。'],
-      ['③退職金・弔慰金', 'ご家族の 生活を 守るための お金です。会社の 資金繰りを 壊さずに、退職金 ' + man(dRet) + 'と 弔慰金 ' + man(r.B - dRet) + 'を 支払えるように しておきます。'],
-      ['④納税資金', '会社が 受け取る 保険金には 税金が かかります。借入金の 返済と 運転資金を 手取りで 確保するために、税金の 分 ' + man(r.taxFund) + 'を 上乗せしています。'],
+      ['③納税資金', '会社が 受け取る 保険金には 税金が かかります。借入金の 返済と 運転資金を 手取りで 確保するために、税金の 分 ' + man(r.taxFund) + 'を 上乗せしています。'],
+      ['④退職金・弔慰金', 'ご家族の 生活を 守るための お金です。会社の 資金繰りを 壊さずに、退職金 ' + man(dRet) + 'と 弔慰金 ' + man(r.B - dRet) + 'を 支払えるように しておきます。'],
       ['就業不能', '病気や けがで 働けなく なった 場合、死亡保険金は 出ません。それでも 役員報酬と 退職金、借入金の 返済は 必要です。その 備えは ' + (disGap > 0 ? man(disGap) + ' 不足しています。' : '足りています。')],
       ['注記', 'この 金額は 試算表を もとにした 概算です（事業を 継続し 後継者に 引き継ぐ 前提・実効税率 ' + Math.round(r.t * 1000) / 10 + '%）。詳しくは 担当者に ご相談ください。']].forEach(function (q) { const d = el('div', 'hotx'); d.appendChild(el('b', null, q[0] + '　')); d.appendChild(document.createTextNode(q[1])); pv.appendChild(d); });
     w.appendChild(pv);
@@ -17732,6 +17962,7 @@
     { v: 'kaikake', icon: '📕', name: '仕入等買掛金帳', kind: '専用', from: 'ビーメイツ', what: '仕入先ごとに 8%・10%・合計・振込手数料・振込金額・自動振替・✓。その月分を 翌月に払う。仕入先は 次の月へ写る' },
     { v: 'kyuyo', icon: '👛', name: '給与台帳', kind: '専用', from: 'ビーメイツ', what: '従業員・アルバイトの 時給×時間・交通費（基本給・残業代・通勤手当）・源泉徴収・住民税・差引支給額・✓。人は 次の月へ写る' },
     { v: 'uriage', icon: '🧾', name: '店舗売上日報', kind: '専用', from: 'aswell', what: '1日1枚。現金・カードそれぞれ 売上合計と カフェ8%・カフェ10%・アパレル（内訳と合計の差異を出す）・天気・メモ・売上合計レシートの写真' },
+    { v: 'kinmu', icon: '⏱', name: '出勤簿・給与', kind: '専用', from: 'aswell', what: '1人1枚の 出勤簿（日ごとに 始業・終業・休憩）→ 日数・時間・時給で 給与（日ごとに 切り捨て）・通勤手当・源泉所得税・差引支給額 → 給与明細。本人確認・会社確認。人と 時給は 次の月へ写る' },
     { v: 'esp', icon: '🍸', name: '売上日報（現金）', kind: '専用', from: 'Bar Espressa', what: '1日1枚。組数・人数（男・女）・現金売上・日計のクレジット（SBPS・JCB）・銀聯・QR（d払い・PayPay・楽天pay・au pay・メルペイ）→ 1日の売上（お会計票の合計と照らす）・日計の写真・月の売上管理表（前半・後半）。仕入・現金実査はなし' }
   ];
   function aTreeDraw() {
@@ -17787,7 +18018,7 @@
           row.appendChild(ab);
           /* ★ 出納帳（2026-11-07）：入れると 顧問先の画面の 何年何月分の右に［📒 出納帳］が出る（日付・摘要・入金・出金・残高） */
           /* ★★ 補助簿（2026-11-11）：押して回すのをやめて えらぶ形に。汎用（出納帳・掛帳）と 専用様式（業務日報 ほか。顧問先の紙に合わせて作ったもの） */
-          const kk = bc.book === 'kake', np = bc.book === 'nippo', nc = bc.book === 'kaikake' || bc.book === 'kyuyo' || bc.book === 'uriage' || bc.book === 'esp';   /* nc … 出納帳ではない 専用様式（2026-11-12） */
+          const kk = bc.book === 'kake', np = bc.book === 'nippo', nc = bc.book === 'kaikake' || bc.book === 'kyuyo' || bc.book === 'uriage' || bc.book === 'esp' || bc.book === 'kinmu';   /* nc … 出納帳ではない 専用様式（2026-11-12） */
           const bk = el('select', 'sm2 book' + (bc.book ? ' on' : '') + (kk ? ' kake' : '') + (np ? ' nippo' : '') + (nc ? ' ' + bc.book : '')); bk.setAttribute('aria-label', '補助簿');
           { const o0 = el('option', null, '補助簿なし'); o0.value = ''; bk.appendChild(o0);
             [['汎用', '汎用（どの顧問先でも）'], ['専用', '専用様式（顧問先の紙に合わせたもの）']].forEach(function (g) {
@@ -18245,6 +18476,30 @@
     tokSave(TOK);   /* 前に入った端末も 控えを置いておく */
     start(lsGet(LS_NAME));
   })();
+
+
+  /* ★★ 紹介・お試し（2026-11-23 石井）：だれの 紹介か・名前・連絡先・質問と AI の 答え。答えを 直して 返せる */
+  function refDraw(list) {
+    let ov = $('refOv'); if (!ov) { ov = el('div', 'tabov'); ov.id = 'refOv'; ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9000;display:flex;align-items:flex-start;justify-content:center;padding:30px 12px;overflow:auto'; document.body.appendChild(ov); ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); }); }
+    ov.textContent = ''; const bx = el('div'); bx.style.cssText = 'background:#fff;border-radius:12px;max-width:820px;width:100%;padding:14px';
+    const h = el('div', 'hobar'); h.appendChild(el('b', null, '🎁 紹介・お試しの 方（' + list.length + '人）')); const cl = el('button', 'btn ghost sm', '閉じる'); cl.type = 'button'; cl.addEventListener('click', function () { ov.remove(); }); h.appendChild(cl); bx.appendChild(h);
+    if (!list.length) bx.appendChild(el('p', 'note', 'まだ ありません。顧問先の 画面の［💬 AI に聞く］の 下に 紹介の URL が 出ています。'));
+    list.forEach(function (x) {
+      const d = el('details', 'refitem'); d.open = x.qs.some(function (q) { return !q.check; });
+      d.appendChild(el('summary', null, x.at + '・' + x.name + (x.contact ? '（' + x.contact + '）' : '') + '・紹介：' + x.from + ' ' + x.fromName + '・質問 ' + x.qs.length));
+      x.qs.forEach(function (q) {
+        const r = el('div', 'aqrow'); r.appendChild(el('div', null, 'Q ' + q.q)); r.appendChild(el('div', 'note', (q.heavy ? '（大事な 質問・まだ 答えて いない）' : 'AI：') + (q.a || '')));
+        if (q.check) r.appendChild(el('div', 'note', '✓ ' + q.check.who + (q.check.text ? '：' + q.check.text : '')));
+        else { const ta = el('textarea'); ta.rows = 2; ta.style.width = '100%'; ta.placeholder = '直した 答え（空なら この答えで よい）'; const b = el('button', 'btn sm', '送る'); b.type = 'button'; b.addEventListener('click', function () { b.disabled = true; gs('refAnswer', x.tid, q.id, ta.value).then(refDraw, function (e) { b.disabled = false; alert(e.message); }); }); r.appendChild(ta); r.appendChild(b); }
+        d.appendChild(r);
+      });
+      bx.appendChild(d);
+    });
+    ov.appendChild(bx);
+  }
+  $('refOpen').addEventListener('click', function () { const b = this; b.disabled = true; gs('refList').then(function (l) { b.disabled = false; refDraw(l); }, function (e) { b.disabled = false; alert(e.message); }); });
+  /* ★★ 2026-11-23（石井）：どの ボタンも 押したら 薄い緑に（押した感） */
+  document.addEventListener('click', function (e) { const b = e.target && e.target.closest ? e.target.closest('button') : null; if (!b || b.disabled) return; b.classList.add('tapped'); setTimeout(function () { b.classList.remove('tapped'); }, 700); }, true);
 </script>
 </body>
 </html>
