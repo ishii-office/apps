@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795340271;</script>
+<script>window.__PAGE_VER=1795347315;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -101,7 +101,7 @@
     #tabs { display: grid; grid-template-columns: repeat(12, 1fr); width: 100%; }
     #tabs button { padding: 8px 2px; font-size: 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
     /* 左上から時計回り：回収資料 → 仕訳化 → 取込ファイル → 担当者 → 顧問先 → 仕訳辞書 */
-    #tabs button[data-tab="Docs"] { grid-area: 1 / 1 / 2 / 4; } #tabs button[data-tab="In"] { grid-area: 1 / 4 / 2 / 7; } #tabs button[data-tab="Tb"] { grid-area: 1 / 7 / 2 / 10; }
+    #tabs button[data-tab="Docs"] { grid-area: 1 / 1 / 2 / 7; } #tabs button[data-tab="Tb"] { grid-area: 1 / 7 / 2 / 10; }   /* ★ 2026-11-22 回収資料・仕訳化は 1つ（幅を 広く） */
     #tabs button[data-tab="Out"] { grid-area: 1 / 10 / 2 / 13; border-right: 0; } #tabs button[data-tab="Staff"] { grid-area: 2 / 9 / 3 / 13; border-right: 0; }
     #tabs button[data-tab="Clients"] { grid-area: 2 / 5 / 3 / 9; } #tabs button[data-tab="Dict"] { grid-area: 2 / 1 / 3 / 5; border-right: 1px solid var(--line); }
     /* ★ 2026-11-21：2段目は 進捗・経営助言・保証・顧問先・担当者（仕訳辞書タブは 出さない） */
@@ -1633,6 +1633,18 @@
   .arrpop .arr-row b { color: #B3261E; font-size: 16px; }
   .arrpop .arr-row small { color: #778; }
   .arrpop .arr-all { font-size: 12px; display: flex; gap: 6px; align-items: center; margin: 0 0 6px; }
+  /* ★★ 2026-11-22：回収資料・仕訳化の 上の 2つの 島 */
+  .isles { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 8px; margin: 6px 0 8px; }
+  @media (max-width: 900px) { .isles { grid-template-columns: 1fr; } }
+  .isle { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: #fff; margin: 0; }
+  .isle.agbar { border: 1px solid #c9b28a; background: #fffaf0; }
+  #isleLed { border-color: #9cc7b4; background: #f3faf6; }
+  .isle-h { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 14px; }
+  .isle-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .isle-sub button { font-size: 12px; }
+  .isle button.dim { opacity: .55; }
+  .isle .pkbar { margin: 0; border: 0; padding: 0; background: none; }
+  .isle-mon { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
   .agbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 8px; margin: 0 0 6px; border: 1px dashed #c9b28a; border-radius: 8px; background: #fffaf0; }   /* ★ 2026-11-21 エージェントの帯（仕訳化タブ） */
   .agbar > button, .agbar > label { flex: 0 0 auto; align-self: center; height: auto; }
   .agbar > .agdocs { flex: 1 1 100%; }
@@ -1719,8 +1731,8 @@
 <div class="top" id="top" hidden>
   <span class="brand">資料回収（事務所）</span>
   <span class="seg" role="tablist" id="tabs">
-    <button type="button" role="tab" data-tab="Docs" aria-pressed="false">回収資料</button>
-    <button type="button" role="tab" data-tab="In" aria-pressed="true">仕訳化</button>
+    <button type="button" role="tab" data-tab="Docs" aria-pressed="true">回収資料・仕訳化</button>
+    <button type="button" role="tab" data-tab="In" aria-pressed="false" hidden>仕訳化</button>
     <button type="button" role="tab" data-tab="Tb" aria-pressed="false" id="tabTb">試算表</button>
     <button type="button" role="tab" data-tab="Out" aria-pressed="false">取込ファイル</button>
     <button type="button" role="tab" data-tab="Prog" aria-pressed="false" id="tabProg">進捗</button>
@@ -1826,7 +1838,18 @@
     <div class="dsr-note">仕訳化して確定したもの（取引年月日・金額・取引先が付いたもの）から探します。範囲と組み合わせで絞れます。</div>
     <div class="dsr-out" id="qOut"></div>
   </details>
-  <div id="pkBarDocs" class="pkbar" hidden></div>
+  <!-- ★★ 2026-11-22（石井）：回収資料と仕訳化を 1つの タブに。上に 2つの 島（エージェント／元帳チェック）。箱は 下の 札で 選ぶ -->
+  <div class="isles" id="isles">
+    <section class="isle agbar" id="agBar"><div class="isle-h"><b class="agbar-t">🤖 エージェントに渡す</b><span id="agpLine" class="note"></span></div>
+      <div class="inrow isle-mon" id="isleMon"></div>
+      <div id="pkBarDocs" class="pkbar"></div>
+      <div class="isle-row"><button type="button" id="dAgentBack" title="自分の Claude Code が作った できあがり（仕訳.json・元帳・質問一覧・カルテ など）を zip にして この顧問先・この月分に 戻す。戻すと エージェント研究 1回として 改善と効率化の集計に 数えます">⬆ できあがりを戻す</button><input type="file" id="dAgentBackF" accept=".zip,application/zip" hidden><span class="agdrop" id="agDrop">⬇ できあがりの zip を ここへ ドラッグして 戻す</span><button type="button" id="dAgent" title="この顧問先・この月分の 資料・補助簿・過去の仕訳・事務所の考え方を 1つの zip にして、自分の Claude Code に渡せるようにする">⚙ ほかの渡し方（半年・1年・気づき・書面添付 など）</button><span id="dAgentPick" hidden></span></div>
+      <span class="dmsg" id="agMsg" role="status"></span></section>
+    <section class="isle" id="isleLed"><div class="isle-h"><b>📗 元帳チェック</b></div>
+      <div class="isle-row"><button type="button" id="dLedger" title="エージェントが 戻した 仕訳を TKC と同じ形の 元帳（月別の残高 → 口座別 → 総勘定元帳 → 伝票）で 確かめる。Enter で ✓ して 次の伝票。全部 ✓ で 取り込みファイルに">📗 元帳で確かめる・直す</button><button type="button" id="dAgentRes" title="戻した できあがりの 中身（仕訳の数・気づいたこと・学び・カルテの案・気づき）。学びは［はい］で 顧問先カルテに 入れると 次の zip から エージェントに 渡る">📥 結果と学び</button><button type="button" id="isTb" title="確かめた 仕訳から 試算表（途中でも）">📊 試算表へ</button><button type="button" id="isExp" title="全部 ✓ したら 取り込みファイル（FX の 一括読み込み）">📤 取込ファイルへ</button><button type="button" id="isDict" class="ghost" title="しまってある 辞書で 仕訳する 画面">📇 辞書の画面を開く</button></div>
+      <div class="isle-row isle-sub"><button type="button" id="dAgentNeed" title="この顧問先で エージェントに 要る資料の チェック表（通年・毎月）。そろったら 投げる。足りないものは 顧問先に お願い">✅ 要る資料のチェック表</button><button type="button" id="dAgentDocs" title="月別減価償却確認表・返済予定表 など、事務所が足す 通年の資料（月に しばられない）。エージェントの zip に いつも入る">📎 事務所の資料（通年）</button><button type="button" id="dAgentStd" title="事務所の 標準体系（記帳の 考え方・科目の 標準・企業防衛の 考え方）を 自分の Claude Code に 入れる 形で ダウンロード。分からないことは そこで 聞く">📚 事務所の標準体系</button></div>
+      <div id="agResBox" class="agdocs" hidden></div><div id="agDocsBox" class="agdocs" hidden></div><div id="needBox" class="agdocs" hidden></div></section>
+  </div>
   <div id="dBody"><div class="cbox muted">読み込み中…</div></div>
 </div>
 
@@ -1834,9 +1857,7 @@
 <div class="pane dpz" id="paneIn" hidden>
   <div class="jmain" id="jmain">
     <!-- ★ 2026-11-21（石井）：エージェント（zip を渡す → できあがりを戻す → 結果と学び・元帳で確かめる）は 仕訳化の 仕事なので 仕訳化タブへ。できあがりの zip は この帯へ ドラッグでも 戻せる -->
-    <div class="inpick" id="inPick"><div id="pkBarIn" class="pkbar"></div><div id="inChips" class="inchips"></div></div>
-    <div class="agbar" id="agBar"><b class="agbar-t">🤖 エージェント</b><span id="agpLine" class="note"></span><button type="button" id="dAgent" title="この顧問先・この月分の 資料・補助簿・過去の仕訳・事務所の考え方を 1つの zip にして、自分の Claude Code に渡せるようにする">🤖 エージェントに渡す（zip）</button><span id="dAgentPick" hidden></span><button type="button" id="dAgentBack" hidden title="自分の Claude Code が作った できあがり（仕訳.json・元帳・質問一覧・カルテ など）を zip にして この顧問先・この月分に 戻す。戻すと エージェント研究 1回として 改善と効率化の集計に 数えます">⬆ できあがりを戻す</button><input type="file" id="dAgentBackF" accept=".zip,application/zip" hidden><button type="button" id="dAgentRes" hidden title="戻した できあがりの 中身（仕訳の数・気づいたこと・学び・カルテの案・気づき）。学びは［はい］で 顧問先カルテに 入れると 次の zip から エージェントに 渡る">📥 結果と学び</button><button type="button" id="dLedger" hidden title="エージェントが 戻した 仕訳を TKC と同じ形の 元帳（月別の残高 → 口座別 → 総勘定元帳 → 伝票）で 確かめる。Enter で ✓ して 次の伝票。全部 ✓ で 取り込みファイルに">📗 元帳で確かめる</button><div id="agResBox" class="agdocs" hidden></div><button type="button" id="dAgentNeed" hidden title="この顧問先で エージェントに 要る資料の チェック表（通年・毎月）。そろったら 投げる。足りないものは 顧問先に お願い">✅ 要る資料のチェック表</button><button type="button" id="dAgentStd" hidden title="事務所の 標準体系（記帳の 考え方・科目の 標準・企業防衛の 考え方）を 自分の Claude Code に 入れる 形で ダウンロード。分からないことは そこで 聞く">📚 事務所の標準体系</button><button type="button" id="dAgentDocs" hidden title="月別減価償却確認表・返済予定表 など、事務所が足す 通年の資料（月に しばられない）。エージェントの zip に いつも入る">📎 事務所の資料（通年）</button><div id="agDocsBox" class="agdocs" hidden></div><div id="needBox" class="agdocs" hidden></div><span class="agdrop" id="agDrop">⬇ できあがりの zip を ここへ ドラッグして 戻す</span><span class="dmsg" id="agMsg" role="status"></span></div>
-    <div class="jdictbar" id="jDictBar"><span id="jDictT">📇 辞書で 仕訳する 画面は しまってあります（仕訳は エージェントに渡す 一択。直すのは 元帳から 手で）</span><button type="button" class="dmon-b" id="jDictLed">📗 元帳で確かめる・直す</button><button type="button" class="dmon-b ghost" id="jDictTg">📇 辞書の画面を開く</button></div>
+    <div class="jdictbar" id="jDictBar"><span id="jDictT">📇 辞書で 仕訳する 画面は しまってあります（仕訳は エージェントに渡す 一択。直すのは 元帳から 手で）</span><button type="button" class="dmon-b" id="jDictLed">📗 元帳で確かめる・直す</button><button type="button" class="dmon-b ghost" id="jDictTg">📇 辞書の画面を開く</button><button type="button" class="dmon-b" id="jDictBack">‹ 回収資料・仕訳化へ</button></div>
     <div class="jlhead">
       <span class="jlsum" id="jlsum"></span>
       <span class="seg" id="jLay" role="group" aria-label="並べ方"><button type="button" data-l="v" aria-pressed="true">縦1列</button><button type="button" data-l="h" aria-pressed="false">横2列</button><button type="button" data-l="w" aria-pressed="false">画像を別ウィンドウ表示</button></span>
@@ -3153,7 +3174,7 @@
     S.pendBundle = b.bundle || null;
     fillClients(b.bundle ? b.bundle.code : r.sel);
     if (S.pendBundle) { const pb = S.pendBundle; S.pendBundle = null; applyBundle(pb); }
-    if (first) { S.booted = true; selectTab(S.resumeTab || { in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In'); S.resumeTab = ''; verWatch(); openFromClient(); setTimeout(lnCheck, 3000); setTimeout(urlPre, 2500); }
+    if (first) { S.booted = true; selectTab(homeTab(S.resumeTab || { in: 'In', clients: 'Clients', staff: 'Staff' }[window.__TAB] || 'In')); S.resumeTab = ''; verWatch(); openFromClient(); setTimeout(lnCheck, 3000); setTimeout(urlPre, 2500); }
   }
 
   function fillClients(sel, force) {
@@ -4196,7 +4217,7 @@
   /* ================= タブ ================= */
   function selectTab(k) {
     S.tab = k;
-    document.querySelectorAll('#tabs button').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.tab === k)); });
+    document.querySelectorAll('#tabs button').forEach(function (x) { x.setAttribute('aria-pressed', String((x.dataset.tab === k && !x.hidden) || (k === 'In' && x.dataset.tab === 'Docs'))); });   /* ★ 仕訳化（辞書の 画面）は 回収資料・仕訳化の 中 */
     hidePanes(); $('pane' + k).hidden = false;
     /* 隠れた欄にフォーカスが残って テンキーが出たままにならないように */
     const ae = document.activeElement; if (ae && ae.dataset && ae.dataset.tk && !$('pane' + k).contains(ae)) { ae.blur(); tkHide(); }
@@ -4208,7 +4229,7 @@
     if (k === 'In' || k === 'Docs') setTimeout(pulse, 0);
     dcBar();
     if (k === 'In' && S.needRender) render();
-    if (k === 'In') { try { agpLine(false); } catch (e) {} }   /* ★ エージェントの帯（仕訳化タブ） */
+    if (k === 'In' || k === 'Docs') { try { agpLine(false); } catch (e) {} }   /* ★ エージェントの 島（回収資料・仕訳化） */
     if (k === 'In' && S.act && !NARROW.matches) { const r = rowOf(S.act); const f = firstField(r); if (f) f.focus({ preventScroll: true }); }
     if (k === 'Out') oLoad();
     if (k === 'Tb') tbLoad();
@@ -4789,7 +4810,7 @@
     if (r.slip) { openSlip(null, r.slip); S.dsel = r.dsel; $('sDel').hidden = !S.dsel; $('sDup').hidden = !S.dsel; drawIndex(); }
     else if (r.dsel != null) openSlip(r.dsel);
     render();
-    if (S.booted) selectTab(r.tab || 'In'); else S.resumeTab = r.tab || 'In';
+    if (S.booted) selectTab(homeTab(r.tab || 'In')); else S.resumeTab = r.tab || 'In';
     [250, 1000, 2500].forEach(function (ms) { setTimeout(function () {
       window.scrollTo(0, r.y || 0);
       Object.keys(r.sc || {}).forEach(function (id) { const e = document.getElementById(id); if (e) e.scrollTop = r.sc[id]; });
@@ -5933,9 +5954,9 @@
     ['pkBarDocs', 'pkBarIn'].forEach(function (id) {
       const w = $(id); if (!w) return; w.textContent = '';
       const any = (S.bsel || []).length || S.box || S.per;
-      w.hidden = !any && id === 'pkBarDocs';
-      if (!any) { if (id === 'pkBarIn') w.appendChild(el('span', 'note', '下の 札で 箱・月分を 選ぶと その分だけに なります（選ばなければ 全部）。')); return; }
+      w.hidden = false;
       w.appendChild(el('b', null, '☑ 選んだもの：' + pkLabel()));
+      if (!any) w.appendChild(el('span', 'note', '（上の 月分と 下の 箱の［選ぶ］で しぼれます）'));
       /* ★★ 2026-11-22（石井）：ここで 完結。札で 選んだ 箱・月分の まま zip を 作る（もとの 画面に 行かない） */
       const send = function (ans) {
         if (!S.code) { dcMsg('先に 顧問先を選んでください。', true); return; }
@@ -6174,8 +6195,9 @@
     if (!TBR.print(TBR.SN[TB.sheet], tbClient(), TB.sheet === 'bs' ? TBR.end(d.ym) + '現在' : TBR.ymL(d.fyStart) + '/01〜' + TBR.end(d.ym), t)) $('tbMsg').textContent = '印刷の 窓が 開けませんでした（ポップアップを 許してください）。';
   });
   /* ★★ 仕訳化の 箱・月分の 札（上の［箱］の プルダウンの 代わり。2026-11-22 石井）。月分の 札＝その月分を 一括。箱・小箱は いくつでも */
+  /* ★★ 2026-11-22：月分の 札は エージェントの 島に（箱は 下の 箱の 札の［選ぶ］で。同じものを 2つ 出さない） */
   function inPickDraw() {
-    const w = $('inChips'); if (!w) return; w.textContent = '';
+    const w = $('isleMon'); if (!w) return; w.textContent = '';
     const c = (S.clients || []).find(function (x) { return x.code === S.code; }) || {};
     const src = (S.items || []).concat(S.docs || []);
     const ms = []; src.forEach(function (it) { const p = String(it.period || '').slice(0, 7); if (/^\d{4}-\d{2}$/.test(p) && ms.indexOf(p) < 0) ms.push(p); });
@@ -6184,18 +6206,7 @@
     const chip = function (t, on, f, title) { const b = el('button', 'inchip' + (on ? ' on' : ''), t); b.type = 'button'; if (title) b.title = title; b.addEventListener('click', f); return b; };
     mr.appendChild(chip('全月分', !S.per, function () { pkMonth(''); }));
     ms.slice(0, 14).forEach(function (m) { const b = chip(perLabel(m) + '（一括）', S.per === m, function () { pkMonth(S.per === m ? '' : m); }, 'その月分を まとめて 選ぶ（箱を 選んでいれば その箱の その月分）'); b.dataset.ym = m; mr.appendChild(b); });
-    w.appendChild(mr);
-    const br = el('div', 'inrow'); br.appendChild(el('span', 'inlab', '箱'));
-    const all = chip('全部の箱', !(S.bsel || []).length && !S.box, function () { S.box = ''; S.bsel = []; $('box').value = ''; boxSelPaint(); render(); pkBar(); }); br.appendChild(all);
-    (S.boxes || []).forEach(function (b) {
-      if (/マイナンバー記載あり/.test(b)) return;   /* マイナンバーの 箱は AI に 回さないので 出さない */
-      const depth = b.split('/').length - 1;
-      const n = src.filter(function (x) { return (x.box === b || String(x.box || '').indexOf(b + '/') === 0) && (!S.per || String(x.period || '').indexOf(S.per) === 0); }).length;
-      const bt = chip((depth ? '└ ' : '') + bxDisp(b).split('/').pop() + (n ? ' ' + n : ''), pkHas(b), function () { pkToggle(b, !pkHas(b)); }, dSpot(c, b) ? 'スポットの箱' : '');
-      bt.dataset.box = b; if (depth) bt.classList.add('sub'); if (!n) bt.classList.add('none');
-      br.appendChild(bt);
-    });
-    w.appendChild(br);
+    w.textContent = ''; [].slice.call(mr.childNodes).forEach(function (n) { w.appendChild(n); });
   }
   function docsGrid(body, all, c) {
     const done = function (x) { return !!x.chk || stTag(x)[0] === 'gone'; };   /* 未確認の 数え方は 月分の 見出し（dMonCount）と 同じ */
@@ -7874,8 +7885,8 @@
     top: { t: '🧭 全体・右上のボタン', pic: 'g_otop', lead: '上の「顧問先」で 顧問先を選び、タブで 仕事を切り替えます。右上のボタンは どのタブからでも使えます。',
       steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
       tips: ['タブを 右クリック →［新しいタブで開く］［別ウィンドウで開く］で 複数の 画面を 並べて 使えます（いまの 顧問先・月分を 引き継ぐ。Ctrl＋クリック・中ボタンでも 新しいタブ）', '紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
-    Docs: { t: '回収資料', pic: 'g_odocs', lead: '顧問先から 届いた資料を 箱ごとに見て、確かめる・整理する タブです。',
-      steps: ['上で 顧問先を選ぶと 箱の一覧（📦 毎月の箱／🗓 スポットの箱／📁 事務所の箱）。箱を押すと その中（年分 › 月分）。［‹ 箱の一覧へ］で 戻る。［▤ すべての箱を 並べて見る］で 箱を またいで さがす', '中に 小箱が ある 箱を 押すと 顧問先の 画面と 同じく 小箱の 札が 出る（小箱の 中で 年分 › 月分）', '札の［選ぶ］で 箱・小箱を いくつでも 選ぶと 上に「☑ 選んだもの」の 帯 →［🤖 新規に渡す］（まだ 仕訳の ない 月）［🧪 答え合わせ付きで渡す］（研究）。その場で zip が できる（仕訳化でも 同じ 選び）', '📁 事務所の箱 … 返済予定表・概算減価償却の一覧表 など 通年の 参照資料を［＋ ファイルを 入れる］（顧問先からは 見えない・エージェントの zip に いつも 入る）。名前は［⚙ 事務所の箱を 決める］', 'まとまった PDF（スキャナで 何十枚も 1つに なったもの）は 大きく見るで［✂ 1ページずつに分ける］。1ページ ＝ 1つの 資料に なり、元の PDF は 破棄したものへ（戻せます）', '赤い枠の［⚠ 二重では？］… 先に届いた写真と 同じ写真・同じ日付と金額と相手・同じ字（日付・合計）。二重なら その写真を 破棄、ちがえば 2回押して「二重ではない」（顧問先には 聞かない）', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）', '戻したら［📗 元帳で確かめる］… TKC と同じ形（月別の残高 → 口座別 → 総勘定元帳 → 伝票）。伝票は 左に 写真（預金は 通帳の行）、右に 10行。Enter で ✓ して 次の伝票・0 で 前・T（F2）で 訂正・1・2 で エージェントの 別の案・Esc で 戻る。全部 ✓ で［📤 取り込みファイルにする］（FX の 一括読み込み。使った箱は 処理済ボックスへ）'],
+    Docs: { t: '回収資料・仕訳化', pic: 'g_odocs', lead: '届いた資料を 箱ごとに 確かめ、そのまま エージェントに渡して 仕訳を作り、元帳で 確かめる タブです（前の 回収資料と 仕訳化を 1つに しました）。',
+      steps: ['上の［🤖 エージェントに渡す］の 島：月分の 札で 月分、下の 箱の 札の［選ぶ］で 箱・小箱を 選んで［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（研究）。できた zip は 島の 中の［⬇ ダウンロード］。何本にも 分かれたら［⬇ 全部まとめてダウンロード］で 同じ フォルダに 保存し、Claude Code に その フォルダを 読ませる（添付しなくても 渡せる）', 'できあがりは［⬆ できあがりを戻す］か 島へ ドラッグ。半年・1年・気づき・書面添付 などは［⚙ ほかの渡し方（半年・1年・気づき・書面添付 など）］', '右の［📗 元帳チェック］の 島：［📗 元帳で確かめる・直す］［📥 結果と学び］［📊 試算表へ］［📤 取込ファイルへ］。しまってある 辞書の 画面は［📇 辞書の画面を開く］', '上で 顧問先を選ぶと 箱の一覧（📦 毎月の箱／🗓 スポットの箱／📁 事務所の箱）。箱を押すと その中（年分 › 月分）。［‹ 箱の一覧へ］で 戻る。［▤ すべての箱を 並べて見る］で 箱を またいで さがす', '中に 小箱が ある 箱を 押すと 顧問先の 画面と 同じく 小箱の 札が 出る（小箱の 中で 年分 › 月分）', '📁 事務所の箱 … 返済予定表・概算減価償却の一覧表 など 通年の 参照資料を［＋ ファイルを 入れる］（顧問先からは 見えない・エージェントの zip に いつも 入る）。名前は［⚙ 事務所の箱を 決める］', 'まとまった PDF（スキャナで 何十枚も 1つに なったもの）は 大きく見るで［✂ 1ページずつに分ける］。1ページ ＝ 1つの 資料に なり、元の PDF は 破棄したものへ（戻せます）', '赤い枠の［⚠ 二重では？］… 先に届いた写真と 同じ写真・同じ日付と金額と相手・同じ字（日付・合計）。二重なら その写真を 破棄、ちがえば 2回押して「二重ではない」（顧問先には 聞かない）', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）', '戻したら［📗 元帳で確かめる］… TKC と同じ形（月別の残高 → 口座別 → 総勘定元帳 → 伝票）。伝票は 左に 写真（預金は 通帳の行）、右に 10行。Enter で ✓ して 次の伝票・0 で 前・T（F2）で 訂正・1・2 で エージェントの 別の案・Esc で 戻る。全部 ✓ で［📤 取り込みファイルにする］（FX の 一括読み込み。使った箱は 処理済ボックスへ）'],
       tips: ['パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料を エージェントに渡して 仕訳を作り、元帳で 確かめて 確定する タブです（AI 下書きは 止めました）。',
       steps: ['上の 札で 月分（「◯月分（一括）」で その月分を まとめて）と 箱・小箱を 選ぶ（いくつでも。［全部の箱］で 戻す）', '帯の［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（もう 仕訳の ある 月・研究）。その場で zip が できる（マイナンバーの書類は 入りません）', '直すのは［📗 元帳で確かめる・直す］から 手で（T／F2 で 訂正）。辞書で 仕訳する 画面は しまってあります（［📇 辞書の画面を開く］で 出せる）', '確定したものは［取込ファイル］タブへ', '［🤖 エージェントに渡す（zip）］で できた zip は 帯の 右上の［⬇ ダウンロード］で その場で 保存（30MB を 超えるときは 1／2・2／2 に 分かれるので 両方 落として 同じ フォルダに 展開）', 'エージェントは 上の帯で：［🤖 エージェントに渡す（zip）］→ 自分の Claude Code に 渡す → できあがりの zip を［⬆ できあがりを戻す］か 帯へ ドラッグ → ［📥 結果と学び］［📗 元帳で確かめる］（TKC と 同じ 伝票の形・Enter で ✓ して 次へ。写真は 先に 読んでおくので 速く 押しても 追いつきます）'],
@@ -8078,7 +8089,8 @@
       const x = (r.rows || []).filter(function (y) { return y.code === S.code && (!S.per || y.ym === S.per); })[0];
       sp.textContent = x ? '🤖 ' + Number(x.ym.slice(5)) + '月分：' + agpStText(x) : '';
       /* ★ 2026-11-21（石井）：zip を 渡したあとは［⬆ できあがりを戻す］を いつも出す（戻り待ちの あいだ 探さなくてよい）。戻したあとは 元帳・結果も */
-      if ($('dAgentPick').hidden) { $('dAgentBack').hidden = !x; $('dLedger').hidden = !(x && x.st !== 'gave'); $('dAgentRes').hidden = !(x && x.st !== 'gave'); }
+      /* ★★ 2026-11-22：島の ボタンは いつも 出す（まだ 使えないものは 薄く） */
+      $('dAgentBack').classList.toggle('dim', !x); $('dLedger').classList.toggle('dim', !(x && x.st !== 'gave')); $('dAgentRes').classList.toggle('dim', !(x && x.st !== 'gave'));
       /* ★ 元帳を 前もって 読んでおく（［📗 元帳で確かめる］を 押した 瞬間に 出る） */
       if (x && x.st !== 'gave') { const c0 = S.code, m0 = x.ym; setTimeout(function () { if (c0 === S.code && !document.getElementById('ledOv')) ledPreLoad(c0, m0, false).catch(function () {}); }, 800); }
     }, function () {});
@@ -8307,7 +8319,7 @@
       }, function () { agentPackRun(ans, mode, boxes, span, true); });
       return;
   }
-  $('dAgentPick').hidden = true; ['dAgentBack', 'dAgentDocs', 'agDocsBox', 'dAgentRes', 'dLedger', 'agResBox', 'dAgentNeed', 'needBox', 'dAgentStd'].forEach(function (i) { $(i).hidden = true; }); const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
+  $('dAgentPick').hidden = true; ['agDocsBox', 'agResBox', 'needBox'].forEach(function (i) { $(i).hidden = true; }); const b = $('dAgent'); b.disabled = true; dcMsg('zip を作っています…（資料が多いと 1〜2分）');
   const phone = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
   gs('agentPack', S.code, S.per, ans, boxes, { span: span || 1, mode: mode || '', nob64: phone }).then(function (r) { AGP.at = 0; try { agpLine(false); } catch (q) {}
     b.disabled = false;
@@ -8316,7 +8328,7 @@
     m.appendChild(document.createTextNode('🤖 ' + r.name + '（' + (r.boxes && r.boxes.length ? r.boxes.join('・') + 'だけ・' : '') + '資料 ' + r.n + '件・補助簿 ' + r.books + '・過去の仕訳 ' + r.past + '行' + (r.ans >= 0 ? '・答え合わせ ' + r.ans + '行' : '') + '・' + r.mb + 'MB' + (r.shrunk ? '・大きい写真 ' + r.shrunk + '枚は 縮めて 入れた' : '') + '）を作りました。 '));
     if (r.b64) { try { const bin = atob(r.b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const dl = document.createElement('a'); dl.href = URL.createObjectURL(new Blob([u8], { type: 'application/zip' })); dl.download = r.name; document.body.appendChild(dl); dl.click(); setTimeout(function () { URL.revokeObjectURL(dl.href); dl.remove(); }, 30000); m.appendChild(document.createTextNode('⬇ ダウンロードしました（ブラウザの ダウンロードから そのまま Claude Code へ ドラッグ）。 ')); } catch (e) {} }
     agDlShow(r);
-    m.appendChild(document.createTextNode('　→ 自分の Claude Code に 添付して「はじめに読む.md のとおり この月の仕訳を作って」と頼む。' + (r.skipped.length ? '　★ 大きすぎて入れられなかった資料：' + r.skipped.join('、') : '') + (r.split ? '　★ ' + r.split : '')));
+    m.appendChild(document.createTextNode('　→ 自分の Claude Code に 渡して（添付か、保存した フォルダを 読ませる）「はじめに読む.md のとおり この月の仕訳を作って」と頼む。' + (r.skipped.length ? '　★ 大きすぎて入れられなかった資料：' + r.skipped.join('、') : '') + (r.split ? '　★ ' + r.split : '')));
   }, function (e) {
     b.disabled = false;
     /* ★ 返事が 途中で 切れても（スマホの Load failed など）ドライブには できていることが 多い。いちばん 新しい zip を 探して 出す */
@@ -8327,18 +8339,25 @@
   });
   }
   /* ★★ 辞書の 画面を しまう／開く（端末が 覚える）。見張り（__noTour）は いままでの 画面で 確かめる */
+  function dictOn() { let on = false; try { on = localStorage.getItem('collect_office_dictui') === '1'; } catch (e) {} if ((window.__noTour || window.__aiDraftOn) && !window.__dictOff) on = true; return on; }
+  /* ★★ 2026-11-22：回収資料と 仕訳化は 1つの タブ。前の「仕訳化」へ 行くのは 辞書の 画面を 開いているときだけ */
+  function homeTab(t) { return t === 'In' && !dictOn() ? 'Docs' : t; }
   function jDictPaint() {
-    let on = false; try { on = localStorage.getItem('collect_office_dictui') === '1'; } catch (e) {} if ((window.__noTour || window.__aiDraftOn) && !window.__dictOff) on = true;
+    const on = dictOn();
     $('jmain').classList.toggle('dictoff', !on);
     $('jDictT').textContent = on ? '📇 辞書で 仕訳する 画面（しまえます。仕訳は エージェントに渡す 一択）' : '📇 辞書で 仕訳する 画面は しまってあります（仕訳は エージェントに渡す 一択。直すのは 元帳から 手で）';
     $('jDictTg').textContent = on ? '📇 辞書の画面を しまう' : '📇 辞書の画面を開く';
   }
   $('jDictTg').addEventListener('click', function () { const on = !$('jmain').classList.contains('dictoff'); try { localStorage.setItem('collect_office_dictui', on ? '0' : '1'); } catch (e) {} window.__dictOff = on ? 1 : 0; jDictPaint(); });
   $('jDictLed').addEventListener('click', function () { lgOpen(); });
+  $('jDictBack').addEventListener('click', function () { selectTab('Docs'); });
+  $('isDict').addEventListener('click', function () { try { localStorage.setItem('collect_office_dictui', '1'); } catch (e) {} window.__dictOff = 0; jDictPaint(); selectTab('In'); });
+  $('isTb').addEventListener('click', function () { selectTab('Tb'); });
+  $('isExp').addEventListener('click', function () { selectTab('Out'); });
   jDictPaint();
   $('dAgent').addEventListener('click', function () {
     const pk = $('dAgentPick');
-    if (!pk.hidden) { pk.hidden = true; ['dAgentBack', 'dAgentDocs', 'agDocsBox', 'dAgentRes', 'dLedger', 'agResBox', 'dAgentNeed', 'needBox', 'dAgentStd'].forEach(function (i) { $(i).hidden = true; }); return; }
+    if (!pk.hidden) { pk.hidden = true; ['agDocsBox', 'agResBox', 'needBox'].forEach(function (i) { $(i).hidden = true; }); return; }
     if (!S.code) { dcMsg('先に 顧問先を選んでください。', true); return; }
     if (!(S.per && /^\d{4}-\d{2}$/.test(S.per))) { dcMsg('先に 上で 月分（◯年◯月分）を 1つ選んでください。', true); return; }
     pk.textContent = ''; pk.hidden = false; try { agpLine(false); } catch (q) {} $('dAgentBack').hidden = false; $('dAgentDocs').hidden = false; $('dAgentRes').hidden = false; $('dLedger').hidden = false; $('dAgentNeed').hidden = false; $('dAgentStd').hidden = false;   /* ★ できあがりを戻す も ここで出す（ふだんは 出さない。並びを 動かさない） */
@@ -8364,7 +8383,7 @@
   function agDlShow(r) {
     let w = $('agDl'); if (!w) { w = el('span', 'agdl'); w.id = 'agDl'; $('agBar').appendChild(w); }
     w.textContent = ''; const ps = (r.parts && r.parts.length) ? r.parts : [{ id: r.id, name: r.name, size: 0 }];
-    w.appendChild(el('span', 'note', ps.length > 1 ? '📦 ' + ps.length + 'つに 分けました（同じ フォルダに 展開）' : '📦 できました'));
+    w.appendChild(el('span', 'note', ps.length > 1 ? '📦 ' + ps.length + 'つに 分けました。全部 同じ フォルダに 保存して、Claude Code に「このフォルダの zip を 全部 展開して はじめに読む.md のとおり」と 頼む（添付しなくても 渡せる）' : '📦 できました'));
     const save = function (name, b64) { const bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const dl = document.createElement('a'); dl.href = URL.createObjectURL(new Blob([u8], { type: 'application/zip' })); dl.download = name; document.body.appendChild(dl); dl.click(); setTimeout(function () { URL.revokeObjectURL(dl.href); dl.remove(); }, 4000); };
     ps.forEach(function (p, i) {
       const b = el('button', 'btn sm agdlb', '⬇ ' + (ps.length > 1 ? (i + 1) + '／' + ps.length + ' ' : '') + 'ダウンロード' + (p.size ? '（' + Math.round(p.size / 1048576 * 10) / 10 + 'MB）' : '')); b.type = 'button'; b.title = p.name;
@@ -8375,6 +8394,16 @@
       });
       w.appendChild(b);
     });
+    /* ★★ 2026-11-22（石井）：何本に なっても 1回で（順に 落とす） */
+    if (ps.length > 1) {
+      const all = el('button', 'btn sm agdlb', '⬇ 全部まとめてダウンロード（' + ps.length + 'つ）'); all.type = 'button'; all.id = 'agDlAll';
+      all.addEventListener('click', function () {
+        all.disabled = true; const bs = [].slice.call(w.querySelectorAll('.agdlb')).filter(function (x) { return x !== all; }); let k = 0;
+        const next = function () { if (k >= bs.length) { all.disabled = false; all.textContent = '✓ ' + ps.length + 'つ 全部 ダウンロードしました'; return; } const b = bs[k++]; all.textContent = '用意しています…（' + k + '／' + bs.length + '）'; b.click(); const wait = function () { if (!b.disabled) setTimeout(next, 600); else setTimeout(wait, 300); }; setTimeout(wait, 300); };
+        next();
+      });
+      w.insertBefore(all, w.children[1] || null);
+    }
   }
   /* ★ 事務所の資料（通年。2026-11-19）：月別減価償却確認表・返済予定表 など。月に しばられず zip に いつも入る */
   let AGD_ALL = false;   /* ★ 2026-11-19：［📚 事務所共通の資料］（書面添付の様式・事例集・標準保障額算定書・Fプラスの資料 など。どの顧問先の zip にも入る） */
@@ -15607,7 +15636,7 @@
   $('grDocB').addEventListener('click', function () { $('grDocFile').value = ''; $('grDocFile').click(); });
   $('grDocFile').addEventListener('change', function () { grtDocSend(this.files && this.files[0]); });
   (function () { const z = $('grDocBox'); z.addEventListener('dragover', function (e) { e.preventDefault(); }); z.addEventListener('drop', function (e) { e.preventDefault(); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) grtDocSend(f); }); })();
-  $('grCmn').addEventListener('click', function () { AGD_ALL = true; selectTab('In'); try { agDocsLoad(); $('agDocsBox').scrollIntoView({ block: 'center' }); } catch (e) {} });
+  $('grCmn').addEventListener('click', function () { AGD_ALL = true; selectTab('Docs'); try { agDocsLoad(); $('agDocsBox').scrollIntoView({ block: 'center' }); } catch (e) {} });
   function advLoad() {
     const code = S.code; if (!code) { $('hoCalc').innerHTML = '<div class="note">上で 顧問先を 選んでください。</div>'; return; }
     const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' }; $('advClient').textContent = '— ' + code + ' ' + c.name;
