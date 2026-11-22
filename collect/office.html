@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795364644;</script>
+<script>window.__PAGE_VER=1795367760;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3135,7 +3135,7 @@
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
   }
-  function signOut(msg) { try { $('arrBtn').hidden = true; $('sorBtn').hidden = true; $('agpBtn').hidden = true; $('guideBtn').hidden = true; $('arrPop').hidden = true; $('bellBtn').hidden = true; $('bellPop').hidden = true; $('mineSel').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); ['collect_led_v1', 'collect_warm_v1', 'collect_pg_v1', 'collect_agp_v1', 'collect_kzst_v1'].forEach(function (k) { lsDel(k); });   /* ★ 2026-11-21：先読みで 覚えた 顧問先の 中身も 消す */ try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
+  function signOut(msg) { try { BDDB.wipe(); } catch (e) {} try { $('arrBtn').hidden = true; $('sorBtn').hidden = true; $('agpBtn').hidden = true; $('guideBtn').hidden = true; $('arrPop').hidden = true; $('bellBtn').hidden = true; $('bellPop').hidden = true; $('mineSel').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); ['collect_led_v1', 'collect_warm_v1', 'collect_pg_v1', 'collect_agp_v1', 'collect_kzst_v1'].forEach(function (k) { lsDel(k); });   /* ★ 2026-11-21：先読みで 覚えた 顧問先の 中身も 消す */ try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
   $('signOut').addEventListener('click', function () { signOut('ログアウトしました。'); });
   $('gate').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -4758,16 +4758,39 @@
     const code = S.code;
     /* ★ 前に開いた顧問先は 手元の束で すぐ出す（この画面を開いているあいだだけ） */
     if (BUNDLES[code]) applyBundle(BUNDLES[code]);
-    else { listMsg('読み込み中…'); if (S.tab === 'Docs') docsLoad(); }
+    else {
+      listMsg('読み込み中…'); if (S.tab === 'Docs') docsLoad();
+      /* ★★ 総点検 2026-11-23（速さ）：前に 開いた 顧問先は 端末に 覚えた 束で すぐ 出す（開き直した あとも）。新しい 束は 下で 取って 差し替える */
+      BDDB.get(code).then(function (b) { if (b && code === S.code && !BUNDLES[code]) applyBundle(b, true); });
+    }
     gs('clientBundle', code).then(applyBundle, function (e) { if (code === S.code) listMsg(e.message); });
   }
   function boxHid(b) { return (S.hideB || []).some(function (h) { return b === h || String(b).indexOf(h + '/') === 0; }); }
   function boxOpt(sel, v) { if (!v || Array.prototype.some.call(sel.options, function (o) { return o.value === v; })) return; const o = el('option', null, v + '（非表示の箱）'); o.value = v; sel.insertBefore(o, sel.lastChild); }
   /* ★ 束（clientBundle）を画面に当てる。同じ中身なら 描き直さない（小さい絵だけ足す） */
   const BUNDLES = {};
-  function applyBundle(b) {
+  /* 端末に 覚える 束（IndexedDB。小さい絵は 入れない＝絵は OTHDB。入っている 担当者の ぶんだけ 使う・最近の 30件・ログアウトで 消す） */
+  const BDDB = (function () {
+    let dbp = null;
+    const db = function () { if (!dbp) dbp = new Promise(function (ok, ng) { try { const r = indexedDB.open('collect_bd_o', 1); r.onupgradeneeded = function () { r.result.createObjectStore('b', { keyPath: 'k' }); }; r.onsuccess = function () { ok(r.result); }; r.onerror = function () { ng(r.error); }; } catch (e) { ng(e); } }); return dbp; };
+    const tx = function (mode, fn) { return db().then(function (d) { return new Promise(function (ok, ng) { const t = d.transaction('b', mode); const req = fn(t.objectStore('b')); t.oncomplete = function () { ok(req && req.result); }; t.onerror = function () { ng(t.error); }; t.onabort = function () { ng(t.error); }; }); }); };
+    const who = function () { return lsGet('collect_office_name') || ''; };
+    return {
+      get: function (code) { return tx('readonly', function (s) { return s.get(code); }).then(function (r) { return r && r.who === who() && r.v && r.v.code === code ? r.v : null; }).catch(function () { return null; }); },
+      put: function (b) {
+        const v = Object.assign({}, b); delete v.thumbs;
+        return tx('readwrite', function (s) { s.put({ k: b.code, who: who(), at: Date.now(), v: v }); return null; })
+          .then(function () { return tx('readonly', function (s) { return s.getAll(); }); })
+          .then(function (all) { if (!all || all.length <= 30) return; all.sort(function (x, y) { return x.at - y.at; }); const gone = all.slice(0, all.length - 30); return tx('readwrite', function (s) { gone.forEach(function (x) { s.delete(x.k); }); return null; }); })
+          .catch(function () {});
+      },
+      wipe: function () { return tx('readwrite', function (s) { s.clear(); return null; }).catch(function () {}); }
+    };
+  })();
+  function applyBundle(b, kept) {
     if (!b || b.code !== S.code) return;
     BUNDLES[b.code] = b;
+    if (!kept) { clearTimeout(applyBundle.t); applyBundle.t = setTimeout(function () { BDDB.put(b); }, 600); }
     Object.keys(BUNDLES).slice(0, -6).forEach(function (k) { if (k !== b.code) delete BUNDLES[k]; });
     Object.keys(b.thumbs || {}).forEach(function (id) { if (!THUMB[id]) THUMB[id] = b.thumbs[id]; });
     S.ai = b.ai || {}; S.aiOn = !!b.aiOn;
@@ -5866,6 +5889,7 @@
   const THIN = {};
   let DTH_RUN = false;
   function docsThumbs(items) {
+    try { docsPreFull(); } catch (e) {}
     if (DTH_RUN && DTH_RUN === S.code) return;
     const need = (items || []).map(function (it) { return it.id; }).filter(function (id) { return !(id in THUMB) && !THIN[id]; });
     if (!need.length) return;
@@ -9769,6 +9793,24 @@
     if (first) DQ.unshift(id); else DQ.push(id);
     dPump();
   }
+  /* ★★ 総点検 2026-11-23（速さ）：回収資料の 札を 押す前に 大きい絵を スタンバイ。
+       ① 一覧が 出て ひと息 ついたら、見えている 札の 先頭 4件 ② マウスを 乗せた 札（押す 直前）。手元に 置くのは 今までどおり 40件まで */
+  let DPRE_SIG = '';
+  function docsPreFull() {
+    clearTimeout(docsPreFull.t);
+    docsPreFull.t = setTimeout(function () {
+      if (S.tab !== 'Docs' || !S.code) return;
+      const ids = Array.prototype.filter.call($('dBody').querySelectorAll('.dtile[data-id]'), function (t) { return t.offsetParent !== null; }).map(function (t) { return t.dataset.id; })
+        .filter(function (id) { const d = docOf(id); return d && !fileKind(d.name) && !d.fold; }).slice(0, 4);
+      const sig = S.code + '|' + ids.join(','); if (!ids.length || sig === DPRE_SIG) return; DPRE_SIG = sig;
+      ids.forEach(function (id) { if (!IMG[id]) dWant(id, false); });
+    }, 1800);
+  }
+  document.addEventListener('mouseover', function (e) {
+    const t = e.target && e.target.closest ? e.target.closest('#dBody .dtile[data-id]') : null; if (!t) return;
+    const id = t.dataset.id; clearTimeout(docsPreFull.h);
+    docsPreFull.h = setTimeout(function () { try { const d = docOf(id); if (d && !fileKind(d.name) && !d.fold && !IMG[id] && t.matches(':hover')) dWant(id, true); } catch (x) {} }, 150);
+  });
   function dPump() {
     while (drun < 2 && DQ.length) {
       const b = DQ.splice(0, 3).filter(function (id) { return !IMG[id] && !INFLIGHT[id]; });
@@ -11694,7 +11736,8 @@
   function dvPosDraw(it) { const ids = dvSeq(it), i = ids.indexOf(it.id); $('dvPos').textContent = (i + 1) + ' / ' + ids.length; }
   function dvPre(it) {
     const ids = dvSeq(it), i = ids.indexOf(it.id);
-    [i + 1, i + 2, i - 1].forEach(function (j) { const id = ids[j]; const d = id && docOf(id); if (d && !fileKind(d.name) && !IMG[id]) dWant(id, true); });
+    /* ★ 総点検 2026-11-23（速さ）：先の 4件・前の 1件を 前もって 取る（前は 先の 2件）。あとに 入れた ものほど 先に 取る ので 遠い順に 入れる */
+    [i + 4, i + 3, i - 1, i + 2, i + 1].forEach(function (j) { const id = ids[j]; const d = id && docOf(id); if (d && !fileKind(d.name) && !IMG[id]) dWant(id, true); });
   }
   /* 次・前の資料（まとめた書類は 1つとして飛ばす）。無ければ null */
   function dvNextId(it, dir) {
