@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795349707;</script>
+<script>window.__PAGE_VER=1795359499;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1633,6 +1633,9 @@
   .arrpop .arr-row b { color: #B3261E; font-size: 16px; }
   .arrpop .arr-row small { color: #778; }
   .arrpop .arr-all { font-size: 12px; display: flex; gap: 6px; align-items: center; margin: 0 0 6px; }
+  .aqrow { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin: 6px 0; background: #fff; display: flex; flex-direction: column; gap: 4px; }
+  .aqrow.done { opacity: .75; } .aqh { font-size: 12.5px; color: #555; } .aqq { font-weight: 700; white-space: pre-wrap; } .aqa { white-space: pre-wrap; } .aqa.fixed { color: #0F6E56; }
+  .aqrow textarea { width: 100%; box-sizing: border-box; font: inherit; } .aqbtn { display: flex; gap: 6px; }
   /* ★★ 2026-11-22：回収資料・仕訳化の 上の 2つの 島 */
   .isles { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 8px; margin: 6px 0 8px; }
   @media (max-width: 900px) { .isles { grid-template-columns: 1fr; } }
@@ -2207,6 +2210,11 @@
   <p class="note">数字（試算表）から 事務所の 考え方で 算定し、顧問先の 画面に「いまの リスク」として 出します。エージェントも 同じ 計算式で 下書きします。</p>
   <details open class="rbox" id="hoBox"><summary>🛡 標準保障額の 算定（企業防衛）</summary>
     <div id="hoCalc"></div>
+  </details>
+  <details class="rbox" id="aqBox"><summary>💬 顧問先が AI に聞いたこと（確かめて 返す）</summary>
+    <p class="note">顧問先の［💬 AI に聞く］の 質問と AI の 答え。ふだんは AI が すぐ 答え、税額が 大きく 変わりそうな ものは 答えを 出さずに 待っています。［✓ この答えで よい］か、直して［✎ 直して 送る］。月の 費用の 上限で 止まります。</p>
+    <div class="note" id="aqStat"></div>
+    <div id="aqList"></div>
   </details>
   <details open class="rbox" id="kyBox"><summary>経営助言（企業防衛のリスク・格付け・顧問先ごとの助言。顧問先の画面に出す）</summary>
     <p class="note">算定は 事務所の仕事です。［🤖 エージェントに渡す（zip）］の［🛡 標準保障額］［🏦 格付け］で 下書きを作ってもらい、［📥 結果と学び］の［経営助言に入れる］で ここに 写して 直してから 入れます。<b>顧問先には「出す」に ✓ したものだけ</b>（算定式・過程・形式的な格付けは 出ません）。<b>保険の提案は 顧問先が［石井事務所に相談する］を 押してから</b>でないと 出せません。</p>
@@ -3018,7 +3026,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
+  const READ_FN = { aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, arriveGrid: 1, askList: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -3243,11 +3251,12 @@
     BELL.items.forEach(function (x) {
       const b2 = el('button', 'arr-row' + (x.unread ? ' unread' : '')); b2.type = 'button';
       b2.appendChild(el('span', 'dot'));
-      b2.appendChild(el('span', 'nm', x.minutes ? '📝 ' + x.code + '　' + x.name + ' 様　' + x.box + '（2週間たちました）' : x.red ? '🔴 ' + x.code + '　' + x.name + ' 様が「要確認」を ' + x.n + '件（' + x.box + '）' : (x.line ? '💬 ' : '📷 ') + x.code + '　' + x.name + ' 様　' + x.n + '件（' + x.box + '）')).title = x.red ? x.name + ' 様が 「要確認」の色のラベルを付けました（' + x.box + '）' : x.name + ' 様から ' + x.n + '件（' + x.box + '）';
+      b2.appendChild(el('span', 'nm', x.aiq ? '💬 ' + x.code + '　' + x.name + ' 様　' + x.box : x.minutes ? '📝 ' + x.code + '　' + x.name + ' 様　' + x.box + '（2週間たちました）' : x.red ? '🔴 ' + x.code + '　' + x.name + ' 様が「要確認」を ' + x.n + '件（' + x.box + '）' : (x.line ? '💬 ' : '📷 ') + x.code + '　' + x.name + ' 様　' + x.n + '件（' + x.box + '）')).title = x.red ? x.name + ' 様が 「要確認」の色のラベルを付けました（' + x.box + '）' : x.name + ' 様から ' + x.n + '件（' + x.box + '）';
       b2.appendChild(el('small', null, x.when));
       b2.addEventListener('click', function () {
         if (x.unread) { x.unread = false; BELL.unread = Math.max(0, BELL.unread - 1); gs('arriveRead', [x.key]).catch(function () {}); }
         $('bellPop').hidden = true; $('bellBtn').setAttribute('aria-expanded', 'false'); bellDraw();
+        if (x.aiq) { if (setCode(x.code)) { selectTab('Advice'); setTimeout(function () { const b = $('aqBox'); if (b) { b.open = true; aqLoad(); b.scrollIntoView({ block: 'start' }); } }, 400); } return; }
         if (x.kyo) { if (setCode(x.code)) { selectTab('Rule'); setTimeout(function () { const b = $('kyBox'); if (b) { b.open = true; b.scrollIntoView({ block: 'start' }); } }, 400); } return; }
         if (x.minutes) { if (setCode(x.code)) { selectTab('Rule'); setTimeout(function () { const b = $('mnBox'); if (b) { b.open = true; b.scrollIntoView({ block: 'start' }); } }, 400); } return; }
         arGo(x.code, x.line ? '' : x.box);
@@ -7904,7 +7913,7 @@
     Prog: { t: '進捗', lead: '顧問先 × 月分で いま どの 工程まで 来ているかを 見る タブです（担当先だけ・上の 👥 で 選ぶ）。',
       steps: ['数えるのは 毎月の箱だけ（年末調整 などの スポットの箱は 数えない）。顧問先の 名前の［🙈 非表示］で 進捗から 外し、［非表示に した 顧問先も 出す］で また 出せる', '資料回収 → 資料チェック → エージェント → 元帳チェック → 取込ファイル化 → 会計システムへ計上 の 順に 並ぶ（緑＝済み・黄＝途中・灰＝まだ。太い枠が いま 止まっている 工程）', 'ブロックを 押すと その工程の 画面へ（資料は 回収資料・エージェント／元帳は 仕訳化・取込ファイル化は 取込ファイル）', '会計システム（FX）へ 取り込んだら「会計システムへ計上」を 押す（もう一度 押すと 取り消し）。最後まで 済んだ 月分は たたむ（［終わった 月分も 出す］で 出す）'], tips: ['期間は 3・6・12か月'] },
     Advice: { t: '経営助言', lead: '企業防衛（標準保障額）・格付け・顧問先ごとの 助言を 作り、顧問先の 画面の 経営助言に 出す タブです。',
-      steps: ['［📥 試算表（過去の仕訳）から 入れる］で 借入金・運転資金・固定費・現預金を 入れて 内訳を 直す', '役員ごとに 報酬月額・在任年数・功績倍率（役位で 目安が 入る）・弔慰金の月数を 入れる。実効税率・繰越欠損金・法人保険の 死亡保険金を 入れる', '標準保障額・不足額・納税資金・就業不能の 必要額と 顧問先に 出る 文が 出る →［💾 入力を 保存］か［🛡 顧問先の 画面に 出す（保存して リスクに 入れる）］', '助言は 項目ごとに 書いて［助言を出す］（税務判断を 含むものは「担当 石井」と 出る）。格付けは［格付けを入れる］。顧問先から 相談が来たら［提案を 顧問先に出す］'],
+      steps: ['「💬 顧問先が AI に聞いたこと」… 顧問先の［💬 AI に聞く］の 質問と AI の 答え。［✓ この答えで よい］か、直して［✎ 直して 送る］（お知らせにも 出る）。税額が 大きく 変わりそうな 質問は 顧問先に まだ 答えを 出していないので 先に 確かめる。今月の 費用と 上限（月1万円）も ここ', '［📥 試算表（過去の仕訳）から 入れる］で 借入金・運転資金・固定費・現預金を 入れて 内訳を 直す', '役員ごとに 報酬月額・在任年数・功績倍率（役位で 目安が 入る）・弔慰金の月数を 入れる。実効税率・繰越欠損金・法人保険の 死亡保険金を 入れる', '標準保障額・不足額・納税資金・就業不能の 必要額と 顧問先に 出る 文が 出る →［💾 入力を 保存］か［🛡 顧問先の 画面に 出す（保存して リスクに 入れる）］', '助言は 項目ごとに 書いて［助言を出す］（税務判断を 含むものは「担当 石井」と 出る）。格付けは［格付けを入れる］。顧問先から 相談が来たら［提案を 顧問先に出す］'],
       tips: ['計算式と 考え方は エージェントの zip にも 入る（企業防衛_標準保障額の考え方.md）。事業を 継続し 後継者に 引き継ぐ 前提の 概算'] },
     Grt: { t: '保証', lead: '巡回監査の 議事録・巡回監査報告書・書面添付（税理士法33条の2）・決算書類の 確認を まとめる タブです（TKC の 4大業務の 保証）。',
       steps: ['「議事録」… OMS などの 議事録を［文字で入れる］か［ファイルで入れる］（あとから直せない記録に 指紋と日時が残る）。［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す', '「巡回監査報告書」… 巡回の月を 選び、書いて［保存（新しい版）］か［保存して 顧問先に 出す］（エージェントの 下書きが あれば 入っている）', '「書面添付」… 決算期を 選んで［🤖 下書きの zip を作る（1年分）］→ Claude Code に 渡し、できた zip を 仕訳化タブで 戻す → 直して［保存（新しい版）］', '「決算書類の 確認」… 決算期と 書類の名前を 入れて［PDF を 選んで 出す］→ 顧問先が［内容を確認しました］を 押すと ✅ が 付く。［出すのを やめる］で 引っ込める'],
@@ -8351,6 +8360,34 @@
   }
   $('jDictTg').addEventListener('click', function () { const on = !$('jmain').classList.contains('dictoff'); try { localStorage.setItem('collect_office_dictui', on ? '0' : '1'); } catch (e) {} window.__dictOff = on ? 1 : 0; jDictPaint(); });
   $('jDictLed').addEventListener('click', function () { lgOpen(); });
+  /* ★★ 2026-11-22（石井）：顧問先が［💬 AI に聞く］で 聞いたこと。確かめて 返す */
+  function aqLoad() {
+    if (!S.code) return; const w = $('aqList'); w.textContent = '読み込み中…';
+    gs('aiqList', S.code).then(aqDraw, function (e) { w.textContent = e.message; });
+  }
+  function aqDraw(r) {
+    const w = $('aqList'); w.textContent = '';
+    $('aqStat').textContent = '今月の AI の 費用（事務所 全体）：約 ' + (r.used || 0).toLocaleString('ja-JP') + '円 ／ 上限 ' + (r.cap || 0).toLocaleString('ja-JP') + '円（1社 月 ' + r.per + '問まで）';
+    if (!r.list.length) { w.appendChild(el('p', 'note', 'まだ 質問は ありません。')); return; }
+    r.list.forEach(function (x) {
+      const d = el('div', 'aqrow' + (x.check ? ' done' : ''));
+      d.appendChild(el('div', 'aqh', x.at + '　' + (x.check ? '✓ ' + x.check.kind + '（' + x.check.who + '）' : x.heavy ? '⏳ 大事な 質問（まだ 顧問先に 答えを 出していない）' : x.err ? '⚠ AI が 答えられなかった（' + x.err + '）' : '🤖 AI が 答えた（確かめ待ち）') + (x.why ? '　理由：' + x.why : '') + '　約' + x.yen + '円'));
+      d.appendChild(el('div', 'aqq', 'Q. ' + x.q));
+      if (x.a) d.appendChild(el('div', 'aqa', (x.check && x.check.kind === '直した' ? '（AI の 下書き）' : '') + x.a));
+      if (x.check && x.check.kind === '直した') d.appendChild(el('div', 'aqa fixed', '（送った 答え）' + x.check.text));
+      if (!x.check) {
+        const ta = el('textarea'); ta.rows = 3; ta.placeholder = '直すときは ここに 送る 答えを 書く（空なら AI の 答えの まま）'; ta.value = '';
+        const ok = el('button', 'btn sm', x.a ? '✓ この答えで よい' : '✎ 答えを 送る'); ok.type = 'button';
+        const fx = el('button', 'btn sm', '✎ 直して 送る'); fx.type = 'button';
+        const send = function (text) { ok.disabled = fx.disabled = true; gs('aiqCheck', S.code, x.id, text).then(function (r2) { aqDraw(r2); try { bellLoad(); } catch (q) {} }, function (e) { ok.disabled = fx.disabled = false; alert(e.message); }); };
+        ok.addEventListener('click', function () { if (!x.a && !ta.value.trim()) { ta.focus(); return; } send(x.a ? '' : ta.value.trim()); });
+        fx.addEventListener('click', function () { if (!ta.value.trim()) { ta.value = x.a || ''; ta.focus(); return; } send(ta.value.trim()); });
+        d.appendChild(ta); const row = el('div', 'aqbtn'); row.appendChild(ok); if (x.a) row.appendChild(fx); d.appendChild(row);
+      }
+      w.appendChild(d);
+    });
+  }
+  $('aqBox').addEventListener('toggle', function () { if (this.open) aqLoad(); });
   $('jDictBack').addEventListener('click', function () { selectTab('Docs'); });
   /* ★★ 2026-11-22：共有ドライブの「結果」に 置かれた できあがりを 拾う（押しても・戻り待ちの あいだ ひとりでにも） */
   function agPickup(silent) {
