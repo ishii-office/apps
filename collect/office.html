@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795420606;</script>
+<script>window.__PAGE_VER=1795426759;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3485,9 +3485,42 @@
     if (FD.info && FD.info.set) { if (!FD.data) fdGo(FD.cur || FD.info.root.id, true); return; }
     fdBoot();
   }
+  /* ★★★ 2026-11-25（石井「共有ドライブの 読み込みが やはり 遅い。瞬時に」）：
+   *   ① 設定（foldInfo）も 端末に 覚えて、開いた 瞬間は それで 描く（前は 設定を 聞き終わるまで 何も 出なかった＝いつも 1往復 待った）。裏で 聞き直し、変わって いれば 描き直す
+   *   ② 開いた フォルダの 中の フォルダ（6つまで）を 裏で 先に 読んで おく（押した 瞬間に 出る）
+   *   ③ 左の 並び（ツリー）の 中身も 端末に 覚える
+   *   ④ アプリを 開いて 手が すいたら、共有ドライブを 開く 前でも 設定と 前回の フォルダを 先に 読んで おく */
   function fdBoot() {
-    fdNote('読んでいます…');
-    gs('foldInfo').then(function (r) { FD.info = r || {}; fdAfterInfo(); }, function (e) { fdNote(e.message, true); });
+    let shown = false;
+    const fresh = function (r) {
+      const was = FD.info ? JSON.stringify(FD.info) : ''; FD.info = r || {}; try { BDDB.put({ code: 'fd:info', data: FD.info }); } catch (e) {}
+      if (!shown || was !== JSON.stringify(FD.info)) { shown = true; fdAfterInfo(); }
+    };
+    let asked = gs('foldInfo');
+    try { BDDB.get('fd:info').then(function (v) { if (v && v.data && v.data.set && !shown) { shown = true; FD.info = v.data; fdAfterInfo(); } }); } catch (e) {}
+    setTimeout(function () { if (!shown) fdNote('読んでいます…'); }, 150);
+    asked.then(fresh, function (e) { if (!shown) fdNote(e.message, true); });
+  }
+  const fdIdle = function (fn, ms) { setTimeout(function () { if (window.requestIdleCallback) requestIdleCallback(fn, { timeout: 2000 }); else fn(); }, ms); };
+  /* ② 中の フォルダを 先に 読む（1つずつ・手が すいたとき・この画面で 1回） */
+  function fdPrefetch(r) {
+    const ids = (r && r.folders || []).map(function (f) { return f.id; }).filter(function (id) { return !FD.cache[id] && !(FD.pf || {})[id]; }).slice(0, 6);
+    FD.pf = FD.pf || {}; if (!ids.length) return;
+    const one = function () {
+      const id = ids.shift(); if (!id || FD.cache[id] || FD.pf[id]) { if (ids.length) one(); return; }
+      FD.pf[id] = 1;
+      gs('foldList', id).then(function (x) { FD.cache[x.id] = x; FD.kids[x.id] = x.folders; try { BDDB.put({ code: 'fd:' + x.id, data: x }); } catch (e) {} }, function () {}).then(function () { if (ids.length) fdIdle(one, 300); });
+    };
+    fdIdle(one, 600);
+  }
+  /* ④ アプリを 開いて 手が すいたら 先に 読む（1回） */
+  function fdWarm() {
+    if (fdWarm.done || !S.booted) return; fdWarm.done = 1;
+    let sv = {}; try { sv = JSON.parse(lsGet(LS_FD) || '{}') || {}; } catch (e) {}
+    gs('foldInfo').then(function (r) { try { BDDB.put({ code: 'fd:info', data: r || {} }); } catch (e) {}
+      if (!(r && r.set)) return; const id = sv.cur || r.root.id; if (FD.cache[id]) return;
+      return gs('foldList', id).then(function (x) { FD.cache[x.id] = x; if (id !== x.id) FD.cache[id] = x; try { BDDB.put({ code: 'fd:' + x.id, data: x }); } catch (e) {} });
+    }).catch(function () {});
   }
   function fdNote(t, err) { const w = $('fdWork'); w.textContent = ''; const n = el('div', 'fdnote', t); if (err) n.style.color = 'var(--err)'; w.appendChild(n); }
   function fdAfterInfo() {
@@ -3634,7 +3667,7 @@
       FD.cache[r.id] = r; if (id && id !== r.id) FD.cache[id] = r; try { BDDB.put({ code: 'fd:' + r.id, data: r }); } catch (e) {}
       FD.loading = ''; FD.cur = r.id; FD.data = r; FD.kids[r.id] = r.folders;
       (r.path || []).slice(0, -1).forEach(function (p) { FD.open[p.id] = 1; });
-      fdSave(); fdMsg(FD.move ? '移す先のフォルダを 左の並びで押してください。' : ''); if (keptSig && keptSig === JSON.stringify(r)) return; fdDraw();
+      fdSave(); fdMsg(FD.move ? '移す先のフォルダを 左の並びで押してください。' : ''); fdPrefetch(r); if (keptSig && keptSig === JSON.stringify(r)) return; fdDraw();
     }, function (e) {
       if (FD.loading !== id) return; FD.loading = '';
       if (soft && FD.info && FD.info.root && id !== FD.info.root.id) return fdGo(FD.info.root.id);
@@ -3685,7 +3718,10 @@
   }
   function fdKidsLoad(id) {
     if (FD.kl[id]) return; FD.kl[id] = 1;
-    gs('foldList', id, 1).then(function (r) { delete FD.kl[id]; FD.kids[id] = r.folders || []; fdTreeDraw(); }, function () { delete FD.kl[id]; FD.kids[id] = []; delete FD.open[id]; fdTreeDraw(); });
+    /* ★★★ 2026-11-25：前に 読んだ 中身が あれば すぐ 出す（この画面の 中・端末）。裏で 新しく する */
+    if (FD.cache[id] && FD.cache[id].folders) { FD.kids[id] = FD.cache[id].folders; setTimeout(fdTreeDraw, 0); }
+    else { try { BDDB.get('fdk:' + id).then(function (v) { if (v && v.data && !FD.kids[id]) { FD.kids[id] = v.data; fdTreeDraw(); } }); } catch (e) {} }
+    gs('foldList', id, 1).then(function (r) { delete FD.kl[id]; const k = r.folders || []; const same = JSON.stringify(FD.kids[id] || null) === JSON.stringify(k); FD.kids[id] = k; try { BDDB.put({ code: 'fdk:' + id, data: k }); } catch (e) {} if (!same) fdTreeDraw(); }, function () { delete FD.kl[id]; if (!FD.kids[id]) { FD.kids[id] = []; delete FD.open[id]; } fdTreeDraw(); });
   }
   function fdTreeHide() { $('fdMain').classList.remove('tree'); }
   /* ---- 右：作業スペース ---- */
@@ -4814,7 +4850,7 @@
         const v = Object.assign({}, b); delete v.thumbs;
         return tx('readwrite', function (s) { s.put({ k: b.code, who: who(), at: Date.now(), v: v }); return null; })
           .then(function () { return tx('readonly', function (s) { return s.getAll(); }); })
-          .then(function (all) { if (!all || all.length <= 60) return; all.sort(function (x, y) { return x.at - y.at; }); const gone = all.slice(0, all.length - 60); return tx('readwrite', function (s) { gone.forEach(function (x) { s.delete(x.k); }); return null; }); })
+          .then(function (all) { if (!all || all.length <= 150) return; all.sort(function (x, y) { return x.at - y.at; }); const gone = all.slice(0, all.length - 150); return tx('readwrite', function (s) { gone.forEach(function (x) { s.delete(x.k); }); return null; }); })
           .catch(function () {});
       },
       wipe: function () { return tx('readwrite', function (s) { s.clear(); return null; }).catch(function () {}); }
@@ -11151,7 +11187,7 @@
   function kzStatsPut(r) {
     (function () {
       const w = $('kzStatsBody'); w.textContent = ''; w.className = '';
-      const H = ['担当者', '改善要望\n（書いた）', 'うち\n改善済み', '直近30日に\n書いた', '回収アプリを\n入れた顧問先', 'うち 運用中\n（30日に届いた）', '届いた資料\n（30日）', '確認済に\nした（30日）', 'AI下書き\n（30日）', '仕訳化\n（30日）', 'エージェント\n研究（回）', 'うち\n30日', 'カルテを\n書いた（30日）'];
+      const H = ['担当者', '改善\n（項目数）', 'うち\n改善済み', '直近30日\n（項目数）', '回収アプリを\n入れた顧問先', 'うち 運用中\n（30日に届いた）', '届いた資料\n（30日）', '確認済に\nした（30日）', 'AI下書き\n（30日）', '仕訳化\n（30日）', 'エージェント\n研究（回）', 'うち\n30日', 'カルテを\n書いた（30日）'];
       const F = ['kz', 'kzDone', 'kz30', 'clients', 'active', 'docs30', 'chk30', 'ai30', 'je30', 'res', 'res30', 'kar30'];
       const tb = el('table', 'kzst'); const tr0 = el('tr'); H.forEach(function (h) { tr0.appendChild(el('th', null, h)); }); tb.appendChild(tr0);
       (r.rows || []).concat([r.total]).forEach(function (x, i, a) {
@@ -11160,7 +11196,7 @@
         tb.appendChild(tr);
       });
       const tw = el('div', 'kzstw'); tw.appendChild(tb); w.appendChild(tw);   /* ★ 表だけ 横に動かす（画面ごと はみ出さない。数が3けたになると スマホで はみ出していた 2026-11-11） */
-      (r.rows || []).filter(function (x) { return x.direct; }).forEach(function (x) { w.appendChild(el('div', 'note', '★ ' + x.name + ' … 改善要望の数に Claude Code に直接頼んで直した ' + x.direct + '回（' + x.directSince.replace(/-/g, '/') + '〜。アプリに入った直しの回数）を含みます。')); });
+      (r.rows || []).filter(function (x) { return x.direct; }).forEach(function (x) { w.appendChild(el('div', 'note', '★ ' + x.name + ' … 改善の 数に Claude Code に直接頼んで直した ' + x.direct + '項目（' + x.directSince.replace(/-/g, '/') + '〜）を含みます。改善の 数は 全員 項目数（1回に まとめて 頼んでも 中の 直しの 数）で 数えます。')); });
       w.appendChild(el('div', 'note', '回収アプリを入れた顧問先 … 顧問先タブの「担当者（事務所）」がその人で、提出URLを出していて 有効なもの。運用中 … そのうち 直近30日に 顧問先から資料が届いたもの。AI下書き・仕訳化 … その人の担当先で 直近30日に AIが読めた枚数・確定した仕訳の数（取り消したものは数えない）。確認済にした … その人が押した数。エージェント研究 … 回収資料タブの［🤖 エージェントに渡す］で zip を作り、自分の Claude Code に投げて、できあがりを［⬆ できあがりを戻す］で 戻した回数（戻した人で数える）。カルテを書いた … AI の考え方タブで 顧問先カルテを 保存した回数。' + (r.master ? '' : '（マスター以外は 自分と事務所全体だけ出ます）') + '　' + r.at + ' 時点'));
     })();
   }
@@ -11260,8 +11296,10 @@
       /* ★ 全部・改善済みには Claude Code に直接頼んで直した分（一覧に1件ずつは無い）も足す。集計の数と そろえる（2026-11-11）
          ★ K-0122：さがしているときは 合ったものだけ数える（直接頼んだ分は 1件ずつ無いので足さない） */
       const dadd = ws.length ? 0 : ((KZ.direct && KZ.direct.add) || 0);
-      const n = (k === 'all' ? hits.length : hits.filter(function (x) { return x.st === k; }).length) + (k === 'all' || k === '改善済み' ? dadd : 0);
-      const b = el('button', null, (k === 'all' ? '全部' : k) + ' ' + n); b.type = 'button'; b.setAttribute('aria-pressed', String(KZ.flt === k));
+      /* ★★★ 2026-11-25（石井）：数は 項目数（1件の 中の 直しの 数）。件数は かっこで */
+      const hk = k === 'all' ? hits : hits.filter(function (x) { return x.st === k; });
+      const n = hk.reduce(function (a, x) { return a + (x.items || 1); }, 0) + (k === 'all' || k === '改善済み' ? dadd : 0);
+      const b = el('button', null, (k === 'all' ? '全部' : k) + ' ' + n + '項目（' + hk.length + '件）'); b.type = 'button'; b.setAttribute('aria-pressed', String(KZ.flt === k));
       b.addEventListener('click', function () { KZ.flt = k; kzDraw(); }); f.appendChild(b);
     });
     /* 選んだもののうち いま一覧にあって まだ済んでいないものだけ数える */
@@ -11312,7 +11350,7 @@
       ok.addEventListener('click', function () { gs('kaizenSeen', mine.map(function (x) { return x.no; })).then(function () { kzLoad(true); }, function (e) { kzMsg('印を付けられませんでした。' + e.message, true); }); }); mw.appendChild(ok);
     }
     const w = $('kzList'); w.textContent = '';
-    if (!ws.length && KZ.direct && KZ.direct.add && (KZ.flt === 'all' || KZ.flt === '改善済み')) w.appendChild(el('p', 'note kzdirect', '★ 数には ' + KZ.direct.who + 'が Claude Code に直接頼んで直した ' + KZ.direct.n + '回（' + String(KZ.direct.since).replace(/-/g, '/') + '〜）のうち 下の一覧に1件ずつ入っていない ' + KZ.direct.add + '回も入っています（集計の数と同じ）。'));
+    if (!ws.length && KZ.direct && KZ.direct.add && (KZ.flt === 'all' || KZ.flt === '改善済み')) w.appendChild(el('p', 'note kzdirect', '★ 数（項目数）には ' + KZ.direct.who + 'が Claude Code に直接頼んで直した ' + KZ.direct.n + '項目（' + String(KZ.direct.since).replace(/-/g, '/') + '〜）のうち 下の一覧に1件ずつ入っていない分も入っています（集計の数と同じ。全員 項目数で 数えます）。'));
     const list = kzShown();
     $('kzQN').textContent = ws.length ? '「' + KZ.q.trim() + '」に合うもの ' + list.length + '件' + (KZ.flt === 'all' ? '' : '（' + KZ.flt + 'のうち）') : '';
     if (!list.length) { w.appendChild(el('p', 'note', ws.length ? '「' + KZ.q.trim() + '」に合う要望は ありません' + (KZ.flt === 'all' ? '' : '（' + KZ.flt + 'のうち。［全部］にすると ほかの状態からも さがします）') + '。' : KZ.flt === 'all' ? 'まだ改善要望はありません。［＋ 改善要望を書く］から どうぞ。' : '「' + KZ.flt + '」のものは ありません。')); return; }
@@ -11347,6 +11385,7 @@
     if (KZ.master && x.st !== '改善済み' && x.st !== '見送り') { const ck = el('input'); ck.type = 'checkbox'; ck.checked = !!KZ.sel[x.no]; ck.title = 'まとめてコピーに入れる'; ck.addEventListener('change', function () { if (ck.checked) KZ.sel[x.no] = 1; else delete KZ.sel[x.no]; kzDraw(); }); h.appendChild(ck); }
     h.appendChild(kzElM('span', 'no', x.no, ws));
     h.appendChild(kzElM('span', 'chip', x.st, ws));
+    if (x.items) { const ni = el('span', 'chip kzitems', x.items + '項目'); ni.title = '改善の 数は 項目数で 数えます（改善内容の 1つ 1つの 直し）'; h.appendChild(ni); }
     if (x.urgent) h.appendChild(el('span', 'chip u', '急ぎ'));
     h.appendChild(kzElM('span', 'chip', x.code ? x.code + ' ' + x.cname : '事務所から', ws));
     h.appendChild(kzElM('span', 'meta', x.at + '　' + x.who + ' さん' + (x.chk ? '　／　確かめた人：' + x.chk : '') + (x.issue ? '　／　' : ''), ws));
@@ -15983,6 +16022,7 @@
         if (code !== S.code) return;
         ['kyoGet', 'hoshoBase', 'grtGet'].forEach(function (fn) { if (S.tab !== (fn === 'grtGet' ? 'Grt' : 'Advice')) warmGo(fn, [code], 60000).catch(function () {}); });
         if (S.tab !== 'Prog' && (!PG.at || Date.now() - PG.at > 300000)) { try { pgLoad(false); } catch (e) {} }
+        if (S.tab !== 'Fold') { try { fdWarm(); } catch (e) {} }
       };
       if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 4000 }); else go();
     }, 1500);
