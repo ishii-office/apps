@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795433341;</script>
+<script>window.__PAGE_VER=1795435379;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3503,8 +3503,32 @@
   }
   const fdIdle = function (fn, ms) { setTimeout(function () { if (window.requestIdleCallback) requestIdleCallback(fn, { timeout: 2000 }); else fn(); }, ms); };
   /* ② 中の フォルダを 先に 読む（1つずつ・手が すいたとき・この画面で 1回） */
+  /* ★★★ 2026-11-25 速さ（石井「中の フォルダや ファイルの 読み込みが 遅い。編集も 早く」）：
+       マウスを 乗せたら（押す 前に）先に 読みはじめる。フォルダは 中身、PDF・画像は 中身（開く・書きこむ ときに 待たない） */
+  let fdHvT = 0;
+  function fdHover(it) {
+    clearTimeout(fdHvT); if (!it || fdTmp(it.id) || it.up) return;
+    fdHvT = setTimeout(function () {
+      if (it.kind === 'folder') { if (it.id === 'ALL' || FD.cache[it.id] || (FD.pf = FD.pf || {})[it.id]) return; FD.pf[it.id] = 1; gs('foldList', it.id).then(function (x) { FD.cache[x.id] = x; FD.kids[x.id] = x.folders; try { BDDB.put({ code: 'fd:' + x.id, data: x }); } catch (e) {} }, function () { delete FD.pf[it.id]; }); return; }
+      /* ファイルは 前から（2026-11-16）マウスを 乗せると 中身を 読んでいる（fdOutReady） */
+    }, 120);
+  }
+  /* PDF・画像の 中身を 先に 取る（8MB まで。同じものは 1回） */
+  function fdPeek(it) {
+    if (!it || it.kind === 'folder' || FDB.bytes[it.id] || (FDB.peek = FDB.peek || {})[it.id]) return;
+    if (!/^image\/(jpeg|png|gif|webp)$|^application\/pdf$/.test(String(it.mime || '')) || (Number(it.size) || 0) > 8 * 1048576) return;
+    FDB.peek[it.id] = 1; fdBytes(it).then(function () {}, function () {}).then(function () { delete FDB.peek[it.id]; });
+  }
+  /* フォルダを 開いて 手が すいたら、上の ほうの PDF・画像（小さいもの 4つ）を 先に 取る */
+  function fdPeekFirst(r) {
+    const its = ((r && r.files) || []).filter(function (x) { return /^image\/(jpeg|png|gif|webp)$|^application\/pdf$/.test(String(x.mime || '')) && (Number(x.size) || 0) <= 3 * 1048576 && !FDB.bytes[x.id]; }).slice(0, 4);
+    if (!its.length) return; const id = r.id;
+    const one = function () { const x = its.shift(); if (!x || FD.cur !== id) return; fdPeek(x); fdIdle(one, 400); };
+    fdIdle(one, 900);
+  }
   function fdPrefetch(r) {
-    const ids = (r && r.folders || []).map(function (f) { return f.id; }).filter(function (id) { return !FD.cache[id] && !(FD.pf || {})[id]; }).slice(0, 6);
+    fdPeekFirst(r);
+    const ids = (r && r.folders || []).map(function (f) { return f.id; }).filter(function (id) { return !FD.cache[id] && !(FD.pf || {})[id]; }).slice(0, 12);
     FD.pf = FD.pf || {}; if (!ids.length) return;
     const one = function () {
       const id = ids.shift(); if (!id || FD.cache[id] || FD.pf[id]) { if (ids.length) one(); return; }
@@ -3708,7 +3732,7 @@
     tw.onclick = function () { if (isRoot) return; if (FD.open[id]) delete FD.open[id]; else FD.open[id] = 1; fdSave(); fdTreeDraw(); };
     const nm = el('button', 'nm'); nm.appendChild(el('span', 'ic', '📁')); nm.appendChild(document.createTextNode(' ' + name)); nm.type = 'button'; nm.title = name + (drive ? '\n共有ドライブ（事務所の正本の置き場）' : '');
     nm.onclick = function () { if (FD.move) { fdMoveTo(id); return; } fdTreeHide(); fdGo(id); };
-    row.appendChild(tw); row.appendChild(nm); if (id !== 'ALL') fdDropBind(row, id); wrap.appendChild(row);
+    row.appendChild(tw); row.appendChild(nm); if (id !== 'ALL') { fdDropBind(row, id); row.addEventListener('pointerenter', function () { fdHover({ id: id, kind: 'folder' }); }); } wrap.appendChild(row);
     if (open) {
       const kb = el('div', 'fdkids');
       if (!kids) { const w = el('div', 'fdnode'); w.appendChild(el('span', 'nm', '…')); kb.appendChild(w); fdKidsLoad(id); }
@@ -3759,6 +3783,7 @@
     e.appendChild(el('div', 'nm', it.name));
     e.appendChild(el('div', 'sub at', it.where || (it.drive ? '共有ドライブ' : it.lock ? '🔒 見るだけ' : it.kind === 'folder' ? 'フォルダ' : it.at || '')));
     e.appendChild(el('div', 'sub sz', it.kind === 'folder' ? '' : fdSize(it.size)));
+    if (!it.up && it.kind === 'folder') { e.addEventListener('pointerenter', function () { fdHover(it); }); e.addEventListener('focus', function () { fdHover(it); }); }
     if (it.up) { e.addEventListener('click', function (ev) { ev.stopPropagation(); }); return e; }   /* 入れている途中の札は 触れない（届いたら 本物に入れ替わる） */
     e.addEventListener('click', function (ev) {
       ev.stopPropagation(); fdDisarm();
