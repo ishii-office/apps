@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795417276;</script>
+<script>window.__PAGE_VER=1795420606;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -8600,6 +8600,7 @@
     if (!S.code || !(S.per && /^\d{4}-\d{2}$/.test(S.per))) { if (!silent) dcMsg('先に 顧問先と 月分を 選んでください。', true); return Promise.resolve(); }
     const b = $('agPick'); if (b.disabled) return Promise.resolve(); b.disabled = true;
     return gs('agentPickup', S.code, S.per).then(function (r) { b.disabled = false;
+      if (r.skipped && r.skipped.length) { dcMsg('⚠ 取り込まなかった zip が あります（ほかの 顧問先・月の できあがり）：' + r.skipped.join(' ／ '), true); if (!r.n) return; }
       if (!r.n) { if (!silent) dcMsg('フォルダの「結果」に まだ できあがりが ありません。'); return; }
       AGP.at = 0; try { agpLine(false); } catch (q) {}
       dcMsg('📂 フォルダから できあがりを ' + r.n + 'つ 拾いました（' + r.names.join('・') + '）。' + (r.last && r.last.res && r.last.res.ledger ? '　📗 伝票 ' + r.last.res.ledger + '枚を［📗 元帳で確かめる・直す］で 確かめてください。' : ''));
