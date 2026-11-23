@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795426759;</script>
+<script>window.__PAGE_VER=1795433341;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3656,6 +3656,7 @@
   }
   function fdTools() { const on = !!(FD.info && FD.info.set); $('fdTools').hidden = !on; $('fdTree').hidden = !on; $('fdQ').hidden = !on; $('fdMode').hidden = !on; $('fdTreeBtn').hidden = !on; }
   function fdGo(id, soft) {
+    if (fdTmp(id)) { fdMsg('いま 作っています。少し待ってから 開いてください。'); return Promise.resolve(); }
     FD.search = null; FD.sel = {}; FD.anchor = -1; fdFormClose(); fdDisarm();
     FD.loading = id; fdMsg('読んでいます…');
     /* ★★ 総点検 2026-11-24（速さ。石井「Google共有ドライブの 読み込みが 遅い」）：前に 開いた フォルダは 覚えた 中身を すぐ 出し、裏で 新しく する（この画面の 中＋端末。ログアウトで 消す） */
@@ -3728,7 +3729,7 @@
   function fdWorkDraw() {
     const w = $('fdWork'); w.textContent = '';
     const d = FD.search || FD.data; if (!d) return;
-    const its = (d.folders || []).map(function (x) { return { id: x.id, kind: 'folder', name: x.name, where: x.where || '', drive: x.drive ? 1 : 0, lock: x.lock ? 1 : 0 }; })
+    const its = (d.folders || []).map(function (x) { return { id: x.id, kind: 'folder', name: x.name, where: x.where || '', drive: x.drive ? 1 : 0, lock: x.lock ? 1 : 0, up: x.up ? 1 : 0, at: x.up ? '作っています…' : '' }; })
       .concat((d.files || []).map(function (x) { return Object.assign({ kind: 'file' }, x); }));
     FD.items = its;
     if (FD.search) {
@@ -3928,26 +3929,62 @@
     FD.data.files = next; fdWorkDraw(); fdMsg('並べ替えました（この並びを 覚えます）。', 'ok');
     gs('foldOrder', cur, next.map(function (x) { return x.id; })).then(function () {}, function (e) { if (FD.cur !== cur) return; FD.data.files = was; fdWorkDraw(); fdMsg('並べ替えを 覚えられませんでした。' + e.message, 'err'); });
   }
+  /* ★★★ 2026-11-25 速さ（石井「共有フォルダの挙動 もっと速く。フォルダの変更や新規作成、中身の変更 などなど 高速で」）：
+       押した瞬間に 画面を 変える（作る・名前・移す・ゴミ箱）。Google へは 裏で 送り、だめなら 元に 戻して わけを 出す。
+       前は 返事を 待ってから 一覧を まるごと 取り直して（小さい絵・覚えた中身も 捨てて）いたので 数秒 止まっていた */
+  let fdOps = 0, fdTmpSeq = 0;
+  function fdByName(a, b) { return String(a.name).localeCompare(String(b.name), 'ja', { numeric: true }); }   /* サーバ（foldSortName_）と 同じ 並び */
+  function fdTmp(id) { return /^tmpf_/.test(String(id || '')); }
+  function fdKeep() { if (!FD.data || !FD.cur || FD.search) return; FD.data.folders = FD.data.folders || []; FD.data.files = FD.data.files || []; FD.kids[FD.cur] = FD.data.folders; FD.cache[FD.cur] = FD.data; try { BDDB.put({ code: 'fd:' + FD.cur, data: FD.data }); BDDB.put({ code: 'fdk:' + FD.cur, data: FD.data.folders }); } catch (e) {} }
+  function fdSnap() { return { cur: FD.cur, folders: (FD.data.folders || []).slice(), files: (FD.data.files || []).slice() }; }
+  function fdBack(sn) { if (FD.cur !== sn.cur || !FD.data) return; FD.data.folders = sn.folders; FD.data.files = sn.files; fdKeep(); fdDraw(); }
+  /* 中身が 変わった フォルダは 覚えた中身を 捨てる（次に 開いたとき 古いものを 出さない） */
+  function fdForget(id) { if (!id || id === FD.cur) return; delete FD.cache[id]; delete FD.kids[id]; try { BDDB.del('fd:' + id); BDDB.del('fdk:' + id); } catch (e) {} }
+  /* 裏で そろえる（小さい絵・選び・覚えた中身は そのまま。触っている最中・送っている最中は 待つ） */
+  function fdSync(id) {
+    if (!id || FD.search) return;
+    gs('foldList', id).then(function (r) {
+      if (!r) return; FD.cache[r.id] = r; try { BDDB.put({ code: 'fd:' + r.id, data: r }); } catch (e) {}
+      if (FD.cur !== id || FD.search || FD.loading || fdOps || !FD.data || FD.drag) return;
+      if ((FD.data.files || []).concat(FD.data.folders || []).some(function (x) { return x.up; })) return;
+      const was = JSON.stringify([FD.data.folders, FD.data.files]); FD.data = r; FD.kids[r.id] = r.folders;
+      if (was !== JSON.stringify([r.folders, r.files])) fdDraw();
+    }, function () {});
+  }
+  function fdOpEnd(id) { fdOps = Math.max(0, fdOps - 1); if (!fdOps) fdSync(id); }
   function fdMove(items, toId) {
     if (!items || !items.length) return;
     if (toId === FD.cur && !FD.search) { fdMsg('もう このフォルダの中にあります。'); return; }
     if (toId === 'ALL') { fdMsg('いちばん上には 移せません。中のフォルダを選んでください。', 'err'); return; }
-    fdMsg(items.length + '件を 移しています…');
-    gs('foldMove', items.map(function (x) { return { id: x.id, kind: x.kind }; }), toId).then(function (r) {
-      const k = (r.kept || []).length;
-      fdReload().then(function () { fdMsg(r.moved + '件を 移しました。' + (k ? '（' + k + '件は 移せませんでした：' + r.kept[0] + '）' : ''), k ? 'err' : 'ok'); });
-    }, function (e) { fdMsg(e.message, 'err'); });
+    if (fdTmp(toId) || items.some(function (x) { return fdTmp(x.id); })) { fdMsg('いま 作っている フォルダです。少し待ってから もう一度。', 'err'); return; }
+    const send = items.map(function (x) { return { id: x.id, kind: x.kind }; });
+    if (FD.search || !FD.data) {
+      fdMsg(items.length + '件を 移しています…');
+      gs('foldMove', send, toId).then(function (r) { const k = (r.kept || []).length; fdForget(toId); fdReload().then(function () { fdMsg(r.moved + '件を 移しました。' + (k ? '（' + k + '件は 移せませんでした：' + r.kept[0] + '）' : ''), k ? 'err' : 'ok'); }); }, function (e) { fdMsg(e.message, 'err'); });
+      return;
+    }
+    const pick = {}; items.forEach(function (x) { pick[x.id] = 1; });
+    const sn = fdSnap(), cur = FD.cur, gone = sn.folders.filter(function (x) { return pick[x.id]; });
+    FD.data.folders = sn.folders.filter(function (x) { return !pick[x.id]; }); FD.data.files = sn.files.filter(function (x) { return !pick[x.id]; });
+    FD.sel = {}; fdKeep(); fdForget(toId); gone.forEach(function (x) { fdForget(x.id); }); fdDraw(); fdBtns();
+    fdMsg(items.length + '件を 移しました。', 'ok'); fdOps++;
+    gs('foldMove', send, toId).then(function (r) {
+      const k = (r.kept || []).length; fdForget(toId);
+      if (k) { fdMsg(r.moved + '件を 移しました。（' + k + '件は 移せませんでした：' + r.kept[0] + '）', 'err'); fdOps = Math.max(0, fdOps - 1); if (FD.cur === cur) fdBack(sn); fdSync(cur); return; }
+      fdOpEnd(cur);
+    }, function (e) { fdOps = Math.max(0, fdOps - 1); fdBack(sn); fdMsg('移せませんでした（元に 戻しました）。' + e.message, 'err'); });
   }
   function fdMoveTo(id) { const its = FD.move, cp = FD.mvCopy; FD.move = null; FD.mvCopy = false; fdTreeHide(); fdBtns(); if (cp) fdCopy(its, id); else fdMove(its, id); }
   /* ★★ コピーを置く（2026-11-16）：元は そのまま。見るだけ（回収資料）の中のものも コピーできる */
   function fdCopy(items, toId) {
     if (!items || !items.length) return;
     if (toId === 'ALL') { fdMsg('いちばん上には 置けません。中のフォルダを選んでください。', 'err'); return; }
+    if (fdTmp(toId)) { fdMsg('いま 作っている フォルダです。少し待ってから もう一度。', 'err'); return; }
     fdMsg(items.length + '件の コピーを 置いています…');
     gs('foldCopy', items.map(function (x) { return { id: x.id, kind: x.kind }; }), toId).then(function (r) {
       const k = (r.kept || []).length;
       const t = r.copied + '件の コピーを 置きました（元は そのまま）。' + (k ? '（' + k + '件は できませんでした：' + r.kept[0] + '）' : '');
-      if (toId === FD.cur) fdReload().then(function () { fdMsg(t, k ? 'err' : 'ok'); }); else { FD.kids = {}; fdTreeDraw(); fdMsg(t, k ? 'err' : 'ok'); }
+      fdMsg(t, k ? 'err' : 'ok'); if (toId === FD.cur) fdSync(toId); else { fdForget(toId); fdTreeDraw(); }
     }, function (e) { fdMsg(e.message, 'err'); });
   }
   /* ★★ 送付物へ（2026-11-16）：選んだファイルを 顧問先の 送付ボックスへ（保管）。顧問先は いま開いているフォルダの名前（「コード_名前」）から 当たりを付ける */
@@ -3972,11 +4009,25 @@
   function fdTrash() {
     const its = fdSelected(); if (!its.length) return;
     if (!FD.arm) { FD.arm = 1; const b = $('fdDel'); b.classList.add('warn'); b.textContent = 'もう一度押すと ゴミ箱へ（' + its.length + '件）'; FD.armT = setTimeout(fdDisarm, 5000); return; }
-    fdDisarm(); fdMsg('ゴミ箱へ入れています…');
-    gs('foldTrash', its.map(function (x) { return { id: x.id, kind: x.kind }; })).then(function (r) {
+    fdDisarm();
+    if (its.some(function (x) { return fdTmp(x.id); })) { fdMsg('いま 作っている フォルダです。少し待ってから もう一度。', 'err'); return; }
+    const send = its.map(function (x) { return { id: x.id, kind: x.kind }; });
+    const tail = '（Google ドライブのゴミ箱から 30日は戻せます）。';
+    if (FD.search || !FD.data) {
+      fdMsg('ゴミ箱へ入れています…');
+      gs('foldTrash', send).then(function (r) { const k = (r.kept || []).length; fdReload().then(function () { fdMsg(r.trashed + '件を ゴミ箱へ入れました' + tail + (k ? '（' + k + '件は できませんでした：' + r.kept[0] + '）' : ''), k ? 'err' : 'ok'); }); }, function (e) { fdMsg(e.message, 'err'); });
+      return;
+    }
+    const pick = {}; its.forEach(function (x) { pick[x.id] = 1; });
+    const sn = fdSnap(), cur = FD.cur;
+    FD.data.folders = sn.folders.filter(function (x) { return !pick[x.id]; }); FD.data.files = sn.files.filter(function (x) { return !pick[x.id]; });
+    FD.sel = {}; fdKeep(); its.forEach(function (x) { if (x.kind === 'folder') fdForget(x.id); }); fdDraw(); fdBtns();
+    fdMsg(its.length + '件を ゴミ箱へ入れました' + tail, 'ok'); fdOps++;
+    gs('foldTrash', send).then(function (r) {
       const k = (r.kept || []).length;
-      fdReload().then(function () { fdMsg(r.trashed + '件を ゴミ箱へ入れました（Google ドライブのゴミ箱から 30日は戻せます）。' + (k ? '（' + k + '件は できませんでした：' + r.kept[0] + '）' : ''), k ? 'err' : 'ok'); });
-    }, function (e) { fdMsg(e.message, 'err'); });
+      if (k) { fdOps = Math.max(0, fdOps - 1); fdMsg(r.trashed + '件を ゴミ箱へ入れました' + tail + '（' + k + '件は できませんでした：' + r.kept[0] + '）', 'err'); if (FD.cur === cur) fdBack(sn); fdSync(cur); return; }
+      fdOpEnd(cur);
+    }, function (e) { fdOps = Math.max(0, fdOps - 1); fdBack(sn); fdMsg('ゴミ箱へ入れられませんでした（元に 戻しました）。' + e.message, 'err'); });
   }
   /* ---- 新しいフォルダ・名前を変える（小さい欄。prompt は使わない） ---- */
   function fdFormOpen(kind) {
@@ -3991,12 +4042,42 @@
   function fdFormOk() {
     const f = FD.form, v = $('fdFormIn').value.trim(); if (!f) return;
     if (!v) { fdMsg('名前を入れてください。', 'err'); return; }
-    $('fdFormOk').disabled = true;
-    const done = function (t) { $('fdFormOk').disabled = false; fdFormClose(); fdReload().then(function () { fdMsg(t, 'ok'); }); };
-    const ng = function (e) { $('fdFormOk').disabled = false; fdMsg(e.message, 'err'); };
-    if (f.kind === 'new') gs('foldNew', FD.cur, v).then(function (r) { done(r.had ? '同じ名前のフォルダが もうあります。' : '「' + r.name + '」を作りました。'); }, ng);
-    else if (v === f.it.name) fdFormClose(), $('fdFormOk').disabled = false;
-    else gs('foldRename', f.it.id, f.it.kind, v).then(function () { done('名前を変えました。'); }, ng);
+    if (f.kind === 'ren' && v === f.it.name) { fdFormClose(); return; }
+    if (!FD.data || FD.search) {   /* さがした結果の中は これまでどおり（返事を 待つ） */
+      $('fdFormOk').disabled = true;
+      const ng0 = function (e) { $('fdFormOk').disabled = false; fdMsg(e.message, 'err'); };
+      const done0 = function (t) { $('fdFormOk').disabled = false; fdFormClose(); fdReload().then(function () { fdMsg(t, 'ok'); }); };
+      if (f.kind === 'new') gs('foldNew', FD.cur, v).then(function (r) { done0(r.had ? '同じ名前のフォルダが もうあります。' : '「' + r.name + '」を作りました。'); }, ng0);
+      else gs('foldRename', f.it.id, f.it.kind, v).then(function () { done0('名前を変えました。'); }, ng0);
+      return;
+    }
+    fdFormClose();
+    const sn = fdSnap(), cur = FD.cur;
+    const fail = function (what) { return function (e) { fdOps = Math.max(0, fdOps - 1); fdBack(sn); fdMsg(what + '（元に 戻しました）。' + e.message, 'err'); }; };
+    if (f.kind === 'new') {
+      const have = sn.folders.find(function (x) { return x.name === v && !x.up; });
+      if (have) { fdMsg('同じ名前のフォルダが もうあります。'); return; }
+      const tmp = { id: 'tmpf_' + (++fdTmpSeq), name: v, up: 1 };
+      FD.data.folders = sn.folders.concat([tmp]).sort(fdByName);
+      FD.kids[tmp.id] = []; FD.open[cur] = 1; fdKeep(); fdDraw(); fdMsg('「' + v + '」を作りました。', 'ok'); fdOps++;
+      gs('foldNew', cur, v).then(function (r) {
+        fdOps = Math.max(0, fdOps - 1); delete FD.kids[tmp.id];
+        if (FD.cur === cur && FD.data) {
+          const list = FD.data.folders.filter(function (x) { return x.id !== tmp.id && x.id !== r.id; });
+          list.push({ id: r.id, name: r.name }); list.sort(fdByName);
+          FD.data.folders = list; FD.kids[r.id] = FD.kids[r.id] || []; fdKeep(); fdDraw();
+          if (r.had) fdMsg('同じ名前のフォルダが もうありました（それを 使います）。');
+        }
+        if (!fdOps) fdSync(cur);
+      }, fail('フォルダを 作れませんでした'));
+      return;
+    }
+    const it = f.it, list = it.kind === 'folder' ? FD.data.folders : FD.data.files, at = list.findIndex(function (x) { return x.id === it.id; });
+    if (at < 0) { fdMsg('見つかりません。開き直してください。', 'err'); return; }
+    list[at] = Object.assign({}, list[at], { name: v });
+    if (it.kind === 'folder') FD.data.folders = list.slice().sort(fdByName);
+    fdKeep(); fdDraw(); fdMsg('名前を変えました。', 'ok'); fdOps++;
+    gs('foldRename', it.id, it.kind, v).then(function () { fdOpEnd(cur); }, fail('名前を 変えられませんでした'));
   }
   /* ---- ファイルを入れる ---- */
   /* ★★ 速さ（2026-11-16）：落とした瞬間に 作業スペースへ並べる（「入れています…」の札）。1つ届くたびに 本物に入れ替える。
@@ -4005,6 +4086,7 @@
   function fdUpload(list, toId, cb) {
     const fs = Array.prototype.slice.call(list || []), max = ((FD.info && FD.info.maxMb) || 20) * 1024 * 1024;
     if (!fs.length) { if (cb) cb([]); return; }
+    if (fdTmp(toId)) { fdMsg('いま 作っている フォルダです。少し待ってから もう一度。', 'err'); if (cb) cb([]); return; }
     let i = 0, ok = 0, run = 0, fin = 0; const bad = [], okI = [];   /* okI … 入れられたか（印刷の受け口が 消してよいか 見る） */
     const here = toId === FD.cur && FD.data && !FD.search;
     const ph = fs.map(function (f) {
@@ -4853,6 +4935,7 @@
           .then(function (all) { if (!all || all.length <= 150) return; all.sort(function (x, y) { return x.at - y.at; }); const gone = all.slice(0, all.length - 150); return tx('readwrite', function (s) { gone.forEach(function (x) { s.delete(x.k); }); return null; }); })
           .catch(function () {});
       },
+      del: function (code) { return tx('readwrite', function (s) { s.delete(code); return null; }).catch(function () {}); },
       wipe: function () { return tx('readwrite', function (s) { s.clear(); return null; }).catch(function () {}); }
     };
   })();
