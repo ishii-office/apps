@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795408228;</script>
+<script>window.__PAGE_VER=1795417276;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1703,6 +1703,7 @@
   .hobig { border-radius: 8px; padding: 10px 12px; font-size: 18px; font-weight: 700; margin: 6px 0; } .hobig.ng { background: #FDECEC; color: #A3271F; } .hobig.ok { background: #E3F3E8; color: #1E6B3A; }
   .hoalert { background: #FFF4D6; border: 1px solid #E2BE5C; border-radius: 6px; padding: 6px 8px; margin: 6px 0; font-size: 13px; }
   .hotx { font-size: 13px; margin: 3px 0; }
+#mnBox.mndrop{outline:3px dashed #0F6E56;outline-offset:2px;background:#EEF7F3}
 </style>
 </head>
 <body>
@@ -2016,14 +2017,17 @@
   </div>
   <div class="tbtop">
     <button type="button" class="btn sm" id="tbConf">✓ この月を 確定（顧問先の 画面にも 出す）</button>
-    <button type="button" class="btn ghost sm" id="tbImpB">📥 FX の 推移表を 入れる（期首・前年）</button>
+    <button type="button" class="btn ghost sm" id="tbImpB">📥 会計システムの データを 入れる（自計化先・期首・前年）</button>
     <button type="button" class="btn ghost sm" id="tbPrint">🖨 印刷・PDF（A4）</button>
     <span class="note" id="tbMsg" role="status"></span>
   </div>
   <div class="tbimp" id="tbImp" hidden>
-    <div class="note">FX の［勘定科目残高推移表］を「累計残高」で 切り出した CSV（貸借対照表・損益計算書・製造原価報告書）を ここへ ドラッグするか、中身を 貼って［入れる］。1回 入れれば あとは アプリの 仕訳で 積み上がります。前年の 月も 入れると 前年同月・前年比が 出ます。</div>
+    <div class="note"><b>① 試算表に する（自計化先は 月が できるたびに）</b>：FX の［勘定科目残高推移表］を「累計残高」で 切り出した CSV（貸借対照表・損益計算書・製造原価報告書）を ここへ ドラッグするか、中身を 貼って［入れる］。1回 入れれば あとは アプリの 仕訳で 積み上がります。前年の 月も 入れると 前年同月・前年比が 出ます。</div>
     <textarea id="tbImpT" rows="5" placeholder="勘定科目,2026年04月,前年比,2026年05月,…"></textarea>
     <div><input type="file" id="tbImpF" accept=".csv,.txt,.tsv" multiple hidden><button type="button" class="btn ghost sm" id="tbImpPick">ファイルを 選ぶ</button><button type="button" class="btn sm" id="tbImpGo">入れる</button></div>
+    <div class="note" style="margin-top:10px"><b>② そのほかの 帳票を 預ける</b>（仕訳・元帳・キャッシュフロー計算書 など。CSV・PDF・エクセル）：何月までの データかと 種類を 選んで ファイルを 選ぶ。</div>
+    <div class="bar"><label class="note">何月まで <input type="month" id="acdYm" aria-label="何月までの データか"></label><select id="acdKind" aria-label="データの 種類"></select><input type="file" id="acdF" accept=".csv,.txt,.tsv,.pdf,.xls,.xlsx" multiple hidden><button type="button" class="btn ghost sm" id="acdPick">帳票の ファイルを 選ぶ</button><span class="note" id="acdMsg" role="status"></span></div>
+    <div id="acdList"></div>
   </div>
   <div class="tbinfo" id="tbInfo"></div>
   <div class="tbbody" id="tbBody"><div class="cbox muted">顧問先を 選んでください。</div></div>
@@ -2281,16 +2285,17 @@
 <div class="pane page" id="paneMin" hidden>
   <h2>議事録 <small id="minClient"></small></h2>
   <p class="note">顧問先で 話したこと・見てきたこと（現物確認の 写真・パソコンや モニターの 様子 など）は ぜんぶ ここへ。あとから 直せない 記録（ハッシュの鎖）に 残し、エージェントの zip にも 入ります。次の 経営助言・企業防衛の 前提・カルテ・巡回監査報告書・書面添付・顧問料の 合意の 証拠 などの もとに なります。</p>
-  <details open class="rbox" id="mnBox"><summary>🎙 議事録を 入れる（文字・ファイル・音声・現物確認の 写真）</summary>
-    <p class="note">OMS などで 録音・文字起こしした 議事録を 入れます。入れた瞬間の 原本の 指紋（SHA-256）と 日時を <b>あとから 直せない記録（ハッシュの鎖）</b>に 残し、［🔒 本物か確かめる］で いじっていないことを 示せます。「顧問先に見せる」に ✓ すると 顧問先の画面に 確認のお願いが出て、［内容を確認しました］が 記録に 足されます。決定事項・やることは Claude Code などで 作って［＋ 決定事項・やること］で 足します（これも 直せない記録）。</p>
+  <details open class="rbox" id="mnBox"><summary>🎙 議事録を 入れる（会話・公式LINE・メール・電話・現物確認の 写真）</summary>
+    <p class="note">OMS などで 録音・文字起こしした 議事録を 入れます。<b>公式LINE・メールの やりとり</b>は 種類を 選んで 文を 貼るか、スクショを 何枚でも（字は ひとりでに 読みます）。日を 合わせると 会った 日の 会話と 時系列に 並びます。入れた瞬間の 原本の 指紋（SHA-256）と 日時を <b>あとから 直せない記録（ハッシュの鎖）</b>に 残し、［🔒 本物か確かめる］で いじっていないことを 示せます。「顧問先に見せる」に ✓ すると 顧問先の画面に 確認のお願いが出て、［内容を確認しました］が 記録に 足されます。決定事項・やることは Claude Code などで 作って［＋ 決定事項・やること］で 足します（これも 直せない記録）。</p>
     <div class="bar"><select id="mnKind" aria-label="会議の種類"></select><input type="date" id="mnDay" aria-label="会議の日"><input id="mnTitle" placeholder="題（例：第12期 決算報告会）" style="min-width:14em"><label class="note"><input type="checkbox" id="mnShow"> 顧問先に見せる（確認をもらう）</label></div>
     <textarea id="mnText" rows="6" maxlength="200000" aria-label="議事録の文字" placeholder="議事録の 文字を 貼る（ファイルなら 下の［ファイルで入れる］）"></textarea>
-    <div class="bar"><button type="button" class="btn sm" id="mnAdd">文字で入れる</button><button type="button" class="btn ghost sm" id="mnFileB">ファイル・写真で入れる（txt・PDF・Word・音声・写真）</button><input type="file" id="mnFile" hidden accept=".txt,.pdf,.docx,.m4a,.mp3,.wav,.mp4,audio/*,image/jpeg,image/png,image/heic,image/webp" multiple></div>
+    <div class="bar"><button type="button" class="btn sm" id="mnAdd">文字で入れる</button><button type="button" class="btn ghost sm" id="mnFileB">ファイル・写真で入れる（txt・PDF・Word・音声・写真）</button><button type="button" class="btn ghost sm" id="mnRec">🎙 録音する</button><button type="button" class="btn ghost sm" id="mnRecPause" hidden>⏸ 一時停止（残さない 話）</button><button type="button" class="btn sm" id="mnRecStop" hidden>⏹ 止めて 議事録に 入れる</button><span class="note" id="mnRecT" hidden></span><input type="file" id="mnFile" hidden accept=".txt,.pdf,.docx,.m4a,.mp3,.wav,.mp4,audio/*,image/jpeg,image/png,image/heic,image/webp" multiple></div>
+    <div class="note" id="mnDropHint">📥 スクショ・ファイルは この 枠に <b>ドラッグ＆ドロップ</b>（何枚でも）。コピーした 画像は 枠を 押して Ctrl+V。</div>
     <span class="pagemsg" id="mnMsg" role="status"></span>
     <div id="mnList"></div>
   </details>
   <details open class="rbox" id="mnFind"><summary>🔎 議事録を 探す・ほかへ 引く</summary>
-    <div class="bar"><input id="mnQ" placeholder="ことばで 探す（例：顧問料・後継者・保険）" style="min-width:16em"><select id="mnQk" aria-label="種類で しぼる"><option value="">ぜんぶの 種類</option></select><span class="note" id="mnQn"></span></div>
+    <div class="bar"><input id="mnQ" placeholder="ことばで 探す（例：顧問料・後継者・保険）" style="min-width:16em"><select id="mnQk" aria-label="種類で しぼる"><option value="">ぜんぶの 種類</option></select><select id="mnOrd" aria-label="並べ方"><option value="new">新しい日から</option><option value="old">古い日から（時系列）</option></select><label class="note"><input type="checkbox" id="mnOpenAll"> 本文も 並べて 読む</label><span class="note" id="mnQn"></span></div>
     <p class="note">探した 議事録の［📎 巡回監査報告書へ 引く］［📎 書面添付へ 引く］で 保証タブの 下書きに 引用を 足します。</p>
   </details>
 </div>
@@ -2319,6 +2324,12 @@
     <div class="bar" id="grDocDrop"><label class="note">決算期 <input type="month" id="grDocYm" aria-label="決算期（書類）"></label><input id="grDocTitle" placeholder="書類の名前（例：第12期 決算書）" style="min-width:14em"><button type="button" class="btn sm" id="grDocB">PDF を 選んで 出す</button><input type="file" id="grDocFile" hidden accept=".pdf,image/jpeg,image/png"></div>
     <span class="pagemsg" id="grDocMsg" role="status"></span>
     <div id="grDocList"></div>
+  </details>
+  <details open class="rbox" id="ksBox"><summary>🧾 確定申告の 書類集め（はい・いいえ・わからない で 聞く）</summary>
+    <p class="note">始めると 顧問先の 画面に「確定申告の 書類」が 出ます。顧問先は 質問に 答えて「はい」の 書類だけ 出します。くわしくは 右上の［📖 操作ガイド］。</p>
+    <div class="bar"><b id="ksYear"></b><label class="note">締切 <input type="date" id="ksDue" aria-label="確定申告の 書類の 締切"></label><button type="button" class="btn sm" id="ksOn">顧問先に 聞きはじめる</button><button type="button" class="btn ghost sm" id="ksOff" hidden>止める</button><button type="button" class="btn ghost sm" id="ksRe">↻ 読み直す</button></div>
+    <span class="pagemsg" id="ksMsg" role="status"></span>
+    <div id="ksView"></div>
   </details>
   <div class="bar"><button type="button" class="btn ghost sm" id="grCmn">📚 雛形・書き方を 入れる（巡回監査報告書・書面添付。事務所共通の資料）</button></div>
 </div>
@@ -3065,7 +3076,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { budgetGet: 1, refWaitN: 1, refList: 1, aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
+  const READ_FN = { acdList: 1, ksGet: 1, budgetGet: 1, refWaitN: 1, refList: 1, aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, arriveGrid: 1, askList: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -4299,7 +4310,7 @@
     if (k === 'Staff') sLoad();
     if (k === 'Rule') rLoad();
     if (k === 'Advice') advLoad();
-    if (k === 'Grt') grtLoad();
+    if (k === 'Grt') { grtLoad(); ksLoad(); }
     if (k === 'Min') minLoadTab();
     if (k === 'Kaizen') kzLoad(true); else { try { if (KZ.loaded) kzBadge(); } catch (e) {} }
     if (k === 'Send') sdLoad();
@@ -6237,7 +6248,7 @@
     /* もと・そろい具合・確定 */
     const inf = $('tbInfo'); inf.textContent = '';
     const src = d.src || {};
-    inf.appendChild(el('span', null, 'もと：' + (d.lastImp ? 'FX の 推移表（' + perLabel(d.lastImp) + 'まで）' : 'FX の 推移表は まだ（［📥 FX の 推移表を 入れる］）') + '・会計ソフトの 過去仕訳 ' + (src.hist || 0) + '行・仕訳化で 確定 ' + (src.app || 0) + '行・元帳 ✓ ' + (src.led || 0) + '枚' + (src.kari ? '・仮（✓ 前）' + src.kari + '枚' : '')));
+    inf.appendChild(el('span', null, 'もと：' + (d.lastImp ? 'FX の 推移表（' + perLabel(d.lastImp) + 'まで）' : 'FX の 推移表は まだ（［📥 会計システムの データを 入れる］）') + '・会計ソフトの 過去仕訳 ' + (src.hist || 0) + '行・仕訳化で 確定 ' + (src.app || 0) + '行・元帳 ✓ ' + (src.led || 0) + '枚' + (src.kari ? '・仮（✓ 前）' + src.kari + '枚' : '')));
     if (d.kari) inf.appendChild(el('b', 'tbkari', '　仮の 伝票を 含む 科目 ' + d.kari + '（黄色）。［元帳で確かめる］で ✓ を 付けると 確定できます'));
     if ((d.boxes || []).length) inf.appendChild(el('b', 'tbpart', '　途中の 試算表（' + d.boxes.map(bxDisp).join('・') + ' の 当月ぶんだけ）'));
     if ((d.missing || []).length) inf.appendChild(el('span', 'tbmiss', '　まだ 入っていない 箱：' + d.missing.map(bxDisp).join('・')));
@@ -6327,6 +6338,25 @@
     gs('tbConfirm', S.code, TB.d.ym).then(function (r) { b.disabled = false; b.textContent = '✓ この月を 確定（顧問先の 画面にも 出す）'; TB.d.confirmed = r.confirmed; $('tbMsg').textContent = '✓ ' + perLabel(TB.d.ym) + 'を 確定しました。顧問先の 画面にも 出ます。'; tbDraw(); }, function (e) { b.disabled = false; b.textContent = '✓ この月を 確定（顧問先の 画面にも 出す）'; $('tbMsg').textContent = e.message; });
   });
   $('tbImpB').addEventListener('click', function () { $('tbImp').hidden = !$('tbImp').hidden; });
+  /* ★★ 2026-11-25（石井）：会計システムから 切り出した そのほかの 帳票（仕訳・元帳・CF 計算書 など）を 預ける。まず 貯める */
+  function acdDraw(r) {
+    const k = $('acdKind'); if (!k.options.length) (r.kinds || []).forEach(function (x) { const o = el('option', null, x); o.value = x; k.appendChild(o); });
+    if (!$('acdYm').value) { const d = new Date(Date.now() + 9 * 3600e3); d.setUTCMonth(d.getUTCMonth() - 1); $('acdYm').value = d.toISOString().slice(0, 7); }
+    const w = $('acdList'); w.textContent = '';
+    (r.list || []).forEach(function (x) { const d = el('div', 'agrow acdrow'); const a = el('a', null, x.ym + '・' + x.kind + '・' + x.name); a.href = 'https://drive.google.com/file/d/' + encodeURIComponent(x.fid) + '/view'; a.target = '_blank'; a.rel = 'noopener'; d.appendChild(a); d.appendChild(el('span', 'note', '　' + x.at + '・' + x.who + '・' + x.kb + 'KB')); w.appendChild(d); });
+  }
+  function acdLoad() { const code = S.code; if (!code) return; gs('acdList', code).then(function (r) { if (code === S.code) acdDraw(r); }, function (e) { $('acdMsg').textContent = e.message; }); }
+  $('tbImpB').addEventListener('click', function () { setTimeout(acdLoad, 0); });
+  $('acdPick').addEventListener('click', function () { if (!S.code) return; if (!$('acdYm').value) { $('acdMsg').textContent = '何月までの データかを 選んでください。'; return; } $('acdF').value = ''; $('acdF').click(); });
+  $('acdF').addEventListener('change', function () {
+    const fs = Array.prototype.slice.call(this.files || []); let i = 0;
+    const MT = { csv: 'text/csv', txt: 'text/plain', tsv: 'text/tab-separated-values', pdf: 'application/pdf', xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
+    const next = function () {
+      if (i >= fs.length) return; const f = fs[i++]; $('acdMsg').textContent = '入れています… ' + i + ' / ' + fs.length;
+      const rd = new FileReader(); rd.onload = function () { gs('acdAdd', S.code, { ym: $('acdYm').value, kind: $('acdKind').value, name: f.name, mime: MT[(f.name.split('.').pop() || '').toLowerCase()] || f.type || '', b64: String(rd.result).split(',')[1] || '' }).then(function (r) { acdDraw(r); $('acdMsg').textContent = '📥 預かりました（' + i + ' / ' + fs.length + '）。'; next(); }, function (e) { $('acdMsg').textContent = f.name + '：' + e.message; next(); }); }; rd.readAsDataURL(f);
+    };
+    next();
+  });
   $('tbImpPick').addEventListener('click', function () { $('tbImpF').click(); });
   const tbImpFiles = function (fs) {
     let txt = '', n = fs.length; if (!n) return;
@@ -8063,7 +8093,7 @@
       steps: ['上の 札で 月分（「◯月分（一括）」で その月分を まとめて）と 箱・小箱を 選ぶ（いくつでも。［全部の箱］で 戻す）', '帯の［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（もう 仕訳の ある 月・研究）。その場で zip が できる（マイナンバーの書類は 入りません）', '直すのは［📗 元帳で確かめる・直す］から 手で（T／F2 で 訂正）。辞書で 仕訳する 画面は しまってあります（［📇 辞書の画面を開く］で 出せる）', '確定したものは［取込ファイル］タブへ', '［🤖 エージェントに渡す（zip）］で できた zip は 帯の 右上の［⬇ ダウンロード］で その場で 保存（30MB を 超えるときは 1／2・2／2 に 分かれるので 両方 落として 同じ フォルダに 展開）', 'エージェントは 上の帯で：［🤖 エージェントに渡す（zip）］→ 自分の Claude Code に 渡す → できあがりの zip を［⬆ できあがりを戻す］か 帯へ ドラッグ → ［📥 結果と学び］［📗 元帳で確かめる］（TKC と 同じ 伝票の形・Enter で ✓ して 次へ。写真は 先に 読んでおくので 速く 押しても 追いつきます）'],
       tips: ['スマホの［📗 元帳で確かめる］は 上から 下（上に 科目・下に 元帳／上に 写真・下に 伝票）。下の［✓ 次へ］［‹ 前］［✎ 訂正］［案1］［案2］［↩ 戻る］で 進みます', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
     Tb: { t: '試算表', lead: '仕訳化で 確かめた 仕訳から 試算表（TKC の 勘定科目残高と 同じ 形）を 作る タブです。途中でも 作れます。',
-      steps: ['はじめに 1回だけ［📥 FX の 推移表を 入れる（期首・前年）］… FX の［勘定科目残高推移表］を「累計残高」で 切り出した CSV を ドラッグ（前年の 月も 入れると 前年同月・前年比が 出ます）', '月分を 選ぶと 前月末 ＋ 当月の 増減（仕訳化で 確定した 仕訳・元帳で ✓ した 伝票）＝ 当月末。✓ 前の 伝票は 黄色の「仮」', '［勘定科目残高］［残高推移表］［グラフ］と［貸借対照表］［損益計算書］［製造原価報告書］を 切り替える。［内訳表示（口座・取引先）］［0円行を表示］', '科目を ダブルクリック → 口座別 → もう一度 ダブルクリックで 元帳 →［伝票を開く］で 元帳で確かめるの その伝票（写真つき・［✎ 訂正］で 直せる）。仕訳化で 確定した 仕訳は［✎ 仕訳を 直す］で 仕訳化の その 1件へ', '［選んだ 箱だけ（途中の 試算表）］… 回収資料・仕訳化の 札で 選んだ 箱の ぶんだけで 当月を 出す（全部 そろっていなくても 作れる）', '［✓ この月を 確定（顧問先の 画面にも 出す）］… 仮が 無ければ 確定できる。確定した 月が 顧問先の 画面の「📊 試算表」に 出て、経営助言の「📥 確定した 試算表から 入れる」の 材料にも なる', '［🖨 印刷・PDF（A4）］… TKC の 紙と 同じ 形で 印刷'],
+      steps: ['自計化先（顧問先が 自分で 会計ソフトに 入れている 先）… 月が できるたびに［📥 会計システムの データを 入れる（自計化先・期首・前年）］で 推移表の CSV を 入れ、その月を 確定すると 顧問先の スマホにも 試算表が 出る（企業防衛の 数字にも 使える）。同じ 枠の ② で 仕訳・元帳・キャッシュフロー計算書 などを 月と 種類を 選んで 預けられる（［帳票の ファイルを 選ぶ］）', 'はじめに 1回だけ［📥 会計システムの データを 入れる（自計化先・期首・前年）］… FX の［勘定科目残高推移表］を「累計残高」で 切り出した CSV を ドラッグ（前年の 月も 入れると 前年同月・前年比が 出ます）', '月分を 選ぶと 前月末 ＋ 当月の 増減（仕訳化で 確定した 仕訳・元帳で ✓ した 伝票）＝ 当月末。✓ 前の 伝票は 黄色の「仮」', '［勘定科目残高］［残高推移表］［グラフ］と［貸借対照表］［損益計算書］［製造原価報告書］を 切り替える。［内訳表示（口座・取引先）］［0円行を表示］', '科目を ダブルクリック → 口座別 → もう一度 ダブルクリックで 元帳 →［伝票を開く］で 元帳で確かめるの その伝票（写真つき・［✎ 訂正］で 直せる）。仕訳化で 確定した 仕訳は［✎ 仕訳を 直す］で 仕訳化の その 1件へ', '［選んだ 箱だけ（途中の 試算表）］… 回収資料・仕訳化の 札で 選んだ 箱の ぶんだけで 当月を 出す（全部 そろっていなくても 作れる）', '［✓ この月を 確定（顧問先の 画面にも 出す）］… 仮が 無ければ 確定できる。確定した 月が 顧問先の 画面の「📊 試算表」に 出て、経営助言の「📥 確定した 試算表から 入れる」の 材料にも なる', '［🖨 印刷・PDF（A4）］… TKC の 紙と 同じ 形で 印刷'],
       tips: ['［予実対比］… 経営助言タブの ① 予算で 決めた 予算と 実績を 当月・期首からの 累計で 比べる（差・達成率・月ごとの グラフ）。顧問先の 画面にも 出ます', '途中の 月でも 推移表と グラフは 出ます（確定しなくても 見られる）', 'エージェントが 作った 試算表は 使いません。仕訳化で 確かめた ものだけが 積み上がります'] },
     Out: { t: '取込ファイル', pic: 'g_oout', lead: '確定した仕訳を 会計ソフト（FX）へ 取り込むファイルにする タブです。',
       steps: ['処理済ボックス（月分・箱）を選ぶ', 'ファイルにして 保存する', 'FX で 取り込む'], tips: [] },
@@ -8075,13 +8105,13 @@
     Prog: { t: '進捗', lead: '顧問先 × 月分で いま どの 工程まで 来ているかを 見る タブです（担当先だけ・上の 👥 で 選ぶ）。',
       steps: ['数えるのは 毎月の箱だけ（年末調整 などの スポットの箱は 数えない）。顧問先の 名前の［🙈 非表示］で 進捗から 外し、［非表示に した 顧問先も 出す］で また 出せる', '資料回収 → 資料チェック → エージェント → 元帳チェック → 取込ファイル化 → 会計システムへ計上 の 順に 並ぶ（緑＝済み・黄＝途中・灰＝まだ。太い枠が いま 止まっている 工程）', 'ブロックを 押すと その工程の 画面へ（資料は 回収資料・エージェント／元帳は 仕訳化・取込ファイル化は 取込ファイル）', '会計システム（FX）へ 取り込んだら「会計システムへ計上」を 押す（もう一度 押すと 取り消し）。最後まで 済んだ 月分は たたむ（［終わった 月分も 出す］で 出す）'], tips: ['会計システムへ計上 の 右は 経営助言（丸の 1〜4＝予算・企業防衛・格付け・助言。緑が 済み。押すと その島へ）と 議事録の 追加（入れた 議事録は 次の 月の エージェントの zip に 入る）', '期間は 3・6・12か月'] },
     Advice: { t: '経営助言', lead: '経営助言は 4つの 島：① 予算（向こう 1年）② 企業防衛（標準保障額）③ 格付け（債務者区分）④ 顧問先ごとの 助言。作って 顧問先の 画面の 経営助言に 出す タブです。',
-      steps: ['① 予算：期を 選び、［📥 前年の 実績から 入れる］（伸び率も）か 年計を 入れて 月に 割り、直して［✓ この 予算に する］。エージェントの 予算案が あれば［案を 表に 入れる］。決めた 予算は 試算表の［予実対比］に 出る', '② 企業防衛：まず 大前提（事業承継か 清算・廃業か・2番手が いるか）を 選ぶ。［📥 試算表（過去の仕訳）から 入れる］で 負債・運転資金・固定費（販管費＋支払利息）・現預金が 入る', '企業防衛の 中：① 負債は 借入金・社債。リース債務は 原則 入れない（全額 払う ときだけ ✓）。② 必要運転資金は 過去 1年で いちばん 大きい 月で 見る。③ 納税資金（実効税率・繰越欠損金）④ 役員退職金・弔慰金（役員ごと）', '大同生命と 同じ 2列（死亡のとき／就業不能のとき）の 算定書が 出る。［🖨 算定書を 印刷・PDF］・［💾 入力を 保存］・［🛡 顧問先の 画面に 出す（保存して リスクに 入れる）］', '③ 格付け：月を 選んで［🏦 試算表から 形式的 格付けを 出す］→ 12の 指標の 点数・格付け（1〜10）・債務者区分の 目安。［↓ 下の 格付けの マスへ 写す］で 直して［格付けを入れる］', '④ 顧問先ごとの 助言：項目ごとに 書いて［助言を出す］（税務判断を 含むものは「担当 石井」と 出る）。下に これから 出す 助言の 一覧', '「💬 顧問先が AI に聞いたこと」… ［✓ この答えで よい］か、直して［✎ 直して 送る］。税額が 大きく 変わりそうな 質問は 先に 確かめる。今月の 費用と 上限（月1万円）も ここ'],
+      steps: ['🙋 社長に 聞くこと（④ の いちばん上）：エージェントが 出した 問い（数字に 出ない 事情・本当の 目的）。会ったときに 聞いて 答えを 入れ［✓ 答えを 議事録に 入れる］。議事録（社長面談）に 入り、次の 助言に 生きる。聞かない 問いは［聞かない］', '① 予算：期を 選び、［📥 前年の 実績から 入れる］（伸び率も）か 年計を 入れて 月に 割り、直して［✓ この 予算に する］。エージェントの 予算案が あれば［案を 表に 入れる］。決めた 予算は 試算表の［予実対比］に 出る', '② 企業防衛：まず 大前提（事業承継か 清算・廃業か・2番手が いるか）を 選ぶ。［📥 試算表（過去の仕訳）から 入れる］で 負債・運転資金・固定費（販管費＋支払利息）・現預金が 入る', '企業防衛の 中：① 負債は 借入金・社債。リース債務は 原則 入れない（全額 払う ときだけ ✓）。② 必要運転資金は 過去 1年で いちばん 大きい 月で 見る。③ 納税資金（実効税率・繰越欠損金）④ 役員退職金・弔慰金（役員ごと）', '大同生命と 同じ 2列（死亡のとき／就業不能のとき）の 算定書が 出る。［🖨 算定書を 印刷・PDF］・［💾 入力を 保存］・［🛡 顧問先の 画面に 出す（保存して リスクに 入れる）］', '③ 格付け：月を 選んで［🏦 試算表から 形式的 格付けを 出す］→ 12の 指標の 点数・格付け（1〜10）・債務者区分の 目安。［↓ 下の 格付けの マスへ 写す］で 直して［格付けを入れる］', '④ 顧問先ごとの 助言：項目ごとに 書いて［助言を出す］（税務判断を 含むものは「担当 石井」と 出る）。下に これから 出す 助言の 一覧', '「💬 顧問先が AI に聞いたこと」… ［✓ この答えで よい］か、直して［✎ 直して 送る］。税額が 大きく 変わりそうな 質問は 先に 確かめる。今月の 費用と 上限（月1万円）も ここ'],
       tips: ['計算式と 考え方は エージェントの zip にも 入る（企業防衛_標準保障額の考え方.md）。格付けの 配点は 一般的な 目安（金融機関で ちがう）。実質的な 格付けと F プラスは 事務所の 考え方で あとから'] },
     Grt: { t: '保証', lead: '巡回監査報告書・書面添付（税理士法33条の2）・決算書類の 確認を まとめる タブです（TKC の 4大業務の 保証）。議事録は［議事録］タブへ 移りました。',
-      steps: ['「巡回監査報告書」… 巡回の月を 選び、書いて［保存（新しい版）］か［保存して 顧問先に 出す］（エージェントの 下書きが あれば 入っている）。議事録の 中身は［議事録］タブの［📎 巡回監査報告書へ 引く］で 足せる', '「書面添付」… 決算期を 選んで［🤖 下書きの zip を作る（1年分）］→ Claude Code に 渡し、できた zip を 仕訳化タブで 戻す → 直して［保存（新しい版）］', '「決算書類の 確認」… 決算期と 書類の名前を 入れて［PDF を 選んで 出す］→ 顧問先が［内容を確認しました］を 押すと ✅ が 付く。［出すのを やめる］で 引っ込める'],
+      steps: ['「確定申告の 書類集め」… 締切を 入れて［顧問先に 聞きはじめる］。顧問先の 画面に「確定申告の 書類」が 出て、質問に「はい・いいえ・わからない」で 答え、「はい」の 書類だけ 出す（手元に 無ければ「あとで 出す」）。ここには「あと ◯ 件」と 要フォロー（未提出／あとで 提出／答えの 確認が 要る＝わからない）が 出る。次の 年は 去年の 答えを 引き継ぐ。止めるときは［止める］（答えは 残る）', '「巡回監査報告書」… 巡回の月を 選び、書いて［保存（新しい版）］か［保存して 顧問先に 出す］（エージェントの 下書きが あれば 入っている）。議事録の 中身は［議事録］タブの［📎 巡回監査報告書へ 引く］で 足せる', '「書面添付」… 決算期を 選んで［🤖 下書きの zip を作る（1年分）］→ Claude Code に 渡し、できた zip を 仕訳化タブで 戻す → 直して［保存（新しい版）］', '「決算書類の 確認」… 決算期と 書類の名前を 入れて［PDF を 選んで 出す］→ 顧問先が［内容を確認しました］を 押すと ✅ が 付く。［出すのを やめる］で 引っ込める'],
       tips: ['雛形・書き方（巡回監査報告書・書面添付）は［📚 雛形・書き方を 入れる］から 事務所共通の資料へ。どの顧問先の zip にも 入る'] },
     Min: { t: '議事録', lead: '顧問先で 話したこと・見てきたことを ぜんぶ 残す タブです。あとから 直せない 記録に 残り、エージェントの zip にも 入って 次の 経営助言・企業防衛の 前提・カルテの もとに なります。',
-      steps: ['種類（巡回監査・社長面談・訪問（現物確認）など）・日・題を 選び、OMS などの 議事録を［文字で入れる］か［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］。写真は 何枚でも（車・設備・パソコンや モニターの 様子 など）', '［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す（顧問料の 合意 など 言った 言わないの 証拠にも なる）', '「🔎 議事録を 探す」… ことば・種類で しぼる →［📎 巡回監査報告書へ 引く］［📎 書面添付へ 引く］で 保証タブの 下書きに 引用を 足す', 'エージェントに 渡すと 議事録（写真も）を 読んで、助言の 下書き（経営助言タブの「これから 出す 助言」）・企業防衛の 前提・カルテ案を 直して くる。［✓ 顧問先に 出す］まで 顧問先には 出ない'],
+      steps: ['種類（巡回監査・社長面談・訪問（現物確認）など）・日・題を 選び、OMS などの 議事録を［文字で入れる］か［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］。写真は 何枚でも（車・設備・パソコンや モニターの 様子 など）', '公式LINE・メール・電話の やりとりも 議事録：種類を 選び、やりとりの 日に 合わせて 文を 貼るか スクショを 入れる（公式LINE・メールの スクショは 字を ひとりでに 読んで 本文に する。12けたの 数字が 写っていたら 字は 入れない）。スクショ・ファイルは 枠に ドラッグ＆ドロップで 何枚でも（コピーした 画像は Ctrl+V）。［🎙 録音する］で その場の 会話を 録音（はじめに「議事録として 残します」と 伝える。残さない 話の あいだは［⏸ 一時停止（残さない 話）］、終わりは［⏹ 止めて 議事録に 入れる］。音声が 原本として 残る。文字には まだ しない）。下の 並べ方を「古い日から（時系列）」に すると、会った 日の 会話と 1本に 並ぶ。「本文も 並べて 読む」で 続けて 読める', '［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す（顧問料の 合意 など 言った 言わないの 証拠にも なる）', '「🔎 議事録を 探す」… ことば・種類で しぼる →［📎 巡回監査報告書へ 引く］［📎 書面添付へ 引く］で 保証タブの 下書きに 引用を 足す', 'エージェントに 渡すと 議事録（写真も）を 読んで、助言の 下書き（経営助言タブの「これから 出す 助言」）・企業防衛の 前提・カルテ案を 直して くる。［✓ 顧問先に 出す］まで 顧問先には 出ない'],
       tips: ['議事録は 追記だけ（消せない）。まちがえたら［＋ 決定事項・やること］で 訂正を 足す'] },
     Rule: { t: 'AIの考え方', pic: 'g_orule', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
       steps: ['「原則と例外」… 左に 事務所の標準（原則）、右に この顧問先の 例外（按分の基準 など）。例外には 理由を 書いて［この顧問先の 例外を 保存］（版を 積む・zip の 原則と例外.md に 入る）。原則は 所長だけ が 直せる', 'エージェントが 戻した カルテ.md は【案】。上に「承認待ち」と 出たら［読んで 承認する］→［📥 結果と学び］で 読んで［✓ 承認して カルテに する］か［採らない（いまの カルテの まま）］（承認するまで カルテにも zip にも 入らない）', '決まりを 書いて［考え方を保存］', '仕訳辞書は「仕訳辞書を入れる口」へ 会計システムから 切り出した 辞書を ドラッグ（参考の 材料。［中身を 見る・直す］で 開ける）。経営助言（企業防衛・格付け・助言）は［経営助言］タブへ 移しました', '議事録は［保証］タブへ 移しました', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
@@ -15678,9 +15708,15 @@
     const q = (($('mnQ') || {}).value || '').trim(), qk = ($('mnQk') || {}).value || '';
     const hit = r.list.filter(function (x) { return (!qk || x.kind === qk) && (!q || (x.title + '\n' + x.body + '\n' + x.notes.map(function (n) { return n.body; }).join('\n')).indexOf(q) >= 0); });
     if ($('mnQn')) $('mnQn').textContent = (q || qk) ? hit.length + '件 見つかりました（ぜんぶで ' + r.list.length + '件）' : 'ぜんぶで ' + r.list.length + '件';
+    /* ★★ 2026-11-24（石井）：会った 日の 会話も 公式LINE・メール・電話も、会議の 日（やりとりの 日）で 1本に 並べる。同じ 日は 入れた 順 */
+    const ord = ($('mnOrd') || {}).value === 'old' ? 1 : -1, openAll = !!($('mnOpenAll') || {}).checked;
+    hit.sort(function (a, b) { return (String(a.day) < String(b.day) ? -1 : String(a.day) > String(b.day) ? 1 : String(a.at) < String(b.at) ? -1 : String(a.at) > String(b.at) ? 1 : 0) * ord; });
+    const MN_ICON = { '公式LINE': '💬', 'メール': '✉', '電話': '📞', '訪問（現物確認）': '🏢', '社長面談': '🤝', '巡回監査': '🔍', '決算報告会': '📊', '所内会議': '🗂' };
+    let lastMon = '';
     hit.forEach(function (x) {
-      const d = el('details'); d.style.margin = '6px 0'; d.className = 'mnitem'; if (q || qk) d.open = true;
-      d.appendChild(el('summary', null, x.day + '・' + x.kind + '・' + x.title + (x.show ? (x.oks.length ? '　✅ 顧問先 確認済み（' + x.oks[x.oks.length - 1].who + '）' : '　⏳ 顧問先の確認待ち') : '') + (x.notes.length ? '　📝 決定事項 ' + x.notes.length : '')));
+      const mon = String(x.day).slice(0, 7); if (mon !== lastMon) { lastMon = mon; const mh = el('div', 'mnmon', mon.replace('-', '年') + '月'); mh.style.cssText = 'font-weight:700;margin:10px 0 2px;border-bottom:1px solid #d9d4c6'; w.appendChild(mh); }
+      const d = el('details'); d.style.margin = '6px 0'; d.className = 'mnitem'; d.dataset.kind = x.kind; if (q || qk || openAll) d.open = true;
+      d.appendChild(el('summary', null, (MN_ICON[x.kind] || '📝') + ' ' + x.day + '・' + x.kind + '・' + x.title + (x.show ? (x.oks.length ? '　✅ 顧問先 確認済み（' + x.oks[x.oks.length - 1].who + '）' : '　⏳ 顧問先の確認待ち') : '') + (x.notes.length ? '　📝 決定事項 ' + x.notes.length : '')));
       d.appendChild(el('div', 'note', '入れた ' + x.at + '・' + x.who + '・指紋 ' + x.sha.slice(0, 16) + '…'));
       if (x.body) { const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;font:inherit;font-size:12.5px;max-height:260px;overflow:auto;background:#fafafa;padding:6px'; pre.textContent = x.body; d.appendChild(pre); }
       x.notes.forEach(function (n) { const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;font:inherit;font-size:12.5px;border-left:3px solid #0F6E56;padding-left:8px'; pre.textContent = '📝 ' + n.at + '・' + n.who + '\n' + n.body; d.appendChild(pre); });
@@ -15714,6 +15750,26 @@
     selectTab('Grt');
     setTimeout(function () { const ta = $(kind === 'report' ? 'grRepText' : 'grShText'); ta.value = (ta.value ? ta.value.replace(/\s+$/, '') + '\n' : '') + quote; ta.focus(); mtMsg(kind === 'report' ? 'grRepMsg' : 'grShMsg', '議事録を 引きました。直して 保存してください。'); }, 300);
   }
+  /* ★★★ 確定申告の 書類集め（2026-11-24 石井）：あと ◯件・要フォロー（書類が 未回収／答えの 確認が 要る） */
+  function ksDrawO(r) {
+    $('ksYear').textContent = r.label; if (document.activeElement !== $('ksDue')) $('ksDue').value = r.due || (r.year + 1) + '-03-15';
+    $('ksOn').textContent = r.on ? '締切を 変える' : '顧問先に 聞きはじめる'; $('ksOff').hidden = !r.on;
+    const w = $('ksView'); w.textContent = ''; if (!r.on && !r.done) { w.appendChild(el('div', 'note', 'まだ 始めていません。')); return; }
+    const top = el('div', 'kstop'); top.style.cssText = 'display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;background:#fff;border:1px solid #d9d4c6;border-radius:10px;padding:10px 14px;margin:6px 0';
+    const big = el('b', null, r.done < r.n ? '質問 あと ' + (r.n - r.done) + 'つ' : 'あと ' + r.left + ' 件'); big.id = 'ksLeft'; big.style.fontSize = '22px'; top.appendChild(big);
+    top.appendChild(el('span', 'note', '書類 ' + r.have + ' / ' + r.need + ' を 回収済み　質問 ' + r.done + ' / ' + r.n + ' 回答済み' + (r.sent ? '（' + r.sent + ' 送信）' : '（まだ 送信していない）') + '　締切 ' + (r.due || '—')));
+    w.appendChild(top);
+    const fol = [];
+    r.list.forEach(function (q) { if (q.a === 'わからない') fol.push(['❓ 答えの 確認が 要る', q.q + (q.note ? '　補足：' + q.note : '')]); if (q.a === 'はい') q.docs.forEach(function (d) { if (!d.got) fol.push([d.later ? '⏳ あとで 提出' : '📭 未提出', d.n + '（' + q.q + '）']); }); if (q.a && q.a !== 'わからない' && q.note) fol.push(['📝 補足あり', q.q + '　' + q.note]); });
+    if (fol.length) { w.appendChild(el('b', null, '要フォロー ' + fol.length + '件')); fol.forEach(function (f) { const d = el('div', 'agrow ksfol'); d.appendChild(el('b', null, f[0] + '　')); d.appendChild(document.createTextNode(f[1])); w.appendChild(d); }); }
+    const dt = el('details'); dt.appendChild(el('summary', null, '答えの 一覧（' + r.done + ' / ' + r.n + '）'));
+    r.list.forEach(function (q) { dt.appendChild(el('div', 'agrow', '［' + q.g + '］' + q.q + '　→　' + (q.a || '未回答') + (q.a === 'はい' && q.docs.length ? '（書類 ' + q.docs.filter(function (d) { return d.got; }).length + '/' + q.docs.length + '）' : '') + (q.prev ? '　去年：' + q.prev : ''))); });
+    w.appendChild(dt);
+  }
+  function ksLoad() { const code = S.code; if (!code) { $('ksView').textContent = ''; return; } gs('ksGet', code, 0).then(function (r) { if (code === S.code) ksDrawO(r); }, function (e) { mtMsg('ksMsg', e.message, 'err'); }); }
+  $('ksOn').addEventListener('click', function () { if (!S.code) return; const b = this; b.disabled = true; gs('ksSet', S.code, 0, { on: true, due: $('ksDue').value }).then(function (r) { b.disabled = false; ksDrawO(r); mtMsg('ksMsg', '顧問先の 画面に「確定申告の 書類」を 出しました。'); }, function (e) { b.disabled = false; mtMsg('ksMsg', e.message, 'err'); }); });
+  $('ksOff').addEventListener('click', function () { if (!S.code) return; const b = this; if (b.dataset.ok !== '1') { b.dataset.ok = '1'; b.textContent = 'もう一度押すと 止める'; return; } b.dataset.ok = ''; b.textContent = '止める'; gs('ksSet', S.code, 0, { on: false, due: $('ksDue').value }).then(function (r) { ksDrawO(r); mtMsg('ksMsg', '止めました（答えは 残っています）。'); }, function (e) { mtMsg('ksMsg', e.message, 'err'); }); });
+  $('ksRe').addEventListener('click', ksLoad);
   function minLoadTab() {
     const code = S.code; if (!code) { $('mnList').innerHTML = '<div class="note">上で 顧問先を 選んでください。</div>'; return; }
     const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' }; $('minClient').textContent = '— ' + code + ' ' + c.name;
@@ -15727,21 +15783,80 @@
   }
   $('mnAdd').addEventListener('click', function () { if (!S.code) return; if (!$('mnText').value.trim()) { mtMsg('mnMsg', '議事録の文字を 貼ってください。', 'err'); return; } mnSend({ text: $('mnText').value }); });
   $('mnFileB').addEventListener('click', function () { if (!S.code) return; $('mnFile').value = ''; $('mnFile').click(); });
-  $('mnFile').addEventListener('change', function () {
-    const fs = Array.prototype.slice.call(this.files || []); if (!fs.length) return;
+  $('mnFile').addEventListener('change', function () { mnFiles(Array.prototype.slice.call(this.files || [])); });
+  /* ★★ 2026-11-24（石井）：スクショ・ファイルを 枠に 落として どんどん 入れる（公式LINE の スクショ など）。コピーした 画像は Ctrl+V。文を 落としたら 文字の 欄へ */
+  (function () {
+    const box = $('mnBox'); let dn = 0;
+    const has = function (e) { const ty = (e.dataTransfer && e.dataTransfer.types) || []; return Array.prototype.indexOf.call(ty, 'Files') >= 0 || Array.prototype.indexOf.call(ty, 'text/plain') >= 0; };
+    box.addEventListener('dragenter', function (e) { if (!has(e)) return; e.preventDefault(); dn++; box.classList.add('mndrop'); });
+    box.addEventListener('dragover', function (e) { if (!has(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+    box.addEventListener('dragleave', function () { dn = Math.max(0, dn - 1); if (!dn) box.classList.remove('mndrop'); });
+    box.addEventListener('drop', function (e) {
+      if (!has(e)) return; e.preventDefault(); dn = 0; box.classList.remove('mndrop');
+      if (!S.code) { mtMsg('mnMsg', '上で 顧問先を 選んでください。', 'err'); return; }
+      const fs = Array.prototype.slice.call(e.dataTransfer.files || []);
+      if (fs.length) { mnFiles(fs); return; }
+      const tx = e.dataTransfer.getData('text/plain'); if (tx) { const ta = $('mnText'); ta.value = (ta.value ? ta.value.replace(/\s+$/, '') + '\n' : '') + tx; ta.focus(); mtMsg('mnMsg', '文字の 欄に 入れました。日を 確かめて［文字で入れる］。'); }
+    });
+    box.addEventListener('paste', function (e) {
+      const its = (e.clipboardData && e.clipboardData.items) || [], fs = [];
+      Array.prototype.forEach.call(its, function (it) { if (it.kind === 'file' && /^image\//.test(it.type)) { const f = it.getAsFile(); if (f) fs.push(new File([f], '貼り付け_' + new Date(Date.now() + 9 * 3600e3).toISOString().slice(11, 19).replace(/:/g, '') + (fs.length ? '_' + fs.length : '') + '.' + (it.type.split('/')[1] || 'png').replace('jpeg', 'jpg'), { type: it.type })); } });
+      if (!fs.length) return; e.preventDefault(); if (!S.code) return; mnFiles(fs);
+    });
+  })();
+  /* ★★ 2026-11-24（石井）：アプリで 録音して 議事録に（音声が 原本。指紋が 付く）。［⏸ 一時停止］の あいだは 録らない。文字に するのは 別（いまは 音声を 残す ところまで） */
+  const MNREC = { mr: null, chunks: [], t0: 0, acc: 0, tm: 0, stream: null };
+  function mnRecUi(on) { $('mnRec').hidden = on; $('mnRecPause').hidden = !on; $('mnRecStop').hidden = !on; $('mnRecT').hidden = !on; if (!on) { $('mnRecPause').textContent = '⏸ 一時停止（残さない 話）'; clearInterval(MNREC.tm); } }
+  function mnRecSec() { return Math.floor((MNREC.acc + (MNREC.t0 ? Date.now() - MNREC.t0 : 0)) / 1000); }
+  function mnRecTick() { const s = mnRecSec(); $('mnRecT').textContent = (MNREC.t0 ? '🔴 録音中 ' : '⏸ 止めています ') + Math.floor(s / 60) + '分' + ('0' + (s % 60)).slice(-2) + '秒'; if (s >= 110 * 60 && MNREC.mr && MNREC.mr.state !== 'inactive') { mtMsg('mnMsg', '110分に なったので 止めて 入れます（続きは もう一度 録音）。'); MNREC.mr.stop(); } }
+  $('mnRec').addEventListener('click', function () {
+    if (!S.code) { mtMsg('mnMsg', '上で 顧問先を 選んでください。', 'err'); return; }
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) { mtMsg('mnMsg', 'この 端末・ブラウザでは 録音できません。', 'err'); return; }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (st) {
+      const ty = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].filter(function (x) { return MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(x); })[0] || '';
+      const mr = new MediaRecorder(st, ty ? { mimeType: ty, audioBitsPerSecond: 32000 } : { audioBitsPerSecond: 32000 });
+      const code = S.code;
+      MNREC.mr = mr; MNREC.chunks = []; MNREC.stream = st; MNREC.acc = 0; MNREC.t0 = Date.now();
+      mr.addEventListener('dataavailable', function (e) { if (e.data && e.data.size) MNREC.chunks.push(e.data); });
+      mr.addEventListener('stop', function () {
+        st.getTracks().forEach(function (t) { t.stop(); }); mnRecUi(false);
+        const mime = (mr.mimeType || ty || 'audio/webm').split(';')[0], blob = new Blob(MNREC.chunks, { type: mime }); MNREC.mr = null; MNREC.chunks = [];
+        if (!blob.size) { mtMsg('mnMsg', '録音が 空でした。', 'err'); return; }
+        if (blob.size > 30 * 1024 * 1024) { mtMsg('mnMsg', '30MB を こえました。入れられません（短く 分けて 録音してください）。', 'err'); return; }
+        if (code !== S.code) { mtMsg('mnMsg', '録音の あいだに 顧問先が 変わったので 入れていません。', 'err'); return; }
+        const hm = new Date(Date.now() + 9 * 3600e3).toISOString().slice(11, 16).replace(':', '');
+        const rd = new FileReader(); rd.onload = function () { mnSend(Object.assign({ name: '録音_' + hm + (mime === 'audio/mp4' ? '.m4a' : '.webm'), mime: mime, b64: String(rd.result).split(',')[1] || '' }, $('mnTitle').value ? {} : { title: '録音 ' + $('mnKind').value + ' ' + hm.slice(0, 2) + ':' + hm.slice(2) })); }; rd.readAsDataURL(blob);
+      });
+      mr.start(5000); mnRecUi(true); mnRecTick(); MNREC.tm = setInterval(mnRecTick, 1000);
+      mtMsg('mnMsg', '🔴 録音しています。はじめに「いまから 議事録として 残します」と 伝えてください。');
+    }, function (e) { mtMsg('mnMsg', 'マイクが 使えません（' + (e && e.message || e) + '）。ブラウザの マイクの 許可を 確かめてください。', 'err'); });
+  });
+  $('mnRecPause').addEventListener('click', function () {
+    const mr = MNREC.mr; if (!mr) return;
+    if (mr.state === 'recording') { mr.pause(); MNREC.acc += Date.now() - MNREC.t0; MNREC.t0 = 0; this.textContent = '▶ 続きを 録る'; }
+    else if (mr.state === 'paused') { mr.resume(); MNREC.t0 = Date.now(); this.textContent = '⏸ 一時停止（残さない 話）'; }
+    mnRecTick();
+  });
+  $('mnRecStop').addEventListener('click', function () { const mr = MNREC.mr; if (mr && mr.state !== 'inactive') { if (MNREC.t0) { MNREC.acc += Date.now() - MNREC.t0; MNREC.t0 = 0; } mr.stop(); } });
+  window.addEventListener('beforeunload', function (e) { if (MNREC.mr && MNREC.mr.state !== 'inactive') { e.preventDefault(); e.returnValue = ''; } });
+  function mnFiles(fs) {
+    if (!fs.length) return;
     let i = 0;
     const next = function () {
       if (i >= fs.length) return; const f = fs[i++];
       if (f.size > 30 * 1024 * 1024) { mtMsg('mnMsg', f.name + '：30MB までです。', 'err'); next(); return; }
       const e = (f.name.split('.').pop() || '').toLowerCase();
-      const mime = { txt: 'text/plain', pdf: 'application/pdf', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', mp4: 'video/mp4', m4a: 'audio/mp4', mp3: 'audio/mpeg', wav: 'audio/wav', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', heic: 'image/heic', webp: 'image/webp' }[e] || f.type || '';
-      const extra = /^image\//.test(mime) && !$('mnTitle').value ? { title: '現物確認の 写真 ' + f.name.replace(/\.[^.]+$/, '') } : {};
+      const mime = { txt: 'text/plain', pdf: 'application/pdf', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', mp4: 'video/mp4', m4a: 'audio/mp4', mp3: 'audio/mpeg', wav: 'audio/wav', webm: 'audio/webm', ogg: 'audio/ogg', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', heic: 'image/heic', webp: 'image/webp' }[e] || f.type || '';
+      const kd = $('mnKind').value, shot = kd === '公式LINE' || kd === 'メール';
+      const extra = /^image\//.test(mime) && !$('mnTitle').value ? { title: (shot ? kd + ' の スクショ ' : '現物確認の 写真 ') + f.name.replace(/\.[^.]+$/, '') } : {};
       const rd = new FileReader(); rd.onload = function () { const p = mnSend(Object.assign({ name: f.name, mime: mime, b64: String(rd.result).split(',')[1] || '' }, extra)); if (p && p.then) p.then(next, next); else next(); }; rd.readAsDataURL(f);
     };
     next();
-  });
+  }
   $('mnQ').addEventListener('input', function () { if (MN_R) mnDraw(MN_R); });
   $('mnQk').addEventListener('change', function () { if (MN_R) mnDraw(MN_R); });
+  $('mnOrd').addEventListener('change', function () { if (MN_R) mnDraw(MN_R); });
+  $('mnOpenAll').addEventListener('change', function () { if (MN_R) mnDraw(MN_R); });
   $('grToMin').addEventListener('click', function () { selectTab('Min'); });
   /* ★★★ 経営助言（2026-11-19・器）：リスク（標準保障額）・格付け。算定は 事務所。顧問先には 出したものだけ。提案は 相談の あとだけ */
   const kyN = function (v) { return Math.round(Number(String(v || '').replace(/[,，円\s]/g, '')) || 0); };
@@ -15755,6 +15870,26 @@
       const al = $('kadList'); al.textContent = '';
       /* ★★ 2026-11-23（石井）：これから 出す 助言（エージェントの 下書き・まだ 出していない もの）を 上に。［✓ 顧問先に 出す］ */
       const adv = (r.advice || []).slice(0, 20), pend = adv.filter(function (x) { return !x.show && !adv.some(function (y) { return y.show && y.val === x.val && y.body.text === x.body.text; }); }), done = adv.filter(function (x) { return x.show; });
+      /* ★★ 2026-11-24（石井）：🙋 社長に 聞くこと（エージェントが 出した 問い。数字に 出ない 事情・本当の 目的）。答えは 議事録に 入り、次の エージェントに 渡る */
+      const qs = r.qs || [];
+      if (qs.length) {
+        const qb = el('div', 'kadrow'); qb.id = 'kaskBox'; qb.style.cssText = 'background:#FFF9E8;border:1px solid #e0c060;border-radius:8px;padding:8px 10px;margin:0 0 10px';
+        qb.appendChild(el('b', null, '🙋 社長に 聞くこと（' + qs.length + '）'));
+        qb.appendChild(el('div', 'note', '次に 会ったとき・電話のときに 聞いて、答えを 入れてください。議事録に 入り、次の 助言に 生きます。'));
+        const tas = [];
+        qs.forEach(function (q) { const w = el('div'); w.className = 'kaskq'; w.style.cssText = 'margin:8px 0 0;padding-top:6px;border-top:1px dashed #e0c060';
+          const h = el('div'); h.style.fontWeight = '700'; h.textContent = (q.kind === '目的' ? '🎯 ' : '🔎 ') + q.q; w.appendChild(h);
+          if (q.why) w.appendChild(el('div', 'note', 'なぜ 聞くか：' + q.why));
+          const ta = el('textarea'); ta.rows = 2; ta.style.width = '100%'; ta.placeholder = '社長の 答え（聞いた とおりに）'; w.appendChild(ta);
+          const sk = el('button', 'btn ghost sm', '聞かない'); sk.type = 'button'; sk.title = 'この 問いを 外す（2回押し）';
+          sk.addEventListener('click', function () { if (sk.dataset.ok !== '1') { sk.dataset.ok = '1'; sk.textContent = 'もう一度押すと 外す'; return; } sk.disabled = true; gs('kyoAskAnswer', S.code, [{ id: q.id, skip: true }]).then(function (rr) { kyDraw(rr.kyo); mtMsg('kyMsg', '問いを 外しました。'); }, function (e) { sk.disabled = false; mtMsg('kyMsg', e.message, 'err'); }); });
+          w.appendChild(sk); tas.push({ id: q.id, ta: ta }); qb.appendChild(w); });
+        const go = el('button', 'btn sm', '✓ 答えを 議事録に 入れる'); go.type = 'button'; go.id = 'kaskGo'; go.style.marginTop = '8px';
+        go.addEventListener('click', function () { const list = tas.filter(function (x) { return x.ta.value.trim(); }).map(function (x) { return { id: x.id, a: x.ta.value }; });
+          if (!list.length) { mtMsg('kyMsg', '答えを 1つ 入れてください。', 'err'); return; }
+          go.disabled = true; gs('kyoAskAnswer', S.code, list).then(function (rr) { kyDraw(rr.kyo); mtMsg('kyMsg', '答え ' + rr.n + '件を 議事録（社長面談）に 入れました。'); }, function (e) { go.disabled = false; mtMsg('kyMsg', e.message, 'err'); }); });
+        qb.appendChild(go); al.appendChild(qb);
+      }
       if (pend.length) al.appendChild(el('b', null, '📝 これから 出す 助言（' + pend.length + '）'));
       pend.concat(done.slice(0, 12)).forEach(function (x) { const box = el('div', 'kadrow'); const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;font:inherit;font-size:12.5px;border-left:3px solid ' + (x.show ? '#0F6E56' : '#e0a040') + ';padding-left:8px;margin:4px 0'; pre.textContent = x.at + '・' + x.val + '・' + (x.who === 'エージェント' ? '🤖 エージェントの 下書き' : '担当 ' + (x.body.tax ? (r.taxName || '石井') + '（税務判断）' : x.who)) + (x.show ? '' : '（まだ 出していない）') + '\n' + (x.body.text || '') + '\n理由：' + (x.body.reason || ''); box.appendChild(pre);
         if (!x.show) { const ok = el('button', 'btn sm', '✓ 顧問先に 出す'); ok.type = 'button'; ok.addEventListener('click', function () { ok.disabled = true; gs('kyoAdvise', S.code, { item: x.val, text: x.body.text, reason: x.body.reason || '（エージェントの 下書き）', tax: !!x.body.tax, ym: x.body.ym || '', show: true }).then(function (rr) { kyDraw(rr); mtMsg('kyMsg', '顧問先の 画面に 出しました。'); }, function (e) { ok.disabled = false; mtMsg('kyMsg', e.message, 'err'); }); });
