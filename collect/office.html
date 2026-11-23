@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795435379;</script>
+<script>window.__PAGE_VER=1795443470;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -4825,14 +4825,20 @@
       return fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: [tk] }) })
         .then(function (r) { return r.json(); }).then(function (o) { if (!o || !o.ok) throw new Error((o && o.msg) || 'ng'); return o.r; });
     };
-    PRE_GO[tk] = raw('clientInfo').then(function (info) {
-      return (info && info.lock ? Promise.resolve(null) : raw('clientHistory').catch(function () { return null; })).then(function (hist) {
+    /* ★★★ 2026-11-25：顧問先の画面が 開くときに 聞く まとめ口（clientBoot）を まるごと 先に 取る（前は 名前と 一覧だけ。ほかは 開いてから 待っていた） */
+    const one = function (b) { const x = b && b.clientInfo; if (!x || x.e) throw new Error('ng'); return b; };
+    PRE_GO[tk] = raw('clientBoot').then(one).then(function (b) { return { info: b.clientInfo.r, hist: b.clientHistory && !b.clientHistory.e ? b.clientHistory.r : null, boot: b }; }, function () {
+      return raw('clientInfo').then(function (info) { return (info && info.lock ? Promise.resolve(null) : raw('clientHistory').catch(function () { return null; })).then(function (hist) { return { info: info, hist: hist, boot: null }; }); });
+    }).then(function (g) {
+      const info = g.info, hist = g.hist;
+      {
         let mm = {}; try { mm = JSON.parse(localStorage.getItem('collect_pre') || '{}') || {}; } catch (e) { mm = {}; }
-        mm[tk] = { at: Date.now(), info: info, hist: info && info.lock ? null : hist };
+        mm[tk] = { at: Date.now(), info: info, hist: info && info.lock ? null : hist, boot: info && info.lock ? null : g.boot };
+        try { if (mm[tk].boot && JSON.stringify(mm[tk].boot).length > 600000) mm[tk].boot = null; } catch (e) { mm[tk].boot = null; }   /* 大きすぎる 中身は 置かない（端末の 置き場が あふれる） */
         const ks = Object.keys(mm).sort(function (a, b) { return (mm[b].at || 0) - (mm[a].at || 0); });
         ks.slice(8).forEach(function (k) { delete mm[k]; });
         try { localStorage.setItem('collect_pre', JSON.stringify(mm)); } catch (e) { try { localStorage.removeItem('collect_pre'); } catch (x) {} }
-      });
+      }
     }).catch(function () {}).then(function () { delete PRE_GO[tk]; });
     return PRE_GO[tk];
   }
