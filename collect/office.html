@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795406380;</script>
+<script>window.__PAGE_VER=1795408228;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -123,7 +123,7 @@
   .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 6px 12px; background: var(--paper); border-bottom: 1px solid var(--line); }
   .ctl label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
   .ctl label[hidden] { display: none !important; }
-  #client { min-width: 220px; }
+  #client { min-width: 160px; }
 
   .pane { flex: 1; min-height: 0; }
   /* 辞書の手入れ・書き出し・担当者 */
@@ -1473,7 +1473,7 @@
     .cl-side { border-right: 0; border-bottom: 1px solid var(--line); }
     #alist { max-height: 32vh; }
     .cl-main { padding: 14px; }
-    #client { min-width: 0; width: 100%; }
+    #client { min-width: 0; }
     .ctl label:first-child { flex: 1 1 100%; }
   }
 .astop { margin: 6px 0 10px; padding: 10px 12px; border: 2px solid #B3261E; border-radius: 10px; background: #FDECEA; color: #8C1D18; line-height: 1.7; }
@@ -1767,7 +1767,7 @@
     <button type="button" role="tab" data-tab="Kaizen" aria-pressed="false" id="tabKaizen">改善要望<b class="kzbadge" id="kzBadge" hidden></b></button>
     <button type="button" role="tab" data-tab="Send" aria-pressed="false" id="tabSend">送付物</button>
   </span>
-  <span class="who"><select class="cursel" id="curSel" hidden aria-label="いま 開いている 顧問先（どの タブでも ここで 替えられる）" title="いま 開いている 顧問先。どの タブでも ここで 替えられます"></select><select class="minesel" id="mineSel" hidden aria-label="どの担当者の顧問先を出すか" title="担当者ごとのマイページ：自分（または選んだ担当者）の担当・補助担当の顧問先だけを 一覧と 上の顧問先の欄に出す"></select><button type="button" class="arrbtn bellbtn" id="circBtn" hidden aria-expanded="false" title="事務所の中の 回覧（自分あて・自分が回したもの）">📋<span class="bt"> 回覧</span><b class="belln" id="circN" hidden></b></button><button type="button" class="arrbtn bellbtn" id="bellBtn" hidden aria-expanded="false" title="顧問先から届いた知らせ（直近30日）。赤い数字は まだ見ていない数">🔔<span class="bt"> お知らせ</span><b class="belln" id="bellN" hidden></b></button><button type="button" class="arrbtn" id="guideBtn" hidden title="この画面の 使い方（操作ガイド）">📖<span class="bt"> 操作ガイド</span></button><button type="button" class="arrbtn" id="agpBtn" hidden title="エージェントの 進み具合（zip を 渡した → 戻した → 元帳で 確かめ中 → 取り込みファイルに した）。担当の顧問先・月分ごと">🤖<span class="bt"> エージェント</span></button><button type="button" class="arrbtn" id="sorBtn" hidden title="担当の顧問先の 資料のそろい具合（月分ごと・箱ごと）。いつも来る箱が まだ来ていない顧問先が 一目で分かります">📊<span class="bt"> そろい具合</span></button><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥<span class="bt"> 未処理</span> <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
+  <span class="who"><select class="cursel" id="client" aria-label="顧問先（いま 開いている 顧問先。どの タブでも ここで 替えられる）" title="いま 開いている 顧問先。どの タブでも ここで 替えられます"></select><select class="minesel" id="mineSel" hidden aria-label="どの担当者の顧問先を出すか" title="担当者ごとのマイページ：自分（または選んだ担当者）の担当・補助担当の顧問先だけを 一覧と 上の顧問先の欄に出す"></select><button type="button" class="arrbtn bellbtn" id="circBtn" hidden aria-expanded="false" title="事務所の中の 回覧（自分あて・自分が回したもの）">📋<span class="bt"> 回覧</span><b class="belln" id="circN" hidden></b></button><button type="button" class="arrbtn bellbtn" id="bellBtn" hidden aria-expanded="false" title="顧問先から届いた知らせ（直近30日）。赤い数字は まだ見ていない数">🔔<span class="bt"> お知らせ</span><b class="belln" id="bellN" hidden></b></button><button type="button" class="arrbtn" id="guideBtn" hidden title="この画面の 使い方（操作ガイド）">📖<span class="bt"> 操作ガイド</span></button><button type="button" class="arrbtn" id="agpBtn" hidden title="エージェントの 進み具合（zip を 渡した → 戻した → 元帳で 確かめ中 → 取り込みファイルに した）。担当の顧問先・月分ごと">🤖<span class="bt"> エージェント</span></button><button type="button" class="arrbtn" id="sorBtn" hidden title="担当の顧問先の 資料のそろい具合（月分ごと・箱ごと）。いつも来る箱が まだ来ていない顧問先が 一目で分かります">📊<span class="bt"> そろい具合</span></button><button type="button" class="arrbtn" id="arrBtn" hidden aria-expanded="false" title="担当の顧問先から届いて まだ処理していない資料（顧問先ごと）">📥<span class="bt"> 未処理</span> <b id="arrN">0</b></button><span id="whoName"></span><button type="button" id="signOut" hidden>ログアウト</button></span>
 </div>
 <div class="arrpop" id="arrPop" hidden role="dialog" aria-label="未処理の資料（顧問先ごと）"></div>
 <div class="arrpop" id="bellPop" hidden role="dialog" aria-label="お知らせ（届いた知らせ）"></div>
@@ -1821,7 +1821,7 @@
 </div>
 <div class="kzann" id="kzAnn" hidden><button type="button" class="kzann-x" id="kzAnnX" aria-label="このお知らせを消す" title="このお知らせを消す（改善要望タブには残ります）">×</button><button type="button" class="kzann-t" id="kzAnnT"></button></div>
 <div class="ctl" id="ctl" hidden>
-  <label>顧問先 <select id="client"></select></label>
+  <!-- ★ 2026-11-24（石井）：顧問先を 選ぶ 欄は 上の 帯（タブの 右の 黄色い 欄）の 1か所だけ。ここには 置かない -->
   <label class="month-hide" title="（中で使うだけ。画面には出さない）" hidden>処理する月 <input type="month" id="month"></label>
   <span class="seg" role="group" aria-label="表示する写真" id="filter">
     <button type="button" data-st="todo" aria-pressed="true">未処理 <b id="cTodo">0</b></button>
@@ -3238,7 +3238,6 @@
       else L.forEach(function (c) { opt(c0, c); });
       if (was) c0.value = was;
     }
-    try { setTimeout(curSync, 0); } catch (e) {}
     if (!L.length) { S.code = ''; listMsg('顧問先がありません。「顧問先」で足してください。'); return; }
     const keep = L.some(function (c) { return c.code === S.code; }) ? S.code : '';
     S.code = keep || (L.some(function (c) { return c.code === sel; }) ? sel : L[0].code);
@@ -4275,13 +4274,12 @@
   /* ================= タブ ================= */
   function selectTab(k) {
     S.tab = k;
-    try { curSync(); } catch (e) {}
     document.querySelectorAll('#tabs button').forEach(function (x) { x.setAttribute('aria-pressed', String((x.dataset.tab === k && !x.hidden) || (k === 'In' && x.dataset.tab === 'Docs'))); });   /* ★ 仕訳化（辞書の 画面）は 回収資料・仕訳化の 中 */
     hidePanes(); $('pane' + k).hidden = false;
     /* 隠れた欄にフォーカスが残って テンキーが出たままにならないように */
     const ae = document.activeElement; if (ae && ae.dataset && ae.dataset.tk && !$('pane' + k).contains(ae)) { ae.blur(); tkHide(); }
     /* ★ 2026-11-07：顧問先タブは 下の一覧で選ぶので 上の帯（顧問先の欄）を出さない（選ぶところを1つに） */
-    $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Tb' || k === 'Dict' || k === 'Out' || k === 'Rule' || k === 'Send' || k === 'Advice' || k === 'Grt' || k === 'Min');
+    $('ctl').hidden = !(k === 'Docs' || k === 'In' || k === 'Tb' || k === 'Dict' || k === 'Out' || k === 'Rule');   /* ★ 2026-11-24：顧問先の 欄は 上の 帯へ 移した。月・箱の 絞り込みが 要る タブだけ 帯を 出す */
     /* 帯の欄は タブに要るものだけ（処理する月・未処理/確定 は仕訳化だけ、月分・箱は 回収資料と仕訳化） */
     $('ctl').dataset.tab = k;
     if (k === 'Docs') docsLoad();
@@ -4739,12 +4737,7 @@
     try { standby(); } catch (e) {}
     return true;
   }
-  function curSync() {
-    try { const cs = $('curSel'), c0 = $('client'); if (!cs || !c0) return; if (cs.dataset.sig !== c0.innerHTML.length + '|' + c0.options.length) { cs.innerHTML = c0.innerHTML; cs.dataset.sig = c0.innerHTML.length + '|' + c0.options.length; }
-      cs.value = S.code || ''; cs.hidden = !c0.options.length || !S.booted; } catch (e) {}
-  }
   function switchClient(soft) {
-    try { curSync(); } catch (e) {}
     /* soft … 同じ顧問先のまま 顧問先の並びだけ変わったとき（箱の選び肢だけ作り直す） */
     if (!soft) { try { pairSync(); } catch (e) {} try { cpPreSoon(); } catch (e) {} }
     if (!soft && S.tab === 'Send') { try { sdLoad(); } catch (e) {} }   /* ★ 送付物：中の顧問先の画面も その顧問先に入れ替える */
@@ -18692,7 +18685,6 @@
   /* ★ 2026-11-24（石井）：個人を 選んだら 代表者の 役職は「代表」（個人事業は みな 代表）。法人に 戻したら 自動で 入れた「代表」は 消す */
   function aRepKind() { const kd = $('aKind').value, rt = $('aRepTitle'); rt.placeholder = kd === '個人' ? '例 代表' : '例 代表取締役'; if (kd === '個人' && !rt.value.trim()) { rt.value = '代表'; rt.dataset.auto = '1'; } else if (kd !== '個人' && rt.dataset.auto === '1' && rt.value === '代表') { rt.value = ''; rt.dataset.auto = ''; } }
   $('aKind').addEventListener('change', aRepKind);
-  $('curSel').addEventListener('change', function () { const v = this.value; if (!setCode(v)) this.value = S.code || ''; curSync(); });
   /* ★ 2026-11-24（石井）：お試しの 方の お問い合わせに まだ 返事を していない 数を［顧問先］タブと［🎁 紹介・お試し］に 赤い 数字で */
   function refBadge() {
     if (!S.booted || document.hidden) return;
