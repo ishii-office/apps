@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795508798;</script>
+<script>window.__PAGE_VER=1795509761;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1257,6 +1257,12 @@
   .dview .dvtools > * { white-space: nowrap; }
   .dview .dvtools .btn.sm { padding: 4px 9px; }
   .dview .dvtools .dvback { flex-wrap: nowrap; }
+  /* ★ K-0307：伝票の日付（日ごとの箱）。何日の伝票か 一目で・ちがえば その場で直す */
+  .dview .dvday { display: inline-flex; align-items: center; gap: 6px; padding: 2px 4px 2px 10px; border: 2px solid #1F4E8C; border-radius: 8px; background: #EEF4FC; color: #1F4E8C; font-weight: 800; font-size: 15px; }
+  .dview .dvday[hidden] { display: none; }
+  .dview .dvday.ai { border-style: dashed; }
+  .dview .dvday.none { border-color: #C0392B; color: #C0392B; background: #FDF1EF; }
+  .dview .dvday input { font: inherit; font-size: 13px; font-weight: 600; padding: 2px 4px; border: 1px solid #9DB6D8; border-radius: 6px; background: #fff; color: #222; }
   .dbox-h { flex-wrap: wrap; row-gap: 6px; }
   .dbox-h h3 { white-space: nowrap; }
   @media (max-width: 700px) {
@@ -1341,7 +1347,7 @@
   .fdnode.drop, .fdit.drop { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--a-tint); }
   .fdkids { margin-left: 14px; }
   /* 事務所フォルダのファイルを 大きく見るとき：回収資料用のボタンは 出さない */
-  .dv-fold #dvGo, .dv-fold #dvBook, .dv-fold #dvRot, .dv-fold #dvOrig, .dv-fold #dvGrip, .dv-fold #dvPos, .dv-fold #dvPg, .dv-fold #dvSplit, .dv-fold .dvkey, .dv-fold #dvMove, .dv-fold #dvGmail, .dv-fold #dvBack, .dv-fold #dvChk, .dv-fold #dvChkAll, .dv-fold #dvPrev, .dv-fold #dvNext, .dv-fold #dvwSide, .dv-fold #dvMemo { display: none !important; }
+  .dv-fold #dvGo, .dv-fold #dvDay, .dv-fold #dvBook, .dv-fold #dvRot, .dv-fold #dvOrig, .dv-fold #dvGrip, .dv-fold #dvPos, .dv-fold #dvPg, .dv-fold #dvSplit, .dv-fold .dvkey, .dv-fold #dvMove, .dv-fold #dvGmail, .dv-fold #dvBack, .dv-fold #dvChk, .dv-fold #dvChkAll, .dv-fold #dvPrev, .dv-fold #dvNext, .dv-fold #dvwSide, .dv-fold #dvMemo { display: none !important; }
   .dv-ro #dvMark { display: none !important; }
   .fdit .mkd { position: absolute; right: 8px; top: 8px; font-size: 12px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 0 5px; }
   /* ★ 赤い印 ＝ 共有ドライブ（事務所の正本の置き場。2026-11-15） */
@@ -2864,6 +2870,7 @@
 <!-- ===== 回収資料を大きく見る ===== -->
 <div class="dview dpz" id="dview" hidden role="dialog" aria-modal="true" aria-label="資料を大きく見る">
   <div class="dvbar"><b id="dvName"></b><span class="dvtools">
+    <label class="dvday" id="dvDay" hidden title="この伝票の日付（日ごとに並ぶ箱）。ちがうときは ここで 正しい日を選ぶと すぐ直ります（ちがう月の日なら その月分へ移ります）"><span id="dvDayT">📅 日付</span><input type="date" id="dvDayIn" aria-label="伝票の日付を直す"></label>
     <button type="button" class="btn sm" id="dvGo">仕訳化する</button><button type="button" class="btn ghost sm" id="dvBook" title="手書き（印刷）の現金出納帳の写真を AI で1行ずつ読み、この箱・この月分の アプリの出納帳に起こします。紙の残高と照らして直してから［この月を仕訳化に回す］。この写真は 対象外（出納帳の原本）になり、1枚の領収書としては下書きしません">📒 出納帳として読む</button>
     <button type="button" class="btn ghost sm" id="dvRot" title="90度ずつ回す">↻ 回す</button>
     <button type="button" class="btn ghost sm" id="dvOrig" hidden title="顧問先が［かざしスキャン］で撮ったとき、書類の形に整える前の 元の写真（Drive で開く）">📷 元の写真</button>
@@ -7007,6 +7014,7 @@
       '.wc .st{top:206px;left:12px;right:auto}.wc .wbd{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;border:2px solid #fff;background:#1E8E3E;color:#fff;font:900 17px/1 sans-serif;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.35);z-index:2;padding:0}.wc.m-skip .wbd{background:#111}.wc.m-trash .wbd{background:#D0201A}' +
       '.wc.m-trash{border-style:dashed}.wc.m-trash .im img{filter:grayscale(1);opacity:.45}.wc.m-chk{border-color:#1E8E3E}' +
       '.wc .ac .wpart,#wzr .wpart{align-self:center;color:#1E8E3E;font-weight:700;font-size:12px}.wc .ac{display:flex;flex-wrap:wrap;gap:4px}.wc .ac button{font:inherit;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid #9aa6b2;background:#fff;color:#1d2733;cursor:pointer}.wc .ac .ok{border-color:#1E8E3E;color:#1E8E3E;font-weight:700}.wc .ac .ng{border-color:#D0201A;color:#D0201A}' +
+      '.wday{display:inline-flex;align-items:center;gap:6px;padding:3px 5px 3px 10px;border-radius:10px;background:#fff;color:#1F4E8C;border:2px solid #9DB6D8;font-size:15px;font-weight:800}.wday.none{color:#C0392B;border-color:#E8A49C}.wday input{font:inherit;font-size:13px;font-weight:600;padding:2px 4px;border:1px solid #9DB6D8;border-radius:6px;background:#fff;color:#222}' +
       '.wzr{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:8px 10px 0;cursor:default}.wzr button{font:inherit;font-size:14px;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.5);border-radius:10px;padding:5px 12px;cursor:pointer}.wzr button:disabled{opacity:.35;cursor:default}.wzr .on{background:#1E8E3E;border-color:#1E8E3E}.wzr .blk{background:#111;border-color:#fff}.wzr .ng{border-color:#ff9a90}.wzr .pos{color:#fff;font-weight:800;font-size:14px}.wzr .key{color:#aaa;font-size:12px;width:100%;text-align:center}' +
       '.wzpg{position:absolute;left:8px;top:56px;bottom:70px;width:92px;overflow:auto;display:flex;flex-direction:column;gap:6px;z-index:3;cursor:default}.wzpg[hidden]{display:none}.wzpg .zp{position:relative;flex:none}.wzpg img{display:block;width:100%;min-height:40px;background:#fff;border:3px solid transparent;border-radius:4px;cursor:pointer}.wzpg .zp.on img{border-color:#F2B800}.wzpg .zp b{position:absolute;left:4px;bottom:4px;background:#000a;color:#fff;font-size:11px;padding:0 5px;border-radius:999px}.wzpg .zp.zt img{border-top-color:#4FC3F7}.wzpg .zp.zb img{border-bottom-color:#4FC3F7}.wzv{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:zoom-out}.wzv[hidden]{display:none}' +
       '.zstage{flex:1 1 auto;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}.zstage img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:50% 50%;user-select:none;background:#fff}.zstage.zin{cursor:grab}.zstage.zgrab{cursor:grabbing}' +
@@ -7349,6 +7357,19 @@
     if (!mem) return;
     const m = wsSetMark(ad, mem), lock = mem.some(ad.locked);
     r.appendChild(E('span', 'pos', (i + 1) + ' / ' + o.zseq.length));
+    /* ★ K-0307（2026-11-24 林）：日ごとに並ぶ箱の資料は「📅 10月3日（土）」と 日付の欄（大きく見る と同じ。選ぶと すぐ直る） */
+    if (ad.day) { const dy = ad.day(it); if (dy) {
+      const w = E('span', 'wday' + (dy.d ? '' : ' none'), '📅 ' + (dy.d ? dy.label + (dy.ai ? ' 🤖' : '') : '日付なし'));
+      w.title = (dy.ai ? '日付は 写真から 読みました。' : '') + (dy.can ? 'ちがうときは 右の欄で 正しい日を選ぶと すぐ直ります（ちがう月の日なら その月分へ移ります）' : 'この伝票の日付');
+      if (dy.can) {
+        const inp = E('input'); inp.type = 'date'; inp.value = dy.d && !/-00$/.test(dy.d) ? dy.d : ''; inp.min = '2024-01-01'; inp.setAttribute('aria-label', '伝票の日付を直す');
+        { const t = new Date(), n = new Date(t.getFullYear(), t.getMonth() + 5, 0); inp.max = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0'); }
+        inp.addEventListener('click', function (e) { e.stopPropagation(); });
+        inp.addEventListener('change', function () { const v = inp.value; if (v && v !== dy.d) { ad.setDay(it, v); setTimeout(function () { wsRefresh(); wsZoom(key, it); }, 0); } });
+        w.appendChild(inp);
+      }
+      r.appendChild(w);
+    } }
     const b = function (cls, t, ti, fn) { const x = E('button', cls, t); x.type = 'button'; x.title = ti; x.addEventListener('click', function (e) { e.stopPropagation(); fn(); }); r.appendChild(x); return x; };
     /* ★ K-0129（2026-11-12）：まとめた書類は 中の写真を 1枚ずつ送れる（前は 1枚目しか 見られなかった）。← → でも 中の写真を順に見てから 次の書類へ */
     if (mem.length > 1) {
@@ -7586,6 +7607,9 @@
       split: function (it) { dSplit(it); },
       splitOne: function (it, x) { dSplit(it, [x.id]); },   /* ★ 2026-11-18（ロードマップ 3）：この1枚だけ 外す */
       rotate: function (it, test, done) { const ok = !isT(it) && !fileKind(it.name); if (test || !ok) return ok; rotSet(it.id, ((S.rot[it.id] || 0) + 90) % 360); if (done) done(); return true; },
+      /* ★ K-0307：伝票の日付（日ごとに並ぶ箱）。確定済みも 直せる・破棄したものは 出さない */
+      day: function (it) { if (isT(it) || !dvDayOn(it)) return null; return { d: it.day || '', ai: !!it.dayAi, can: true, label: it.day ? dDayLabel(it.day) : '' }; },
+      setDay: function (it, v) { dvDaySet(it, v); },
       thumb: function (it) { return THUMB[it.id]; }, name: nm,
       stat: function (it) { return isT(it) ? '破棄済み' : stTag(it)[1]; }, locked: function (it) { return it.status === 'done' || isT(it); },
       need: function (ids) { wsThumbsO(ids); },
@@ -8289,7 +8313,7 @@
       tips: ['タブを 右クリック →［新しいタブで開く］［別ウィンドウで開く］で 複数の 画面を 並べて 使えます（いまの 顧問先・月分を 引き継ぐ。Ctrl＋クリック・中ボタンでも 新しいタブ）', '紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料・仕訳化', pic: 'g_odocs', lead: '届いた資料を 箱ごとに 確かめ、そのまま エージェントに渡して 仕訳を作り、元帳で 確かめる タブです（前の 回収資料と 仕訳化を 1つに しました）。',
       steps: ['上の［🤖 エージェントに渡す］の 島：月分の 札で 月分、下の 箱の 札の［選ぶ］で 箱・小箱を 選んで［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（研究）。できた zip は 島の 中の［⬇ ダウンロード］。zip を Claude Code に 投げる だけで よい（指示は 要らない。zip の 中に Claude への 指示が 入っている。zip は 共有ドライブの 1回ぶんの フォルダ G:\\共有ドライブ\\…\\_エージェントに渡す に できている。ダウンロード 不要）。ブラウザの Claude Code は［⬇ 全部まとめてダウンロード］で 保存して 添付', 'できあがりは Claude Code が 同じ フォルダの「結果」に 置けば アプリが ひとりでに 拾う（［📂 フォルダの できあがりを 拾う］でも）。ほかに［⬆ できあがりを戻す］か 島へ ドラッグ。半年・1年・気づき・書面添付 などは［⚙ ほかの渡し方（半年・1年・気づき・書面添付 など）］', '右の［📗 元帳チェック］の 島：［📗 元帳で確かめる・直す］［📥 結果と学び］［📊 試算表へ］［📤 取込ファイルへ］。しまってある 辞書の 画面は［📇 辞書の画面を開く］', '上で 顧問先を選ぶと 箱の一覧（📦 毎月の箱／🗓 スポットの箱／📁 事務所の箱）。箱を押すと その中（年分 › 月分）。［‹ 箱の一覧へ］で 戻る。［▤ すべての箱を 並べて見る］で 箱を またいで さがす', '中に 小箱が ある 箱を 押すと 顧問先の 画面と 同じく 小箱の 札が 出る（小箱の 中で 年分 › 月分）', '📁 事務所の箱 … 返済予定表・概算減価償却の一覧表 など 通年の 参照資料を［＋ ファイルを 入れる］（顧問先からは 見えない・エージェントの zip に いつも 入る）。名前は［⚙ 事務所の箱を 決める］', 'まとまった PDF（スキャナで 何十枚も 1つに なったもの）は 大きく見るで［✂ 1ページずつに分ける］。1ページ ＝ 1つの 資料に なり、元の PDF は 破棄したものへ（戻せます）', '赤い枠の［⚠ 二重では？］… 先に届いた写真と 同じ写真・同じ日付と金額と相手・同じ字（日付・合計）。二重なら その写真を 破棄、ちがえば 2回押して「二重ではない」（顧問先には 聞かない）', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）', '戻したら［📗 元帳で確かめる］… TKC と同じ形（月別の残高 → 口座別 → 総勘定元帳 → 伝票）。伝票は 左に 写真（預金は 通帳の行）、右に 10行。Enter で ✓ して 次の伝票・0 で 前・T（F2）で 訂正・1・2 で エージェントの 別の案・Esc で 戻る。全部 ✓ で［📤 取り込みファイルにする］（FX の 一括読み込み。使った箱は 処理済ボックスへ）'],
-      tips: ['日ごとの箱（売上伝票など）は、日を選ばずに 届いたものも AI が 日付を読んで その日に並べます（札の左上に「🤖 10/12」。ちがう月の日付なら その月分へ移します）。前から届いていて 日の無いものは 月分の見出しの［🤖 日付を読む］で 読めます（1回に 25件まで・1枚 0.03〜0.05円ほど）', 'パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '🍸 売上日報（現金）の 箱は 上の「補助簿」の［🤖 写真から日報］で、日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで 1日ずつ 作ります（届いた 写真だけ。書いてある日は さわりません。日付の 無い 写真は 伝票の 日付を 読んで その日に 入れます）。作った日は 🤖 の 印。顧問先が 確かめて 保存すると 消えます', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
+      tips: ['日ごとの箱（売上伝票など）は、日を選ばずに 届いたものも AI が 日付を読んで その日に並べます（札の左上に「🤖 10/12」。ちがう月の日付なら その月分へ移します）。前から届いていて 日の無いものは 月分の見出しの［🤖 日付を読む］で 読めます（1回に 25件まで・1枚 0.03〜0.05円ほど）', '日ごとの箱の写真を 押して 大きく見ると、上の帯の左に 何月何日の伝票か（📅 10月3日（土）。🤖 は AI が読んだ日・日が無ければ 赤い「📅 日付なし」）。ちがうときは 右の欄で 正しい日を選ぶと すぐ直ります（ちがう月の日なら その月分へ移ります。確定済みでも 直せます）。［↗ 別ウィンドウ］の 大きく見る でも 同じです', 'パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '🍸 売上日報（現金）の 箱は 上の「補助簿」の［🤖 写真から日報］で、日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで 1日ずつ 作ります（届いた 写真だけ。書いてある日は さわりません。日付の 無い 写真は 伝票の 日付を 読んで その日に 入れます）。作った日は 🤖 の 印。顧問先が 確かめて 保存すると 消えます', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料を エージェントに渡して 仕訳を作り、元帳で 確かめて 確定する タブです（AI 下書きは 止めました）。',
       steps: ['上の 札で 月分（「◯月分（一括）」で その月分を まとめて）と 箱・小箱を 選ぶ（いくつでも。［全部の箱］で 戻す）', '帯の［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（もう 仕訳の ある 月・研究）。その場で zip が できる（マイナンバーの書類は 入りません）', '直すのは［📗 元帳で確かめる・直す］から 手で（T／F2 で 訂正）。辞書で 仕訳する 画面は しまってあります（［📇 辞書の画面を開く］で 出せる）', '確定したものは［取込ファイル］タブへ', '［🤖 エージェントに渡す（zip）］で できた zip は 帯の 右上の［⬇ ダウンロード］で その場で 保存（30MB を 超えるときは 1／2・2／2 に 分かれるので 両方 落として 同じ フォルダに 展開）', 'エージェントは 上の帯で：［🤖 エージェントに渡す（zip）］→ 自分の Claude Code に 渡す → できあがりの zip を［⬆ できあがりを戻す］か 帯へ ドラッグ → ［📥 結果と学び］［📗 元帳で確かめる］（TKC と 同じ 伝票の形・Enter で ✓ して 次へ。写真は 先に 読んでおくので 速く 押しても 追いつきます）'],
       tips: ['スマホの［📗 元帳で確かめる］は 上から 下（上に 科目・下に 元帳／上に 写真・下に 伝票）。下の［✓ 次へ］［‹ 前］［✎ 訂正］［案1］［案2］［↩ 戻る］で 進みます', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
@@ -10037,7 +10061,7 @@
     const at = (String(it.at).match(/\d+\/\d+ \d\d:\d\d$/) || [''])[0];
     b.appendChild(el('span', 'stt ' + tg[0], tg[0] === 'todo' ? at + ' 届' : tg[0] === 'done' ? '✓ 確定' : tg[1]));
     if (it.set && it.setOf > 1) b.appendChild(el('span', 'dsetn', '📎' + it.setN + '/' + it.setOf));
-    if (it.day && it.dayAi) { const da = el('span', 'ddayai', '🤖 ' + Number(it.day.slice(5, 7)) + '/' + Number(it.day.slice(8))); da.title = '日付は AI が 写真から読みました（' + dDayLabel(it.day) + '）。ちがうときは 別の月分へ移す・顧問先に 撮り直しを お願いしてください'; b.appendChild(da); }   /* ★ K-0303 */
+    if (it.day && it.dayAi) { const da = el('span', 'ddayai', '🤖 ' + Number(it.day.slice(5, 7)) + '/' + Number(it.day.slice(8))); da.title = '日付は AI が 写真から読みました（' + dDayLabel(it.day) + '）。ちがうときは 写真を押して 大きく見るの「📅 日付」で 直せます'; b.appendChild(da); }   /* ★ K-0303。★ K-0307：直す所 */
     if (it.scan) { const sc = el('span', 'dscan' + (it.scan === 'スキャナ保存' ? '' : ' paper'), it.scan === 'スキャナ保存' ? '電子保存' : it.scan); sc.title = it.scan === 'スキャナ保存' ? '電子帳簿保存法（スキャナ保存）。紙の原本は捨ててかまいません' : '電子保存になりません。紙の原本を保管'; b.appendChild(sc); }
     if (tg[0] === 'gone') tile.classList.add('gone');
     if (it.status === 'back' && !it.redo) tile.classList.add('isback');
@@ -11853,6 +11877,7 @@
     /* ★ 2026-11-12（細谷）：［開いたら いつも書きこむ］なら 書きこむ帯を はじめから出す */
     if (mkAutoOn() && !MK.on && !fileKind(it.name)) setTimeout(function () { if (S.dvIt === it && !MK.on && !$('dview').hidden) mkStart(); }, 0);
     $('dvName').textContent = perLabel(it.period) + '　［' + it.box + '］　' + it.name.replace(/^\d{8}_\d{6}_/, '');
+    dvDayPaint(it);
     $('dvDrive').href = it.url;
     $('dvOrig').hidden = !it.orig; $('dvOrig').onclick = function () { if (it.orig) window.open('https://drive.google.com/file/d/' + encodeURIComponent(it.orig) + '/view', '_blank', 'noopener'); };
     $('dvMemo').textContent = it.memo ? '💬 顧問先から：' + it.memo : ''; $('dvMemo').hidden = !it.memo;
@@ -12039,6 +12064,32 @@
     }, true);
   });
   $('dvRot').addEventListener('click', function () { if (!S.dvId) return; rotSet(S.dvId, (S.rot[S.dvId] || 0) + 90); dvFit(); });   /* ★ 2026-11-12：向きは 覚える */
+  /* ★★ K-0307（2026-11-24 林）：大きく見るで 何月何日の伝票か 分かるように・ちがえば その場で直す（日ごとに並ぶ箱だけ）。
+       日を選ぶと すぐ保存（ちがう月の日なら その月分へ移る）。まとめた書類は 全部の写真を 同じ日に。人が直した日は 🤖 が消える */
+  function dvDayOn(it) { return !!(it && !it.hold && (S.dayBoxes || []).indexOf(it.box) >= 0); }
+  function dvDayPaint(it) {
+    const w = $('dvDay'), on = dvDayOn(it); w.hidden = !on; if (!on) return;
+    const real = it.day && !/-00$/.test(it.day);
+    $('dvDayT').textContent = it.day ? '📅 ' + dDayLabel(it.day) + (it.dayAi ? ' 🤖' : '') : '📅 日付なし';
+    w.classList.toggle('ai', !!(it.day && it.dayAi)); w.classList.toggle('none', !it.day);
+    w.title = (it.dayAi ? 'この日付は AI が 写真から読みました。' : '') + 'この伝票の日付。ちがうときは 右で 正しい日を選ぶと すぐ直ります（ちがう月の日なら その月分へ移ります）';
+    const inp = $('dvDayIn'); inp.value = real ? it.day : ''; inp.max = dmvMax() + '-31'; inp.min = '2024-01-01';
+    inp.onchange = function () { const v = inp.value; if (v && v !== it.day) dvDaySet(it, v); };
+  }
+  function dvDaySet(it, v) {
+    const list = (it.set && it.setOf > 1 ? dMembers(it.set).map(docOf).filter(Boolean) : [it]);
+    const was = list.map(function (x) { return [x.day, x.dayAi, x.period, x.ord]; }), code = S.code, per = v.slice(0, 7);
+    list.forEach(function (x) { x.day = v; x.dayAi = 0; if (x.period !== per) { x.period = per; x.ord = 0; DOPEN[x.box + '|' + per] = true; } });
+    (S.items || []).forEach(function (y) { if (list.some(function (x) { return x.id === y.id; })) y.period = per; });
+    if (S.dvIt === it) { $('dvName').textContent = perLabel(it.period) + '　［' + it.box + '］　' + it.name.replace(/^\d{8}_\d{6}_/, ''); dvDayPaint(it); }
+    perFill(S.docs); docsDraw();
+    gs('workSetDay', code, list.map(function (x) { return x.id; }), v).then(function () {
+      if (code === S.code) dcMsg('日付を ' + dDayLabel(v) + ' に 直しました' + (was[0][2] !== per ? '（' + perLabel(per) + 'へ 移しました）' : '') + '。');
+    }, function (e) {
+      list.forEach(function (x, i) { x.day = was[i][0]; x.dayAi = was[i][1]; x.period = was[i][2]; x.ord = was[i][3]; });
+      if (code !== S.code) return; perFill(S.docs); docsDraw(); if (S.dvIt === it) dvDayPaint(it); dcMsg('日付を 直せませんでした。' + e.message, true);
+    });
+  }
   function docsClose() { if (MK.on) mkEnd(true); $('dview').classList.remove('dv-fold', 'dv-ro'); S.dvId = ''; S.dvIt = null; S.dvSeq = null; S.dvMemo = null; $('dvwSide').textContent = ''; $('dvwSide').dataset.set = ''; $('dview').hidden = true; document.body.classList.remove('dv-on'); $('dvBody').textContent = ''; }
   $('dvClose').addEventListener('click', function (e) { e.stopPropagation(); docsClose(); });   /* ★ 2026-11-13（細谷）：大きな［閉じる］（上の帯の小さい［閉じる］［確認済］は なくした） */
 
