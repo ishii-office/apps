@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795496739;</script>
+<script>window.__PAGE_VER=1795498717;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -11925,7 +11925,7 @@
       const rot = S.rot[S.dvId] || 0;
       t.style.transform = (DVZ.s > 1 ? 'translate(' + DVZ.x + 'px,' + DVZ.y + 'px) scale(' + DVZ.s + ') ' : '') + (rot ? 'rotate(' + rot + 'deg)' : '');
       mkPaint();
-    } else { dvPdfFit(); t.style.setProperty('--pz', DVZ.s); if (MK.on) mkPaint(); }   /* ★ K-0232：書きこみ中は 重ねた書きこみも 新しい大きさで描き直す */
+    } else { dvPdfFit(); t.style.setProperty('--pz', DVZ.s); mkPaint(); }   /* ★ K-0232：書きこみ中は 重ねた書きこみも 新しい大きさで描き直す。★ K-0304（林）：書きこむ帯を 出していなくても（前は 帯を閉じて 拡大すると 書きこみが 元の大きさのまま ずれていた） */
     b.classList.toggle('zin', DVZ.s > 1 && t.tagName === 'IMG');
   }
   function dvZReset() { DVZ.s = 1; DVZ.x = 0; DVZ.y = 0; dvZApply(); }
