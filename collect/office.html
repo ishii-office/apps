@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795608308;</script>
+<script>window.__PAGE_VER=1795613461;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1699,6 +1699,14 @@
   #hyView.m-point .hyav img { animation: hypoint .5s ease-in-out 2 alternate; }
   @keyframes hypoint { to { transform: translateX(10px) rotate(3deg); } }
   #hyView.m-think .hyav img { animation: hytilt 2.4s ease-in-out infinite; }
+  #hyView.m-joy .hyav img { animation: hyjoy .45s ease-in-out 4 alternate; filter: brightness(1.15) saturate(1.2); box-shadow: 0 0 60px #ffd45e, 0 0 0 4px #ffd45e; }   /* ★ 2026-11-26 うまく いったら 喜ぶ */
+  @keyframes hyjoy { from { transform: translateY(0) scale(1); } to { transform: translateY(-16px) scale(1.04); } }
+  #hyView.m-serious .hyav img { filter: contrast(1.15) saturate(.9); transform: scale(1.03); box-shadow: 0 0 40px #7fb2ff, 0 0 0 3px #bcd6ff; }   /* 呼ばれたら 真剣な 顔 */
+  #hyView .hystat { background: rgba(255,255,255,.08); border: 1px solid #5b8cd6; border-radius: 10px; padding: 8px 12px; font-size: 15px; white-space: pre-wrap; } #hyView .hystat[hidden], #hyView .hysw[hidden] { display: none; }
+  #hyView .hystat.ok { border-color: #4fd1a5; } #hyView .hystat.err { border-color: #ff8a80; }
+  #hyView .hysw select, #hyView .hypc select { font-size: 16px; padding: 8px; border-radius: 8px; border: 1px solid #5b8cd6; background: #081a38; color: #fff; max-width: 100%; flex: 1 1 14em; min-width: 0; }
+  #hyView .hypick button, #hyView .hysw button { white-space: normal; max-width: 100%; text-align: left; }   /* ★ スマホで ボタンが 見切れていた */
+  #hyView.mini .hystat { font-size: 12px; padding: 4px 8px; } #hyView.mini .hysw { flex-wrap: nowrap; } #hyView.mini .hysw select { font-size: 13px; padding: 4px; }
   #hyView .hyfx { position: absolute; right: -6px; top: -4px; font-size: 52px; opacity: 0; transform: scale(.6); transition: opacity .3s, transform .3s; pointer-events: none; }
   #hyView[class*=" m-"] .hyfx { opacity: 1; transform: scale(1); }
   #hyView .hywave { position: absolute; left: -34px; bottom: 30px; display: flex; gap: 3px; align-items: flex-end; height: 40px; opacity: 0; }
@@ -8545,7 +8553,7 @@
     order: ['top', 'Docs', 'In', 'Tb', 'Out', 'Prog', 'Advice', 'Grt', 'Min', 'Clients', 'Dict', 'Rule', 'Fold', 'Send', 'Kaizen', 'Staff'],
     top: { t: '🧭 全体・右上のボタン', pic: 'g_otop', lead: '上の「顧問先」で 顧問先を選び、タブで 仕事を切り替えます。右上のボタンは どのタブからでも使えます。',
       steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
-      tips: ['［🎙 ハヤト］… 事務所の AI（AI ハヤト）で、議事録の 録音も ここ 1つ。押すと はじめに「👤 この 顧問先の 議事録」か「🏢 所内の 議事録（会議・研修・ふだんの 会話）」を 選び、そのまま 聞きはじめる（顧問先の 議事録は 先に その 顧問先を 開いてから 押す。途中で 画面を 替えても 行き先は 変わらない）。聞いている あいだ「ハヤト、◯◯さんの 試算表を 出して」「ハヤト、この 判断 合ってる？」と 呼ぶと 声と 画面で 答える（顧問先の 議事録の ときは その 顧問先を 前提に 答える）。［⏹ 終わる］で 止めると「◯◯の 議事録で よかったですか？」── 種類・題を 選んで［✓ はい（議事録に 入れて まとめる）］で 議事録に 入り、すぐ エージェントが まとめる（顧問先＝ご報告・巡回の 下書き・カルテ候補・聞くこと。所内＝決まったこと・やること・事務所の 標準の 候補・確かめる こと）。行き先は［🏢 所内に 変える］で 変えられる。［🗑 残さない］は 2回 押して 捨てる。途中で 閉じても 聞いた 文字は その 端末に 残り、次に 押すと 確かめて 入れられる。顧問先の 議事録の ときは 音声も 原本として 残る。話し手は 自動では 分からない（AI が 呼びかけから 推測して 添える）。答えごとに 絵が しぐさを する。［🎨 マイエージェント］で 名前・絵・声（男性／女性・速さ・高さ。［▶ 声を 試す］で 聞ける。Edge なら 自然な 声）を 自分用に（その 名前で 呼ぶと 答える）。録音中は 画面を 消さない。ほかの タブを 見ても・✕ を 押しても 録音は 続く（✕ は 小さく するだけ）。スマホで ほかの アプリに 切り替えた あいだは ブラウザが 聞くのを 休み、戻ると ひとりでに 聞き直す。［▣ 小さくする］で 右下に 小さく、［🔈 声で 答える］で 声の 入り切り。Chrome か Edge で 開く', 'タブを 右クリック →［新しいタブで開く］［別ウィンドウで開く］で 複数の 画面を 並べて 使えます（いまの 顧問先・月分を 引き継ぐ。Ctrl＋クリック・中ボタンでも 新しいタブ）', '紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
+      tips: ['［🎙 ハヤト］… 事務所の AI（AI ハヤト）で、議事録の 録音も ここ 1つ。押すと はじめに「👤 この 顧問先の 議事録」（開いて いる 顧問先が 選ばれて いる。プルダウンで 選び直せる）か「🏢 所内の 議事録（会議・研修・ふだんの 会話）」を 選び、そのまま 聞きはじめる（途中で 画面を 替えても 行き先は 変わらない）。話が 別の 顧問先に 移ったら、録音中の［🔀 この 議事録に 切り替える］か、はっきり「次は ◯◯さん」と 言うと とめずに 切り替わる（それまでの 分は 前の 行き先の 議事録に 入って まとまる）。［⏹ 終わる］→［✓ はい］の あとは すぐ「どの 議事録？」に 戻る。聞いている あいだ「ハヤト、◯◯さんの 試算表を 出して」「ハヤト、この 判断 合ってる？」と 呼ぶと 声と 画面で 答える（顧問先の 議事録の ときは その 顧問先を 前提に 答える）。［⏹ 終わる］で 止めると「◯◯の 議事録で よかったですか？」── 種類・題を 選んで［✓ はい（議事録に 入れて まとめる）］で 議事録に 入り、すぐ エージェントが まとめる（顧問先＝ご報告・巡回の 下書き・カルテ候補・聞くこと。所内＝決まったこと・やること・事務所の 標準の 候補・確かめる こと）。行き先は［🏢 所内に 変える］で 変えられる。［🗑 残さない］は 2回 押して 捨てる。途中で 閉じても 聞いた 文字は その 端末に 残り、次に 押すと 確かめて 入れられる。顧問先の 議事録の ときは 音声も 原本として 残る。話し手は 自動では 分からない（AI が 呼びかけから 推測して 添える）。答えごとに 絵が しぐさを する。［🎨 マイエージェント］で 名前・絵・声（男性／女性・速さ・高さ。［▶ 声を 試す］で 聞ける。Edge なら 自然な 声）を 自分用に（その 名前で 呼ぶと 答える）。録音中は 画面を 消さない。ほかの タブを 見ても・✕ を 押しても 録音は 続く（✕ は 小さく するだけ）。スマホで ほかの アプリに 切り替えた あいだは ブラウザが 聞くのを 休み、戻ると ひとりでに 聞き直す。［▣ 小さくする］で 右下に 小さく、［🔈 声で 答える］で 声の 入り切り。Chrome か Edge で 開く', 'タブを 右クリック →［新しいタブで開く］［別ウィンドウで開く］で 複数の 画面を 並べて 使えます（いまの 顧問先・月分を 引き継ぐ。Ctrl＋クリック・中ボタンでも 新しいタブ）', '紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料・仕訳化', pic: 'g_odocs', lead: '届いた資料を 箱ごとに 確かめ、そのまま エージェントに渡して 仕訳を作り、元帳で 確かめる タブです（前の 回収資料と 仕訳化を 1つに しました）。',
       steps: ['上の［🤖 エージェントに渡す］の 島：月分の 札で 月分、下の 箱の 札の［選ぶ］で 箱・小箱を 選んで［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（研究）。できた zip は 島の 中の［⬇ ダウンロード］。zip を Claude Code に 投げる だけで よい（指示は 要らない。zip の 中に Claude への 指示が 入っている。zip は 共有ドライブの 1回ぶんの フォルダ G:\\共有ドライブ\\…\\_エージェントに渡す に できている。ダウンロード 不要）。ブラウザの Claude Code は［⬇ 全部まとめてダウンロード］で 保存して 添付', 'できあがりは Claude Code が 同じ フォルダの「結果」に 置けば アプリが ひとりでに 拾う（［📂 フォルダの できあがりを 拾う］でも）。ほかに［⬆ できあがりを戻す］か 島へ ドラッグ。半年・1年・気づき・書面添付 などは［⚙ ほかの渡し方（半年・1年・気づき・書面添付 など）］', '右の［📗 元帳チェック］の 島：［📗 元帳で確かめる・直す］［📥 結果と学び］［📊 試算表へ］［📤 取込ファイルへ］。しまってある 辞書の 画面は［📇 辞書の画面を開く］', '上で 顧問先を選ぶと 箱の一覧（📦 毎月の箱／🗓 スポットの箱／📁 事務所の箱）。箱を押すと その中（年分 › 月分）。［‹ 箱の一覧へ］で 戻る。［▤ すべての箱を 並べて見る］で 箱を またいで さがす', '中に 小箱が ある 箱を 押すと 顧問先の 画面と 同じく 小箱の 札が 出る（小箱の 中で 年分 › 月分）', '📁 事務所の箱 … 返済予定表・概算減価償却の一覧表 など 通年の 参照資料を［＋ ファイルを 入れる］（顧問先からは 見えない・エージェントの zip に いつも 入る）。名前は［⚙ 事務所の箱を 決める］', 'まとまった PDF（スキャナで 何十枚も 1つに なったもの）は 大きく見るで［✂ 1ページずつに分ける］。1ページ ＝ 1つの 資料に なり、元の PDF は 破棄したものへ（戻せます）', '赤い枠の［⚠ 二重では？］… 先に届いた写真と 同じ写真・同じ日付と金額と相手・同じ字（日付・合計）。二重なら その写真を 破棄、ちがえば 2回押して「二重ではない」（顧問先には 聞かない）', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）', '戻したら［📗 元帳で確かめる］… TKC と同じ形（月別の残高 → 口座別 → 総勘定元帳 → 伝票）。伝票は 左に 写真（預金は 通帳の行）、右に 10行。Enter で ✓ して 次の伝票・0 で 前・T（F2）で 訂正・1・2 で エージェントの 別の案・Esc で 戻る。全部 ✓ で［📤 取り込みファイルにする］（FX の 一括読み込み。使った箱は 処理済ボックスへ）'],
       tips: ['補助簿の 🍸 売上日報は、行を 押すと 下の 欄で 直せます（AI が 作った 🤖 の日を 正しい 売上表に 合わせる など）。［この日を 保存］で 保存（現金は 1日の売上 − キャッシュレス）。🤖 の日を 直すと AI が その顧問先の 直しを 覚えて 次から 読むときに 使います（メモに 直した わけを 書くと 伝わります）', '赤い「NEW」… 前に その箱を 開いたあとに 顧問先から 届いた資料（札の 届いた日時の 前）。箱の一覧には 箱ごとに「NEW 3」。札を 見たら 🔔 お知らせも 見たことになります。見ている あいだは NEW のまま、顧問先を 替えるか 開き直すと 消えます（自分の担当・補助担当の顧問先・直近30日。事務所が 入れたもの・確認済には 付きません）', '日ごとの箱（売上伝票など）は、日を選ばずに 届いたものも AI が 日付を読んで その日に並べます（札の左上に「🤖 10/12」。ちがう月の日付なら その月分へ移します）。前から届いていて 日の無いものは 月分の見出しの［🤖 日付を読む］で 読めます（1回に 25件まで・1枚 0.03〜0.05円ほど）。手書きの日付を先に読み、夜0時すぎに出した 日計は 前の日に並べます', '日付を 人が付けた（直した）月分は、見出しの［🤖 日付の読み方を確かめる］で AI に もう一度読ませて 何件 合ったかを 数えられます（日は 書きかえません）。ちがったものは「AI → 正しい日」で 知らせ、覚えて 次から AI に 伝えます。🤖 の日を 直したときも 同じように 覚えます', '日ごとの箱の写真を 押して 大きく見ると、上の帯の左に 何月何日の伝票か（📅 10月3日（土）。🤖 は AI が読んだ日・日が無ければ 赤い「📅 日付なし」）。ちがうときは 右の欄で 正しい日を選ぶと すぐ直ります（ちがう月の日なら その月分へ移ります。確定済みでも 直せます）。［↗ 別ウィンドウ］の 大きく見る でも 同じです', 'パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '🍸 売上日報（現金）の 箱は 上の「補助簿」の［🤖 写真から日報］か、売上伝票の 箱を 開いたときの 見出しの［🤖 写真から 売上日報を まとめて作る］（どちらも 同じ）で 月の 小窓を 開き、［‹ 前の月］［次の月 ›］で 作る月を 選んで［🤖 写真から ◯月分の 売上日報を まとめて作る］を 押すと、日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで 1日ずつ 作ります（届いた 写真だけ。書いてある日は さわりません。日付の 無い 写真は 伝票の 日付を 読んで その日に 入れます）。作った日は 🤖 の 印。顧問先が 確かめて 保存すると 消えます', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
@@ -20035,7 +20043,7 @@
     const v = document.createElement('div'); v.id = 'hyView'; v.hidden = true; v.setAttribute('role', 'dialog'); v.setAttribute('aria-label', 'AI ハヤト');
     v.innerHTML = '<div class="hyhd"><b id="hyTitle">AI ハヤト</b><span class="hyst off" id="hySt">止めています</span><span class="hynote" id="hyCost"></span><span style="flex:1"></span>' +
       '<span class="hydest" id="hyDest" hidden></span><button type="button" id="hyGo">▶ 議事録を 取りはじめる</button><button type="button" id="hyMute" aria-pressed="false">🔈 声で 答える</button><button type="button" id="hyMe">🎨 マイエージェント</button><button type="button" id="hyMin">▣ 小さくする</button><button type="button" id="hyClose">✕ 閉じる</button></div>' +
-      '<div class="hyme" id="hyMeBox" hidden></div><div class="hypick" id="hyPick" hidden></div><div class="hypick" id="hyEnd" hidden></div>' +
+      '<div class="hyme" id="hyMeBox" hidden></div><div class="hystat" id="hyStat" hidden></div><div class="hybar hysw" id="hySw" hidden><select id="hySwSel" aria-label="切り替える 先"></select><button type="button" id="hySwGo">🔀 この 議事録に 切り替える</button></div><div class="hypick" id="hyPick" hidden></div><div class="hypick" id="hyEnd" hidden></div>' +
       '<div class="hyav" id="hyAv" aria-hidden="true"><img alt="" src="' + hyPicSrc(hyMe().pic) + '"><span class="hyfx" id="hyFx"></span><span class="hywave"><i></i><i></i><i></i></span></div>' +
       '<div class="hymain"><div class="hyans"><div class="hyq" id="hyQ">「ハヤト、◯◯さんの 試算表を 出して」「ハヤト、この 判断 合ってる？」のように 呼んでください。</div><div class="hysay" id="hySay"></div><div class="hyact" id="hyAct" hidden><span id="hyActT"></span><button type="button" id="hyYes">はい（実行）</button><button type="button" id="hyNo">やめる</button></div><div class="hyshow" id="hyShow"></div></div>' +
       '<div class="hylive" id="hyLive" aria-live="off"></div></div>' +
@@ -20052,6 +20060,7 @@
     $('hyMe').addEventListener('click', hyMeOpen);
     hyMeApply();
     $('hyNo').addEventListener('click', function () { HY.pend = null; $('hyAct').hidden = true; hySpeak('やめました。'); });
+    $('hySwGo').addEventListener('click', function () { const v = $('hySwSel').value; if (!v) return; hySwitch(v === '*' ? { code: '*', name: '所内' } : hyClientOf(v), 'button'); });
     gs('hayatoStat').then(hyCostPaint, function () {});
   }
   function hyCostPaint(r) { if (r && $('hyCost')) $('hyCost').textContent = (r.on ? '' : '⚠ AI の 鍵が ありません　') + '今月 約' + (r.used || 0) + '円 ／ 上限 ' + (r.cap || 0) + '円'; }
@@ -20071,16 +20080,53 @@
   function hyBufGet() { try { const o = JSON.parse(localStorage.getItem(hyBufKey()) || 'null'); return o && o.dest && Array.isArray(o.lines) && o.lines.length ? o : null; } catch (e) { return null; } }
   function hyBufDrop() { try { localStorage.removeItem(hyBufKey()); } catch (e) {} }
   function hyDestTxt(d) { return d && d.code !== '*' ? '👤 ' + d.code + ' ' + (d.name || '') + ' の 議事録' : '🏢 所内の 議事録'; }
+  function hyClientOf(code) { const c = (S.clients || []).filter(function (x) { return x.code === code; })[0]; return c ? { code: c.code, name: c.name } : null; }
+  function hyClientSel(sel, cur, withNai) {
+    sel.innerHTML = ''; if (withNai) sel.appendChild(new Option('🏢 所内の 議事録', '*')); else sel.appendChild(new Option('（顧問先を 選ぶ）', ''));
+    (S.clients || []).forEach(function (c) { sel.appendChild(new Option(c.code + ' ' + c.name, c.code)); }); sel.value = cur || (withNai ? '*' : '');
+  }
+  /* ★★ 2026-11-26（石井）：開いている 顧問先を はじめから 出し、プルダウンで ほかの 顧問先も 選べる。スマホで 見切れない */
   function hyPickShow() {
     const box = $('hyPick'); if (!box) return; $('hyEnd').hidden = true; box.innerHTML = ''; box.hidden = false;
     const c = hyCur();
     box.appendChild(el('b', null, 'どの 議事録を 取りますか？'));
+    const sel = el('select'); sel.id = 'hyPickSel'; hyClientSel(sel, c ? c.code : '', false);
+    const b1 = el('button', 'hybig', '👤 この 顧問先の 議事録'); b1.type = 'button'; b1.id = 'hyPickC';
+    b1.addEventListener('click', function () { const x = hyClientOf(sel.value); if (!x) { hyStat('顧問先を 選んで ください。'); sel.focus(); return; } hyStart(x); });
+    const r1 = el('div', 'hybar hypc'); r1.appendChild(sel); r1.appendChild(b1); box.appendChild(r1);
     const bar = el('div', 'hybar');
-    if (c) { const b1 = el('button', 'hybig', '👤 ' + c.code + ' ' + c.name + ' の 議事録'); b1.type = 'button'; b1.id = 'hyPickC'; b1.addEventListener('click', function () { hyStart({ code: c.code, name: c.name }); }); bar.appendChild(b1); }
     const b2 = el('button', 'hybig', '🏢 所内の 議事録（会議・研修・ふだんの 会話）'); b2.type = 'button'; b2.id = 'hyPickN'; b2.addEventListener('click', function () { hyStart({ code: '*', name: '所内' }); }); bar.appendChild(b2);
     const b3 = el('button', null, 'やめる'); b3.type = 'button'; b3.addEventListener('click', function () { box.hidden = true; }); bar.appendChild(b3);
     box.appendChild(bar);
-    box.appendChild(el('div', 'hynote', c ? 'この 顧問先の 話なら 👤、事務所の 会議・研修・1日 聞かせて おく ときは 🏢。' : '顧問先の 議事録に したい ときは、先に その 顧問先を 開いてから 押してください。'));
+    box.appendChild(el('div', 'hynote', '顧問先の 話なら 👤（プルダウンで 選び直せます）、事務所の 会議・研修・1日 聞かせて おく ときは 🏢。とちゅうで「次は ◯◯さん」と はっきり 言うと その 顧問先の 議事録に 切り替えます。'));
+  }
+  function hyStat(t, cls) { const b = $('hyStat'); if (!b) return; b.textContent = t; b.className = 'hystat' + (cls ? ' ' + cls : ''); b.hidden = !t; }
+  function hySwPaint() { const w = $('hySw'); if (!w) return; w.hidden = !HY.on; if (HY.on) { hyClientSel($('hySwSel'), HY.dest ? HY.dest.code : '*', true); } }
+  function hyMeaningful(lines) { return (lines || []).filter(function (x) { return !/】/.test(x); }).length > 0; }
+  function hyKindOf(dest) { return dest && dest.code !== '*' ? '巡回監査' : '所内会議'; }
+  /* ★★★ 2026-11-26（石井「話が 別の 顧問先に 移ったら、すぐ 終わって 別の ところへ 瞬時に」）：とめずに 切り替える。
+       それまでの 分は いまの 行き先の 議事録に そのまま 入れて まとめ（確かめは 省く。種類は 巡回監査／所内会議）、聞くのは 続けたまま 新しい 行き先へ */
+  function hySwitch(dest, how) {
+    if (!dest) return; if (!HY.on) { hyStart(dest); return; }
+    if (HY.dest && HY.dest.code === dest.code) return;
+    const o = { dest: HY.dest, day: HY.day, from: HY.from, lines: HY.lines.slice() };
+    HY.dest = dest; HY.lines = []; HY.from = hyNow(); HY.audio = null; hyBufSave();
+    $('hyDest').textContent = '🔴 ' + hyDestTxt(dest) + 'を 取っています'; hySwPaint();
+    hyRecStop(function (blob) { if (hyMeaningful(o.lines)) hySave(o, o.dest, hyKindOf(o.dest), '', blob); hyRecOn(); });
+    hyMood('point'); hySpeak((dest.code === '*' ? '所内' : dest.name + 'さん') + 'の 議事録に 切り替えました。');
+    hyStat('🔀 ' + hyDestTxt(dest) + 'に 切り替えました' + (how === 'voice' ? '（声で）' : '') + (hyMeaningful(o.lines) ? '。前の 分（' + hyDestTxt(o.dest) + '）は 入れて まとめています…' : ''));
+  }
+  /* 声で 切り替える：「次は」「ここから」「話 変わって」などの あとに 顧問先の 名前（か コード）。はっきり 言った ときだけ */
+  const HY_SWRE = /(次は|つぎは|ここから(は)?|話(が|は)?(変わ|かわ)って|続いて|つづいて|今度は|こんどは)/;
+  function hySwKey(t) { return hyHira(String(t || '')).replace(/株式会社|有限会社|合同会社|㈱|㈲|\(株\)|\(有\)|（株）|（有）|かぶしきがいしゃ|ゆうげんがいしゃ/g, '').replace(/[\s　・、。,.]/g, '').toLowerCase(); }
+  function hySwFind(t) {
+    const m = String(t || '').match(HY_SWRE); if (!m) return null;
+    const rest = String(t).slice(m.index + m[0].length), rk = hySwKey(rest);
+    if (/^(所内|しょない|事務所の)/.test(rk)) return { code: '*', name: '所内' };
+    const num = rest.match(/(\d{3,})/); if (num) { const x = hyClientOf(num[1]); if (x) return x; }
+    let best = null, bl = 0;
+    (S.clients || []).forEach(function (c) { const k = hySwKey(c.name); if (k.length < 2) return; const hit = rk.indexOf(k) === 0 || rk.indexOf(k) >= 0 && rk.indexOf(k) < 6 ? k.length : (k.length > 5 && rk.indexOf(k.slice(0, 4)) >= 0 && rk.indexOf(k.slice(0, 4)) < 6 ? 4 : 0); if (hit > bl) { bl = hit; best = { code: c.code, name: c.name }; } });
+    return best;
   }
   function hyStart(dest) {
     const R = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -20088,7 +20134,7 @@
     $('hyPick').hidden = true; $('hyEnd').hidden = true;
     HY.dest = dest; HY.lines = []; HY.day = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); HY.from = hyNow(); HY.audio = null;
     HY.on = true; $('hyGo').textContent = '⏹ 終わる'; $('hyDest').textContent = '🔴 ' + hyDestTxt(dest) + 'を 取っています'; $('hyDest').hidden = false;
-    hySrOn(); hyState('idle'); hyRecOn(); hyWake(true);
+    hySrOn(); hyState('idle'); hyRecOn(); hyWake(true); hySwPaint(); hyStat(''); hyMood('serious');
     clearInterval(HY.dog); HY.dog = setInterval(function () { if (HY.on && !HY.sr && !HY.speaking && document.visibilityState === 'visible') hySrOn(); }, 4000);   /* 音声認識が 黙って 止まっても 聞き直す */
   }
   /* ★★ 2026-11-26（石井「巡回で スマホ。ほかの 画面を 見ても 録音が 切れないように」）：録音中は 画面を 消さない（Wake Lock）。裏から 戻ったら すぐ 聞き直す */
@@ -20105,14 +20151,15 @@
       const mr = new MediaRecorder(st, ty ? { mimeType: ty, audioBitsPerSecond: 24000 } : { audioBitsPerSecond: 24000 });
       const rec = { mr: mr, st: st, chunks: [], size: 0, mime: (mr.mimeType || ty || 'audio/webm').split(';')[0] }; HY.rec = rec;
       mr.addEventListener('dataavailable', function (e) { if (e.data && e.data.size && rec.size + e.data.size <= 30 * 1024 * 1024) { rec.chunks.push(e.data); rec.size += e.data.size; } });
-      mr.addEventListener('stop', function () { st.getTracks().forEach(function (t) { t.stop(); }); HY.audio = rec.size ? new Blob(rec.chunks, { type: rec.mime }) : null; HY.audioMime = rec.mime; });
+      mr.addEventListener('stop', function () { st.getTracks().forEach(function (t) { t.stop(); }); const bl = rec.size ? new Blob(rec.chunks, { type: rec.mime }) : null; HY.audioMime = rec.mime; if (rec.cb) { const f = rec.cb; rec.cb = null; f(bl); } else HY.audio = bl; });
       mr.start(5000);
     }, function () {});
   }
+  function hyRecStop(cb) { const rec = HY.rec; HY.rec = null; if (rec && rec.mr.state !== 'inactive') { rec.cb = cb; try { rec.mr.stop(); } catch (e) { rec.cb = null; cb(null); } } else cb(null); }
   function hyStop(silent) {
     HY.on = false; clearTimeout(HY.tm); clearInterval(HY.dog); hyWake(false); hySrOff(); try { speechSynthesis.cancel(); } catch (q) {}
     const rec = HY.rec; HY.rec = null; try { if (rec && rec.mr.state !== 'inactive') rec.mr.stop(); } catch (q) {}
-    if ($('hyGo')) { $('hyGo').textContent = '▶ 議事録を 取りはじめる'; $('hyDest').hidden = true; hyState('idle'); }
+    if ($('hyGo')) { $('hyGo').textContent = '▶ 議事録を 取りはじめる'; $('hyDest').hidden = true; $('hySw').hidden = true; hyState('idle'); }
     hyBufSave();
     if (!silent) hyEndShow();
   }
@@ -20134,32 +20181,39 @@
     const sw = el('button', null, ''); sw.type = 'button'; sw.id = 'hyEndSw'; sw.addEventListener('click', function () { if (!alt) return; dest = dest.code === orig.code ? alt : orig; paint(); });
     const ok = el('button', 'hybig', '✓ はい（議事録に 入れて まとめる）'); ok.type = 'button'; ok.id = 'hyEndOk';
     const no = el('button', null, '🗑 残さない'); no.type = 'button'; no.id = 'hyEndNo';
-    ok.addEventListener('click', function () { ok.disabled = true; if (/^\d{4}-\d{2}-\d{2}$/.test(dd.value)) o.day = dd.value; hySave(o, dest, ks.value, tt.value.trim()); });
+    ok.addEventListener('click', function () {
+      ok.disabled = true; if (/^\d{4}-\d{2}-\d{2}$/.test(dd.value)) o.day = dd.value;
+      const snap = { dest: o.dest, day: o.day, from: o.from, lines: o.lines.slice() }, blob = dest.code !== '*' && dest.code === (o.dest && o.dest.code) ? HY.audio : null;
+      HY.lines = []; HY.audio = null; hyBufDrop(); box.hidden = true;
+      hySave(snap, dest, ks.value, tt.value.trim(), blob); hyPickShow();   /* ★ 2026-11-26（石井）：終わったら すぐ「どの 議事録？」に 戻る（入れて まとめるのは 裏で） */
+    });
     no.addEventListener('click', function () { if (!no.dataset.sure) { no.dataset.sure = '1'; no.textContent = '本当に 捨てる（もう 戻せません）'; return; } hyBufDrop(); HY.lines = []; HY.audio = null; box.hidden = true; hySpeak('残さずに 捨てました。'); });
     const r1 = el('div', 'hybar'); [ks, dd, tt].forEach(function (x) { r1.appendChild(x); }); box.appendChild(r1);
     const r2 = el('div', 'hybar'); [ok, sw, no].forEach(function (x) { r2.appendChild(x); }); box.appendChild(r2);
     box.appendChild(el('div', 'hynote', '✓ を 押すと 議事録に 入り、すぐ エージェントが まとめます（1回 20〜30円ほど）。話し手は 自動では 分かりません。'));
     paint();
   }
-  function hySave(o, dest, kind, title) {
-    const msg = function (t) { const b = $('hyEnd'); b.innerHTML = ''; b.appendChild(el('b', null, t)); const x = el('button', null, '閉じる'); x.type = 'button'; x.addEventListener('click', function () { b.hidden = true; }); b.appendChild(x); };
+  function hyPendKey() { return 'collect_hy_pend:' + String((S.me && S.me.name) || ''); }
+  function hyPendAll() { try { return JSON.parse(localStorage.getItem(hyPendKey()) || '[]') || []; } catch (e) { return []; } }
+  function hyPendPut(x) { try { const a = hyPendAll(); a.push(x); localStorage.setItem(hyPendKey(), JSON.stringify(a.slice(-20))); } catch (e) {} }
+  function hyPendRetry() { const a = hyPendAll(); if (!a.length) return; try { localStorage.removeItem(hyPendKey()); } catch (e) {} a.forEach(function (x) { hySave(x.o, x.dest, x.kind, x.title, null); }); }
+  function hySave(o, dest, kind, title, blob) {
+    const nm = hyDestTxt(dest);
     const text = '（' + hyMe().name + 'で 取った 議事録 ' + o.day + ' ' + (o.from || '') + '〜' + hyNow() + '・' + ((S.me && S.me.name) || '') + '）\n' + o.lines.join('\n');
     const send = function (b64) {
       const arg = { kind: kind, day: o.day, title: title || (kind + ' ' + o.day + ' ' + (o.from || '')), text: text, stt: 1, show: false };
       if (b64) { arg.b64 = b64; arg.mime = HY.audioMime || 'audio/webm'; arg.name = '録音_' + String(o.from || '').replace(':', '') + (arg.mime === 'audio/mp4' ? '.m4a' : '.webm'); }
-      msg('議事録に 入れています…');
+      hyStat('📝 ' + nm + 'に 入れています…');
       gs('minutesAdd', dest.code, arg).then(function (r) {
-        hyBufDrop(); HY.lines = []; HY.audio = null;
-        msg('🤖 ' + hyDestTxt(dest) + 'に 入れました。いま まとめています…（1分ほど）');
+        hyStat('🤖 ' + nm + 'に 入れました。いま まとめています…（1分ほど）');
         gs('minSumNow', dest.code, r.added).then(function (s2) {
-          if (!s2.ok) { msg(hyDestTxt(dest) + 'に 入れました。' + (s2.msg || 'まとめは 作りませんでした。')); return; }
+          if (!s2.ok) { hyStat(nm + 'に 入れました。' + (s2.msg || 'まとめは 作りませんでした。')); return; }
           const asks = (s2.ask || []).map(function (a) { return a.q; });
-          msg('✓ ' + hyDestTxt(dest) + 'に 入れて まとめました（約' + (s2.yen || 0) + '円）。議事録タブの「🤖 まとめの 下書き」で 確かめてください。' + (asks.length ? '\n確かめたい こと：' + asks.join('／') : ''));
-          hySpeak('議事録に 入れて まとめました。' + (asks.length ? '標準に する 前に 確かめたい ことが ' + asks.length + 'つ あります。' + asks[0] : ''));
-        }, function (e) { msg(hyDestTxt(dest) + 'に 入れました（まとめは できませんでした：' + e.message + '）。議事録タブの［🤖 いま まとめる］で やり直せます。'); });
-      }, function (e) { msg('入れられませんでした（聞いた 文字は この 端末に 残っています。もう一度［🎙 ハヤト］を 押すと 確かめられます）：' + e.message); });
+          hyStat('✓ ' + nm + 'に 入れて まとめました（約' + (s2.yen || 0) + '円）。議事録タブの「🤖 まとめの 下書き」で 確かめてください。' + (asks.length ? '\n確かめたい こと：' + asks.join('／') : ''), 'ok');
+          hyMood('joy'); if (!HY.on) hySpeak('議事録に 入れて まとめました。' + (asks.length ? '標準に する 前に 確かめたい ことが ' + asks.length + 'つ あります。' + asks[0] : ''));
+        }, function (e) { hyMood('sorry'); hyStat(nm + 'に 入れました（まとめは できませんでした：' + e.message + '）。議事録タブの［🤖 いま まとめる］で やり直せます。', 'err'); });
+      }, function (e) { hyPendPut({ o: o, dest: dest, kind: kind, title: title }); hyMood('bow'); hyStat('入れられませんでした（聞いた 文字は この 端末に 残しました。次に［🎙 ハヤト］を 押すと もう一度 入れます）：' + e.message, 'err'); if (!HY.on) hySpeak('すみません、入れられませんでした。'); });
     };
-    const blob = dest.code !== '*' && dest.code === (o.dest && o.dest.code) ? HY.audio : null;
     if (blob && blob.size <= 30 * 1024 * 1024) { const rd = new FileReader(); rd.onload = function () { send(String(rd.result).split(',')[1] || ''); }; rd.onerror = function () { send(''); }; rd.readAsDataURL(blob); }
     else send('');
   }
@@ -20182,12 +20236,13 @@
   function hyHeard(t) {
     if (!t) return;
     HY.lines.push('[' + hyNow() + '] ' + t); hyBufSave();
+    if (HY.on) { const sw = hySwFind(t); if (sw && (!HY.dest || sw.code !== HY.dest.code)) { HY.lines.pop(); hySwitch(sw, 'voice'); HY.lines.push('[' + hyNow() + '] ' + t); hyBufSave(); return; } }
     if (HY.pend && HY.mode !== 'wake') {
       if (/^(はい|ええ|お願い|おねがい|やって|実行|オーケー|ok|うん)/i.test(t)) { hyDo(); return; }
       if (/(いいえ|やめ|キャンセル|ちがう|違う|いらない)/.test(t)) { HY.pend = null; $('hyAct').hidden = true; hySpeak('やめました。'); return; }
     }
     const m = t.match(HY_WAKE);
-    if (m) { HY.q = t.slice(m.index + m[0].length).trim(); hyState('wake'); hyArm(); return; }
+    if (m) { HY.q = t.slice(m.index + m[0].length).trim(); hyState('wake'); hyMood('serious'); hyArm(); return; }
     if (HY.mode === 'wake') { HY.q = (HY.q ? HY.q + ' ' : '') + t; hyArm(); }
   }
   function hyFire() {
@@ -20228,7 +20283,7 @@
     }
   }
   /* しぐさ … smile 笑顔・nod うなずく・think 考える・bow お辞儀・sorry ごめん・point 指さす。話し終えて 少ししたら 戻す */
-  const HY_MOODS = { smile: '😊', nod: '👍', think: '🤔', bow: '🙇', sorry: '🙏', point: '👉' };
+  const HY_MOODS = { smile: '😊', nod: '👍', think: '🤔', bow: '🙇', sorry: '🙏', point: '👉', joy: '🙌', serious: '🧐' };
   function hyMood(m) {
     const v = $('hyView'); if (!v) return; clearTimeout(HY.moodT);
     Object.keys(HY_MOODS).forEach(function (k) { v.classList.remove('m-' + k); });
@@ -20253,6 +20308,7 @@
   $('hyBtn').addEventListener('click', function () {
     hyBuild(); const v = $('hyView'); v.hidden = false; v.classList.remove('mini'); $('hyMin').textContent = '▣ 小さくする';
     if (HY.on) return;
+    hyPendRetry();
     if (hyBufGet()) hyEndShow(true); else hyPickShow();
   });
   /* ★★ 2026-11-23（石井）：どの ボタンも 押したら 薄い緑に（押した感） */
