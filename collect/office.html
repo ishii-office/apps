@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795567641;</script>
+<script>window.__PAGE_VER=1795570432;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -8772,10 +8772,14 @@
     if (!ok) {
       gs('needList', S.code, S.per).then(function (nr) {
         if (!nr.missing.length) { agentPackRun(ans, mode, boxes, span, true); return; }
-        const m = $('dcMsg'); m.textContent = '✗ 要る資料が ' + nr.missing.length + '件 そろっていません（' + nr.missing.slice(0, 6).join('・') + (nr.missing.length > 6 ? ' ほか' : '') + '）。 ';
-        const y = el('button', 'dmon-b', 'このまま作る'); y.type = 'button'; y.addEventListener('click', function () { agentPackRun(ans, mode, boxes, span, true); });
+        /* ★ 2026-11-25（柳田）：［このまま作る］が 長い文の 右端で 画面から はみ出し、押しても 何も 出ないように 見えた → ボタンを 文の 前（左端）に 出し、帯にも 一言 */
+        const m = $('dcMsg'); dcMsg('', true); m.textContent = '';
+        const y = el('button', 'dmon-b', '▶ このまま作る'); y.type = 'button'; y.addEventListener('click', function () { agMsgSet(''); agentPackRun(ans, mode, boxes, span, true); });
         const c = el('button', 'dmon-b', '✅ チェック表を見る'); c.type = 'button'; c.addEventListener('click', function () { needOpen(); });
         m.appendChild(y); m.appendChild(c);
+        m.appendChild(document.createTextNode(' ✗ 要る資料が ' + nr.missing.length + '件 そろっていません（' + nr.missing.slice(0, 6).join('・') + (nr.missing.length > 6 ? ' ほか' : '') + '）。'));
+        agMsgSet('✗ 要る資料が ' + nr.missing.length + '件 そろっていません。上の［▶ このまま作る］を 押すと zip を 作ります');
+        try { m.scrollIntoView({ block: 'nearest' }); } catch (q) {}
       }, function () { agentPackRun(ans, mode, boxes, span, true); });
       return;
   }
@@ -8793,6 +8797,13 @@
     m.appendChild(document.createTextNode('　→ 島の 中の［⬇ ダウンロード］から zip を Claude Code に 投げる だけ（指示は 要りません）。' + (r.skipped.length ? '　★ 大きすぎて入れられなかった資料：' + r.skipped.join('、') : '') + (r.split ? '　★ ' + r.split : '')));
   }, function (e) {
     b.disabled = false; AGB.busy = ''; try { pkBar(); } catch (q) {} agMsgSet('');
+    /* ★ 2026-11-25（柳田）：選んだ 箱が 0件なら zip を 作らない。全部の箱で 渡し直せる ボタンを 出す */
+    const em = String(e && e.message || '').match(/AG_EMPTY:([\s\S]*)$/);
+    if (em) {
+      dcMsg('⚠ ' + em[1] + ' ', true);
+      if (boxes && boxes.length) { const m = $('dcMsg'); const all = el('button', 'dmon-b', '📦 全部の箱で 渡す'); all.type = 'button'; all.addEventListener('click', function () { agentPackRun(ans, mode, [], span, true); }); m.appendChild(all); }
+      return;
+    }
     /* ★ 返事が 途中で 切れても（スマホの Load failed など）ドライブには できていることが 多い。いちばん 新しい zip を 探して 出す */
     gs('agentPackLast', S.code).then(function (z) {
       if (z && !z.none && z.min <= 10) { const m = $('dcMsg'); dcMsg('返事は 途中で 切れましたが、zip は できています（' + z.at + '）：'); const a = document.createElement('a'); a.href = z.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = z.name + ' を ドライブで開く（ダウンロード）'; m.appendChild(a); }
