@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795572250;</script>
+<script>window.__PAGE_VER=1795573698;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1708,6 +1708,11 @@
   .hof { display: grid; grid-template-columns: 17em 10em 1fr; gap: 6px; align-items: center; margin: 3px 0; font-size: 14px; } .hof input:not([type=checkbox]) { text-align: right; } .hof small { color: #667; font-size: 12px; }
   .hot { border-collapse: collapse; margin: 4px 0; font-size: 13px; } .hot th, .hot td { border: 1px solid #dde4e0; padding: 3px 6px; } .hot th { background: #f1f5f3; } .hot td.n { text-align: right; white-space: nowrap; }
   .hobig { border-radius: 8px; padding: 10px 12px; font-size: 18px; font-weight: 700; margin: 6px 0; } .hobig.ng { background: #FDECEC; color: #A3271F; } .hobig.ok { background: #E3F3E8; color: #1E6B3A; }
+  .fasb > summary { font-size: 14px; } .fasf { display: inline-flex; align-items: center; gap: 3px; font-size: 13px; } .fasf input[type=number] { text-align: right; } .fasrow { border-bottom: 1px dashed #dde4e0; padding-bottom: 4px; }   /* ★★★ FASコンサルティング（2026-11-25） */
+  .faspos { display: flex; gap: 2px; margin: 4px 0; flex-wrap: wrap; } .faspos span { flex: 1; min-width: 26px; text-align: center; padding: 3px 0; border: 1px solid #ccd; border-radius: 4px; font-size: 12px; background: #f6f8f7; } .faspos span.on { background: #0F6E56; color: #fff; font-weight: 700; } .faspos span.plan { outline: 2px dashed #0F6E56; }
+  .fasmx td { text-align: center; } .fasmx td.on { background: #0F6E56; color: #fff; font-weight: 700; } .fasmx td.bk { outline: 2px solid #E2BE5C; } .fassub { font-size: 13px; font-weight: 400; margin-top: 2px; }
+  .fast tr.ng td:nth-child(5) { color: #A3271F; font-weight: 700; } .fast tr.ok td:nth-child(5) { color: #1E6B3A; } .fast tr.mid td:nth-child(5) { color: #8A5A00; } .fasact { display: flex; gap: 6px; align-items: flex-start; font-size: 13px; margin: 3px 0; } .fasact b { min-width: 3.5em; } .fasask { margin: 4px 0; font-size: 13px; } .fasask .fasf { margin-right: 8px; }
+  .fasfive, .fast { font-size: 12px; } @media (max-width: 700px) { .fast, .fasfive, .fasmx { display: block; overflow-x: auto; } }
   .hoalert { background: #FFF4D6; border: 1px solid #E2BE5C; border-radius: 6px; padding: 6px 8px; margin: 6px 0; font-size: 13px; }
   .hotx { font-size: 13px; margin: 3px 0; }
 #mnBox.mndrop{outline:3px dashed #0F6E56;outline-offset:2px;background:#EEF7F3}
@@ -2264,10 +2269,10 @@
       <div class="bar"><button type="button" class="btn ghost sm" id="kyIdeaSave">考え方を保存</button></div>
     </details>
   </details>
-  <details open class="rbox" id="rtBox"><summary>🏦 ③ 格付け（債務者区分）</summary>
-    <p class="note">金融機関の 格付けは ① 定量評価（決算書の 数字）→ ② 定性評価（経営者・業界・将来性）→ ③ 実態評価（役員借入金を 自己資本と みなす・含み損益 など）の 3段階。ここでは まず 試算表から 一般的な 計算式で ①（形式的 格付け）を 出します。実質的な 格付けは 事務所の 考え方で 直します。</p>
+  <details open class="rbox" id="rtBox"><summary>🏦 ③ FASコンサルティング（格付け・資金調達力）</summary>
+    <p class="note">金融機関から どう 見られているか（FAS格付・債務者区分）を 決算の 数字から 出し、どう 直せば 上がるかを 予算・月次・5ヶ年に つなげます。格付は 簿価ではなく 実態で 見ます。くわしくは 右上の［📖 操作ガイド］。</p>
     <div id="rtCalc"></div>
-    <fieldset class="kyf"><legend>格付け</legend>
+    <fieldset class="kyf"><legend>顧問先に 出す 格付け（手で 直す とき）</legend>
       <div class="bar"><input id="kgFormal" placeholder="形式的な格付け（試算表から・中だけ）" style="width:14em"><input id="kgLow" placeholder="上げられる幅 低" style="width:7em"><input id="kgHigh" placeholder="高" style="width:7em"><input id="kgShow" placeholder="顧問先に見せる（例：およそ 5〜6）" style="width:16em"></div>
       <input id="kgReason" placeholder="理由（1〜2文。顧問先に出す）" style="width:100%">
       <textarea id="kgPoints" rows="4" aria-label="上げるための点" placeholder="格付けを上げるための点（1行に1つ：指標,いま,目安,どうすれば）&#10;自己資本比率,8%,20%以上,利益を残す"></textarea>
@@ -3099,7 +3104,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { aiqAll: 1, acdList: 1, ksGet: 1, budgetGet: 1, refWaitN: 1, refList: 1, aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
+  const READ_FN = { fasGet: 1, aiqAll: 1, acdList: 1, ksGet: 1, budgetGet: 1, refWaitN: 1, refList: 1, aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, arriveGrid: 1, askList: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -8352,9 +8357,9 @@
       steps: ['［＋ 辞書を登録］で 取引先・科目・税区分を 入れる', 'まちがえたものは 直す・［この辞書を消す］'], tips: ['同じ辞書を いくつかの回収ボックスで使うときは、「回収ボックス」の下の「ほかの箱でも使う」で その箱に ✓（どの箱にも出すなら「共通」）', 'いくつもの辞書に まとめて箱を足すときは［☑ まとめて箱を付ける・移す］→ 辞書に ✓ → 箱を選んで［＋ この箱でも使う］（外すときは［－ この箱から外す］）', 'ほかの回収ボックスへ まとめて移すときは［☑ まとめて箱を付ける・移す］→ 辞書に ✓（Shift＋クリックで あいだを ぜんぶ・［全部選ぶ］）→ 箱を選んで［→ この箱へ移す］。移した辞書は 移す先の いちばん下に並びます'] },
     Prog: { t: '進捗', lead: '顧問先 × 月分で いま どの 工程まで 来ているかを 見る タブです（担当先だけ・上の 👥 で 選ぶ）。',
       steps: ['数えるのは 毎月の箱だけ（年末調整 などの スポットの箱は 数えない）。顧問先の 名前の［🙈 非表示］で 進捗から 外し、［非表示に した 顧問先も 出す］で また 出せる', '資料回収 → 資料チェック → エージェント → 元帳チェック → 取込ファイル化 → 会計システムへ計上 の 順に 並ぶ（緑＝済み・黄＝途中・灰＝まだ。太い枠が いま 止まっている 工程）', 'ブロックを 押すと その工程の 画面へ（資料は 回収資料・エージェント／元帳は 仕訳化・取込ファイル化は 取込ファイル）', '会計システム（FX）へ 取り込んだら「会計システムへ計上」を 押す（もう一度 押すと 取り消し）。最後まで 済んだ 月分は たたむ（［終わった 月分も 出す］で 出す）'], tips: ['会計システムへ計上 の 右は 経営助言（丸の 1〜4＝予算・企業防衛・格付け・助言。緑が 済み。押すと その島へ）と 議事録の 追加（入れた 議事録は 次の 月の エージェントの zip に 入る）', '期間は 3・6・12か月'] },
-    Advice: { t: '経営助言', lead: '経営助言は 4つの 島：① 予算（向こう 1年）② 企業防衛（標準保障額）③ 格付け（債務者区分）④ 顧問先ごとの 助言。作って 顧問先の 画面の 経営助言に 出す タブです。',
-      steps: ['🙋 社長に 聞くこと（④ の いちばん上）：エージェントが 出した 問い（数字に 出ない 事情・本当の 目的）。会ったときに 聞いて 答えを 入れ［✓ 答えを 議事録に 入れる］。議事録（社長面談）に 入り、次の 助言に 生きる。聞かない 問いは［聞かない］', '① 予算：期を 選び、［📥 前年の 実績から 入れる］（伸び率も）か 年計を 入れて 月に 割り、直して［✓ この 予算に する］。エージェントの 予算案が あれば［案を 表に 入れる］。決めた 予算は 試算表の［予実対比］に 出る', '② 企業防衛：まず 大前提（事業承継か 清算・廃業か・2番手が いるか）を 選ぶ。［📥 試算表（過去の仕訳）から 入れる］で 負債・運転資金・固定費（販管費＋支払利息）・現預金が 入る', '企業防衛の 中：① 負債は 借入金・社債。リース債務は 原則 入れない（全額 払う ときだけ ✓）。② 必要運転資金は 過去 1年で いちばん 大きい 月で 見る。③ 納税資金（実効税率・繰越欠損金）④ 役員退職金・弔慰金（役員ごと）', '大同生命と 同じ 2列（死亡のとき／就業不能のとき）の 算定書が 出る。［🖨 算定書を 印刷・PDF］・［💾 入力を 保存］・［🛡 顧問先の 画面に 出す（保存して リスクに 入れる）］', '③ 格付け：月を 選んで［🏦 試算表から 形式的 格付けを 出す］→ 12の 指標の 点数・格付け（1〜10）・債務者区分の 目安。［↓ 下の 格付けの マスへ 写す］で 直して［格付けを入れる］', '④ 顧問先ごとの 助言：項目ごとに 書いて［助言を出す］（税務判断を 含むものは「担当 石井」と 出る）。下に これから 出す 助言の 一覧', '「💬 顧問先が AI に聞いたこと」… ［✓ この答えで よい］か、直して［✎ 直して 送る］。税額が 大きく 変わりそうな 質問は 先に 確かめる。今月の 費用と 上限（月1万円）も ここ', '同じ ところで 顧問先ごとの 設定：「広げて 答える」に ✓（まず 1〜2社で 試す。担当者に 回すのは 税額・申告の 中身を 決める 判断だけ）と、よく使う 質問（1行に 1つ）を 入れて［💾 この 顧問先の 設定を 保存］', '［📊 全部の 顧問先の やりとり・使われ方・AI の 精度（月ごと）］… 月ごとの 質問の 数・使った 顧問先・担当者が 確かめて そのまま よかった 割合（精度）。はじめの 1か月は ここで 使われているかを 見る'],
-      tips: ['計算式と 考え方は エージェントの zip にも 入る（企業防衛_標準保障額の考え方.md）。格付けの 配点は 一般的な 目安（金融機関で ちがう）。実質的な 格付けと F プラスは 事務所の 考え方で あとから'] },
+    Advice: { t: '経営助言', lead: '経営助言は 4つの 島：① 予算（向こう 1年）② 企業防衛（標準保障額）③ FASコンサルティング（格付け・資金調達力）④ 顧問先ごとの 助言。作って 顧問先の 画面の 経営助言に 出す タブです。',
+      steps: ['🙋 社長に 聞くこと（④ の いちばん上）：エージェントが 出した 問い（数字に 出ない 事情・本当の 目的）。会ったときに 聞いて 答えを 入れ［✓ 答えを 議事録に 入れる］。議事録（社長面談）に 入り、次の 助言に 生きる。聞かない 問いは［聞かない］', '① 予算：期を 選び、［📥 前年の 実績から 入れる］（伸び率も）か 年計を 入れて 月に 割り、直して［✓ この 予算に する］。エージェントの 予算案が あれば［案を 表に 入れる］。決めた 予算は 試算表の［予実対比］に 出る', '② 企業防衛：まず 大前提（事業承継か 清算・廃業か・2番手が いるか）を 選ぶ。［📥 試算表（過去の仕訳）から 入れる］で 負債・運転資金・固定費（販管費＋支払利息）・現預金が 入る', '企業防衛の 中：① 負債は 借入金・社債。リース債務は 原則 入れない（全額 払う ときだけ ✓）。② 必要運転資金は 過去 1年で いちばん 大きい 月で 見る。③ 納税資金（実効税率・繰越欠損金）④ 役員退職金・弔慰金（役員ごと）', '大同生命と 同じ 2列（死亡のとき／就業不能のとき）の 算定書が 出る。［🖨 算定書を 印刷・PDF］・［💾 入力を 保存］・［🛡 顧問先の 画面に 出す（保存して リスクに 入れる）］', '③ FASコンサルティング：決算の 月を 選んで［🏦 試算表から FAS格付を 出す］→ FAS格付（自己資本比率 × 債務償還年数の 表で S〜G）・債務者区分・資金調達の 方向性・5FOCUS と 重要指標（判定・理想金額・あといくら）。簿価・前期・計画到達も 並ぶ', 'FAS の 中：⚙ 設定（業種・役員報酬 600万円 基準・役員借入金）→ ✏ 実態補正（回収できない 売掛金・不良在庫・含み損を 千円で 減らし、根拠を 書く）→ 🏦 借入金一覧（［試算表の 借入金を 並べる］・資金繰り改善シミュレーション）', 'FAS の 計画：🎯 計画到達（方式A 粗利率／方式B 原価 項目別。賃上げは 金額で）→ 📅 月次の 着地見込（今期の 月を 選んで［📅 この 月までの 実績で 着地を 出す］）→ 📈 5ヶ年（成長率・賃上げ率・年間返済）', 'FAS の 仕上げ：［💾 入力を 保存］・［🏦 顧問先の 画面に 出す］（いまの 格付・前期・計画どおりなら・取り組むこと）・［🖨 企業財務診断報告書］・［🖨 決算報告書 兼 経営計画書］・［🖨 面談メモ（職員用）］（顧問先には 出さない）・［↓ 下の 格付けの マスへ 写す］で 手で 直して［格付けを入れる］', '④ 顧問先ごとの 助言：項目ごとに 書いて［助言を出す］（税務判断を 含むものは「担当 石井」と 出る）。下に これから 出す 助言の 一覧', '「💬 顧問先が AI に聞いたこと」… ［✓ この答えで よい］か、直して［✎ 直して 送る］。税額が 大きく 変わりそうな 質問は 先に 確かめる。今月の 費用と 上限（月1万円）も ここ', '同じ ところで 顧問先ごとの 設定：「広げて 答える」に ✓（まず 1〜2社で 試す。担当者に 回すのは 税額・申告の 中身を 決める 判断だけ）と、よく使う 質問（1行に 1つ）を 入れて［💾 この 顧問先の 設定を 保存］', '［📊 全部の 顧問先の やりとり・使われ方・AI の 精度（月ごと）］… 月ごとの 質問の 数・使った 顧問先・担当者が 確かめて そのまま よかった 割合（精度）。はじめの 1か月は ここで 使われているかを 見る'],
+      tips: ['計算式と 考え方は エージェントの zip にも 入る（企業防衛_標準保障額の考え方.md・FAS格付の 出し方）。エージェントの 格付け.json の 実態補正・借入金は［経営助言に入れる］で ③ の 入力に 入る', 'FAS格付は F+prus（5FOCUS）と 同じ 式。格付は 3つ（直近決算／計画到達／月次の 着地見込）。「画面に よって 格付が ちがう」と 言われたら まず どの 格付か、次に 実態補正の 有無', '金融機関の 点数式（12指標・1〜10）は ③ の 下の「金融機関の 点数式」に 残っている（金融機関で 配点が ちがう 目安）。業界中央値は いまは「その他の製造業」だけ'] },
     Grt: { t: '保証', lead: '巡回監査報告書・書面添付（税理士法33条の2）・決算書類の 確認を まとめる タブです（TKC の 4大業務の 保証）。議事録は［議事録］タブへ 移りました。',
       steps: ['「確定申告の 書類集め」… 締切を 入れて［顧問先に 聞きはじめる］。顧問先の 画面に「確定申告の 書類」が 出て、質問に「はい・いいえ・わからない」で 答え、「はい」の 書類だけ 出す（手元に 無ければ「あとで 出す」）。ここには「あと ◯ 件」と 要フォロー（未提出／あとで 提出／答えの 確認が 要る＝わからない）が 出る。次の 年は 去年の 答えを 引き継ぐ。止めるときは［止める］（答えは 残る）', '「巡回監査報告書」… 巡回の月を 選び、書いて［保存（新しい版）］か［保存して 顧問先に 出す］（エージェントの 下書きが あれば 入っている）。議事録の 中身は［議事録］タブの［📎 巡回監査報告書へ 引く］で 足せる', '「書面添付」… 決算期を 選んで［🤖 下書きの zip を作る（1年分）］→ Claude Code に 渡し、できた zip を 仕訳化タブで 戻す → 直して［保存（新しい版）］', '「決算書類の 確認」… 決算期と 書類の名前を 入れて［PDF を 選んで 出す］→ 顧問先が［内容を確認しました］を 押すと ✅ が 付く。［出すのを やめる］で 引っ込める'],
       tips: ['雛形・書き方（巡回監査報告書・書面添付）は［📚 雛形・書き方を 入れる］から 事務所共通の資料へ。どの顧問先の zip にも 入る'] },
@@ -16595,17 +16600,7 @@
     const kubun = grade <= 6 ? '正常先' : grade === 7 ? '要注意先' : grade === 8 ? '要注意先（要管理先 相当）' : grade === 9 ? '破綻懸念先' : '実質破綻先・破綻先';
     return { m: m, score: score, grade: grade, kubun: kubun, mon: mon, officer: officer, eq: eq, ym: d.ym };
   }
-  function rtLoad() {
-    const w = $('rtCalc'), code = S.code; if (!w || !code) return; w.textContent = '';
-    const bar = el('div', 'hobar'), ym = el('input'); ym.type = 'month'; ym.id = 'rtYm'; ym.value = (S.per && /^\d{4}-\d{2}$/.test(S.per)) ? S.per : (function () { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); })();
-    const go = el('button', 'btn sm', '🏦 試算表から 形式的 格付けを 出す'); go.type = 'button'; go.id = 'rtGo';
-    bar.appendChild(el('span', 'note', 'どの月の 試算表で')); bar.appendChild(ym); bar.appendChild(go); w.appendChild(bar);
-    const out = el('div'); out.id = 'rtOut'; w.appendChild(out);
-    go.addEventListener('click', function () {
-      go.disabled = true; go.classList.add('busy'); out.textContent = '試算表を 読んでいます…';
-      gs('tbGet', code, ym.value, {}).then(function (d) { go.disabled = false; go.classList.remove('busy'); if (code !== S.code) return; rtDraw(rtCalc(d)); }, function (e) { go.disabled = false; go.classList.remove('busy'); out.textContent = '読めませんでした。' + e.message; });
-    });
-  }
+  function rtLoad() { fasLoad(); }
   function rtDraw(r) {
     const out = $('rtOut'); out.textContent = '';
     const fmt = function (x) { if (x.v == null || isNaN(x.v)) return '—'; if (x.u === '円') return Math.round(x.v).toLocaleString('ja-JP') + '円'; if (x.u === '倍' && x.v >= 99) return '支払利息 なし'; return (Math.round(x.v * 10) / 10).toLocaleString('ja-JP') + x.u; };
@@ -16617,6 +16612,461 @@
     if (r.officer > 0) out.appendChild(el('div', 'hoalert', '役員借入金 ' + Math.round(r.officer).toLocaleString('ja-JP') + '円：実質的な 格付けでは 自己資本と みなして 上げられることが ある（事務所の 考え方で 直す）。'));
     const cp = el('button', 'btn ghost sm', '↓ 下の 格付けの マスへ 写す'); cp.type = 'button'; cp.addEventListener('click', function () { $('kgFormal').value = r.grade + '（' + r.score + '点・' + r.kubun + '）'; const pts = Object.keys(r.m).filter(function (k) { return r.m[k].s < r.m[k].max / 2; }).map(function (k) { return r.m[k].n.replace(/（.*$/, '') + ',' + fmt(r.m[k]) + ',' + r.m[k].ok + ','; }); if (pts.length && !$('kgPoints').value) $('kgPoints').value = pts.join('\n'); $('kgSteps').value = '試算表 ' + r.ym + '・形式的 格付け ' + r.grade + '（' + r.score + '点）。' + Object.keys(r.m).map(function (k) { return r.m[k].n.replace(/（.*$/, '') + ' ' + fmt(r.m[k]) + '→' + r.m[k].s + '点'; }).join('／'); mtMsg('kyMsg', '格付けの マスに 写しました。直してから［格付けを入れる］。'); });
     out.appendChild(cp);
+  }
+  /*FAS_BEGIN*/
+  /* ★★★ FASコンサルティング（2026-11-25 石井）── F+prus の「5FOCUS・FAS格付・実態補正・予算・5ヶ年」と 同じことを アプリで。
+       格付は 2軸（自己資本比率 × 債務償還年数）。簿価ではなく 実態で 見る。格付は 3つ（直近決算／計画到達／月次の 着地見込）。
+       金額は 千円で 入れて 見る（F+prus と 同じ）。計算は ここ（fasPick → fasMetrics → fasPlan）だけ。tools/fas.mjs が 見張る */
+  const FAS_COLS = ['〜5年未満', '〜7年未満', '〜10年未満', '〜15年未満', '〜20年未満', '〜40年未満', '40年以上', 'CFマイナス'];
+  const FAS_ROWS = [
+    ['30% 以上', ['S', 'A', 'B', 'D1', 'D1', 'D1', 'D1', 'D3']],
+    ['15% 以上', ['A', 'A', 'B', 'D1', 'D1', 'D2', 'D2', 'D3']],
+    ['自己資本 プラス', ['B', 'B', 'C', 'D1', 'D2', 'D3', 'D3', 'D4']],
+    ['債務超過（解消 3年以内）・資本欠損', ['D1', 'D1', 'D2', 'D3', 'D4', 'D4', 'D4', 'E']],
+    ['債務超過（解消 10年以内）', ['D1', 'D1', 'D2', 'D3', 'D4', 'D4', 'D4', 'E']],
+    ['債務超過（解消 10年超）', ['D4', 'D4', 'D4', 'D4', 'E', 'E', 'E', 'E']],
+    ['債務超過 且つ 当期利益 マイナス', ['D4', 'D4', 'D4', 'E', 'E', 'E', 'E', 'E']]];
+  const FAS_ORDER = ['G', 'F', 'E', 'D4', 'D3', 'D2', 'D1', 'C', 'B', 'A', 'S'];
+  const FAS_RANK = {
+    S: { n: '超優良先', k: '正常先', c: 1, d: '財務状況が 極めて 良好', f: '無借金経営に 近づく' },
+    A: { n: '優良先', k: '正常先', c: 3, d: '財務状況は 良好で 資金調達に 不安が無い', f: '運転資金は 当座貸越' },
+    B: { n: '良好先', k: '正常先', c: 4, d: '財務状況に 問題は無いと 言える', f: '当座貸越も 可能・プロパー融資で 調達' },
+    C: { n: '正常先', k: '正常先', c: 6, d: '財務状況に 問題は無い水準だが、ランクアップは 必要', f: 'プロパー融資で 調達。C 以上は 経営者保証 不要の 可能性あり' },
+    D1: { n: '要注意先', k: '要注意先', c: 7, d: '財務状況に 課題が あるものの 金融機関に よっては 正常先に 猶予している 場合がある', f: '保証協会 中心で 止む無し' },
+    D2: { n: '要注意先', k: '要注意先', c: 7, d: '財務状況に 問題があり、基本的に プロパー融資が 難しくなる', f: '保証協会 中心で 止む無し' },
+    D3: { n: '要注意先', k: '要注意先', c: 7, d: '基本的に 要注意先。3〜5年で 正常先に 戻れるかが 重要（無理なら D4）', f: '保証協会 中心で 止む無し' },
+    D4: { n: '要注意先', k: '要注意先', c: 7, d: '要管理先（不良債権）ギリギリの 財務状況。改善が 必達。新規融資は 難しい', f: '保証協会 中心で 止む無し' },
+    E: { n: '要管理先', k: '要管理先', c: 8, d: '不良債権 扱い。金融支援は リスケが 前提', f: '不良債権先' },
+    F: { n: '破綻懸念先', k: '破綻懸念先', c: 9, d: '不良債権として 整理対象', f: '整理検討先' },
+    G: { n: '実質破綻先', k: '実質破綻先', c: 10, d: '金融支援が 難しい', f: '整理対象先' } };
+  /* 業界中央値（CRD 法人 2023年決算データ。F+prus の 5FOCUS レポートに 載っているもの）。ほかの 業種は 表を もらってから 足す */
+  const FAS_MED = {
+    'その他の製造業': { roaOp: 0.47, roaOrd: 1.62, roaNet: 1.26, roe: 6.24, gp: 37.65, opR: 0.48, ordR: 1.56, netR: 1.18, sgaR: 37.82, turn: 1.11, arDays: 46.26, invDays: 20.44, fixTurn: 5.32, apDays: 14.34, wcM: 1.79, cur: 251.6, quick: 174.87, cashCur: 95.69, cashSales: 19.71, eq: 18.8, capX: 2.27, fixLong: 48.35, fixR: 92.08, debtDep: 62.13, dcr: 110.89, cashDebt: 36.09, debtM: 6.41, cfDebt: 6.39, depR: 18.73, depSales: 2.03, othCur: 1.89, invM: 0.67 } };
+  /* 業種別の 在庫回転期間（月）。F+prus の 5FOCUS レポート FOCUS4 の 表 */
+  const FAS_INV = { '建設': 0.19, '製造': 0.86, '情報通信': 0.01, '運輸・郵便': 0, '卸売': 0.54, '卸売（アパレル）': 1.44, '小売': 0.9, '不動産・物品賃貸': 0.58, 'サービス': 0.05 };
+  const FAS_INDS = ['その他の製造業'].concat(Object.keys(FAS_INV));
+  function fasInvMed(ind) { if (FAS_MED[ind] && FAS_MED[ind].invM != null) return FAS_MED[ind].invM; if (FAS_INV[ind] != null) return FAS_INV[ind]; if (/製造/.test(ind || '')) return FAS_INV['製造']; return null; }
+  /** 試算表（表示の 行）→ 数字。mon … 期首から 何か月分か（損益を 年に 直す）。単位は 円のまま */
+  function fasPick(sh, mon) {
+    sh = sh || {}; const bs = sh.bs || [], pl = sh.pl || [], mfg = sh.mfg || [];
+    const g = function (rows, c) { const r = rows.filter(function (x) { return x.code === c; })[0]; return r ? Number(r.cur) || 0 : 0; };
+    const has = function (rows, c) { return rows.some(function (x) { return x.code === c; }); };
+    const sumN = function (rows, re, ex) { return rows.filter(function (x) { return !x.t && re.test(x.name || '') && !(ex && ex.test(x.name || '')); }).reduce(function (a, x) { return a + (Number(x.cur) || 0); }, 0); };
+    const an = 12 / Math.max(1, Math.min(12, Number(mon) || 12));
+    const allow = sumN(bs, /貸倒引当金/);
+    const recv = sumN(bs, /売掛金|受取手形|電子記録債権|完成工事未収入金|未収売上/, /貸倒/) - Math.abs(allow);
+    const inv = has(bs, '1120') ? g(bs, '1120') : sumN(bs, /商品|製品|半製品|原材料|仕掛品|貯蔵品|未成工事支出金|材料/);
+    const pay = sumN(bs, /買掛金|支払手形|電子記録債務|工事未払金/);
+    const ex = /役員|代表者|関係会社|従業員|社長/;
+    const st = sumN(bs, /短期借入金|手形借入金|当座借越/, ex), lt = sumN(bs, /長期借入金|社債|1年以内返済予定/, ex);
+    const cash = has(bs, '1101') ? g(bs, '1101') : sumN(bs, /現金|預金/);
+    const asset = g(bs, '1000'), eq = g(bs, '3000'), curA = g(bs, '1100'), curL = g(bs, '2100'), fixA = g(bs, '1200'), fixL = g(bs, '2200'), tang = g(bs, '1210');
+    const othCur = has(bs, '1130') ? g(bs, '1130') : 0, land = sumN(bs, /土地/);
+    const capital = sumN(bs, /資本金/, /準備金|剰余金/);
+    const f = function (v) { return v * an; };
+    const sales = g(pl, '4000'), cogs = g(pl, '5200'), gp = has(pl, '5000') ? g(pl, '5000') : sales - cogs, sga = g(pl, '6100'), op = has(pl, '6000') ? g(pl, '6000') : gp - sga;
+    const noi = g(pl, '7100'), noe = g(pl, '7200'), ord = has(pl, '7000') ? g(pl, '7000') : op + noi - noe, spI = g(pl, '8100'), spE = g(pl, '8200');
+    const tax = sumN(pl, /法人税|住民税|事業税/), pre = has(pl, '8000') ? g(pl, '8000') : ord + spI - spE, net = has(pl, '9111') ? g(pl, '9111') : pre - tax;
+    const dep = sumN(pl, /減価償却/) + sumN(mfg, /減価償却/), execPay = sumN(pl, /役員報酬/), persSga = sumN(pl, /給料|給与|賃金|賞与|法定福利|福利厚生|雑給|退職/, /役員/);
+    const intE = sumN(pl, /支払利息|割引料/);
+    const mat = g(mfg, '5410'), labor = g(mfg, '5420'), outs = sumN(mfg, /外注/);
+    return { mon: Math.max(1, Math.min(12, Number(mon) || 12)), asset: asset, eq: eq, cash: cash, liqCash: cash - sumN(bs, /定期預金|定期積金/), recv: recv, inv: inv, pay: pay, st: st, lt: lt, officerLoan: sumN(bs, /役員借入|代表者借入|社長借入/),
+      curA: curA, curL: curL, fixA: fixA, fixL: fixL, tang: tang, othCur: othCur, land: land, capital: capital,
+      sales: f(sales), cogs: f(cogs), gp: f(gp), sga: f(sga), op: f(op), noi: f(noi), noe: f(noe), ord: f(ord), sp: f(spI - spE), tax: f(tax), pre: f(pre), net: f(net), dep: f(dep), execPay: f(execPay), persSga: f(persSga), intE: f(intE),
+      mat: f(mat), labor: f(labor), outs: f(outs) };
+  }
+  /** 実態補正を 当てる（adj は 千円。bs … 資産を 増減（マイナスで 減らす）・自己資本も 同じだけ／pl … 経常利益（一過性の 損益を 戻す など）） */
+  function fasAdjust(p, inp) {
+    inp = inp || {}; const q = Object.assign({}, p), rows = [];
+    (inp.adj || []).forEach(function (a) {
+      const v = Math.round((Number(a.amt) || 0) * 1000); if (!v) return;
+      if (a.k === 'pl') { q.ord += v; q.pre += v; q.net += v; rows.push({ k: 'PL', name: a.name || '損益の 補正', v: v, why: a.why || '' }); return; }
+      q.asset += v; q.eq += v;
+      if (/売掛|受取手形|債権/.test(a.name || '')) q.recv += v; else if (/在庫|棚卸|商品|製品|材料|仕掛/.test(a.name || '')) q.inv += v;
+      if (a.pl) { q.ord += v; q.pre += v; q.net += v; }
+      rows.push({ k: 'BS', name: a.name || '資産の 補正', v: v, why: a.why || '', pl: !!a.pl });
+    });
+    if (inp.officerStd && p.execPay > 0) {
+      const n = Math.max(1, Math.round(Number(inp.officerN) || 1)), d = Math.round(p.execPay - 6000000 * n);
+      if (d) { q.ord += d; q.pre += d; q.ordKeep = d; rows.push({ k: 'PL', name: '役員報酬 600万円（' + n + '名）基準', v: d, why: '役員報酬 ' + Math.round(p.execPay / 1000).toLocaleString('ja-JP') + '千円 を 基準と くらべて 経常利益を 補正（金融機関の 見方）', auto: 1 }); }
+    }
+    if (inp.officerLoanEq && p.officerLoan > 0) { q.eq += p.officerLoan; rows.push({ k: 'BS', name: '役員借入金を 自己資本と みなす', v: p.officerLoan, why: '返済を 求めない 確認が あれば 金融機関が 自己資本と みる ことが ある', auto: 1, eqOnly: 1 }); }
+    q.adjRows = rows; return q;
+  }
+  function fasGrade(eqR, eq, capital, net, years) {
+    let row;
+    if (eq < 0) { const k = net > 0 ? -eq / net : null; row = !(net > 0) ? 6 : k <= 3 ? 3 : k <= 10 ? 4 : 5; }
+    else if (capital > 0 && eq < capital) row = 3;
+    else row = eqR >= 30 ? 0 : eqR >= 15 ? 1 : 2;
+    const col = years == null ? 7 : years < 5 ? 0 : years < 7 ? 1 : years < 10 ? 2 : years < 15 ? 3 : years < 20 ? 4 : years < 40 ? 5 : 6;
+    return { row: row, col: col, g: FAS_ROWS[row][1][col] };
+  }
+  /** 指標と 格付（p … fasPick か fasAdjust の あと）。repay … 年間 返済額（円・借入金一覧から） */
+  function fasMetrics(p, repay) {
+    const wc = Math.max(0, p.recv + p.inv - p.pay), debt = p.st + p.lt, yosho = Math.max(0, debt - wc), cf = p.ord + p.dep - p.tax;
+    const years = yosho <= 0 ? 0 : cf > 0 ? yosho / cf : null, eqR = p.asset ? p.eq / p.asset * 100 : 0, mS = p.sales / 12;
+    const gr = fasGrade(eqR, p.eq, p.capital, p.net, years);
+    return { wc: wc, debt: debt, yosho: yosho, cf: cf, years: years, eqR: eqR, kesson: p.eq >= 0 && p.capital > 0 && p.eq < p.capital,
+      kaisho: p.eq < 0 ? (p.net > 0 ? -p.eq / p.net : null) : 0, liq: mS > 0 ? (p.liqCash != null ? p.liqCash : p.cash) / mS : null, invM: mS > 0 ? p.inv / mS : null,
+      stCover: wc > 0 ? p.st / wc * 100 : null, cfRepay: repay > 0 ? (cf > 0 ? repay / cf * 100 : Infinity) : null, repay: repay || 0,
+      gpR: p.sales ? p.gp / p.sales * 100 : null, invDays: p.sales ? p.inv / p.sales * 365 : null, grade: gr.g, row: gr.row, col: gr.col };
+  }
+  /* 5FOCUS と 8つの 重要指標の 判定（F+prus の 文言） */
+  function fasJudge(k, m, ind) {
+    const lv = function (t, c) { return { t: t, c: c }; };
+    if (k === 'eq') return m.row >= 3 && m.kesson ? lv('改善する 必要が あります（資本欠損）', 'ng') : m.eqR < 0 || m.row >= 4 ? lv('危険な 状況です（債務超過）', 'ng') : m.eqR >= 30 ? lv('潰れない 水準です', 'ok') : m.eqR >= 15 ? lv('良好な 水準です', 'ok') : lv('あと一歩 向上が 欲しい 水準です', 'mid');
+    if (k === 'years') return m.years == null ? lv('危険な 状況です（CFマイナス）', 'ng') : m.years < 5 ? lv('潰れない 水準です', 'ok') : m.years < 7 ? lv('良好な 水準です', 'ok') : m.years < 10 ? lv('あと一歩 向上が 欲しい 水準です', 'mid') : lv('改善する 必要が あります', 'ng');
+    if (k === 'liq') return m.liq == null ? lv('—', '') : m.liq >= 2 ? lv('良好な 水準です', 'ok') : m.liq >= 1.5 ? lv('問題の 無い 水準です', 'ok') : m.liq >= 1 ? lv('あと一歩 向上が 欲しい 水準です', 'mid') : lv('問題ありと される 水準です', 'ng');
+    if (k === 'invM') return m.invM == null ? lv('—', '') : m.invM < 1 ? lv('問題の 無い 水準です', 'ok') : m.invM < 2 ? lv('問題は無いが 改善したい 水準', 'mid') : m.invM < 3 ? lv('改善する 必要が あります', 'ng') : lv('問題ありと される 水準です', 'ng');
+    if (k === 'stCover') return m.stCover == null ? lv('短期借入金は 不要な 状態です', 'ok') : m.stCover >= 120 ? lv('良好な 状態です', 'ok') : m.stCover >= 100 ? lv('良好（120% が 目安）', 'ok') : m.stCover >= 30 ? lv('短期継続融資の 増額を 目指しましょう', 'mid') : lv('短期借入金が 不足しています', 'ng');
+    if (k === 'kaisho') return m.kaisho === 0 ? lv('良好な 水準です（債務超過で ない）', 'ok') : m.kaisho == null ? lv('危険な 状況です（計算不可）', 'ng') : m.kaisho < 3 ? lv('融資を 検討できる 水準', 'mid') : m.kaisho < 5 ? lv('融資を ギリギリ 検討できる', 'mid') : m.kaisho < 10 ? lv('融資を 検討するのは 難しい', 'ng') : lv('危険な 状況です', 'ng');
+    if (k === 'cfRepay') return m.cfRepay == null ? lv('返済が 不要な 状態（または 借入金一覧が 空）', '') : m.cfRepay < 80 ? lv('良好な 水準です', 'ok') : m.cfRepay < 150 ? lv('問題の ない 水準です', 'mid') : lv('改善する 必要が あります', 'ng');
+    if (k === 'gpR') { const md = FAS_MED[ind] ? FAS_MED[ind].gp : null; return m.gpR == null ? lv('—', '') : md == null ? lv('業界中央値の 表が まだ ありません', '') : m.gpR >= md ? lv('問題の 無い 水準です', 'ok') : m.gpR >= md / 2 ? lv('中央値を 下回っています', 'mid') : lv('抜本的な 改善が 必要です', 'ng'); }
+    if (k === 'invDays') { const md = FAS_MED[ind] ? FAS_MED[ind].invDays : null; return m.invDays == null ? lv('—', '') : md == null ? lv('業界中央値の 表が まだ ありません', '') : m.invDays <= md ? lv('問題の 無い 水準です', 'ok') : lv('中央値を 上回っています', 'mid'); }
+    return lv('—', '');
+  }
+  /** 理想金額と あといくら（円）。F+prus と 同じ 目安：自己資本比率 15%・償還 7年・手元 2か月・短期借入 120%・返済は CF の 80% */
+  function fasIdeal(k, p, m, ind) {
+    const mS = p.sales / 12;
+    if (k === 'eq') return m.eqR >= 15 ? null : { lab: '自己資本（15%）', now: p.eq, want: p.asset * 0.15 };
+    if (k === 'years') return m.years != null && m.years < 7 ? null : { lab: '簡易CF（7年）', now: m.cf, want: m.yosho / 7 };
+    if (k === 'liq') return m.liq == null || m.liq >= 2 ? null : { lab: '流動性現預金（月商 2か月）', now: p.liqCash != null ? p.liqCash : p.cash, want: mS * 2 };
+    if (k === 'invM') { const md = fasInvMed(ind); const w = mS * (md != null ? Math.max(md, 1) : 1); return m.invM == null || p.inv <= w ? null : { lab: '在庫（' + (md != null ? '業界 ' + md + 'か月・1か月未満' : '1か月') + '）', now: p.inv, want: w }; }
+    if (k === 'stCover') return m.stCover == null || m.stCover >= 120 ? null : { lab: '短期借入金（所要運転資金の 120%）', now: p.st, want: m.wc * 1.2 };
+    if (k === 'cfRepay') return m.cfRepay == null || m.cfRepay < 80 ? null : { lab: '年間返済額（CF の 80%）', now: m.repay, want: Math.max(0, m.cf * 0.8) };
+    if (k === 'gpR') { const md = FAS_MED[ind] ? FAS_MED[ind].gp : null; return md == null || m.gpR == null || m.gpR >= md ? null : { lab: '売上総利益（業界 ' + md + '%）', now: p.gp, want: p.sales * md / 100 }; }
+    if (k === 'invDays') { const md = FAS_MED[ind] ? FAS_MED[ind].invDays : null; return md == null || m.invDays == null || m.invDays <= md ? null : { lab: '在庫（業界 ' + md + '日）', now: p.inv, want: p.sales * md / 365 }; }
+    return null;
+  }
+  const FAS_KEYS = [['eq', 'FOCUS1 自己資本比率', '自己資本 ÷ 総資産'], ['years', 'FOCUS2 債務償還年数', '（有利子負債 − 所要運転資金）÷（経常利益 ＋ 減価償却費 − 法人税等）'], ['liq', 'FOCUS3 手元流動性', '流動性現預金（定期を 除く）÷ 月商'], ['invM', 'FOCUS4 在庫回転期間', '棚卸資産 ÷ 月商'], ['stCover', 'FOCUS5 短期借入カバー率', '短期借入金 ÷ 所要運転資金'],
+    ['kaisho', '債務超過解消年数', '債務超過額 ÷ 当期純利益'], ['cfRepay', 'CF返済充当率', '年間返済額 ÷ 簡易CF'], ['gpR', '売上総利益率', '売上総利益 ÷ 売上高'], ['invDays', '在庫回転日数', '棚卸資産 ÷ 売上高 × 365']];
+  function fasVal(k, m) {
+    const r1 = function (v) { return Math.round(v * 10) / 10; }, r2 = function (v) { return Math.round(v * 100) / 100; };
+    if (k === 'eq') return r2(m.eqR) + '%'; if (k === 'years') return m.years == null ? 'CFマイナス' : r2(m.years) + '年';
+    if (k === 'liq') return m.liq == null ? '—' : r2(m.liq) + 'か月'; if (k === 'invM') return m.invM == null ? '—' : r2(m.invM) + 'か月';
+    if (k === 'stCover') return m.stCover == null ? '計算不要' : r2(m.stCover) + '%'; if (k === 'kaisho') return m.kaisho === 0 ? '計算不要' : m.kaisho == null ? '計算不可' : r1(m.kaisho) + '年';
+    if (k === 'cfRepay') return m.cfRepay == null ? '—' : m.cfRepay === Infinity ? 'CF赤字' : r2(m.cfRepay) + '%'; if (k === 'gpR') return m.gpR == null ? '—' : r2(m.gpR) + '%'; if (k === 'invDays') return m.invDays == null ? '—' : r2(m.invDays) + '日';
+    return '—';
+  }
+  /** 借入金一覧（千円）→ 年間返済額（円）と 資金繰り改善シミュレーション（F+prus と 同じ：理想の 短期借入 ＝ 所要運転資金 × 120%（千円で 切り上げ）、残りを 理想の 期間で 返す） */
+  function fasLoanSim(loans, m, years) {
+    const L = (loans || []).filter(function (x) { return Number(x.bal) || Number(x.yr); });
+    const total = L.reduce(function (a, x) { return a + (Number(x.bal) || 0); }, 0) * 1000, repay = L.reduce(function (a, x) { return a + (Number(x.yr) || 0); }, 0) * 1000;
+    const st = L.filter(function (x) { return /短期|手形貸付|当座/.test((x.term || '') + (x.form || '')); }).reduce(function (a, x) { return a + (Number(x.bal) || 0); }, 0) * 1000;
+    const idealSt = Math.ceil(m.wc * 1.2 / 1e6) * 1e6, A = Math.max(st, idealSt), B = Math.max(0, total - A), C = Math.max(1, Number(years) || 7), newRepay = Math.round(B / C);
+    return { total: total, repay: repay, st: st, idealSt: A, addSt: Math.max(0, A - st), B: B, C: C, newRepay: newRepay, cf: m.cf,
+      nowRate: m.cf > 0 ? repay / m.cf * 100 : null, newRate: m.cf > 0 ? newRepay / m.cf * 100 : null, nowLeft: m.cf - repay, newLeft: m.cf - newRepay };
+  }
+  /** 計画（今期の 予算）。base … 実態の 直近（fasAdjust の あと）。方式A＝粗利率／方式B＝原価 項目別（比率）＋ 労務費（金額）。金額は 千円で 入る。
+      一過性の 実態補正（在庫の 評価損 など）は 計画に 持ち込まない。役員報酬の 基準の 補正（ordKeep）だけ 残す */
+  function fasPlan(base, pl) {
+    pl = pl || {}; const K = function (v) { return (Number(v) || 0) * 1000; }, gr = (Number(pl.growth) || 0) / 100;
+    const sales = base.sales * (1 + gr), labor = base.labor + K(pl.labor);
+    let cogs;
+    if (pl.mode === 'B') {
+      const oth0 = base.cogs - base.mat - base.labor - base.outs, R = function (v) { return base.sales ? v / base.sales : 0; };
+      cogs = sales * (R(base.mat) + (Number(pl.mat) || 0) / 100) + sales * (R(base.outs) + (Number(pl.outs) || 0) / 100) + sales * (R(oth0) + (Number(pl.oth) || 0) / 100) + labor;
+    } else { const gp0 = base.sales ? base.gp / base.sales : 0; cogs = sales * (1 - gp0 - (Number(pl.gp) || 0) / 100); }
+    const gp = sales - cogs, persSga = base.persSga + K(pl.sgaP), exec = base.execPay + K(pl.exec), sga = base.sga + K(pl.sgaP) + K(pl.exec) + K(pl.sgaO), op = gp - sga;
+    const ord = op + base.noi - base.noe + K(pl.nonOp) + (base.ordKeep || 0), rate0 = base.pre > 0 && base.tax >= 0 ? Math.min(0.5, base.tax / base.pre) : 0.3;
+    const tax = Math.max(0, ord) * rate0, net = ord - tax, cf = ord + base.dep - tax;
+    const wage0 = base.labor + base.persSga, wage = wage0 ? ((labor - base.labor) + (persSga - base.persSga)) / wage0 * 100 : 0;
+    const q = Object.assign({}, base, { sales: sales, cogs: cogs, gp: gp, labor: labor, persSga: persSga, execPay: exec, sga: sga, op: op, ord: ord, tax: tax, pre: ord, net: net, rate: rate0, wage: wage });
+    q.eq = base.eq + net; q.asset = base.asset + net; const rp = K(pl.repay); q.lt = Math.max(0, base.lt - rp); q.asset -= Math.min(rp, base.lt);
+    return q;
+  }
+  /** 月次の 着地見込：今期の 実績（ytd … fasPick(表, 12) ＝ 年に 直さない 期首からの 累計・mon か月分）＋ 残りの 月の 計画。BS は 直近の 実態 ＋ 着地の 純利益 */
+  function fasLanding(base, plan, ytdRaw, mon) {
+    mon = Math.max(1, Math.min(12, Number(mon) || 12)); const r = (12 - mon) / 12, keys = ['sales', 'cogs', 'gp', 'sga', 'op', 'noi', 'noe', 'dep', 'labor', 'persSga', 'execPay'];
+    const q = Object.assign({}, base); keys.forEach(function (k) { q[k] = (ytdRaw[k] || 0) + plan[k] * r; });
+    q.ord = q.op + q.noi - q.noe + (base.ordKeep || 0); q.tax = Math.max(0, q.ord) * plan.rate; q.pre = q.ord; q.net = q.ord - q.tax;
+    q.eq = base.eq + q.net; q.asset = base.asset + q.net; q.st = ytdRaw.st; q.lt = ytdRaw.lt; q.cash = ytdRaw.cash; q.liqCash = ytdRaw.liqCash; q.recv = ytdRaw.recv; q.inv = ytdRaw.inv; q.pay = ytdRaw.pay;
+    return q;
+  }
+  /** 5ヶ年：今期の 計画から 売上成長率・賃上げ率・年間返済で 1〜5年目。利益は 自己資本に 積む */
+  function fasFive(plan, five) {
+    five = five || {}; const out = [], g = (Number(five.growth) || 0) / 100, w = (Number(five.wage) || 0) / 100, rp = (Number(five.repay) || 0) * 1000;
+    let p = plan;
+    for (let i = 1; i <= 5; i++) {
+      const sales = p.sales * (1 + g), gpR = p.sales ? p.gp / p.sales : 0, gp = sales * gpR, persSga = p.persSga * (1 + w), sga = p.sga + (persSga - p.persSga);
+      const op = gp - sga, ord = op + p.noi - p.noe + (p.ordKeep || 0), tax = Math.max(0, ord) * p.rate, net = ord - tax;
+      const pay = Math.min(rp, p.st + p.lt), lt = Math.max(0, p.lt - pay);
+      const q = Object.assign({}, p, { sales: sales, gp: gp, cogs: sales - gp, persSga: persSga, sga: sga, op: op, ord: ord, tax: tax, pre: ord, net: net, eq: p.eq + net, asset: p.asset + net - pay, lt: lt });
+      out.push(q); p = q;
+    }
+    return out;
+  }
+  /* 格付ランク別の 財務改善 重要実施事項（C は F+prus の レポートの とおり。ほかは 同じ 考え方で 事務所が 作った もの） */
+  const FAS_ACTS = {
+    SA: [['高', '当座貸越の 枠を 所要運転資金の 120% 以上に 保ちましょう'], ['高', '無担保・無保証の 条件で 借り換えを 相談しましょう'], ['高', '金利の 引き下げ・固定金利への 切り替えを 交渉しましょう'], ['中', '決算レポートを 金融機関に 提出しましょう'], ['中', '設備投資は 補助金・優遇税制と 合わせて 検討しましょう'], ['中', '事業承継（自社株評価・承継計画）を 早めに 進めましょう']],
+    B: [['最重要', '手形貸付では なく 当座貸越の 設定を 目指しましょう（所要運転資金の 120%）'], ['最重要', 'すべて プロパー融資に 切り替えましょう'], ['高', 'A ランクに なるため 自己資本比率 15%・30% を 目指す 計画を 作りましょう'], ['高', '無保証人・無担保の 融資を 進めましょう'], ['高', '決算レポートを 金融機関に 提出しましょう'], ['高', '資金繰り表で 3か月先までの 資金計画を 立てましょう']],
+    C: [['最重要', 'すべて プロパー融資に 切り替えましょう'], ['最重要', '短期借入額（枠）が 所要運転資金の 120% より 少ない 場合は 短期借入金の 融資を 進めましょう'], ['最重要', 'キャッシュフローの 1.5倍 以上の 返済が ある 場合は 借り換えを 進め、返済負担を 減らしましょう'], ['最重要', '所要運転資金の 120% 程度の 当座貸越の 設定を 目指しましょう（既に 120% か 確認）'],
+      ['高', 'B ランクに なるために 債務償還年数や 自己資本比率を 向上する 計画の 作成を 進めましょう'], ['高', 'B ランクに なるために 早期経営改善計画（補助金）を 活用した 事業計画の 作成を 検討しましょう'], ['高', '資金繰り表を 作成し、早め早めの 資金計画を 立てましょう'], ['高', '無保証人を 目指した 融資を 進めましょう'], ['高', '無担保借入を 目指した 融資を 進めましょう'], ['高', '決算レポートを 金融機関に 提出しましょう'], ['高', 'CRD スコアリングモデル（McSS）で 会社の 強みを 確認しましょう'], ['高', '設備投資に 対応する 補助金・優遇税制を 検討しましょう']],
+    D: [['最重要', '保証協会付き 融資を 中心に 必要な 資金を 確保しましょう'], ['最重要', 'キャッシュフローの 1.5倍 以上の 返済が あれば 借り換え・返済条件の 見直しを 相談しましょう'], ['最重要', '早期経営改善計画（補助金）で 正常先に 戻る 計画を 作りましょう'], ['高', '債務超過・資本欠損なら 解消の 計画（今期・3年・5年・10年）を 作りましょう'], ['高', '資金繰り表を 作り、早め早めの 資金計画を 立てましょう'], ['高', '不良在庫・回収できない 売掛金を 整理しましょう'], ['高', '役員報酬・経費を 見直し キャッシュフローを 増やしましょう'], ['高', '毎月 予算と 実績を くらべ、金融機関に 報告しましょう']],
+    E: [['最重要', '事業再生計画（実抜計画）を 作りましょう'], ['最重要', 'バンクミーティングを 開き、返済条件の 変更（リスケ）を 相談しましょう'], ['高', '経営改善支援センターの 利用を 検討しましょう'], ['高', '資金繰り表を 週単位で 管理しましょう'], ['高', '不採算部門の 整理・事業の 選択と 集中を 検討しましょう']] };
+  function fasActsOf(g) { return /^[SA]$/.test(g) ? FAS_ACTS.SA : g === 'B' ? FAS_ACTS.B : g === 'C' ? FAS_ACTS.C : /^D/.test(g) ? FAS_ACTS.D : FAS_ACTS.E; }
+  /* 職員用の 面談メモ（顧問先・金融機関には 出さない） */
+  const FAS_TALK = {
+    SA: '社長、今回の FAS 実態格付は {g} ランク（{n}）です。金融機関から 見て 安心して 貸せる 会社です。この 水準を 守りながら、金利・保証・担保の 条件を 良くしていく 段階です。',
+    B: '社長、今回の FAS 実態格付は B ランク（良好先）です。当座貸越や プロパー融資が 組める 水準です。次は 自己資本比率を 上げて A を 目指しましょう。',
+    C: '社長、今回の FAS 実態格付は C ランク（正常先）です。問題は ありませんが、B に 上がると 当座貸越や 保証なしの 融資が 見えてきます。いちばん 効くのは {focus} です。',
+    D: '社長、今回の FAS 実態格付は {g}（要注意先）です。金融機関は 保証協会付きでないと 貸しにくい 状態と 見ています。まず {focus} を 直して 正常先（C）に 戻る 計画を 一緒に 作りましょう。',
+    E: '社長、今回の FAS 実態格付は {g}（{n}）です。このままでは 新しい 融資は 難しい 状態です。返済条件の 見直しと 事業再生の 計画を、すぐに 一緒に 考えましょう。' };
+  const FAS_ASK = [['売上', '売上の 増減の 要因は？', ['新規取引先の 獲得', '既存取引先との 取引拡大', '受注数量の 増加', '販売単価の 引き上げ', '主要取引先の 減少', '受注数量の 減少']],
+    ['粗利', '粗利率が 変わった 要因は？', ['販売単価の 改善', '製品別 採算の 改善', '材料費の 高騰', '外注費の 増加', '価格転嫁が できていない', '歩留まり・生産性の 改善']],
+    ['経費', '経費の 増減の 要因は？', ['賃上げ', '人員の 増加', '設備投資・減価償却', '広告宣伝', '一過性の 費用', '経費の 見直し']],
+    ['今期', '今期 力を 入れることは？', ['価格転嫁', '原価の 抑制', '新規開拓', '設備更新・省力化', '人材の 採用・育成', '借入の 見直し']]];
+  const FAS_VIEW = [[/製造/, '鋼材・材料費率・外注加工費率・労務費の 比率と 設備の 回転。価格転嫁が できているか'], [/建設/, '完成工事総利益率・外注費率・未成工事支出金の 中身・受注残'], [/卸売/, '粗利率と 在庫回転・売掛金の 回収サイト・主要仕入先への 依存'],
+    [/小売/, '粗利率と 在庫回転・人件費率・店舗ごとの 採算'], [/飲食|サービス/, '人件費率（FL 比率）・客数 × 客単価・固定費'], [/不動産/, '稼働率・借入の 期間と 物件の 収益・返済 比率'], [/運輸/, '燃料費・車両の 稼働と 更新・人件費率'], [/情報通信/, '人件費率・受注の 継続性・外注の 比率']];
+  function fasView(ind) { const v = FAS_VIEW.filter(function (q) { return q[0].test(ind || ''); })[0]; return v ? v[1] : '売上総利益率・人件費率・在庫と 売掛金の 回転'; }
+  /** 業界中央値と くらべる 指標（業種の 表が ある ときだけ）。[名前, 値, 中央値, 単位, 高いほど 良いか] */
+  function fasMedRows(p, ind) {
+    const md = FAS_MED[ind]; if (!md) return [];
+    const S = p.sales, A = p.asset, P = function (a, b) { return b ? a / b * 100 : null; }, debt = p.st + p.lt;
+    return [['売上高総利益率', P(p.gp, S), md.gp, '%', 1], ['売上高営業利益率', P(p.op, S), md.opR, '%', 1], ['売上高経常利益率', P(p.ord, S), md.ordR, '%', 1], ['売上高販管費率', P(p.sga, S), md.sgaR, '%', 0],
+      ['総資本経常利益率', P(p.ord, A), md.roaOrd, '%', 1], ['自己資本当期純利益率', p.eq > 0 ? P(p.net, p.eq) : null, md.roe, '%', 1], ['総資本回転率', A ? S / A : null, md.turn, '回', 1],
+      ['売上債権回転日数', S ? p.recv / S * 365 : null, md.arDays, '日', 0], ['棚卸資産回転日数', S ? p.inv / S * 365 : null, md.invDays, '日', 0], ['買入債務回転日数', S ? p.pay / S * 365 : null, md.apDays, '日', 0],
+      ['流動比率', P(p.curA, p.curL), md.cur, '%', 1], ['当座比率', P(p.cash + p.recv, p.curL), md.quick, '%', 1], ['自己資本比率', P(p.eq, A), md.eq, '%', 1],
+      ['固定長期適合率', P(p.fixA, p.eq + p.fixL), md.fixLong, '%', 0], ['固定比率', p.eq > 0 ? P(p.fixA, p.eq) : null, md.fixR, '%', 0], ['借入依存度', P(debt, A), md.debtDep, '%', 0],
+      ['借入金月商倍率', S ? debt / (S / 12) : null, md.debtM, '倍', 0], ['現預金比率', P(p.cash, S), md.cashSales, '%', 1]];
+  }
+  /** 報告書の 文（現状の 総括・今後 取り組むこと）。F+prus の 書きぶりに 合わせる */
+  function fasSummary(g, m, judges) {
+    const r = FAS_RANK[g] || {}, bad = judges.filter(function (j) { return j.c === 'ng' || j.c === 'mid'; });
+    const now = /^[SAB]$/.test(g) ? '本決算の 財務内容を 自己分析（財務格付診断）したところ、良好先 以上の 上位に 位置すると 判断しております。引き続き、現状の 財務水準の 維持・向上に 努めてまいります。'
+      : g === 'C' ? '本決算の 財務内容を 自己分析（財務格付診断）したところ、正常先に 位置すると 判断しております。良好先（B）への ランクアップに 向けて、財務内容の 改善に 取り組んでまいります。'
+      : /^D/.test(g) ? '本決算の 財務内容を 自己分析（財務格付診断）したところ、要注意先（' + g + '）に 位置すると 判断しております。早期に 正常先へ 戻るための 改善計画を 策定し、実行してまいります。'
+      : '本決算の 財務内容を 自己分析（財務格付診断）したところ、' + (r.n || '') + 'に 位置すると 判断しております。金融機関と 協議のうえ、事業再生に 向けた 計画を 策定してまいります。';
+    const todo = [];
+    if (m.years == null || m.years >= 7) todo.push('債務償還年数を 7年未満に するため、経常利益（簡易キャッシュフロー）を 増やす 計画を 立てましょう。');
+    else todo.push('債務償還年数は ' + (m.years < 5 ? '5年未満' : '7年未満') + 'です。自己資本比率・手元流動性も 併せて 確認し、必要な 資金枠と 調達条件を 検討しましょう。');
+    if (m.eqR < 15) todo.push('自己資本比率 15% を 目指し、税引後利益の 蓄積と 資産（在庫・不良資産）の 圧縮に 取り組みましょう。');
+    if (m.stCover != null && m.stCover < 100) todo.push('所要運転資金は 短期継続融資（当座貸越）で 賄い、資金繰りを 安定させましょう。');
+    if (m.cfRepay != null && m.cfRepay >= 150) todo.push('年間返済額が 簡易キャッシュフローを 大きく 上回っています。借り換えで 返済負担を 減らしましょう。');
+    todo.push('売上総利益率と 材料費率・外注費率を 確認し、必要な 利益額と 経費の 予算を 検討しましょう。');
+    return { now: now, todo: todo, bad: bad.map(function (j) { return j.name; }) };
+  }
+  /*FAS_END*/
+  /* ===== FASコンサルティングの 画面（③）。入力は 1回 組み立て、数字が 変わったら fasPaint で 結果だけ 描き直す（打っている 欄が 飛ばない） ===== */
+  const FAS = { code: '', inp: null, d: null, raw: null, rawPrev: null, at: '', by: '' };
+  const FAS_INP0 = function () { return { ind: '', officerStd: false, officerN: 1, officerLoanEq: false, adj: [], loans: [], simYears: 7, overdraft: false,
+    plan: { mode: 'A', growth: 0, gp: 0, mat: 0, outs: 0, oth: 0, labor: 0, sgaP: 0, exec: 0, sgaO: 0, nonOp: 0, repay: 0 }, five: { growth: 0, wage: 0, repay: 0 }, acts: {}, qa: {}, memo: '', note: '' }; };
+  const fasK = function (v) { return v == null || isNaN(v) ? '—' : Math.round(v / 1000).toLocaleString('ja-JP'); };
+  const fasPct = function (v) { return v == null || isNaN(v) ? '—' : (Math.round(v * 10) / 10).toLocaleString('ja-JP') + '%'; };
+  const fasYrs = function (m) { return m.years == null ? 'CFマイナス' : (Math.round(m.years * 10) / 10) + '年'; };
+  function fasYmAdd(ym, k) { const d = new Date(Number(ym.slice(0, 4)), Number(ym.slice(5)) - 1 + k, 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); }
+  function fasMon(fy, ym) { return Math.max(1, Math.min(12, (Number(ym.slice(0, 4)) - Number(fy.slice(0, 4))) * 12 + Number(ym.slice(5)) - Number(fy.slice(5)) + 1)); }
+  /** 推移（前年の 期首から）から その 月の 表を 組む。無ければ null */
+  function fasSheetAt(d, m) {
+    const rows = (d && d.trend && d.trend.rows) || {}, sh = { bs: [], pl: [], mfg: [] }; let any = false;
+    Object.keys(rows).forEach(function (k) { const r = rows[k]; if (!sh[r.sheet]) return; const v = r.cum ? r.cum[m] : undefined; if (v != null) any = true; sh[r.sheet].push({ code: r.code, name: r.name, t: r.t, cur: Number(v) || 0 }); });
+    return any ? sh : null;
+  }
+  function fasLoad() {
+    const w = $('rtCalc'), code = S.code; if (!w || !code) return; w.textContent = ''; FAS.code = code; FAS.d = null; FAS.raw = null; FAS.rawPrev = null; FAS.inp = FAS_INP0();
+    const bar = el('div', 'hobar'), ym = el('input'); ym.type = 'month'; ym.id = 'rtYm'; ym.value = (S.per && /^\d{4}-\d{2}$/.test(S.per)) ? S.per : (function () { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); })();
+    const go = el('button', 'btn sm', '🏦 試算表から FAS格付を 出す'); go.type = 'button'; go.id = 'rtGo';
+    bar.appendChild(el('span', 'note', '決算の 月（または 直近の 月）の 試算表で')); bar.appendChild(ym); bar.appendChild(go); w.appendChild(bar);
+    const box = el('div'); box.id = 'fasBox'; w.appendChild(box);
+    const pt = el('details', 'kysub'); pt.appendChild(el('summary', null, '金融機関の 点数式（12指標・目安）')); const out = el('div'); out.id = 'rtOut'; pt.appendChild(out); w.appendChild(pt);
+    gs('fasGet', code).then(function (r) { if (code !== S.code || !r) return; if (r.inp) { FAS.inp = Object.assign(FAS_INP0(), r.inp); FAS.inp.plan = Object.assign(FAS_INP0().plan, r.inp.plan || {}); FAS.inp.five = Object.assign(FAS_INP0().five, r.inp.five || {}); } FAS.at = r.at || ''; FAS.by = r.by || ''; if (FAS.d) fasDraw(); }, function () {});
+    go.addEventListener('click', function () {
+      go.disabled = true; go.classList.add('busy'); box.textContent = '試算表を 読んでいます…';
+      gs('tbGet', code, ym.value, {}).then(function (d) {
+        go.disabled = false; go.classList.remove('busy'); if (code !== S.code) return;
+        FAS.d = d; const fy = d.fyStart || ym.value; FAS.raw = fasPick(d.sheets, fasMon(fy, d.ym));
+        const pm = fasYmAdd(d.ym, -12), sp = fasSheetAt(d, pm); FAS.rawPrev = sp ? fasPick(sp, fasMon(fasYmAdd(fy, -12), pm)) : null; FAS.prevYm = pm;
+        fasDraw(); rtDraw(rtCalc(d));
+      }, function (e) { go.disabled = false; go.classList.remove('busy'); box.textContent = '読めませんでした。' + e.message; });
+    });
+  }
+  /* 入力の 部品 */
+  function fasNum(obj, key, lab, unit, w) { const s = el('label', 'fasf'); s.appendChild(el('span', null, lab)); const i = el('input'); i.type = 'number'; i.step = 'any'; i.value = obj[key] == null ? '' : obj[key]; i.style.width = (w || 6) + 'em'; i.addEventListener('input', function () { obj[key] = i.value === '' ? 0 : Number(i.value); fasPaint(); }); s.appendChild(i); if (unit) s.appendChild(el('small', null, unit)); return s; }
+  function fasSel(obj, key, opts, lab) { const s = el('label', 'fasf'); if (lab) s.appendChild(el('span', null, lab)); const v = el('select'); opts.forEach(function (o) { const op = el('option', null, o[1] == null ? o : o[1]); op.value = o[0] == null ? o : o[0]; v.appendChild(op); }); v.value = obj[key] || ''; v.addEventListener('change', function () { obj[key] = v.value; fasPaint(); }); s.appendChild(v); return s; }
+  function fasChk(obj, key, lab) { const s = el('label', 'fasf'); const c = el('input'); c.type = 'checkbox'; c.checked = !!obj[key]; c.addEventListener('change', function () { obj[key] = c.checked; fasPaint(); }); s.appendChild(c); s.appendChild(el('span', null, lab)); return s; }
+  function fasTxt(obj, key, ph, w) { const i = el('input'); i.value = obj[key] || ''; i.placeholder = ph || ''; i.style.width = (w || 10) + 'em'; i.addEventListener('input', function () { obj[key] = i.value; fasPaint(); }); return i; }
+  function fasSec(id, title, open) { const d = el('details', 'rbox fasb'); d.id = id; d.open = !!open; d.appendChild(el('summary', null, title)); return d; }
+  /** 計算を ぜんぶ やる（画面・帳票・顧問先へ 出すもの 共通） */
+  function fasAll() {
+    const I = FAS.inp, rawP = FAS.raw; if (!rawP) return null;
+    const repay = (I.loans || []).reduce(function (a, x) { return a + (Number(x.yr) || 0); }, 0) * 1000;
+    const book = fasMetrics(rawP, repay), p = fasAdjust(rawP, I), m = fasMetrics(p, repay);
+    let pp = null, mp = null; if (FAS.rawPrev && FAS.rawPrev.asset) { pp = fasAdjust(FAS.rawPrev, { officerStd: I.officerStd, officerN: I.officerN, officerLoanEq: I.officerLoanEq }); mp = fasMetrics(pp, repay); }
+    const judges = FAS_KEYS.map(function (k) { const j = fasJudge(k[0], m, I.ind); return { k: k[0], name: k[1], f: k[2], v: fasVal(k[0], m), vb: fasVal(k[0], book), vp: mp ? fasVal(k[0], mp) : '—', t: j.t, c: j.c, ideal: fasIdeal(k[0], p, m, I.ind) }; });
+    const plan = fasPlan(p, I.plan), mPlan = fasMetrics(plan, repay), five = fasFive(plan, I.five).map(function (q) { return { q: q, m: fasMetrics(q, repay) }; });
+    const sim = fasLoanSim(I.loans, m, I.simYears);
+    let land = null; if (FAS.land) { const lq = fasLanding(p, plan, FAS.land.raw, FAS.land.mon); land = { q: lq, m: fasMetrics(lq, repay), mon: FAS.land.mon, ym: FAS.land.ym }; }
+    return { I: I, raw: rawP, book: book, p: p, m: m, pp: pp, mp: mp, judges: judges, plan: plan, mPlan: mPlan, five: five, sim: sim, land: land, sum: fasSummary(m.grade, m, judges), ym: FAS.d.ym, prevYm: FAS.prevYm };
+  }
+  function fasDraw() {
+    const box = $('fasBox'); if (!box || !FAS.raw) return; box.textContent = ''; const I = FAS.inp;
+    const res = el('div'); res.id = 'fasRes'; box.appendChild(res);
+    /* 設定 */
+    const st = fasSec('fasSet', '⚙ 設定（業種・役員報酬・役員借入金）');
+    const r1 = el('div', 'hobar'); r1.appendChild(fasSel(I, 'ind', [['', '（業種を 選ぶ）']].concat(FAS_INDS.map(function (x) { return [x, x]; })), '業種'));
+    r1.appendChild(fasChk(I, 'officerStd', '役員報酬 600万円 基準で 経常利益を 補正する')); r1.appendChild(fasNum(I, 'officerN', '役員', '名', 3)); r1.appendChild(fasChk(I, 'officerLoanEq', '役員借入金を 自己資本と みなす')); r1.appendChild(fasChk(I, 'overdraft', '当座貸越の 枠が ある'));
+    st.appendChild(r1); st.appendChild(el('p', 'note', '業界中央値は いまは「その他の製造業」だけ（ほかの 業種は 在庫回転期間だけ）。役員報酬の 補正は 多くの 金融機関の 見方（600万円／1名を 上回る 分を 経常利益に 足す・下回れば 引く）。')); box.appendChild(st);
+    /* 実態補正 */
+    const ad = fasSec('fasAdjBox', '✏ 実態補正（簿価 → 実態）'); ad.appendChild(el('p', 'note', '金融機関は 簿価を そのまま 見ず、回収できない 売掛金・不良在庫・含み損を 減らした「実態」で 見ます。金額は 千円（資産を 減らすときは マイナス）。根拠は 必ず 書く（金融機関に 説明する ため）。'));
+    const al = el('div'); al.id = 'fasAdjList'; ad.appendChild(al);
+    const drawAdj = function () {
+      al.textContent = ''; (I.adj || []).forEach(function (a, i) {
+        const r = el('div', 'hobar fasrow'); r.appendChild(fasSel(a, 'k', [['bs', '資産を 補正（BS）'], ['pl', '一過性の 損益（PL）']])); r.appendChild(fasTxt(a, 'name', '科目（例：売掛金）', 8)); r.appendChild(fasNum(a, 'amt', '', '千円', 7));
+        if (a.k !== 'pl') r.appendChild(fasChk(a, 'pl', '損益にも 出す（在庫の 評価損 など）'));
+        r.appendChild(fasTxt(a, 'why', '根拠（例：実質破綻先のため）', 16));
+        const x = el('button', 'btn ghost sm', '✕'); x.type = 'button'; x.addEventListener('click', function () { I.adj.splice(i, 1); drawAdj(); fasPaint(); }); r.appendChild(x); al.appendChild(r);
+      });
+    };
+    drawAdj(); const aa = el('button', 'btn ghost sm', '＋ 補正を 足す'); aa.type = 'button'; aa.id = 'fasAdjAdd'; aa.addEventListener('click', function () { I.adj.push({ k: 'bs', name: '', amt: 0, why: '' }); drawAdj(); }); ad.appendChild(aa);
+    const nt = el('textarea'); nt.rows = 2; nt.placeholder = '特記事項（実態補正の 根拠・金融機関へ 伝えること）'; nt.value = I.note || ''; nt.style.width = '100%'; nt.addEventListener('input', function () { I.note = nt.value; }); ad.appendChild(nt); box.appendChild(ad);
+    /* 借入金一覧 */
+    const lb = fasSec('fasLoanBox', '🏦 借入金一覧と 資金繰り改善シミュレーション'); const ll = el('div'); ll.id = 'fasLoanList'; lb.appendChild(ll);
+    const FORMS = ['証書貸付', '手形貸付', '当座貸越', '私募債', 'その他'], GUAR = ['保証協会', 'プロパー', '制度融資', 'その他'];
+    const drawLoans = function () {
+      ll.textContent = ''; (I.loans || []).forEach(function (a, i) {
+        const r = el('div', 'hobar fasrow'); r.appendChild(fasTxt(a, 'name', '借入先（例：A銀行）', 8)); r.appendChild(fasSel(a, 'form', FORMS.map(function (x) { return [x, x]; }))); r.appendChild(fasNum(a, 'bal', '残高', '千円', 7)); r.appendChild(fasSel(a, 'guar', GUAR.map(function (x) { return [x, x]; })));
+        r.appendChild(fasNum(a, 'yr', '年返済', '千円', 6)); r.appendChild(fasNum(a, 'rate', '利率', '%', 4)); r.appendChild(fasSel(a, 'term', [['長期', '長期'], ['短期', '短期']]));
+        const x = el('button', 'btn ghost sm', '✕'); x.type = 'button'; x.addEventListener('click', function () { I.loans.splice(i, 1); drawLoans(); fasPaint(); }); r.appendChild(x); ll.appendChild(r);
+      });
+    };
+    drawLoans();
+    const lr = el('div', 'hobar'); const la = el('button', 'btn ghost sm', '＋ 借入を 足す'); la.type = 'button'; la.addEventListener('click', function () { I.loans.push({ name: '', form: '証書貸付', bal: 0, guar: 'プロパー', yr: 0, rate: 0, term: '長期' }); drawLoans(); });
+    const lf = el('button', 'btn ghost sm', '試算表の 借入金を 並べる'); lf.type = 'button'; lf.id = 'fasLoanFill'; lf.addEventListener('click', function () {
+      const bs = (FAS.d.sheets.bs || []).filter(function (x) { return !x.t && /借入金|社債/.test(x.name || '') && !/役員|代表者|関係会社|従業員/.test(x.name || '') && Number(x.cur); });
+      bs.forEach(function (x) { const st0 = /短期|手形/.test(x.name); I.loans.push({ name: x.name, form: st0 ? '手形貸付' : '証書貸付', bal: Math.round(Number(x.cur) / 1000), guar: 'プロパー', yr: st0 ? Math.round(Number(x.cur) / 1000) : 0, rate: 0, term: st0 ? '短期' : '長期' }); });
+      drawLoans(); fasPaint(); });
+    lr.appendChild(la); lr.appendChild(lf); lr.appendChild(fasNum(I, 'simYears', '理想の 借入期間', '年', 4)); lb.appendChild(lr);
+    const ls = el('div'); ls.id = 'fasSim'; lb.appendChild(ls); box.appendChild(lb);
+    /* 計画到達 */
+    const pb = fasSec('fasPlanBox', '🎯 計画到達の 格付（今期の 予算を 達成したら）'); const P = I.plan;
+    const p1 = el('div', 'hobar'); p1.appendChild(fasSel(P, 'mode', [['A', '方式A：粗利率で 一括'], ['B', '方式B：原価 項目別']], '原価の 見方')); p1.appendChild(fasNum(P, 'growth', '売上成長率', '%', 4)); pb.appendChild(p1);
+    const pa = el('div', 'hobar'); pa.id = 'fasPlanA'; pa.appendChild(fasNum(P, 'gp', '粗利率を', 'pt 上げる', 4)); pb.appendChild(pa);
+    const pB = el('div', 'hobar'); pB.id = 'fasPlanB'; pB.appendChild(fasNum(P, 'mat', '材料費率', 'pt', 4)); pB.appendChild(fasNum(P, 'outs', '外注費率', 'pt', 4)); pB.appendChild(fasNum(P, 'oth', 'その他原価率', 'pt', 4)); pB.appendChild(fasNum(P, 'labor', '労務費', '千円 増減', 6)); pb.appendChild(pB);
+    const p2 = el('div', 'hobar'); p2.appendChild(fasNum(P, 'sgaP', '販管費の 人件費', '千円 増減', 6)); p2.appendChild(fasNum(P, 'exec', '役員報酬', '千円 増減', 6)); p2.appendChild(fasNum(P, 'sgaO', 'その他 販管費', '千円 増減', 6)); p2.appendChild(fasNum(P, 'nonOp', '営業外', '千円 増減', 6)); p2.appendChild(fasNum(P, 'repay', '今期の 返済', '千円', 6)); pb.appendChild(p2);
+    pb.appendChild(el('p', 'note', '賃上げは 先に 決めるもの。原資は 価格転嫁と 原価率で 作る（原価は 比率で、人件費は 金額で）。両方式を 同時に 動かさない。'));
+    const pr = el('div'); pr.id = 'fasPlanRes'; pb.appendChild(pr); box.appendChild(pb);
+    /* 月次の 着地見込 */
+    const lnb = fasSec('fasLandBox', '📅 月次の 着地見込の 格付（今期の 実績 ＋ 残りの 予算）'); const lbar = el('div', 'hobar'), lym = el('input'); lym.type = 'month'; lym.id = 'fasLandYm'; lym.value = (function () { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); })();
+    const lgo = el('button', 'btn ghost sm', '📅 この 月までの 実績で 着地を 出す'); lgo.type = 'button'; lgo.id = 'fasLandGo'; lgo.addEventListener('click', function () {
+      lgo.disabled = true; const code = S.code; gs('tbGet', code, lym.value, {}).then(function (d2) { lgo.disabled = false; if (code !== S.code) return; const mon = fasMon(d2.fyStart || lym.value, d2.ym); FAS.land = { raw: fasPick(d2.sheets, 12), mon: mon, ym: d2.ym }; fasPaint(); }, function (e) { lgo.disabled = false; fasMsg(e.message, true); }); });
+    lbar.appendChild(el('span', 'note', '今期の')); lbar.appendChild(lym); lbar.appendChild(lgo); lnb.appendChild(lbar); const lres = el('div'); lres.id = 'fasLandRes'; lnb.appendChild(lres); box.appendChild(lnb);
+    /* 5ヶ年 */
+    const fb = fasSec('fasFiveBox', '📈 5ヶ年計画（自己資本・償還年数・格付の 推移）'); const f1 = el('div', 'hobar'); f1.appendChild(fasNum(I.five, 'growth', '売上成長率（毎年）', '%', 4)); f1.appendChild(fasNum(I.five, 'wage', '賃上げ率（毎年）', '%', 4)); f1.appendChild(fasNum(I.five, 'repay', '年間返済', '千円', 6)); fb.appendChild(f1);
+    const fr = el('div'); fr.id = 'fasFiveRes'; fb.appendChild(fr); box.appendChild(fb);
+    /* 面談メモ */
+    const tb = fasSec('fasTalkBox', '🗣 職員用の 面談メモ（顧問先・金融機関には 出しません）'); const tr0 = el('div'); tr0.id = 'fasTalk'; tb.appendChild(tr0);
+    FAS_ASK.forEach(function (q) { const d = el('div', 'fasask'); d.appendChild(el('b', null, '☐ ' + q[1])); const sel = I.qa[q[0]] = I.qa[q[0]] || []; q[2].forEach(function (c) { const lab = el('label', 'fasf'), cb = el('input'); cb.type = 'checkbox'; cb.checked = sel.indexOf(c) >= 0; cb.addEventListener('change', function () { const i = sel.indexOf(c); if (cb.checked && i < 0) sel.push(c); if (!cb.checked && i >= 0) sel.splice(i, 1); }); lab.appendChild(cb); lab.appendChild(el('span', null, c)); d.appendChild(lab); }); tb.appendChild(d); });
+    const mm = el('textarea'); mm.rows = 3; mm.id = 'fasMemo'; mm.placeholder = '面談の メモ（社長の 言葉・施策）'; mm.value = I.memo || ''; mm.style.width = '100%'; mm.addEventListener('input', function () { I.memo = mm.value; }); tb.appendChild(mm); box.appendChild(tb);
+    /* ボタン */
+    const bb = el('div', 'hobar');
+    [['💾 入力を 保存', 'fasSave', function () { fasSave(false); }], ['🏦 顧問先の 画面に 出す', 'fasPub', function () { fasSave(true); }], ['🖨 企業財務診断報告書', 'fasPr1', function () { fasPrint('diag'); }], ['🖨 決算報告書 兼 経営計画書', 'fasPr2', function () { fasPrint('plan'); }], ['🖨 面談メモ（職員用）', 'fasPr3', function () { fasPrint('memo'); }], ['↓ 下の 格付けの マスへ 写す', 'fasCopy', fasCopy]].forEach(function (q, i) { const b = el('button', i === 1 ? 'btn sm' : 'btn ghost sm', q[0]); b.type = 'button'; b.id = q[1]; b.addEventListener('click', q[2]); bb.appendChild(b); });
+    const msg = el('span', 'pagemsg'); msg.id = 'fasMsg'; bb.appendChild(msg); box.appendChild(bb);
+    if (FAS.at) box.appendChild(el('p', 'note', '前に 保存した 入力：' + FAS.at.slice(0, 16) + (FAS.by ? '・' + FAS.by : '')));
+    fasPaint();
+  }
+  function fasMsg(t, err) { const m = $('fasMsg'); if (m) { m.textContent = t || ''; m.className = 'pagemsg' + (err ? ' err' : ''); } }
+  function fasTable(head, rows, cls) { const t = el('table', 'hot ' + (cls || '')); const h = el('tr'); head.forEach(function (x) { h.appendChild(el('th', null, x)); }); t.appendChild(h); rows.forEach(function (r) { const tr = el('tr', r.cls || ''); (r.c || r).forEach(function (x, i) { tr.appendChild(el('td', i > 0 && /^[-−▲\d,.%年か月日倍回—]+|CF|計算/.test(String(x)) ? 'n' : null, x)); }); t.appendChild(tr); }); return t; }
+  function fasPaint(soft) {
+    const A = fasAll(), res = $('fasRes'); if (!A || !res) return; if (soft) return;
+    const I = A.I, m = A.m, rk = FAS_RANK[m.grade] || {}; res.textContent = '';
+    if ($('fasPlanA')) { $('fasPlanA').hidden = I.plan.mode === 'B'; $('fasPlanB').hidden = I.plan.mode !== 'B'; }
+    /* 1. 格付 */
+    const big = el('div', 'hobig ' + (rk.k === '正常先' ? 'ok' : 'ng')); big.id = 'fasBig';
+    big.appendChild(el('div', null, 'FAS格付（実態）' + m.grade + '　' + rk.n + '（' + rk.k + '）'));
+    big.appendChild(el('div', 'fassub', '簿価 ' + A.book.grade + (A.mp ? '　／　前期 ' + A.mp.grade + ' → 直近 ' + m.grade : '') + '　／　計画どおりなら ' + A.mPlan.grade + (A.land ? '　／　着地見込 ' + A.land.m.grade : '')));
+    res.appendChild(big);
+    const pos = el('div', 'faspos'); FAS_ORDER.forEach(function (g) { const c = el('span', g === m.grade ? 'on' : (g === A.mPlan.grade ? 'plan' : ''), g); c.title = FAS_RANK[g].n; pos.appendChild(c); }); res.appendChild(pos);
+    res.appendChild(el('p', 'note', rk.d + '。資金調達の 方向性：' + rk.f + '。自己資本比率 ' + fasPct(m.eqR) + '（' + FAS_ROWS[m.row][0] + '）× 債務償還年数 ' + fasYrs(m) + '（' + FAS_COLS[m.col] + '）。'));
+    const mt = el('table', 'hot fasmx'); const h = el('tr'); h.appendChild(el('th', null, '自己資本比率 ＼ 償還年数')); FAS_COLS.forEach(function (c) { h.appendChild(el('th', null, c)); }); mt.appendChild(h);
+    FAS_ROWS.forEach(function (r, i) { const tr = el('tr'); tr.appendChild(el('th', null, r[0])); r[1].forEach(function (g, j) { const td = el('td', (i === m.row && j === m.col ? 'on' : '') + (i === A.book.row && j === A.book.col ? ' bk' : ''), g); tr.appendChild(td); }); mt.appendChild(tr); });
+    const md = el('details'); md.appendChild(el('summary', null, 'FAS 基準の 格付表（■ 実態・□ 簿価）')); md.appendChild(mt); res.appendChild(md);
+    /* 2. 5FOCUS と 8指標 */
+    res.appendChild(el('h4', null, '5FOCUS と 重要指標'));
+    res.appendChild(fasTable(['指標', '前期（実態）', '直近（簿価）', '直近（実態）', '判定', '理想', 'あと'], A.judges.map(function (j) { return { cls: 'fj ' + j.c, c: [j.name, j.vp, j.vb, j.v, j.t, j.ideal ? j.ideal.lab + ' ' + fasK(j.ideal.want) + '千円' : '—', j.ideal ? fasK(j.ideal.want - j.ideal.now) + '千円' : '—'] }; }), 'fast'));
+    res.appendChild(el('p', 'note', '所要運転資金 ' + fasK(m.wc) + '千円（売上債権 ＋ 棚卸資産 − 仕入債務）／有利子負債 ' + fasK(m.debt) + '千円／要償還債務 ' + fasK(m.yosho) + '千円／簡易CF ' + fasK(m.cf) + '千円（経常利益 ＋ 減価償却費 − 法人税等）。損益は ' + A.raw.mon + 'か月分を 年に 直しています。'));
+    if (A.p.adjRows.length) res.appendChild(fasTable(['補正', '科目', '金額（千円）', '根拠'], A.p.adjRows.map(function (a) { return [a.k, a.name, fasK(a.v), a.why]; })));
+    /* 3. 重要実施事項 */
+    const acts = fasActsOf(m.grade), ad = el('details'); ad.open = true; ad.appendChild(el('summary', null, '財務改善の 重要実施事項（' + m.grade + ' ランク）'));
+    acts.forEach(function (q) { const lab = el('label', 'fasact'), c = el('input'); c.type = 'checkbox'; c.checked = !!I.acts[q[1]]; c.addEventListener('change', function () { I.acts[q[1]] = c.checked; }); lab.appendChild(c); lab.appendChild(el('b', null, q[0])); lab.appendChild(el('span', null, q[1])); ad.appendChild(lab); });
+    res.appendChild(ad);
+    /* 4. 業界中央値 */
+    const mr = fasMedRows(A.p, I.ind);
+    if (mr.length) { const dd = el('details'); dd.appendChild(el('summary', null, '業界中央値と くらべる（' + I.ind + '・CRD）')); dd.appendChild(fasTable(['指標', '貴社', '中央値', '良否'], mr.map(function (r) { const ok = r[1] == null ? '—' : (r[4] ? r[1] >= r[2] : r[1] <= r[2]) ? '○' : '×'; return [r[0], r[1] == null ? '—' : (Math.round(r[1] * 100) / 100) + r[3], r[2] + r[3], ok]; }))); res.appendChild(dd); }
+    else res.appendChild(el('p', 'note', '業界中央値： 設定で 業種を 選ぶと くらべられます（表が あるのは「その他の製造業」だけ。ほかの 業種は 石井さんから 表を もらって 足します）。'));
+    /* 借入金の シミュレーション */
+    const sm = $('fasSim'); if (sm) { const s = A.sim; sm.textContent = ''; if (s.total) sm.appendChild(fasTable(['', '現在', '理想'], [['短期借入金（所要運転資金の 120%）', fasK(s.st), fasK(s.idealSt)], ['長期で 返す 借入', fasK(s.total - s.st), fasK(s.B) + '（' + s.C + '年）'], ['年間返済額', fasK(s.repay), fasK(s.newRepay)], ['簡易CF', fasK(s.cf), fasK(s.cf)], ['返済 ÷ 簡易CF', s.nowRate == null ? '—' : fasPct(s.nowRate), s.newRate == null ? '—' : fasPct(s.newRate)], ['手元に 残る 金額', fasK(s.nowLeft), fasK(s.newLeft)]], 'fassim')); else sm.appendChild(el('p', 'note', '借入金を 入れると、短期継続融資（当座貸越）への 切り替えと 借り換えで 手元に 残る お金が 出ます（千円）。')); }
+    /* 計画到達 */
+    const pr = $('fasPlanRes'); if (pr) { const b = A.p, q = A.plan, mp = A.mPlan; pr.textContent = '';
+      const big2 = el('div', 'hobig ' + (FAS_RANK[mp.grade].k === '正常先' ? 'ok' : 'ng')); big2.id = 'fasPlanBig'; big2.appendChild(el('div', null, '直近 ' + m.grade + ' → 計画到達 ' + mp.grade + '（' + FAS_RANK[mp.grade].n + '）')); pr.appendChild(big2);
+      pr.appendChild(fasTable(['（千円）', '直近（実態）', '計画', '差'], [['売上高', b.sales, q.sales], ['売上原価', b.cogs, q.cogs], ['売上総利益', b.gp, q.gp], ['販管費', b.sga, q.sga], ['営業利益', b.op, q.op], ['経常利益', b.ord, q.ord], ['法人税等', b.tax, q.tax], ['当期純利益', b.net, q.net], ['簡易CF', m.cf, mp.cf]].map(function (r) { return [r[0], fasK(r[1]), fasK(r[2]), fasK(r[2] - r[1])]; }).concat([['粗利率', fasPct(b.sales ? b.gp / b.sales * 100 : null), fasPct(q.sales ? q.gp / q.sales * 100 : null), ''], ['自己資本比率', fasPct(m.eqR), fasPct(mp.eqR), ''], ['債務償還年数', fasYrs(m), fasYrs(mp), ''], ['FAS格付', m.grade, mp.grade, '']])));
+      pr.appendChild(el('p', 'note', '賃上げ率 ' + fasPct(q.wage) + '（労務費 ＋ 販管費の 人件費が 母数）。法人税等は 前期の 実効税率 ' + fasPct(q.rate * 100) + ' で 概算。計画到達は 直近の 実態 BS に 計画の 純利益を 足して 判定。')); }
+    /* 着地見込 */
+    const lr = $('fasLandRes'); if (lr) { lr.textContent = ''; if (A.land) { const L = A.land; lr.appendChild(el('div', 'hobig ' + (FAS_RANK[L.m.grade].k === '正常先' ? 'ok' : 'ng'), L.ym + ' まで ' + L.mon + 'か月の 実績 ＋ 残り ' + (12 - L.mon) + 'か月の 計画 → 着地見込 ' + L.m.grade + '（' + FAS_RANK[L.m.grade].n + '）'));
+      lr.appendChild(fasTable(['（千円）', '計画', '着地見込'], [['売上高', A.plan.sales, L.q.sales], ['経常利益', A.plan.ord, L.q.ord], ['当期純利益', A.plan.net, L.q.net], ['簡易CF', A.mPlan.cf, L.m.cf]].map(function (r) { return [r[0], fasK(r[1]), fasK(r[2])]; }).concat([['自己資本比率', fasPct(A.mPlan.eqR), fasPct(L.m.eqR)], ['債務償還年数', fasYrs(A.mPlan), fasYrs(L.m)], ['FAS格付', A.mPlan.grade, L.m.grade]])));
+      lr.appendChild(el('p', 'note', '簡易CF は 返済原資の めやす（資金繰り表とは 別物）。借入金は いまの 試算表の 残高。')); } else lr.appendChild(el('p', 'note', '今期の 月を 選んで 押すと、実績 ＋ 残りの 予算で このまま 行くと どこに 着くかが 出ます。')); }
+    /* 5ヶ年 */
+    const fr = $('fasFiveRes'); if (fr) { fr.textContent = ''; const cols = [{ n: '前期（実態）', q: A.p, m: m }, { n: '今期（計画）', q: A.plan, m: A.mPlan }].concat(A.five.map(function (x, i) { return { n: (i + 1) + '年目', q: x.q, m: x.m }; }));
+      const rows = [['売上高', function (c) { return fasK(c.q.sales); }], ['経常利益', function (c) { return fasK(c.q.ord); }], ['当期純利益', function (c) { return fasK(c.q.net); }], ['自己資本', function (c) { return fasK(c.q.eq); }], ['総資産', function (c) { return fasK(c.q.asset); }], ['自己資本比率', function (c) { return fasPct(c.m.eqR); }], ['有利子負債', function (c) { return fasK(c.m.debt); }], ['簡易CF', function (c) { return fasK(c.m.cf); }], ['債務償還年数', function (c) { return fasYrs(c.m); }], ['FAS格付', function (c) { return c.m.grade; }]];
+      fr.appendChild(fasTable(['（千円）'].concat(cols.map(function (c) { return c.n; })), rows.map(function (r) { return [r[0]].concat(cols.map(r[1])); }), 'fasfive')); }
+    /* 面談メモ（切り出し・業種別の 視点） */
+    const tk = $('fasTalk'); if (tk) { tk.textContent = ''; const worst = A.judges.filter(function (j) { return j.c === 'ng'; })[0] || A.judges.filter(function (j) { return j.c === 'mid'; })[0];
+      const tpl = /^[SA]$/.test(m.grade) ? FAS_TALK.SA : m.grade === 'B' ? FAS_TALK.B : m.grade === 'C' ? FAS_TALK.C : /^D/.test(m.grade) ? FAS_TALK.D : FAS_TALK.E;
+      tk.appendChild(el('div', 'hotx', '① 切り出し：' + tpl.replace('{g}', m.grade).replace('{n}', rk.n).replace('{focus}', worst ? worst.name.replace(/^FOCUS\d /, '') : '利益の 積み上げ')));
+      tk.appendChild(el('div', 'hotx', '③ 業種別の 視点（' + (I.ind || '業種 未設定') + '）：' + fasView(I.ind))); }
+  }
+  function fasSave(pub) {
+    const code = S.code; if (!code || !FAS.inp) return; const A = fasAll(); if (pub && !A) { fasMsg('先に［🏦 試算表から FAS格付を 出す］を 押してください。', true); return; }
+    fasMsg('保存しています…');
+    const body = { inp: FAS.inp };
+    if (pub) { const m = A.m, rk = FAS_RANK[m.grade];
+      body.pub = { show: m.grade + '（' + rk.n + '）', formal: m.grade, reason: A.sum.now, steps: '試算表 ' + A.ym + '・自己資本比率 ' + fasPct(m.eqR) + '・債務償還年数 ' + fasYrs(m) + '・簡易CF ' + fasK(m.cf) + '千円・所要運転資金 ' + fasK(m.wc) + '千円・簿価 ' + A.book.grade,
+        points: A.judges.filter(function (j) { return j.c === 'ng' || j.c === 'mid'; }).slice(0, 8).map(function (j) { return { name: j.name.replace(/^FOCUS\d /, ''), now: j.v, good: j.ideal ? j.ideal.lab : '', how: j.t }; }),
+        fas: { g: m.grade, n: rk.n, k: rk.k, f: rk.f, prev: A.mp ? A.mp.grade : '', plan: A.mPlan.grade, planN: FAS_RANK[A.mPlan.grade].n, eqR: Math.round(m.eqR * 10) / 10, years: m.years == null ? null : Math.round(m.years * 10) / 10, ym: A.ym, todo: A.sum.todo } }; }
+    gs('fasSave', code, body.inp, body.pub || null).then(function (r) { if (code !== S.code) return; FAS.at = (r && r.at) || ''; fasMsg(pub ? '🏦 顧問先の 画面の 経営助言に 出しました（「更新されました」と 出ます）。' : '💾 保存しました。'); if (pub) kyLoad(); }, function (e) { fasMsg(e.message, true); });
+  }
+  function fasCopy() {
+    const A = fasAll(); if (!A) return; const m = A.m;
+    $('kgFormal').value = m.grade + '（FAS 実態・簿価 ' + A.book.grade + '）'; $('kgShow').value = m.grade + '（' + FAS_RANK[m.grade].n + '）'; $('kgReason').value = A.sum.now.slice(0, 200);
+    $('kgPoints').value = A.judges.filter(function (j) { return j.c !== 'ok' && j.c !== ''; }).map(function (j) { return [j.name.replace(/^FOCUS\d /, ''), j.v, j.ideal ? j.ideal.lab : '', j.t].join(','); }).join('\n');
+    $('kgSteps').value = '試算表 ' + A.ym + '・FAS 実態 ' + m.grade + '（自己資本比率 ' + fasPct(m.eqR) + '・償還 ' + fasYrs(m) + '）・簿価 ' + A.book.grade + '・計画到達 ' + A.mPlan.grade;
+    fasMsg('下の 格付けの マスに 写しました。直してから［格付けを入れる］。');
+  }
+  /** 帳票（印刷・PDF）。diag … 企業財務診断報告書／plan … 決算報告書 兼 経営計画書／memo … 面談メモ（職員用・事務所の 中だけ） */
+  function fasPrint(kind) {
+    const A = fasAll(); if (!A) { fasMsg('先に［🏦 試算表から FAS格付を 出す］を 押してください。', true); return; }
+    const c = (S.clients || []).find(function (q) { return q.code === S.code; }) || { name: '' }, m = A.m, rk = FAS_RANK[m.grade];
+    const e = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (q) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[q]; }); };
+    const tbl = function (head, rows) { return '<table><tr>' + head.map(function (h) { return '<th>' + e(h) + '</th>'; }).join('') + '</tr>' + rows.map(function (r) { return '<tr>' + r.map(function (x, i) { return '<td' + (i ? ' class="r"' : '') + '>' + e(x) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>'; };
+    const d = new Date(), ds = d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日';
+    const mx = '<table class="mx"><tr><th>自己資本比率 ＼ 償還年数</th>' + FAS_COLS.map(function (x) { return '<th>' + e(x) + '</th>'; }).join('') + '</tr>' + FAS_ROWS.map(function (r, i) { return '<tr><th>' + e(r[0]) + '</th>' + r[1].map(function (g, j) { return '<td class="' + (i === m.row && j === m.col ? 'on' : '') + '">' + g + '<br><small>' + e(FAS_RANK[g].n) + '</small></td>'; }).join('') + '</tr>'; }).join('') + '</table>';
+    let body = '';
+    if (kind === 'diag') {
+      body = '<h1>企業財務診断報告書</h1><div class="hd"><div>' + e(c.name) + ' 御中　' + e(A.ym) + ' 時点</div><div>' + ds + '　石井重洋税理士事務所</div></div>'
+        + '<h2>1. FAS格付（実態）　' + m.grade + '　' + e(rk.n) + '（' + e(rk.k) + '）</h2><p>' + e(rk.d) + '。資金調達の 方向性：' + e(rk.f) + '。簿価の 格付は ' + A.book.grade + (A.mp ? '、前期は ' + A.mp.grade : '') + '。</p>' + mx
+        + '<h2>2. 5FOCUS と 重要指標</h2>' + tbl(['指標', '計算式', '前期', '簿価', '実態', '判定', '理想（千円）', 'あと（千円）'], A.judges.map(function (j) { return [j.name, j.f, j.vp, j.vb, j.v, j.t, j.ideal ? j.ideal.lab + ' ' + fasK(j.ideal.want) : '—', j.ideal ? fasK(j.ideal.want - j.ideal.now) : '—']; }))
+        + '<p class="note">所要運転資金 ' + fasK(m.wc) + '千円／有利子負債 ' + fasK(m.debt) + '千円／要償還債務 ' + fasK(m.yosho) + '千円／簡易CF ' + fasK(m.cf) + '千円</p>'
+        + (A.sim.total ? '<h2>3. 資金繰り改善シミュレーション（千円）</h2>' + tbl(['', '現在', '理想'], [['短期借入金', fasK(A.sim.st), fasK(A.sim.idealSt)], ['年間返済額', fasK(A.sim.repay), fasK(A.sim.newRepay)], ['返済 ÷ 簡易CF', fasPct(A.sim.nowRate), fasPct(A.sim.newRate)], ['手元に 残る 金額', fasK(A.sim.nowLeft), fasK(A.sim.newLeft)]]) + tbl(['借入先', '形態', '残高', '保証', '年返済', '利率'], (A.I.loans || []).map(function (x) { return [x.name, x.form, (Number(x.bal) || 0).toLocaleString('ja-JP'), x.guar, (Number(x.yr) || 0).toLocaleString('ja-JP'), (x.rate || 0) + '%']; })) : '')
+        + '<h2>4. 財務改善の 重要実施事項（' + m.grade + ' ランク）</h2>' + tbl(['優先度', 'メニュー', 'チェック'], fasActsOf(m.grade).map(function (q) { return [q[0], q[1], A.I.acts[q[1]] ? '✓' : '']; }))
+        + (A.p.adjRows.length ? '<h2>5. 実態補正の 内容（千円）</h2>' + tbl(['区分', '科目', '金額', '根拠'], A.p.adjRows.map(function (a) { return [a.k, a.name, fasK(a.v), a.why]; })) : '')
+        + (fasMedRows(A.p, A.I.ind).length ? '<h2>6. 業界中央値比較（' + e(A.I.ind) + '・CRD）</h2>' + tbl(['指標', '貴社', '中央値'], fasMedRows(A.p, A.I.ind).map(function (r) { return [r[0], r[1] == null ? '—' : (Math.round(r[1] * 100) / 100) + r[3], r[2] + r[3]]; })) : '')
+        + (A.I.note ? '<h2>特記事項</h2><p>' + e(A.I.note) + '</p>' : '');
+    } else if (kind === 'plan') {
+      const b = A.p, q = A.plan, mp = A.mPlan, qa = A.I.qa || {}, why = function (k) { return (qa[k] || []).join('・'); };
+      const rep = (b.sales ? '前期の 売上高は ' + fasK(b.sales) + '千円' : '') + (why('売上') ? '（' + why('売上') + '）' : '') + '。' + (why('粗利') ? '粗利率は ' + fasPct(b.gp / b.sales * 100) + '（' + why('粗利') + '）。' : '') + '経常利益は ' + fasK(b.ord) + '千円 と なりました。';
+      body = '<h1>決算報告書 兼 経営計画書</h1><div class="hd"><div>' + e(c.name) + ' 御中</div><div>' + ds + '　石井重洋税理士事務所</div></div>'
+        + '<div class="kpi"><div><b>FAS格付（実態）</b><span>' + m.grade + '</span>' + e(rk.n) + '</div><div><b>自己資本比率</b><span>' + fasPct(m.eqR) + '</span></div><div><b>債務償還年数</b><span>' + fasYrs(m) + '</span></div><div><b>簡易CF</b><span>' + fasK(m.cf) + '</span>千円</div><div><b>計画到達</b><span>' + mp.grade + '</span>' + e(FAS_RANK[mp.grade].n) + '</div></div>'
+        + '<h2>1. 損益の 実績と 今期目標（千円）</h2>' + tbl(['科目', '直近（実態）', '今期計画', '増減'], [['売上高', b.sales, q.sales], ['売上原価', b.cogs, q.cogs], ['売上総利益', b.gp, q.gp], ['販管費', b.sga, q.sga], ['営業利益', b.op, q.op], ['経常利益', b.ord, q.ord], ['簡易キャッシュフロー', m.cf, mp.cf]].map(function (r) { return [r[0], fasK(r[1]), fasK(r[2]), fasK(r[2] - r[1])]; }))
+        + '<h2>2. 決算の ご報告</h2><p>' + e(rep) + '</p><h2>3. 財務の 現状認識</h2><p>' + e(A.sum.now) + '</p>'
+        + '<h2>4. 今期の 計画</h2><p>' + e('今期は 売上高 ' + fasK(q.sales) + '千円・粗利率 ' + fasPct(q.gp / q.sales * 100) + '・経常利益 ' + fasK(q.ord) + '千円を 計画しております。' + (why('今期') ? why('今期') + 'に 取り組み、' : '') + '簡易キャッシュフロー ' + fasK(mp.cf) + '千円の 確保を 図り、FAS格付 ' + mp.grade + '（' + FAS_RANK[mp.grade].n + '）を 目指します。') + '</p>'
+        + '<h2>5. 今後 取り組むべきこと</h2><ul>' + A.sum.todo.map(function (t) { return '<li>' + e(t) + '</li>'; }).join('') + '</ul>'
+        + '<h2>6. 5ヶ年の 格付の 推移</h2>' + tbl(['', '前期', '今期'].concat(A.five.map(function (x, i) { return (i + 1) + '年目'; })), [['自己資本比率', fasPct(m.eqR), fasPct(mp.eqR)].concat(A.five.map(function (x) { return fasPct(x.m.eqR); })), ['債務償還年数', fasYrs(m), fasYrs(mp)].concat(A.five.map(function (x) { return fasYrs(x.m); })), ['FAS格付', m.grade, mp.grade].concat(A.five.map(function (x) { return x.m.grade; }))]);
+    } else {
+      body = '<h1>社長面談メモ（職員用・事務所の 中だけ）</h1><div class="hd"><div>' + e(c.name) + '　' + e(A.ym) + '</div><div>' + ds + '</div></div>'
+        + '<h2>① 切り出し</h2><p>' + e(($('fasTalk') || {}).textContent || '') + '</p><h2>② 深掘りヒアリング</h2>' + tbl(['質問', '答え'], FAS_ASK.map(function (q) { return [q[1], ((A.I.qa || {})[q[0]] || []).join('・')]; }))
+        + '<h2>メモ</h2><p>' + e(A.I.memo || '') + '</p><h2>数字</h2><p>FAS 実態 ' + m.grade + '・簿価 ' + A.book.grade + '・計画到達 ' + A.mPlan.grade + '・自己資本比率 ' + fasPct(m.eqR) + '・償還 ' + fasYrs(m) + '</p>';
+    }
+    const html = '<!doctype html><html><head><meta charset="utf-8"><title>' + (kind === 'diag' ? '企業財務診断報告書' : kind === 'plan' ? '決算報告書 兼 経営計画書' : '面談メモ') + '</title><style>@page{size:A4 portrait;margin:12mm}body{font-family:"Yu Gothic","Hiragino Sans",sans-serif;font-size:11px;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}h1{text-align:center;font-size:18px;letter-spacing:.2em;margin:0 0 4px}h2{font-size:13px;border-left:4px solid #0F6E56;padding-left:6px;margin:12px 0 4px}.hd{display:flex;justify-content:space-between;margin:4px 0 8px}table{border-collapse:collapse;width:100%;margin:4px 0}th,td{border:1px solid #888;padding:3px 5px;vertical-align:top}th{background:#eef4f1}td.r{text-align:right}.mx td{text-align:center}.mx td.on{background:#0F6E56;color:#fff;font-weight:700}.note{font-size:10px;color:#444}.kpi{display:flex;gap:6px;margin:6px 0}.kpi div{flex:1;border:1px solid #888;padding:4px;text-align:center}.kpi span{display:block;font-size:18px;font-weight:700}</style></head><body>' + body + '<script>window.onload=function(){window.print();}<\/script></body></html>';
+    const w = window.open('', '_blank'); if (!w) { fasMsg('窓が 開けませんでした（ポップアップを 許してください）。', true); return; } w.document.write(html); w.document.close();
   }
   function hoMsg(t, err) { const m = $('hoMsg'); if (m) { m.textContent = t || ''; m.className = 'pagemsg' + (err ? ' err' : ''); } }
   function hoPaint() {
@@ -16664,6 +17114,14 @@
       $('kgFormal').value = o.formal || ''; $('kgLow').value = o.low || ''; $('kgHigh').value = o.high || ''; $('kgShow').value = o.show || (o.low && o.high ? 'およそ ' + o.low + '〜' + o.high : '');
       $('kgReason').value = o.reason || ''; $('kgPoints').value = (o.points || []).map(function (x) { return [x.name, x.now || '', x.good || '', x.how || ''].join(','); }).join('\n');
       $('kgSteps').value = Array.isArray(o.steps) ? o.steps.join('\n') : (o.steps || '');
+      /* ★★★ エージェントの 実態補正・借入金の 下書きを ③ FASコンサルティングの 入力へ（直してから 保存） */
+      if (o.fas && typeof o.fas === 'object' && FAS.inp) {
+        const f = o.fas, n = function (v) { return Number(String(v == null ? '' : v).replace(/[,，\s千円%]/g, '')) || 0; };
+        if (Array.isArray(f.adj)) FAS.inp.adj = f.adj.slice(0, 30).map(function (a) { return { k: a.k === 'pl' ? 'pl' : 'bs', name: String(a.name || '').slice(0, 40), amt: n(a.amt), pl: !!a.pl, why: String(a.why || '').slice(0, 200) }; });
+        if (Array.isArray(f.loans)) FAS.inp.loans = f.loans.slice(0, 30).map(function (a) { return { name: String(a.name || '').slice(0, 40), form: String(a.form || '証書貸付'), bal: n(a.bal), guar: String(a.guar || ''), yr: n(a.yr), rate: n(a.rate), term: /短期/.test(a.term || '') ? '短期' : '長期' }; });
+        if (f.officerStd != null) FAS.inp.officerStd = !!f.officerStd; if (f.ind) FAS.inp.ind = String(f.ind).slice(0, 30);
+        if (FAS.raw) fasDraw();
+      }
     }
     selectTab('Rule'); setTimeout(function () { const b = $('kyBox'); b.open = true; b.scrollIntoView({ block: 'start' }); }, 300);
     mtMsg('kyMsg', 'エージェントの 下書きを 写しました。直してから［' + (kind === 'risk' ? 'リスク' : '格付け') + 'を入れる］を 押してください。');
