@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795570432;</script>
+<script>window.__PAGE_VER=1795572250;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -7907,8 +7907,9 @@
   function obEsAiRun() {
     if (OB.aiBusy || OB.kind !== 'esp') return;
     const code = S.code, box = OB.box, ym = OB.ym, M = Number(ym.slice(5, 7)) + '月';
-    const say = function (t) { if (OB.box === box && OB.ym === ym && !$('obv').hidden) $('obMsg').textContent = t; };
-    const end = function (t) { OB.aiBusy = false; $('obEsAi').disabled = false; if (OB.box === box && OB.ym === ym) { OB.msg = t; obLoad(); } };
+    /* ★ K-0313（2026-11-25 林）：進み具合を 読み込みの 知らせで 消さない（obNote が OB.aiText を 先に 出す） */
+    const say = function (t) { OB.aiText = t; if (OB.box === box && OB.ym === ym && !$('obv').hidden) { $('obMsg').textContent = t; $('obMsg').className = 'note'; } };
+    const end = function (t) { OB.aiBusy = false; OB.aiText = ''; $('obEsAi').disabled = false; if (OB.box === box && OB.ym === ym) { OB.msg = t; obLoad(); } };
     OB.aiBusy = true; $('obEsAi').disabled = true; say(M + 'の 写真を 調べています…');
     let made = 0, from = 0;
     const fail = function (e) { end('途中で 止まりました。' + e.message + '（もう一度 押すと 続きから 作ります）'); };
@@ -7957,6 +7958,7 @@
   function obNote(extra) {
     const d = OB.data; if (!d) return;
     const t = [];
+    if (OB.aiBusy && OB.aiText) { $('obMsg').textContent = '🤖 ' + OB.aiText; $('obMsg').className = 'note'; return; }   /* ★ K-0313 */
     if (extra || OB.msg) t.push(extra || OB.msg);
     if (OB.kind === 'kyuyo') t.push('期間 ' + obMd(d.from) + '〜' + obMd(d.to));
     if (OB.kind === 'kinmu') { t.push(d.saved ? '保存 ' + d.at + '（' + d.who + '）' : d.carried ? 'この月は まだ保存されていません（' + d.carried + ' の 人と 時給だけ 写しています）。' : 'この月は まだ書かれていません。'); if (d.sum.need) t.push('⚠ 源泉所得税を 月額表で 確かめて 入れる 人が ' + d.sum.need + '人（給与 88,000円 以上）'); }
