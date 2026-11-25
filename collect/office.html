@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795579105;</script>
+<script>window.__PAGE_VER=1795581150;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1223,6 +1223,8 @@
   .dsr-out td.amt { text-align: right; font-variant-numeric: tabular-nums; }
   .dsr-note { font-size: 12px; color: var(--sub); padding: 0 12px 10px; }
   .dimg .stt { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 0; text-align: center; padding: 2px 3px; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dimg .stt .dnew { color: #D0021B; font-weight: 900; margin-right: 4px; letter-spacing: .02em; }   /* ★ S1125-柳田-03：前に開いたあとに 届いた資料 */
+  .dgt .dgnew { flex: none; display: inline-block; padding: 0 6px; border-radius: 4px; background: #D0021B; color: #fff; font-size: 11.5px; font-weight: 900; vertical-align: middle; }
   .dimg .pdf { bottom: 24px; }
   /* ★ 顧問先からのひとこと（2026-10-23）。写真の下に 黄色で はっきり。2行まで見せ、全文は押したときの大きな画面と 札の上で */
   .dat { margin-top: 4px; font-size: 12px; font-weight: 700; line-height: 1.4; color: #4A3700; background: #FFF3C4; border: 1px solid #E0B43A; border-radius: 6px; padding: 2px 6px;
@@ -3319,7 +3321,7 @@
   function bellLoad() {
     if (!S.started || LIVE || BELL.busy) return;
     BELL.busy = true;
-    gs('arriveLog', 30).then(function (r) { BELL.busy = false; BELL.items = (r && r.items) || []; BELL.unread = (r && r.unread) || 0; BELL.at = Date.now(); bellDraw(); }, function () { BELL.busy = false; });
+    gs('arriveLog', 30).then(function (r) { BELL.busy = false; BELL.items = (r && r.items) || []; BELL.unread = (r && r.unread) || 0; BELL.at = Date.now(); bellDraw(); try { newPaint(); } catch (e) {} }, function () { BELL.busy = false; });
   }
   function bellDraw() {
     const n = BELL.unread, b = $('bellBtn');
@@ -3347,6 +3349,62 @@
       });
       pop.appendChild(b2);
     });
+  }
+  /* ★ S1125-柳田-03（2026-11-25 柳田）：回収資料の 札に 赤い「NEW」。前に その箱を 開いたあとに 顧問先から 届いたもの。
+     「どこまで 見たか」は 🔔 お知らせと 同じ記録（担当者ごと・顧問先 × 日 × 箱）。札を 出したら 見たことにする（お知らせの 赤い丸も 消える）。
+     見ている あいだは NEW のまま（hold）。顧問先を 替えるか 画面を 開き直すと 消える。箱の 一覧には 箱ごとの「NEW n」 */
+  const NEWS = { code: '', hold: {}, its: {}, all: null, q: {}, t: 0 };
+  function newKey(it) {
+    const d = new Date(it.t || 0); if (!it.t || isNaN(d)) return null;
+    const p = function (n) { return ('0' + n).slice(-2); };
+    let bx = String(it.box || '').split('/')[0]; if (!bx || bx === '未分類') bx = 'その他';
+    return { k: S.code + '|' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '|' + bx, t: it.t };
+  }
+  function newByOffice(it) { const mm = String(it.memo || ''); return (STAFF_NAMES || []).some(function (n) { return n && mm.slice(-(n.length + 2)) === '（' + n + '）'; }); }
+  /* まだ 見ていない（hold は 見ない）。未確定で 確認済に していないもの だけ。事務所が 自分で 入れたものは 付けない */
+  function newIs(it) {
+    if (!it || stTag(it)[0] !== 'todo' || it.chk || newByOffice(it)) return false;
+    const nk = newKey(it); if (!nk) return false;
+    const b = BELL.items.find(function (x) { return x.key === nk.k; });
+    return !!b && nk.t > (b.readAt || 0);
+  }
+  function newHoldReset() { if (NEWS.code !== S.code) { NEWS.code = S.code; NEWS.hold = {}; NEWS.its = {}; } }
+  /* 札に 出す NEW か（出したら 見たことにして、見ている あいだは 残す） */
+  function newShow(it) {
+    newHoldReset(); NEWS.its[it.id] = it;
+    if (NEWS.hold[it.id]) return true;
+    if (!newIs(it)) return false;
+    NEWS.hold[it.id] = 1; NEWS.q[newKey(it).k] = 1;
+    clearTimeout(NEWS.t); NEWS.t = setTimeout(newFlush, 1500);
+    return true;
+  }
+  function newFlush() {
+    const ks = Object.keys(NEWS.q); NEWS.q = {}; if (!ks.length) return;
+    const now = Date.now();
+    BELL.items.forEach(function (x) { if (ks.indexOf(x.key) >= 0) { x.readAt = Math.max(now, x.at || 0); if (x.unread) { x.unread = false; BELL.unread = Math.max(0, BELL.unread - 1); } } });
+    bellDraw(); newBoxPaint();
+    gs('arriveRead', ks).catch(function () {});
+  }
+  function newBadge() { const n = el('b', 'dnew', 'NEW'); n.title = '前に この箱を 開いたあとに 届いた資料'; return n; }
+  /* 箱の 一覧の「NEW n」 */
+  function newBoxPaint() {
+    const all = NEWS.all; if (!all || NEWS.code !== S.code) return;
+    document.querySelectorAll('#dBody .dgt[data-box]').forEach(function (t) {
+      const b = t.dataset.box, n = all.filter(function (x) { return (x.box === b || String(x.box).indexOf(b + '/') === 0) && newIs(x); }).length;
+      let e = t.querySelector('.dgnew'); if (!n) { if (e) e.remove(); return; }
+      if (!e) { e = el('span', 'dgnew'); const h = t.querySelector('.dgth'), nm = h && h.querySelector('b'); if (nm) nm.after(e); else (h || t).appendChild(e); }
+      e.textContent = 'NEW ' + n; e.title = '前に この箱を 開いたあとに 届いた資料が ' + n + '件';
+    });
+  }
+  /* お知らせを 読み直したら：出ている 札と 箱の 一覧に NEW を 足す */
+  function newPaint() {
+    if (NEWS.code !== S.code) return;
+    document.querySelectorAll('#dBody .dtile[data-id]').forEach(function (t) {
+      const it = NEWS.its[t.dataset.id], s0 = t.querySelector('.dimg .stt');
+      if (!it || !s0 || s0.querySelector('.dnew') || !newShow(it)) return;
+      s0.insertBefore(newBadge(), s0.firstChild);
+    });
+    newBoxPaint();
   }
   $('bellBtn').addEventListener('click', function (e) {
     e.stopPropagation();
@@ -6608,6 +6666,7 @@
     { const al = el('button', 'dmon-b dgall', '▤ すべての箱を 並べて見る（箱をまたいで さがす・まとめて 選ぶ）'); al.type = 'button'; al.addEventListener('click', function () { S.dvBox = '*'; S.dvOff = false; docsDraw(); }); body.appendChild(al); }
     const st = el('button', 'dmon-b dgset', '⚙ 事務所の箱を 決める'); st.type = 'button'; st.addEventListener('click', function () { offBoxSet(c); }); co.appendChild(st);
     body.appendChild(g);
+    newHoldReset(); NEWS.all = all; newBoxPaint();   /* ★ S1125-柳田-03：箱ごとの「NEW n」 */
     if (OFFD.code !== S.code) offLoad(true);
   }
   /* 事務所の 箱の 中身（［事務所の資料］の その種類）。足す・開く・外す */
@@ -8362,7 +8421,7 @@
       tips: ['タブを 右クリック →［新しいタブで開く］［別ウィンドウで開く］で 複数の 画面を 並べて 使えます（いまの 顧問先・月分を 引き継ぐ。Ctrl＋クリック・中ボタンでも 新しいタブ）', '紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料・仕訳化', pic: 'g_odocs', lead: '届いた資料を 箱ごとに 確かめ、そのまま エージェントに渡して 仕訳を作り、元帳で 確かめる タブです（前の 回収資料と 仕訳化を 1つに しました）。',
       steps: ['上の［🤖 エージェントに渡す］の 島：月分の 札で 月分、下の 箱の 札の［選ぶ］で 箱・小箱を 選んで［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（研究）。できた zip は 島の 中の［⬇ ダウンロード］。zip を Claude Code に 投げる だけで よい（指示は 要らない。zip の 中に Claude への 指示が 入っている。zip は 共有ドライブの 1回ぶんの フォルダ G:\\共有ドライブ\\…\\_エージェントに渡す に できている。ダウンロード 不要）。ブラウザの Claude Code は［⬇ 全部まとめてダウンロード］で 保存して 添付', 'できあがりは Claude Code が 同じ フォルダの「結果」に 置けば アプリが ひとりでに 拾う（［📂 フォルダの できあがりを 拾う］でも）。ほかに［⬆ できあがりを戻す］か 島へ ドラッグ。半年・1年・気づき・書面添付 などは［⚙ ほかの渡し方（半年・1年・気づき・書面添付 など）］', '右の［📗 元帳チェック］の 島：［📗 元帳で確かめる・直す］［📥 結果と学び］［📊 試算表へ］［📤 取込ファイルへ］。しまってある 辞書の 画面は［📇 辞書の画面を開く］', '上で 顧問先を選ぶと 箱の一覧（📦 毎月の箱／🗓 スポットの箱／📁 事務所の箱）。箱を押すと その中（年分 › 月分）。［‹ 箱の一覧へ］で 戻る。［▤ すべての箱を 並べて見る］で 箱を またいで さがす', '中に 小箱が ある 箱を 押すと 顧問先の 画面と 同じく 小箱の 札が 出る（小箱の 中で 年分 › 月分）', '📁 事務所の箱 … 返済予定表・概算減価償却の一覧表 など 通年の 参照資料を［＋ ファイルを 入れる］（顧問先からは 見えない・エージェントの zip に いつも 入る）。名前は［⚙ 事務所の箱を 決める］', 'まとまった PDF（スキャナで 何十枚も 1つに なったもの）は 大きく見るで［✂ 1ページずつに分ける］。1ページ ＝ 1つの 資料に なり、元の PDF は 破棄したものへ（戻せます）', '赤い枠の［⚠ 二重では？］… 先に届いた写真と 同じ写真・同じ日付と金額と相手・同じ字（日付・合計）。二重なら その写真を 破棄、ちがえば 2回押して「二重ではない」（顧問先には 聞かない）', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）', '戻したら［📗 元帳で確かめる］… TKC と同じ形（月別の残高 → 口座別 → 総勘定元帳 → 伝票）。伝票は 左に 写真（預金は 通帳の行）、右に 10行。Enter で ✓ して 次の伝票・0 で 前・T（F2）で 訂正・1・2 で エージェントの 別の案・Esc で 戻る。全部 ✓ で［📤 取り込みファイルにする］（FX の 一括読み込み。使った箱は 処理済ボックスへ）'],
-      tips: ['日ごとの箱（売上伝票など）は、日を選ばずに 届いたものも AI が 日付を読んで その日に並べます（札の左上に「🤖 10/12」。ちがう月の日付なら その月分へ移します）。前から届いていて 日の無いものは 月分の見出しの［🤖 日付を読む］で 読めます（1回に 25件まで・1枚 0.03〜0.05円ほど）。手書きの日付を先に読み、夜0時すぎに出した 日計は 前の日に並べます', '日付を 人が付けた（直した）月分は、見出しの［🤖 日付の読み方を確かめる］で AI に もう一度読ませて 何件 合ったかを 数えられます（日は 書きかえません）。ちがったものは「AI → 正しい日」で 知らせ、覚えて 次から AI に 伝えます。🤖 の日を 直したときも 同じように 覚えます', '日ごとの箱の写真を 押して 大きく見ると、上の帯の左に 何月何日の伝票か（📅 10月3日（土）。🤖 は AI が読んだ日・日が無ければ 赤い「📅 日付なし」）。ちがうときは 右の欄で 正しい日を選ぶと すぐ直ります（ちがう月の日なら その月分へ移ります。確定済みでも 直せます）。［↗ 別ウィンドウ］の 大きく見る でも 同じです', 'パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '🍸 売上日報（現金）の 箱は 上の「補助簿」の［🤖 写真から日報］か、売上伝票の 箱を 開いたときの 見出しの［🤖 写真から 売上日報を まとめて作る］（どちらも 同じ）で 月の 小窓を 開き、［‹ 前の月］［次の月 ›］で 作る月を 選んで［🤖 写真から ◯月分の 売上日報を まとめて作る］を 押すと、日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで 1日ずつ 作ります（届いた 写真だけ。書いてある日は さわりません。日付の 無い 写真は 伝票の 日付を 読んで その日に 入れます）。作った日は 🤖 の 印。顧問先が 確かめて 保存すると 消えます', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
+      tips: ['赤い「NEW」… 前に その箱を 開いたあとに 顧問先から 届いた資料（札の 届いた日時の 前）。箱の一覧には 箱ごとに「NEW 3」。札を 見たら 🔔 お知らせも 見たことになります。見ている あいだは NEW のまま、顧問先を 替えるか 開き直すと 消えます（自分の担当・補助担当の顧問先・直近30日。事務所が 入れたもの・確認済には 付きません）', '日ごとの箱（売上伝票など）は、日を選ばずに 届いたものも AI が 日付を読んで その日に並べます（札の左上に「🤖 10/12」。ちがう月の日付なら その月分へ移します）。前から届いていて 日の無いものは 月分の見出しの［🤖 日付を読む］で 読めます（1回に 25件まで・1枚 0.03〜0.05円ほど）。手書きの日付を先に読み、夜0時すぎに出した 日計は 前の日に並べます', '日付を 人が付けた（直した）月分は、見出しの［🤖 日付の読み方を確かめる］で AI に もう一度読ませて 何件 合ったかを 数えられます（日は 書きかえません）。ちがったものは「AI → 正しい日」で 知らせ、覚えて 次から AI に 伝えます。🤖 の日を 直したときも 同じように 覚えます', '日ごとの箱の写真を 押して 大きく見ると、上の帯の左に 何月何日の伝票か（📅 10月3日（土）。🤖 は AI が読んだ日・日が無ければ 赤い「📅 日付なし」）。ちがうときは 右の欄で 正しい日を選ぶと すぐ直ります（ちがう月の日なら その月分へ移ります。確定済みでも 直せます）。［↗ 別ウィンドウ］の 大きく見る でも 同じです', 'パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '🍸 売上日報（現金）の 箱は 上の「補助簿」の［🤖 写真から日報］か、売上伝票の 箱を 開いたときの 見出しの［🤖 写真から 売上日報を まとめて作る］（どちらも 同じ）で 月の 小窓を 開き、［‹ 前の月］［次の月 ›］で 作る月を 選んで［🤖 写真から ◯月分の 売上日報を まとめて作る］を 押すと、日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで 1日ずつ 作ります（届いた 写真だけ。書いてある日は さわりません。日付の 無い 写真は 伝票の 日付を 読んで その日に 入れます）。作った日は 🤖 の 印。顧問先が 確かめて 保存すると 消えます', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料を エージェントに渡して 仕訳を作り、元帳で 確かめて 確定する タブです（AI 下書きは 止めました）。',
       steps: ['上の 札で 月分（「◯月分（一括）」で その月分を まとめて）と 箱・小箱を 選ぶ（いくつでも。［全部の箱］で 戻す）', '帯の［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（もう 仕訳の ある 月・研究）。その場で zip が できる（マイナンバーの書類は 入りません）', '直すのは［📗 元帳で確かめる・直す］から 手で（T／F2 で 訂正）。辞書で 仕訳する 画面は しまってあります（［📇 辞書の画面を開く］で 出せる）', '確定したものは［取込ファイル］タブへ', '［🤖 エージェントに渡す（zip）］で できた zip は 帯の 右上の［⬇ ダウンロード］で その場で 保存（30MB を 超えるときは 1／2・2／2 に 分かれるので 両方 落として 同じ フォルダに 展開）', 'エージェントは 上の帯で：［🤖 エージェントに渡す（zip）］→ 自分の Claude Code に 渡す → できあがりの zip を［⬆ できあがりを戻す］か 帯へ ドラッグ → ［📥 結果と学び］［📗 元帳で確かめる］（TKC と 同じ 伝票の形・Enter で ✓ して 次へ。写真は 先に 読んでおくので 速く 押しても 追いつきます）'],
       tips: ['スマホの［📗 元帳で確かめる］は 上から 下（上に 科目・下に 元帳／上に 写真・下に 伝票）。下の［✓ 次へ］［‹ 前］［✎ 訂正］［案1］［案2］［↩ 戻る］で 進みます', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
@@ -10143,7 +10202,7 @@
     if (it.pdf) b.appendChild(el('span', 'pdf', 'PDF'));
     const tg = stTag(it);
     const at = (String(it.at).match(/\d+\/\d+ \d\d:\d\d$/) || [''])[0];
-    b.appendChild(el('span', 'stt ' + tg[0], tg[0] === 'todo' ? at + ' 届' : tg[0] === 'done' ? '✓ 確定' : tg[1]));
+    { const s0 = el('span', 'stt ' + tg[0], tg[0] === 'todo' ? at + ' 届' : tg[0] === 'done' ? '✓ 確定' : tg[1]); if (newShow(it)) s0.insertBefore(newBadge(), s0.firstChild); b.appendChild(s0); }   /* ★ S1125-柳田-03：赤い NEW */
     if (it.set && it.setOf > 1) b.appendChild(el('span', 'dsetn', '📎' + it.setN + '/' + it.setOf));
     if (it.day && it.dayAi) { const da = el('span', 'ddayai', '🤖 ' + Number(it.day.slice(5, 7)) + '/' + Number(it.day.slice(8))); da.title = '日付は AI が 写真から読みました（' + dDayLabel(it.day) + '）。ちがうときは 写真を押して 大きく見るの「📅 日付」で 直せます'; b.appendChild(da); }   /* ★ K-0303。★ K-0307：直す所 */
     if (it.scan) { const sc = el('span', 'dscan' + (it.scan === 'スキャナ保存' ? '' : ' paper'), it.scan === 'スキャナ保存' ? '電子保存' : it.scan); sc.title = it.scan === 'スキャナ保存' ? '電子帳簿保存法（スキャナ保存）。紙の原本は捨ててかまいません' : '電子保存になりません。紙の原本を保管'; b.appendChild(sc); }
