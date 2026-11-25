@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795603937;</script>
+<script>window.__PAGE_VER=1795604850;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -6450,19 +6450,25 @@
       t.appendChild(tb);
       w.appendChild(C('div', 'tbcap', '予実対比　' + TBR.ymL(d.fyStart) + ' 〜 の 期（予算：' + (B.at || '') + (B.by ? '・' + B.by : '') + '）　差の 緑＝予算より 良い・赤＝悪い'));
       const sc = C('div', 'tbsc'); sc.appendChild(t); w.appendChild(sc);
-      /* 月ごとの グラフ（棒＝実績・線＝予算） */
+      /* ★★ 2026-11-26（石井「損益は 累計で、折れ線で」）：期首からの 累計の 折れ線（緑＝実績・橙＝予算）。売上高が マイナスの 月が あれば 知らせる */
       st = st || {}; const line = TBR.YJ.filter(function (L) { return L[0] === st.yjLine; })[0] || TBR.YJ[0];
       const bar = C('div', 'tbgbar'), sel = C('select'); TBR.YJ.forEach(function (L) { const o = C('option', null, L[1]); o.value = L[0]; sel.appendChild(o); }); sel.value = line[0]; sel.id = 'yjLine';
-      sel.addEventListener('change', function () { st.yjLine = sel.value; if (redraw) redraw(); }); bar.appendChild(C('b', null, '📊 月ごとの グラフ')); bar.appendChild(sel); bar.appendChild(C('span', 'note', '棒＝実績・線＝予算')); w.appendChild(bar);
-      const bv = months.map(function (m, i) { return TBR.yjBud(B.m, line[0], i); }), av = months.map(function (m, i) { return act(line[0], i); });
+      sel.addEventListener('change', function () { st.yjLine = sel.value; if (redraw) redraw(); }); bar.appendChild(C('b', null, '📈 期首からの 累計')); bar.appendChild(sel); bar.appendChild(C('span', 'note yjleg', '緑＝実績・橙＝予算')); w.appendChild(bar);
+      const negM = months.filter(function (m, i) { const a = act('4000', i); return a != null && a < 0; });
+      if (negM.length) w.appendChild(C('div', 'note yjneg', '⚠ 売上高が マイナスの 月が あります（' + negM.map(function (m) { return Number(m.slice(5)) + '月'; }).join('・') + '）。推移表が「当月（その月の 発生）」の まま 入って いる かも しれません。［会計システムの データを 入れる］で もう一度 貼ると 累計に 直して 入ります（予算を 前年の 実績から 作った ときは 予算も 作り直して ください）。'));
+      let cb = 0, ca = 0; const bv = [], av = [];
+      months.forEach(function (m, i) { cb += TBR.yjBud(B.m, line[0], i); bv.push(cb); const a = act(line[0], i); if (a != null) { ca += a; av.push(ca); } else av.push(null); });
       const all = bv.concat(av.filter(function (x) { return x != null; })), mx = Math.max.apply(null, all.concat([1])), mn = Math.min.apply(null, all.concat([0]));
-      const W = 720, H = 260, L0 = 64, R0 = 12, T0 = 14, B0 = 30, pw = (W - L0 - R0) / 12, y = function (v) { return T0 + (H - T0 - B0) * (1 - (v - mn) / ((mx - mn) || 1)); };
+      const W = 720, H = 260, L0 = 64, R0 = 12, T0 = 14, B0 = 30, pw = (W - L0 - R0) / 12, y = function (v) { return T0 + (H - T0 - B0) * (1 - (v - mn) / ((mx - mn) || 1)); }, xc = function (i) { return L0 + pw * i + pw / 2; };
       const man = function (v) { return Math.abs(v) >= 10000 ? (Math.round(v / 1000) / 10).toLocaleString('ja-JP') + '万' : Math.round(v).toLocaleString('ja-JP'); };
-      let g = '<svg class="tbsvg yjsvg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + TBR.e(line[1]) + ' の 予算と 実績"><rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#fff"/>';
+      let g = '<svg class="tbsvg yjsvg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + TBR.e(line[1]) + ' の 期首からの 累計（予算と 実績）"><rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#fff"/>';
       for (let k = 0; k <= 4; k++) { const v = mn + (mx - mn) * k / 4; g += '<line x1="' + L0 + '" x2="' + (W - R0) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#e3e8e3"/><text x="' + (L0 - 5) + '" y="' + (y(v) + 4) + '" font-size="11" text-anchor="end" fill="#55615e">' + man(v) + '</text>'; }
-      months.forEach(function (m, i) { const x0 = L0 + pw * i; if (av[i] != null) { const y0 = y(Math.max(0, av[i])), y1 = y(Math.min(0, av[i])); g += '<rect x="' + (x0 + pw * 0.2) + '" y="' + y0 + '" width="' + (pw * 0.6) + '" height="' + Math.max(1, y1 - y0) + '" fill="' + (m === d.ym ? '#2E8B57' : '#8FC3A4') + '"/>'; }
-        g += '<text x="' + (x0 + pw / 2) + '" y="' + (H - 10) + '" font-size="11" text-anchor="middle" fill="#55615e">' + Number(m.slice(5)) + '月</text>'; });
-      g += '<polyline fill="none" stroke="#C0612B" stroke-width="2.5" points="' + bv.map(function (v, i) { return (L0 + pw * i + pw / 2) + ',' + y(v); }).join(' ') + '"/>' + bv.map(function (v, i) { return '<circle cx="' + (L0 + pw * i + pw / 2) + '" cy="' + y(v) + '" r="3" fill="#C0612B"/>'; }).join('') + '</svg>';
+      if (mn < 0) g += '<line x1="' + L0 + '" x2="' + (W - R0) + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="#9aa7a2"/>';
+      months.forEach(function (m, i) { g += '<text x="' + xc(i) + '" y="' + (H - 10) + '" font-size="11" text-anchor="middle" fill="#55615e">' + Number(m.slice(5)) + '月</text>'; });
+      g += '<polyline class="yjbud" fill="none" stroke="#C0612B" stroke-width="2.5" stroke-dasharray="6 4" points="' + bv.map(function (v, i) { return xc(i) + ',' + y(v); }).join(' ') + '"/>' + bv.map(function (v, i) { return '<circle cx="' + xc(i) + '" cy="' + y(v) + '" r="3" fill="#C0612B"/>'; }).join('');
+      const ap = av.map(function (v, i) { return v == null ? null : xc(i) + ',' + y(v); }).filter(Boolean);
+      if (ap.length) g += '<polyline class="yjact" fill="none" stroke="#2E8B57" stroke-width="3.5" points="' + ap.join(' ') + '"/>' + av.map(function (v, i) { return v == null ? '' : '<circle cx="' + xc(i) + '" cy="' + y(v) + '" r="' + (months[i] === d.ym ? 6 : 4) + '" fill="#2E8B57"><title>' + Number(months[i].slice(5)) + '月 累計 実績 ' + TBR.n(v) + ' ／ 予算 ' + TBR.n(bv[i]) + '</title></circle>'; }).join('');
+      g += '</svg>';
       const gw = C('div'); gw.innerHTML = g; w.appendChild(gw);
       if (B.note) w.appendChild(C('div', 'note', '予算の 決め方：' + B.note));
       return w;
@@ -6703,7 +6709,7 @@
   $('tbImpGo').addEventListener('click', function () {
     const t = $('tbImpT').value; if (!t.trim()) { $('tbMsg').textContent = '中身が 空です。'; return; }
     /* 貸借対照表・損益計算書・製造原価報告書を 続けて 貼っても よい（見出しごとに 読む） */
-    gs('tbImport', S.code, t).then(function (r) { $('tbMsg').textContent = '📥 ' + r.months.length + 'か月ぶん（' + perLabel(r.months[0]) + '〜' + perLabel(r.months[r.months.length - 1]) + '）を 入れました。'; $('tbImp').hidden = true; $('tbImpT').value = ''; tbLoad(true); }, function (e) { $('tbMsg').textContent = e.message; });
+    gs('tbImport', S.code, t).then(function (r) { $('tbMsg').textContent = '📥 ' + r.months.length + 'か月ぶん（' + perLabel(r.months[0]) + '〜' + perLabel(r.months[r.months.length - 1]) + '）を 入れました。' + (r.monthly ? '損益が「当月（その月の 発生）」で 入っていたので、期首からの 累計に 直して 入れました。' + (r.partial && r.partial.length ? '（' + r.partial.map(perLabel).join('・') + ' からは 期首の 月が 無いので、その 月からの 累計です。期首の 月から 入れ直すと 正しく なります）' : '') : '') + (r.neg ? '　⚠ 売上高が マイナスの 月が あります。CSV を 確かめてください。' : ''); $('tbImp').hidden = true; $('tbImpT').value = ''; tbLoad(true); }, function (e) { $('tbMsg').textContent = e.message; });
   });
   $('tbPrint').addEventListener('click', function () {
     if (!TB.d) return; const d = TB.d;
@@ -8540,7 +8546,7 @@
       tips: ['スマホの［📗 元帳で確かめる］は 上から 下（上に 科目・下に 元帳／上に 写真・下に 伝票）。下の［✓ 次へ］［‹ 前］［✎ 訂正］［案1］［案2］［↩ 戻る］で 進みます', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
     Tb: { t: '試算表', lead: '仕訳化で 確かめた 仕訳から 試算表（TKC の 勘定科目残高と 同じ 形）を 作る タブです。途中でも 作れます。',
       steps: ['自計化先（顧問先が 自分で 会計ソフトに 入れている 先）… 月が できるたびに［📥 会計システムの データを 入れる（自計化先・期首・前年）］で 推移表の CSV を 入れ、その月を 確定すると 顧問先の スマホにも 試算表が 出る（企業防衛の 数字にも 使える）。同じ 枠の ② で 仕訳・元帳・キャッシュフロー計算書 などを 月と 種類を 選んで 預けられる（［帳票の ファイルを 選ぶ］）', 'はじめに 1回だけ［📥 会計システムの データを 入れる（自計化先・期首・前年）］… FX の［勘定科目残高推移表］を「累計残高」で 切り出した CSV を ドラッグ（前年の 月も 入れると 前年同月・前年比が 出ます）', '月分を 選ぶと 前月末 ＋ 当月の 増減（仕訳化で 確定した 仕訳・元帳で ✓ した 伝票）＝ 当月末。✓ 前の 伝票は 黄色の「仮」', '［勘定科目残高］［残高推移表］［グラフ］と［貸借対照表］［損益計算書］［製造原価報告書］を 切り替える。［内訳表示（口座・取引先）］［0円行を表示］', '科目を ダブルクリック → 口座別 → もう一度 ダブルクリックで 元帳 →［伝票を開く］で 元帳で確かめるの その伝票（写真つき・［✎ 訂正］で 直せる）。仕訳化で 確定した 仕訳は［✎ 仕訳を 直す］で 仕訳化の その 1件へ', '［選んだ 箱だけ（途中の 試算表）］… 回収資料・仕訳化の 札で 選んだ 箱の ぶんだけで 当月を 出す（全部 そろっていなくても 作れる）', '［✓ この月を 確定（顧問先の 画面にも 出す）］… 仮が 無ければ 確定できる。確定した 月が 顧問先の 画面の「📊 試算表」に 出て、経営助言の「📥 確定した 試算表から 入れる」の 材料にも なる', '［🖨 印刷・PDF（A4）］… TKC の 紙と 同じ 形で 印刷'],
-      tips: ['［予実対比］… 経営助言タブの ① 予算で 決めた 予算と 実績を 当月・期首からの 累計で 比べる（差・達成率・月ごとの グラフ）。顧問先の 画面にも 出ます', '途中の 月でも 推移表と グラフは 出ます（確定しなくても 見られる）', 'エージェントが 作った 試算表は 使いません。仕訳化で 確かめた ものだけが 積み上がります'] },
+      tips: ['［予実対比］… 経営助言タブの ① 予算で 決めた 予算と 実績を 当月・期首からの 累計で 比べる（差・達成率・期首からの 累計の 折れ線（緑＝実績・橙＝予算））。売上高が マイナスの 月が 出たら 推移表が「当月」の まま 入って いるので、もう一度 貼る（累計に 直して 入る）。顧問先の 画面にも 出ます', '途中の 月でも 推移表と グラフは 出ます（確定しなくても 見られる）', 'エージェントが 作った 試算表は 使いません。仕訳化で 確かめた ものだけが 積み上がります'] },
     Out: { t: '取込ファイル', pic: 'g_oout', lead: '確定した仕訳を 会計ソフト（FX）へ 取り込むファイルにする タブです。',
       steps: ['処理済ボックス（月分・箱）を選ぶ', 'ファイルにして 保存する', 'FX で 取り込む'], tips: [] },
     Clients: { t: '顧問先', pic: 'g_oclients', lead: '顧問先の登録・箱（資料の入れもの）・URL・公式LINE などを決めるタブです。',
