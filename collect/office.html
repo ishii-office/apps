@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795575583;</script>
+<script>window.__PAGE_VER=1795577018;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -9517,7 +9517,9 @@
     for (let k = 1; k <= LED_AHEAD; k++) { const sl = LED.d.slips[LED.order[LED.si + k]]; if (!sl) break; ledWarm(sl); }
     if (LED.si > 0) { const pv = LED.d.slips[LED.order[LED.si - 1]]; if (pv) ledWarm(pv); }
   }
-  function ledDrawSlipOnly() { const b = $('ledBody'); b.textContent = ''; ledStat(); ledCr(); ledDrawSlip(b); ledPrefetch(); }
+  function ledDrawSlipOnly() { const b = $('ledBody'); b.textContent = ''; ledStat(); ledCr(); ledDrawSlip(b); ledPrefetch(); ledRefocus(); }
+  /* ★ 2026-11-25：訂正の欄を Esc・保存で 閉じると 字を打っていた欄が 消えて キーが 元帳に 届かなくなっていた（Enter・0・1 が 効かない）。元帳へ 戻す */
+  function ledRefocus() { if (LED.edit) return; const ov = $('ledOv'); if (ov && !ov.contains(document.activeElement)) { try { ov.focus({ preventScroll: true }); } catch (e) { ov.focus(); } } }
   function ledCur() { return LED.d.slips[LED.order[LED.si]]; }
   function ledApply(r) { const sl = LED.d.slips.filter(function (x) { return x.id === r.id; })[0]; if (!sl) return sl; if (r.lines) sl.lines = r.lines; if (r.edited !== undefined) { sl.ed = r.edited ? '今' : ''; sl.edBy = r.edited ? 'あなた' : ''; sl.ok = ''; } return sl; }
   function ledRestat() { const n = LED.d.slips.length, ed = LED.d.slips.filter(function (x) { return x.ed; }).length; LED.d.stat = { n: n, ok: LED.d.slips.filter(function (x) { return x.ok; }).length, edited: ed, match: n ? Math.round((n - ed) / n * 1000) / 10 : 0 }; ledAgg(); }
