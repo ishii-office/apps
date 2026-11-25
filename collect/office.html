@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795618470;</script>
+<script>window.__PAGE_VER=1795621054;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -3222,7 +3222,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { ckzList: 1, cjyList: 1, hayatoStat: 1, minSumStat: 1, fasGet: 1, aiqAll: 1, acdList: 1, ksGet: 1, budgetGet: 1, refWaitN: 1, refList: 1, aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
+  const READ_FN = { demoGet: 1, ckzList: 1, cjyList: 1, hayatoStat: 1, minSumStat: 1, fasGet: 1, aiqAll: 1, acdList: 1, ksGet: 1, budgetGet: 1, refWaitN: 1, refList: 1, aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, arriveGrid: 1, askList: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -3478,7 +3478,8 @@
     const d = new Date(it.t || 0); if (!it.t || isNaN(d)) return null;
     const p = function (n) { return ('0' + n).slice(-2); };
     let bx = String(it.box || '').split('/')[0]; if (!bx || bx === '未分類') bx = 'その他';
-    return { k: S.code + '|' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '|' + bx, t: it.t };
+    const j = new Date(d.getTime() + 9 * 3600e3);   /* ★ 2026-11-26：日付は 日本時間で（サーバの 🔔 と 同じ。端末の 時刻帯が ちがうと 0時すぎに NEW が 出なかった） */
+    return { k: S.code + '|' + j.getUTCFullYear() + '-' + p(j.getUTCMonth() + 1) + '-' + p(j.getUTCDate()) + '|' + bx, t: it.t };
   }
   function newByOffice(it) { const mm = String(it.memo || ''); return (STAFF_NAMES || []).some(function (n) { return n && mm.slice(-(n.length + 2)) === '（' + n + '）'; }); }
   /* まだ 見ていない（hold は 見ない）。未確定で 確認済に していないもの だけ。事務所が 自分で 入れたものは 付けない */
@@ -8590,7 +8591,7 @@
     Out: { t: '取込ファイル', pic: 'g_oout', lead: '確定した仕訳を 会計ソフト（FX）へ 取り込むファイルにする タブです。',
       steps: ['処理済ボックス（月分・箱）を選ぶ', 'ファイルにして 保存する', 'FX で 取り込む'], tips: [] },
     Clients: { t: '顧問先', pic: 'g_oclients', lead: '顧問先の登録・箱（資料の入れもの）・URL・公式LINE などを決めるタブです。',
-      steps: ['［🎁 紹介・お試し］… 顧問先の 紹介 URL から お試しを はじめた 方（名前・連絡先・だれの 紹介か）と 質問。答えを 直して［送る］。「✉ やりとり」で お問い合わせを 読み、［担当者から 送る］で 一言 返す（お試しの 方の 画面に 出る）', '［＋ 新しい顧問先］で 登録', '［＋ 箱を足す］で 資料の箱を決める（並べ替え・中の箱も）', '顧問先に渡す URL は ここ（［URLを作り直す］で 前の URL は 使えなくなります）', '担当・補助担当・決算月を 入れる'],
+      steps: ['［🎁 紹介・お試し］の いちばん 上「🧪 見本の 会社（デモ）」… 架空の 顧問先を 選んで［見本に する］と、だれでも 登録なしで その 画面を 触れる URL（?demo=1）が 出る。触っても 保存は されない（中身は 事務所の 画面から ふだんどおり 入れる・同意は 先に 済ませる）', '［🎁 紹介・お試し］… 顧問先の 紹介 URL から お試しを はじめた 方（名前・連絡先・だれの 紹介か）と 質問。答えを 直して［送る］。「✉ やりとり」で お問い合わせを 読み、［担当者から 送る］で 一言 返す（お試しの 方の 画面に 出る）', '［＋ 新しい顧問先］で 登録', '［＋ 箱を足す］で 資料の箱を決める（並べ替え・中の箱も）', '顧問先に渡す URL は ここ（［URLを作り直す］で 前の URL は 使えなくなります）', '担当・補助担当・決算月を 入れる'],
       tips: ['利用規約の同意は［同意の画面を出す］を押すまで 顧問先には出ません（今までどおり使えます）。導入に行くときに 代表者の役職・氏名・説明担当者を入れて［保存］し、その場で押します。会社名・役職・代表者氏名・控えのメールは 同意の画面に 先に印字されます（顧問先が直せます）。説明担当者は ここで入れたものが 同意ログに残ります', 'QRコードは 顧問先のスマホのカメラで読み込むと ブラウザで開きます（LINE などから開いたときも ふだんのブラウザで開き直します）。あとは 画面の案内どおり「ホーム画面に追加」で終わりです', '顧問先の画面に 出納帳などの帳簿を出すのも ここで 箱ごとに決めます'] },
     Dict: { t: '仕訳辞書', pic: 'g_odict', lead: '取引先・摘要ごとの 決まった仕訳を 登録しておく タブです。AI の下書きにも 効きます。',
       steps: ['［＋ 辞書を登録］で 取引先・科目・税区分を 入れる', 'まちがえたものは 直す・［この辞書を消す］'], tips: ['同じ辞書を いくつかの回収ボックスで使うときは、「回収ボックス」の下の「ほかの箱でも使う」で その箱に ✓（どの箱にも出すなら「共通」）', 'いくつもの辞書に まとめて箱を足すときは［☑ まとめて箱を付ける・移す］→ 辞書に ✓ → 箱を選んで［＋ この箱でも使う］（外すときは［－ この箱から外す］）', 'ほかの回収ボックスへ まとめて移すときは［☑ まとめて箱を付ける・移す］→ 辞書に ✓（Shift＋クリックで あいだを ぜんぶ・［全部選ぶ］）→ 箱を選んで［→ この箱へ移す］。移した辞書は 移す先の いちばん下に並びます'] },
@@ -19985,6 +19986,7 @@
     let ov = $('refOv'); if (!ov) { ov = el('div', 'tabov'); ov.id = 'refOv'; ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9000;display:flex;align-items:flex-start;justify-content:center;padding:30px 12px;overflow:auto'; document.body.appendChild(ov); ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); }); }
     ov.textContent = ''; const bx = el('div'); bx.style.cssText = 'background:#fff;border-radius:12px;max-width:820px;width:100%;padding:14px';
     const h = el('div', 'hobar'); h.appendChild(el('b', null, '🎁 紹介・お試しの 方（' + list.length + '人）')); const cl = el('button', 'btn ghost sm', '閉じる'); cl.type = 'button'; cl.addEventListener('click', function () { ov.remove(); }); h.appendChild(cl); bx.appendChild(h);
+    bx.appendChild(demoBox_());
     if (!list.length) bx.appendChild(el('p', 'note', 'まだ ありません。顧問先の 画面の［💬 ハヤト（AI）に聞く］の 下に 紹介の URL が 出ています。'));
     list.forEach(function (x) {
       const d = el('details', 'refitem'); d.open = x.qs.some(function (q) { return !q.check; });
@@ -20011,6 +20013,21 @@
   /* ★ 2026-11-24（石井）：個人を 選んだら 代表者の 役職は「代表」（個人事業は みな 代表）。法人に 戻したら 自動で 入れた「代表」は 消す */
   function aRepKind() { const kd = $('aKind').value, rt = $('aRepTitle'); rt.placeholder = kd === '個人' ? '例 代表' : '例 代表取締役'; if (kd === '個人' && !rt.value.trim()) { rt.value = '代表'; rt.dataset.auto = '1'; } else if (kd !== '個人' && rt.dataset.auto === '1' && rt.value === '代表') { rt.value = ''; rt.dataset.auto = ''; } }
   $('aKind').addEventListener('change', aRepKind);
+  /* ★★★ 2026-11-26（石井）：見本の 会社（デモ）。架空の 顧問先を 1つ 見本に 決めると、だれでも ?demo=1 で その 画面を 触れる（保存は されない） */
+  function demoBox_() {
+    const d = el('details', 'refitem'); d.id = 'demoBox'; d.appendChild(el('summary', null, '🧪 見本の 会社（デモ）'));
+    const st = el('div', 'note', '読み込んでいます…'); d.appendChild(st);
+    const sel = el('select'); sel.id = 'demoSel'; sel.appendChild(new Option('（見本に しない）', ''));
+    (S.clients || []).forEach(function (c) { sel.appendChild(new Option(c.code + ' ' + c.name, c.code)); });
+    const go = el('button', 'btn sm', '見本に する'); go.type = 'button'; go.id = 'demoGo';
+    const url = el('input'); url.id = 'demoUrl'; url.readOnly = true; url.style.cssText = 'width:100%;margin-top:6px'; url.hidden = true;
+    const cp = el('button', 'btn ghost sm', '📋 URL を コピー'); cp.type = 'button'; cp.hidden = true; cp.addEventListener('click', function () { try { navigator.clipboard.writeText(url.value); cp.textContent = '✓ コピーしました'; } catch (e) {} });
+    const paint = function (r) { sel.value = r.code || ''; st.textContent = r.code ? 'いまの 見本：' + r.code + ' ' + r.name + '。下の URL を 名刺・LINE・ホームページに 載せると、だれでも 登録なしで 触れます（触っても 保存は されません）。' : 'まだ 見本は ありません。架空の 顧問先を 作って 中身（試算表・助言・議事録 など）を 入れてから 選んでください（同意も 先に 済ませて おく）。'; url.hidden = cp.hidden = !r.code; url.value = r.url || ''; };
+    go.addEventListener('click', function () { go.disabled = true; gs('demoSet', sel.value).then(function (r) { go.disabled = false; paint(r); }, function (e) { go.disabled = false; st.textContent = e.message; }); });
+    const row = el('div', 'bar'); row.appendChild(sel); row.appendChild(go); d.appendChild(row); d.appendChild(url); d.appendChild(cp);
+    gs('demoGet').then(paint, function (e) { st.textContent = e.message; });
+    return d;
+  }
   /* ★ 2026-11-24（石井）：お試しの 方の お問い合わせに まだ 返事を していない 数を［顧問先］タブと［🎁 紹介・お試し］に 赤い 数字で */
   function refBadge() {
     if (!S.booted || document.hidden) return;
