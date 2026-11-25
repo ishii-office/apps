@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795606694;</script>
+<script>window.__PAGE_VER=1795607519;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2373,7 +2373,7 @@
     <div id="jyList"></div>
   </details>
   <details class="rbox" id="aqBox"><summary>💬 顧問先が AI に聞いたこと（確かめて 返す）</summary>
-    <p class="note">顧問先の［💬 AI に聞く］の 質問と AI の 答え。ふだんは AI が すぐ 答え、税額が 大きく 変わりそうな ものは 答えを 出さずに 待っています。［✓ この答えで よい］か、直して［✎ 直して 送る］。月の 費用の 上限で 止まります。</p>
+    <p class="note">顧問先の［💬 ハヤト（AI）に聞く］の 質問と AI の 答え。ふだんは AI が すぐ 答え、税額が 大きく 変わりそうな ものは 答えを 出さずに 待っています。［✓ この答えで よい］か、直して［✎ 直して 送る］。月の 費用の 上限で 止まります。</p>
     <div class="note" id="aqStat"></div>
     <!-- ★★★ 2026-11-24：この 顧問先の AI の 設定（広げて 答える＝まず 1〜2社で 試す・よく使う 質問） -->
     <div class="aqconf">
@@ -9037,7 +9037,7 @@
   }
   $('jDictTg').addEventListener('click', function () { const on = !$('jmain').classList.contains('dictoff'); try { localStorage.setItem('collect_office_dictui', on ? '0' : '1'); } catch (e) {} window.__dictOff = on ? 1 : 0; jDictPaint(); });
   $('jDictLed').addEventListener('click', function () { lgOpen(); });
-  /* ★★ 2026-11-22（石井）：顧問先が［💬 AI に聞く］で 聞いたこと。確かめて 返す */
+  /* ★★ 2026-11-22（石井）：顧問先が［💬 ハヤト（AI）に聞く］で 聞いたこと。確かめて 返す */
   /* ★★ 2026-11-26：顧問先の［🧭 経営助言要望］ */
   function jyLoad() {
     if (!S.code) return; const w = $('jyList'); w.textContent = '読み込み中…';
@@ -19919,7 +19919,7 @@
     let ov = $('refOv'); if (!ov) { ov = el('div', 'tabov'); ov.id = 'refOv'; ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9000;display:flex;align-items:flex-start;justify-content:center;padding:30px 12px;overflow:auto'; document.body.appendChild(ov); ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); }); }
     ov.textContent = ''; const bx = el('div'); bx.style.cssText = 'background:#fff;border-radius:12px;max-width:820px;width:100%;padding:14px';
     const h = el('div', 'hobar'); h.appendChild(el('b', null, '🎁 紹介・お試しの 方（' + list.length + '人）')); const cl = el('button', 'btn ghost sm', '閉じる'); cl.type = 'button'; cl.addEventListener('click', function () { ov.remove(); }); h.appendChild(cl); bx.appendChild(h);
-    if (!list.length) bx.appendChild(el('p', 'note', 'まだ ありません。顧問先の 画面の［💬 AI に聞く］の 下に 紹介の URL が 出ています。'));
+    if (!list.length) bx.appendChild(el('p', 'note', 'まだ ありません。顧問先の 画面の［💬 ハヤト（AI）に聞く］の 下に 紹介の URL が 出ています。'));
     list.forEach(function (x) {
       const d = el('details', 'refitem'); d.open = x.qs.some(function (q) { return !q.check; });
       const ms = x.msgs || [], wait = ms.length && ms[ms.length - 1].me;   /* 問い合わせに まだ 返事を していない */
