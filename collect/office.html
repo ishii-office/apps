@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795621054;</script>
+<script>window.__PAGE_VER=1795624463;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -8591,7 +8591,7 @@
     Out: { t: '取込ファイル', pic: 'g_oout', lead: '確定した仕訳を 会計ソフト（FX）へ 取り込むファイルにする タブです。',
       steps: ['処理済ボックス（月分・箱）を選ぶ', 'ファイルにして 保存する', 'FX で 取り込む'], tips: [] },
     Clients: { t: '顧問先', pic: 'g_oclients', lead: '顧問先の登録・箱（資料の入れもの）・URL・公式LINE などを決めるタブです。',
-      steps: ['［🎁 紹介・お試し］の いちばん 上「🧪 見本の 会社（デモ）」… 架空の 顧問先を 選んで［見本に する］と、だれでも 登録なしで その 画面を 触れる URL（?demo=1）が 出る。触っても 保存は されない（中身は 事務所の 画面から ふだんどおり 入れる・同意は 先に 済ませる）', '［🎁 紹介・お試し］… 顧問先の 紹介 URL から お試しを はじめた 方（名前・連絡先・だれの 紹介か）と 質問。答えを 直して［送る］。「✉ やりとり」で お問い合わせを 読み、［担当者から 送る］で 一言 返す（お試しの 方の 画面に 出る）', '［＋ 新しい顧問先］で 登録', '［＋ 箱を足す］で 資料の箱を決める（並べ替え・中の箱も）', '顧問先に渡す URL は ここ（［URLを作り直す］で 前の URL は 使えなくなります）', '担当・補助担当・決算月を 入れる'],
+      steps: ['［🎁 紹介・お試し］… お試しの 方が 決算書の 診断を すると、その 方の 行に 格付の 目安・強み・気を つける ところ・助言が 出る（担当者に 知らせが 届く。決算書は 30日で ひとりでに 消える。月 5,000円まで）', '［🎁 紹介・お試し］の いちばん 上「🧪 見本の 会社（デモ）」… 架空の 顧問先を 選んで［見本に する］と、だれでも 登録なしで その 画面を 触れる URL（?demo=1）が 出る。触っても 保存は されない（中身は 事務所の 画面から ふだんどおり 入れる・同意は 先に 済ませる）', '［🎁 紹介・お試し］… 顧問先の 紹介 URL から お試しを はじめた 方（名前・連絡先・だれの 紹介か）と 質問。答えを 直して［送る］。「✉ やりとり」で お問い合わせを 読み、［担当者から 送る］で 一言 返す（お試しの 方の 画面に 出る）', '［＋ 新しい顧問先］で 登録', '［＋ 箱を足す］で 資料の箱を決める（並べ替え・中の箱も）', '顧問先に渡す URL は ここ（［URLを作り直す］で 前の URL は 使えなくなります）', '担当・補助担当・決算月を 入れる'],
       tips: ['利用規約の同意は［同意の画面を出す］を押すまで 顧問先には出ません（今までどおり使えます）。導入に行くときに 代表者の役職・氏名・説明担当者を入れて［保存］し、その場で押します。会社名・役職・代表者氏名・控えのメールは 同意の画面に 先に印字されます（顧問先が直せます）。説明担当者は ここで入れたものが 同意ログに残ります', 'QRコードは 顧問先のスマホのカメラで読み込むと ブラウザで開きます（LINE などから開いたときも ふだんのブラウザで開き直します）。あとは 画面の案内どおり「ホーム画面に追加」で終わりです', '顧問先の画面に 出納帳などの帳簿を出すのも ここで 箱ごとに決めます'] },
     Dict: { t: '仕訳辞書', pic: 'g_odict', lead: '取引先・摘要ごとの 決まった仕訳を 登録しておく タブです。AI の下書きにも 効きます。',
       steps: ['［＋ 辞書を登録］で 取引先・科目・税区分を 入れる', 'まちがえたものは 直す・［この辞書を消す］'], tips: ['同じ辞書を いくつかの回収ボックスで使うときは、「回収ボックス」の下の「ほかの箱でも使う」で その箱に ✓（どの箱にも出すなら「共通」）', 'いくつもの辞書に まとめて箱を足すときは［☑ まとめて箱を付ける・移す］→ 辞書に ✓ → 箱を選んで［＋ この箱でも使う］（外すときは［－ この箱から外す］）', 'ほかの回収ボックスへ まとめて移すときは［☑ まとめて箱を付ける・移す］→ 辞書に ✓（Shift＋クリックで あいだを ぜんぶ・［全部選ぶ］）→ 箱を選んで［→ この箱へ移す］。移した辞書は 移す先の いちばん下に並びます'] },
@@ -20000,6 +20000,17 @@
         const eg = el('button', 'btn ghost sm', '例文を 入れる'); eg.type = 'button'; eg.addEventListener('click', function () { if (!ta.value) ta.value = '先日は お試しで AI を 使って いただき ありがとうございます。担当の ' + ((S.me && S.me.name) || '') + 'です。気に なる ことが あれば、ここから いつでも どうぞ。'; ta.focus(); });
         const sb = el('button', 'btn sm', '担当者から 送る'); sb.type = 'button'; sb.addEventListener('click', function () { if (!ta.value.trim()) return; sb.disabled = true; gs('refSay', x.tid, ta.value).then(function (l) { refDraw(l); refBadge(); }, function (e) { sb.disabled = false; alert(e.message); }); });
         mb.appendChild(ta); mb.appendChild(eg); mb.appendChild(sb); d.appendChild(mb); }
+      /* ★★★ 2026-11-26 決算書を 撮るだけ 診断の 結果（決算書は 30日で 消える） */
+      (x.shindan || []).forEach(function (o) {
+        const sb2 = el('div', 'aqrow'); sb2.appendChild(el('b', null, '📈 決算書の 診断 ' + o.at + '：' + (o.company || '') + ' ' + (o.term || '') + '　格付の 目安 ' + o.grade + '（' + o.words + '）' + o.score + '点'));
+        (o.ind || []).forEach(function (i) { sb2.appendChild(el('div', 'note', i.k + '：' + (i.v == null ? '—' : i.v + i.u) + '（' + i.p + '/' + i.max + '）')); });
+        sb2.appendChild(el('div', null, '👍 ' + (o.strengths || []).join('／')));
+        sb2.appendChild(el('div', null, '⚠ ' + (o.risks || []).join('／')));
+        sb2.appendChild(el('div', null, '🧭 ' + (o.advice || '')));
+        if (o.protect) sb2.appendChild(el('div', 'note', '🛡 ' + o.protect));
+        sb2.appendChild(el('div', 'note', '決算書（' + (o.files || 0) + '枚）は ' + o.del + ' に ひとりでに 消します（ドライブ ＞ _診断）。'));
+        d.appendChild(sb2); d.open = true;
+      });
       x.qs.forEach(function (q) {
         const r = el('div', 'aqrow'); r.appendChild(el('div', null, 'Q ' + q.q)); r.appendChild(el('div', 'note', (q.heavy ? '（大事な 質問・まだ 答えて いない）' : 'AI：') + (q.a || '')));
         if (q.check) r.appendChild(el('div', 'note', '✓ ' + q.check.who + (q.check.text ? '：' + q.check.text : '')));
