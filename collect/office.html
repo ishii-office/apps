@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795577531;</script>
+<script>window.__PAGE_VER=1795578892;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1823,7 +1823,7 @@
 <div class="obv" id="obv" hidden role="dialog" aria-modal="true" aria-labelledby="obT">
   <div class="obbox">
     <div class="obh"><h3 id="obT">📒 出納帳</h3><button type="button" class="btn ghost sm" id="obClose">閉じる</button></div>
-    <div class="obnav"><button type="button" class="btn ghost sm" id="obPrev">‹ 前の月</button><b id="obYm"></b><button type="button" class="btn ghost sm" id="obNext">次の月 ›</button><button type="button" class="btn sm" id="obEsAi" hidden title="日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで、この月の 売上日報を まとめて 作ります（書いてある日は さわりません）">🤖 写真から 売上日報を まとめて作る</button><button type="button" class="btn ghost sm" id="obPrint" hidden title="この月の 店舗売上日報の一覧と まとめを 印刷（PDF にも できます）">🖨 印刷</button><button type="button" class="btn ghost sm" id="obCsv" title="この月の出納帳を CSV（エクセルで開ける）で保存">CSV で保存</button><button type="button" class="btn sm" id="obToWork" title="この月の出納帳を CSV にして この箱へ入れる。仕訳化では 1行ずつ仕訳の下書きになり（背骨）、領収書は 証憑として当たる">🤖 この月を仕訳化に回す</button></div>
+    <div class="obnav"><button type="button" class="btn ghost sm" id="obPrev">‹ 前の月</button><b id="obYm"></b><button type="button" class="btn ghost sm" id="obNext">次の月 ›</button><button type="button" class="btn sm" id="obEsAi" hidden title="日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで、いま 出している月の 売上日報を まとめて 作ります（書いてある日は さわりません。月は［‹ 前の月］［次の月 ›］で 選ぶ）">🤖 写真から 売上日報を まとめて作る</button><button type="button" class="btn ghost sm" id="obPrint" hidden title="この月の 店舗売上日報の一覧と まとめを 印刷（PDF にも できます）">🖨 印刷</button><button type="button" class="btn ghost sm" id="obCsv" title="この月の出納帳を CSV（エクセルで開ける）で保存">CSV で保存</button><button type="button" class="btn sm" id="obToWork" title="この月の出納帳を CSV にして この箱へ入れる。仕訳化では 1行ずつ仕訳の下書きになり（背骨）、領収書は 証憑として当たる">🤖 この月を仕訳化に回す</button></div>
     <div class="obwrap"><table class="obtbl"><thead id="obHead"><tr><th>日付</th><th>摘要</th><th class="n">入金</th><th class="n">出金</th><th class="n">残高</th></tr></thead><tbody id="obBody"></tbody></table></div>
     <p class="note" id="obMsg"></p>
     <!-- ★ 2026-11-19（柳田）：店舗売上日報の 1か月の まとめ（カフェ／アパレル・8%／10%・現金／カード） -->
@@ -6195,7 +6195,8 @@
     if (!S.dvOff && S.dvBox && S.dvBox !== '*' && (c.esps || []).indexOf(S.dvBox) >= 0) {
       const k = S.dvBox, ab = el('button', 'dmon-b obgo uriage dvesai', '🤖 写真から 売上日報を まとめて作る'); ab.type = 'button';
       ab.title = '［' + boxLabel(k) + '］の 日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで、売上日報を まとめて 作ります';
-      ab.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'esp'); obEsAiRun(); }); h.appendChild(ab);
+      /* ★ K-0317（2026-11-25 林）：補助簿の［🤖 写真から日報］と 同じく、月の 小窓を 開いて 月を 選んでから 作る */
+      ab.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'esp', '［‹ 前の月］［次の月 ›］で 作る月を 選んで、［🤖 写真から ◯月分の 売上日報を まとめて作る］を 押してください。', true); }); h.appendChild(ab);
     }
     body.appendChild(h);
   }
@@ -6695,7 +6696,8 @@
         kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'esp'); }); st.appendChild(kb);
         /* ★ K-0302（2026-11-24 林）：売上伝票の 写真から 売上日報を まとめて作る */
         const ab = el('button', 'dmon-b obgo uriage', '🤖 写真から日報'); ab.type = 'button'; ab.title = '［' + boxLabel(k) + '］の 日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで、売上日報を まとめて 作ります';
-        ab.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'esp'); obEsAiRun(); }); st.appendChild(ab); });
+        /* ★ K-0317（2026-11-25 林）：押しても すぐには 作らない。月の 小窓を 開いて［‹ 前の月］［次の月 ›］で 月を 選び、［🤖 写真から ◯月分の 売上日報を まとめて作る］で 作る */
+        ab.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'esp', '［‹ 前の月］［次の月 ›］で 作る月を 選んで、［🤖 写真から ◯月分の 売上日報を まとめて作る］を 押してください。', true); }); st.appendChild(ab); });
       kns.forEach(function (k) { const kb = el('button', 'dmon-b obgo kyuyo', '⏱ ' + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 出勤簿・給与（人ごとの 日数・時間・時給・給与・通勤手当・源泉所得税・差引支給額）を見る';
         kb.addEventListener('click', function () { obOpen(k, S.per && S.per.length === 7 ? S.per : '', 'kinmu'); }); st.appendChild(kb); });
       kys.forEach(function (k) { const kb = el('button', 'dmon-b obgo kyuyo', '👛 ' + boxLabel(k)); kb.type = 'button'; kb.title = '顧問先が この箱で書いた 給与台帳（時給×時間・交通費・源泉徴収・住民税・差引支給額）を見る';
@@ -7910,26 +7912,31 @@
   /* ★ 出納帳（顧問先が書いたもの。見るだけ。2026-11-07） */
   const OB = { box: '', ym: '', data: null, kind: '' };
   function obYmNow() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
-  function obOpen(box, ym, kind, msg) {
-    OB.box = box; OB.ym = ym || obYmNow(); OB.kind = kind || ''; OB.edit = ''; OB.msg = msg || '';
+  function obOpen(box, ym, kind, msg, make) {
+    OB.box = box; OB.ym = ym || obYmNow(); OB.kind = kind || ''; OB.edit = ''; OB.msg = msg || ''; OB.make = !!make && OB.kind === 'esp';
     $('obT').textContent = (({ kake: '📘 掛帳', kaikake: '📕 仕入等買掛金帳', kyuyo: '👛 給与台帳', uriage: '🧾 店舗売上日報', esp: '🍸 売上日報（現金）', kinmu: '⏱ 出勤簿・給与' })[OB.kind] || '📒 出納帳') + '［' + boxLabel(box) + '］';
     /* 出納帳（業務日報も）だけ 直す・仕訳化に回す。掛帳・仕入等買掛金帳・給与台帳は 見るだけ */
     $('obToWork').hidden = !!OB.kind;
     $('obPrint').hidden = OB.kind !== 'uriage';   /* ★ 2026-11-19（柳田）：店舗売上日報は 月の一覧を 印刷 */
-    $('obEsAi').hidden = true; $('obEsAi').disabled = !!OB.aiBusy;   /* ★ K-0302。2026-11-24（林）：🍸 の 小窓（売上日報の 画面）には 出さない。まとめて作るのは 補助簿の［🤖 写真から日報］から */
+    obEsAiPaint();   /* ★ K-0302。2026-11-24（林）：🍸 で 開いた 小窓には 出さない。補助簿の［🤖 写真から日報］で 開いたときだけ 出す（K-0317） */
     $('obEd').hidden = !!OB.kind;
     $('obv').querySelector('.obbox').classList.toggle('wide', OB.kind === 'kaikake' || OB.kind === 'kyuyo' || OB.kind === 'uriage' || OB.kind === 'esp' || OB.kind === 'kinmu');
     $('obv').hidden = false; obLoad();
   }
   /* ★ K-0302（2026-11-24 林）：売上伝票の 写真から 売上日報を まとめて作る（届いた 写真だけ。日報が まだ無い日＝数字が 1つも 入っていない日だけ。書いてある日は さわらない）。
        顧問先の画面の esAiRun と 同じ 流れ（① 日の 無い 写真の 日付を 読む ② 1日ずつ 作る） */
+  /* ★ K-0317（2026-11-25 林）：どの月を 作るか 選べるように。［🤖 写真から日報］で 開いた 小窓だけ ボタンを 出し、何月分かを ボタンに 書く（‹ › で 月を 変えると 入れ替わる） */
+  function obEsAiPaint() {
+    const b = $('obEsAi'); b.hidden = !(OB.make && OB.kind === 'esp'); b.disabled = !!OB.aiBusy;
+    const m = String(OB.ym || '').split('-'); b.textContent = OB.aiBusy ? '🤖 作っています…' : '🤖 写真から ' + Number(m[1]) + '月分の 売上日報を まとめて作る';
+  }
   function obEsAiRun() {
     if (OB.aiBusy || OB.kind !== 'esp') return;
-    const code = S.code, box = OB.box, ym = OB.ym, M = Number(ym.slice(5, 7)) + '月';
+    const code = S.code, box = OB.box, ym = OB.ym, M = ym.slice(0, 4) + '年' + Number(ym.slice(5, 7)) + '月分';
     /* ★ K-0313（2026-11-25 林）：進み具合を 読み込みの 知らせで 消さない（obNote が OB.aiText を 先に 出す） */
     const say = function (t) { OB.aiText = t; if (OB.box === box && OB.ym === ym && !$('obv').hidden) { $('obMsg').textContent = t; $('obMsg').className = 'note'; } };
-    const end = function (t) { OB.aiBusy = false; OB.aiText = ''; $('obEsAi').disabled = false; if (OB.box === box && OB.ym === ym) { OB.msg = t; obLoad(); } };
-    OB.aiBusy = true; $('obEsAi').disabled = true; say(M + 'の 写真を 調べています…');
+    const end = function (t) { OB.aiBusy = false; OB.aiText = ''; obEsAiPaint(); if (OB.box === box && OB.ym === ym) { OB.msg = t; obLoad(); } };
+    OB.aiBusy = true; obEsAiPaint(); say(M + 'の 写真を 調べています…');
     let made = 0, from = 0;
     const fail = function (e) { end('途中で 止まりました。' + e.message + '（もう一度 押すと 続きから 作ります）'); };
     const dates = function () {
@@ -7968,7 +7975,7 @@
     return pp;
   }
   function obLoad() {
-    const m = OB.ym.split('-'); $('obYm').textContent = m[0] + '年' + Number(m[1]) + '月分'; OB.data = null; obDraw(); $('obMsg').textContent = '読み込んでいます…';
+    const m = OB.ym.split('-'); $('obYm').textContent = m[0] + '年' + Number(m[1]) + '月分'; obEsAiPaint(); OB.data = null; obDraw(); $('obMsg').textContent = '読み込んでいます…';
     if (OB.kind === 'kaikake') { const n = new Date(Number(m[0]), Number(m[1]), 1); $('obYm').textContent += '（' + n.getFullYear() + '年' + (n.getMonth() + 1) + '月支払い）'; }
     const want = OB.box + '|' + OB.ym;
     gs(({ kake: 'officeKake', kaikake: 'officeKaikake', kyuyo: 'officeKyuyo', uriage: 'officeUriage', esp: 'officeEsp', kinmu: 'officeKinmu' })[OB.kind] || 'officeBook', S.code, OB.box, OB.ym).then(function (r) { if (OB.box + '|' + OB.ym !== want) return; OB.data = r; obEdReset(); obDraw(); obNote(); },
@@ -8355,7 +8362,7 @@
       tips: ['タブを 右クリック →［新しいタブで開く］［別ウィンドウで開く］で 複数の 画面を 並べて 使えます（いまの 顧問先・月分を 引き継ぐ。Ctrl＋クリック・中ボタンでも 新しいタブ）', '紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料・仕訳化', pic: 'g_odocs', lead: '届いた資料を 箱ごとに 確かめ、そのまま エージェントに渡して 仕訳を作り、元帳で 確かめる タブです（前の 回収資料と 仕訳化を 1つに しました）。',
       steps: ['上の［🤖 エージェントに渡す］の 島：月分の 札で 月分、下の 箱の 札の［選ぶ］で 箱・小箱を 選んで［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（研究）。できた zip は 島の 中の［⬇ ダウンロード］。zip を Claude Code に 投げる だけで よい（指示は 要らない。zip の 中に Claude への 指示が 入っている。zip は 共有ドライブの 1回ぶんの フォルダ G:\\共有ドライブ\\…\\_エージェントに渡す に できている。ダウンロード 不要）。ブラウザの Claude Code は［⬇ 全部まとめてダウンロード］で 保存して 添付', 'できあがりは Claude Code が 同じ フォルダの「結果」に 置けば アプリが ひとりでに 拾う（［📂 フォルダの できあがりを 拾う］でも）。ほかに［⬆ できあがりを戻す］か 島へ ドラッグ。半年・1年・気づき・書面添付 などは［⚙ ほかの渡し方（半年・1年・気づき・書面添付 など）］', '右の［📗 元帳チェック］の 島：［📗 元帳で確かめる・直す］［📥 結果と学び］［📊 試算表へ］［📤 取込ファイルへ］。しまってある 辞書の 画面は［📇 辞書の画面を開く］', '上で 顧問先を選ぶと 箱の一覧（📦 毎月の箱／🗓 スポットの箱／📁 事務所の箱）。箱を押すと その中（年分 › 月分）。［‹ 箱の一覧へ］で 戻る。［▤ すべての箱を 並べて見る］で 箱を またいで さがす', '中に 小箱が ある 箱を 押すと 顧問先の 画面と 同じく 小箱の 札が 出る（小箱の 中で 年分 › 月分）', '📁 事務所の箱 … 返済予定表・概算減価償却の一覧表 など 通年の 参照資料を［＋ ファイルを 入れる］（顧問先からは 見えない・エージェントの zip に いつも 入る）。名前は［⚙ 事務所の箱を 決める］', 'まとまった PDF（スキャナで 何十枚も 1つに なったもの）は 大きく見るで［✂ 1ページずつに分ける］。1ページ ＝ 1つの 資料に なり、元の PDF は 破棄したものへ（戻せます）', '赤い枠の［⚠ 二重では？］… 先に届いた写真と 同じ写真・同じ日付と金額と相手・同じ字（日付・合計）。二重なら その写真を 破棄、ちがえば 2回押して「二重ではない」（顧問先には 聞かない）', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）', '戻したら［📗 元帳で確かめる］… TKC と同じ形（月別の残高 → 口座別 → 総勘定元帳 → 伝票）。伝票は 左に 写真（預金は 通帳の行）、右に 10行。Enter で ✓ して 次の伝票・0 で 前・T（F2）で 訂正・1・2 で エージェントの 別の案・Esc で 戻る。全部 ✓ で［📤 取り込みファイルにする］（FX の 一括読み込み。使った箱は 処理済ボックスへ）'],
-      tips: ['日ごとの箱（売上伝票など）は、日を選ばずに 届いたものも AI が 日付を読んで その日に並べます（札の左上に「🤖 10/12」。ちがう月の日付なら その月分へ移します）。前から届いていて 日の無いものは 月分の見出しの［🤖 日付を読む］で 読めます（1回に 25件まで・1枚 0.03〜0.05円ほど）。手書きの日付を先に読み、夜0時すぎに出した 日計は 前の日に並べます', '日付を 人が付けた（直した）月分は、見出しの［🤖 日付の読み方を確かめる］で AI に もう一度読ませて 何件 合ったかを 数えられます（日は 書きかえません）。ちがったものは「AI → 正しい日」で 知らせ、覚えて 次から AI に 伝えます。🤖 の日を 直したときも 同じように 覚えます', '日ごとの箱の写真を 押して 大きく見ると、上の帯の左に 何月何日の伝票か（📅 10月3日（土）。🤖 は AI が読んだ日・日が無ければ 赤い「📅 日付なし」）。ちがうときは 右の欄で 正しい日を選ぶと すぐ直ります（ちがう月の日なら その月分へ移ります。確定済みでも 直せます）。［↗ 別ウィンドウ］の 大きく見る でも 同じです', 'パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '🍸 売上日報（現金）の 箱は 上の「補助簿」の［🤖 写真から日報］か、売上伝票の 箱を 開いたときの 見出しの［🤖 写真から 売上日報を まとめて作る］（どちらも 同じ）で、日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで 1日ずつ 作ります（届いた 写真だけ。書いてある日は さわりません。日付の 無い 写真は 伝票の 日付を 読んで その日に 入れます）。作った日は 🤖 の 印。顧問先が 確かめて 保存すると 消えます', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
+      tips: ['日ごとの箱（売上伝票など）は、日を選ばずに 届いたものも AI が 日付を読んで その日に並べます（札の左上に「🤖 10/12」。ちがう月の日付なら その月分へ移します）。前から届いていて 日の無いものは 月分の見出しの［🤖 日付を読む］で 読めます（1回に 25件まで・1枚 0.03〜0.05円ほど）。手書きの日付を先に読み、夜0時すぎに出した 日計は 前の日に並べます', '日付を 人が付けた（直した）月分は、見出しの［🤖 日付の読み方を確かめる］で AI に もう一度読ませて 何件 合ったかを 数えられます（日は 書きかえません）。ちがったものは「AI → 正しい日」で 知らせ、覚えて 次から AI に 伝えます。🤖 の日を 直したときも 同じように 覚えます', '日ごとの箱の写真を 押して 大きく見ると、上の帯の左に 何月何日の伝票か（📅 10月3日（土）。🤖 は AI が読んだ日・日が無ければ 赤い「📅 日付なし」）。ちがうときは 右の欄で 正しい日を選ぶと すぐ直ります（ちがう月の日なら その月分へ移ります。確定済みでも 直せます）。［↗ 別ウィンドウ］の 大きく見る でも 同じです', 'パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '🍸 売上日報（現金）の 箱は 上の「補助簿」の［🤖 写真から日報］か、売上伝票の 箱を 開いたときの 見出しの［🤖 写真から 売上日報を まとめて作る］（どちらも 同じ）で 月の 小窓を 開き、［‹ 前の月］［次の月 ›］で 作る月を 選んで［🤖 写真から ◯月分の 売上日報を まとめて作る］を 押すと、日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで 1日ずつ 作ります（届いた 写真だけ。書いてある日は さわりません。日付の 無い 写真は 伝票の 日付を 読んで その日に 入れます）。作った日は 🤖 の 印。顧問先が 確かめて 保存すると 消えます', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料を エージェントに渡して 仕訳を作り、元帳で 確かめて 確定する タブです（AI 下書きは 止めました）。',
       steps: ['上の 札で 月分（「◯月分（一括）」で その月分を まとめて）と 箱・小箱を 選ぶ（いくつでも。［全部の箱］で 戻す）', '帯の［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（もう 仕訳の ある 月・研究）。その場で zip が できる（マイナンバーの書類は 入りません）', '直すのは［📗 元帳で確かめる・直す］から 手で（T／F2 で 訂正）。辞書で 仕訳する 画面は しまってあります（［📇 辞書の画面を開く］で 出せる）', '確定したものは［取込ファイル］タブへ', '［🤖 エージェントに渡す（zip）］で できた zip は 帯の 右上の［⬇ ダウンロード］で その場で 保存（30MB を 超えるときは 1／2・2／2 に 分かれるので 両方 落として 同じ フォルダに 展開）', 'エージェントは 上の帯で：［🤖 エージェントに渡す（zip）］→ 自分の Claude Code に 渡す → できあがりの zip を［⬆ できあがりを戻す］か 帯へ ドラッグ → ［📥 結果と学び］［📗 元帳で確かめる］（TKC と 同じ 伝票の形・Enter で ✓ して 次へ。写真は 先に 読んでおくので 速く 押しても 追いつきます）'],
       tips: ['スマホの［📗 元帳で確かめる］は 上から 下（上に 科目・下に 元帳／上に 写真・下に 伝票）。下の［✓ 次へ］［‹ 前］［✎ 訂正］［案1］［案2］［↩ 戻る］で 進みます', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
