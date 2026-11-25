@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795586365;</script>
+<script>window.__PAGE_VER=1795589620;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1664,6 +1664,7 @@
   .aqrow { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin: 6px 0; background: #fff; display: flex; flex-direction: column; gap: 4px; }
   .aqrow.done { opacity: .75; } .aqh { font-size: 12.5px; color: #555; } .aqq { font-weight: 700; white-space: pre-wrap; } .aqa { white-space: pre-wrap; } .aqa.fixed { color: #0F6E56; }
   .jyn { color: #b3261e; font-size: 12.5px; margin-left: 6px; }
+  .mndraft { border: 1px solid #8a5cf0; background: #f7f3ff; border-radius: 8px; padding: 8px 10px; margin: 6px 0; display: flex; flex-direction: column; gap: 6px; } .mndraft .mnh { font-weight: 700; margin-top: 4px; } .mndraft pre { white-space: pre-wrap; font: inherit; font-size: 12.5px; margin: 0; } .mndraft .mnrow { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; } .mndraft .mnrow span { flex: 1; font-size: 13px; }
   /* ★★★ 2026-11-26：AI ハヤト（大きな モニターに 出す 全画面） */
   #hyView { position: fixed; inset: 0; z-index: 9000; background: radial-gradient(ellipse at 50% 40%, #12305e 0%, #071226 60%, #030812 100%); color: #e8f1ff; display: flex; flex-direction: column; padding: 18px 22px; gap: 12px; font-size: 18px; }
   #hyView[hidden] { display: none; }
@@ -3153,7 +3154,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { ckzList: 1, cjyList: 1, hayatoStat: 1, fasGet: 1, aiqAll: 1, acdList: 1, ksGet: 1, budgetGet: 1, refWaitN: 1, refList: 1, aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
+  const READ_FN = { ckzList: 1, cjyList: 1, hayatoStat: 1, minSumStat: 1, fasGet: 1, aiqAll: 1, acdList: 1, ksGet: 1, budgetGet: 1, refWaitN: 1, refList: 1, aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, arriveGrid: 1, askList: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -8526,7 +8527,7 @@
       tips: ['雛形・書き方（巡回監査報告書・書面添付）は［📚 雛形・書き方を 入れる］から 事務所共通の資料へ。どの顧問先の zip にも 入る'] },
     Min: { t: '議事録', lead: '顧問先で 話したこと・見てきたことを ぜんぶ 残す タブです。あとから 直せない 記録に 残り、エージェントの zip にも 入って 次の 経営助言・企業防衛の 前提・カルテの もとに なります。',
       steps: ['種類（巡回監査・社長面談・訪問（現物確認）など）・日・題を 選び、OMS などの 議事録を［文字で入れる］か［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］。写真は 何枚でも（車・設備・パソコンや モニターの 様子 など）', '公式LINE・メール・電話の やりとりも 議事録：種類を 選び、やりとりの 日に 合わせて 文を 貼るか スクショを 入れる（公式LINE・メールの スクショは 字を ひとりでに 読んで 本文に する。12けたの 数字が 写っていたら 字は 入れない）。スクショ・ファイルは 枠に ドラッグ＆ドロップで 何枚でも（コピーした 画像は Ctrl+V）。［🎙 録音する］で その場の 会話を 録音（はじめに「議事録として 残します」と 伝える。残さない 話の あいだは［⏸ 一時停止（残さない 話）］、終わりは［⏹ 止めて 議事録に 入れる］。音声が 原本として 残る。「🗣 話しながら 字に する」に ✓ が あれば 録音しながら 話した ことを 字に し、止めたら 音声と 文字起こしが いっしょに 入る。巡回は スマホで 事務所の 画面を 開いて 録音すれば よい）。文字起こしの ある 議事録は エージェントの zip に「まとめ まだ」と 入り、エージェントの 議事録まとめ.json（要点・決定事項・やること）が 戻すと「決定事項」に 足される。下の 並べ方を「古い日から（時系列）」に すると、会った 日の 会話と 1本に 並ぶ。「本文も 並べて 読む」で 続けて 読める', '［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す（顧問料の 合意 など 言った 言わないの 証拠にも なる）', '「🔎 議事録を 探す」… ことば・種類で しぼる →［📎 巡回監査報告書へ 引く］［📎 書面添付へ 引く］で 保証タブの 下書きに 引用を 足す', 'エージェントに 渡すと 議事録（写真も）を 読んで、助言の 下書き（経営助言タブの「これから 出す 助言」）・企業防衛の 前提・カルテ案を 直して くる。［✓ 顧問先に 出す］まで 顧問先には 出ない'],
-      tips: ['議事録は 追記だけ（消せない）。まちがえたら［＋ 決定事項・やること］で 訂正を 足す', '上の［🏢 所内の 議事録（事務所の 中で 話したこと）］に 切り替えると 所内会議・打ち合わせを ためられる（顧問先には 出ない）。新しい 20件が どの 顧問先の エージェントの zip にも「所内議事録/」として 入り、事務所の 考え方・やり方の 材料に なる', '文字起こしは ブラウザの 音声認識（お金は かからない。聞きまちがいが あり得る。原本は 音声）。スマホでは 画面を 消すと 止まることが あるので、録音中は 画面を つけたまま'] },
+      tips: ['★ 録音を 止めると すぐ AI が まとめる（1回 20〜30円ほど・月の 上限 3000円）。議事録の まとめ・書面添付の 材料は 決定事項と 共有ドライブ（_議事録/コード/…_まとめ.md）に 入り、「🤖 まとめの 下書き」の［📨 顧問先に ご報告として 出す］［④の 助言に 写す］［カルテに 入れる］は 押した ものだけ 使う。社長に 聞くことは ④の いちばん上へ。まとめて いない 録音は［🤖 いま まとめる（AI・20〜30円ほど）］。AI の 利用を 撤回した 顧問先は まとめない', '議事録は 追記だけ（消せない）。まちがえたら［＋ 決定事項・やること］で 訂正を 足す', '上の［🏢 所内の 議事録（事務所の 中で 話したこと）］に 切り替えると 所内会議・打ち合わせを ためられる（顧問先には 出ない）。新しい 20件が どの 顧問先の エージェントの zip にも「所内議事録/」として 入り、事務所の 考え方・やり方の 材料に なる', '文字起こしは ブラウザの 音声認識（お金は かからない。聞きまちがいが あり得る。原本は 音声）。スマホでは 画面を 消すと 止まることが あるので、録音中は 画面を つけたまま'] },
     Rule: { t: 'AIの考え方', pic: 'g_orule', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
       steps: ['「原則と例外」… 左に 事務所の標準（原則）、右に この顧問先の 例外（按分の基準 など）。例外には 理由を 書いて［この顧問先の 例外を 保存］（版を 積む・zip の 原則と例外.md に 入る）。原則は 所長だけ が 直せる', 'エージェントが 戻した カルテ.md は【案】。上に「承認待ち」と 出たら［読んで 承認する］→［📥 結果と学び］で 読んで［✓ 承認して カルテに する］か［採らない（いまの カルテの まま）］（承認するまで カルテにも zip にも 入らない）', '決まりを 書いて［考え方を保存］', '仕訳辞書は「仕訳辞書を入れる口」へ 会計システムから 切り出した 辞書を ドラッグ（参考の 材料。［中身を 見る・直す］で 開ける）。経営助言（企業防衛・格付け・助言）は［経営助言］タブへ 移しました', '議事録は［保証］タブへ 移しました', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
     Fold: { t: 'Google共有ドライブ', lead: '事務所の Google共有ドライブを この画面から 開く・整理する タブです。',
@@ -16273,11 +16274,45 @@
   /* ★★★ 議事録（2026-11-19・ロードマップ6・7）：追記のみ・ハッシュの鎖。決定事項・顧問先の確認も 行を足す */
   let MN_KINDS = null;
   let MN_R = null;
+  /* ★★★ 2026-11-26：録音を 止めたら すぐ まとめる（AI・1回 20〜30円ほど）。下書き（ご報告・助言・カルテ）は 押した ものだけ 使う */
+  function mnSumGo(code, mid) {
+    mtMsg('mnMsg', '🤖 まとめています…（1分ほど。止めても 録音と 文字起こしは 残っています）');
+    gs('minSumNow', code, mid).then(function (x) {
+      if (x.list && code === MNC()) { mnDraw({ list: x.list }); const dd = document.querySelector('#mnList details[data-mid="' + String(mid).replace(/[^\w-]/g, '') + '"]'); if (dd) { dd.open = true; try { dd.scrollIntoView({ block: 'nearest' }); } catch (q) {} } }
+      mtMsg('mnMsg', x.ok ? '🤖 まとめました（約' + (x.yen || 0) + '円）。下の 議事録の「🤖 まとめの 下書き」から ご報告・助言・カルテに 使えます。共有ドライブ（_議事録）にも 置きました。' : (x.msg || 'まとめは 作りませんでした。'), x.ok ? '' : 'err');
+    }, function (e) { mtMsg('mnMsg', 'まとめられませんでした（録音と 文字起こしは 残っています）：' + e.message, 'err'); });
+  }
+  function mnDraftBox(x) {
+    const dr = x.draft, used = dr.used || {}, code = MNC(), box = el('div', 'mndraft');
+    box.appendChild(el('b', null, '🤖 まとめの 下書き（AI・' + dr.at + '）── 使う 前に 確かめて ください'));
+    const use = function (what, text, b, after) { b.disabled = true; gs('minDraftUse', code, x.id, what, text).then(function (r) { mtMsg('mnMsg', '✓ 使いました。'); if (after) after(); mnDraw({ list: r.list }); }, function (e) { b.disabled = false; mtMsg('mnMsg', e.message, 'err'); }); };
+    if (dr.report) {
+      box.appendChild(el('div', 'mnh', '📨 巡回の ご報告（顧問先向け）'));
+      const ta = el('textarea'); ta.rows = 6; ta.style.width = '100%'; ta.value = dr.report; box.appendChild(ta);
+      const b = el('button', 'btn sm', used.report ? '✓ 顧問先に 出しました（' + used.report + '）' : '📨 顧問先に ご報告として 出す'); b.type = 'button'; b.disabled = !!used.report;
+      b.addEventListener('click', function () { use('report', ta.value, b); }); box.appendChild(b);
+    }
+    if (dr.audit) { box.appendChild(el('div', 'mnh', '🔍 書面添付・巡回監査の 材料（議事録の 決定事項と 共有ドライブに 入れました）')); const p = el('pre'); p.textContent = dr.audit; box.appendChild(p); }
+    (dr.advice || []).forEach(function (a, i) {
+      if (i === 0) box.appendChild(el('div', 'mnh', '💬 経営助言の 下書き'));
+      const row = el('div', 'mnrow'); row.appendChild(el('span', null, '【' + a.item + '】' + a.text + '（理由：' + a.reason + '）' + (a.tax ? '【税務判断を 含む】' : '')));
+      const b = el('button', 'btn ghost sm', used['advice:' + i] ? '✓ ④に 写しました' : '④の 助言に 写す'); b.type = 'button'; b.disabled = !!used['advice:' + i];
+      b.addEventListener('click', function () { use('advice:' + i, '', b, function () { selectTab('Advice'); setTimeout(function () { try { $('kadNew').value = a.item; $('kadText').value = a.text; $('kadReason').value = a.reason; $('kadTax').checked = !!a.tax; $('kyBox').open = true; $('kadText').scrollIntoView({ block: 'center' }); } catch (q) {} }, 400); }); });
+      row.appendChild(b); box.appendChild(row);
+    });
+    (dr.karte || []).forEach(function (k, i) {
+      if (i === 0) box.appendChild(el('div', 'mnh', '🗂 カルテに 足す こと'));
+      const row = el('div', 'mnrow'); row.appendChild(el('span', null, k));
+      const b = el('button', 'btn ghost sm', used['karte:' + i] ? '✓ カルテに 入れました' : 'カルテに 入れる'); b.type = 'button'; b.disabled = !!used['karte:' + i];
+      b.addEventListener('click', function () { use('karte:' + i, k, b); }); row.appendChild(b); box.appendChild(row);
+    });
+    return box;
+  }
   function mnDraw(r) {
     MN_R = r;
     if (r.kinds && !MN_KINDS) { MN_KINDS = r.kinds; const k = $('mnKind'); k.textContent = ''; r.kinds.forEach(function (x) { const o = el('option', null, x); o.value = x; k.appendChild(o); }); const qk = $('mnQk'); if (qk) r.kinds.forEach(function (x) { const o = el('option', null, x); o.value = x; qk.appendChild(o); }); }
     if (!$('mnDay').value) $('mnDay').value = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
-    const w = $('mnList'); w.textContent = '';
+    const w = $('mnList'); const wasOpen = {}; Array.prototype.forEach.call(w.querySelectorAll('details.mnitem[open]'), function (d) { wasOpen[d.dataset.mid] = 1; }); w.textContent = '';   /* 描き直しても 開いていた 議事録は 開いたまま */
     if (!(r.list || []).length) { w.appendChild(el('div', 'note', 'まだ ありません。')); return; }
     /* ★★ 2026-11-23（石井）：ことば・種類で 探す */
     const q = (($('mnQ') || {}).value || '').trim(), qk = ($('mnQk') || {}).value || '';
@@ -16290,13 +16325,15 @@
     let lastMon = '';
     hit.forEach(function (x) {
       const mon = String(x.day).slice(0, 7); if (mon !== lastMon) { lastMon = mon; const mh = el('div', 'mnmon', mon.replace('-', '年') + '月'); mh.style.cssText = 'font-weight:700;margin:10px 0 2px;border-bottom:1px solid #d9d4c6'; w.appendChild(mh); }
-      const d = el('details'); d.style.margin = '6px 0'; d.className = 'mnitem'; d.dataset.kind = x.kind; if (q || qk || openAll) d.open = true;
+      const d = el('details'); d.style.margin = '6px 0'; d.className = 'mnitem'; d.dataset.kind = x.kind; d.dataset.mid = x.id; if (q || qk || openAll || wasOpen[x.id]) d.open = true;
       d.appendChild(el('summary', null, (MN_ICON[x.kind] || '📝') + ' ' + x.day + '・' + x.kind + '・' + x.title + (x.show ? (x.oks.length ? '　✅ 顧問先 確認済み（' + x.oks[x.oks.length - 1].who + '）' : '　⏳ 顧問先の確認待ち') : '') + (x.notes.length ? '　📝 決定事項 ' + x.notes.length : '')));
       d.appendChild(el('div', 'note', '入れた ' + x.at + '・' + x.who + '・指紋 ' + x.sha.slice(0, 16) + '…'));
       if (x.body) { const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;font:inherit;font-size:12.5px;max-height:260px;overflow:auto;background:#fafafa;padding:6px'; pre.textContent = x.body; d.appendChild(pre); }
       x.notes.forEach(function (n) { const pre = el('pre'); pre.style.cssText = 'white-space:pre-wrap;font:inherit;font-size:12.5px;border-left:3px solid #0F6E56;padding-left:8px'; pre.textContent = '📝 ' + n.at + '・' + n.who + '\n' + n.body; d.appendChild(pre); });
       x.oks.forEach(function (o) { d.appendChild(el('div', 'note', '✅ ' + o.at + '　' + o.who + ' が 内容を確認しました')); });
+      if (x.draft) d.appendChild(mnDraftBox(x));
       const bar = el('div', 'bar');
+      if (!x.draft && /【文字起こし/.test(x.body || '')) { const sb = el('button', 'btn sm', '🤖 いま まとめる（AI・20〜30円ほど）'); sb.type = 'button'; sb.addEventListener('click', function () { sb.disabled = true; mnSumGo(MNC(), x.id); }); bar.appendChild(sb); }
       const vb = el('button', 'btn ghost sm', '🔒 本物か確かめる'); vb.type = 'button';
       vb.addEventListener('click', function () { vb.disabled = true; gs('minutesVerify', MNC(), x.id).then(function (v) { vb.disabled = false; mtMsg('mnMsg', v.msg, v.ok ? '' : 'err'); }, function (e) { vb.disabled = false; mtMsg('mnMsg', e.message, 'err'); }); });
       const cb = el('button', 'btn ghost sm', 'Claude に渡す文を写す'); cb.type = 'button';
@@ -16360,7 +16397,12 @@
   function mnSend(extra) {
     const o = Object.assign({ kind: $('mnKind').value, day: $('mnDay').value, title: $('mnTitle').value, show: $('mnShow').checked }, extra);
     mtMsg('mnMsg', '記録しています…');
-    return gs('minutesAdd', MNC(), o).then(function (r) { mtMsg('mnMsg', '🔒 記録しました（あとから直せない記録に 指紋と日時を 残しました）。'); $('mnText').value = ''; $('mnTitle').value = ''; mnDraw(r); }, function (e) { mtMsg('mnMsg', e.message, 'err'); });
+    const code = MNC();
+    return gs('minutesAdd', code, o).then(function (r) {
+      mtMsg('mnMsg', '🔒 記録しました（あとから直せない記録に 指紋と日時を 残しました）。'); $('mnText').value = ''; $('mnTitle').value = ''; mnDraw(r);
+      /* ★★★ 2026-11-26（石井「録音を 切ったら その瞬間に 整理されて」）：録音の 文字起こしなら すぐ AI が まとめる */
+      if (o.stt && r.added) mnSumGo(code, r.added);
+    }, function (e) { mtMsg('mnMsg', e.message, 'err'); });
   }
   $('mnAdd').addEventListener('click', function () { if (!MNC()) return; if (!$('mnText').value.trim()) { mtMsg('mnMsg', '議事録の文字を 貼ってください。', 'err'); return; } mnSend({ text: $('mnText').value }); });
   $('mnFileB').addEventListener('click', function () { if (!MNC()) return; $('mnFile').value = ''; $('mnFile').click(); });
