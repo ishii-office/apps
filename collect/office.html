@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795583045;</script>
+<script>window.__PAGE_VER=1795584653;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1663,6 +1663,7 @@
   .arrpop .arr-all { font-size: 12px; display: flex; gap: 6px; align-items: center; margin: 0 0 6px; }
   .aqrow { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin: 6px 0; background: #fff; display: flex; flex-direction: column; gap: 4px; }
   .aqrow.done { opacity: .75; } .aqh { font-size: 12.5px; color: #555; } .aqq { font-weight: 700; white-space: pre-wrap; } .aqa { white-space: pre-wrap; } .aqa.fixed { color: #0F6E56; }
+  .jyn { color: #b3261e; font-size: 12.5px; margin-left: 6px; }
   .aqrow textarea { width: 100%; box-sizing: border-box; font: inherit; } .aqbtn { display: flex; gap: 6px; }
   /* ★★ 2026-11-22：回収資料・仕訳化の 上の 2つの 島 */
   .isles { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 8px; margin: 6px 0 8px; }
@@ -2309,6 +2310,11 @@
     </fieldset>
     <span class="pagemsg" id="kyMsg" role="status"></span>
     <div id="kyList"></div>
+  </details>
+  <!-- ★★ 2026-11-26（石井）：顧問先の［🧭 経営助言要望］＝ 顧問先の 需要。読んで 受ける／返事を 書く（顧問先に 出る） -->
+  <details open class="rbox" id="jyBox"><summary>🧭 顧問先からの 経営助言要望（どんな 助言が ほしいか）<b class="jyn" id="jyN" hidden></b></summary>
+    <p class="note">顧問先の［🧭 経営助言要望］に 書かれた（話された）こと。<b>これが 顧問先の 需要</b>です。［受けた］か、返事を 書いて［返事を 送る］（顧問先の 画面に 出ます）。応えるのは ④の 助言・次に 会ったとき。エージェントの zip にも 入ります。</p>
+    <div id="jyList"></div>
   </details>
   <details class="rbox" id="aqBox"><summary>💬 顧問先が AI に聞いたこと（確かめて 返す）</summary>
     <p class="note">顧問先の［💬 AI に聞く］の 質問と AI の 答え。ふだんは AI が すぐ 答え、税額が 大きく 変わりそうな ものは 答えを 出さずに 待っています。［✓ この答えで よい］か、直して［✎ 直して 送る］。月の 費用の 上限で 止まります。</p>
@@ -3124,7 +3130,7 @@
 
   /* ★ 速さ（2026-10-11）：開いた瞬間は 前に読んだもので描く（BOOT_WAIT のあいだ）。
        そのあいだ 書き込みは送らずに待たせ、本物が届いてから送る（古い姿の上に書かない）。読むだけのものは そのまま */
-  const READ_FN = { ckzList: 1, fasGet: 1, aiqAll: 1, acdList: 1, ksGet: 1, budgetGet: 1, refWaitN: 1, refList: 1, aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
+  const READ_FN = { ckzList: 1, cjyList: 1, fasGet: 1, aiqAll: 1, acdList: 1, ksGet: 1, budgetGet: 1, refWaitN: 1, refList: 1, aiqList: 1, tbGet: 1, tbDrill: 1, progressBoard: 1, grtGet: 1, rulexGet: 1, needList: 1, kyoGet: 1, agentBossLearn: 1, karteGet: 1, agentDocs: 1, agentResults: 1, minutesList: 1, minutesVerify: 1, consentLog: 1, consentVerify: 1, invList: 1, invPreview: 1, mailTargets: 1, mailPreview: 1, mailLog: 1, officeBoot: 1, adminLogoGet: 1, clientBundle: 1, staffMe: 1, workInit: 1, workList: 1, viewerThumbs: 1, viewerImages: 1, stampList: 1, viewerImage: 1, pushKey: 1, pushState: 1, officeBook: 1, officeKake: 1, officeKaikake: 1, officeKyuyo: 1, officeBookOpts: 1, boxDoneList: 1, rbList: 1, officePartyGet: 1,
     acctGet: 1, partyGet: 1, dictGet: 1, fxConfGet: 1, dictHeldGet: 1, staffList: 1, getAppStatus: 1, aiStatus: 1, aiGet: 1, ruleList: 1, tehonList: 1, workPulse: 1, arriveNews: 1, arriveGrid: 1, askList: 1, lineNews: 1, foldInfo: 1, foldList: 1, foldFile: 1, foldThumbs: 1, foldSearch: 1 };
   let BOOT_WAIT = null;
   /* お手本の解析は ひと月ぶんを読むので 長く待つ（GAS は 6分で止まる） */
@@ -3355,12 +3361,13 @@
     BELL.items.forEach(function (x) {
       const b2 = el('button', 'arr-row' + (x.unread ? ' unread' : '')); b2.type = 'button';
       b2.appendChild(el('span', 'dot'));
-      b2.appendChild(el('span', 'nm', x.ckz ? '💡 ' + x.code + '　' + x.name + ' 様から ' + x.box : x.aiq ? '💬 ' + x.code + '　' + x.name + ' 様　' + x.box : x.minutes ? '📝 ' + x.code + '　' + x.name + ' 様　' + x.box + '（2週間たちました）' : x.red ? '🔴 ' + x.code + '　' + x.name + ' 様が「要確認」を ' + x.n + '件（' + x.box + '）' : (x.line ? '💬 ' : '📷 ') + x.code + '　' + x.name + ' 様　' + x.n + '件（' + x.box + '）')).title = x.red ? x.name + ' 様が 「要確認」の色のラベルを付けました（' + x.box + '）' : x.name + ' 様から ' + x.n + '件（' + x.box + '）';
+      b2.appendChild(el('span', 'nm', x.ckz ? '💡 ' + x.code + '　' + x.name + ' 様から ' + x.box : x.cjy ? '🧭 ' + x.code + '　' + x.name + ' 様から ' + x.box : x.aiq ? '💬 ' + x.code + '　' + x.name + ' 様　' + x.box : x.minutes ? '📝 ' + x.code + '　' + x.name + ' 様　' + x.box + '（2週間たちました）' : x.red ? '🔴 ' + x.code + '　' + x.name + ' 様が「要確認」を ' + x.n + '件（' + x.box + '）' : (x.line ? '💬 ' : '📷 ') + x.code + '　' + x.name + ' 様　' + x.n + '件（' + x.box + '）')).title = x.red ? x.name + ' 様が 「要確認」の色のラベルを付けました（' + x.box + '）' : x.name + ' 様から ' + x.n + '件（' + x.box + '）';
       b2.appendChild(el('small', null, x.when));
       b2.addEventListener('click', function () {
         if (x.unread) { x.unread = false; BELL.unread = Math.max(0, BELL.unread - 1); gs('arriveRead', [x.key]).catch(function () {}); }
         $('bellPop').hidden = true; $('bellBtn').setAttribute('aria-expanded', 'false'); bellDraw();
         if (x.ckz) { ckzOpen(x.code, x.ckz); return; }
+        if (x.cjy) { if (setCode(x.code)) { selectTab('Advice'); setTimeout(function () { const b = $('jyBox'); if (b) { b.open = true; jyLoad(); b.scrollIntoView({ block: 'start' }); } }, 400); } return; }
         if (x.aiq) { if (setCode(x.code)) { selectTab('Advice'); setTimeout(function () { const b = $('aqBox'); if (b) { b.open = true; aqLoad(); b.scrollIntoView({ block: 'start' }); } }, 400); } return; }
         if (x.kyo) { if (setCode(x.code)) { selectTab('Rule'); setTimeout(function () { const b = $('kyBox'); if (b) { b.open = true; b.scrollIntoView({ block: 'start' }); } }, 400); } return; }
         if (x.minutes) { if (setCode(x.code)) { selectTab('Rule'); setTimeout(function () { const b = $('mnBox'); if (b) { b.open = true; b.scrollIntoView({ block: 'start' }); } }, 400); } return; }
@@ -8489,7 +8496,7 @@
     Prog: { t: '進捗', lead: '顧問先 × 月分で いま どの 工程まで 来ているかを 見る タブです（担当先だけ・上の 👥 で 選ぶ）。',
       steps: ['数えるのは 毎月の箱だけ（年末調整 などの スポットの箱は 数えない）。顧問先の 名前の［🙈 非表示］で 進捗から 外し、［非表示に した 顧問先も 出す］で また 出せる', '資料回収 → 資料チェック → エージェント → 元帳チェック → 取込ファイル化 → 会計システムへ計上 の 順に 並ぶ（緑＝済み・黄＝途中・灰＝まだ。太い枠が いま 止まっている 工程）', 'ブロックを 押すと その工程の 画面へ（資料は 回収資料・エージェント／元帳は 仕訳化・取込ファイル化は 取込ファイル）', '会計システム（FX）へ 取り込んだら「会計システムへ計上」を 押す（もう一度 押すと 取り消し）。最後まで 済んだ 月分は たたむ（［終わった 月分も 出す］で 出す）'], tips: ['会計システムへ計上 の 右は 経営助言（丸の 1〜4＝予算・企業防衛・格付け・助言。緑が 済み。押すと その島へ）と 議事録の 追加（入れた 議事録は 次の 月の エージェントの zip に 入る）', '期間は 3・6・12か月'] },
     Advice: { t: '経営助言', lead: '経営助言は 4つの 島：① 予算（向こう 1年）② 企業防衛（標準保障額）③ FASコンサルティング（格付け・資金調達力）④ 顧問先ごとの 助言。作って 顧問先の 画面の 経営助言に 出す タブです。',
-      steps: ['🙋 社長に 聞くこと（④ の いちばん上）：エージェントが 出した 問い（数字に 出ない 事情・本当の 目的）。会ったときに 聞いて 答えを 入れ［✓ 答えを 議事録に 入れる］。議事録（社長面談）に 入り、次の 助言に 生きる。聞かない 問いは［聞かない］', '① 予算：期を 選び、［📥 前年の 実績から 入れる］（伸び率も）か 年計を 入れて 月に 割り、直して［✓ この 予算に する］。エージェントの 予算案が あれば［案を 表に 入れる］。決めた 予算は 試算表の［予実対比］に 出る', '② 企業防衛：まず 大前提（事業承継か 清算・廃業か・2番手が いるか）を 選ぶ。［📥 試算表（過去の仕訳）から 入れる］で 負債・運転資金・固定費（販管費＋支払利息）・現預金が 入る', '企業防衛の 中：① 負債は 借入金・社債。リース債務は 原則 入れない（全額 払う ときだけ ✓）。② 必要運転資金は 過去 1年で いちばん 大きい 月で 見る。③ 納税資金（実効税率・繰越欠損金）④ 役員退職金・弔慰金（役員ごと）', '大同生命と 同じ 2列（死亡のとき／就業不能のとき）の 算定書が 出る。［🖨 算定書を 印刷・PDF］・［💾 入力を 保存］・［🛡 顧問先の 画面に 出す（保存して リスクに 入れる）］', '③ FASコンサルティング：決算の 月を 選んで［🏦 試算表から FAS格付を 出す］→ FAS格付（自己資本比率 × 債務償還年数の 表で S〜G）・債務者区分・資金調達の 方向性・5FOCUS と 重要指標（判定・理想金額・あといくら）。簿価・前期・計画到達も 並ぶ', 'FAS の 中：⚙ 設定（業種・役員報酬 600万円 基準・役員借入金）→ ✏ 実態補正（回収できない 売掛金・不良在庫・含み損を 千円で 減らし、根拠を 書く）→ 🏦 借入金一覧（［試算表の 借入金を 並べる］・資金繰り改善シミュレーション）', 'FAS の 計画：🎯 計画到達（方式A 粗利率／方式B 原価 項目別。賃上げは 金額で）→ 📅 月次の 着地見込（今期の 月を 選んで［📅 この 月までの 実績で 着地を 出す］）→ 📈 5ヶ年（成長率・賃上げ率・年間返済）', 'FAS の 仕上げ：［💾 入力を 保存］・［🏦 顧問先の 画面に 出す］（いまの 格付・前期・計画どおりなら・取り組むこと）・［🖨 企業財務診断報告書］・［🖨 決算報告書 兼 経営計画書］・［🖨 面談メモ（職員用）］（顧問先には 出さない）・［↓ 下の 格付けの マスへ 写す］で 手で 直して［格付けを入れる］', '④ 顧問先ごとの 助言：項目ごとに 書いて［助言を出す］（税務判断を 含むものは「担当 石井」と 出る）。下に これから 出す 助言の 一覧', '「💬 顧問先が AI に聞いたこと」… ［✓ この答えで よい］か、直して［✎ 直して 送る］。税額が 大きく 変わりそうな 質問は 先に 確かめる。今月の 費用と 上限（月1万円）も ここ', '同じ ところで 顧問先ごとの 設定：「広げて 答える」に ✓（まず 1〜2社で 試す。担当者に 回すのは 税額・申告の 中身を 決める 判断だけ）と、よく使う 質問（1行に 1つ）を 入れて［💾 この 顧問先の 設定を 保存］', '［📊 全部の 顧問先の やりとり・使われ方・AI の 精度（月ごと）］… 月ごとの 質問の 数・使った 顧問先・担当者が 確かめて そのまま よかった 割合（精度）。はじめの 1か月は ここで 使われているかを 見る'],
+      steps: ['🧭 顧問先からの 経営助言要望（④ の 下）：顧問先が 書いた（話した）「どんな 助言が ほしいか」＝ 顧問先の 需要。🔔 にも 届く。［✓ 受けた（返事は あとで）］か、返事を 書いて［✎ 返事を 送る］（顧問先の 画面に 出る）。エージェントの zip にも 入る', '🙋 社長に 聞くこと（④ の いちばん上）：エージェントが 出した 問い（数字に 出ない 事情・本当の 目的）。会ったときに 聞いて 答えを 入れ［✓ 答えを 議事録に 入れる］。議事録（社長面談）に 入り、次の 助言に 生きる。聞かない 問いは［聞かない］', '① 予算：期を 選び、［📥 前年の 実績から 入れる］（伸び率も）か 年計を 入れて 月に 割り、直して［✓ この 予算に する］。エージェントの 予算案が あれば［案を 表に 入れる］。決めた 予算は 試算表の［予実対比］に 出る', '② 企業防衛：まず 大前提（事業承継か 清算・廃業か・2番手が いるか）を 選ぶ。［📥 試算表（過去の仕訳）から 入れる］で 負債・運転資金・固定費（販管費＋支払利息）・現預金が 入る', '企業防衛の 中：① 負債は 借入金・社債。リース債務は 原則 入れない（全額 払う ときだけ ✓）。② 必要運転資金は 過去 1年で いちばん 大きい 月で 見る。③ 納税資金（実効税率・繰越欠損金）④ 役員退職金・弔慰金（役員ごと）', '大同生命と 同じ 2列（死亡のとき／就業不能のとき）の 算定書が 出る。［🖨 算定書を 印刷・PDF］・［💾 入力を 保存］・［🛡 顧問先の 画面に 出す（保存して リスクに 入れる）］', '③ FASコンサルティング：決算の 月を 選んで［🏦 試算表から FAS格付を 出す］→ FAS格付（自己資本比率 × 債務償還年数の 表で S〜G）・債務者区分・資金調達の 方向性・5FOCUS と 重要指標（判定・理想金額・あといくら）。簿価・前期・計画到達も 並ぶ', 'FAS の 中：⚙ 設定（業種・役員報酬 600万円 基準・役員借入金）→ ✏ 実態補正（回収できない 売掛金・不良在庫・含み損を 千円で 減らし、根拠を 書く）→ 🏦 借入金一覧（［試算表の 借入金を 並べる］・資金繰り改善シミュレーション）', 'FAS の 計画：🎯 計画到達（方式A 粗利率／方式B 原価 項目別。賃上げは 金額で）→ 📅 月次の 着地見込（今期の 月を 選んで［📅 この 月までの 実績で 着地を 出す］）→ 📈 5ヶ年（成長率・賃上げ率・年間返済）', 'FAS の 仕上げ：［💾 入力を 保存］・［🏦 顧問先の 画面に 出す］（いまの 格付・前期・計画どおりなら・取り組むこと）・［🖨 企業財務診断報告書］・［🖨 決算報告書 兼 経営計画書］・［🖨 面談メモ（職員用）］（顧問先には 出さない）・［↓ 下の 格付けの マスへ 写す］で 手で 直して［格付けを入れる］', '④ 顧問先ごとの 助言：項目ごとに 書いて［助言を出す］（税務判断を 含むものは「担当 石井」と 出る）。下に これから 出す 助言の 一覧', '「💬 顧問先が AI に聞いたこと」… ［✓ この答えで よい］か、直して［✎ 直して 送る］。税額が 大きく 変わりそうな 質問は 先に 確かめる。今月の 費用と 上限（月1万円）も ここ', '同じ ところで 顧問先ごとの 設定：「広げて 答える」に ✓（まず 1〜2社で 試す。担当者に 回すのは 税額・申告の 中身を 決める 判断だけ）と、よく使う 質問（1行に 1つ）を 入れて［💾 この 顧問先の 設定を 保存］', '［📊 全部の 顧問先の やりとり・使われ方・AI の 精度（月ごと）］… 月ごとの 質問の 数・使った 顧問先・担当者が 確かめて そのまま よかった 割合（精度）。はじめの 1か月は ここで 使われているかを 見る'],
       tips: ['計算式と 考え方は エージェントの zip にも 入る（企業防衛_標準保障額の考え方.md・FAS格付の 出し方）。エージェントの 格付け.json の 実態補正・借入金は［経営助言に入れる］で ③ の 入力に 入る', 'FAS格付は F+prus（5FOCUS）と 同じ 式。格付は 3つ（直近決算／計画到達／月次の 着地見込）。「画面に よって 格付が ちがう」と 言われたら まず どの 格付か、次に 実態補正の 有無', '金融機関の 点数式（12指標・1〜10）は ③ の 下の「金融機関の 点数式」に 残っている（金融機関で 配点が ちがう 目安）。業界中央値は いまは「その他の製造業」だけ'] },
     Grt: { t: '保証', lead: '巡回監査報告書・書面添付（税理士法33条の2）・決算書類の 確認を まとめる タブです（TKC の 4大業務の 保証）。議事録は［議事録］タブへ 移りました。',
       steps: ['「確定申告の 書類集め」… 締切を 入れて［顧問先に 聞きはじめる］。顧問先の 画面に「確定申告の 書類」が 出て、質問に「はい・いいえ・わからない」で 答え、「はい」の 書類だけ 出す（手元に 無ければ「あとで 出す」）。ここには「あと ◯ 件」と 要フォロー（未提出／あとで 提出／答えの 確認が 要る＝わからない）が 出る。次の 年は 去年の 答えを 引き継ぐ。止めるときは［止める］（答えは 残る）', '「巡回監査報告書」… 巡回の月を 選び、書いて［保存（新しい版）］か［保存して 顧問先に 出す］（エージェントの 下書きが あれば 入っている）。議事録の 中身は［議事録］タブの［📎 巡回監査報告書へ 引く］で 足せる', '「書面添付」… 決算期を 選んで［🤖 下書きの zip を作る（1年分）］→ Claude Code に 渡し、できた zip を 仕訳化タブで 戻す → 直して［保存（新しい版）］', '「決算書類の 確認」… 決算期と 書類の名前を 入れて［PDF を 選んで 出す］→ 顧問先が［内容を確認しました］を 押すと ✅ が 付く。［出すのを やめる］で 引っ込める'],
@@ -8962,6 +8969,34 @@
   $('jDictTg').addEventListener('click', function () { const on = !$('jmain').classList.contains('dictoff'); try { localStorage.setItem('collect_office_dictui', on ? '0' : '1'); } catch (e) {} window.__dictOff = on ? 1 : 0; jDictPaint(); });
   $('jDictLed').addEventListener('click', function () { lgOpen(); });
   /* ★★ 2026-11-22（石井）：顧問先が［💬 AI に聞く］で 聞いたこと。確かめて 返す */
+  /* ★★ 2026-11-26：顧問先の［🧭 経営助言要望］ */
+  function jyLoad() {
+    if (!S.code) return; const w = $('jyList'); w.textContent = '読み込み中…';
+    gs('cjyList', S.code).then(jyDraw, function (e) { w.textContent = e.message; });
+  }
+  function jyDraw(r) {
+    const w = $('jyList'); w.textContent = '';
+    const open = r.list.filter(function (x) { return !x.st; }).length;
+    $('jyN').hidden = !open; $('jyN').textContent = open ? ' まだ ' + open + '件' : '';
+    if (!r.list.length) { w.appendChild(el('p', 'note', 'まだ ありません。顧問先の 画面の［🧭 経営助言要望］から 届きます。')); return; }
+    r.list.forEach(function (x) {
+      const d = el('div', 'aqrow' + (x.st ? ' done' : ''));
+      d.appendChild(el('div', 'aqh', x.at + '　' + (x.st ? '✓ ' + x.st + '（' + x.by + '　' + x.rat + '）' : '🆕 まだ 受けていない')));
+      d.appendChild(el('div', 'aqq', x.text));
+      if (x.reply) d.appendChild(el('div', 'aqa fixed', '（返事）' + x.reply));
+      if (x.st !== '返事した') {
+        const ta = el('textarea'); ta.rows = 3; ta.placeholder = '顧問先への 返事（例：次の 巡回で 資金繰りの 表を 一緒に 作りましょう）';
+        const ok = el('button', 'btn sm', '✓ 受けた（返事は あとで）'); ok.type = 'button';
+        const rp = el('button', 'btn sm', '✎ 返事を 送る'); rp.type = 'button';
+        const send = function (st) { ok.disabled = rp.disabled = true; gs('cjyReply', S.code, x.id, st, ta.value.trim()).then(function (r2) { jyDraw(r2); try { bellLoad(); } catch (q) {} }, function (e) { ok.disabled = rp.disabled = false; alert(e.message); }); };
+        ok.addEventListener('click', function () { send('受けた'); });
+        rp.addEventListener('click', function () { if (!ta.value.trim()) { ta.focus(); return; } send('返事した'); });
+        d.appendChild(ta); const row = el('div', 'aqbtn'); if (!x.st) row.appendChild(ok); row.appendChild(rp); d.appendChild(row);
+      }
+      w.appendChild(d);
+    });
+  }
+  $('jyBox').addEventListener('toggle', function () { if (this.open) jyLoad(); });
   function aqLoad() {
     if (!S.code) return; const w = $('aqList'); w.textContent = '読み込み中…';
     gs('aiqList', S.code).then(aqDraw, function (e) { w.textContent = e.message; });
@@ -16662,6 +16697,7 @@
     const c = (S.clients || []).find(function (x) { return x.code === code; }) || { name: '' }; $('advClient').textContent = '— ' + code + ' ' + c.name;
     try { if (!$('rtCalc').dataset.code || $('rtCalc').dataset.code !== code) { $('rtCalc').dataset.code = code; rtLoad(); } } catch (e) {}
     try { bgLoad(); } catch (e) {}
+    try { if ($('jyBox').open) jyLoad(); } catch (e) {}
     const kc = warmPeek('kyoGet', [code]); if (kc) kyDraw(kc);
     kyLoad();
     const hb = warmPeek('hoshoBase', [code]);
