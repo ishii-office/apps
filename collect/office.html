@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795605722;</script>
+<script>window.__PAGE_VER=1795606694;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2399,6 +2399,10 @@
     <div class="bar"><button type="button" class="btn sm" id="mnAdd">文字で入れる</button><button type="button" class="btn ghost sm" id="mnFileB">ファイル・写真で入れる（txt・PDF・Word・音声・写真）</button><span class="note" id="mnRecHint">🎙 録音は 右上の［🎙 ハヤト］から（顧問先の 画面で 押すと この 顧問先の 議事録に。止めたら すぐ まとめます）</span><input type="file" id="mnFile" hidden accept=".txt,.pdf,.docx,.m4a,.mp3,.wav,.mp4,audio/*,image/jpeg,image/png,image/heic,image/webp" multiple></div>
     <div class="note" id="mnDropHint">📥 スクショ・ファイルは この 枠に <b>ドラッグ＆ドロップ</b>（何枚でも）。コピーした 画像は 枠を 押して Ctrl+V。</div>
     <span class="pagemsg" id="mnMsg" role="status"></span>
+    <div class="rbox agmode" id="gjBox"><b>🤖 まだ 整理して いない 議事録を エージェントに 渡す</b>
+      <p class="note">入れた だけの 議事録（公式LINE・メール・電話・所内の チャット・録音）を エージェントが 整えて、議事録の まとめ・カルテの 案・社長に 聞くこと・助言の 下書き・事務所の 標準の 候補に 振り分けます。この 顧問先の ぶんと 所内の ぶんが 入ります。</p>
+      <div class="bar"><button type="button" class="btn sm" id="gjZip">🤖 議事録を エージェントに 渡す（zip）</button><button type="button" class="btn ghost sm" id="gjBack">📥 できあがりを 戻す</button><input type="file" id="gjFile" accept=".zip,application/zip" hidden><span class="pagemsg" id="gjMsg" role="status"></span></div>
+    </div>
     <div id="mnList"></div>
   </details>
   <details open class="rbox" id="mnFind"><summary>🔎 議事録を 探す・ほかへ 引く</summary>
@@ -2444,6 +2448,10 @@
   <div class="rwrap">
   <h2 class="rh">AI の考え方 <span id="rClient"></span></h2>
   <div class="rstat" id="rStat"></div>
+  <div class="rbox agmode" id="kisoBox"><b>🤖 この 顧問先の 基礎資料を エージェントに 作らせる</b>
+    <p class="note">過去の 仕訳（3年分）・仕訳辞書・考え方・原則と例外・引き継ぎメモ（事務所の資料）・議事録を まとめて エージェントに 渡し、<b>顧問先カルテ・議事録の まとめ・社長に 聞くこと</b>を 作って もらいます。過去の 仕訳や 引き継ぎメモを 入れた とき・考え方を 変えた ときに 押してください。戻すと それぞれの 置き場に 入ります（カルテは［✓ 承認して カルテにする］まで 入りません）。</p>
+    <div class="bar"><button type="button" class="btn sm" id="kisoZip">🤖 基礎資料を エージェントに 渡す（zip）</button><button type="button" class="btn ghost sm" id="kisoBack">📥 できあがりを 戻す</button><input type="file" id="kisoFile" accept=".zip,application/zip" hidden><span class="pagemsg" id="kisoMsg" role="status"></span></div>
+  </div>
   <div class="rway" id="rWay">
     <b class="rwayh">いまのやり方：<span id="rWayName">総合判断</span></b>
     <p>前任者に引き継ぐのと同じです。AI に <b>材料をまるごと</b>（過去の仕訳・引き継ぎメモ・事務所共通メモ・仕訳の憲法・辞書・科目と補助）渡し、
@@ -2453,8 +2461,8 @@
     <label class="rwaysel" id="rWayL" hidden>やり方（マスター）
       <select id="rWaySel" aria-label="AI 下書きのやり方"><option value="v2">新しいやり方（総合判断）</option><option value="v1">前のやり方（ルール・型で答えを上書き）</option></select></label>
   </div>
-  <details open class="rbox" id="aiBox"><summary>0. AI 下書きを使う（写真 → 仕訳の下書き。Claude API）</summary>
-      <div class="bar"><label class="aiuse"><input type="checkbox" id="aiUse"> この顧問先で AI 下書きを使う（下書きだけ。確定は人）</label>
+  <details class="rbox" id="aiBox"><summary>0. AI の 鍵・消費税（AI 下書きは いまは 使いません。仕訳は エージェントに 渡す zip で）</summary>
+      <div class="bar"><label class="aiuse" hidden><input type="checkbox" id="aiUse"> この顧問先で AI 下書きを使う（下書きだけ。確定は人）</label>
         <span class="note" id="aiState"></span></div>
       <div class="bar"><label class="aiuse">消費税 <select id="aiTaxm" aria-label="消費税の課税方式"><option value="">（決めていない）</option><option value="本則">本則課税</option><option value="簡易">簡易課税</option><option value="免税">免税</option></select></label>
         <span class="note">本則課税にすると 仕訳化で 背骨（出納帳・カード明細）の行ごとに インボイスの印（登録番号あり／帳簿のみの特例の候補／確かめる）を出します</span></div>
@@ -8563,10 +8571,10 @@
       steps: ['「確定申告の 書類集め」… 締切を 入れて［顧問先に 聞きはじめる］。顧問先の 画面に「確定申告の 書類」が 出て、質問に「はい・いいえ・わからない」で 答え、「はい」の 書類だけ 出す（手元に 無ければ「あとで 出す」）。ここには「あと ◯ 件」と 要フォロー（未提出／あとで 提出／答えの 確認が 要る＝わからない）が 出る。次の 年は 去年の 答えを 引き継ぐ。止めるときは［止める］（答えは 残る）', '「巡回監査報告書」… 巡回の月を 選び、書いて［保存（新しい版）］か［保存して 顧問先に 出す］（エージェントの 下書きが あれば 入っている）。議事録の 中身は［議事録］タブの［📎 巡回監査報告書へ 引く］で 足せる', '「書面添付」… 決算期を 選んで［🤖 下書きの zip を作る（1年分）］→ Claude Code に 渡し、できた zip を 仕訳化タブで 戻す → 直して［保存（新しい版）］', '「決算書類の 確認」… 決算期と 書類の名前を 入れて［PDF を 選んで 出す］→ 顧問先が［内容を確認しました］を 押すと ✅ が 付く。［出すのを やめる］で 引っ込める'],
       tips: ['雛形・書き方（巡回監査報告書・書面添付）は［📚 雛形・書き方を 入れる］から 事務所共通の資料へ。どの顧問先の zip にも 入る'] },
     Min: { t: '議事録', lead: '顧問先で 話したこと・見てきたことを ぜんぶ 残す タブです。あとから 直せない 記録に 残り、エージェントの zip にも 入って 次の 経営助言・企業防衛の 前提・カルテの もとに なります。',
-      steps: ['種類（巡回監査・社長面談・訪問（現物確認）など）・日・題を 選び、OMS などの 議事録を［文字で入れる］か［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］。写真は 何枚でも（車・設備・パソコンや モニターの 様子 など）', '公式LINE・メール・電話の やりとりも 議事録：種類を 選び、やりとりの 日に 合わせて 文を 貼るか スクショを 入れる（公式LINE・メールの スクショは 字を ひとりでに 読んで 本文に する。12けたの 数字が 写っていたら 字は 入れない）。スクショ・ファイルは 枠に ドラッグ＆ドロップで 何枚でも（コピーした 画像は Ctrl+V）。録音は 右上の［🎙 ハヤト］で（「👤 この 顧問先の 議事録」を 選ぶ。止めて［✓ はい（議事録に 入れて まとめる）］で この タブに 入り、すぐ まとまる。集音器などで 録った 音声ファイルは［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］で）。文字起こしの ある 議事録は エージェントの zip に「まとめ まだ」と 入り、エージェントの 議事録まとめ.json（要点・決定事項・やること）が 戻すと「決定事項」に 足される。下の 並べ方を「古い日から（時系列）」に すると、会った 日の 会話と 1本に 並ぶ。「本文も 並べて 読む」で 続けて 読める', '［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す（顧問料の 合意 など 言った 言わないの 証拠にも なる）', '「🔎 議事録を 探す」… ことば・種類で しぼる →［📎 巡回監査報告書へ 引く］［📎 書面添付へ 引く］で 保証タブの 下書きに 引用を 足す', 'エージェントに 渡すと 議事録（写真も）を 読んで、助言の 下書き（経営助言タブの「これから 出す 助言」）・企業防衛の 前提・カルテ案を 直して くる。［✓ 顧問先に 出す］まで 顧問先には 出ない'],
+      steps: ['録音は 右上の［🎙 ハヤト］（巡回・決算検討会・決算報告会・社長面談）。会社の スマホで 行く ときも ハヤトを 起動して 置いておき、帰りに［⏹ 終わる］。日付と 種類は 終わる ときに 直せる（あとで 入れる ときは 会った 日に）', '公式LINE・メール・所内の チャット（職員と 所長の やりとり）も 種類を 選んで 貼るだけで よい（種類「チャット（所内）」は 所内の 議事録で）。たまったら［🤖 議事録を エージェントに 渡す（zip）］→ 自分の Claude Code で 整えて［📥 できあがりを 戻す］。議事録の まとめ・カルテの 案・社長に 聞くこと・助言の 下書き・事務所の 標準の 候補に 振り分けられる', '種類（巡回監査・社長面談・訪問（現物確認）など）・日・題を 選び、OMS などの 議事録を［文字で入れる］か［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］。写真は 何枚でも（車・設備・パソコンや モニターの 様子 など）', '公式LINE・メール・電話の やりとりも 議事録：種類を 選び、やりとりの 日に 合わせて 文を 貼るか スクショを 入れる（公式LINE・メールの スクショは 字を ひとりでに 読んで 本文に する。12けたの 数字が 写っていたら 字は 入れない）。スクショ・ファイルは 枠に ドラッグ＆ドロップで 何枚でも（コピーした 画像は Ctrl+V）。録音は 右上の［🎙 ハヤト］で（「👤 この 顧問先の 議事録」を 選ぶ。止めて［✓ はい（議事録に 入れて まとめる）］で この タブに 入り、すぐ まとまる。集音器などで 録った 音声ファイルは［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］で）。文字起こしの ある 議事録は エージェントの zip に「まとめ まだ」と 入り、エージェントの 議事録まとめ.json（要点・決定事項・やること）が 戻すと「決定事項」に 足される。下の 並べ方を「古い日から（時系列）」に すると、会った 日の 会話と 1本に 並ぶ。「本文も 並べて 読む」で 続けて 読める', '［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す（顧問料の 合意 など 言った 言わないの 証拠にも なる）', '「🔎 議事録を 探す」… ことば・種類で しぼる →［📎 巡回監査報告書へ 引く］［📎 書面添付へ 引く］で 保証タブの 下書きに 引用を 足す', 'エージェントに 渡すと 議事録（写真も）を 読んで、助言の 下書き（経営助言タブの「これから 出す 助言」）・企業防衛の 前提・カルテ案を 直して くる。［✓ 顧問先に 出す］まで 顧問先には 出ない'],
       tips: ['★ ハヤトで 録って 止めると すぐ AI が まとめる（1回 20〜30円ほど・月の 上限 3000円）。所内の 議事録は「📘 事務所の 標準に なりそうな こと」の［事務所の 考え方に 足す］（所長・管理者）で 事務所の AI の 考え方に 入る。議事録の まとめ・書面添付の 材料は 決定事項と 共有ドライブ（_議事録/コード/…_まとめ.md）に 入り、「🤖 まとめの 下書き」の［📨 顧問先に ご報告として 出す］［④の 助言に 写す］［カルテに 入れる］は 押した ものだけ 使う。社長に 聞くことは ④の いちばん上へ。まとめて いない 録音は［🤖 いま まとめる（AI・20〜30円ほど）］。AI の 利用を 撤回した 顧問先は まとめない', '議事録は 追記だけ（消せない）。まちがえたら［＋ 決定事項・やること］で 訂正を 足す', '上の［🏢 所内の 議事録（事務所の 中で 話したこと）］に 切り替えると 所内会議・打ち合わせを ためられる（顧問先には 出ない）。新しい 20件が どの 顧問先の エージェントの zip にも「所内議事録/」として 入り、事務所の 考え方・やり方の 材料に なる', '文字起こしは ブラウザの 音声認識（お金は かからない。聞きまちがいが あり得る）。スマホでは 画面を 消すと 止まることが あるので、ハヤトで 録っている あいだは 画面を つけたまま'] },
     Rule: { t: 'AIの考え方', pic: 'g_orule', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
-      steps: ['「原則と例外」… 左に 事務所の標準（原則）、右に この顧問先の 例外（按分の基準 など）。例外には 理由を 書いて［この顧問先の 例外を 保存］（版を 積む・zip の 原則と例外.md に 入る）。原則は 所長だけ が 直せる', 'エージェントが 戻した カルテ.md は【案】。上に「承認待ち」と 出たら［読んで 承認する］→［📥 結果と学び］で 読んで［✓ 承認して カルテに する］か［採らない（いまの カルテの まま）］（承認するまで カルテにも zip にも 入らない）', '決まりを 書いて［考え方を保存］', '仕訳辞書は「仕訳辞書を入れる口」へ 会計システムから 切り出した 辞書を ドラッグ（参考の 材料。［中身を 見る・直す］で 開ける）。経営助言（企業防衛・格付け・助言）は［経営助言］タブへ 移しました', '議事録は［保証］タブへ 移しました', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
+      steps: ['［🤖 基礎資料を エージェントに 渡す（zip）］… 過去の 仕訳（3年分）・仕訳辞書・考え方・原則と例外・引き継ぎメモ・議事録を まとめて 渡し、顧問先カルテ・議事録の まとめ・社長に 聞くことを 作らせる。過去の 仕訳や 引き継ぎメモを 入れた とき・考え方を 変えた ときに 押す。できた zip は［📥 できあがりを 戻す］で 戻すと それぞれの 置き場に 入る（カルテは 承認するまで 案）', '「0. AI の 鍵・消費税」は ふだん 閉じて いる（AI 下書きは いまは 使わない。鍵は ハヤト・議事録の まとめに 使う）', '「原則と例外」… 左に 事務所の標準（原則）、右に この顧問先の 例外（按分の基準 など）。例外には 理由を 書いて［この顧問先の 例外を 保存］（版を 積む・zip の 原則と例外.md に 入る）。原則は 所長だけ が 直せる', 'エージェントが 戻した カルテ.md は【案】。上に「承認待ち」と 出たら［読んで 承認する］→［📥 結果と学び］で 読んで［✓ 承認して カルテに する］か［採らない（いまの カルテの まま）］（承認するまで カルテにも zip にも 入らない）', '決まりを 書いて［考え方を保存］', '仕訳辞書は「仕訳辞書を入れる口」へ 会計システムから 切り出した 辞書を ドラッグ（参考の 材料。［中身を 見る・直す］で 開ける）。経営助言（企業防衛・格付け・助言）は［経営助言］タブへ 移しました', '議事録は［保証］タブへ 移しました', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
     Fold: { t: 'Google共有ドライブ', lead: '事務所の Google共有ドライブを この画面から 開く・整理する タブです。',
       steps: ['フォルダを押して 中へ', '［☑ 選ぶ］で 押したものに ✓（何枚でも）。［☑ すべて選ぶ］で ぜんぶ', '写真・PDF を押すと 大きく見る。［✏ 書きこむ］［🔴 ハンコ］', '［📮 送付物へ］で 顧問先へ送る 送付物にする', '［🖨 印刷の受け口］… PDF24 で印刷すると いま開いているフォルダに 入ります'],
       tips: ['🔒 の付いたフォルダ（回収資料）は 見るだけです', 'PDF24 の設定は 説明書「職員向け はじめての設定（Claude と PDF24）」'] },
@@ -16311,6 +16319,35 @@
   /* ★★★ 議事録（2026-11-19・ロードマップ6・7）：追記のみ・ハッシュの鎖。決定事項・顧問先の確認も 行を足す */
   let MN_KINDS = null;
   let MN_R = null;
+  /* ★★★ 2026-11-26（石井）：基礎資料（AIの考え方）・議事録の 整理（議事録）を エージェントに 渡す zip と 戻し口。月分は いまの 月 */
+  function agNowYm() { return new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 7); }
+  function agModeZip(mode, msg, btn) {
+    if (!S.code) { mtMsg(msg, '上で 顧問先を 選んでください。', 'err'); return; }
+    const ym = agNowYm(); btn.disabled = true; mtMsg(msg, 'zip を 作っています…（1〜2分）');
+    gs('agentPack', S.code, ym, false, [], { mode: mode, nob64: /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) }).then(function (r) {
+      btn.disabled = false; const m = $(msg); m.textContent = '🤖 ' + r.name + ' を 作りました。 ';
+      if (r.b64) { try { const bin = atob(r.b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const dl = document.createElement('a'); dl.href = URL.createObjectURL(new Blob([u8], { type: 'application/zip' })); dl.download = r.name; document.body.appendChild(dl); dl.click(); dl.remove(); } catch (e) {} }
+      const a = document.createElement('a'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'ドライブの 控え'; m.appendChild(a);
+      m.appendChild(document.createTextNode('　→ 自分の Claude Code に 渡して「はじめに読む.md の とおり」と 頼み、できた zip を すぐ 横の［📥 できあがりを 戻す］で 戻す。'));
+    }, function (e) { btn.disabled = false; mtMsg(msg, 'zip を 作れませんでした。' + e.message, 'err'); });
+  }
+  function agModeBack(f, msg, after) {
+    if (!S.code || !f) return; const code = S.code, mm = String(f.name || '').match(/結果_[0-9A-Za-z]{1,8}_(\d{4}-\d{2})/), ym = mm ? mm[1] : agNowYm();
+    mtMsg(msg, '戻しています…');
+    const rd = new FileReader(); rd.onload = function () {
+      gs('agentReturn', code, ym, { name: f.name, b64: String(rd.result).split(',')[1] || '' }).then(function (r) {
+        const x = r.res || {}; const got = [x.minSum ? '議事録の まとめ ' + x.minSum + '件' : '', x.karteDraft ? 'カルテの 案（顧問先タブの［✓ 承認して カルテにする］で 入る）' : '', x.ask ? '社長に 聞くこと ' + x.ask + '件（経営助言 ④）' : '', x.advice ? '助言の 下書き ' + x.advice + '件' : '', x.learn ? '学び' : ''].filter(Boolean);
+        mtMsg(msg, '✓ 戻しました。' + (got.length ? '入った もの：' + got.join('・') : '（入る ものは ありませんでした。zip の 中身を 確かめて ください）') + (x.err ? '　⚠ ' + x.err : ''), got.length ? 'ok' : '');
+        if (after) after();
+      }, function (e) { mtMsg(msg, '戻せませんでした：' + e.message, 'err'); });
+    }; rd.readAsDataURL(f);
+  }
+  $('kisoZip').addEventListener('click', function () { agModeZip('kiso', 'kisoMsg', this); });
+  $('kisoBack').addEventListener('click', function () { $('kisoFile').value = ''; $('kisoFile').click(); });
+  $('kisoFile').addEventListener('change', function () { agModeBack(this.files && this.files[0], 'kisoMsg'); });
+  $('gjZip').addEventListener('click', function () { agModeZip('gijiroku', 'gjMsg', this); });
+  $('gjBack').addEventListener('click', function () { $('gjFile').value = ''; $('gjFile').click(); });
+  $('gjFile').addEventListener('change', function () { agModeBack(this.files && this.files[0], 'gjMsg', function () { try { mnLoad(true); } catch (e) {} }); });
   /* ★★★ 2026-11-26：録音を 止めたら すぐ まとめる（AI・1回 20〜30円ほど）。下書き（ご報告・助言・カルテ）は 押した ものだけ 使う */
   function mnSumGo(code, mid) {
     mtMsg('mnMsg', '🤖 まとめています…（1分ほど。止めても 録音と 文字起こしは 残っています）');
@@ -20087,18 +20124,19 @@
     let dest = o.dest; const c = hyCur();
     const h = el('b', null, ''); box.appendChild(h);
     const ks = el('select'); ks.id = 'hyEndKind'; const tt = el('input'); tt.type = 'text'; tt.id = 'hyEndTitle'; tt.placeholder = '題（空なら 種類と 日）';
+    const dd = el('input'); dd.type = 'date'; dd.id = 'hyEndDay'; dd.value = o.day; dd.title = 'いつの 議事録か（あとで 入れる ときは 会った 日に）';
     const paint = function () {
       h.textContent = (left ? '前に 聞いた 分が 残っています。' : '') + hyDestTxt(dest) + 'で よかったですか？（' + o.day + ' ' + (o.from || '') + '〜・' + o.lines.length + '行）';
-      ks.innerHTML = ''; (dest.code === '*' ? ['所内会議', '所内研修', '所内の会話（ハヤト）'] : ['巡回監査', '社長面談', '決算報告会', '訪問（現物確認）', '電話', 'その他']).forEach(function (k) { ks.appendChild(new Option(k, k)); });
+      ks.innerHTML = ''; (dest.code === '*' ? ['所内会議', '所内研修', '所内の会話（ハヤト）'] : ['巡回監査', '決算検討会', '決算報告会', '社長面談', '訪問（現物確認）', '電話', 'その他']).forEach(function (k) { ks.appendChild(new Option(k, k)); });
       const to = dest.code === orig.code ? alt : orig; sw.hidden = !to; sw.textContent = !to ? '' : to.code === '*' ? '🏢 所内に 変える' : '👤 ' + to.code + ' ' + to.name + ' に 変える';
     };
     const orig = o.dest, alt = orig.code !== '*' ? { code: '*', name: '所内' } : c ? { code: c.code, name: c.name } : null;   /* 聞きはじめた 行き先 ⇔ 所内（所内で 始めた ときは いま 開いている 顧問先） */
     const sw = el('button', null, ''); sw.type = 'button'; sw.id = 'hyEndSw'; sw.addEventListener('click', function () { if (!alt) return; dest = dest.code === orig.code ? alt : orig; paint(); });
     const ok = el('button', 'hybig', '✓ はい（議事録に 入れて まとめる）'); ok.type = 'button'; ok.id = 'hyEndOk';
     const no = el('button', null, '🗑 残さない'); no.type = 'button'; no.id = 'hyEndNo';
-    ok.addEventListener('click', function () { ok.disabled = true; hySave(o, dest, ks.value, tt.value.trim()); });
+    ok.addEventListener('click', function () { ok.disabled = true; if (/^\d{4}-\d{2}-\d{2}$/.test(dd.value)) o.day = dd.value; hySave(o, dest, ks.value, tt.value.trim()); });
     no.addEventListener('click', function () { if (!no.dataset.sure) { no.dataset.sure = '1'; no.textContent = '本当に 捨てる（もう 戻せません）'; return; } hyBufDrop(); HY.lines = []; HY.audio = null; box.hidden = true; hySpeak('残さずに 捨てました。'); });
-    const r1 = el('div', 'hybar'); [ks, tt].forEach(function (x) { r1.appendChild(x); }); box.appendChild(r1);
+    const r1 = el('div', 'hybar'); [ks, dd, tt].forEach(function (x) { r1.appendChild(x); }); box.appendChild(r1);
     const r2 = el('div', 'hybar'); [ok, sw, no].forEach(function (x) { r2.appendChild(x); }); box.appendChild(r2);
     box.appendChild(el('div', 'hynote', '✓ を 押すと 議事録に 入り、すぐ エージェントが まとめます（1回 20〜30円ほど）。話し手は 自動では 分かりません。'));
     paint();
