@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795613461;</script>
+<script>window.__PAGE_VER=1795616992;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -86,7 +86,7 @@
   /* ★ K-0019（2026-10-31）：右上の［📷 顧問先の画面を表示］［↻ 開き直す］の幅は 実際に測って あける（--toprw）。文字が大きい端末でも［ログアウト］と重ならない */
   @media (min-width: 701px) { .top { padding-right: calc(var(--toprw, 248px) + 16px); } }
   /* ★ 2026-11-16：窓が狭いと タブの列が 右上のボタンの下へ はみ出し「送付物」が隠れていた → 入りきらない分は 2段目へ折り返す */
-  @media (min-width: 701px) { #tabs { flex-wrap: wrap; max-width: 100%; } #tabs button { flex: 1 0 auto; border-bottom: 1.5px solid #9DADA8; margin-bottom: -1px; } }   /* ★ 2026-11-26（石井「1段目と 2段目の あいだに 線が 無いと 見にくい」）：段の 境目は 濃い 線
+  @media (min-width: 701px) { #tabs { flex-wrap: wrap; max-width: 100%; } #tabs button { flex: 1 0 auto; border-bottom: 1.5px solid #9DADA8; margin-bottom: -1px; padding-left: 9px; padding-right: 9px; } }   /* ★ 2026-11-26（石井「1段目と 2段目の あいだに 線が 無いと 見にくい」）：段の 境目は 濃い 線
   .vtoast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 42px); right: 8px; z-index: 61; max-width: calc(100vw - 16px); display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 7px 8px 7px 12px; box-shadow: 0 6px 20px rgba(0,0,0,.18); font-size: 14px; }
   .vtoast button { font: inherit; font-size: 14px; font-weight: 700; border-radius: 8px; padding: 4px 10px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
   .vtoast button.x { background: none; color: var(--sub); border: 0; padding: 4px 6px; }
@@ -98,25 +98,30 @@
   .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; font-weight: 700; }
   /* スマホ：タブは3列に並べて 全部見えるように（右が見切れていた） */
   @media (max-width: 700px) {
-    #tabs { display: grid; grid-template-columns: repeat(12, 1fr); width: 100%; }
+    #tabs { display: grid; grid-template-columns: repeat(24, 1fr); width: 100%; }
     #tabs button { padding: 8px 2px; font-size: 14px; border-bottom: 1.5px solid #9DADA8; white-space: nowrap; }
     /* 左上から時計回り：回収資料 → 仕訳化 → 取込ファイル → 担当者 → 顧問先 → 仕訳辞書 */
-    #tabs button[data-tab="Docs"] { grid-area: 1 / 1 / 2 / 7; } #tabs button[data-tab="Tb"] { grid-area: 1 / 7 / 2 / 10; }   /* ★ 2026-11-22 回収資料・仕訳化は 1つ（幅を 広く） */
-    #tabs button[data-tab="Out"] { grid-area: 1 / 10 / 2 / 13; border-right: 0; } #tabs button[data-tab="Staff"] { grid-area: 2 / 9 / 3 / 13; border-right: 0; }
-    #tabs button[data-tab="Clients"] { grid-area: 2 / 5 / 3 / 9; } #tabs button[data-tab="Dict"] { grid-area: 2 / 1 / 3 / 5; border-right: 1px solid var(--line); }
+    #tabs button[data-tab="Docs"] { grid-area: 1 / 1 / 2 / 13; } #tabs button[data-tab="Tb"] { grid-area: 1 / 13 / 2 / 19; }   /* ★ 2026-11-22 回収資料・仕訳化は 1つ（幅を 広く） */
+    #tabs button[data-tab="Out"] { grid-area: 1 / 19 / 2 / 25; border-right: 0; } #tabs button[data-tab="Staff"] { grid-area: 2 / 17 / 3 / 25; border-right: 0; }
+    #tabs button[data-tab="Clients"] { grid-area: 2 / 9 / 3 / 17; } #tabs button[data-tab="Dict"] { grid-area: 2 / 1 / 3 / 9; border-right: 1px solid var(--line); }
     /* ★ 2026-11-21：2段目は 進捗・経営助言・保証・顧問先・担当者（仕訳辞書タブは 出さない） */
-    #tabs button[data-tab="Prog"] { grid-area: 2 / 1 / 3 / 3; border-right: 1px solid var(--line); } #tabs button[data-tab="Advice"] { grid-area: 2 / 3 / 3 / 6; }
-    #tabs button[data-tab="Grt"] { grid-area: 2 / 5 / 3 / 7; } #tabs button[data-tab="Min"] { grid-area: 2 / 7 / 3 / 9; } #tabs button[data-tab="Clients"] { grid-area: 2 / 9 / 3 / 11; } #tabs button[data-tab="Staff"] { grid-area: 2 / 11 / 3 / 13; border-right: 0; }
-    #tabs button[data-tab="Advice"] { grid-area: 2 / 3 / 3 / 5; }
+    #tabs button[data-tab="Prog"] { grid-area: 2 / 1 / 3 / 5; border-right: 1px solid var(--line); } #tabs button[data-tab="Advice"] { grid-area: 2 / 5 / 3 / 11; }
+    #tabs button[data-tab="Grt"] { grid-area: 2 / 9 / 3 / 13; } #tabs button[data-tab="Min"] { grid-area: 2 / 13 / 3 / 17; } #tabs button[data-tab="Clients"] { grid-area: 2 / 17 / 3 / 21; } #tabs button[data-tab="Staff"] { grid-area: 2 / 21 / 3 / 25; border-right: 0; }
+    #tabs button[data-tab="Advice"] { grid-area: 2 / 5 / 3 / 9; }
     #tabs button[data-tab="Prog"], #tabs button[data-tab="Advice"], #tabs button[data-tab="Grt"], #tabs button[data-tab="Min"], #tabs button[data-tab="Clients"], #tabs button[data-tab="Staff"] { font-size: 13px; }
     /* 3段目：AIの考え方（2つぶん）と 改善要望 を1行に（2026-10-25。別の行にしない） */
     /* ★ 送付物（2026-10-26）：3段目を AIの考え方・改善要望・送付物 の3つに */
     /* ★ 事務所フォルダ（2026-11-14）：3段目を4つに（4段にはしない。タブで画面を取りすぎない） */
-    #tabs button[data-tab="Rule"] { grid-area: 3 / 1 / 4 / 4; border-right: 1px solid var(--line); } #tabs button[data-tab="Fold"] { grid-area: 3 / 4 / 4 / 8; font-size: 13px; }
-    #tabs button[data-tab="Kaizen"] { grid-area: 3 / 8 / 4 / 11; } #tabs button[data-tab="Send"] { grid-area: 3 / 11 / 4 / 13; border-right: 0; }
+    #tabs button[data-tab="Rule"] { grid-area: 3 / 1 / 4 / 7; border-right: 1px solid var(--line); } #tabs button[data-tab="Fold"] { grid-area: 3 / 7 / 4 / 15; font-size: 13px; }
+
+    #tabs button[data-tab="Kaizen"] { grid-area: 3 / 15 / 4 / 21; } #tabs button[data-tab="Send"] { grid-area: 3 / 21 / 4 / 25; border-right: 0; }
+    /* ★ 2026-11-26 巡回の 見える化（議事録の 次）：3段目の 頭に 入れて 5つに（24マスで 割り振り。390px の スマホで 測って 決めた。改善要望は 赤い印の ぶん 広く） */
+    #tabs button[data-tab="Jun"] { grid-area: 3 / 1 / 4 / 5; border-right: 1px solid var(--line); font-size: 12px; } #tabs button[data-tab="Rule"] { grid-area: 3 / 5 / 4 / 9; } #tabs button[data-tab="Fold"] { grid-area: 3 / 9 / 4 / 16; }
+    #tabs button[data-tab="Kaizen"] { grid-area: 3 / 16 / 4 / 22; } #tabs button[data-tab="Send"] { grid-area: 3 / 22 / 4 / 25; }
     /* ★ 2026-11-16：3段目は 字を少し小さく（Google共有ドライブ が長い）。改善要望の赤い印は 字の上に重ねず 右上の角に小さく（見切れていた） */
     #tabs button[data-tab="Rule"], #tabs button[data-tab="Kaizen"], #tabs button[data-tab="Send"] { font-size: 13px; }
     #tabs button[data-tab="Fold"] { font-size: 12px; letter-spacing: -.02em; }
+    #tabs button[data-tab="Rule"], #tabs button[data-tab="Fold"] { font-size: 11px; padding-left: 0; padding-right: 0; } #tabs button[data-tab="Kaizen"], #tabs button[data-tab="Send"] { font-size: 12px; } #tabs button[data-tab="Send"] { padding-left: 0; padding-right: 0; }   /* ★ 2026-11-26 3段目が 5つに なったので 少し 小さく */
     #tabs button[data-tab="Kaizen"] { padding-left: 0; padding-right: 0; }
     #tabs button[data-tab="Kaizen"] .kzbadge { margin-left: 2px; min-width: 14px; padding: 0 3px; font-size: 9.5px; line-height: 14px; border-radius: 7px; vertical-align: 1px; }
   }
@@ -1784,6 +1789,11 @@
   .fast tr.ng td:nth-child(5) { color: #A3271F; font-weight: 700; } .fast tr.ok td:nth-child(5) { color: #1E6B3A; } .fast tr.mid td:nth-child(5) { color: #8A5A00; } .fasact { display: flex; gap: 6px; align-items: flex-start; font-size: 13px; margin: 3px 0; } .fasact b { min-width: 3.5em; } .fasask { margin: 4px 0; font-size: 13px; } .fasask .fasf { margin-right: 8px; }
   .fasfive, .fast { font-size: 12px; } @media (max-width: 700px) { .fast, .fasfive, .fasmx { display: block; overflow-x: auto; } }
   .kzfrom { background: #FFF4D6; border: 1px solid #E2BE5C; border-radius: 8px; padding: 8px 10px; margin: 6px 0; } .kzmic { padding: 1px 8px !important; margin-left: 6px; } .kzmic.on, .mnstt.on { background: #A3271F !important; color: #fff !important; }   /* ★ 2026-11-25 */
+  #hyQuick { position: fixed; right: 14px; bottom: 14px; z-index: 9400; background: #1d4f9c; color: #fff; border: 0; border-radius: 26px; padding: 12px 18px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+  .hyq0 { background: #B23A3A !important; color: #fff !important; }
+  .juntbl { border-collapse: collapse; width: 100%; font-size: 13px; } .juntbl th, .juntbl td { border-bottom: 1px solid #dde4e0; padding: 5px 6px; text-align: left; white-space: nowrap; } .juntbl tr.jundim { opacity: .45; }
+  .junbar { height: 7px; background: #EEF2F0; border-radius: 4px; overflow: hidden; width: 70px; } .junbar i { display: block; height: 100%; } .jundot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 3px; }
+  .junrow { border-bottom: 1px solid #e6ebe8; padding: 6px 2px; font-size: 14px; } .junchip { display: inline-block; color: #fff; border-radius: 10px; padding: 1px 8px; margin: 3px 4px 0 0; font-size: 12px; } .junh { margin-top: 14px; } .tblwrap { overflow-x: auto; }
   .mnlive { max-height: 220px; overflow: auto; white-space: pre-wrap; background: #F6F8F7; border: 1px solid #dde4e0; border-radius: 6px; padding: 6px 8px; font-size: 13px; margin: 6px 0; } .mnseg { margin: 4px 0 8px; }   /* ★ 2026-11-25 録音の 文字起こし・所内議事録 */
   .hoalert { background: #FFF4D6; border: 1px solid #E2BE5C; border-radius: 6px; padding: 6px 8px; margin: 6px 0; font-size: 13px; }
   .hotx { font-size: 13px; margin: 3px 0; }
@@ -1838,6 +1848,7 @@
 })();
 </script>
 <div class="vtoast" id="vtoast" role="status" hidden><span>アプリが新しくなりました</span><button type="button" id="vtGo">開き直す</button><button type="button" class="x" id="vtX" aria-label="閉じる（このまま続ける）">×</button></div>
+<button type="button" id="hyQuick" hidden title="AI ハヤト（画面の 用意を 待たずに すぐ 録りはじめる。行き先は 終わる ときに 選ぶ）">🎙 ハヤト</button>
 <div class="top" id="top" hidden>
   <span class="brand">資料回収（事務所）</span>
   <span class="seg" role="tablist" id="tabs">
@@ -1849,6 +1860,7 @@
     <button type="button" role="tab" data-tab="Advice" aria-pressed="false" id="tabAdvice">経営助言</button>
     <button type="button" role="tab" data-tab="Grt" aria-pressed="false" id="tabGrt">保証</button>
     <button type="button" role="tab" data-tab="Min" aria-pressed="false" id="tabMin">議事録</button>
+    <button type="button" role="tab" data-tab="Jun" aria-pressed="false" id="tabJun" title="巡回の 見える化（訪問ごとに 会計・税務・経営助言・保証・その他の どれを やったか。職員ごとの 統計）">見える化</button>
     <button type="button" role="tab" data-tab="Staff" aria-pressed="false" id="tabStaff" hidden>担当者</button>
     <button type="button" role="tab" data-tab="Clients" aria-pressed="false">顧問先</button>
     <button type="button" role="tab" data-tab="Dict" aria-pressed="false" hidden>仕訳辞書</button>
@@ -2417,6 +2429,15 @@
     <div class="bar"><input id="mnQ" placeholder="ことばで 探す（例：顧問料・後継者・保険）" style="min-width:16em"><select id="mnQk" aria-label="種類で しぼる"><option value="">ぜんぶの 種類</option></select><select id="mnOrd" aria-label="並べ方"><option value="new">新しい日から</option><option value="old">古い日から（時系列）</option></select><label class="note"><input type="checkbox" id="mnOpenAll"> 本文も 並べて 読む</label><span class="note" id="mnQn"></span></div>
     <p class="note">探した 議事録の［📎 巡回監査報告書へ 引く］［📎 書面添付へ 引く］で 保証タブの 下書きに 引用を 足します。</p>
   </details>
+</div>
+<div class="pane page" id="paneJun" hidden>
+  <h2>巡回の 見える化 <small>── 議事録は 巡回監査報告書。行って 何を やってきたか</small></h2>
+  <div class="bar"><label class="note">期間 <select id="junM" aria-label="さかのぼる 月数"><option value="1">今月</option><option value="3">3か月</option><option value="6" selected>6か月</option><option value="12">12か月</option><option value="24">24か月</option></select></label><select id="junWho" aria-label="職員で しぼる"><option value="">全員</option></select><button type="button" id="junGo">↻ 数え直す</button></div>
+  <p class="note">巡回監査は 会計・税務・経営助言・保証を ぜんぶ やるもの。訪問の 議事録（巡回監査・決算検討会・決算報告会・社長面談・現物確認）の 本文と まとめの 言葉から 分けた 目安です（例：企業防衛 の 話 → 経営助言）。くわしくは 右上の［📖 操作ガイド］。</p>
+  <div id="junMsg" class="note"></div>
+  <div id="junStaff"></div>
+  <h3 class="junh">訪問ごと（新しい 順）</h3>
+  <div id="junList"></div>
 </div>
 <div class="pane page" id="paneGrt" hidden>
   <h2>保証 <small id="grtClient"></small></h2>
@@ -3277,14 +3298,14 @@
 
   /* ================= 入口 ================= */
   function fatal(t) { ['gate', 'chg', 'top', 'ctl', 'toClient'].forEach(function (k) { $(k).hidden = true; }); hidePanes(); $('fatal').hidden = false; $('fatalMsg').textContent = t; }
-  function hidePanes() { ['Docs', 'In', 'Tb', 'Dict', 'Out', 'Prog', 'Advice', 'Grt', 'Min', 'Clients', 'Staff', 'Rule', 'Kaizen', 'Send', 'Fold'].forEach(function (k) { $('pane' + k).hidden = true; }); }
+  function hidePanes() { ['Docs', 'In', 'Tb', 'Dict', 'Out', 'Prog', 'Advice', 'Grt', 'Min', 'Jun', 'Clients', 'Staff', 'Rule', 'Kaizen', 'Send', 'Fold'].forEach(function (k) { $('pane' + k).hidden = true; }); }
   function showGate(msg) {
     $('top').hidden = true; $('ctl').hidden = true; $('chg').hidden = true; hidePanes(); $('toClient').hidden = true;
     $('gate').hidden = false; $('gMsg').textContent = msg || '';
     $('gName').value = lsGet(LS_NAME);
     ($('gName').value ? $('gPin') : $('gName')).focus();
   }
-  function signOut(msg) { try { BDDB.wipe(); } catch (e) {} try { $('arrBtn').hidden = true; $('sorBtn').hidden = true; $('agpBtn').hidden = true; $('guideBtn').hidden = true; try { $('hyBtn').hidden = true; hyStop(true); } catch (q) {} $('arrPop').hidden = true; $('bellBtn').hidden = true; $('bellPop').hidden = true; $('mineSel').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); ['collect_led_v1', 'collect_warm_v1', 'collect_pg_v1', 'collect_agp_v1', 'collect_kzst_v1'].forEach(function (k) { lsDel(k); });   /* ★ 2026-11-21：先読みで 覚えた 顧問先の 中身も 消す */ try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
+  function signOut(msg) { try { BDDB.wipe(); } catch (e) {} try { $('arrBtn').hidden = true; $('sorBtn').hidden = true; $('agpBtn').hidden = true; $('guideBtn').hidden = true; try { $('hyQuick').hidden = true; $('hyBtn').hidden = true; hyStop(true); } catch (q) {} $('arrPop').hidden = true; $('bellBtn').hidden = true; $('bellPop').hidden = true; $('mineSel').hidden = true; } catch (e) {} RESUME_OFF = true; lsDel('collect_office_resume'); TOK = ''; lsDel(LS_TOK); tokDrop(); lsDel(LS_BOOT); lsDel('collect_office_alist'); ['collect_led_v1', 'collect_warm_v1', 'collect_pg_v1', 'collect_agp_v1', 'collect_kzst_v1'].forEach(function (k) { lsDel(k); });   /* ★ 2026-11-21：先読みで 覚えた 顧問先の 中身も 消す */ try { A.list = []; } catch (e) {} S.started = false; S.booted = false; showGate(msg || ''); }
   $('signOut').addEventListener('click', function () { signOut('ログアウトしました。'); });
   $('gate').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -3322,6 +3343,7 @@
   }
   function start(name) {
     S.started = true;
+    try { $('hyQuick').hidden = false; } catch (e) {}   /* ★ 2026-11-26 起動を 待たずに ハヤトだけは 使える */
     resumeLoad(name);
     $('gate').hidden = true; $('chg').hidden = true;
     const old = bootLoad(name);
@@ -3344,7 +3366,8 @@
     const me = b.me;
     S.me = me;
     if (me.must) { showChange(true); return; }
-    $('top').hidden = false; $('toClient').hidden = false;
+    $('top').hidden = false; $('toClient').hidden = false; $('hyQuick').hidden = true;
+    try { if (HY.on) hySwPaint(); } catch (e) {}   /* とりあえず 録っている 最中に 用意が できたら 切り替え先の 並びを 入れる */
     $('whoName').textContent = (me.name || name) ? (me.name || name) + ' さん' + (me.master && !LIVE ? '（マスター）' : '') : '';
     $('signOut').hidden = LIVE;
     /* 担当者のタブ：シートの窓とアプリのマスターは手入れ、アプリのふつうの担当者は自分の番号だけ */
@@ -4644,6 +4667,7 @@
     if (k === 'Advice') advLoad();
     if (k === 'Grt') { grtLoad(); ksLoad(); }
     if (k === 'Min') minLoadTab();
+    if (k === 'Jun') junLoad();
     if (k === 'Kaizen') kzLoad(true); else { try { if (KZ.loaded) kzBadge(); } catch (e) {} }
     if (k === 'Send') sdLoad();
     if (k === 'Fold') fdShow();
@@ -8550,10 +8574,10 @@
     LN.n = 0; lnBadge();
   }
   const GUIDE = {
-    order: ['top', 'Docs', 'In', 'Tb', 'Out', 'Prog', 'Advice', 'Grt', 'Min', 'Clients', 'Dict', 'Rule', 'Fold', 'Send', 'Kaizen', 'Staff'],
+    order: ['top', 'Docs', 'In', 'Tb', 'Out', 'Prog', 'Advice', 'Grt', 'Min', 'Jun', 'Clients', 'Dict', 'Rule', 'Fold', 'Send', 'Kaizen', 'Staff'],
     top: { t: '🧭 全体・右上のボタン', pic: 'g_otop', lead: '上の「顧問先」で 顧問先を選び、タブで 仕事を切り替えます。右上のボタンは どのタブからでも使えます。',
       steps: ['［👤 担当］で 自分の担当先だけにする（マイページ）', '［📊 そろい具合］… 顧問先 × 月分で 資料が そろっているか（✓／△／✕）。マスを押すと 箱ごと、足りない箱は［📩 お願いを送る］で 顧問先へ', '［📋 回覧］… 事務所の中で 回された書類（［👁 見ました］［✅ 承認］）と 自分が回したもの（誰が見たか）。回すのは 作業場で 札を選んで［📋 回覧に回す］', '［🔔 お知らせ］… 顧問先から 届いた知らせ（赤い数字は まだ見ていない数）。顧問先が「要確認」の色を付けたものも 🔴 で出ます（顧問先の一覧の 赤い枠「要確認 n」は その数）', '［📥 未処理］… 届いて まだ処理していない資料。押すと その顧問先の 回収資料へ'],
-      tips: ['［🎙 ハヤト］… 事務所の AI（AI ハヤト）で、議事録の 録音も ここ 1つ。押すと はじめに「👤 この 顧問先の 議事録」（開いて いる 顧問先が 選ばれて いる。プルダウンで 選び直せる）か「🏢 所内の 議事録（会議・研修・ふだんの 会話）」を 選び、そのまま 聞きはじめる（途中で 画面を 替えても 行き先は 変わらない）。話が 別の 顧問先に 移ったら、録音中の［🔀 この 議事録に 切り替える］か、はっきり「次は ◯◯さん」と 言うと とめずに 切り替わる（それまでの 分は 前の 行き先の 議事録に 入って まとまる）。［⏹ 終わる］→［✓ はい］の あとは すぐ「どの 議事録？」に 戻る。聞いている あいだ「ハヤト、◯◯さんの 試算表を 出して」「ハヤト、この 判断 合ってる？」と 呼ぶと 声と 画面で 答える（顧問先の 議事録の ときは その 顧問先を 前提に 答える）。［⏹ 終わる］で 止めると「◯◯の 議事録で よかったですか？」── 種類・題を 選んで［✓ はい（議事録に 入れて まとめる）］で 議事録に 入り、すぐ エージェントが まとめる（顧問先＝ご報告・巡回の 下書き・カルテ候補・聞くこと。所内＝決まったこと・やること・事務所の 標準の 候補・確かめる こと）。行き先は［🏢 所内に 変える］で 変えられる。［🗑 残さない］は 2回 押して 捨てる。途中で 閉じても 聞いた 文字は その 端末に 残り、次に 押すと 確かめて 入れられる。顧問先の 議事録の ときは 音声も 原本として 残る。話し手は 自動では 分からない（AI が 呼びかけから 推測して 添える）。答えごとに 絵が しぐさを する。［🎨 マイエージェント］で 名前・絵・声（男性／女性・速さ・高さ。［▶ 声を 試す］で 聞ける。Edge なら 自然な 声）を 自分用に（その 名前で 呼ぶと 答える）。録音中は 画面を 消さない。ほかの タブを 見ても・✕ を 押しても 録音は 続く（✕ は 小さく するだけ）。スマホで ほかの アプリに 切り替えた あいだは ブラウザが 聞くのを 休み、戻ると ひとりでに 聞き直す。［▣ 小さくする］で 右下に 小さく、［🔈 声で 答える］で 声の 入り切り。Chrome か Edge で 開く', 'タブを 右クリック →［新しいタブで開く］［別ウィンドウで開く］で 複数の 画面を 並べて 使えます（いまの 顧問先・月分を 引き継ぐ。Ctrl＋クリック・中ボタンでも 新しいタブ）', '紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
+      tips: ['［⏺ とりあえず 録りはじめる］… 急ぐ ときは これ。行き先（顧問先か 所内か）は ［⏹ 終わる］ ときに 選ぶ。画面を 開いた 直後（用意が できる 前）は 右下に［🎙 ハヤト］が 出て、押すと その場で 録りはじめる', '［🎙 ハヤト］… 事務所の AI（AI ハヤト）で、議事録の 録音も ここ 1つ。押すと はじめに「👤 この 顧問先の 議事録」（開いて いる 顧問先が 選ばれて いる。プルダウンで 選び直せる）か「🏢 所内の 議事録（会議・研修・ふだんの 会話）」を 選び、そのまま 聞きはじめる（途中で 画面を 替えても 行き先は 変わらない）。話が 別の 顧問先に 移ったら、録音中の［🔀 この 議事録に 切り替える］か、はっきり「次は ◯◯さん」と 言うと とめずに 切り替わる（それまでの 分は 前の 行き先の 議事録に 入って まとまる）。［⏹ 終わる］→［✓ はい］の あとは すぐ「どの 議事録？」に 戻る。聞いている あいだ「ハヤト、◯◯さんの 試算表を 出して」「ハヤト、この 判断 合ってる？」と 呼ぶと 声と 画面で 答える（顧問先の 議事録の ときは その 顧問先を 前提に 答える）。［⏹ 終わる］で 止めると「◯◯の 議事録で よかったですか？」── 種類・題を 選んで［✓ はい（議事録に 入れて まとめる）］で 議事録に 入り、すぐ エージェントが まとめる（顧問先＝ご報告・巡回の 下書き・カルテ候補・聞くこと。所内＝決まったこと・やること・事務所の 標準の 候補・確かめる こと）。行き先は［🏢 所内に 変える］で 変えられる。［🗑 残さない］は 2回 押して 捨てる。途中で 閉じても 聞いた 文字は その 端末に 残り、次に 押すと 確かめて 入れられる。顧問先の 議事録の ときは 音声も 原本として 残る。話し手は 自動では 分からない（AI が 呼びかけから 推測して 添える）。答えごとに 絵が しぐさを する。［🎨 マイエージェント］で 名前・絵・声（男性／女性・速さ・高さ。［▶ 声を 試す］で 聞ける。Edge なら 自然な 声）を 自分用に（その 名前で 呼ぶと 答える）。録音中は 画面を 消さない。ほかの タブを 見ても・✕ を 押しても 録音は 続く（✕ は 小さく するだけ）。スマホで ほかの アプリに 切り替えた あいだは ブラウザが 聞くのを 休み、戻ると ひとりでに 聞き直す。［▣ 小さくする］で 右下に 小さく、［🔈 声で 答える］で 声の 入り切り。Chrome か Edge で 開く', 'タブを 右クリック →［新しいタブで開く］［別ウィンドウで開く］で 複数の 画面を 並べて 使えます（いまの 顧問先・月分を 引き継ぐ。Ctrl＋クリック・中ボタンでも 新しいタブ）', '紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料・仕訳化', pic: 'g_odocs', lead: '届いた資料を 箱ごとに 確かめ、そのまま エージェントに渡して 仕訳を作り、元帳で 確かめる タブです（前の 回収資料と 仕訳化を 1つに しました）。',
       steps: ['上の［🤖 エージェントに渡す］の 島：月分の 札で 月分、下の 箱の 札の［選ぶ］で 箱・小箱を 選んで［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（研究）。できた zip は 島の 中の［⬇ ダウンロード］。zip を Claude Code に 投げる だけで よい（指示は 要らない。zip の 中に Claude への 指示が 入っている。zip は 共有ドライブの 1回ぶんの フォルダ G:\\共有ドライブ\\…\\_エージェントに渡す に できている。ダウンロード 不要）。ブラウザの Claude Code は［⬇ 全部まとめてダウンロード］で 保存して 添付', 'できあがりは Claude Code が 同じ フォルダの「結果」に 置けば アプリが ひとりでに 拾う（［📂 フォルダの できあがりを 拾う］でも）。ほかに［⬆ できあがりを戻す］か 島へ ドラッグ。半年・1年・気づき・書面添付 などは［⚙ ほかの渡し方（半年・1年・気づき・書面添付 など）］', '右の［📗 元帳チェック］の 島：［📗 元帳で確かめる・直す］［📥 結果と学び］［📊 試算表へ］［📤 取込ファイルへ］。しまってある 辞書の 画面は［📇 辞書の画面を開く］', '上で 顧問先を選ぶと 箱の一覧（📦 毎月の箱／🗓 スポットの箱／📁 事務所の箱）。箱を押すと その中（年分 › 月分）。［‹ 箱の一覧へ］で 戻る。［▤ すべての箱を 並べて見る］で 箱を またいで さがす', '中に 小箱が ある 箱を 押すと 顧問先の 画面と 同じく 小箱の 札が 出る（小箱の 中で 年分 › 月分）', '📁 事務所の箱 … 返済予定表・概算減価償却の一覧表 など 通年の 参照資料を［＋ ファイルを 入れる］（顧問先からは 見えない・エージェントの zip に いつも 入る）。名前は［⚙ 事務所の箱を 決める］', 'まとまった PDF（スキャナで 何十枚も 1つに なったもの）は 大きく見るで［✂ 1ページずつに分ける］。1ページ ＝ 1つの 資料に なり、元の PDF は 破棄したものへ（戻せます）', '赤い枠の［⚠ 二重では？］… 先に届いた写真と 同じ写真・同じ日付と金額と相手・同じ字（日付・合計）。二重なら その写真を 破棄、ちがえば 2回押して「二重ではない」（顧問先には 聞かない）', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）', '戻したら［📗 元帳で確かめる］… TKC と同じ形（月別の残高 → 口座別 → 総勘定元帳 → 伝票）。伝票は 左に 写真（預金は 通帳の行）、右に 10行。Enter で ✓ して 次の伝票・0 で 前・T（F2）で 訂正・1・2 で エージェントの 別の案・Esc で 戻る。全部 ✓ で［📤 取り込みファイルにする］（FX の 一括読み込み。使った箱は 処理済ボックスへ）'],
       tips: ['補助簿の 🍸 売上日報は、行を 押すと 下の 欄で 直せます（AI が 作った 🤖 の日を 正しい 売上表に 合わせる など）。［この日を 保存］で 保存（現金は 1日の売上 − キャッシュレス）。🤖 の日を 直すと AI が その顧問先の 直しを 覚えて 次から 読むときに 使います（メモに 直した わけを 書くと 伝わります）', '赤い「NEW」… 前に その箱を 開いたあとに 顧問先から 届いた資料（札の 届いた日時の 前）。箱の一覧には 箱ごとに「NEW 3」。札を 見たら 🔔 お知らせも 見たことになります。見ている あいだは NEW のまま、顧問先を 替えるか 開き直すと 消えます（自分の担当・補助担当の顧問先・直近30日。事務所が 入れたもの・確認済には 付きません）', '日ごとの箱（売上伝票など）は、日を選ばずに 届いたものも AI が 日付を読んで その日に並べます（札の左上に「🤖 10/12」。ちがう月の日付なら その月分へ移します）。前から届いていて 日の無いものは 月分の見出しの［🤖 日付を読む］で 読めます（1回に 25件まで・1枚 0.03〜0.05円ほど）。手書きの日付を先に読み、夜0時すぎに出した 日計は 前の日に並べます', '日付を 人が付けた（直した）月分は、見出しの［🤖 日付の読み方を確かめる］で AI に もう一度読ませて 何件 合ったかを 数えられます（日は 書きかえません）。ちがったものは「AI → 正しい日」で 知らせ、覚えて 次から AI に 伝えます。🤖 の日を 直したときも 同じように 覚えます', '日ごとの箱の写真を 押して 大きく見ると、上の帯の左に 何月何日の伝票か（📅 10月3日（土）。🤖 は AI が読んだ日・日が無ければ 赤い「📅 日付なし」）。ちがうときは 右の欄で 正しい日を選ぶと すぐ直ります（ちがう月の日なら その月分へ移ります。確定済みでも 直せます）。［↗ 別ウィンドウ］の 大きく見る でも 同じです', 'パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '🍸 売上日報（現金）の 箱は 上の「補助簿」の［🤖 写真から日報］か、売上伝票の 箱を 開いたときの 見出しの［🤖 写真から 売上日報を まとめて作る］（どちらも 同じ）で 月の 小窓を 開き、［‹ 前の月］［次の月 ›］で 作る月を 選んで［🤖 写真から ◯月分の 売上日報を まとめて作る］を 押すと、日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで 1日ずつ 作ります（届いた 写真だけ。書いてある日は さわりません。日付の 無い 写真は 伝票の 日付を 読んで その日に 入れます）。作った日は 🤖 の 印。顧問先が 確かめて 保存すると 消えます', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
@@ -8581,6 +8605,9 @@
     Min: { t: '議事録', lead: '顧問先で 話したこと・見てきたことを ぜんぶ 残す タブです。あとから 直せない 記録に 残り、エージェントの zip にも 入って 次の 経営助言・企業防衛の 前提・カルテの もとに なります。',
       steps: ['録音は 右上の［🎙 ハヤト］（巡回・決算検討会・決算報告会・社長面談）。会社の スマホで 行く ときも ハヤトを 起動して 置いておき、帰りに［⏹ 終わる］。日付と 種類は 終わる ときに 直せる（あとで 入れる ときは 会った 日に）', '公式LINE・メール・所内の チャット（職員と 所長の やりとり）も 種類を 選んで 貼るだけで よい（種類「チャット（所内）」は 所内の 議事録で）。たまったら［🤖 議事録を エージェントに 渡す（zip）］→ 自分の Claude Code で 整えて［📥 できあがりを 戻す］。議事録の まとめ・カルテの 案・社長に 聞くこと・助言の 下書き・事務所の 標準の 候補に 振り分けられる', '種類（巡回監査・社長面談・訪問（現物確認）など）・日・題を 選び、OMS などの 議事録を［文字で入れる］か［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］。写真は 何枚でも（車・設備・パソコンや モニターの 様子 など）', '公式LINE・メール・電話の やりとりも 議事録：種類を 選び、やりとりの 日に 合わせて 文を 貼るか スクショを 入れる（公式LINE・メールの スクショは 字を ひとりでに 読んで 本文に する。12けたの 数字が 写っていたら 字は 入れない）。スクショ・ファイルは 枠に ドラッグ＆ドロップで 何枚でも（コピーした 画像は Ctrl+V）。録音は 右上の［🎙 ハヤト］で（「👤 この 顧問先の 議事録」を 選ぶ。止めて［✓ はい（議事録に 入れて まとめる）］で この タブに 入り、すぐ まとまる。集音器などで 録った 音声ファイルは［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］で）。文字起こしの ある 議事録は エージェントの zip に「まとめ まだ」と 入り、エージェントの 議事録まとめ.json（要点・決定事項・やること）が 戻すと「決定事項」に 足される。下の 並べ方を「古い日から（時系列）」に すると、会った 日の 会話と 1本に 並ぶ。「本文も 並べて 読む」で 続けて 読める', '［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す（顧問料の 合意 など 言った 言わないの 証拠にも なる）', '「🔎 議事録を 探す」… ことば・種類で しぼる →［📎 巡回監査報告書へ 引く］［📎 書面添付へ 引く］で 保証タブの 下書きに 引用を 足す', 'エージェントに 渡すと 議事録（写真も）を 読んで、助言の 下書き（経営助言タブの「これから 出す 助言」）・企業防衛の 前提・カルテ案を 直して くる。［✓ 顧問先に 出す］まで 顧問先には 出ない'],
       tips: ['★ ハヤトで 録って 止めると すぐ AI が まとめる（1回 20〜30円ほど・月の 上限 3000円）。所内の 議事録は「📘 事務所の 標準に なりそうな こと」の［事務所の 考え方に 足す］（所長・管理者）で 事務所の AI の 考え方に 入る。議事録の まとめ・書面添付の 材料は 決定事項と 共有ドライブ（_議事録/コード/…_まとめ.md）に 入り、「🤖 まとめの 下書き」の［📨 顧問先に ご報告として 出す］［④の 助言に 写す］［カルテに 入れる］は 押した ものだけ 使う。社長に 聞くことは ④の いちばん上へ。まとめて いない 録音は［🤖 いま まとめる（AI・20〜30円ほど）］。AI の 利用を 撤回した 顧問先は まとめない', '議事録は 追記だけ（消せない）。まちがえたら［＋ 決定事項・やること］で 訂正を 足す', '上の［🏢 所内の 議事録（事務所の 中で 話したこと）］に 切り替えると 所内会議・打ち合わせを ためられる（顧問先には 出ない）。新しい 20件が どの 顧問先の エージェントの zip にも「所内議事録/」として 入り、事務所の 考え方・やり方の 材料に なる', '文字起こしは ブラウザの 音声認識（お金は かからない。聞きまちがいが あり得る）。スマホでは 画面を 消すと 止まることが あるので、ハヤトで 録っている あいだは 画面を つけたまま'] },
+    Jun: { t: '巡回の 見える化', lead: '議事録は 巡回監査報告書 ── 行って 何を やってきたかの 記録です。訪問ごとに 会計・税務・経営助言・保証・その他の どれを やったかを 分けて、職員ごとに 数えます（見合いっこ）。',
+      steps: ['期間（今月〜24か月）を 選ぶ。［↻ 数え直す］で 最新に', '上の 表 … 職員ごとの 訪問の 回数・顧問先の 数・分野ごとの 回数と 割合・4つ ぜんぶ やった 回数', '職員を 選ぶと その人の 訪問だけ 並ぶ。［議事録を 見る］で その 顧問先の 議事録タブへ'],
+      tips: ['数えるのは 巡回監査・決算検討会・決算報告会・社長面談・訪問（現物確認）の 議事録（所内は 入れない）', '分け方は 本文と まとめの 言葉で 見る 目安（AI では ない・お金は かからない）。例：企業防衛・保険・資金繰り → 経営助言／書面添付・巡回監査報告 → 保証', 'TKC の 巡回監査は 4つ ぜんぶ やるもの。話した ことを ハヤトに 残せば ここに 出ます'] },
     Rule: { t: 'AIの考え方', pic: 'g_orule', lead: 'AI の下書きの 決まり（その顧問先だけの 科目の使い方・迷ったときの扱い）を 決めるタブです。',
       steps: ['［🤖 基礎資料を エージェントに 渡す（zip）］… 過去の 仕訳（3年分）・仕訳辞書・考え方・原則と例外・引き継ぎメモ・議事録を まとめて 渡し、顧問先カルテ・議事録の まとめ・社長に 聞くことを 作らせる。過去の 仕訳や 引き継ぎメモを 入れた とき・考え方を 変えた ときに 押す。できた zip は［📥 できあがりを 戻す］で 戻すと それぞれの 置き場に 入る（カルテは 承認するまで 案）', '「0. AI の 鍵・消費税」は ふだん 閉じて いる（AI 下書きは いまは 使わない。鍵は ハヤト・議事録の まとめに 使う）', '「原則と例外」… 左に 事務所の標準（原則）、右に この顧問先の 例外（按分の基準 など）。例外には 理由を 書いて［この顧問先の 例外を 保存］（版を 積む・zip の 原則と例外.md に 入る）。原則は 所長だけ が 直せる', 'エージェントが 戻した カルテ.md は【案】。上に「承認待ち」と 出たら［読んで 承認する］→［📥 結果と学び］で 読んで［✓ 承認して カルテに する］か［採らない（いまの カルテの まま）］（承認するまで カルテにも zip にも 入らない）', '決まりを 書いて［考え方を保存］', '仕訳辞書は「仕訳辞書を入れる口」へ 会計システムから 切り出した 辞書を ドラッグ（参考の 材料。［中身を 見る・直す］で 開ける）。経営助言（企業防衛・格付け・助言）は［経営助言］タブへ 移しました', '議事録は［保証］タブへ 移しました', '「顧問先カルテ」… ［雛形を入れる］で 12項目 → 書いて［保存（新しい版）］。Claude Code が作った カルテ.md も ここに貼って 保存（エージェントに渡す zip に いつも入ります）', '過去の仕訳から ルールを見つけるときは ボタンを押したときだけ（費用は 画面に出ます）'], tips: ['マイナンバーの書類は AI に回しません（この決まりは 変えません）'] },
     Fold: { t: 'Google共有ドライブ', lead: '事務所の Google共有ドライブを この画面から 開く・整理する タブです。',
@@ -16475,6 +16502,37 @@
   /* ★★ 2026-11-25（石井「所内で 話していることも エージェントの 基礎」）：所内の 議事録（コード ＊）。どの 顧問先の エージェントの zip にも 入る */
   const MNS = { nai: false };
   function MNC() { return MNS.nai ? '*' : S.code; }
+  /* ===== ★★ 2026-11-26 巡回の 見える化（議事録の 次の タブ。職員ごとに 見合いっこ） ===== */
+  const JUN = { r: null };
+  const JUN_COL = { '会計': '#2F6FAF', '税務': '#7A4FB0', '経営助言': '#C0662A', '保証': '#2E8B57', 'その他': '#8A8F8C' };
+  function junLoad() {
+    mtMsg('junMsg', '数えています…');
+    gs('junkaiStats', Number($('junM').value) || 6).then(function (r) { JUN.r = r; mtMsg('junMsg', ''); junDraw(); }, function (e) { mtMsg('junMsg', e.message, 'err'); });
+  }
+  function junDraw() {
+    const r = JUN.r; if (!r) return; const A = r.areas, sel = $('junWho'), cur = sel.value;
+    sel.innerHTML = '<option value="">全員</option>' + r.staff.map(function (s) { return '<option>' + esc(s.who) + '</option>'; }).join(''); sel.value = cur;
+    if (!r.staff.length) { $('junStaff').innerHTML = '<div class="note">この 期間の 訪問の 議事録は まだ ありません（' + esc(r.from) + ' から）。</div>'; $('junList').innerHTML = ''; return; }
+    const pct = function (n, d) { return d ? Math.round(n * 100 / d) : 0; };
+    $('junStaff').innerHTML = '<div class="tblwrap"><table class="juntbl"><thead><tr><th>職員</th><th>訪問</th><th>顧問先</th>' + A.map(function (a) { return '<th><span class="jundot" style="background:' + JUN_COL[a] + '"></span>' + esc(a) + '</th>'; }).join('') + '<th title="会計・税務・経営助言・保証の 4つ ぜんぶ">4つ ぜんぶ</th></tr></thead><tbody>' +
+      r.staff.map(function (s) {
+        return '<tr' + (cur && cur !== s.who ? ' class="jundim"' : '') + '><th>' + esc(s.who) + '</th><td>' + s.visits + '</td><td>' + s.clients + '</td>' + A.map(function (a) {
+          const n = s.n[a] || 0, p = pct(n, s.visits);
+          return '<td><div class="junbar"><i style="width:' + p + '%;background:' + JUN_COL[a] + '"></i></div>' + n + '回 <small>' + p + '%</small></td>';
+        }).join('') + '<td><b>' + s.full + '</b> <small>' + pct(s.full, s.visits) + '%</small></td></tr>';
+      }).join('') + '</tbody></table></div><p class="note">' + esc(r.from) + ' から ' + r.total + '件の 訪問。％は その人の 訪問の うち その分野の 話が あった 割合。</p>';
+    const L = r.list.filter(function (x) { return !cur || x.who === cur; });
+    $('junList').innerHTML = L.length ? L.slice(0, 200).map(function (x) {
+      return '<div class="junrow"><b>' + esc(x.day) + '</b> ' + esc(x.code) + ' ' + esc(x.name) + ' <small>' + esc(x.kind) + '・' + esc(x.who) + '</small><br>' + esc(x.title) + '<div>' +
+        (x.areas.length ? x.areas.map(function (a) { const w = (x.hit[a] || []).join('・'); return '<span class="junchip" style="background:' + JUN_COL[a] + '" title="' + esc(w) + '">' + esc(a) + '</span>'; }).join('') : '<span class="note">（中身が 短くて 分けられません）</span>') +
+        ' <button type="button" data-junopen="' + esc(x.code) + '">議事録を 見る</button></div></div>';
+    }).join('') : '<div class="note">ありません。</div>';
+  }
+  $('junGo').addEventListener('click', junLoad); $('junM').addEventListener('change', junLoad); $('junWho').addEventListener('change', junDraw);
+  $('junList').addEventListener('click', function (e) {
+    const b = e.target.closest('[data-junopen]'); if (!b) return;
+    if (!setCode(b.dataset.junopen)) return; MNS.nai = false; selectTab('Min');
+  });
   function minLoadTab() {
     $('mnShow').closest('label').hidden = MNS.nai;
     if (MNS.nai) { $('minClient').textContent = '— 🏢 所内（事務所の 中）'; if ($('mnKind').value !== '所内会議' && Array.prototype.some.call($('mnKind').options, function (o) { return o.value === '所内会議'; })) $('mnKind').value = '所内会議'; mnLoad(); return; }
@@ -19977,7 +20035,9 @@
   /* ★★ 2026-11-26（石井「職員 それぞれの ハヤト。自分で 絵を 作って、名前を つけて 楽しめるように」）：
      絵（用意した 3枚 か 自分の 絵）と 名前を 職員ごとに 決める。この パソコンに 覚える（職員の 名前ごと）。
      名前で 呼ぶと 答える（「ハヤト」でも 答える）。AI も その 名前で 名乗る */
-  function hyMeKey() { return 'collect_hy_me:' + String((S.me && S.me.name) || ''); }
+  /* ★★ 2026-11-26（石井「開いたら 間髪 入れず ハヤトだけは」）：起動を 待たずに 使うので、名前は 前に 入った 名前で 代える */
+  function hyWho() { return String((S.me && S.me.name) || lsGet(LS_NAME) || ''); }
+  function hyMeKey() { return 'collect_hy_me:' + hyWho(); }
   function hyMe() { let o = {}; try { o = JSON.parse(localStorage.getItem(hyMeKey()) || '{}') || {}; } catch (e) {} return { name: String(o.name || 'ハヤト').slice(0, 12), pic: o.pic || 'p1', voice: String(o.voice || ''), rate: Number(o.rate) || 1.05, pitch: Number(o.pitch) || 1 }; }
   /* ★★ 2026-11-26（石井「流暢に。男性・女性など 声を 選べるように」）：その 端末の 日本語の 声を 並べて 選ぶ。
        Edge は「Nanami（女性）・Keita（男性）」などの 自然な 声（Natural / Online）が ある。選んで いなければ 自然な 声を 先に 使う */
@@ -20075,11 +20135,11 @@
        ・聞いた 文字は その 都度 この 端末に 控える（途中で 閉じても 次に 開いた とき 確かめて 入れられる）
        ・顧問先の 議事録の ときは 音声も 原本として 録る（言った 言わないの 証拠。30MB まで）。所内は 字だけ（1日 聞かせても 重く ならない） */
   function hyCur() { return (S.clients || []).filter(function (c) { return c.code === S.code; })[0] || null; }
-  function hyBufKey() { return 'collect_hy_buf:' + String((S.me && S.me.name) || ''); }
+  function hyBufKey() { return 'collect_hy_buf:' + hyWho(); }
   function hyBufSave() { try { if (HY.dest && HY.lines.length) localStorage.setItem(hyBufKey(), JSON.stringify({ dest: HY.dest, day: HY.day, from: HY.from, lines: HY.lines.slice(-6000) })); } catch (e) {} }
   function hyBufGet() { try { const o = JSON.parse(localStorage.getItem(hyBufKey()) || 'null'); return o && o.dest && Array.isArray(o.lines) && o.lines.length ? o : null; } catch (e) { return null; } }
   function hyBufDrop() { try { localStorage.removeItem(hyBufKey()); } catch (e) {} }
-  function hyDestTxt(d) { return d && d.code !== '*' ? '👤 ' + d.code + ' ' + (d.name || '') + ' の 議事録' : '🏢 所内の 議事録'; }
+  function hyDestTxt(d) { return d && d.code === '?' ? '❓ 行き先は あとで 決める 議事録' : d && d.code !== '*' ? '👤 ' + d.code + ' ' + (d.name || '') + ' の 議事録' : '🏢 所内の 議事録'; }
   function hyClientOf(code) { const c = (S.clients || []).filter(function (x) { return x.code === code; })[0]; return c ? { code: c.code, name: c.name } : null; }
   function hyClientSel(sel, cur, withNai) {
     sel.innerHTML = ''; if (withNai) sel.appendChild(new Option('🏢 所内の 議事録', '*')); else sel.appendChild(new Option('（顧問先を 選ぶ）', ''));
@@ -20090,6 +20150,7 @@
     const box = $('hyPick'); if (!box) return; $('hyEnd').hidden = true; box.innerHTML = ''; box.hidden = false;
     const c = hyCur();
     box.appendChild(el('b', null, 'どの 議事録を 取りますか？'));
+    { const bq = el('button', 'hybig hyq0', '⏺ とりあえず 録りはじめる（行き先は 終わる ときに）'); bq.type = 'button'; bq.id = 'hyPickQ'; bq.addEventListener('click', function () { hyStart(HY_LATER); }); const rq = el('div', 'hybar'); rq.appendChild(bq); box.appendChild(rq); }
     const sel = el('select'); sel.id = 'hyPickSel'; hyClientSel(sel, c ? c.code : '', false);
     const b1 = el('button', 'hybig', '👤 この 顧問先の 議事録'); b1.type = 'button'; b1.id = 'hyPickC';
     b1.addEventListener('click', function () { const x = hyClientOf(sel.value); if (!x) { hyStat('顧問先を 選んで ください。'); sel.focus(); return; } hyStart(x); });
@@ -20100,6 +20161,7 @@
     box.appendChild(bar);
     box.appendChild(el('div', 'hynote', '顧問先の 話なら 👤（プルダウンで 選び直せます）、事務所の 会議・研修・1日 聞かせて おく ときは 🏢。とちゅうで「次は ◯◯さん」と はっきり 言うと その 顧問先の 議事録に 切り替えます。'));
   }
+  const HY_LATER = { code: '?', name: 'あとで 決める' };
   function hyStat(t, cls) { const b = $('hyStat'); if (!b) return; b.textContent = t; b.className = 'hystat' + (cls ? ' ' + cls : ''); b.hidden = !t; }
   function hySwPaint() { const w = $('hySw'); if (!w) return; w.hidden = !HY.on; if (HY.on) { hyClientSel($('hySwSel'), HY.dest ? HY.dest.code : '*', true); } }
   function hyMeaningful(lines) { return (lines || []).filter(function (x) { return !/】/.test(x); }).length > 0; }
@@ -20109,6 +20171,7 @@
   function hySwitch(dest, how) {
     if (!dest) return; if (!HY.on) { hyStart(dest); return; }
     if (HY.dest && HY.dest.code === dest.code) return;
+    if (HY.dest && HY.dest.code === '?') { HY.dest = dest; hyBufSave(); $('hyDest').textContent = '🔴 ' + hyDestTxt(dest) + 'を 取っています'; hySwPaint(); hyStat('🔀 ' + hyDestTxt(dest) + 'に しました（ここまでの 分も 入ります）'); hyMood('point'); return; }   /* ★ とりあえず 録った 分は 行き先を 付けるだけ */
     const o = { dest: HY.dest, day: HY.day, from: HY.from, lines: HY.lines.slice() };
     HY.dest = dest; HY.lines = []; HY.from = hyNow(); HY.audio = null; hyBufSave();
     $('hyDest').textContent = '🔴 ' + hyDestTxt(dest) + 'を 取っています'; hySwPaint();
@@ -20169,13 +20232,16 @@
     $('hyPick').hidden = true; box.innerHTML = ''; box.hidden = false;
     if (!o.lines.filter(function (x) { return !/】/.test(x); }).length) { box.appendChild(el('b', null, '話は 聞き取れませんでした（議事録は 作りません）。')); const ok = el('button', null, '閉じる'); ok.type = 'button'; ok.addEventListener('click', function () { box.hidden = true; }); box.appendChild(ok); hyBufDrop(); return; }
     let dest = o.dest; const c = hyCur();
+    const later = o.dest.code === '?';   /* ★ とりあえず 録った ときは ここで 行き先を 選ぶ（所内か 顧問先か） */
+    const ds = el('select'); ds.id = 'hyEndDest'; ds.setAttribute('aria-label', 'どの 議事録に 入れるか');
+    if (later) { hyClientSel(ds, c ? c.code : '*', true); dest = ds.value === '*' ? { code: '*', name: '所内' } : (hyClientOf(ds.value) || { code: '*', name: '所内' }); ds.addEventListener('change', function () { dest = ds.value === '*' ? { code: '*', name: '所内' } : (hyClientOf(ds.value) || dest); paint(); }); }
     const h = el('b', null, ''); box.appendChild(h);
     const ks = el('select'); ks.id = 'hyEndKind'; const tt = el('input'); tt.type = 'text'; tt.id = 'hyEndTitle'; tt.placeholder = '題（空なら 種類と 日）';
     const dd = el('input'); dd.type = 'date'; dd.id = 'hyEndDay'; dd.value = o.day; dd.title = 'いつの 議事録か（あとで 入れる ときは 会った 日に）';
     const paint = function () {
-      h.textContent = (left ? '前に 聞いた 分が 残っています。' : '') + hyDestTxt(dest) + 'で よかったですか？（' + o.day + ' ' + (o.from || '') + '〜・' + o.lines.length + '行）';
+      h.textContent = (left ? '前に 聞いた 分が 残っています。' : '') + (later ? 'どの 議事録に 入れますか？ いまは ' : '') + hyDestTxt(dest) + 'で よかったですか？（' + o.day + ' ' + (o.from || '') + '〜・' + o.lines.length + '行）';
       ks.innerHTML = ''; (dest.code === '*' ? ['所内会議', '所内研修', '所内の会話（ハヤト）'] : ['巡回監査', '決算検討会', '決算報告会', '社長面談', '訪問（現物確認）', '電話', 'その他']).forEach(function (k) { ks.appendChild(new Option(k, k)); });
-      const to = dest.code === orig.code ? alt : orig; sw.hidden = !to; sw.textContent = !to ? '' : to.code === '*' ? '🏢 所内に 変える' : '👤 ' + to.code + ' ' + to.name + ' に 変える';
+      const to = dest.code === orig.code ? alt : orig; sw.hidden = !to || later; sw.textContent = !to ? '' : to.code === '*' ? '🏢 所内に 変える' : '👤 ' + to.code + ' ' + to.name + ' に 変える';
     };
     const orig = o.dest, alt = orig.code !== '*' ? { code: '*', name: '所内' } : c ? { code: c.code, name: c.name } : null;   /* 聞きはじめた 行き先 ⇔ 所内（所内で 始めた ときは いま 開いている 顧問先） */
     const sw = el('button', null, ''); sw.type = 'button'; sw.id = 'hyEndSw'; sw.addEventListener('click', function () { if (!alt) return; dest = dest.code === orig.code ? alt : orig; paint(); });
@@ -20183,23 +20249,24 @@
     const no = el('button', null, '🗑 残さない'); no.type = 'button'; no.id = 'hyEndNo';
     ok.addEventListener('click', function () {
       ok.disabled = true; if (/^\d{4}-\d{2}-\d{2}$/.test(dd.value)) o.day = dd.value;
-      const snap = { dest: o.dest, day: o.day, from: o.from, lines: o.lines.slice() }, blob = dest.code !== '*' && dest.code === (o.dest && o.dest.code) ? HY.audio : null;
+      const snap = { dest: o.dest, day: o.day, from: o.from, lines: o.lines.slice() }, blob = dest.code !== '*' && (dest.code === (o.dest && o.dest.code) || (o.dest && o.dest.code === '?')) ? HY.audio : null;
       HY.lines = []; HY.audio = null; hyBufDrop(); box.hidden = true;
       hySave(snap, dest, ks.value, tt.value.trim(), blob); hyPickShow();   /* ★ 2026-11-26（石井）：終わったら すぐ「どの 議事録？」に 戻る（入れて まとめるのは 裏で） */
     });
     no.addEventListener('click', function () { if (!no.dataset.sure) { no.dataset.sure = '1'; no.textContent = '本当に 捨てる（もう 戻せません）'; return; } hyBufDrop(); HY.lines = []; HY.audio = null; box.hidden = true; hySpeak('残さずに 捨てました。'); });
+    if (later) { const r0 = el('div', 'hybar'); r0.appendChild(ds); box.appendChild(r0); }
     const r1 = el('div', 'hybar'); [ks, dd, tt].forEach(function (x) { r1.appendChild(x); }); box.appendChild(r1);
     const r2 = el('div', 'hybar'); [ok, sw, no].forEach(function (x) { r2.appendChild(x); }); box.appendChild(r2);
     box.appendChild(el('div', 'hynote', '✓ を 押すと 議事録に 入り、すぐ エージェントが まとめます（1回 20〜30円ほど）。話し手は 自動では 分かりません。'));
     paint();
   }
-  function hyPendKey() { return 'collect_hy_pend:' + String((S.me && S.me.name) || ''); }
+  function hyPendKey() { return 'collect_hy_pend:' + hyWho(); }
   function hyPendAll() { try { return JSON.parse(localStorage.getItem(hyPendKey()) || '[]') || []; } catch (e) { return []; } }
   function hyPendPut(x) { try { const a = hyPendAll(); a.push(x); localStorage.setItem(hyPendKey(), JSON.stringify(a.slice(-20))); } catch (e) {} }
   function hyPendRetry() { const a = hyPendAll(); if (!a.length) return; try { localStorage.removeItem(hyPendKey()); } catch (e) {} a.forEach(function (x) { hySave(x.o, x.dest, x.kind, x.title, null); }); }
   function hySave(o, dest, kind, title, blob) {
     const nm = hyDestTxt(dest);
-    const text = '（' + hyMe().name + 'で 取った 議事録 ' + o.day + ' ' + (o.from || '') + '〜' + hyNow() + '・' + ((S.me && S.me.name) || '') + '）\n' + o.lines.join('\n');
+    const text = '（' + hyMe().name + 'で 取った 議事録 ' + o.day + ' ' + (o.from || '') + '〜' + hyNow() + '・' + hyWho() + '）\n' + o.lines.join('\n');
     const send = function (b64) {
       const arg = { kind: kind, day: o.day, title: title || (kind + ' ' + o.day + ' ' + (o.from || '')), text: text, stt: 1, show: false };
       if (b64) { arg.b64 = b64; arg.mime = HY.audioMime || 'audio/webm'; arg.name = '録音_' + String(o.from || '').replace(':', '') + (arg.mime === 'audio/mp4' ? '.m4a' : '.webm'); }
@@ -20253,7 +20320,7 @@
   }
   function hyAskGo(q) {
     hyState('think'); $('hyQ').textContent = '「' + q + '」'; $('hySay').textContent = ''; $('hyShow').textContent = ''; $('hyAct').hidden = true; HY.pend = null;
-    gs('hayatoAsk', q, HY.dest && HY.dest.code !== '*' ? HY.dest.code : '', HY.hist.slice(-4), hyMe().name).then(function (r) {
+    gs('hayatoAsk', q, HY.dest && HY.dest.code !== '*' && HY.dest.code !== '?' ? HY.dest.code : '', HY.hist.slice(-4), hyMe().name).then(function (r) {
       $('hySay').textContent = r.say || ''; $('hyShow').textContent = r.show || '';
       if (r.used != null) hyCostPaint({ on: true, used: r.used, cap: r.cap });
       HY.hist.push({ q: q, a: r.say || '' }); if (HY.hist.length > 8) HY.hist.shift();
@@ -20305,11 +20372,19 @@
     try { speechSynthesis.speak(u); } catch (e) { done(); }
   }
   window.addEventListener('beforeunload', function (e) { hyBufSave(); if (HY.on) { e.preventDefault(); e.returnValue = ''; } });
+  function hyOpenView() { hyBuild(); const v = $('hyView'); v.hidden = false; v.classList.remove('mini'); $('hyMin').textContent = '▣ 小さくする'; }
   $('hyBtn').addEventListener('click', function () {
-    hyBuild(); const v = $('hyView'); v.hidden = false; v.classList.remove('mini'); $('hyMin').textContent = '▣ 小さくする';
+    hyOpenView();
     if (HY.on) return;
     hyPendRetry();
     if (hyBufGet()) hyEndShow(true); else hyPickShow();
+  });
+  /* ★★ 2026-11-26（石井「事務所の 画面を 開いたら 間髪 入れず ハヤトだけは 起動できるように。とりあえず 回し始めなければ ならない ことも ある」）：
+       画面の 用意（顧問先の 並び など）を 待たずに 右下の［🎙 ハヤト］が 出る。押したら その場で 録りはじめ、行き先（顧問先か 所内か）は 終わる ときに 選ぶ */
+  $('hyQuick').addEventListener('click', function () {
+    hyOpenView(); if (HY.on) return;
+    if (hyBufGet()) { hyEndShow(true); return; }
+    hyStart(HY_LATER);
   });
   /* ★★ 2026-11-23（石井）：どの ボタンも 押したら 薄い緑に（押した感） */
   document.addEventListener('click', function (e) { const b = e.target && e.target.closest ? e.target.closest('button') : null; if (!b || b.disabled) return; b.classList.add('tapped'); setTimeout(function () { b.classList.remove('tapped'); }, 700); }, true);
