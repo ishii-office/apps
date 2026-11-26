@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795670366;</script>
+<script>window.__PAGE_VER=1795707928;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -950,6 +950,9 @@
   .dvmk .mk-st .stpre[aria-pressed="true"] { border-color: #D0201A; box-shadow: 0 0 0 2px #D0201A55; }
   .dvmk .mk-st .stpre.keep { box-shadow: 0 0 0 3px #F2B800; }
   .dvmk .mk-st .stsep { color: #bbb; padding: 0 2px; }
+  .dvmk .mk-st .stz { display: inline-flex; gap: 3px; align-items: center; font-size: 12.5px; font-weight: 700; }   /* K-0350：ハンコの大きさ */
+  .dvmk .mk-st .stz button { padding: 2px 7px; }
+  .dvmk .mk-st .sttint[aria-pressed="true"] { border-color: var(--c); box-shadow: 0 0 0 2px var(--c); }   /* K-0350 続き */
   .dvmk .mk-st .stx { border: 0; background: none; color: #999; padding: 0 2px; font-size: 13px; }
   .mksvg { position: absolute; pointer-events: none; overflow: visible; transform-origin: 50% 50%; }
   .dv-mk .mksvg { pointer-events: auto; cursor: crosshair; }
@@ -7882,7 +7885,7 @@
         const leads = {}; mem.forEach(function (it) { if (isT(it) || fileKind(it.name)) return; const d = it.set || it.id; if (!leads[d]) leads[d] = it; });
         const list = Object.keys(leads).map(function (k) { return leads[k]; }); if (!list.length) { say('印を押せる書類が ありません（破棄したもの・エクセルなどは 押せません）。', true); return; }
         let n = 0, ng = 0; const one = function (it) { return new Promise(function (ok) { const src = THUMB[it.id]; if (!src) { ok(1.414); return; } const im = new Image(); im.onload = function () { ok(im.naturalHeight / Math.max(1, im.naturalWidth)); }; im.onerror = function () { ok(1.414); }; im.src = src; }).then(function (asp) {
-          const w = 0.16, h = Math.min(0.5, w / Math.max(0.2, asp)), mk = (it.mark || []).slice(); mk.push({ p: 0, t: 'stamp', s: 'auto', d: stampToday(), x: 1 - w - 0.02, y: 0.02, w: w, h: h, c: STAMP_RED });
+          const w = Math.min(0.4, 0.16 * STAMP_K), h = Math.min(0.5, w / Math.max(0.2, asp)), mk = (it.mark || []).slice(); mk.push({ p: 0, t: 'stamp', s: 'auto', d: stampToday(), x: 1 - w - 0.02, y: 0.02, w: w, h: h, c: STAMP_C });   /* K-0350：ハンコの色・大きさ */
           return gs('workMark', code, it.id, mk).then(function (r) { it.mark = r.mark; n++; }, function () { ng++; }); }); };
         list.reduce(function (pr, it) { return pr.then(function () { return one(it); }); }, Promise.resolve()).then(function () { docsDraw(); wsRefresh(); say(n + '件に 受付印を押しました' + (ng ? '（' + ng + '件は 押せませんでした）' : '') + '。大きく見るの［✏ 書きこむ］で 動かす・消す ができます。', !!ng); });
       },
@@ -8587,7 +8590,7 @@
       tips: ['［⏺ とりあえず 録りはじめる］… 急ぐ ときは これ。行き先（顧問先か 所内か）は ［⏹ 終わる］ ときに 選ぶ。画面を 開いた 直後（用意が できる 前）は 右下に［🎙 ハヤト］が 出て、押すと その場で 録りはじめる', '［🎙 ハヤト］… 事務所の AI（AI ハヤト）で、議事録の 録音も ここ 1つ。押すと はじめに「👤 この 顧問先の 議事録」（開いて いる 顧問先が 選ばれて いる。プルダウンで 選び直せる）か「🏢 所内の 議事録（会議・研修・ふだんの 会話）」を 選び、そのまま 聞きはじめる（途中で 画面を 替えても 行き先は 変わらない）。話が 別の 顧問先に 移ったら、録音中の［🔀 この 議事録に 切り替える］か、はっきり「次は ◯◯さん」と 言うと とめずに 切り替わる（それまでの 分は 前の 行き先の 議事録に 入って まとまる）。［⏹ 終わる］→［✓ はい］の あとは すぐ「どの 議事録？」に 戻る。聞いている あいだ「ハヤト、◯◯さんの 試算表を 出して」「ハヤト、この 判断 合ってる？」と 呼ぶと 声と 画面で 答える（顧問先の 議事録の ときは その 顧問先を 前提に 答える）。［⏹ 終わる］で 止めると「◯◯の 議事録で よかったですか？」── 種類・題を 選んで［✓ はい（議事録に 入れて まとめる）］で 議事録に 入り、すぐ エージェントが まとめる（顧問先＝ご報告・巡回の 下書き・カルテ候補・聞くこと。所内＝決まったこと・やること・事務所の 標準の 候補・確かめる こと）。行き先は［🏢 所内に 変える］で 変えられる。［🗑 残さない］は 2回 押して 捨てる。途中で 閉じても 聞いた 文字は その 端末に 残り、次に 押すと 確かめて 入れられる。顧問先の 議事録の ときは 音声も 原本として 残る。話し手は 自動では 分からない（AI が 呼びかけから 推測して 添える）。答えごとに 絵が しぐさを する。［🎨 マイエージェント］で 名前・絵・声（男性／女性・速さ・高さ。［▶ 声を 試す］で 聞ける。Edge なら 自然な 声）を 自分用に（その 名前で 呼ぶと 答える）。録音中は 画面を 消さない。ほかの タブを 見ても・✕ を 押しても 録音は 続く（✕ は 小さく するだけ）。スマホで ほかの アプリに 切り替えた あいだは ブラウザが 聞くのを 休み、戻ると ひとりでに 聞き直す。［▣ 小さくする］で 右下に 小さく、［🔈 声で 答える］で 声の 入り切り。Chrome か Edge で 開く', 'タブを 右クリック →［新しいタブで開く］［別ウィンドウで開く］で 複数の 画面を 並べて 使えます（いまの 顧問先・月分を 引き継ぐ。Ctrl＋クリック・中ボタンでも 新しいタブ）', '紫の枠「📩」のマスは お願いを送ったのに まだ届いていない月分です', '画面が古いときは 上に「新しくなりました」が出ます。［開き直す］で 新しくなります'] },
     Docs: { t: '回収資料・仕訳化', pic: 'g_odocs', lead: '届いた資料を 箱ごとに 確かめ、そのまま エージェントに渡して 仕訳を作り、元帳で 確かめる タブです（前の 回収資料と 仕訳化を 1つに しました）。',
       steps: ['上の［🤖 エージェントに渡す］の 島：月分の 札で 月分、下の 箱の 札の［選ぶ］で 箱・小箱を 選んで［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（研究）。できた zip は 島の 中の［⬇ ダウンロード］。zip を Claude Code に 投げる だけで よい（指示は 要らない。zip の 中に Claude への 指示が 入っている。zip は 共有ドライブの 1回ぶんの フォルダ G:\\共有ドライブ\\…\\_エージェントに渡す に できている。ダウンロード 不要）。ブラウザの Claude Code は［⬇ 全部まとめてダウンロード］で 保存して 添付', 'できあがりは Claude Code が 同じ フォルダの「結果」に 置けば アプリが ひとりでに 拾う（［📂 フォルダの できあがりを 拾う］でも）。ほかに［⬆ できあがりを戻す］か 島へ ドラッグ。半年・1年・気づき・書面添付 などは［⚙ ほかの渡し方（半年・1年・気づき・書面添付 など）］', '右の［📗 元帳チェック］の 島：［📗 元帳で確かめる・直す］［📥 結果と学び］［📊 試算表へ］［📤 取込ファイルへ］。しまってある 辞書の 画面は［📇 辞書の画面を開く］', '上で 顧問先を選ぶと 箱の一覧（📦 毎月の箱／🗓 スポットの箱／📁 事務所の箱）。箱を押すと その中（年分 › 月分）。［‹ 箱の一覧へ］で 戻る。［▤ すべての箱を 並べて見る］で 箱を またいで さがす', '中に 小箱が ある 箱を 押すと 顧問先の 画面と 同じく 小箱の 札が 出る（小箱の 中で 年分 › 月分）', '📁 事務所の箱 … 返済予定表・概算減価償却の一覧表 など 通年の 参照資料を［＋ ファイルを 入れる］（顧問先からは 見えない・エージェントの zip に いつも 入る）。名前は［⚙ 事務所の箱を 決める］', 'まとまった PDF（スキャナで 何十枚も 1つに なったもの）は 大きく見るで［✂ 1ページずつに分ける］。1ページ ＝ 1つの 資料に なり、元の PDF は 破棄したものへ（戻せます）', '赤い枠の［⚠ 二重では？］… 先に届いた写真と 同じ写真・同じ日付と金額と相手・同じ字（日付・合計）。二重なら その写真を 破棄、ちがえば 2回押して「二重ではない」（顧問先には 聞かない）', '写真を押すと 大きく見る（← → で前後、Enter で 確認済にして次へ。［⬇ 保存］で その書類を パソコン・スマホに保存。［↗ 別ウィンドウ］の 大きく見る にも［⬇ 保存］）', '選んで 下の帯から［✓ 確認済］［⊘ 対象外にする］［📎 まとめる］［↪ 別の箱へ移す］［破棄］', '［PDF切り出し］［🖨 印刷］［✉ Gmailに添付］で 外へ', '［📂 フォルダへ写す］で Google共有ドライブの 好きなフォルダへ コピー', '［🤖 エージェントに渡す（zip）］で その月分の材料を zip に（自分の Claude Code に渡して 仕訳を作ってもらう）', '試算表の［📈 気づき］は 月次のあと、巡回監査の前に 1回（社長面談の 論点の下書き）。資料が多くて zip に 入りきらないときは「半年分」で 2回に 分ける', '戻した結果は［📥 結果と学び］で 見る。学びは ✓ して カルテへ（次の zip から エージェントに 渡る）。年一の先は「1年分」に ✓、試算表からの 社長面談の論点は［📈 気づき（試算表から）］', '［📚 事務所の標準体系］で 記帳の考え方・科目の標準・企業防衛の考え方を 自分の Claude Code に 入れておく（分からないことは そこで 聞く）', '［✅ 要る資料のチェック表］で その顧問先の 要る資料を そろえてから 投げる（はじめは［過去の仕訳からの案］を ✓ して 足す。毎月の ✗ は［📨 足りない資料を 顧問先に お願い］）', '月別減価償却確認表・返済予定表 などは［🤖 エージェントに渡す（zip）］→［📎 事務所の資料（通年）］に 足す（月に しばられず zip に いつも入る）', '書面添付の下書き・標準保障額・格付けは［🤖 エージェントに渡す（zip）］の［📝 書面添付の下書き］［🛡 標準保障額］［🏦 格付け］。様式・算定書・Fプラスの資料は［📎 事務所の資料（通年）］→［📚 事務所共通の資料］に 入れておく', 'Claude Code の できあがりは zip にして［🤖 エージェントに渡す（zip）］→［⬆ できあがりを戻す］で 戻す（エージェント研究 1回として 集計に 数える）', '戻したら［📗 元帳で確かめる］… TKC と同じ形（月別の残高 → 口座別 → 総勘定元帳 → 伝票）。伝票は 左に 写真（預金は 通帳の行）、右に 10行。Enter で ✓ して 次の伝票・0 で 前・T（F2）で 訂正・1・2 で エージェントの 別の案・Esc で 戻る。全部 ✓ で［📤 取り込みファイルにする］（FX の 一括読み込み。使った箱は 処理済ボックスへ）'],
-      tips: ['補助簿の 🍸 売上日報は、行を 押すと 下の 欄で 直せます（AI が 作った 🤖 の日を 正しい 売上表に 合わせる など）。［この日を 保存］で 保存（現金は 1日の売上 − キャッシュレス）。🤖 の日を 直すと AI が その顧問先の 直しを 覚えて 次から 読むときに 使います（メモに 直した わけを 書くと 伝わります）', '赤い「NEW」… 前に その箱を 開いたあとに 顧問先から 届いた資料（札の 届いた日時の 前）。箱の一覧には 箱ごとに「NEW 3」。札を 見たら 🔔 お知らせも 見たことになります。［↗ 別ウィンドウ］の 札にも 状態の 前に 赤い「NEW」。見ている あいだは NEW のまま、顧問先を 替えるか 開き直すと 消えます（自分の担当・補助担当の顧問先・直近30日。事務所が 入れたもの・確認済には 付きません）', '日ごとの箱（売上伝票など）は、日を選ばずに 届いたものも AI が 日付を読んで その日に並べます（札の左上に「🤖 10/12」。ちがう月の日付なら その月分へ移します）。別ウィンドウで 開いても 同じように 日ごとの見出しで 並びます。前から届いていて 日の無いものは 月分の見出しの［🤖 日付を読む］で 読めます（1回に 25件まで・1枚 0.03〜0.05円ほど）。手書きの日付を先に読み、夜0時すぎに出した 日計は 前の日に並べます', '日付を 人が付けた（直した）月分は、見出しの［🤖 日付の読み方を確かめる］で AI に もう一度読ませて 何件 合ったかを 数えられます（日は 書きかえません）。ちがったものは「AI → 正しい日」で 知らせ、覚えて 次から AI に 伝えます。🤖 の日を 直したときも 同じように 覚えます', '日ごとの箱の写真を 押して 大きく見ると、上の帯の左に 何月何日の伝票か（📅 10月3日（土）。🤖 は AI が読んだ日・日が無ければ 赤い「📅 日付なし」）。ちがうときは 右の欄で 正しい日を選ぶと すぐ直ります（ちがう月の日なら その月分へ移ります。確定済みでも 直せます）。［↗ 別ウィンドウ］の 大きく見る でも 同じです', 'パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '🍸 売上日報（現金）の 箱は 上の「補助簿」の［🤖 写真から日報］か、売上伝票の 箱を 開いたときの 見出しの［🤖 写真から 売上日報を まとめて作る］（どちらも 同じ）で 月の 小窓を 開き、［‹ 前の月］［次の月 ›］で 作る月を 選んで［🤖 写真から ◯月分の 売上日報を まとめて作る］を 押すと、日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで 1日ずつ 作ります（届いた 写真だけ。書いてある日は さわりません。日付の 無い 写真は 伝票の 日付を 読んで その日に 入れます）。作った日は 🤖 の 印。顧問先が 確かめて 保存すると 消えます', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
+      tips: ['補助簿の 🍸 売上日報は、行を 押すと 下の 欄で 直せます（AI が 作った 🤖 の日を 正しい 売上表に 合わせる など）。［この日を 保存］で 保存（現金は 1日の売上 − キャッシュレス）。🤖 の日を 直すと AI が その顧問先の 直しを 覚えて 次から 読むときに 使います（メモに 直した わけを 書くと 伝わります）', '赤い「NEW」… 前に その箱を 開いたあとに 顧問先から 届いた資料（札の 届いた日時の 前）。箱の一覧には 箱ごとに「NEW 3」。札を 見たら 🔔 お知らせも 見たことになります。［↗ 別ウィンドウ］の 札にも 状態の 前に 赤い「NEW」。見ている あいだは NEW のまま、顧問先を 替えるか 開き直すと 消えます（自分の担当・補助担当の顧問先・直近30日。事務所が 入れたもの・確認済には 付きません）', '日ごとの箱（売上伝票など）は、日を選ばずに 届いたものも AI が 日付を読んで その日に並べます（札の左上に「🤖 10/12」。ちがう月の日付なら その月分へ移します）。別ウィンドウで 開いても 同じように 日ごとの見出しで 並びます。前から届いていて 日の無いものは 月分の見出しの［🤖 日付を読む］で 読めます（1回に 25件まで・1枚 0.03〜0.05円ほど）。手書きの日付を先に読み、夜0時すぎに出した 日計は 前の日に並べます', '日付を 人が付けた（直した）月分は、見出しの［🤖 日付の読み方を確かめる］で AI に もう一度読ませて 何件 合ったかを 数えられます（日は 書きかえません）。ちがったものは「AI → 正しい日」で 知らせ、覚えて 次から AI に 伝えます。🤖 の日を 直したときも 同じように 覚えます', '日ごとの箱の写真を 押して 大きく見ると、上の帯の左に 何月何日の伝票か（📅 10月3日（土）。🤖 は AI が読んだ日・日が無ければ 赤い「📅 日付なし」）。ちがうときは 右の欄で 正しい日を選ぶと すぐ直ります（ちがう月の日なら その月分へ移ります。確定済みでも 直せます）。［↗ 別ウィンドウ］の 大きく見る でも 同じです', 'パソコンのファイルは 箱へ ドラッグ＆ドロップで入れられます（フォルダごと落とすと 中のファイルが全部入ります）', '🍸 売上日報（現金）の 箱は 上の「補助簿」の［🤖 写真から日報］か、売上伝票の 箱を 開いたときの 見出しの［🤖 写真から 売上日報を まとめて作る］（どちらも 同じ）で 月の 小窓を 開き、［‹ 前の月］［次の月 ›］で 作る月を 選んで［🤖 写真から ◯月分の 売上日報を まとめて作る］を 押すと、日報が まだ無い日（数字が 1つも 入っていない日）の 売上伝票・日計の 写真を AI が 読んで 1日ずつ 作ります（届いた 写真だけ。書いてある日は さわりません。日付の 無い 写真は 伝票の 日付を 読んで その日に 入れます）。作った日は 🤖 の 印。顧問先が 確かめて 保存すると 消えます', '書きこむ道具に ➜ 矢印・◯ 丸（顧問先と そろえた）。日付印は［🔴 ハンコ］。ハンコの色は ハンコを選んでから 上の色（赤・黒・青…・🎨）で、大きさは ハンコの帯の 左の「大きさ 小・中・大・特大」で 押す前に選べます（この端末が覚える。押したハンコを選んで 変えても よい）。登録した画像のハンコは［🎨 画像のハンコも この色で］を入れると 選んだ色で塗って押せます（もう一度押すと 元の色）。最後に使った道具と色は 次に［書きこむ］を押したとき そのまま選んであります（置いたら外れるのは これまでどおり）。別ウィンドウの「🔎 名前・中の文字で探す」で 名前・メモ・下書き・写真や PDF の字（Google ドライブの 無料の文字起こし。マイナンバーは 読まない）から 絞れます。札の下の 丸を押すと 色のラベル（要確認・あとで・済み）を付けて 色で絞れます（顧問先の画面にも 同じ色が出ます）。PDF の札には 本当のページ数', '書きこみは［↶ 元に戻す］［↷ やり直す］（Ctrl＋Z／Ctrl＋Y）。［✍ ペン］で なぞったとおりの 手書きの線（顧問先と そろえた）。［📋 書いたもの］で 一覧（押すと そこへ飛んで 選ぶ）。別ウィンドウで 大きく見ると 左に ページの一覧（押すと そのページ・つかんで 順番）。［✂ このページを外す］［🗑 このページだけ］［↻ 回す］も。別ウィンドウで 札を選んで［🔴 選んだ書類に 受付印］を押すと まとめて押せます。別ウィンドウの 名前・まとめる・バラす も Ctrl＋Z で 元に戻せます', 'キーボード（DocuWorks と同じ）：Shift＋押す＝前に押した札から まとめて選ぶ／Ctrl＋A＝全部選ぶ／F2＝選んだ1つの名前を書き換え／Esc＝選ぶのをやめる。大きく見るでは PageUp・PageDown・Home（最初）・End（最後）。札の大きさは 下の「札の大きさ」か Ctrl＋ホイール', '破棄したものは［破棄したもの］から戻せます', '［✏ 書きこむ］で 文字・線・枠・ハンコ（事務所だけ）', '書きこむ途中でも［🔍＋］［🔍－］・ホイール（PDF は Ctrl＋ホイール）で 拡大・縮小。拡大中に 道具を選んでいなければ つかんで動かす。別ウィンドウで書きこむときも［🔍＋］［🔍－］［元の大きさ］'] },
     In: { t: '仕訳化', pic: 'g_oin', lead: '届いた資料を エージェントに渡して 仕訳を作り、元帳で 確かめて 確定する タブです（AI 下書きは 止めました）。',
       steps: ['上の 札で 月分（「◯月分（一括）」で その月分を まとめて）と 箱・小箱を 選ぶ（いくつでも。［全部の箱］で 戻す）', '帯の［🤖 新規に渡す］（まだ 仕訳の ない 月）か［🧪 答え合わせ付きで渡す］（もう 仕訳の ある 月・研究）。その場で zip が できる（マイナンバーの書類は 入りません）', '直すのは［📗 元帳で確かめる・直す］から 手で（T／F2 で 訂正）。辞書で 仕訳する 画面は しまってあります（［📇 辞書の画面を開く］で 出せる）', '確定したものは［取込ファイル］タブへ', '［🤖 エージェントに渡す（zip）］で できた zip は 帯の 右上の［⬇ ダウンロード］で その場で 保存（30MB を 超えるときは 1／2・2／2 に 分かれるので 両方 落として 同じ フォルダに 展開）', 'エージェントは 上の帯で：［🤖 エージェントに渡す（zip）］→ 自分の Claude Code に 渡す → できあがりの zip を［⬆ できあがりを戻す］か 帯へ ドラッグ → ［📥 結果と学び］［📗 元帳で確かめる］（TKC と 同じ 伝票の形・Enter で ✓ して 次へ。写真は 先に 読んでおくので 速く 押しても 追いつきます）'],
       tips: ['スマホの［📗 元帳で確かめる］は 上から 下（上に 科目・下に 元帳／上に 写真・下に 伝票）。下の［✓ 次へ］［‹ 前］［✎ 訂正］［案1］［案2］［↩ 戻る］で 進みます', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
@@ -11521,7 +11524,11 @@
           if (m.d) { x.font = '700 ' + L.dfs + 'px ' + NOTE_FAM; x.fillText(m.d, bx + bw / 2, L.dy); }
         } else if (im) {
           const k = Math.min(bw / im.naturalWidth, bh / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
-          x.drawImage(im, bx + (bw - iw) / 2, by + (bh - ih) / 2, iw, ih);
+          if (m.tc) {   /* K-0350 続き：画像の 色の付いた所を その色で 塗って 焼きこむ */
+            const tc = document.createElement('canvas'); tc.width = Math.max(1, Math.round(iw)); tc.height = Math.max(1, Math.round(ih)); const tx2 = tc.getContext('2d');
+            tx2.drawImage(im, 0, 0, tc.width, tc.height); tx2.globalCompositeOperation = 'source-in'; tx2.fillStyle = m.c || STAMP_RED; tx2.fillRect(0, 0, tc.width, tc.height);
+            x.drawImage(tc, bx + (bw - iw) / 2, by + (bh - ih) / 2, iw, ih);
+          } else x.drawImage(im, bx + (bw - iw) / 2, by + (bh - ih) / 2, iw, ih);
           if (m.d) txt(m.d, by + bh / 2, Math.max(9 * W / 1000, Math.min(bw, bh) * 0.13));
         } else {
           const r = Math.min(bw, bh) / 2, cx = bx + bw / 2, cy = by + bh / 2, lw = Math.max(1.5, r * 0.06);
@@ -12726,6 +12733,24 @@
        書きこむ帯に いつも 絵で並べる。1回押す＝1つだけ置く・2回続けて押す＝続けて置ける（ほかの道具と同じ）。色は はじめ赤（あとで 選んで変えられる） */
   const STAMP_BUILTIN = { auto: 1, sumi: 1, rect: 1, circ: 1 };
   const STAMP_RED = '#D9381E';
+  /* ★ K-0350（2026-11-26 林）：ハンコの 色と大きさを 押す前に選べる（この端末が覚える）。
+       色 … ハンコを選ぶと 上の色の欄が ハンコの色（はじめは 赤）になり、変えると 次から その色で押す（帯の絵も その色）。登録した画像のハンコは 画像の色のまま
+       大きさ … ハンコの帯の［小］［中］［大］［特大］。選んでいる ハンコにも効く（押したあとは これまでどおり［A－］［A＋］でも） */
+  const STAMP_Z = [['小', 0.7], ['中', 1], ['大', 1.4], ['特大', 2]];
+  let STAMP_C = (function () { const c = lsGet('collect_office_mk_stc'); return /^#[0-9A-Fa-f]{6}$/.test(c) ? c.toUpperCase() : STAMP_RED; })();
+  /* ★ K-0350 続き（2026-11-26 林）：登録した画像のハンコも 選んだ色で 塗れる（tc:1 ＝ 画像の色の付いた所を c の色で塗る。はじめは 元の色）。
+       帯の［画像のハンコも この色で］で 入れる／外す（この端末が覚える）。画像のハンコを選んで 色を押しても 入る。選んでいる 画像のハンコにも効く */
+  let STAMP_IMGC = lsGet('collect_office_mk_sti') === '1';
+  function stampImgTint(on) { STAMP_IMGC = !!on; lsSet('collect_office_mk_sti', on ? '1' : ''); const sm = MK.sel >= 0 ? MK.list[MK.sel] : null; if (sm && sm.t === 'stamp' && stampOf(sm.s)) mkSelEdit(function (m) { if (on) m.tc = 1; else delete m.tc; }); }
+  /* 画像のハンコを c の色で塗った絵（data URL）。ハンコ×色ごとに 1回だけ作って 覚える。できたら 描き直す */
+  const STAMP_TINT = {};
+  function stampTintUrl(st, c) {
+    const k = st.id + c; if (STAMP_TINT[k]) return STAMP_TINT[k] === 1 ? st.data : STAMP_TINT[k];
+    STAMP_TINT[k] = 1; const im = new Image();
+    im.onload = function () { try { const cv = document.createElement('canvas'); cv.width = Math.max(1, im.naturalWidth); cv.height = Math.max(1, im.naturalHeight); const x = cv.getContext('2d'); x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = c; x.fillRect(0, 0, cv.width, cv.height); STAMP_TINT[k] = cv.toDataURL('image/png'); if (MK.on) mkPaint(); } catch (e) {} };
+    im.src = st.data; return st.data;
+  }
+  let STAMP_K = (function () { const v = Number(lsGet('collect_office_mk_stz')); return STAMP_Z.some(function (z) { return z[1] === v; }) ? v : 1; })();
   const STAMP_PRE = [
     { id: 'ck:y', k: 'check', c: '#F2B800', n: '黄の ✔' }, { id: 'ck:b', k: 'check', c: '#1A4FD0', n: '青の ✔' }, { id: 'ck:r', k: 'check', c: '#D0201A', n: '赤の ✔' },
     { id: 'r:重要', k: 'rect', tx: '重要' }, { id: 'r:回覧', k: 'rect', tx: '回覧' }, { id: 'r:至急', k: 'rect', tx: '至急' }, { id: 'r:承認', k: 'rect', tx: '承認' },
@@ -12753,8 +12778,8 @@
     const S0 = 'http://www.w3.org/2000/svg', sv = document.createElementNS(S0, 'svg');
     let W, H, sh;
     if (o.k === 'check') { W = H = 24; sh = checkShape({ x: 0, y: 0, w: 1, h: 1, c: o.c }, W, H); }
-    else if (o.k === 'circ') { W = H = 26; sh = stampShape({ x: 0, y: 0, w: 1, h: 1, s: 'circ', tx: o.tx, c: STAMP_RED }, W, H); }
-    else if (o.k === 'rect') { const n = Array.from(o.tx).length; H = o.date ? 26 : 20; W = o.date ? 44 : Math.round(n * 13 + 10); sh = stampShape({ x: 0, y: 0, w: 1, h: 1, s: 'rect', tx: o.tx, d: o.date ? stampToday() : '', c: STAMP_RED }, W, H); }
+    else if (o.k === 'circ') { W = H = 26; sh = stampShape({ x: 0, y: 0, w: 1, h: 1, s: 'circ', tx: o.tx, c: STAMP_C }, W, H); }
+    else if (o.k === 'rect') { const n = Array.from(o.tx).length; H = o.date ? 26 : 20; W = o.date ? 44 : Math.round(n * 13 + 10); sh = stampShape({ x: 0, y: 0, w: 1, h: 1, s: 'rect', tx: o.tx, d: o.date ? stampToday() : '', c: STAMP_C }, W, H); }
     else return null;
     sv.setAttribute('viewBox', '0 0 ' + W + ' ' + H); sv.setAttribute('width', W); sv.setAttribute('height', H); sv.appendChild(sh); return sv;
   }
@@ -12764,14 +12789,19 @@
       if (!t) return; MK.free = t;
     }
     MK.keep = !!keep;
-    if (o.k === 'check') { MK.m = 'check'; MK.st = o.id; mkColorSet(o.c); }
-    else { MK.m = 'stamp'; MK.st = o.id; }
+    if (o.k === 'check') { MK.m = 'check'; MK.st = o.id; mkColorSet(o.c, 'tool'); }
+    else { MK.m = 'stamp'; MK.st = o.id; mkColorSet(STAMP_C, 'stamp'); }
     mkToolPaint(); stampBar();
   }
   function stampBar() {
     const bar = $('mkStBar'); bar.textContent = '';
     bar.hidden = !MK.on;   /* ★ 2026-11-12：書きこむ帯では いつも出す */
     if (bar.hidden) return;
+    { const zg = el('span', 'stz'); zg.setAttribute('role', 'group'); zg.setAttribute('aria-label', 'ハンコの大きさ'); zg.title = 'これから押す ハンコの大きさ（この端末が覚える）。選んでいる ハンコにも効く'; zg.appendChild(el('span', null, '大きさ'));
+      STAMP_Z.forEach(function (z) { const b = el('button', null, z[0]); b.type = 'button'; b.setAttribute('aria-pressed', String(STAMP_K === z[1]));
+        b.addEventListener('click', function () { const old = STAMP_K; STAMP_K = z[1]; lsSet('collect_office_mk_stz', String(STAMP_K)); const sm = MK.sel >= 0 ? MK.list[MK.sel] : null; if (sm && sm.t === 'stamp' && old !== STAMP_K) mkSelEdit(function (m) { stampZoom(m, STAMP_K / old); }); stampBar(); });
+        zg.appendChild(b); });
+      bar.appendChild(zg); bar.appendChild(el('span', 'stsep', '｜')); }
     STAMP_PRE.forEach(function (o) {
       const b = el('button', 'stpre'); b.type = 'button'; b.title = (o.n || o.tx) + '（1回押す＝1つ置く・2回続けて押す＝続けて置ける）';
       const on = (o.k === 'check' ? MK.m === 'check' : MK.m === 'stamp') && MK.st === o.id; b.setAttribute('aria-pressed', String(on)); if (on && MK.keep) b.classList.add('keep');
@@ -12785,7 +12815,7 @@
       const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', String(MK.m === 'stamp' && MK.st === id));
       if (img) { const im = el('img'); im.src = img; im.alt = ''; b.appendChild(im); }
       b.appendChild(document.createTextNode(label));
-      b.addEventListener('click', function () { MK.st = id; MK.m = 'stamp'; MK.keep = false; mkToolPaint(); stampBar(); });
+      b.addEventListener('click', function () { MK.st = id; MK.m = 'stamp'; MK.keep = false; mkColorSet(STAMP_C, 'stamp'); mkToolPaint(); stampBar(); });
       bar.appendChild(b); return b;
     };
     mkb('auto', '日付印（' + ((STAMPS && STAMPS.office) || '事務所') + '）');
@@ -12795,6 +12825,12 @@
       x.addEventListener('click', function () { if (!confirm('ハンコ「' + st.name + '」を 登録から消しますか？')) return; gs('stampDelete', st.id).then(function () { STAMPS.list = STAMPS.list.filter(function (y) { return y.id !== st.id; }); if (MK.st === st.id) MK.st = 'auto'; stampBar(); }, function (e) { dcMsg(e.message, true); }); });
       bar.appendChild(x);
     });
+    if (((STAMPS && STAMPS.list) || []).length) {
+      const tg = el('button', 'sttint', '🎨 画像のハンコも この色で'); tg.type = 'button'; tg.setAttribute('aria-pressed', String(STAMP_IMGC)); tg.style.setProperty('--c', STAMP_C);
+      tg.title = '登録した画像のハンコを 上で選んだ色で 塗って押す（もう一度押すと 画像の元の色）。選んでいる 画像のハンコにも効く';
+      tg.addEventListener('click', function () { stampImgTint(!STAMP_IMGC); stampBar(); });
+      bar.appendChild(tg);
+    }
     const add = el('button', null, '＋ ハンコを登録'); add.type = 'button'; add.title = 'ハンコの画像（PNG・JPEG）を選ぶ。白いところは透明にします';
     add.addEventListener('click', function () { const f = el('input'); f.type = 'file'; f.accept = 'image/png,image/jpeg'; f.addEventListener('change', function () { if (f.files[0]) stampRegister(f.files[0]); }); f.click(); });
     bar.appendChild(add);
@@ -12823,14 +12859,15 @@
     const pre = STAMP_PRE.find(function (o) { return o.id === MK.st && (o.k === 'rect' || o.k === 'circ' || o.k === 'free'); });
     if (pre) {   /* ★ 2026-11-12（細谷）：よく使うハンコ・自由入力 */
       const tx = pre.k === 'free' ? (MK.free || '') : pre.tx; if (!tx) return;
-      const k = pre.k === 'circ' ? 'circ' : 'rect', sz = stampPreSize(k, tx, pre.date, W, H), w = sz[0], h = sz[1];
-      MK.list.push(mkWithR({ p: p, t: 'stamp', s: k, tx: tx, d: pre.date ? stampToday() : '', x: Math.max(0, Math.min(1 - w, a.x - w / 2)), y: Math.max(0, Math.min(1 - h, a.y - h / 2)), w: w, h: h, c: STAMP_RED }));
+      const k = pre.k === 'circ' ? 'circ' : 'rect', sz = stampPreSize(k, tx, pre.date, W, H), q = Math.min(STAMP_K, 0.95 / Math.max(sz[0], sz[1])), w = sz[0] * q, h = sz[1] * q;
+      MK.list.push(mkWithR({ p: p, t: 'stamp', s: k, tx: tx, d: pre.date ? stampToday() : '', x: Math.max(0, Math.min(1 - w, a.x - w / 2)), y: Math.max(0, Math.min(1 - h, a.y - h / 2)), w: w, h: h, c: STAMP_C }));
       MK.sel = MK.list.length - 1; mkSelect(MK.sel); mkDirty(); return;
     }
-    const st = stampOf(MK.st), w = 0.16, asp = st ? stampAspect(st) : 1;
-    const h = w * asp * W / Math.max(1, H);
+    const st = stampOf(MK.st), asp = st ? stampAspect(st) : 1;
+    let w = 0.16 * STAMP_K, h = w * asp * W / Math.max(1, H); if (h > 0.95) { w = w * 0.95 / h; h = 0.95; }
     const sumi = MK.st === 'sumi';
-    MK.list.push(mkWithR({ p: p, t: 'stamp', s: sumi ? 'sumi' : st ? st.id : 'auto', d: sumi ? '' : (!st || st.date) ? stampToday() : '', x: Math.max(0, Math.min(1 - w, a.x - w / 2)), y: Math.max(0, Math.min(1 - h, a.y - h / 2)), w: w, h: h, c: MK.c }));
+    MK.list.push(mkWithR({ p: p, t: 'stamp', s: sumi ? 'sumi' : st ? st.id : 'auto', d: sumi ? '' : (!st || st.date) ? stampToday() : '', x: Math.max(0, Math.min(1 - w, a.x - w / 2)), y: Math.max(0, Math.min(1 - h, a.y - h / 2)), w: w, h: h, c: STAMP_C }));
+    if (st && STAMP_IMGC) MK.list[MK.list.length - 1].tc = 1;   /* K-0350 続き：画像のハンコも この色で */
     MK.sel = MK.list.length - 1; mkSelect(MK.sel); mkDirty();
   }
   /* ★ K-0006（2026-10-29）：書いた文字を 押して選ぶ → つかんで動かす・［文字を直す］（ダブルクリックでも）・［A－］［A＋］・色・［消す］（Delete キーでも）。
@@ -13036,7 +13073,7 @@
       tx(off, cy - r * 0.6, r * 0.27); tx(m.d || '', cy, r * 0.27); tx(m.s === 'auto' ? '受付' : '', cy + r * 0.6, r * 0.3);
       if (m.s !== 'auto') { const q = mk('rect', { x: x, y: y, width: w, height: h, fill: 'none', stroke: '#999', 'stroke-dasharray': '4 3' }); void q; }
     } else {
-      mk('image', { href: st.data, x: x, y: y, width: w, height: h, preserveAspectRatio: 'xMidYMid meet' });
+      mk('image', { href: m.tc ? stampTintUrl(st, c) : st.data, x: x, y: y, width: w, height: h, preserveAspectRatio: 'xMidYMid meet' });   /* K-0350 続き：塗った絵（できるまでは 元の絵） */
       if (m.d) tx(m.d, y + h / 2, Math.max(9, Math.min(w, h) * 0.13));
     }
     mk('rect', { x: x, y: y, width: w, height: h, fill: 'transparent', stroke: 'none' });   /* どこを押しても つかめるように */
@@ -13279,11 +13316,18 @@
   $('mkSize').addEventListener('keydown', function (e) { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); mkSizeSet(false); this.blur(); } });
   $('mkSize').addEventListener('focus', function () { const t = this; setTimeout(function () { try { t.select(); } catch (x) {} }, 0); });
   /* ★ K-0094：好みの色 */
-  function mkColorSet(c) { try { lsSet('collect_office_mk_col', String(arguments[0] || '')); } catch (e) {}
+  function mkColorSet(c, pick) {   /* pick … 道具を選んだだけ（選んでいる書きこみは 塗り替えない・ハンコの色は 覚え直さない。'stamp' ＝ふだんの色も 覚え直さない。K-0350） */
+    const stampPick = !!pick; if (pick !== 'stamp') { try { lsSet('collect_office_mk_col', String(arguments[0] || '')); } catch (e) {} }
     MK.c = String(c || '#D0201A').toUpperCase();
     let hit = false; mkD().querySelectorAll('#dvMkBar .mk-c button').forEach(function (x) { const on = x.dataset.c.toUpperCase() === MK.c; if (on) hit = true; x.setAttribute('aria-pressed', String(on)); });
     const pk = mkD().querySelector('#dvMkBar .mk-pick'); if (pk) { pk.classList.toggle('on', !hit); pk.style.setProperty('--c', MK.c); }
-    if (MK.sel >= 0) mkSelEdit(function (m) { m.c = MK.c; });
+    if (MK.sel >= 0 && !stampPick) mkSelEdit(function (m) { m.c = MK.c; });
+    /* ★ K-0350：ハンコを選んでいる・ハンコを選んで色を変えた ＝ ハンコの色を 覚える（帯の絵も その色に） */
+    const sm = MK.sel >= 0 ? MK.list[MK.sel] : null;
+    if (!stampPick && (MK.m === 'stamp' || (sm && sm.t === 'stamp')) && STAMP_C !== MK.c) { STAMP_C = MK.c; lsSet('collect_office_mk_stc', STAMP_C); if (MK.on) stampBar(); }
+    /* K-0350 続き：画像のハンコを 選んで（押す前・押したあと）色を変えた ＝ 画像のハンコも この色で */
+    const smImg = !!(sm && sm.t === 'stamp' && stampOf(sm.s));
+    if (!stampPick && ((MK.m === 'stamp' && stampOf(MK.st)) || smImg)) { if (smImg && !sm.tc) mkSelEdit(function (m) { m.tc = 1; }); if (!STAMP_IMGC) { STAMP_IMGC = true; lsSet('collect_office_mk_sti', '1'); } if (MK.on) stampBar(); }
   }
   /* ★ 2026-11-17：最後に使った色を この端末が覚える（道具も mkToolLast で覚える） */
   { const c0 = lsGet('collect_office_mk_col'); if (/^#[0-9A-Fa-f]{6}$/.test(c0)) mkColorSet(c0); }
