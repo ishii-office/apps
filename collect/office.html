@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795766973;</script>
+<script>window.__PAGE_VER=1795769136;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -2201,9 +2201,9 @@
     <span class="note" id="tbMsg" role="status"></span>
   </div>
   <div class="tbimp" id="tbImp" hidden>
-    <div class="note"><b>① 試算表に する（自計化先は 月が できるたびに）</b>：FX の［勘定科目残高推移表］を「累計残高」で 切り出した CSV（貸借対照表・損益計算書・製造原価報告書）を ここへ ドラッグするか、中身を 貼って［入れる］。当月の 借方・貸方（計上額）も 出したいときは、FX の［勘定科目残高］の CSV も 入れる（上の［月分］で 選んでいる 月の もの として 入ります）。1回 入れれば あとは アプリの 仕訳で 積み上がります。前年の 月も 入れると 前年同月・前年比が 出ます。</div>
+    <div class="note"><b>① 試算表に する（自計化先は 月が できるたびに）</b>：FX の［勘定科目残高推移表］を「累計残高」で 切り出した CSV（貸借対照表・損益計算書・製造原価報告書）を ここへ ドラッグするか、中身を 貼って［入れる］。当月の 借方・貸方（計上額）も 出したいときは、FX の［勘定科目残高］の CSV も 入れる（CSV に「2026年09月30日現在」などが あれば その 月、無ければ 上の［月分］で 選んでいる 月の もの として 入ります）。1回 入れれば あとは アプリの 仕訳で 積み上がります。前年の 月も 入れると 前年同月・前年比が 出ます。</div>
     <textarea id="tbImpT" rows="5" placeholder="勘定科目,2026年04月,前年比,2026年05月,…"></textarea>
-    <div><input type="file" id="tbImpF" accept=".csv,.txt,.tsv" multiple hidden><button type="button" class="btn ghost sm" id="tbImpPick">ファイルを 選ぶ</button><button type="button" class="btn sm" id="tbImpGo">入れる</button></div>
+    <div><input type="file" id="tbImpF" accept=".csv,.txt,.tsv" multiple hidden><button type="button" class="btn ghost sm" id="tbImpPick">ファイルを 選ぶ</button><button type="button" class="btn sm" id="tbImpGo">入れる</button><button type="button" class="btn ghost sm" id="tbUndo" title="月を まちがえて 入れたときなど。さいごに 入れた 取り込みを 取り消します（押すたびに 1つ前へ）">↩ さいごに 入れたものを 取り消す</button></div>
     <div class="note" style="margin-top:10px"><b>② そのほかの 帳票を 預ける</b>（仕訳・元帳・キャッシュフロー計算書 など。CSV・PDF・エクセル）：何月までの データかと 種類を 選んで ファイルを 選ぶ。</div>
     <div class="bar"><label class="note">何月まで <input type="month" id="acdYm" aria-label="何月までの データか"></label><select id="acdKind" aria-label="データの 種類"></select><input type="file" id="acdF" accept=".csv,.txt,.tsv,.pdf,.xls,.xlsx" multiple hidden><button type="button" class="btn ghost sm" id="acdPick">帳票の ファイルを 選ぶ</button><span class="note" id="acdMsg" role="status"></span></div>
     <div id="acdList"></div>
@@ -6829,7 +6829,14 @@
     const t = $('tbImpT').value; if (!t.trim()) { $('tbMsg').textContent = '中身が 空です。'; return; }
     /* 貸借対照表・損益計算書・製造原価報告書を 続けて 貼っても よい（見出しごとに 読む） */
     /* 勘定科目残高の CSV（月が 書いていない）は 上の［月分］で 選んでいる 月の もの として 入れる（K-0354） */
-    gs('tbImport', S.code, t, $('tbYm').value).then(function (r) { $('tbMsg').textContent = (r.bal ? '📥 勘定科目残高を ' + perLabel(r.bal) + 'として 入れました（当月の 借方・貸方・前月末・前年同月）。' : '📥 ' + r.months.length + 'か月ぶん（' + perLabel(r.months[0]) + '〜' + perLabel(r.months[r.months.length - 1]) + '）を 入れました。') + (r.monthly ? '損益が「当月（その月の 発生）」で 入っていたので、期首からの 累計に 直して 入れました。' + (r.partial && r.partial.length ? '（' + r.partial.map(perLabel).join('・') + ' からは 期首の 月が 無いので、その 月からの 累計です。期首の 月から 入れ直すと 正しく なります）' : '') : '') + (r.neg ? '　⚠ 売上高が マイナスの 月が あります。CSV を 確かめてください。' : ''); $('tbImp').hidden = true; $('tbImpT').value = ''; tbLoad(true); }, function (e) { $('tbMsg').textContent = e.message; });
+    /* ★★ S1127-林-07：月が 書いていない 勘定科目残高の CSV は、何月分として 入れるかを 確かめる（月分が 10月の まま 9月の CSV を 入れて 1か月 ずれた） */
+    const isBal = /前月末/.test(t) && /当月/.test(t), hasYm = /\d{4}\s*[年\/.-]\s*\d{1,2}\s*[月\/.-]\s*\d{1,2}\s*日?\s*現在|令和\s*(\d{1,2}|元)\s*年\s*\d{1,2}\s*月/.test(t);
+    if (isBal && !hasYm && !confirm('この CSV には 月が 書いていません。\n' + perLabel($('tbYm').value) + ' の 勘定科目残高 として 入れます。\n\nFX で 出した 月と 同じですか？（ちがうときは［キャンセル］→ 上の［月分］を 選び直す）')) { $('tbMsg').textContent = '入れませんでした。上の［月分］を FX で 出した 月に してから［入れる］を 押してください。'; return; }
+    gs('tbImport', S.code, t, $('tbYm').value).then(function (r) { if (r.bal && r.bal !== $('tbYm').value && Array.prototype.some.call($('tbYm').options, function (o) { return o.value === r.bal; })) $('tbYm').value = r.bal; $('tbMsg').textContent = (r.bal ? '📥 勘定科目残高を ' + perLabel(r.bal) + 'として 入れました（当月の 借方・貸方・前月末・前年同月）。' + (r.fromCsv && r.asked && r.asked !== r.bal ? 'CSV に 書いてある 月（' + perLabel(r.bal) + '）で 入れました（選んでいた ' + perLabel(r.asked) + ' では なく）。' : '') : '📥 ' + r.months.length + 'か月ぶん（' + perLabel(r.months[0]) + '〜' + perLabel(r.months[r.months.length - 1]) + '）を 入れました。') + (r.monthly ? '損益が「当月（その月の 発生）」で 入っていたので、期首からの 累計に 直して 入れました。' + (r.partial && r.partial.length ? '（' + r.partial.map(perLabel).join('・') + ' からは 期首の 月が 無いので、その 月からの 累計です。期首の 月から 入れ直すと 正しく なります）' : '') : '') + (r.neg ? '　⚠ 売上高が マイナスの 月が あります。CSV を 確かめてください。' : ''); $('tbImp').hidden = true; $('tbImpT').value = ''; tbLoad(true); }, function (e) { $('tbMsg').textContent = e.message; });
+  });
+  $('tbUndo').addEventListener('click', function () {
+    if (!confirm('さいごに 入れた 試算表の 取り込みを 取り消します。よいですか？\n（月を まちがえて 入れたときなど。押すたびに 1つ前の 取り込みも 取り消せます）')) return;
+    gs('tbUndo', S.code).then(function (r) { $('tbMsg').textContent = '↩ 取り消しました（' + r.months.map(perLabel).join('・') + '）。正しい 月分を 選んで 入れ直してください。'; tbLoad(true); }, function (e) { $('tbMsg').textContent = e.message; });
   });
   $('tbPrint').addEventListener('click', function () {
     if (!TB.d) return; const d = TB.d;
@@ -8672,7 +8679,7 @@
       tips: ['スマホの［📗 元帳で確かめる］は 上から 下（上に 科目・下に 元帳／上に 写真・下に 伝票）。下の［✓ 次へ］［‹ 前］［✎ 訂正］［案1］［案2］［↩ 戻る］で 進みます', 'その顧問先だけの 決まりは［AIの考え方］へ'] },
     Tb: { t: '試算表', lead: '仕訳化で 確かめた 仕訳から 試算表（TKC の 勘定科目残高と 同じ 形）を 作る タブです。途中でも 作れます。',
       steps: ['自計化先（顧問先が 自分で 会計ソフトに 入れている 先）… 月が できるたびに［📥 会計システムの データを 入れる（自計化先・期首・前年）］で 推移表の CSV を 入れ、その月を 確定すると 顧問先の スマホにも 試算表が 出る（企業防衛の 数字にも 使える）。同じ 枠の ② で 仕訳・元帳・キャッシュフロー計算書 などを 月と 種類を 選んで 預けられる（［帳票の ファイルを 選ぶ］）', 'はじめに 1回だけ［📥 会計システムの データを 入れる（自計化先・期首・前年）］… FX の［勘定科目残高推移表］を「累計残高」で 切り出した CSV を ドラッグ（前年の 月も 入れると 前年同月・前年比が 出ます）', '月分を 選ぶと 前月末 ＋ 当月の 増減（仕訳化で 確定した 仕訳・元帳で ✓ した 伝票）＝ 当月末。✓ 前の 伝票は 黄色の「仮」', '［勘定科目残高］［残高推移表］［グラフ］と［貸借対照表］［損益計算書］［製造原価報告書］を 切り替える。［内訳表示（口座・取引先）］［0円行を表示］', '科目を ダブルクリック → 口座別 → もう一度 ダブルクリックで 元帳 →［伝票を開く］で 元帳で確かめるの その伝票（写真つき・［✎ 訂正］で 直せる）。仕訳化で 確定した 仕訳は［✎ 仕訳を 直す］で 仕訳化の その 1件へ', '［選んだ 箱だけ（途中の 試算表）］… 回収資料・仕訳化の 札で 選んだ 箱の ぶんだけで 当月を 出す（全部 そろっていなくても 作れる）', '［✓ この月を 確定（顧問先の 画面にも 出す）］… 仮が 無ければ 確定できる。確定した 月が 顧問先の 画面の「📊 試算表」に 出て、経営助言の「📥 確定した 試算表から 入れる」の 材料にも なる', '［🖨 印刷・PDF（A4）］… TKC の 紙と 同じ 形で 印刷'],
-      tips: ['［予実対比］… 経営助言タブの ① 予算で 決めた 予算と 実績を 当月・期首からの 累計で 比べる（差・達成率・期首からの 累計の 折れ線（緑＝実績・橙＝予算））。売上高が マイナスの 月が 出たら 推移表が「当月」の まま 入って いるので、もう一度 貼る（累計に 直して 入る）。顧問先の 画面にも 出ます', '当月の 借方・貸方（計上額）も FX と 同じに 出したいときは、上の 月分で その月を 選んで、FX の［勘定科目残高］の CSV も［📥 会計システムの データを 入れる（自計化先・期首・前年）］から 入れる（前月末・前年同月も 入ります）', '途中の 月でも 推移表と グラフは 出ます（確定しなくても 見られる）', 'エージェントが 作った 試算表は 使いません。仕訳化で 確かめた ものだけが 積み上がります'] },
+      tips: ['［予実対比］… 経営助言タブの ① 予算で 決めた 予算と 実績を 当月・期首からの 累計で 比べる（差・達成率・期首からの 累計の 折れ線（緑＝実績・橙＝予算））。売上高が マイナスの 月が 出たら 推移表が「当月」の まま 入って いるので、もう一度 貼る（累計に 直して 入る）。顧問先の 画面にも 出ます', '当月の 借方・貸方（計上額）も FX と 同じに 出したいときは、上の 月分で その月を 選んで、FX の［勘定科目残高］の CSV も［📥 会計システムの データを 入れる（自計化先・期首・前年）］から 入れる（前月末・前年同月も 入ります）。CSV に「2026年09月30日現在」などが あれば その 月で 入る。月を まちがえて 入れたら［↩ さいごに 入れたものを 取り消す］→ 月分を 選び直して 入れ直す', '途中の 月でも 推移表と グラフは 出ます（確定しなくても 見られる）', 'エージェントが 作った 試算表は 使いません。仕訳化で 確かめた ものだけが 積み上がります'] },
     Out: { t: '取込ファイル', pic: 'g_oout', lead: '確定した仕訳を 会計ソフト（FX）へ 取り込むファイルにする タブです。',
       steps: ['処理済ボックス（月分・箱）を選ぶ', 'ファイルにして 保存する', 'FX で 取り込む'], tips: [] },
     Clients: { t: '顧問先', pic: 'g_oclients', lead: '顧問先の登録・箱（資料の入れもの）・URL・公式LINE などを決めるタブです。',
