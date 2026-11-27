@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795751108;</script>
+<script>window.__PAGE_VER=1795753239;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -6706,7 +6706,10 @@
     if ((d.boxes || []).length) inf.appendChild(el('b', 'tbpart', '　途中の 試算表（' + d.boxes.map(bxDisp).join('・') + ' の 当月ぶんだけ）'));
     if ((d.missing || []).length) inf.appendChild(el('span', 'tbmiss', '　まだ 入っていない 箱：' + d.missing.map(bxDisp).join('・')));
     const cf = (d.confirmed || []).filter(function (x) { return x.ym === d.ym; }).pop();
-    inf.appendChild(el('span', cf ? 'tbok' : 'note', cf ? '　✓ この月は 確定（' + cf.at + '・' + cf.by + '）。顧問先の 画面に 出ています' : '　この月は まだ 確定していません（顧問先には 確定した 月まで 出ます）'));
+    inf.appendChild(el(cf ? 'span' : 'b', cf ? 'tbok' : 'tbkari', cf ? '　✓ この月は 確定（' + cf.at + '・' + cf.by + '）。顧問先の 画面に 出ています' : '　⚠ この月は まだ 顧問先の 画面に 出ていません。［✓ この月を 確定（顧問先の 画面にも 出す）］を 押すと 出ます'));
+    /* ★ K-0353：いま 顧問先に 出ている 月を 並べる（顧問先の 画面で 月分を 選べる 月） */
+    const cms = []; (d.confirmed || []).forEach(function (x) { if (cms.indexOf(x.ym) < 0) cms.push(x.ym); }); cms.sort();
+    inf.appendChild(el('span', 'note', '　顧問先に 出ている 月：' + (cms.length ? cms.map(perLabel).join('・') : 'まだ なし')));
     if (TB.view === 'yj') {
       body.appendChild(TBR.yj(d, TB, tbDraw));
       if (!d.budget) { const gb = el('button', 'btn sm', '① 予算を 決める（経営助言タブへ）'); gb.type = 'button'; gb.id = 'yjToBud'; gb.addEventListener('click', function () { selectTab('Advice'); setTimeout(function () { const t = $('bgBox'); if (t) { t.open = true; t.scrollIntoView({ block: 'start' }); } }, 400); }); body.appendChild(gb); }
