@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-title" content="資料回収 事務所">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F6E5C">
-<script>window.__PAGE_VER=1795707928;</script>
+<script>window.__PAGE_VER=1795740850;</script>
 <!-- ==================================================================
      事務所の画面（パソコン・スマホ）。1枚で2つの開き方をする：
        アプリ … https://ishii-office.github.io/apps/collect/office.html
@@ -1807,6 +1807,68 @@
   table.aqstat th, table.aqstat td { border: 1px solid #dde5ec; padding: 4px 8px; font-size: 13px; text-align: right; }
   table.aqstat th { background: #f4f8fb; }
 </style>
+<!-- ===== ★★★ 2026-11-26 端末の 鍵（指紋・顔 ／ パスコード）。この 端末の 中だけ（サーバには 送らない） ===== -->
+<style>
+  .lkov { position: fixed; inset: 0; z-index: 2147483000; background: linear-gradient(160deg, #0f2f2a, #1f3a5f); color: #fff; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .lkov .lkbx { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.25); border-radius: 16px; padding: 22px; max-width: 360px; width: 100%; text-align: center; display: flex; flex-direction: column; gap: 12px; }
+  .lkov button { font: inherit; font-size: 17px; padding: 12px; border-radius: 10px; border: 0; background: #f2b84b; color: #1f2a33; font-weight: 700; cursor: pointer; }
+  .lkov button.lksub { background: transparent; color: #cfe3dc; border: 1px solid rgba(255,255,255,.35); font-size: 14px; font-weight: normal; }
+  .lkov input { font: inherit; font-size: 26px; letter-spacing: .4em; text-align: center; padding: 8px; border-radius: 10px; border: 0; width: 100%; box-sizing: border-box; }
+  .lkov .lkmsg { min-height: 1.4em; color: #ffd9cc; font-size: 14px; }
+</style>
+<script>
+(function () {
+  const AWAY_MIN = 30;   /* 30分 以上 はなれて 戻ったら もう一度 */
+  const KEY = 'collect_lock_' + (location.pathname.indexOf('office') >= 0 ? 'office' : 'client');
+  const rd = function () { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
+  const wr = function (o) { try { if (o) localStorage.setItem(KEY, JSON.stringify(o)); else localStorage.removeItem(KEY); } catch (e) {} };
+  const b64 = function (buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))); };
+  const unb64 = function (s) { const t = atob(s), u = new Uint8Array(t.length); for (let i = 0; i < t.length; i++) u[i] = t.charCodeAt(i); return u; };
+  const rnd = function (n) { const u = new Uint8Array(n); crypto.getRandomValues(u); return u; };
+  const sha = function (s) { return crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)).then(b64); };
+  const bioOk = function () { return !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) ? PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(function () { return false; }) : Promise.resolve(false); };
+  let open = false, hiddenAt = 0, onUnlock = [];
+  function bioAsk(c) { return navigator.credentials.get({ publicKey: { challenge: rnd(32), allowCredentials: [{ type: 'public-key', id: unb64(c.bio) }], userVerification: 'required', timeout: 60000 } }); }
+  function show() {
+    const c = rd(); if (!c || open) return; open = true;
+    const ov = document.createElement('div'); ov.className = 'lkov'; ov.id = 'lockOv';
+    ov.innerHTML = '<div class="lkbx"><div style="font-size:40px">🔒</div><b>この 端末には 鍵が かかっています</b>'
+      + (c.bio ? '<button type="button" id="lkBio">指紋・顔で 開く</button>' : '')
+      + (c.pin ? '<input id="lkPin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" aria-label="パスコード" placeholder="パスコード">' : '')
+      + '<div class="lkmsg" id="lkMsg" role="status"></div><button type="button" class="lksub" id="lkOut">開けない とき（この 端末の 鍵と 入った 記録を 消して 入り直す）</button></div>';
+    document.body.appendChild(ov);
+    const msg = function (t) { ov.querySelector('#lkMsg').textContent = t || ''; };
+    const done = function () { open = false; ov.remove(); try { sessionStorage.setItem(KEY + '_ok', '1'); } catch (e) {} onUnlock.forEach(function (f) { try { f(); } catch (e) {} }); };
+    const go = function () { bioAsk(c).then(done, function () { msg('指紋・顔で 開けませんでした。' + (c.pin ? 'パスコードでも 開けます。' : 'もう一度 押して ください。')); }); };
+    if (c.bio) { ov.querySelector('#lkBio').addEventListener('click', go); setTimeout(go, 300); }
+    if (c.pin) { const p = ov.querySelector('#lkPin'); let miss = 0; if (!c.bio) p.focus();
+      p.addEventListener('input', function () { if (p.value.length < c.len) return; sha(c.salt + '|' + p.value).then(function (h) { if (h === c.pin) done(); else { p.value = ''; miss++; msg('パスコードが ちがいます（' + miss + '回）'); if (miss >= 10) { wr(null); location.reload(); } } }); }); }
+    ov.querySelector('#lkOut').addEventListener('click', function () {
+      if (!this.dataset.sure) { this.dataset.sure = '1'; this.textContent = '本当に 消す（このあと 名前・暗証番号か、事務所から 届いた URL で 入り直し）'; return; }
+      wr(null); try { Object.keys(localStorage).forEach(function (k) { if (/^collect_/.test(k) && k !== 'collect_dev') localStorage.removeItem(k); }); } catch (e) {} location.reload();
+    });
+  }
+  function need() { const c = rd(); if (!c) return false; try { return sessionStorage.getItem(KEY + '_ok') !== '1'; } catch (e) { return true; } }
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { hiddenAt = Date.now(); return; }
+    if (rd() && hiddenAt && Date.now() - hiddenAt > AWAY_MIN * 60000) { try { sessionStorage.removeItem(KEY + '_ok'); } catch (e) {} show(); }
+  });
+  window.LockKit = {
+    has: function () { const c = rd(); return c ? { bio: !!c.bio, pin: !!c.pin } : null; },
+    bioOk: bioOk,
+    setBio: function (who) {
+      return navigator.credentials.create({ publicKey: { challenge: rnd(32), rp: { name: '資料回収' }, user: { id: rnd(16), name: String(who || 'user'), displayName: String(who || 'user') },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }], authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' }, timeout: 60000 } })
+        .then(function (cr) { const c = rd() || {}; c.bio = b64(cr.rawId); wr(c); try { sessionStorage.setItem(KEY + '_ok', '1'); } catch (e) {} return true; });
+    },
+    setPin: function (pin) { pin = String(pin || ''); if (!/^\d{4,6}$/.test(pin)) return Promise.reject(new Error('パスコードは 数字 4〜6けたに して ください。')); const salt = b64(rnd(12)); return sha(salt + '|' + pin).then(function (h) { const c = rd() || {}; c.pin = h; c.salt = salt; c.len = pin.length; wr(c); try { sessionStorage.setItem(KEY + '_ok', '1'); } catch (e) {} return true; }); },
+    clear: function () { wr(null); },
+    guard: function () { if (need()) show(); },
+    onUnlock: function (f) { onUnlock.push(f); }
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { window.LockKit.guard(); }); else window.LockKit.guard();
+})();
+</script>
 </head>
 <body>
 <div class="ismwm" aria-hidden="true"><b>I</b>sm clou<b>D</b></div>
@@ -1814,11 +1876,13 @@
 <!-- ===== 入口（アプリのときだけ） ===== -->
 <form class="gate" id="gate" hidden autocomplete="on">
   <h1>資料回収（事務所）</h1>
-  <p>担当者の名前と暗証番号で入ります。一度入れば、この端末は30日のあいだ覚えています。</p>
+  <p>担当者の名前と暗証番号で入ります。一度入れば、この端末は30日のあいだ覚えています（はじめての 端末は メールの 6けたで 確かめます）。</p>
   <label for="gName">名前</label>
   <input id="gName" autocomplete="username" maxlength="30">
   <label for="gPin">暗証番号</label>
   <input id="gPin" type="password" autocomplete="current-password" maxlength="12" inputmode="text">
+  <div id="gCodeBox" hidden><label for="gCode">確かめの 番号（メールの 6けた）</label>
+  <input id="gCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
   <button type="submit" class="primary" id="gGo">入る</button>
   <div class="msg" id="gMsg" role="status"></div>
 </form>
@@ -2415,6 +2479,10 @@
   <h2>議事録 <small id="minClient"></small></h2>
   <div class="seg mnseg" id="mnSeg" role="group" aria-label="どの 議事録"><button type="button" data-n="0" aria-pressed="true">👥 この 顧問先の 議事録</button><button type="button" data-n="1" aria-pressed="false" id="mnNaiB">🏢 所内の 議事録（事務所の 中で 話したこと）</button></div>
   <p class="note">顧問先で 話したこと・見てきたこと（現物確認の 写真・パソコンや モニターの 様子 など）は ぜんぶ ここへ。あとから 直せない 記録（ハッシュの鎖）に 残し、エージェントの zip にも 入ります。次の 経営助言・企業防衛の 前提・カルテ・巡回監査報告書・書面添付・顧問料の 合意の 証拠 などの もとに なります。</p>
+  <details class="rbox" id="inboxBox"><summary>📥 議事録の 受け口（Notta などの 文字起こしを ドライブに 置くだけ）</summary>
+    <p class="note">Notta などで できた 文字起こしを 下の フォルダに 置くと、10分おきに 拾って 議事録に 入れ、エージェントが まとめます。<b>ファイル名の 頭に 顧問先コード</b>（例「001 巡回」）を 付けると その 顧問先へ、無ければ 所内へ。入れた ファイルは「取り込み済み」へ 移ります。</p>
+    <div class="bar"><a id="inboxUrl" target="_blank" rel="noopener" class="btn ghost sm">📁 受け口の フォルダを 開く</a><button type="button" class="btn sm" id="inboxGo">いま 取り込む</button><span class="note" id="inboxSay" role="status"></span></div>
+  </details>
   <details open class="rbox" id="mnBox"><summary>🎙 議事録を 入れる（会話・公式LINE・メール・電話・現物確認の 写真）</summary>
     <p class="note">OMS などで 録音・文字起こしした 議事録を 入れます。<b>公式LINE・メールの やりとり</b>は 種類を 選んで 文を 貼るか、スクショを 何枚でも（字は ひとりでに 読みます）。日を 合わせると 会った 日の 会話と 時系列に 並びます。入れた瞬間の 原本の 指紋（SHA-256）と 日時を <b>あとから 直せない記録（ハッシュの鎖）</b>に 残し、［🔒 本物か確かめる］で いじっていないことを 示せます。「顧問先に見せる」に ✓ すると 顧問先の画面に 確認のお願いが出て、［内容を確認しました］が 記録に 足されます。決定事項・やることは Claude Code などで 作って［＋ 決定事項・やること］で 足します（これも 直せない記録）。</p>
     <div class="bar"><select id="mnKind" aria-label="会議の種類"></select><input type="date" id="mnDay" aria-label="会議の日"><input id="mnTitle" placeholder="題（例：第12期 決算報告会）" style="min-width:14em"><label class="note"><input type="checkbox" id="mnShow"> 顧問先に見せる（確認をもらう）</label></div>
@@ -2718,6 +2786,7 @@
 <!-- ===== 担当者（シートの窓のときだけ） ===== -->
 <div class="pane page" id="paneStaff" hidden>
   <div class="staff">
+    <div id="secBox" class="aibox" style="max-width:none"></div>
     <div id="sAdmin">
     <p class="note">アプリ（パソコン・スマホ）に入る担当者と暗証番号です。変えられるのは マスターの方 と スプレッドシートの中 だけです。<br>
       暗証番号は半角の英数字 4〜12 桁（マスターは 6〜12 桁）。番号そのものはどこにも残しません（忘れた人には、ここで新しい番号を決めてください）。<br>
@@ -3315,13 +3384,15 @@
     const name = $('gName').value.trim(), pin = $('gPin').value;
     if (!name || !pin) { $('gMsg').textContent = '名前と暗証番号を入れてください。'; return; }
     $('gGo').disabled = true; $('gMsg').textContent = '';
-    gs('staffSignIn', name, pin).then(function (r) {
-      $('gGo').disabled = false; $('gPin').value = '';
+    gs('staffSignIn', name, pin, devId(), $('gCode').value.trim()).then(function (r) {
+      $('gGo').disabled = false;
+      if (r && r.need2) { $('gCodeBox').hidden = false; $('gCode').value = ''; $('gMsg').textContent = '新しい 端末です。' + r.to + ' に 届いた 6けたを 入れて［入る］を 押して ください（10分で 切れます）。'; $('gCode').focus(); return; }
+      $('gPin').value = ''; $('gCode').value = ''; $('gCodeBox').hidden = true;
       TOK = r.tok; tokSave(r.tok, r.name);
       /* はじめの番号のままのとき：いま打った番号は、変える画面の「いまの番号」にだけ使う（端末には残さない） */
       if (r.must) { showChange(true, pin); return; }
       start(r.name);
-    }, function (err) { $('gGo').disabled = false; $('gPin').value = ''; $('gMsg').textContent = err.message; $('gPin').focus(); });
+    }, function (err) { $('gGo').disabled = false; $('gMsg').textContent = err.message; if ($('gCodeBox').hidden) { $('gPin').value = ''; $('gPin').focus(); } else $('gCode').focus(); });
   });
 
 
@@ -8613,7 +8684,7 @@
       steps: ['「確定申告の 書類集め」… 締切を 入れて［顧問先に 聞きはじめる］。顧問先の 画面に「確定申告の 書類」が 出て、質問に「はい・いいえ・わからない」で 答え、「はい」の 書類だけ 出す（手元に 無ければ「あとで 出す」）。ここには「あと ◯ 件」と 要フォロー（未提出／あとで 提出／答えの 確認が 要る＝わからない）が 出る。次の 年は 去年の 答えを 引き継ぐ。止めるときは［止める］（答えは 残る）', '「巡回監査報告書」… 巡回の月を 選び、書いて［保存（新しい版）］か［保存して 顧問先に 出す］（エージェントの 下書きが あれば 入っている）。議事録の 中身は［議事録］タブの［📎 巡回監査報告書へ 引く］で 足せる', '「書面添付」… 決算期を 選んで［🤖 下書きの zip を作る（1年分）］→ Claude Code に 渡し、できた zip を 仕訳化タブで 戻す → 直して［保存（新しい版）］', '「決算書類の 確認」… 決算期と 書類の名前を 入れて［PDF を 選んで 出す］→ 顧問先が［内容を確認しました］を 押すと ✅ が 付く。［出すのを やめる］で 引っ込める'],
       tips: ['雛形・書き方（巡回監査報告書・書面添付）は［📚 雛形・書き方を 入れる］から 事務所共通の資料へ。どの顧問先の zip にも 入る'] },
     Min: { t: '議事録', lead: '顧問先で 話したこと・見てきたことを ぜんぶ 残す タブです。あとから 直せない 記録に 残り、エージェントの zip にも 入って 次の 経営助言・企業防衛の 前提・カルテの もとに なります。',
-      steps: ['録音は 右上の［🎙 ハヤト］（巡回・決算検討会・決算報告会・社長面談）。会社の スマホで 行く ときも ハヤトを 起動して 置いておき、帰りに［⏹ 終わる］。日付と 種類は 終わる ときに 直せる（あとで 入れる ときは 会った 日に）', '公式LINE・メール・所内の チャット（職員と 所長の やりとり）も 種類を 選んで 貼るだけで よい（種類「チャット（所内）」は 所内の 議事録で）。たまったら［🤖 議事録を エージェントに 渡す（zip）］→ 自分の Claude Code で 整えて［📥 できあがりを 戻す］。議事録の まとめ・カルテの 案・社長に 聞くこと・助言の 下書き・事務所の 標準の 候補に 振り分けられる', '種類（巡回監査・社長面談・訪問（現物確認）など）・日・題を 選び、OMS などの 議事録を［文字で入れる］か［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］。写真は 何枚でも（車・設備・パソコンや モニターの 様子 など）', '公式LINE・メール・電話の やりとりも 議事録：種類を 選び、やりとりの 日に 合わせて 文を 貼るか スクショを 入れる（公式LINE・メールの スクショは 字を ひとりでに 読んで 本文に する。12けたの 数字が 写っていたら 字は 入れない）。スクショ・ファイルは 枠に ドラッグ＆ドロップで 何枚でも（コピーした 画像は Ctrl+V）。録音は 右上の［🎙 ハヤト］で（「👤 この 顧問先の 議事録」を 選ぶ。止めて［✓ はい（議事録に 入れて まとめる）］で この タブに 入り、すぐ まとまる。集音器などで 録った 音声ファイルは［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］で）。文字起こしの ある 議事録は エージェントの zip に「まとめ まだ」と 入り、エージェントの 議事録まとめ.json（要点・決定事項・やること）が 戻すと「決定事項」に 足される。下の 並べ方を「古い日から（時系列）」に すると、会った 日の 会話と 1本に 並ぶ。「本文も 並べて 読む」で 続けて 読める', '［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す（顧問料の 合意 など 言った 言わないの 証拠にも なる）', '「🔎 議事録を 探す」… ことば・種類で しぼる →［📎 巡回監査報告書へ 引く］［📎 書面添付へ 引く］で 保証タブの 下書きに 引用を 足す', 'エージェントに 渡すと 議事録（写真も）を 読んで、助言の 下書き（経営助言タブの「これから 出す 助言」）・企業防衛の 前提・カルテ案を 直して くる。［✓ 顧問先に 出す］まで 顧問先には 出ない'],
+      steps: ['Notta などで できた 文字起こしは「📥 議事録の 受け口」の［📁 受け口の フォルダを 開く］の フォルダに 置くだけ（ファイル名の 頭に 顧問先コード。10分おきに 拾って まとめる。急ぐときは［いま 取り込む］）', '録音は 右上の［🎙 ハヤト］（巡回・決算検討会・決算報告会・社長面談）。会社の スマホで 行く ときも ハヤトを 起動して 置いておき、帰りに［⏹ 終わる］。日付と 種類は 終わる ときに 直せる（あとで 入れる ときは 会った 日に）', '公式LINE・メール・所内の チャット（職員と 所長の やりとり）も 種類を 選んで 貼るだけで よい（種類「チャット（所内）」は 所内の 議事録で）。たまったら［🤖 議事録を エージェントに 渡す（zip）］→ 自分の Claude Code で 整えて［📥 できあがりを 戻す］。議事録の まとめ・カルテの 案・社長に 聞くこと・助言の 下書き・事務所の 標準の 候補に 振り分けられる', '種類（巡回監査・社長面談・訪問（現物確認）など）・日・題を 選び、OMS などの 議事録を［文字で入れる］か［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］。写真は 何枚でも（車・設備・パソコンや モニターの 様子 など）', '公式LINE・メール・電話の やりとりも 議事録：種類を 選び、やりとりの 日に 合わせて 文を 貼るか スクショを 入れる（公式LINE・メールの スクショは 字を ひとりでに 読んで 本文に する。12けたの 数字が 写っていたら 字は 入れない）。スクショ・ファイルは 枠に ドラッグ＆ドロップで 何枚でも（コピーした 画像は Ctrl+V）。録音は 右上の［🎙 ハヤト］で（「👤 この 顧問先の 議事録」を 選ぶ。止めて［✓ はい（議事録に 入れて まとめる）］で この タブに 入り、すぐ まとまる。集音器などで 録った 音声ファイルは［ファイル・写真で入れる（txt・PDF・Word・音声・写真）］で）。文字起こしの ある 議事録は エージェントの zip に「まとめ まだ」と 入り、エージェントの 議事録まとめ.json（要点・決定事項・やること）が 戻すと「決定事項」に 足される。下の 並べ方を「古い日から（時系列）」に すると、会った 日の 会話と 1本に 並ぶ。「本文も 並べて 読む」で 続けて 読める', '［🔒 本物か確かめる］で いじっていないことを 示せる。決定事項は［＋ 決定事項・やること］で 足す（顧問料の 合意 など 言った 言わないの 証拠にも なる）', '「🔎 議事録を 探す」… ことば・種類で しぼる →［📎 巡回監査報告書へ 引く］［📎 書面添付へ 引く］で 保証タブの 下書きに 引用を 足す', 'エージェントに 渡すと 議事録（写真も）を 読んで、助言の 下書き（経営助言タブの「これから 出す 助言」）・企業防衛の 前提・カルテ案を 直して くる。［✓ 顧問先に 出す］まで 顧問先には 出ない'],
       tips: ['★ ハヤトで 録って 止めると すぐ AI が まとめる（1回 20〜30円ほど・月の 上限 3000円）。所内の 議事録は「📘 事務所の 標準に なりそうな こと」の［事務所の 考え方に 足す］（所長・管理者）で 事務所の AI の 考え方に 入る。議事録の まとめ・書面添付の 材料は 決定事項と 共有ドライブ（_議事録/コード/…_まとめ.md）に 入り、「🤖 まとめの 下書き」の［📨 顧問先に ご報告として 出す］［④の 助言に 写す］［カルテに 入れる］は 押した ものだけ 使う。社長に 聞くことは ④の いちばん上へ。まとめて いない 録音は［🤖 いま まとめる（AI・20〜30円ほど）］。AI の 利用を 撤回した 顧問先は まとめない', '議事録は 追記だけ（消せない）。まちがえたら［＋ 決定事項・やること］で 訂正を 足す', '上の［🏢 所内の 議事録（事務所の 中で 話したこと）］に 切り替えると 所内会議・打ち合わせを ためられる（顧問先には 出ない）。新しい 20件が どの 顧問先の エージェントの zip にも「所内議事録/」として 入り、事務所の 考え方・やり方の 材料に なる', '文字起こしは ブラウザの 音声認識（お金は かからない。聞きまちがいが あり得る）。スマホでは 画面を 消すと 止まることが あるので、ハヤトで 録っている あいだは 画面を つけたまま'] },
     Jun: { t: '巡回の 見える化', lead: '議事録は 巡回監査報告書 ── 行って 何を やってきたかの 記録です。訪問ごとに 会計・税務・経営助言・保証・その他の どれを やったかを 分けて、職員ごとに 数えます（見合いっこ）。',
       steps: ['期間（今月〜24か月）を 選ぶ。［↻ 数え直す］で 最新に', '上の 表 … 職員ごとの 訪問の 回数・顧問先の 数・分野ごとの 回数と 割合・4つ ぜんぶ やった 回数', '職員を 選ぶと その人の 訪問だけ 並ぶ。［議事録を 見る］で その 顧問先の 議事録タブへ'],
@@ -8628,7 +8699,7 @@
     Kaizen: { t: '改善要望', pic: 'g_okaizen', lead: 'アプリへの 要望・顧問先から 聞いたことを 書いて、直してもらうタブです。',
       steps: ['画面のどこで 何が困るか・どうなってほしいかを 書く（写真も貼れます）。「いま起きていること」「こうしてほしい」は［🎤 話す］で 話しても 書ける', '直ったら【改善済み】になり、顧問先へのお知らせを 出すかを選ぶ', '顧問先の 画面の［💡 改善要望］から 届いたものは 右上の 🔔 に「💡 ◯◯ 様から 改善要望」と 出る。押すと 中身が 入った 改善要望の 画面が 開くので 読んで 判断：［保存する］＝ 直すことに する（番号が 付き 顧問先にも「直すことに しました」と 出る）／［今回は 見送る］（理由は 顧問先に 出る）'], tips: ['自分の Claude で 直すこともできます（説明書「自分の Claude で 資料回収アプリを直す」）'] },
     Staff: { t: '担当者', show: function () { return !!(document.getElementById('tabStaff') && !document.getElementById('tabStaff').hidden); }, lead: '事務所の 担当者（職員）を 登録するタブです（管理する人だけ）。',
-      steps: ['名前・パスワードを 入れて 登録'], tips: [] }
+      steps: ['名前・パスワードを 入れて 登録', 'いちばん上の「🔐 入り方の 守り」… ［指紋・顔で 鍵を かける］か［パスコードを 決める］で この 端末に 鍵（開くとき・30分 はなれて 戻ったとき）', 'マスターは 職員ごとに［メールを 決める］。決めた 職員は、はじめての 端末で 入るとき メールの 6けたで 確かめる', '端末を なくしたら その 端末の［外す］'], tips: ['メールを 決めると、その 職員の 端末は いちど 入り直しに なります（そのとき 6けたで 確かめた 端末を 覚えます）'] }
   };
   function guideKey() { return S.tab && GUIDE[S.tab] ? S.tab : 'top'; }
   /* ================= ★★ 操作ガイド（2026-11-17。石井） =================
@@ -16593,6 +16664,15 @@
   }
   $('mnSeg').addEventListener('click', function (e) { const b = e.target.closest('button[data-n]'); if (!b) return; MNS.nai = b.dataset.n === '1'; this.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); $('mnList').textContent = ''; minLoadTab(); });
   function mnLoad() { const code = MNC(); if (!code) return; gs('minutesList', code).then(function (r) { if (code !== MNC()) return; mnDraw(r); }, function (e) { mtMsg('mnMsg', e.message, 'err'); }); }
+  /* ★★★ 2026-11-26（石井）議事録の 受け口（Notta などの 文字起こしを ドライブに 置くと 拾って まとめる） */
+  function inboxPaint(r) {
+    if (!r) return; const a = $('inboxUrl'); a.href = r.url;
+    const l = r.last, run = r.run;
+    $('inboxSay').textContent = (run ? (run.n ? '✓ ' + run.n + '件 入れました（まとめも 作っています）。' : '') + (run.ng.length ? '読めなかった：' + run.ng.join('、') + '（「読めなかった」へ 移しました）。' : '') : '')
+      + '待っている ファイル ' + r.wait + '件' + (l ? '・前に 入れたのは ' + l.at + '（' + l.n + '件）' : '');
+  }
+  $('inboxBox').addEventListener('toggle', function () { if (this.open && !this.dataset.got) { this.dataset.got = '1'; gs('inboxGet').then(inboxPaint, function (e) { $('inboxSay').textContent = e.message; }); } });
+  $('inboxGo').addEventListener('click', function () { const b = this; b.disabled = true; $('inboxSay').textContent = '取り込んでいます…'; gs('inboxNow').then(function (r) { b.disabled = false; inboxPaint(r); try { mnLoad(); } catch (e) {} }, function (e) { b.disabled = false; $('inboxSay').textContent = e.message; }); });
   function mnSend(extra) {
     const o = Object.assign({ kind: $('mnKind').value, day: $('mnDay').value, title: $('mnTitle').value, show: $('mnShow').checked }, extra);
     mtMsg('mnMsg', '記録しています…');
@@ -19974,7 +20054,38 @@
 
   /* ================= 担当者（手入れはシートの窓かマスター） ================= */
   function smsg(t, kind) { $('sMsg').textContent = t || ''; $('sMsg').className = 'pagemsg' + (kind ? ' ' + kind : ''); }
-  function sLoad() { if (!S.me || !S.me.master) return; gs('staffList').then(sDraw, function (e) { smsg(e.message, 'err'); }); }
+  /* ★★★ 2026-11-26（石井）入り方の 守り：この 端末の 鍵（指紋・顔／パスコード）・新しい 端末の 確かめ（メールの 6けた）・端末を 外す */
+  function devId() { let d = lsGet('collect_dev'); if (!/^[0-9a-f]{32}$/.test(d || '')) { const u = new Uint8Array(16); crypto.getRandomValues(u); d = Array.from(u).map(function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); lsSet('collect_dev', d); } return d; }
+  function secLoad() {
+    const w = $('secBox'); if (!w) return; w.textContent = '読み込んでいます…';
+    gs('staffSec').then(function (r) { secDraw(r); }, function (e) { w.textContent = e.message; });
+  }
+  function secDraw(r) {
+    const w = $('secBox'); w.textContent = '';
+    w.appendChild(el('b', null, '🔐 入り方の 守り'));
+    /* この 端末の 鍵 */
+    const lk = window.LockKit ? LockKit.has() : null, lb = el('div', 'aqrow');
+    lb.appendChild(el('div', null, 'この 端末の 鍵：' + (lk ? [lk.bio ? '指紋・顔' : '', lk.pin ? 'パスコード' : ''].filter(Boolean).join('＋') + '（開くとき・30分 はなれて 戻ったとき）' : 'かけて いません')));
+    const say = el('span', 'note'); 
+    const bb = el('button', 'btn sm', '指紋・顔で 鍵を かける'); bb.type = 'button'; bb.id = 'secBio'; bb.hidden = true;
+    if (window.LockKit) LockKit.bioOk().then(function (ok) { bb.hidden = !ok; if (!ok) say.textContent = 'この 端末は 指紋・顔が 使えません。パスコードを どうぞ。'; });
+    bb.addEventListener('click', function () { LockKit.setBio(S.me ? S.me.name : '').then(function () { secDraw(r); }, function (e) { say.textContent = '指紋・顔を 登録できませんでした（' + (e.message || e) + '）'; }); });
+    const pi = el('input'); pi.type = 'password'; pi.inputMode = 'numeric'; pi.maxLength = 6; pi.placeholder = '数字 4〜6けた'; pi.style.width = '8em'; pi.id = 'secPin';
+    const pb = el('button', 'btn sm', 'パスコードを 決める'); pb.type = 'button'; pb.addEventListener('click', function () { LockKit.setPin(pi.value).then(function () { secDraw(r); }, function (e) { say.textContent = e.message; }); });
+    const cb = el('button', 'btn ghost sm', '鍵を 外す'); cb.type = 'button'; cb.hidden = !lk; cb.addEventListener('click', function () { LockKit.clear(); secDraw(r); });
+    [bb, pi, pb, cb, say].forEach(function (x) { lb.appendChild(x); }); w.appendChild(lb);
+    /* 新しい 端末の 確かめ・端末 */
+    r.list.forEach(function (x) {
+      const row = el('div', 'aqrow');
+      row.appendChild(el('div', null, x.name + '：' + (x.mail ? '新しい 端末は ' + x.mail + ' に 6けたを 送って 確かめる' : '新しい 端末の 確かめ なし（メールが 未登録）')));
+      if (r.master) { const mi = el('input'); mi.type = 'email'; mi.value = x.mail; mi.placeholder = 'メール（空で 確かめを 外す）'; mi.style.width = '16em'; const mb = el('button', 'btn sm', 'メールを 決める'); mb.type = 'button';
+        mb.addEventListener('click', function () { mb.disabled = true; gs('staffMailSet', x.name, mi.value).then(secDraw, function (e) { mb.disabled = false; alert(e.message); }); }); row.appendChild(mi); row.appendChild(mb); }
+      x.devs.forEach(function (d) { const db = el('button', 'btn ghost sm', '外す'); db.type = 'button'; const line = el('div', 'note', '確かめた 端末 ' + d.at + ' '); db.addEventListener('click', function () { db.disabled = true; gs('staffDevDel', x.name, d.id).then(secDraw, function (e) { db.disabled = false; alert(e.message); }); }); line.appendChild(db); row.appendChild(line); });
+      w.appendChild(row);
+    });
+    w.appendChild(el('p', 'note', '端末を なくしたら［外す］。その 端末は すぐ 使えなく なります（もう一度 入るには 名前・暗証番号と メールの 6けた）。'));
+  }
+  function sLoad() { secLoad(); if (!S.me || !S.me.master) return; gs('staffList').then(sDraw, function (e) { smsg(e.message, 'err'); }); }
   function sDraw(list) {
     const tb = $('sBody'); tb.textContent = '';
     if (!list.length) { const tr = el('tr'); const td = el('td', null, 'まだ誰もいません。下で足してください。'); td.colSpan = 3; tr.appendChild(td); tb.appendChild(tr); }
@@ -20359,7 +20470,7 @@
   }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState !== 'visible' || !HY.on) return; hyWake(true); if (!HY.sr && !HY.speaking) setTimeout(hySrOn, 200); });
   function hyRecOn() {
-    HY.rec = null; if (!HY.dest || HY.dest.code === '*') return;
+    HY.rec = null; if (!HY.dest) return;   /* ★ 2026-11-26（石井）：所内・研修も 録音を 残す（文字起こしは その場の 無料の もの） */
     if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) return;
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (st) {
       if (!HY.on) { st.getTracks().forEach(function (t) { t.stop(); }); return; }
@@ -20402,7 +20513,7 @@
     const no = el('button', null, '🗑 残さない'); no.type = 'button'; no.id = 'hyEndNo';
     ok.addEventListener('click', function () {
       ok.disabled = true; if (/^\d{4}-\d{2}-\d{2}$/.test(dd.value)) o.day = dd.value;
-      const snap = { dest: o.dest, day: o.day, from: o.from, lines: o.lines.slice() }, blob = dest.code !== '*' && (dest.code === (o.dest && o.dest.code) || (o.dest && o.dest.code === '?')) ? HY.audio : null;
+      const snap = { dest: o.dest, day: o.day, from: o.from, lines: o.lines.slice() }, blob = (dest.code === (o.dest && o.dest.code) || (o.dest && o.dest.code === '?')) ? HY.audio : null;
       HY.lines = []; HY.audio = null; hyBufDrop(); box.hidden = true;
       hySave(snap, dest, ks.value, tt.value.trim(), blob); hyPickShow();   /* ★ 2026-11-26（石井）：終わったら すぐ「どの 議事録？」に 戻る（入れて まとめるのは 裏で） */
     });
@@ -20542,5 +20653,7 @@
   /* ★★ 2026-11-23（石井）：どの ボタンも 押したら 薄い緑に（押した感） */
   document.addEventListener('click', function (e) { const b = e.target && e.target.closest ? e.target.closest('button') : null; if (!b || b.disabled) return; b.classList.add('tapped'); setTimeout(function () { b.classList.remove('tapped'); }, 700); }, true);
 </script>
+
+
 </body>
 </html>
